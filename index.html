@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車大戦 v94</title>
+<title>戦車大戦 v95</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -27,6 +27,11 @@ p{font-size:12px;opacity:.75;margin:8px 0 0;text-align:center;line-height:1.6}
 #resetBtn{position:fixed;top:max(10px,calc(env(safe-area-inset-top,0px) + 8px));left:50%;transform:translateX(-50%);z-index:40;padding:8px 14px;border:1px solid rgba(230,233,216,.55);border-radius:999px;background:rgba(10,12,8,.58);color:var(--fg);font:600 12px/1 system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;box-shadow:0 2px 12px rgba(0,0,0,.28);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);touch-action:manipulation;-webkit-tap-highlight-color:transparent;cursor:pointer}
 #resetBtn:active{background:rgba(255,210,122,.55);border-color:#ffd27a}
 #resetBtn[hidden]{display:none}
+#debugToggleBtn{display:none;position:fixed;top:max(10px,calc(env(safe-area-inset-top,0px) + 8px));left:max(10px,calc(env(safe-area-inset-left,0px) + 8px));z-index:42;width:44px;height:44px;padding:0;border:1px solid rgba(255,210,122,.58);border-radius:14px;background:rgba(10,12,8,.62);color:#fff0ba;font:600 11px/1 system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;box-shadow:0 2px 12px rgba(0,0,0,.28);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);touch-action:manipulation;-webkit-tap-highlight-color:transparent;cursor:pointer;align-items:center;justify-content:center;flex-direction:column;gap:2px}
+#debugToggleBtn .icon{font-size:15px;line-height:1}
+#debugToggleBtn .key{font-size:10px;line-height:1;letter-spacing:.08em}
+#debugToggleBtn.on{background:rgba(104,20,14,.82);border-color:#ffd27a;box-shadow:0 0 0 1px rgba(255,210,122,.18),0 2px 12px rgba(0,0,0,.3)}
+#debugToggleBtn:active{background:rgba(255,210,122,.32)}
 #debugBadge{position:fixed;top:max(10px,calc(env(safe-area-inset-top,0px) + 8px));right:max(10px,calc(env(safe-area-inset-right,0px) + 8px));z-index:41;padding:8px 14px;border:1px solid rgba(255,210,122,.70);border-radius:999px;background:rgba(104,20,14,.72);color:#fff0ba;font:600 12px/1 system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;box-shadow:0 2px 12px rgba(0,0,0,.28);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);pointer-events:none;white-space:nowrap}
 #debugBadge[hidden]{display:none}
 @media (pointer:coarse){
@@ -35,6 +40,7 @@ p{font-size:12px;opacity:.75;margin:8px 0 0;text-align:center;line-height:1.6}
  canvas{position:fixed;inset:0;width:100vw;height:100dvh;max-width:none;max-height:none;border:0;border-radius:0;display:block}
  p{display:none}
  #pad{display:block;position:fixed;inset:0;z-index:20;width:100%;height:100%;pointer-events:none;touch-action:none}
+ #debugToggleBtn{display:flex}
  #stick{position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:max(18px,calc(env(safe-area-inset-bottom,0px) + 12px));width:132px;height:132px}
  #knob{left:42px;top:42px;width:48px;height:48px}
  .btns{position:absolute;right:max(12px,env(safe-area-inset-right,0px));bottom:max(18px,calc(env(safe-area-inset-bottom,0px) + 12px));grid-template-columns:repeat(2,64px);grid-template-rows:repeat(2,64px);gap:10px}
@@ -52,12 +58,13 @@ p{font-size:12px;opacity:.75;margin:8px 0 0;text-align:center;line-height:1.6}
 <body>
 <canvas id="c" width="840" height="680"></canvas>
 <button id="resetBtn" type="button" aria-label="タイトルへ戻る">↩ タイトルへ</button>
+<button id="debugToggleBtn" type="button" aria-label="無敵モード切替" title="無敵モード切替"><span class="icon">🛡</span><span class="key">P</span></button>
 <div id="debugBadge" hidden>無敵モード</div>
 <div id="pad"><div id="stick"><div id="knob"></div></div><div class="btns"><button class="b" id="skillBtn" data-k="KeyS"><span class="coolRing" id="skillCooldown"></span><span class="coolText" id="skillCooldownText"></span><b>S</b><small id="skillLabel">スキル</small></button><button class="b" id="actionBtn" type="button"><span class="coolRing" id="actionCooldown"></span><span class="coolText" id="actionCooldownText"></span><b id="actionGlyph">D</b><small id="actionLabel">爆弾</small></button><button class="b" data-k="KeyE"><b>E</b><small>操作</small></button></div></div>
 <p>移動: ↑↓←→ / E: 搭乗・降車・近接気絶 / 再開: Enter<br>歩兵: D=爆弾設置/起爆　S=スキル　E=近くの敵兵を10秒気絶　戦車: D=主砲、S=マシンガン（車種で性能差）　戦闘機: D=爆撃　iPhone版もD/S/Eに対応</p>
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.04.94',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
+const GAME_VERSION='2026.10.04.95',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
 let audioCtx=null;
 function ensureAudio(){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(_){}}
 function tone(f=440,d=.08,v=.035,type='square',f2=null){if(!audioCtx)return;const t=audioCtx.currentTime,o=audioCtx.createOscillator(),a=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t+d);a.gain.setValueAtTime(v,t);a.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(a);a.connect(audioCtx.destination);o.start(t);o.stop(t+d+.02);}
@@ -2699,7 +2706,10 @@ function draw(near){
   const TB=titleButtonRects();
   uiBtn(TB.start,'スタート',TOUCH?'タップで開始':'Enter でも開始',mx>=TB.start.x&&mx<=TB.start.x+TB.start.w&&my>=TB.start.y&&my<=TB.start.y+TB.start.h);
   uiBtn(TB.help,'操作説明',TOUCH?'基本操作を見る':'H キーでも開く',mx>=TB.help.x&&mx<=TB.help.x+TB.help.w&&my>=TB.help.y&&my<=TB.help.y+TB.help.h);
-  g.font='12px system-ui';g.fillStyle='#8f987b';g.fillText('Created by terauchi takeharu',W/2,684);g.fillText('Version '+GAME_VERSION,W/2,702);
+  const creditY=TB.help.y+TB.help.h+34;
+  g.textAlign='center';g.lineWidth=3;g.strokeStyle='rgba(0,0,0,.72)';
+  g.font='bold 13px system-ui';g.strokeText('Created by terauchi takeharu',W/2,creditY);g.fillStyle='#d8f0b4';g.fillText('Created by terauchi takeharu',W/2,creditY);
+  g.font='bold 12px system-ui';g.strokeText('Version '+GAME_VERSION,W/2,creditY+20);g.fillStyle='#ffe2a1';g.fillText('Version '+GAME_VERSION,W/2,creditY+20);
  }
  else if(state==='help'){
   g.fillStyle='rgba(10,12,8,.92)';g.fillRect(0,0,W,H);g.textAlign='center';
@@ -2811,6 +2821,22 @@ const press=(c)=>{
 };
 const release=(c)=>{keys[c]=false;};
 const cap=(el,e)=>{try{el.setPointerCapture(e.pointerId);}catch(_){}};
+const debugToggleBtn=document.getElementById('debugToggleBtn');
+const debugModeLabel=()=>debugMode===1?'無敵モード':debugMode===2?'無敵＋索敵解除':debugMode===3?'無敵＋戦闘機∞燃料':'無敵モード OFF';
+if(debugToggleBtn){
+ const syncDebugToggleButton=()=>{
+  const active=debugMode>0,playable=state==='play';
+  debugToggleBtn.classList.toggle('on',active);
+  debugToggleBtn.setAttribute('aria-pressed',active?'true':'false');
+  debugToggleBtn.setAttribute('aria-label',playable?('Pキー相当：'+debugModeLabel()):'無敵モード切替（プレイ中のみ）');
+  debugToggleBtn.title=playable?('Pキー相当：'+debugModeLabel()):'無敵モード切替（プレイ中のみ）';
+  debugToggleBtn.style.opacity=playable?'1':'.5';
+ };
+ debugToggleBtn.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();},{passive:false});
+ debugToggleBtn.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();if(state!=='play')return;toggleDebugInvincible();syncDebugToggleButton();});
+ syncDebugToggleButton();
+ requestAnimationFrame(function loopDebugToggle(){syncDebugToggleButton();requestAnimationFrame(loopDebugToggle);});
+}
 
 document.querySelectorAll('[data-k]').forEach(el=>{const c=el.dataset.k;
  const down=e=>{e.preventDefault();cap(el,e);el.classList.add('on');press(c);};
