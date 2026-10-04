@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車大戦 v95</title>
+<title>戦車大戦 v97</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -64,7 +64,7 @@ p{font-size:12px;opacity:.75;margin:8px 0 0;text-align:center;line-height:1.6}
 <p>移動: ↑↓←→ / E: 搭乗・降車・近接気絶 / 再開: Enter<br>歩兵: D=爆弾設置/起爆　S=スキル　E=近くの敵兵を10秒気絶　戦車: D=主砲、S=マシンガン（車種で性能差）　戦闘機: D=爆撃　iPhone版もD/S/Eに対応</p>
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.04.95',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
+const GAME_VERSION='2026.10.05.97',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
 let audioCtx=null;
 function ensureAudio(){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(_){}}
 function tone(f=440,d=.08,v=.035,type='square',f2=null){if(!audioCtx)return;const t=audioCtx.currentTime,o=audioCtx.createOscillator(),a=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t+d);a.gain.setValueAtTime(v,t);a.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(a);a.connect(audioCtx.destination);o.start(t);o.stop(t+d+.02);}
@@ -766,10 +766,10 @@ function genCovers(){covers=[];
     const shift=(row%2)*(gx*.45);let col=0;
     for(let x=startX+shift;x+bw<WW-14;x+=bw+gx,col++){
      if((row+col)%9===4&&R()<.5)continue;
-     tryAdd(R()<.52?3:4,x,y,bw+R()*14,bh+R()*14,5,8);
+     tryAdd(R()<.80?3:4,x,y,bw+R()*14,bh+R()*14,5,8);
     }
    }
-   for(let k=0;k<42;k++)tryAdd(7,28+R()*860,ry(),46+R()*18,22+R()*10,5,18);
+   for(let k=0;k<20;k++)tryAdd(7,28+R()*860,ry(),46+R()*18,22+R()*10,5,18);
   }else if(z.n==='敵前線基地'){
    // 軍事施設、コンクリート障害物、柵が多い。
    for(let k=0;k<10;k++){const w=118+R()*16,h=84+R()*14;tryAdd(R()<.55?3:7,42+R()*(WW-w-84),ry(),w,h,16,16);}
@@ -824,10 +824,12 @@ function genObjects(){
  const bands=ZONES.map(z=>({n:z.n,y0:z.y0/MAP_SCALE,y1:Math.max(0,z.y1/MAP_SCALE)}));
  for(const z of bands){const top=z.y1+24,bottom=z.y0-24,span=Math.max(90,bottom-top),ry=()=>top+R()*span;
   if(z.n==='草原'){for(let k=0;k<16;k++)tryObject('crate',35+R()*850,ry(),CRATE_W,CRATE_H,9);}
-  else if(z.n==='湿地'){for(let k=0;k<4;k++)tryObject('crate',45+R()*830,ry(),CRATE_W,CRATE_H,10);}
-  else if(z.n==='村'){for(let k=0;k<18;k++)tryObject('crate',34+R()*850,ry(),CRATE_W,CRATE_H,8);for(let k=0;k<8;k++)tryObject('barrel',40+R()*840,ry(),BARREL_SIZE,BARREL_SIZE,7);}
-  else if(z.n==='街'){for(let k=0;k<16;k++)tryObject('barrel',36+R()*850,ry(),BARREL_SIZE,BARREL_SIZE,7);}
-  else if(z.n==='敵前線基地'){for(let k=0;k<7;k++)tryObject('crate',40+R()*840,ry(),CRATE_W,CRATE_H,9);for(let k=0;k<14;k++)tryObject('barrel',36+R()*850,ry(),BARREL_SIZE,BARREL_SIZE,7);}
+  else if(z.n==='湿地'){for(let k=0;k<4;k++)tryObject('crate',45+R()*830,ry(),CRATE_W,CRATE_H,10);for(let k=0;k<5;k++)tryObject('barrel',42+R()*836,ry(),BARREL_SIZE,BARREL_SIZE,8);}
+  else if(z.n==='村'){for(let k=0;k<6;k++)tryObject('crate',34+R()*850,ry(),CRATE_W,CRATE_H,8);for(let k=0;k<8;k++)tryObject('barrel',40+R()*840,ry(),BARREL_SIZE,BARREL_SIZE,7);}
+  else if(z.n==='街'){for(let k=0;k<6;k++)tryObject('barrel',36+R()*850,ry(),BARREL_SIZE,BARREL_SIZE,7);for(let k=0;k<6;k++)tryObject('crate',40+R()*840,ry(),CRATE_W,CRATE_H,9);}
+  else if(z.n==='敵前線基地'){for(let k=0;k<7;k++)tryObject('crate',40+R()*840,ry(),CRATE_W,CRATE_H,9);for(let k=0;k<6;k++)tryObject('barrel',36+R()*850,ry(),BARREL_SIZE,BARREL_SIZE,7);}
+  else if(z.n==='敵迷路基地'){for(let k=0;k<5;k++)tryObject('crate',40+R()*840,ry(),CRATE_W,CRATE_H,9);}
+  else if(z.n==='敵司令本部'){for(let k=0;k<10;k++)tryObject('crate',40+R()*840,ry(),CRATE_W,CRATE_H,10);for(let k=0;k<10;k++)tryObject('barrel',40+R()*840,ry(),BARREL_SIZE,BARREL_SIZE,8);}
  }
 }
 
@@ -887,17 +889,18 @@ function setupAreaDebugStage(){
    addObjectSample('crate',WW/2-150,z.y1+780,CRATE_W,CRATE_H,'オブジェクト：木箱');addObjectSample('barrel',WW/2+100,z.y1+795,BARREL_SIZE,BARREL_SIZE,'オブジェクト：ドラム缶');
   }else if(z.n==='街'){
    placeRow(z,[{kd:3,w:CONCRETE_W,h:CONCRETE_H,label:'コンクリート建物'},{kd:4,w:WOOD_W,h:WOOD_H,label:'木造建物'}],180);
-   placeRow(z,[{kd:7,w:BARRIER_LONG,h:BARRIER_SHORT,label:'防護壁'}],560);addObjectSample('barrel',WW/2-BARREL_SIZE/2,z.y1+820,BARREL_SIZE,BARREL_SIZE,'オブジェクト：ドラム缶');
+   placeRow(z,[{kd:7,w:BARRIER_LONG,h:BARRIER_SHORT,label:'防護壁'}],560);addObjectSample('barrel',WW/2-150,z.y1+820,BARREL_SIZE,BARREL_SIZE,'オブジェクト：ドラム缶');addObjectSample('crate',WW/2+70,z.y1+800,CRATE_W,CRATE_H,'オブジェクト：木箱');
   }else if(z.n==='敵迷路基地'){
    // 迷路基地では建物を使用しない。迷路壁と防護壁のみ確認できる構成にする。
    placeRow(z,[{kd:7,w:BARRIER_LONG,h:BARRIER_SHORT,label:'防護壁'}],260);
-   placeRow(z,[{kd:1,w:62,h:16,label:'迷路壁 最小'},{kd:1,w:93,h:16,label:'迷路壁 中央'},{kd:1,w:124,h:16,label:'迷路壁 最大'}],620);
+   placeRow(z,[{kd:1,w:62,h:16,label:'迷路壁 最小'},{kd:1,w:93,h:16,label:'迷路壁 中央'},{kd:1,w:124,h:16,label:'迷路壁 最大'}],620);addObjectSample('crate',WW/2-CRATE_W/2,z.y1+900,CRATE_W,CRATE_H,'オブジェクト：木箱');
   }else if(z.n==='湿地'){
-   addObjectSample('crate',WW/2-CRATE_W/2,z.y1+180,CRATE_W,CRATE_H,'オブジェクト：木箱');
+   addObjectSample('crate',WW/2-CRATE_W/2,z.y1+180,CRATE_W,CRATE_H,'オブジェクト：木箱');addObjectSample('barrel',WW/2+120,z.y1+200,BARREL_SIZE,BARREL_SIZE,'オブジェクト：ドラム缶');
    addMudSample(z,105,48,95,z.y1+470,'泥 最小');addMudSample(z,183,77,388,z.y1+455,'泥 中央');addMudSample(z,260,106,665,z.y1+440,'泥 最大');
   }else if(z.n==='敵司令本部'){
    placeRow(z,[{kd:1,w:68,h:16,label:'壁 最小'},{kd:1,w:82,h:16,label:'壁 中央'},{kd:1,w:96,h:16,label:'壁 最大'}],430);
    placeRow(z,[{kd:7,w:BARRIER_LONG,h:BARRIER_SHORT,label:'防護壁'}],680);
+   addObjectSample('crate',WW/2-150,z.y1+900,CRATE_W,CRATE_H,'オブジェクト：木箱');addObjectSample('barrel',WW/2+100,z.y1+920,BARREL_SIZE,BARREL_SIZE,'オブジェクト：ドラム缶');
    addLabel('敵司令本部',base.x+base.w/2,base.y+base.h+26,'#ffcf9a','bold 14px system-ui');
   }
  }
@@ -1237,7 +1240,7 @@ function updateScoreTracking(dt,moved=0){
  trackEnemyDeaths();
 }
 function scoreGrade(v,a,b){return v>=a?'A':v>=b?'B':'C';}
-function overallRank(v){return v>=4000?'S':v>=3000?'A':v>=2000?'B':v>=1000?'C':'D';}
+function overallRank(v){return v>=8000?'S':v>=6000?'A':v>=4000?'B':v>=2000?'C':'D';}
 function formatRunTime(sec){sec=Math.max(0,Math.round(sec));return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');}
 function finalizeScore(cleared){
  if(!scoreStats||scoreStats.finalized)return;
@@ -1251,7 +1254,7 @@ function finalizeScore(cleared){
  const chainBonus=Math.min(350,Math.max(0,scoreStats.maxKillChain-1)*70);
  const alertCombatBonus=Math.min(350,scoreStats.alertCombatKills*35);
  const combat=scoreStats.humanKills*100+scoreStats.eliteKills*250+scoreStats.tankKills*400+forwardPaceBonus+destructionBonus+scoreStats.multiKillBonus+chainBonus+alertCombatBonus;
- const stealthRank=scoreGrade(stealth,900,450),combatRank=scoreGrade(combat,1600,700);
+ const stealthRank=scoreGrade(stealth,1800,900),combatRank=scoreGrade(combat,3200,1400);
  const hqBonus=cleared?1000:0;
  let timeBonus=0;if(cleared){const t=scoreStats.time;timeBonus=t<=180?1000:t<=300?700:t<=480?400:t<=720?200:0;}
  const bonus=hqBonus+timeBonus,total=stealth+combat+bonus,rank=overallRank(total);
