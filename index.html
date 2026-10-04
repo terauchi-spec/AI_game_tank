@@ -2502,7 +2502,10 @@ function drawMenuOnlyState(){
   const TB=titleButtonRects();
   uiBtn(TB.start,'スタート',TOUCH?'タップで開始':'Enter でも開始',mx>=TB.start.x&&mx<=TB.start.x+TB.start.w&&my>=TB.start.y&&my<=TB.start.y+TB.start.h);
   uiBtn(TB.help,'操作説明',TOUCH?'基本操作を見る':'H キーでも開く',mx>=TB.help.x&&mx<=TB.help.x+TB.help.w&&my>=TB.help.y&&my<=TB.help.y+TB.help.h);
-  g.font='12px system-ui';g.fillStyle='#8f987b';g.fillText('Created by terauchi takeharu',W/2,H-26);g.fillText('Version '+GAME_VERSION,W/2,H-10);
+  const creditY=TB.help.y+TB.help.h+30;
+  g.textAlign='center';g.lineWidth=4;g.strokeStyle='rgba(0,0,0,.82)';
+  g.font='bold 18px system-ui';g.strokeText('Created by terauchi takeharu',W/2,creditY);g.fillStyle='#e7f7c8';g.fillText('Created by terauchi takeharu',W/2,creditY);
+  g.font='bold 16px system-ui';g.strokeText('Version '+GAME_VERSION+'  10/5 08:18',W/2,creditY+27);g.fillStyle='#ffe2a1';g.fillText('Version '+GAME_VERSION+'  10/5 08:18',W/2,creditY+27);
  }
  else if(state==='help'){
   g.fillStyle='rgba(10,12,8,.98)';g.fillRect(0,0,W,H);g.textAlign='center';
@@ -2709,10 +2712,10 @@ function draw(near){
   const TB=titleButtonRects();
   uiBtn(TB.start,'スタート',TOUCH?'タップで開始':'Enter でも開始',mx>=TB.start.x&&mx<=TB.start.x+TB.start.w&&my>=TB.start.y&&my<=TB.start.y+TB.start.h);
   uiBtn(TB.help,'操作説明',TOUCH?'基本操作を見る':'H キーでも開く',mx>=TB.help.x&&mx<=TB.help.x+TB.help.w&&my>=TB.help.y&&my<=TB.help.y+TB.help.h);
-  const creditY=TB.help.y+TB.help.h+34;
-  g.textAlign='center';g.lineWidth=3;g.strokeStyle='rgba(0,0,0,.72)';
-  g.font='bold 13px system-ui';g.strokeText('Created by terauchi takeharu',W/2,creditY);g.fillStyle='#d8f0b4';g.fillText('Created by terauchi takeharu',W/2,creditY);
-  g.font='bold 12px system-ui';g.strokeText('Version '+GAME_VERSION,W/2,creditY+20);g.fillStyle='#ffe2a1';g.fillText('Version '+GAME_VERSION,W/2,creditY+20);
+  const creditY=TB.help.y+TB.help.h+30;
+  g.textAlign='center';g.lineWidth=4;g.strokeStyle='rgba(0,0,0,.82)';
+  g.font='bold 18px system-ui';g.strokeText('Created by terauchi takeharu',W/2,creditY);g.fillStyle='#e7f7c8';g.fillText('Created by terauchi takeharu',W/2,creditY);
+  g.font='bold 16px system-ui';g.strokeText('Version '+GAME_VERSION+'  10/5 08:18',W/2,creditY+27);g.fillStyle='#ffe2a1';g.fillText('Version '+GAME_VERSION+'  10/5 08:18',W/2,creditY+27);
  }
  else if(state==='help'){
   g.fillStyle='rgba(10,12,8,.92)';g.fillRect(0,0,W,H);g.textAlign='center';
