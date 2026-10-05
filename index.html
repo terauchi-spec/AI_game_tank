@@ -64,7 +64,7 @@ p{font-size:12px;opacity:.75;margin:8px 0 0;text-align:center;line-height:1.6}
 <p>移動: ↑↓←→ / E: 搭乗・降車・近接気絶 / 再開: Enter<br>歩兵: D=爆弾設置/起爆　S=スキル　E=近くの敵兵を10秒気絶　戦車: D=主砲、S=マシンガン（車種で性能差）　戦闘機: D=爆撃　iPhone版もD/S/Eに対応</p>
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.05.98',FILE_CREATED_AT='2026/10/06 00:18',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
+const GAME_VERSION='2026.10.05.98',FILE_CREATED_AT='2026/10/06 01:14',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
 let audioCtx=null;
 function ensureAudio(){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(_){}}
 function tone(f=440,d=.08,v=.035,type='square',f2=null){if(!audioCtx)return;const t=audioCtx.currentTime,o=audioCtx.createOscillator(),a=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t+d);a.gain.setValueAtTime(v,t);a.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(a);a.connect(audioCtx.destination);o.start(t);o.stop(t+d+.02);}
@@ -160,7 +160,7 @@ const TERRAIN_ASSET_SRC={
  "村":ASSET_DIR+'terrain/village.webp',
  "丘陵":ASSET_DIR+'terrain/hills.webp',
  "敵前線基地":ASSET_DIR+'terrain/front_base.webp',
- "街":ASSET_DIR+'terrain/city.webp',
+ "街":ASSET_DIR+'terrain/maze_base.webp',
  "敵迷路基地":ASSET_DIR+'terrain/maze_base.webp',
  "湿地":ASSET_DIR+'terrain/wetland.webp',
  "敵司令本部":ASSET_DIR+'terrain/hq.webp'
@@ -358,6 +358,43 @@ function objectHitCircle(o){return null;}
 function circleHitsObject(x,y,r,o){const cc=objectHitCircle(o);return cc?Math.hypot(x-cc.x,y-cc.y)<=r+cc.r:circleHitsRect(x,y,r,objectHitRect(o));}
 function pointHitsObject(x,y,o,pad=0){const cc=objectHitCircle(o);return cc?Math.hypot(x-cc.x,y-cc.y)<=cc.r+pad:pointHitsCoverRect(x,y,objectHitRect(o),pad);}
 function segmentHitsObject(a,b,o,pad=0){const cc=objectHitCircle(o);if(cc)return segmentHitsCircle(a,b,cc,pad);const rc=objectHitRect(o);return segmentHitsRect(a,b,pad?{x:rc.x-pad,y:rc.y-pad,w:rc.w+pad*2,h:rc.h+pad*2}:rc);}
+// ---- Performance: static spatial hash for covers / objects / bushes ----
+const SPATIAL_CELL=160;
+let spatialCoverGrid=new Map(),spatialObjectGrid=new Map(),spatialBushGrid=new Map();
+let spatialCoverRef=null,spatialObjectRef=null,spatialBushRef=null,spatialCoverLen=-1,spatialObjectLen=-1,spatialBushLen=-1,spatialQuerySeq=1;
+const spatialKey=(x,y)=>x+','+y;
+function coverAABB(c){
+ const re=rockHitEllipse(c);if(re)return{x:re.x-re.rx,y:re.y-re.ry,w:re.rx*2,h:re.ry*2};
+ const cc=coverHitCircle(c);if(cc)return{x:cc.x-cc.r,y:cc.y-cc.r,w:cc.r*2,h:cc.r*2};
+ return coverHitRect(c)||{x:c.x,y:c.y,w:c.w,h:c.h};
+}
+function objectAABB(o){const cc=objectHitCircle(o);return cc?{x:cc.x-cc.r,y:cc.y-cc.r,w:cc.r*2,h:cc.r*2}:(objectHitRect(o)||o);}
+function spatialInsert(grid,item,rc){
+ if(!rc||!Number.isFinite(rc.x)||!Number.isFinite(rc.y)||!Number.isFinite(rc.w)||!Number.isFinite(rc.h))return;
+ const x0=Math.floor(rc.x/SPATIAL_CELL),x1=Math.floor((rc.x+Math.max(0,rc.w))/SPATIAL_CELL),y0=Math.floor(rc.y/SPATIAL_CELL),y1=Math.floor((rc.y+Math.max(0,rc.h))/SPATIAL_CELL);
+ for(let gy=y0;gy<=y1;gy++)for(let gx=x0;gx<=x1;gx++){const k=spatialKey(gx,gy);let a=grid.get(k);if(!a)grid.set(k,a=[]);a.push(item);}
+}
+function rebuildSpatialGrid(){
+ spatialCoverGrid.clear();spatialObjectGrid.clear();spatialBushGrid.clear();
+ for(const c of (covers||[]))spatialInsert(spatialCoverGrid,c,coverAABB(c));
+ for(const o of (objects||[]))spatialInsert(spatialObjectGrid,o,objectAABB(o));
+ for(const b of (bushes||[]))spatialInsert(spatialBushGrid,b,b);
+ spatialCoverRef=covers;spatialObjectRef=objects;spatialBushRef=bushes;
+ spatialCoverLen=(covers||[]).length;spatialObjectLen=(objects||[]).length;spatialBushLen=(bushes||[]).length;
+}
+function ensureSpatialGrid(){
+ if(spatialCoverRef!==covers||spatialObjectRef!==objects||spatialBushRef!==bushes||spatialCoverLen!==(covers||[]).length||spatialObjectLen!==(objects||[]).length||spatialBushLen!==(bushes||[]).length)rebuildSpatialGrid();
+}
+function spatialQuery(grid,x0,y0,x1,y1){
+ ensureSpatialGrid();const out=[],stamp=++spatialQuerySeq,gx0=Math.floor(x0/SPATIAL_CELL),gx1=Math.floor(x1/SPATIAL_CELL),gy0=Math.floor(y0/SPATIAL_CELL),gy1=Math.floor(y1/SPATIAL_CELL);
+ for(let gy=gy0;gy<=gy1;gy++)for(let gx=gx0;gx<=gx1;gx++){const a=grid.get(spatialKey(gx,gy));if(!a)continue;for(const q of a){if(q._spStamp===stamp)continue;q._spStamp=stamp;out.push(q);}}
+ return out;
+}
+const nearbyCovers=(x,y,r=0)=>spatialQuery(spatialCoverGrid,x-r,y-r,x+r,y+r);
+const nearbyObjects=(x,y,r=0)=>spatialQuery(spatialObjectGrid,x-r,y-r,x+r,y+r);
+const nearbyBushes=(x,y,r=0)=>spatialQuery(spatialBushGrid,x-r,y-r,x+r,y+r);
+const coversInBox=(x0,y0,x1,y1)=>spatialQuery(spatialCoverGrid,x0,y0,x1,y1);
+const objectsInBox=(x0,y0,x1,y1)=>spatialQuery(spatialObjectGrid,x0,y0,x1,y1);
 let lastObjectExplosionSfx=0;
 function explodeObject(o,fxOn=true){
  if(!objects||!o)return false;const i=objects.indexOf(o);if(i<0)return false;objects.splice(i,1);
@@ -397,7 +434,7 @@ function damageObject(o,source='impact'){
 }
 function damageObjectsInRadius(x,y,r,source='impact'){
  if(!objects||!objects.length)return 0;let n=0;
- for(let i=objects.length-1;i>=0;i--){const o=objects[i],rc=objectHitRect(o),nx=Math.max(rc.x,Math.min(x,rc.x+rc.w)),ny=Math.max(rc.y,Math.min(y,rc.y+rc.h));if(Math.hypot(nx-x,ny-y)<=r){if(damageObject(o,source))n++;}}
+ const candidates=nearbyObjects(x,y,r+80).slice();for(const o of candidates){if(!objects.includes(o))continue;const rc=objectHitRect(o),nx=Math.max(rc.x,Math.min(x,rc.x+rc.w)),ny=Math.max(rc.y,Math.min(y,rc.y+rc.h));if(Math.hypot(nx-x,ny-y)<=r){if(damageObject(o,source))n++;}}
  return n;
 }
 function updateBurningObjects(dt){
@@ -720,7 +757,7 @@ function drawHelpInteract(x,y){
  g.fillStyle='#c8d68a';g.font='12px system-ui';g.fillText('司令部を破壊してクリア',x+516,y+150);
 }
 const ov2=(a,b,m)=>a.x<b.x+b.w+m&&a.x+a.w+m>b.x&&a.y<b.y+b.h+m&&a.y+a.h+m>b.y;
-const inBush=o=>bushes.some(b=>o.x>b.x&&o.x<b.x+b.w&&o.y>b.y&&o.y<b.y+b.h);
+const inBush=o=>nearbyBushes(o.x,o.y,2).some(b=>o.x>b.x&&o.x<b.x+b.w&&o.y>b.y&&o.y<b.y+b.h);
 const CCol=['#8a7a55','#8c8c86','#7a5f3a','#55504a','#b9ab8a','#7a5f3a','#2f6b34','#4a5a4a','#7a7468','#666865','#b9ab8a'];
 const FRAG_COLORS={0:['#8a7a55','#6a5d40'],1:['#8c8c86','#6a6a66'],2:['#7a5f3a','#4e3c24'],3:['#55504a','#35322e'],4:['#b9ab8a','#8a4a3a','#5a2e24'],5:['#7a5f3a','#4e3c24'],6:['#2f6b34','#3d8a42','#4a3622'],7:['#4a5a4a','#33403a','#8fb0c4'],8:['#7a7468','#9a9484','#57534a'],9:['#666865','#8c8f8a','#4e514e'],10:['#b9ab8a','#8a4a3a','#5a2e24']};
 const labels=[];function lab(t,x,y,f,c,ns){labels.push({t,x,y,f,c,ns});}
@@ -1078,6 +1115,7 @@ function patrol(o,dt,sp,r){
  if(Math.hypot(t.x-o.x,t.y-o.y)<5||o.stk>.8){o.stk=0;o.turnPause=2;o.pauseFace=a;return a;}
  const ox=o.x,oy=o.y;mv(o,Math.cos(a)*sp*dt,Math.sin(a)*sp*dt,r);o.stk=(o.x===ox&&o.y===oy)?o.stk+dt:0;return a;}
 function reset(rerollSkills=true){
+ burningNatureSet.clear();lastEnemySeparationAt=-1e9;allyTargetRefreshAt=0;
  state='play';shake=0;flash=0;msg='';msgT=0;interact=false;bombReq=false;skillReq=false;decoy=null;allies=[];hound=null;houndTrail=[];allySeq=0;builtWalls=[];radio=null;airstrike=null;airbombs=[];weather='clear';weatherT=0;weatherNext=15+R()*35;baseSpawnT=5;deathT=0;cam=0;camX=0;scoreStats=newScoreStats();
  setupZones();if(rerollSkills)rollSkillChoices();
  p={x:WW/2,y:3100,hp:2,tank:null,cc:0,vc:0,ang:-1.57,body:-1.57,dig:0,digPrep:0,digElapsed:0,digExitAnim:0,digExitX:0,digExitY:0,scd:0,scdMax:0,drill:0,drillHit:0,drillTarget:null,drillSfx:0,bushHide:0,grappleT:0,grappleTarget:null,flameFuel:3,flameActive:false,flamePath:[],flameSfx:0,flameReach:0,fireExposure:0};
@@ -1105,9 +1143,19 @@ function reset(rerollSkills=true){
    mud.push(m);made++;
   }
  }
- const bushCount={'草原':560,'湿地':72,'森林':12,'村':18,'丘陵':5,'敵前線基地':1,'街':0,'敵迷路基地':0,'敵司令本部':0};
- const addBush=(b,margin=8,allowBushOverlap=false)=>{if(b.x<8||b.x+b.w>WW-8||(!allowBushOverlap&&bushes.some(o=>bushOvF(o,b,margin)))||b.y>WH/MAP_SCALE-8||bushOvF(b,{x:350,y:2990,w:260,h:170},0)||water.some(c=>bushOvF(c,b,8))||nearBridge(b,60)||bushOvF(b,base,24))return false;bushes.push(b);return true;};
- for(const z of ZONES){const y0=z.y0/MAP_SCALE,y1=Math.max(0,z.y1/MAP_SCALE),n=bushCount[z.n]||0;for(let k=0,m=0;k<30000&&m<n;k++){let bw=30+R()*30,bh=22+R()*22,margin=4;if(z.n==='村'){bw=34+R()*28;bh=24+R()*22;margin=5;}else if(z.n==='森林'){bw=28+R()*26;bh=22+R()*18;margin=5;}else if(z.n==='湿地'){bw=36+R()*32;bh=23+R()*23;margin=7;}const scale=z.n==='湿地'?(1+R()*.55):(1+R()*1.5),w=Math.min(WW-28,bw*scale),h=bh*scale,b={x:14+R()*Math.max(16,WW-w-28),y:y1+8+R()*Math.max(20,y0-y1-h-16),w,h};if(addBush(b,margin,z.n==='草原'))m++;}}
+ const bushCount={'草原':200,'湿地':72,'森林':12,'村':18,'丘陵':5,'敵前線基地':1,'街':0,'敵迷路基地':0,'敵司令本部':0};
+ // 草原のみ草むら同士の重なりを許可。ただし候補が既存2個以上と重なる場合は却下し、3重以上の重なりを防ぐ。
+ const addBush=(b,margin=8,allowBushOverlap=false)=>{
+  const overlapCount=allowBushOverlap?bushes.reduce((n,o)=>n+(bushOvF(o,b,0)?1:0),0):0;
+  if(b.x<8||b.x+b.w>WW-8||(allowBushOverlap?overlapCount>=2:bushes.some(o=>bushOvF(o,b,margin)))||b.y>WH/MAP_SCALE-8||bushOvF(b,{x:350,y:2990,w:260,h:170},0)||water.some(c=>bushOvF(c,b,8))||nearBridge(b,60)||bushOvF(b,base,24))return false;
+  bushes.push(b);return true;
+ };
+ for(const z of ZONES){const y0=z.y0/MAP_SCALE,y1=Math.max(0,z.y1/MAP_SCALE),n=bushCount[z.n]||0;for(let k=0,m=0;k<30000&&m<n;k++){
+  let bw=30+R()*30,bh=22+R()*22,margin=4;
+  if(z.n==='村'){bw=34+R()*28;bh=24+R()*22;margin=5;}else if(z.n==='森林'){bw=28+R()*26;bh=22+R()*18;margin=5;}else if(z.n==='湿地'){bw=36+R()*32;bh=23+R()*23;margin=7;}
+  const scale=z.n==='湿地'?(1+R()*.55):z.n==='草原'?(1.8+R()*.5):(1+R()*1.5),w=Math.min(WW-28,bw*scale),h=bh*scale,b={x:14+R()*Math.max(16,WW-w-28),y:y1+8+R()*Math.max(20,y0-y1-h-16),w,h};
+  if(addBush(b,margin,z.n==='草原'))m++;
+ }}
  genCovers();genObjects();
  cars=[[1900,[0,2]],[950,[1,3]]].map(([y,o])=>{const t=TYPES[o[Math.floor(R()*2)]],sp=freeSpot(100+R()*760,y,22,80);return{x:sp.x,y:sp.y,t,kind:'tank',hp:t.hp,c:t.cmax,v:t.vmax,f:t.fmax,ch:0,mgHits:0,body:-1.57};});
  for(let i=0;i<2;i++){const y=650+R()*1650,sp=freeSpot(80+R()*800,y,24,100);cars.push({x:sp.x,y:sp.y,t:TRUCK_TYPE,kind:'truck',hp:5,c:0,v:0,f:TRUCK_TYPE.fmax,mgHits:0,body:-1.57});}
@@ -1201,7 +1249,7 @@ function reset(rerollSkills=true){
  // スタート地点の周囲260pxには草むらを置かない。
  bushes=bushes.filter(b=>{const nx=Math.max(b.x,Math.min(b.x+b.w,p.x)),ny=Math.max(b.y,Math.min(b.y+b.h,p.y));return Math.hypot(nx-p.x,ny-p.y)>260;});
  // 開始地点の周囲は安全地帯にする。開始直後には敵と接触しない。
- humans=humans.filter(h=>D(h,p)>520);etanks=etanks.filter(e=>D(e,p)>700);separateEnemyUnits();if(skill==='hound')spawnHound();
+ humans=humans.filter(h=>D(h,p)>520);etanks=etanks.filter(e=>D(e,p)>700);separateEnemyUnits(true);if(skill==='hound')spawnHound();
 }
 // 敵司令本部のコリジョンは command_building_1.webp の実描画領域に合わせる。
 // 元画像256x221のうち、主要な不透明領域はおよそ x=4..248 / y=6..213。
@@ -1210,7 +1258,7 @@ function baseHitRect(){
  return{x:b.x+l,y:b.y+t,w:b.w-l-r,h:b.h-t-bt};
 }
 const inBase=(x,y)=>{const b=baseHitRect();return x>b.x&&x<b.x+b.w&&y>b.y&&y<b.y+b.h;};
-const hitsC=(x,y,r)=>{const b=baseHitRect();return covers.some(c=>circleHitsCover(x,y,r,c))||(objects||[]).some(o=>circleHitsObject(x,y,r,o))||(x+r>b.x&&x-r<b.x+b.w&&y+r>b.y&&y-r<b.y+b.h);};
+const hitsC=(x,y,r)=>{const b=baseHitRect();return nearbyCovers(x,y,r+6).some(c=>circleHitsCover(x,y,r,c))||nearbyObjects(x,y,r+6).some(o=>circleHitsObject(x,y,r,o))||(x+r>b.x&&x-r<b.x+b.w&&y+r>b.y&&y-r<b.y+b.h);};
 const inWaterAt=(x,y,r=0)=>water.some(c=>x+r>c.x&&x-r<c.x+c.w&&y+r>c.y&&y-r<c.y+c.h);
 const inMudAt=(x,y,r=0)=>(mud||[]).some(m=>{const rx=m.w/2+r,ry=m.h/2+r;if(rx<=0||ry<=0)return false;const dx=(x-(m.x+m.w/2))/rx,dy=(y-(m.y+m.h/2))/ry;return dx*dx+dy*dy<=1;});
 const inSlowTerrainAt=(x,y,r=0)=>inWaterAt(x,y,r)||inMudAt(x,y,r);
@@ -1223,13 +1271,16 @@ function tankBlocked(self,x,y,r){
 }
 function enemyUnitBlocked(self,x,y,r){
  const hs=humans||[],ts=etanks||[],isEnemy=hs.includes(self)||ts.includes(self);if(!isEnemy)return false;
- // 接触直前だけでなく、少しパーソナルスペースを持たせて集団の塊を防ぐ。
- for(const h of hs)if(h!==self&&h.alive&&Math.hypot(h.x-x,h.y-y)<r+8+10)return true;
- for(const e of ts)if(e!==self&&e.alive&&Math.hypot(e.x-x,e.y-y)<r+TANK_HIT+8)return true;
+ // まず矩形で絞り込み、近距離の個体だけ平方距離を計算する。
+ const hm=r+18,tm=r+TANK_HIT+8;
+ for(const h of hs)if(h!==self&&h.alive){const dx=h.x-x,dy=h.y-y;if(Math.abs(dx)<hm&&Math.abs(dy)<hm&&dx*dx+dy*dy<hm*hm)return true;}
+ for(const e of ts)if(e!==self&&e.alive){const dx=e.x-x,dy=e.y-y;if(Math.abs(dx)<tm&&Math.abs(dy)<tm&&dx*dx+dy*dy<tm*tm)return true;}
  return false;
 }
 function mv(o,dx,dy,r){const slow=(inSlowTerrainAt(o.x,o.y,r)||inSlowTerrainAt(o.x+dx,o.y+dy,r))?.3:1;dx*=slow;dy*=slow;const nx=o.x+dx;if(nx>r&&nx<WW-r&&!hitsC(nx,o.y,r)&&!tankBlocked(o,nx,o.y,r)&&!enemyUnitBlocked(o,nx,o.y,r))o.x=nx;const ny=o.y+dy;if(ny>r&&ny<WH-r&&!hitsC(o.x,ny,r)&&!tankBlocked(o,o.x,ny,r)&&!enemyUnitBlocked(o,o.x,ny,r))o.y=ny;}
-function separateEnemyUnits(){
+let lastEnemySeparationAt=-1e9;
+function separateEnemyUnits(force=false){
+ const now=performance.now();if(!force&&now-lastEnemySeparationAt<100)return;lastEnemySeparationAt=now;
  const u=[];for(const h of humans||[])if(h.alive)u.push({o:h,r:8,static:!!h.areaDebugStatic});for(const e of etanks||[])if(e.alive)u.push({o:e,r:TANK_HIT,static:!!(e.static||e.areaDebugStatic)});
  for(let pass=0;pass<3;pass++)for(let i=0;i<u.length;i++)for(let j=i+1;j<u.length;j++){
   const a=u[i],b=u[j],dx=b.o.x-a.o.x,dy=b.o.y-a.o.y,d=Math.hypot(dx,dy),bothHuman=a.r===8&&b.r===8,min=a.r+b.r+(bothHuman?12:8);if(d>=min)continue;
@@ -1251,39 +1302,46 @@ function segmentHitsRect(a,b,r){
 }
 function los(a,b){
  const minX=Math.min(a.x,b.x),maxX=Math.max(a.x,b.x),minY=Math.min(a.y,b.y),maxY=Math.max(a.y,b.y);
- const coverBlocked=covers.some(c=>{
+ const coverBlocked=coversInBox(minX-2,minY-2,maxX+2,maxY+2).some(c=>{
   const rc=coverHitRect(c),cc=coverHitCircle(c),re=rockHitEllipse(c);
   if(re){if(re.x+re.rx<minX||re.x-re.rx>maxX||re.y+re.ry<minY||re.y-re.ry>maxY)return false;return segmentHitsCover(a,b,c);}
   if(cc){if(cc.x+cc.r<minX||cc.x-cc.r>maxX||cc.y+cc.r<minY||cc.y-cc.r>maxY)return false;return segmentHitsCover(a,b,c);}
-  if(!rc)return false;
-  if(rc.x>maxX||rc.x+rc.w<minX||rc.y>maxY||rc.y+rc.h<minY)return false;
-  return segmentHitsCover(a,b,c);
+  if(!rc)return false;if(rc.x>maxX||rc.x+rc.w<minX||rc.y>maxY||rc.y+rc.h<minY)return false;return segmentHitsCover(a,b,c);
  });
  if(coverBlocked)return false;
- return !(objects||[]).some(o=>{const rc=objectHitRect(o),cc=objectHitCircle(o);if(cc){if(cc.x+cc.r<minX||cc.x-cc.r>maxX||cc.y+cc.r<minY||cc.y-cc.r>maxY)return false;return segmentHitsObject(a,b,o);}if(rc.x>maxX||rc.x+rc.w<minX||rc.y>maxY||rc.y+rc.h<minY)return false;return segmentHitsObject(a,b,o);});
+ return !objectsInBox(minX-2,minY-2,maxX+2,maxY+2).some(o=>{const rc=objectHitRect(o),cc=objectHitCircle(o);if(cc){if(cc.x+cc.r<minX||cc.x-cc.r>maxX||cc.y+cc.r<minY||cc.y-cc.r>maxY)return false;return segmentHitsObject(a,b,o);}if(rc.x>maxX||rc.x+rc.w<minX||rc.y>maxY||rc.y+rc.h<minY)return false;return segmentHitsObject(a,b,o);});
+}
+function cachedLos(o,target,ms=90){
+ const now=performance.now();if(o&&o._visTarget===target&&o._nextVisAt>now)return !!o._visCache;const v=los(o,target);if(o){o._visTarget=target;o._visCache=v;o._nextVisAt=now+ms;}return v;
 }
 function targetObj(key){if(key&&key.startsWith('ally:')){const id=+key.slice(5);return (allies||[]).find(a=>a.alive&&a.id===id)||null;}if(key==='decoy')return decoy;return key==='p'?p:null;}
 function canDetect(o,target,face,key){
  if(!target)return false;const d=D(o,target),known=o.st&&o.target===key,searchBoost=(o&&o.sus>0&&!o.st)?1.5:1,eliteRange=o&&o.elite?1.2:1,eliteFov=o&&o.elite?1.2:1,humanFov=(humans||[]).includes(o)?1.2:1,fovBoost=eliteFov*humanFov;
  const hiddenPlayer=key==='p'&&(debugMode>=2||p.dig>0||(!p.tank&&inBush(p))||(weather==='rain'&&inWaterAt(p.x,p.y,0)));if(hiddenPlayer)return false;
- if(!los(o,target))return false;
- if(known)return d<detectDropRange(key)*eliteRange;
+ if(known){if(d>=detectDropRange(key)*eliteRange)return false;return los(o,target);}
  const da=Math.abs(angD(Math.atan2(target.y-o.y,target.x-o.x),face));
- if(da<=DETECT_CENTER_HALF*fovBoost)return d<detectRange(key)*searchBoost*eliteRange;
- return da<=DETECT_OUTER_HALF*fovBoost&&d<detectOuterRange(key)*searchBoost*eliteRange;
+ const inCenter=da<=DETECT_CENTER_HALF*fovBoost&&d<detectRange(key)*searchBoost*eliteRange;
+ const inOuter=da<=DETECT_OUTER_HALF*fovBoost&&d<detectOuterRange(key)*searchBoost*eliteRange;
+ if(!inCenter&&!inOuter)return false;
+ return los(o,target);
 }
 function findDetectedTarget(o,face){
+ const now=performance.now();if(o&&o._nextDetectAt>now)return o._detectCache||null;
+ let best=null;
  // 偽装は音で注意を引くため、遮蔽物越しでも一定範囲の敵を誘導する。
- if(decoy&&D(o,decoy)<500)return{key:'decoy',obj:decoy,d:D(o,decoy)};
- if(decoy&&canDetect(o,decoy,face,'decoy'))return{key:'decoy',obj:decoy,d:D(o,decoy)};
- const seen=[];if(canDetect(o,p,face,'p'))seen.push({key:'p',obj:p,d:D(o,p)});for(const a of (allies||[]))if(a.alive&&canDetect(o,a,face,'ally:'+a.id))seen.push({key:'ally:'+a.id,obj:a,d:D(o,a)});
- seen.sort((a,b)=>a.d-b.d);return seen[0]||null;
+ if(decoy){const dd=D(o,decoy);if(dd<500)best={key:'decoy',obj:decoy,d:dd};else if(canDetect(o,decoy,face,'decoy'))best={key:'decoy',obj:decoy,d:dd};}
+ if(!best&&canDetect(o,p,face,'p'))best={key:'p',obj:p,d:D(o,p)};
+ for(const a of (allies||[]))if(a.alive&&canDetect(o,a,face,'ally:'+a.id)){const d=D(o,a);if(!best||d<best.d)best={key:'ally:'+a.id,obj:a,d};}
+ if(o){o._detectCache=best;o._nextDetectAt=now+90+((o.x+o.y)|0)%21;}
+ return best;
 }
-function burst(x,y,n,col,sp){for(let i=0;i<n;i++){const a=R()*6.28,s=R()*sp;parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.4+R()*.4,col});}}
-function cannonCoverDebris(x,y,col='#8a7a55',amount=3){for(let i=0;i<amount;i++){const a=R()*6.28318,s=70+R()*150;parts.push({x:x+(R()-.5)*16,y:y+(R()-.5)*12,vx:Math.cos(a)*s,vy:Math.sin(a)*s*.58,z:2+R()*6,vz:105+R()*155,g:360,life:1.05+R()*.75,col,sz:5+R()*7,arcFrag:1,rot:R()*6.28,vr:(R()-.5)*9});}}
-function updateParts(dt){for(const q of parts){q.life-=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;if(q.arcFrag){q.vz-=q.g*dt;q.z=Math.max(0,(q.z||0)+q.vz*dt);q.rot=(q.rot||0)+(q.vr||0)*dt;if(q.z<=0&&q.vz<0){q.z=0;q.vz*=-.22;q.vx*=.68;q.vy*=.68;}}q.vx*=q.arcFrag?.985:.93;q.vy*=q.arcFrag?.985:.93;}parts=parts.filter(q=>q.life>0);}
+const MAX_PARTS=MOBILE_VIEW?240:360;
+function trimParts(extra=0){if(!parts)return;const over=parts.length+extra-MAX_PARTS;if(over>0)parts.splice(0,over);}
+function burst(x,y,n,col,sp){const nn=Math.min(n,MAX_PARTS);trimParts(nn);for(let i=0;i<nn;i++){const a=R()*6.28,s=R()*sp;parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.4+R()*.4,col});}}
+function cannonCoverDebris(x,y,col='#8a7a55',amount=3){amount=Math.min(amount,MAX_PARTS);trimParts(amount);for(let i=0;i<amount;i++){const a=R()*6.28318,s=70+R()*150;parts.push({x:x+(R()-.5)*16,y:y+(R()-.5)*12,vx:Math.cos(a)*s,vy:Math.sin(a)*s*.58,z:2+R()*6,vz:105+R()*155,g:360,life:1.05+R()*.75,col,sz:5+R()*7,arcFrag:1,rot:R()*6.28,vr:(R()-.5)*9});}}
+function updateParts(dt){trimParts();let w=0;for(let i=0;i<parts.length;i++){const q=parts[i];q.life-=dt;if(q.life<=0)continue;q.x+=q.vx*dt;q.y+=q.vy*dt;if(q.arcFrag){q.vz-=q.g*dt;q.z=Math.max(0,(q.z||0)+q.vz*dt);q.rot=(q.rot||0)+(q.vr||0)*dt;if(q.z<=0&&q.vz<0){q.z=0;q.vz*=-.22;q.vx*=.68;q.vy*=.68;}}q.vx*=q.arcFrag?.985:.93;q.vy*=q.arcFrag?.985:.93;parts[w++]=q;}parts.length=w;}
 function digSoilBurst(x,y,power=1){
- const n=Math.round(24*power);
+ const n=Math.round(24*power);trimParts(n);
  for(let i=0;i<n;i++){
   const a=R()*6.28,sp=(55+R()*150)*power,sz=(5+R()*5)*Math.min(1.2,power);
   parts.push({x:x+(R()-.5)*10,y:y+(R()-.5)*8,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp*.72,life:.48+R()*.42,col:R()<.5?'#7a5a38':'#9a744b',sz});
@@ -1628,24 +1686,23 @@ function summonAlly(){
  const used=new Set((allies||[]).filter(a=>a.alive).map(a=>a.slot)),slot=[0,1,2,3,4].find(n=>!used.has(n))??0,rank=slot-2,ax=Math.max(40,Math.min(WW-40,p.x+rank*38+(R()-.5)*34)),landY=Math.max(45,Math.min(WH-45,p.y-48-Math.abs(rank)*14));
  const startY=Math.max(45,landY-320);allies.push({id:++allySeq,x:ax,y:startY,startY,landY,alive:true,chute:3,chuteTotal:3,shotCd:.2,burstLeft:3,face:p.body,slot});setSkillCooldown(6);sfx('ally');say('相棒を要請! '+(active+1)+'/5');
 }
+let allyTargetRefreshAt=0;
 function updateAlly(dt){
  const active=(allies||[]).filter(a=>a.alive),ready=[];
  for(const ally of active){
   if(ally.chute>0){ally.chute=Math.max(0,ally.chute-dt);const total=ally.chuteTotal||3,t=1-ally.chute/total,e=t*t*(3-2*t);ally.y=(ally.startY??ally.y)+(ally.landY-(ally.startY??ally.y))*e;if(ally.chute<=0){ally.y=ally.landY;ally.chute=0;sfx('ally');say('相棒が到着!');}continue;}
-  if(updateBlastFlight(ally,dt))continue;
-  // 地形に詰まって遥か後方へ残った相棒は自動離脱。
-  // 約1画面強の距離を超えた場合に消滅させる。
-  if(D(ally,p)>900){ally.alive=false;continue;}
-  ally.shotCd-=dt;ready.push(ally);
+  if(updateBlastFlight(ally,dt))continue;if(D(ally,p)>900){ally.alive=false;continue;}ally.shotCd-=dt;ready.push(ally);
  }
- const assigned=new Map(),range=264;
- for(const ally of ready){
-  const candidates=[];for(const h of humans)if(h.alive&&los(ally,h)){const d=D(ally,h);if(d<range)candidates.push({h,d,n:assigned.get(h)||0});}
-  candidates.sort((a,b)=>a.n-b.n||a.d-b.d);const pick=candidates[0],target=pick&&pick.h,bd=pick?pick.d:1e9;
-  if(target){assigned.set(target,(assigned.get(target)||0)+1);ally.face=Math.atan2(target.y-ally.y,target.x-ally.x);
-   if(bd>176){moveAllySmart(ally,target,135,dt);}
-   else if(ally.shotCd<=0){fire(ally.x+Math.cos(ally.face)*12,ally.y+Math.sin(ally.face)*12,ally.face+(R()-.5)*.08,'ally','v',480,205);ally.burstLeft--;if(ally.burstLeft<=0){ally.burstLeft=3;ally.shotCd=3;}else ally.shotCd=.16;}
-  }else{const rank=(ally.slot||0)-2,followX=p.x+rank*30,followY=p.y+36+Math.abs(rank)*14,d=Math.hypot(followX-ally.x,followY-ally.y);if(d>62){moveAllySmart(ally,{x:followX,y:followY},135,dt);}}
+ const range=264,now=performance.now(),refresh=now>=allyTargetRefreshAt;
+ if(refresh){
+  allyTargetRefreshAt=now+100;const assigned=new Map();
+  for(const ally of ready){let best=null,bestScore=Infinity;for(const h of humans){if(!h.alive)continue;const dx=h.x-ally.x,dy=h.y-ally.y,d2=dx*dx+dy*dy;if(d2>=range*range)continue;if(!los(ally,h))continue;const d=Math.sqrt(d2),n=assigned.get(h)||0,score=n*10000+d;if(score<bestScore){bestScore=score;best=h;}}
+   ally._combatTarget=best;if(best)assigned.set(best,(assigned.get(best)||0)+1);
+  }
+ }
+ for(const ally of ready){let target=ally._combatTarget;if(target&&!target.alive){target=null;ally._combatTarget=null;}const bd=target?D(ally,target):1e9;
+  if(target&&bd<range+40){ally.face=Math.atan2(target.y-ally.y,target.x-ally.x);if(bd>176)moveAllySmart(ally,target,135,dt);else if(ally.shotCd<=0){fire(ally.x+Math.cos(ally.face)*12,ally.y+Math.sin(ally.face)*12,ally.face+(R()-.5)*.08,'ally','v',480,205);ally.burstLeft--;if(ally.burstLeft<=0){ally.burstLeft=3;ally.shotCd=3;}else ally.shotCd=.16;}}
+  else{ally._combatTarget=null;const rank=(ally.slot||0)-2,followX=p.x+rank*30,followY=p.y+36+Math.abs(rank)*14,d=Math.hypot(followX-ally.x,followY-ally.y);if(d>62)moveAllySmart(ally,{x:followX,y:followY},135,dt);}
  }
  allies=allies.filter(a=>a.alive);
 }
@@ -1701,7 +1758,7 @@ function houndTryStep(a,sp,dt,allowAvoid=true){
  for(const off of angles){const aa=a+off,nx=hound.x+Math.cos(aa)*step,ny=hound.y+Math.sin(aa)*step;if(nx<=7||nx>=WW-7||ny<=7||ny>=WH-7||hitsC(nx,ny,7))continue;const wasWater=inWaterAt(hound.x,hound.y,7),nowWater=inWaterAt(nx,ny,7);hound.x=nx;hound.y=ny;hound.face=aa;if(nowWater&&!wasWater){sfx('splash');burst(hound.x,hound.y+3,8,'#9fd8ee',65);}return true;}return false;
 }
 function houndDirectStepBlocked(a,sp,dt){if(!hound)return true;const slow=inSlowTerrainAt(hound.x,hound.y,7)?.3:1,step=sp*slow*dt,nx=hound.x+Math.cos(a)*step,ny=hound.y+Math.sin(a)*step;return nx<=7||nx>=WW-7||ny<=7||ny>=WH-7||hitsC(nx,ny,7);}
-function houndDirectStepTouchesCover(a,sp,dt){if(!hound)return false;const slow=inSlowTerrainAt(hound.x,hound.y,7)?.3:1,step=sp*slow*dt,nx=hound.x+Math.cos(a)*step,ny=hound.y+Math.sin(a)*step;if(nx<=7||nx>=WW-7||ny<=7||ny>=WH-7)return false;return (covers||[]).some(c=>circleHitsCover(nx,ny,7,c));}
+function houndDirectStepTouchesCover(a,sp,dt){if(!hound)return false;const slow=inSlowTerrainAt(hound.x,hound.y,7)?.3:1,step=sp*slow*dt,nx=hound.x+Math.cos(a)*step,ny=hound.y+Math.sin(a)*step;if(nx<=7||nx>=WW-7||ny<=7||ny>=WH-7)return false;return nearbyCovers(nx,ny,14).some(c=>circleHitsCover(nx,ny,7,c));}
 function chooseHoundLostMove(){
  if(!hound)return;hound.lostTurn=R()<.5?-1:1;hound.lostMode='s';hound.lostFace=hound.face||0;hound.lostBase=hound.lostFace+(R()-.5)*.38;hound.lostPhase=R()*Math.PI*2;
 }
@@ -1858,7 +1915,7 @@ function updateDrill(dt){
  if(!(p.drill>0))return;
  if(p.tank||p.dig>0){p.drill=0;p.drillHit=0;p.drillTarget=null;p.drillTankHit=0;p.drillTankTarget=null;setSkillCooldown(DRILL_RECHARGE);return;}
  p.drill=Math.max(0,p.drill-dt);p.drillSfx-=dt;if(p.drillSfx<=0){p.drillSfx=.16;sfx('drill');}
- const dg=drillGeom(),hitCover=covers.find(c=>segmentHitsCover(dg.a,dg.b,c,dg.r)),hitObject=(objects||[]).find(o=>segmentHitsObject(dg.a,dg.b,o,dg.r)),hit=hitCover||hitObject;
+ const dg=drillGeom(),minDX=Math.min(dg.a.x,dg.b.x)-dg.r,maxDX=Math.max(dg.a.x,dg.b.x)+dg.r,minDY=Math.min(dg.a.y,dg.b.y)-dg.r,maxDY=Math.max(dg.a.y,dg.b.y)+dg.r,hitCover=coversInBox(minDX,minDY,maxDX,maxDY).find(c=>segmentHitsCover(dg.a,dg.b,c,dg.r)),hitObject=objectsInBox(minDX,minDY,maxDX,maxDY).find(o=>segmentHitsObject(dg.a,dg.b,o,dg.r)),hit=hitCover||hitObject;
  const tankHit=(etanks||[]).find(e=>e.alive&&pointSegDist(e.x,e.y,dg.a,dg.b)<=dg.r+TANK_HIT);
  for(const h of humans)if(h.alive&&pointSegDist(h.x,h.y,dg.a,dg.b)<=dg.r+7){h.alive=false;recordPlayerKill(p.drillActionId||0);burst(h.x,h.y,16,'#c05a3a',220);sfx('crush');shake=Math.max(shake,4);}
  if(tankHit){
@@ -1883,10 +1940,10 @@ function playerMove(dx,dy,r,dt){
  const ox=p.x,oy=p.y;
  if(p.tank&&p.tank.kind==='fighter'){p.x=Math.max(r,Math.min(WW-r,p.x+dx));p.y=Math.max(r,Math.min(WH-r,p.y+dy));return Math.hypot(p.x-ox,p.y-oy);}
  if(p.tank&&p.tank.kind!=='fighter'){
-  const len=Math.hypot(dx,dy)||1,nx=p.x+dx,ny=p.y+dy,hitObject=(objects||[]).find(o=>circleHitsObject(nx,ny,r,o));
+  const len=Math.hypot(dx,dy)||1,nx=p.x+dx,ny=p.y+dy,hitObject=nearbyObjects(nx,ny,r+10).find(o=>circleHitsObject(nx,ny,r,o));
   if(hitObject){damageObject(hitObject,'vehicle');sfx('drillBreak');shake=Math.max(shake,4);alertEnemiesNear(hitObject.x+hitObject.w/2,hitObject.y+hitObject.h/2,100);}
   if(p.tank.kind==='tank'){
-   const hitCover=covers.find(c=>circleHitsCover(nx,ny,r,c));
+   const hitCover=nearbyCovers(nx,ny,r+8).find(c=>circleHitsCover(nx,ny,r,c));
    if(hitCover){p.tank.ramT=(p.tank.ramT||0)+dt;const ux=dx/len,uy=dy/len,fxp=p.x+ux*(r+9),fyp=p.y+uy*(r+9),rr=Math.min(30,7+p.tank.ramT*15);carve(fxp,fyp,rr,true);if((p.tank.ramSfx||0)<=0){sfx('drillBreak');p.tank.ramSfx=.28;}if((p.tank.ramAlert||0)<=0){alertEnemiesNear(hitCover.x+hitCover.w/2,hitCover.y+hitCover.h/2,100);p.tank.ramAlert=.45;}shake=Math.max(shake,2.5);}
    else p.tank.ramT=Math.max(0,(p.tank.ramT||0)-dt*2);
    p.tank.ramSfx=Math.max(0,(p.tank.ramSfx||0)-dt);p.tank.ramAlert=Math.max(0,(p.tank.ramAlert||0)-dt);
@@ -1897,8 +1954,11 @@ function playerMove(dx,dy,r,dt){
  return Math.hypot(p.x-ox,p.y-oy);
 }
 function firstBlockingCover(a,b,maxD=300){
- const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy);if(!d)return null;const t=Math.min(1,maxD/d),bb={x:a.x+dx*t,y:a.y+dy*t};
- const hits=covers.filter(c=>segmentHitsCover(a,bb,c)).map(c=>{const ct=coverCenter(c);return{c,d:Math.hypot(ct.x-a.x,ct.y-a.y)}});for(const o of (objects||[]))if(segmentHitsObject(a,bb,o)){const rc=objectHitRect(o);hits.push({c:o,d:Math.hypot(rc.x+rc.w/2-a.x,rc.y+rc.h/2-a.y)});}hits.sort((u,v)=>u.d-v.d);return hits[0]?.c||null;
+ const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy);if(!d)return null;const t=Math.min(1,maxD/d),bb={x:a.x+dx*t,y:a.y+dy*t},minX=Math.min(a.x,bb.x),maxX=Math.max(a.x,bb.x),minY=Math.min(a.y,bb.y),maxY=Math.max(a.y,bb.y);
+ let best=null,bestD=Infinity;
+ for(const c of coversInBox(minX-4,minY-4,maxX+4,maxY+4))if(segmentHitsCover(a,bb,c)){const ct=coverCenter(c),dd=(ct.x-a.x)*(ct.x-a.x)+(ct.y-a.y)*(ct.y-a.y);if(dd<bestD){bestD=dd;best=c;}}
+ for(const o of objectsInBox(minX-4,minY-4,maxX+4,maxY+4))if(segmentHitsObject(a,bb,o)){const rc=objectHitRect(o),ox=rc.x+rc.w/2,oy=rc.y+rc.h/2,dd=(ox-a.x)*(ox-a.x)+(oy-a.y)*(oy-a.y);if(dd<bestD){bestD=dd;best=o;}}
+ return best;
 }
 function activeBuiltWalls(){
  builtWalls=builtWalls.filter(g=>{g.parts=g.parts.filter(c=>covers.includes(c));return g.parts.length>0;});
@@ -1929,34 +1989,34 @@ function cleanBuiltWalls(cy,cx){
 }
 function pointSegDistance(px,py,a,b){const dx=b.x-a.x,dy=b.y-a.y,l2=dx*dx+dy*dy;if(!l2)return Math.hypot(px-a.x,py-a.y);const t=Math.max(0,Math.min(1,((px-a.x)*dx+(py-a.y)*dy)/l2));return Math.hypot(px-(a.x+t*dx),py-(a.y+t*dy));}
 function rectGap(a,b){const dx=Math.max(0,a.x-(b.x+b.w),b.x-(a.x+a.w)),dy=Math.max(0,a.y-(b.y+b.h),b.y-(a.y+a.h));return Math.hypot(dx,dy);}
-function igniteNature(o){if(!o||o.burnT>0||weather==='rain')return false;o.burnT=5;o.burnSpread=(.65+R()*.35)/.3;o.burnSpreadDone=false;return true;}
+const burningNatureSet=new Set();
+function igniteNature(o){if(!o||o.burnT>0||weather==='rain')return false;o.burnT=5;o.burnSpread=(.65+R()*.35)/.3;o.burnSpreadDone=false;burningNatureSet.add(o);return true;}
 function igniteBridge(b){if(!b||b.burnT>0)return false;b.burnT=5;b.bridgeBurn=true;return true;}
 function natureHitByPath(path){
- if(!path||path.length<2)return;
- for(const c of covers){if(c.fr||c.kd!==6||c.burnT>0)continue;for(let i=1;i<path.length;i++){const a=path[i-1],b=path[i],rad=Math.max(c.w,c.h)*.45+13;if(pointSegDistance(c.x+c.w/2,c.y+c.h/2,a,b)<=rad){igniteNature(c);break;}}}
- for(const bsh of bushes){if(bsh.burnT>0)continue;for(let i=1;i<path.length;i++){const a=path[i-1],b=path[i];if(segmentHitsRect(a,b,{x:bsh.x-8,y:bsh.y-8,w:bsh.w+16,h:bsh.h+16})){igniteNature(bsh);break;}}}
- for(const br of bridges){if(br.burnT>0)continue;for(let i=1;i<path.length;i++){const a=path[i-1],b=path[i];if(segmentHitsRect(a,b,{x:br.x-5,y:br.y-5,w:(br.w||100)+10,h:(br.h||100)+10})){igniteBridge(br);break;}}} for(const o of (objects||[])){for(let i=1;i<path.length;i++){const a=path[i-1],b=path[i];if(segmentHitsObject(a,b,o,8)){damageObject(o,'flame');break;}}}
+ if(!path||path.length<2)return;let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;for(const q of path){if(q.x<minX)minX=q.x;if(q.x>maxX)maxX=q.x;if(q.y<minY)minY=q.y;if(q.y>maxY)maxY=q.y;}const pad=90;
+ for(const c of coversInBox(minX-pad,minY-pad,maxX+pad,maxY+pad)){if(c.fr||c.kd!==6||c.burnT>0)continue;for(let i=1;i<path.length;i++){const a=path[i-1],b=path[i],rad=Math.max(c.w,c.h)*.45+13;if(pointSegDistance(c.x+c.w/2,c.y+c.h/2,a,b)<=rad){igniteNature(c);break;}}}
+ for(const bsh of spatialQuery(spatialBushGrid,minX-12,minY-12,maxX+12,maxY+12)){if(bsh.burnT>0)continue;for(let i=1;i<path.length;i++){const a=path[i-1],b=path[i];if(segmentHitsRect(a,b,{x:bsh.x-8,y:bsh.y-8,w:bsh.w+16,h:bsh.h+16})){igniteNature(bsh);break;}}}
+ for(const br of bridges){if(br.burnT>0)continue;for(let i=1;i<path.length;i++){const a=path[i-1],b=path[i];if(segmentHitsRect(a,b,{x:br.x-5,y:br.y-5,w:(br.w||100)+10,h:(br.h||100)+10})){igniteBridge(br);break;}}}
+ for(const o of objectsInBox(minX-12,minY-12,maxX+12,maxY+12)){for(let i=1;i<path.length;i++){const a=path[i-1],b=path[i];if(segmentHitsObject(a,b,o,8)){damageObject(o,'flame');break;}}}
 }
 function spreadNatureFire(src){
- if(weather==='rain')return;
- for(const c of covers)if(!c.fr&&c.kd===6&&!(c.burnT>0)&&c!==src&&rectGap(src,c)<=48)igniteNature(c);
- for(const b of bushes)if(!(b.burnT>0)&&b!==src&&rectGap(src,b)<=48)igniteNature(b);
+ if(weather==='rain')return;const cx=src.x+(src.w||0)/2,cy=src.y+(src.h||0)/2,rr=Math.max(src.w||0,src.h||0)/2+60;
+ for(const c of nearbyCovers(cx,cy,rr))if(!c.fr&&c.kd===6&&!(c.burnT>0)&&c!==src&&rectGap(src,c)<=48)igniteNature(c);
+ for(const b of nearbyBushes(cx,cy,rr))if(!(b.burnT>0)&&b!==src&&rectGap(src,b)<=48)igniteNature(b);
 }
 function burningAt(x,y,r=5){
- for(const c of covers)if(c.burnT>0&&x+r>c.x&&x-r<c.x+c.w&&y+r>c.y&&y-r<c.y+c.h)return true;
- for(const b of bushes)if(b.burnT>0&&x+r>b.x&&x-r<b.x+b.w&&y+r>b.y&&y-r<b.y+b.h)return true;
+ for(const c of nearbyCovers(x,y,r+70))if(c.burnT>0&&x+r>c.x&&x-r<c.x+c.w&&y+r>c.y&&y-r<c.y+c.h)return true;
+ for(const b of nearbyBushes(x,y,r+70))if(b.burnT>0&&x+r>b.x&&x-r<b.x+b.w&&y+r>b.y&&y-r<b.y+b.h)return true;
  for(const br of bridges)if(br.burnT>0&&x+r>br.x&&x-r<br.x+(br.w||100)&&y+r>br.y&&y-r<br.y+(br.h||100))return true;
  return false;
 }
 function updateBurningNature(dt){
- // 雨天中は木・草むらの火を消し、延焼させない。鎮火した木・草むら自体は残る。
- for(const c of covers)if(c.burnT>0){
-  if(weather==='rain'){c.burnT=undefined;c.burnSpread=undefined;c.burnSpreadDone=false;}
-  else{c.burnT-=dt;c.burnSpread-=dt;if(!c.burnSpreadDone&&c.burnSpread<=0){c.burnSpreadDone=true;spreadNatureFire(c);}}
- }
- for(const b of bushes)if(b.burnT>0){
-  if(weather==='rain'){b.burnT=undefined;b.burnSpread=undefined;b.burnSpreadDone=false;}
-  else{b.burnT-=dt;b.burnSpread-=dt;if(!b.burnSpreadDone&&b.burnSpread<=0){b.burnSpreadDone=true;spreadNatureFire(b);}}
+ // 炎上中の自然物だけを更新し、全遮蔽物・全草むらの毎フレーム走査を避ける。
+ for(const o of Array.from(burningNatureSet)){
+  if(!o||!(o.burnT>0)){burningNatureSet.delete(o);continue;}
+  if(weather==='rain'){o.burnT=undefined;o.burnSpread=undefined;o.burnSpreadDone=false;burningNatureSet.delete(o);continue;}
+  o.burnT-=dt;o.burnSpread-=dt;if(!o.burnSpreadDone&&o.burnSpread<=0){o.burnSpreadDone=true;spreadNatureFire(o);}
+  if(o.burnT<=0){burningNatureSet.delete(o);const ci=covers.indexOf(o);if(ci>=0&&o.kd===6)covers.splice(ci,1);else{const bi=bushes.indexOf(o);if(bi>=0)bushes.splice(bi,1);}}
  }
  const survivingBridges=[];
  for(const br of bridges){
@@ -1970,8 +2030,6 @@ function updateBurningNature(dt){
   survivingBridges.push(br);
  }
  bridges=survivingBridges;
- covers=covers.filter(c=>!(c.kd===6&&c.burnT!==undefined&&c.burnT<=0));
- bushes=bushes.filter(b=>!(b.burnT!==undefined&&b.burnT<=0));
  for(const h of humans){
   if(!h.alive)continue;
   const directFlame=!!(p.flameActive&&p.flamePath&&p.flamePath.some((q,i)=>i&&pointSegDistance(h.x,h.y,p.flamePath[i-1],q)<18));
@@ -2005,13 +2063,13 @@ function updateBurningNature(dt){
 }
 function makeFlamePath(maxD){
  maxD=Math.max(0,Math.min(200,maxD||0));const a=p.body,start={x:p.x+Math.cos(a)*12,y:p.y+Math.sin(a)*12},pts=[start];if(maxD<4)return pts;let last={...start},hit=null,used=0;
- for(let d=8;d<=maxD;d+=6){const q={x:start.x+Math.cos(a)*d,y:start.y+Math.sin(a)*d};const c=covers.find(o=>pointHitsCover(q.x,q.y,o,4))||(objects||[]).find(o=>pointHitsObject(q.x,q.y,o,4));if(c){hit=c;used=d;last={x:q.x-Math.cos(a)*6,y:q.y-Math.sin(a)*6};break;}last=q;}
+ for(let d=8;d<=maxD;d+=6){const q={x:start.x+Math.cos(a)*d,y:start.y+Math.sin(a)*d};const c=nearbyCovers(q.x,q.y,10).find(o=>pointHitsCover(q.x,q.y,o,4))||nearbyObjects(q.x,q.y,10).find(o=>pointHitsObject(q.x,q.y,o,4));if(c){hit=c;used=d;last={x:q.x-Math.cos(a)*6,y:q.y-Math.sin(a)*6};break;}last=q;}
  pts.push(last);
  if(hit&&(objects||[]).includes(hit))damageObject(hit,'flame');
  if(hit&&used<maxD){
   const horizontal=hit.w>=hit.h,cands=horizontal?[0,Math.PI]:[Math.PI/2,-Math.PI/2];let ta=cands[0],best=-9;for(const q of cands){const score=Math.cos(q-a);if(score>best){best=score;ta=q;}}
   const remain=maxD-used,edgeStart={x:last.x+Math.cos(ta)*4,y:last.y+Math.sin(ta)*4};let edgeLast=edgeStart;
-  for(let d=8;d<=remain;d+=6){const q={x:edgeStart.x+Math.cos(ta)*d,y:edgeStart.y+Math.sin(ta)*d};if(q.x<4||q.x>WW-4||q.y<4||q.y>WH-4)break;const block=covers.find(o=>o!==hit&&pointHitsCover(q.x,q.y,o,4))||(objects||[]).find(o=>o!==hit&&pointHitsObject(q.x,q.y,o,4));if(block)break;edgeLast=q;}
+  for(let d=8;d<=remain;d+=6){const q={x:edgeStart.x+Math.cos(ta)*d,y:edgeStart.y+Math.sin(ta)*d};if(q.x<4||q.x>WW-4||q.y<4||q.y>WH-4)break;const block=nearbyCovers(q.x,q.y,10).find(o=>o!==hit&&pointHitsCover(q.x,q.y,o,4))||nearbyObjects(q.x,q.y,10).find(o=>o!==hit&&pointHitsObject(q.x,q.y,o,4));if(block)break;edgeLast=q;}
   pts.push(edgeLast);
  }
  return pts;
@@ -2057,8 +2115,11 @@ function drawFlame(){
  }
  g.restore();
 }
-function drawBurningNature(){
- const tm=performance.now()*.02;g.save();g.globalCompositeOperation='lighter';const drawObj=o=>{const count=Math.max(3,Math.min(12,Math.round((o.w+o.h)/28)));for(let i=0;i<count;i++){const x=o.x+(i+.5)/count*o.w+(R()-.5)*5,y=o.y+o.h*(.45+.35*((i*7)%5)/4),r=5+((i*3)%4)*2;flameBlob(x,y,r,tm+i*1.7);}};for(const c of covers)if(c.burnT>0)drawObj(c);for(const b of bushes)if(b.burnT>0)drawObj(b);for(const br of bridges)if(br.burnT>0)drawObj({x:br.x,y:br.y,w:br.w||100,h:br.h||100});for(const o of (objects||[]))if(o.burnT>0)drawObj(o);g.restore();
+function drawBurningNature(cx=0,cy=0){
+ const tm=performance.now()*.02,gx0=cx-80,gx1=cx+W+80,gy0=cy-80,gy1=cy+H+80;g.save();g.globalCompositeOperation='lighter';
+ const visible=o=>o&&o.x+(o.w||100)>=gx0&&o.x<=gx1&&o.y+(o.h||100)>=gy0&&o.y<=gy1;
+ const drawObj=o=>{const count=Math.max(3,Math.min(12,Math.round((o.w+o.h)/28)));for(let i=0;i<count;i++){const x=o.x+(i+.5)/count*o.w+(R()-.5)*5,y=o.y+o.h*(.45+.35*((i*7)%5)/4),r=5+((i*3)%4)*2;flameBlob(x,y,r,tm+i*1.7);}};
+ for(const c of coversInBox(gx0,gy0,gx1,gy1))if(c.burnT>0&&visible(c))drawObj(c);for(const b of spatialQuery(spatialBushGrid,gx0,gy0,gx1,gy1))if(b.burnT>0&&visible(b))drawObj(b);for(const br of bridges)if(br.burnT>0&&visible(br))drawObj({x:br.x,y:br.y,w:br.w||100,h:br.h||100});for(const o of objectsInBox(gx0,gy0,gx1,gy1))if(o.burnT>0&&visible(o))drawObj(o);g.restore();
 }
 function update(dt){
  updateWeather(dt);updateHQSpawn(dt);updateDrill(dt);
@@ -2070,11 +2131,11 @@ function update(dt){
  const areaDebugInfiniteAmmo=!!(areaDebugEnabled&&p.tank&&p.tank.kind==='tank');
  cleanBuiltWalls(cy,cx);updateFlame(dt);if(debugMode>=2)clearPlayerDetection();if(areaDebugInfiniteFuel)p.tank.f=p.tank.t.fmax||100;if(areaDebugInfiniteAmmo){p.tank.c=p.tank.t.cmax;p.tank.v=p.tank.t.vmax;}if(debugMode===3&&p.tank&&p.tank.kind==='fighter'){p.tank.f=FIGHTER_TYPE.fmax;p.tank.hp=FIGHTER_TYPE.hp;}
  if((ix||iy)&&!(p.grappleT>0)&&!prepDig&&!playerAir){if(!p.tank||p.tank.f>0){frameMove=playerMove(ix/il*sp*dt,iy/il*sp*dt,r,dt);if(p.tank){if(areaDebugInfiniteFuel)p.tank.f=p.tank.t.fmax||100;else if(!(debugMode===3&&isFighter))p.tank.f=Math.max(0,p.tank.f-frameMove*.04);else p.tank.f=FIGHTER_TYPE.fmax;if(isTruck&&frameMove>0){p.tank.lastDriveSpeed=frameMove/Math.max(.001,dt);p.tank.lastDriveAt=performance.now();}}p.body=Math.atan2(iy,ix);if(isTruck||isFighter)p.ang=p.body;if(isTruck&&frameMove>0)checkDrivenTruckCrash();}else if(msgT<=0)say('ガソリン切れ!Eで降車');}
- if(p.digPrep>0){p.digPrep=Math.max(0,p.digPrep-dt);if(R()<.9)parts.push({x:p.x+(R()-.5)*20,y:p.y+7+(R()-.5)*7,vx:(R()-.5)*42,vy:-16-R()*24,life:.34,col:R()<.5?'#7a5a38':'#9a744b',sz:5+R()*4});if(p.digPrep<=0){p.dig=5;p.digElapsed=0;sfx('skill');say('掘削! 地中に潜行');digSoilBurst(p.x,p.y,1.08);}}
+ if(p.digPrep>0){p.digPrep=Math.max(0,p.digPrep-dt);if(R()<.9){trimParts(1);parts.push({x:p.x+(R()-.5)*20,y:p.y+7+(R()-.5)*7,vx:(R()-.5)*42,vy:-16-R()*24,life:.34,col:R()<.5?'#7a5a38':'#9a744b',sz:5+R()*4});}if(p.digPrep<=0){p.dig=5;p.digElapsed=0;sfx('skill');say('掘削! 地中に潜行');digSoilBurst(p.x,p.y,1.08);}}
  if(p.dig>0&&(inWaterAt(p.x,p.y,5)||inMudAt(p.x,p.y,5))){sfx('splash');finishDig('川・泥では掘削を継続できない',false);burst(p.x,p.y,14,'#705238',120);}
  if(T&&!isTruck&&!isFighter)p.ang=(performance.now()-lastMouse<1500)?Math.atan2(wy-p.y,wx-p.x):p.body;
  p.cc=Math.max(0,p.cc-dt);p.vc=Math.max(0,p.vc-dt);p.scd=Math.max(0,p.scd-dt);p.digExitAnim=Math.max(0,(p.digExitAnim||0)-dt);p.grappleT=Math.max(0,(p.grappleT||0)-dt);if(p.grappleT<=0)p.grappleTarget=null;if(p.scd<=0)p.scdMax=0;if(decoy){decoy.t-=dt;decoy.sound=(decoy.sound||0)-dt;if(decoy.sound<=0){decoy.sound=.75;sfx('decoy');burst(decoy.x,decoy.y,3,'#ffd27a',35);}if(decoy.t<=0)decoy=null;}
- if(p.dig>0){p.digElapsed=(p.digElapsed||0)+dt;p.dig-=dt;if(R()<.6)parts.push({x:p.x,y:p.y,vx:(R()-.5)*60,vy:(R()-.5)*60,life:.35,col:'#7a5a38',sz:4+R()*3});if(p.dig<=0)finishDig('潜航解除：地上に出た');}
+ if(p.dig>0){p.digElapsed=(p.digElapsed||0)+dt;p.dig-=dt;if(R()<.6){trimParts(1);parts.push({x:p.x,y:p.y,vx:(R()-.5)*60,vy:(R()-.5)*60,life:.35,col:'#7a5a38',sz:4+R()*3});}if(p.dig<=0)finishDig('潜航解除：地上に出た');}
  if(p.grappleT>0||playerAir){skillReq=false;bombReq=false;interact=false;}
  if(skillReq){skillReq=false;if(T)say('スキルは歩兵のときに使える');else if(skill==='hound'&&hound&&hound.stun>0){say('猟犬は気絶中');}else if(skill==='hound'&&hound&&hound.state!=='follow'){say('猟犬は行動中');}else if(skill==='dig'&&p.dig>0){finishDig('潜航解除：地上に出た');}else if(skill==='dig'&&p.digPrep>0){say('掘削準備中');}else if(skill==='flame'){}else if(skill==='throw'){const pb=bombs.findIndex(b=>b.own==='p');if(pb>=0&&!(bombs[pb].fly>0)){bombBlast(bombs[pb].x,bombs[pb].y);bombs.splice(pb,1);say('起爆!');}else if(p.scd>0)say('スキル準備中');else if(p.dig<=0&&p.digPrep<=0)useSkill(wx,wy);}else if(p.scd>0)say('スキル準備中');else if(p.dig<=0&&p.digPrep<=0&&p.drill<=0)useSkill(wx,wy);}
  if(bombReq){bombReq=false;if(!T&&!(p.dig>0)&&!(p.digPrep>0)){const pb=bombs.findIndex(b=>b.own==='p');if(pb<0){bombs.push({x:p.x,y:p.y,own:'p',armed:false});sfx('skill');say('爆弾を設置(Dで起爆)');}else if(!(bombs[pb].fly>0)){bombBlast(bombs[pb].x,bombs[pb].y);bombs.splice(pb,1);}}}
@@ -2124,7 +2185,7 @@ function update(dt){
   const detected=findDetectedTarget(h,h.face);if(detected){const fresh=!h.st;enterHumanFound(h,detected.key,.5);if(fresh)h.sharePause=0;}
   if(!h.st){const shared=alertedHumanInSearch(h);if(shared)inheritAlertFromHuman(h,shared);}
   let tg=targetObj(h.target);if(h.st&&!tg){h.st=0;h.target=null;h.foundPause=0;h.sharePause=0;}tg=targetObj(h.target);
-  if(h.st&&tg){const d=D(h,tg),toT=Math.atan2(tg.y-h.y,tg.x-h.x),vis=los(h,tg),moveSp=95*(h.elite?1.2:1);
+  if(h.st&&tg){const d=D(h,tg),toT=Math.atan2(tg.y-h.y,tg.x-h.x),vis=cachedLos(h,tg),moveSp=95*(h.elite?1.2:1);
    if(!detected&&!h.hq){h.lost-=dt;if(h.lost<=0||d>detectDropRange(h.target)*(h.elite?1.2:1)){h.st=0;h.target=null;h.sharePause=0;h.foundPause=0;}}
    if(h.st){h.cd-=dt;h.ct=(h.ct||0)+dt;const sharedPause=(h.sharePause||0)>0,foundPause=(h.foundPause||0)>0;if(sharedPause)h.sharePause=Math.max(0,h.sharePause-dt);if(foundPause)h.foundPause=Math.max(0,h.foundPause-dt);const movePause=sharedPause||foundPause;h.face=(foundPause&&p)?Math.atan2(p.y-h.y,p.x-h.x):toT;
     // 通常兵だけが設置爆弾を使う。発見モード突入時に設置タイミングを個体ごとにランダム決定。
@@ -2141,7 +2202,7 @@ function update(dt){
   const silentDrill=!!(p.drill>0&&p.drillSilentTank===e&&p.drillTankTarget===e&&!e.st&&!e.static);
   const detected=silentDrill?null:findDetectedTarget(e,e.ang);if(detected)enterTankFound(e,detected.key,.5);
   let tg=targetObj(e.target);if(e.st&&!tg){e.st=0;e.target=null;e.foundPause=0;}tg=targetObj(e.target);
-  if(e.st&&tg){const d=D(e,tg),toT=Math.atan2(tg.y-e.y,tg.x-e.x),vis=los(e,tg);
+  if(e.st&&tg){const d=D(e,tg),toT=Math.atan2(tg.y-e.y,tg.x-e.x),vis=cachedLos(e,tg);
    if(!detected){e.lost-=dt;if(e.lost<=0||d>detectDropRange(e.target)){e.st=0;e.target=null;e.foundPause=0;}}
    if(e.st){e.cc-=dt;e.vc-=dt;const foundPause=(e.foundPause||0)>0;if(foundPause)e.foundPause=Math.max(0,e.foundPause-dt);e.ang=(foundPause&&p)?Math.atan2(p.y-e.y,p.x-e.x):toT;if(!foundPause&&!e.static&&d>190){mv(e,Math.cos(toT)*55*dt,Math.sin(toT)*55*dt,15);e.body=toT;}else if(!foundPause&&!e.static&&d<120){mv(e,-Math.cos(toT)*40*dt,-Math.sin(toT)*40*dt,15);}
     if(!vis&&e.cc<=0){const block=firstBlockingCover(e,tg,300);if(block){const bx=block.x+block.w/2,by=block.y+block.h/2,ba=Math.atan2(by-e.y,bx-e.x);e.cc=2.8;fire(e.x+Math.cos(ba)*38,e.y+Math.sin(ba)*38,ba+(R()-.5)*.035,'e','c',enemyCannonSpeed(),340);}}
@@ -2177,10 +2238,16 @@ function update(dt){
    for(const e of etanks)if(e.alive&&Math.hypot(e.x-b.x,e.y-b.y)<TANK_HIT){e.alive=false;recordPlayerKill(actionId);burst(e.x,e.y,40,'#ff6a2a',350);}
    bombBlast(b.x,b.y,actionId);if(stepped){if(p.tank)wreck();else{triggerPlayerDeath();}}}}
  // 弾
- for(let i=bullets.length-1;i>=0;i--){const b=bullets[i];b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;let dead=b.life<=0;if(dead&&b.k==='c')cannonImpact(b.x,b.y,b.from);
+ for(let i=bullets.length-1;i>=0;i--){const b=bullets[i],ox=b.x,oy=b.y;b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;let dead=b.life<=0;if(dead&&b.k==='c')cannonImpact(b.x,b.y,b.from);
   if(!dead&&(b.from==='p'||b.from==='ally')&&inBase(b.x,b.y)){dead=true;if(b.k==='c'){cannonImpact(b.x,b.y,b.from);base.hp-=b.dmg;explode(b.x,b.y,20,true,b.from,b.from==='p'?b.actionId:0);if(base.hp<=0&&state==='play')winSeq();}else burst(b.x,b.y,3,'#ffe28a',90);}
-  else if(!dead&&(objects||[]).some(o=>pointHitsObject(b.x,b.y,o,0))){const hitObject=(objects||[]).find(o=>pointHitsObject(b.x,b.y,o,0));dead=true;if(b.k==='c'){damageObject(hitObject,'cannonDirect');}else{damageObject(hitObject,'mg');burst(b.x,b.y,4,'#b9b39a',90);}}
-  else if(!dead&&hitsC(b.x,b.y,0)){dead=true;if(b.k==='c'){if(b.from==='p')playerCannonGroundImpact(b.x,b.y,b.actionId);else{cannonImpact(b.x,b.y,b.from);explode(b.x,b.y,28,false,b.from,0);carve(b.x,b.y,48,false,'cannonBlast');burst(b.x,b.y,22,'#a89a74',260);shake=Math.max(shake,8);}}else burst(b.x,b.y,4,'#b9b39a',90);}
+  // 最適化後も砲弾が薄い遮蔽物をすり抜けないよう、前フレーム位置→現在位置の線分で判定する。
+  if(!dead){const minX=Math.min(ox,b.x)-4,maxX=Math.max(ox,b.x)+4,minY=Math.min(oy,b.y)-4,maxY=Math.max(oy,b.y)+4,segA={x:ox,y:oy},segB={x:b.x,y:b.y};
+   const hitObject=objectsInBox(minX,minY,maxX,maxY).find(o=>segmentHitsObject(segA,segB,o,b.k==='c'?2:0));
+   if(hitObject){dead=true;if(b.k==='c'){damageObject(hitObject,'cannonDirect');}else{damageObject(hitObject,'mg');burst(b.x,b.y,4,'#b9b39a',90);}}
+   if(!dead){const hitCover=coversInBox(minX,minY,maxX,maxY).find(c=>segmentHitsCover(segA,segB,c,b.k==='c'?2:0));
+    if(hitCover){dead=true;if(b.k==='c'){if(b.from==='p')playerCannonGroundImpact(b.x,b.y,b.actionId);else{cannonImpact(b.x,b.y,b.from);explode(b.x,b.y,28,false,b.from,0);carve(b.x,b.y,48,false,'cannonBlast');burst(b.x,b.y,22,'#a89a74',260);shake=Math.max(shake,8);}}else burst(b.x,b.y,4,'#b9b39a',90);}
+   }
+  }
   if(!dead&&(b.from==='p'||b.from==='ally')){
    if(!(b.from==='p'&&b.k==='v'))for(const e of etanks)if(e.alive&&Math.hypot(b.x-e.x,b.y-e.y)<TANK_HIT){dead=true;if(b.k==='c'){cannonImpact(e.x,e.y,b.from);explode(e.x,e.y,38,true,b.from,b.from==='p'?b.actionId:0);}else burst(b.x,b.y,4,'#ffe28a',100);break;}
    const humanHitR=(b.from==='p'&&b.k==='v')?18:10;
@@ -2346,43 +2413,55 @@ function mkPat(z){
  }
  const pt=proceduralTerrain(32,'basic');if(pt&&pt.setTransform&&typeof DOMMatrix!=='undefined'){try{pt.setTransform(new DOMMatrix().scale(2));}catch(_){}}return pt;
 }
-function drawZoneTransition(lower,upper){
- const boundary=lower.y1,blend=176,colW=12,rows=14;
- const seed=(lower.n.length*31+upper.n.length*47);
- const edgeAt=x=>boundary+
-  Math.sin(x*.0105+seed*.37)*22+
-  Math.sin(x*.026+seed*.71)*10+
-  Math.sin(x*.061+seed*1.13)*4;
- g.save();
- // 横方向に細い列へ分け、列ごとに境界の高さをずらす。
- // 各列は不透明の色ブレンドで下地を完全に覆うため、元の直線境界が透けない。
+const zoneTransitionCache=new Map();
+function transitionPattern(ctx,z){
+ const im=TERRAIN_IMG[z.n];if(!assetOK(im))return null;const pt=ctx.createPattern(im,'repeat');
+ if(pt&&pt.setTransform&&typeof DOMMatrix!=='undefined'){try{pt.setTransform(new DOMMatrix().scale(1.45));}catch(_){}}
+ return pt;
+}
+function getZoneTransitionCanvas(lower,upper){
+ const readyL=assetOK(TERRAIN_IMG[lower.n])?1:0,readyU=assetOK(TERRAIN_IMG[upper.n])?1:0,key=lower.n+'>'+upper.n+'|'+readyL+readyU;
+ if(zoneTransitionCache.has(key))return zoneTransitionCache.get(key);
+ const tc=document.createElement('canvas'),th=280;tc.width=WW;tc.height=th;const c=tc.getContext('2d');
+ const boundary=th/2,blend=176,colW=12,rows=14,seed=(lower.n.length*31+upper.n.length*47),lp=transitionPattern(c,lower),up=transitionPattern(c,upper);
+ const edgeAt=x=>boundary+Math.sin(x*.0105+seed*.37)*22+Math.sin(x*.026+seed*.71)*10+Math.sin(x*.061+seed*1.13)*4;
  for(let x=0;x<WW;x+=colW){
   const w=Math.min(colW+1,WW-x),edge=edgeAt(x+colW*.5),top=edge-blend*.5,bottom=edge+blend*.5;
-  const grad=g.createLinearGradient(0,top,0,bottom);
-  grad.addColorStop(0,upper.g);
-  grad.addColorStop(.18,upper.g);
-  grad.addColorStop(.82,lower.g);
-  grad.addColorStop(1,lower.g);
-  g.fillStyle=grad;g.fillRect(x,top,w,blend);
-  // 背景タイルも同じ局所境界に沿ってクロスフェードする。
+  const grad=c.createLinearGradient(0,top,0,bottom);grad.addColorStop(0,upper.g);grad.addColorStop(.18,upper.g);grad.addColorStop(.82,lower.g);grad.addColorStop(1,lower.g);c.fillStyle=grad;c.fillRect(x,top,w,blend);
   for(let r=0;r<rows;r++){
    const t=(r+.5)/rows,sm=t*t*(3-2*t),yy=top+r*(blend/rows),hh=blend/rows+1;
-   if(upper.pat){g.save();g.globalAlpha=(assetOK(TERRAIN_IMG[upper.n])?.42:.22)*(1-sm);g.fillStyle=upper.pat;g.fillRect(x,yy,w,hh);g.restore();}
-   if(lower.pat){g.save();g.globalAlpha=(assetOK(TERRAIN_IMG[lower.n])?.42:.22)*sm;g.fillStyle=lower.pat;g.fillRect(x,yy,w,hh);g.restore();}
+   if(up){c.save();c.globalAlpha=.42*(1-sm);c.fillStyle=up;c.fillRect(x,yy,w,hh);c.restore();}
+   if(lp){c.save();c.globalAlpha=.42*sm;c.fillStyle=lp;c.fillRect(x,yy,w,hh);c.restore();}
   }
  }
- // 境界線の周辺に上下の地面を少量食い込ませ、規則的な帯感をさらに崩す。
  for(let q=0;q<32;q++){
-  const px=((q*83+seed*17)%997)/997*WW,edge=edgeAt(px),side=q%2?1:-1;
-  const src=side>0?upper:lower;
-  if(!src.pat)continue;
-  const py=edge+side*(8+(q%5)*5),rx=18+(q%6)*7,ry=6+(q%4)*3;
-  g.save();g.globalAlpha=assetOK(TERRAIN_IMG[src.n])?.12:.07;g.fillStyle=src.pat;
-  g.beginPath();g.ellipse(px,py,rx,ry,((q%5)-2)*.12,0,Math.PI*2);g.fill();g.restore();
+  const px=((q*83+seed*17)%997)/997*WW,edge=edgeAt(px),side=q%2?1:-1,src=side>0?up:lp;if(!src)continue;
+  const py=edge+side*(8+(q%5)*5),rx=18+(q%6)*7,ry=6+(q%4)*3;c.save();c.globalAlpha=.12;c.fillStyle=src;c.beginPath();c.ellipse(px,py,rx,ry,((q%5)-2)*.12,0,Math.PI*2);c.fill();c.restore();
  }
- g.fillStyle='rgba(18,23,17,.018)';
- for(let x=0;x<WW;x+=colW){const edge=edgeAt(x+colW*.5);g.fillRect(x,edge-blend*.5,colW+1,blend);}
- g.restore();
+ c.fillStyle='rgba(18,23,17,.018)';for(let x=0;x<WW;x+=colW){const edge=edgeAt(x+colW*.5);c.fillRect(x,edge-blend*.5,colW+1,blend);}
+ zoneTransitionCache.set(key,tc);return tc;
+}
+function drawZoneTransition(lower,upper,viewTop,viewBottom){
+ const th=280,y=lower.y1-th/2;if(y>viewBottom+40||y+th<viewTop-40)return;const tc=getZoneTransitionCanvas(lower,upper);g.drawImage(tc,0,y);
+}
+
+// 草むらは複雑なパスを毎フレーム生成せず、複数の事前生成スプライトを使う。
+const bushSpriteCache=[];
+function makeBushSprite(variant){
+ const c=document.createElement('canvas');c.width=128;c.height=96;const q=c.getContext('2d');let sd=variant*92821+731;const rnd=()=>((sd=(sd*9301+49297)%233280)/233280);
+ q.fillStyle='rgba(26,84,34,.10)';q.beginPath();q.ellipse(64,53,79,42,0,0,6.28);q.ellipse(28,56,34,23,-.2,0,6.28);q.ellipse(100,56,34,23,.2,0,6.28);q.fill();
+ q.fillStyle='rgba(26,84,34,.21)';q.beginPath();q.ellipse(64,55,64,35,0,0,6.28);q.fill();
+ for(let i=4;i<126;i+=13)for(let j=5;j<94;j+=15){
+  const s=rnd(),s2=rnd(),px=i+(s-.5)*8,py=j+(s2-.5)*6,rx=2.4+s*1.6,ry=5.4+s2*3.2,rot=(s-.5)*1.0,edge=Math.min(i,j,128-i,96-j),fade=Math.max(0,Math.min(1,edge/14));
+  q.fillStyle='rgba(52,140,58,'+(.36+.34*fade)+')';q.beginPath();q.ellipse(px,py,rx,ry,rot,0,6.28);q.fill();
+  if(rnd()>.48){q.fillStyle='rgba(78,168,84,'+(.18+.22*fade)+')';q.beginPath();q.ellipse(px+1,py-1.4,rx*.78,ry*.48,rot+.12,0,6.28);q.fill();}
+  if(s>.58){q.fillStyle='rgba(38,116,45,'+(.15+.16*fade)+')';q.beginPath();q.ellipse(px-1.2,py+1.1,rx*.68,ry*.42,rot-.18,0,6.28);q.fill();}
+ }
+ q.strokeStyle='rgba(86,170,88,.24)';q.lineWidth=1.15;q.lineCap='round';for(let i=2;i<126;i+=16){const s=rnd(),px=i+s*3.5,baseY=50+12*s,tipY=baseY-(5+s*6.2);q.beginPath();q.moveTo(px,baseY);q.lineTo(px-(.9+s*1.2),tipY);q.stroke();}
+ return c;
+}
+function drawBushCached(b){
+ const variant=Math.abs((((b.x|0)*17+(b.y|0)*31+(b.w|0)*7+(b.h|0)*11)%12));if(!bushSpriteCache[variant])bushSpriteCache[variant]=makeBushSprite(variant);g.drawImage(bushSpriteCache[variant],b.x,b.y,b.w,b.h);
 }
 function tankShape(x,y,body,ang,tank,sz){
  const t=typeof tank==='object'?tank:{id:'enemy',col:tank},id=t.id||'enemy';
@@ -2914,20 +2993,21 @@ function draw(near){
  g.save();if(shake>0)g.translate((R()-.5)*shake,(R()-.5)*shake);
  g.fillStyle='#2b3322';g.fillRect(-20,-20,W+40,H+40);g.translate(-cx,-cy);
  for(const z of ZONES){
+  if(z.y0<cy-160||z.y1>cy+H+160)continue;
   g.fillStyle=z.g;g.fillRect(0,z.y1,WW,z.y0-z.y1);
   if(!z.pat)z.pat=mkPat(z);
   if(z.pat){g.save();g.globalAlpha=assetOK(TERRAIN_IMG[z.n])?.44:1;g.fillStyle=z.pat;g.fillRect(0,z.y1,WW,z.y0-z.y1);g.restore();}
   // テクスチャの模様が障害物に見えすぎないよう、地面側は控えめに馴染ませる。
   g.fillStyle='rgba(18,23,17,.045)';g.fillRect(0,z.y1,WW,z.y0-z.y1);
  }
- for(let i=0;i<ZONES.length-1;i++)drawZoneTransition(ZONES[i],ZONES[i+1]);
+ for(let i=0;i<ZONES.length-1;i++)drawZoneTransition(ZONES[i],ZONES[i+1],cy,cy+H);
  if(areaDebugEnabled)for(const l of areaDebugLabels)lab(l.t,l.x,l.y,l.f,l.c);
  for(const m of (mud||[])){const cxm=m.x+m.w/2,cym=m.y+m.h/2;g.fillStyle='#5b4935';g.beginPath();g.ellipse(cxm,cym,m.w/2,m.h/2,0,0,6.28);g.fill();g.strokeStyle='rgba(118,94,62,.65)';g.lineWidth=3;g.beginPath();g.ellipse(cxm,cym,Math.max(4,m.w/2-4),Math.max(4,m.h/2-4),0,0,6.28);g.stroke();g.fillStyle='rgba(79,64,47,.55)';for(let q=0;q<6;q++){const a=(q*2.17+(m.x*.013))%6.28,rr=.18+.1*(q%3);g.beginPath();g.ellipse(cxm+Math.cos(a)*m.w*rr,cym+Math.sin(a)*m.h*rr,8+q%3*4,3,0,0,6.28);g.fill();}}
  for(const w of water){g.fillStyle='#2f5f8a';g.fillRect(w.x,w.y,w.w,w.h);g.fillStyle='#4a7fae';for(let x=(w.x+10)|0;x<w.x+w.w;x+=36)for(let yy=w.y+12;yy<w.y+w.h-8;yy+=40){g.fillRect(x,yy,16,3);g.fillRect(x+14,yy+20,16,3);}}
  for(const b of bridges)drawBridgeFancy(b);
  const CC=[['#8a7a55','#6a5d40'],['#8c8c86','#6a6a66'],['#7a5f3a','#4e3c24'],['#55504a','#35322e'],['#b9ab8a','#8f8263'],['#7a5f3a','#4e3c24'],['#2f6b34','#1d4a22'],['#4a5a4a','#33403a'],['#7a7468','#57534a'],['#666865','#4e514e'],['#b9ab8a','#8f8263']];
- for(const c of covers){
-  // 森林の大量の木など、画面外の遮蔽物は描画しない。
+ for(const c of coversInBox(cx-100,cy-100,cx+W+100,cy+H+100)){
+  // 空間グリッドで画面周辺の遮蔽物だけ描画する。
   if(c.x+c.w<cx-90||c.x>cx+W+90||c.y+c.h<cy-90||c.y>cy+H+90)continue;
   if(c.fr){drawCoverFragment(c);continue;}
   if(drawCoverAsset(c))continue;
@@ -2966,7 +3046,7 @@ function draw(near){
    for(const [bx,by,br] of blobs){g.beginPath();g.ellipse(bx-br*.10,by-br*.22,br*.24,br*.14,-.35,0,6.28);g.fill();}
    g.restore();continue;
   }const cl=CC[c.kd];g.fillStyle=cl[0];g.fillRect(c.x,c.y,c.w,c.h);g.strokeStyle='#14140f';g.lineWidth=2;g.strokeRect(c.x,c.y,c.w,c.h);g.fillStyle=cl[1];g.fillRect(c.x,c.y+c.h*.7,c.w,c.h*.3);if(c.kd===2){g.strokeStyle=cl[1];g.lineWidth=2;g.strokeRect(c.x+2,c.y+2,c.w-4,c.h-4);}if(c.kd===3){g.fillStyle=cl[1];for(let i=6;i<c.w-8;i+=18)g.fillRect(c.x+i,c.y+6,8,10);}if(c.kd===4||c.kd===10){g.fillStyle='#8a4a3a';g.fillRect(c.x-3,c.y-3,c.w+6,c.h*.55);g.fillStyle='#5a2e24';g.fillRect(c.x+c.w/2-8,c.y+c.h*.7,16,c.h*.3);}if(c.kd===9){g.fillStyle=cl[1];for(let i=6;i<c.w-8;i+=18)g.fillRect(c.x+i,c.y+6,8,10);}if(c.kd===7){const hor=c.w>=c.h;g.fillStyle='#d1d3cf';g.fillRect(c.x+3,c.y+3,c.w-6,c.h-6);g.fillStyle='#a1a6a2';if(hor){g.fillRect(c.x+5,c.y+c.h*.67,c.w-10,c.h*.2);g.fillStyle='#e5e7e2';g.fillRect(c.x+8,c.y+6,c.w-16,Math.max(4,c.h*.2));}else{g.fillRect(c.x+c.w*.67,c.y+5,c.w*.2,c.h-10);g.fillStyle='#e5e7e2';g.fillRect(c.x+6,c.y+8,Math.max(4,c.w*.2),c.h-16);}g.strokeStyle='#555b58';g.lineWidth=2;g.strokeRect(c.x+2,c.y+2,c.w-4,c.h-4);g.fillStyle='#f3c83f';const band=hor?Math.min(20,c.w*.18):Math.min(20,c.h*.18);if(hor){for(const xx of [c.x+4,c.x+c.w-band-4]){g.fillStyle='#f3c83f';g.fillRect(xx,c.y+5,band,c.h-10);g.fillStyle='#272727';for(let q=-c.h;q<band+c.h;q+=12){g.save();g.beginPath();g.rect(xx,c.y+5,band,c.h-10);g.clip();g.translate(xx+q,c.y+5);g.rotate(-.65);g.fillRect(0,0,5,c.h*2);g.restore();}}}else{for(const yy of [c.y+4,c.y+c.h-band-4]){g.fillStyle='#f3c83f';g.fillRect(c.x+5,yy,c.w-10,band);g.fillStyle='#272727';for(let q=-c.w;q<band+c.w;q+=12){g.save();g.beginPath();g.rect(c.x+5,yy,c.w-10,band);g.clip();g.translate(c.x+5,yy+q);g.rotate(.65);g.fillRect(0,0,c.w*2,5);g.restore();}}}}if(c.kd===5){g.fillStyle=cl[1];if(c.w>=c.h)for(let i=0;i<c.w;i+=14)g.fillRect(c.x+i,c.y-3,4,c.h+6);else for(let i=0;i<c.h;i+=14)g.fillRect(c.x-3,c.y+i,c.w+6,4);}}
- for(const o of (objects||[])){if(o.x+o.w<cx-70||o.x>cx+W+70||o.y+o.h<cy-70||o.y>cy+H+70)continue;drawObject(o);}
+ for(const o of objectsInBox(cx-80,cy-80,cx+W+80,cy+H+80)){if(o.x+o.w<cx-70||o.x>cx+W+70||o.y+o.h<cy-70||o.y>cy+H+70)continue;drawObject(o);}
  for(const it of items)if(p.tank&&!it.got){g.fillStyle='#111';g.fillRect(it.x-12,it.y-12,24,24);g.fillStyle='#e8c53a';g.fillRect(it.x-10,it.y-10,20,20);lab('E',it.x,it.y+5,'bold 14px system-ui','#222',1);}
  if(radio&&!radio.got){g.fillStyle='#101820';g.fillRect(radio.x-12,radio.y-12,24,24);g.fillStyle='#65c6e8';g.fillRect(radio.x-9,radio.y-8,18,17);g.strokeStyle='#d9f6ff';g.lineWidth=2;g.beginPath();g.moveTo(radio.x+5,radio.y-9);g.lineTo(radio.x+10,radio.y-22);g.stroke();}
  drawBase();
@@ -2992,43 +3072,7 @@ function draw(near){
  else if(p.digPrep>0){soldier(p.x,p.y,p.body,true,false,false);const k=1-p.digPrep/1;g.save();g.translate(p.x,p.y+4);g.strokeStyle='rgba(205,175,110,'+(0.45+.35*Math.sin(performance.now()/110))+')';g.lineWidth=2;g.beginPath();g.arc(0,0,10+k*14,0,6.28);g.stroke();g.strokeStyle='rgba(122,90,56,.65)';g.beginPath();g.arc(0,0,18+k*10,0,6.28);g.stroke();g.fillStyle='rgba(122,90,56,.55)';for(let q=0;q<5;q++){const a=performance.now()/300+q*1.26,r=12+k*10+(q%2)*4;g.beginPath();g.arc(Math.cos(a)*r*.45,4+Math.sin(a*1.3)*2,2.4,0,6.28);g.fill();}g.restore();}
  else{drawBlastShadow(p);soldier(p.x,p.y-blastLift(p),p.body,true,false,!!(keys.ArrowUp||keys.ArrowDown||keys.ArrowLeft||keys.ArrowRight));}
  if(!p.tank&&p.drill>0){const a=p.body,t=performance.now()/90;g.save();g.translate(p.x,p.y);g.rotate(a);g.fillStyle='#30343a';g.beginPath();g.moveTo(10,-10);g.lineTo(48,0);g.lineTo(10,10);g.closePath();g.fill();g.strokeStyle='#d6d9dd';g.lineWidth=2;for(let q=0;q<4;q++){const xx=14+q*8,yy=Math.sin(t+q*1.7)*6;g.beginPath();g.moveTo(xx,-8+yy*.25);g.lineTo(xx+6,8-yy*.25);g.stroke();}g.fillStyle='#ffd27a';g.beginPath();g.arc(49,0,3+Math.sin(t)*1.2,0,6.28);g.fill();g.restore();if(p.drillTarget){g.fillStyle='rgba(0,0,0,.58)';g.fillRect(p.x-22,p.y-31,44,5);g.fillStyle='#ffd27a';g.fillRect(p.x-22,p.y-31,44*Math.min(1,p.drillHit/.5),5);}}
- for(const b of bushes){
-  if(b.x+b.w<cx-40||b.x>cx+W+40||b.y+b.h<cy-40||b.y>cy+H+40)continue;
-  const bx=b.x,by=b.y,bw=b.w,bh=b.h;
-  g.save();
-  g.beginPath();g.rect(bx,by,bw,bh);g.clip();
-  // ベース面は残しつつ、角を弱めるために楕円状の濃淡でやぶ感を出す。
-  g.fillStyle='rgba(26,84,34,.12)';
-  g.beginPath();
-  g.ellipse(bx+bw*.50,by+bh*.55,bw*.60,bh*.42,0,0,6.28);
-  g.ellipse(bx+bw*.22,by+bh*.58,bw*.25,bh*.22,-.18,0,6.28);
-  g.ellipse(bx+bw*.78,by+bh*.58,bw*.25,bh*.22,.18,0,6.28);
-  g.fill();
-  g.fillStyle='rgba(26,84,34,.24)';
-  g.beginPath();
-  g.ellipse(bx+bw*.50,by+bh*.57,bw*.48,bh*.34,0,0,6.28);
-  g.fill();
-  // 葉束は少し不規則な楕円にして、四角いパーツ感とタイル感を減らす。
-  for(let i=0;i<bw;i+=11)for(let j=0;j<bh;j+=13){
-    const s=((i*7+j*13+(bx|0)+(by|0))%17)/16;
-    const edge=Math.min(i,j,bw-i,bh-j),fade=Math.max(0,Math.min(1,edge/14));
-    const px=bx+i+(s-.5)*5.5,py=by+j+(s-.5)*3.5;
-    const rx=1.8+s*.9,ry=4.2+s*2.0,rot=(s-.5)*.55;
-    g.fillStyle='rgba(52,140,58,'+(.34+.38*fade)+')';
-    g.beginPath();g.ellipse(px,py,rx,ry,rot,0,6.28);g.fill();
-    if(((i+j)>>1)%2===0){
-      g.fillStyle='rgba(78,168,84,'+(.18+.22*fade)+')';
-      g.beginPath();g.ellipse(px+.8,py-1.2,rx*.7,ry*.42,rot,0,6.28);g.fill();
-    }
-  }
-  // ところどころ短い葉先を足して、全体の輪郭をぼかす。
-  g.strokeStyle='rgba(86,170,88,.24)';g.lineWidth=1.05;g.lineCap='round';
-  for(let i=0;i<bw;i+=17){
-    const s=((i*5+(by|0))%9)/8,px=bx+i+2+s*2.5,baseY=by+bh*(.52+.10*s),tipY=baseY-(4+s*5.5);
-    g.beginPath();g.moveTo(px,baseY);g.lineTo(px-(.8+s*.9),tipY);g.stroke();
-  }
-  g.restore();
-}
+ for(const b of nearbyBushes(cx+W/2,cy+H/2,Math.max(W,H)*.8+100)){if(b.x+b.w<cx-40||b.x>cx+W+40||b.y+b.h<cy-40||b.y>cy+H+40)continue;drawBushCached(b);}
  // 草むら内では本体を再描画せず、歩兵の輪郭だけを草の上に表示する。
  // プレイヤー・相棒・敵人間で同じ処理を使う。
  if(!p.tank&&!(p.dig>0)&&!(p.blastAirT>0)&&inBush(p))soldierBushOutline(p.x,p.y,p.body,true,false,false);
@@ -3038,12 +3082,12 @@ function draw(near){
  for(const b of bombs)if(b.own==='p'&&inBush(b)){const rr=7.5;g.save();g.globalAlpha=.5;g.fillStyle='#181818';g.beginPath();g.arc(b.x,b.y,rr,0,6.28);g.fill();g.strokeStyle='#ff5f4b';g.lineWidth=1.7;g.beginPath();g.arc(b.x,b.y,rr+3,0,6.28);g.stroke();g.fillStyle='#ff4f45';g.fillRect(b.x-2,b.y-2,4,4);g.restore();}
  // 降下中の相棒は草むらより上のレイヤーに表示する。
  for(const ally of (allies||[]))if(ally.alive&&ally.chute>0)drawAllyParachute(ally);
- drawBurningNature();drawFlame();
+ drawBurningNature(cx,cy);drawFlame();
  g.save();g.globalAlpha*=enemyAlpha;for(const e of etanks)if(e.alive)tankShape(e.x,e.y,e.body,e.ang,{id:'enemy',col:'#4b5f9e'},TANK_DRAW);g.restore();
  if(p.tank)drawVehicle(p.tank,p.x,p.y,p.body,p.ang);
  drawAllWaterCrossings(cx,cy);
- for(const q of parts){const psz=q.sz||4,dy=q.y-(q.z||0);g.globalAlpha=Math.min(1,q.life*2);g.fillStyle=q.col;if(q.arcFrag){g.save();g.translate(q.x,dy);g.rotate(q.rot||0);g.fillRect(-psz/2,-psz/2,psz,Math.max(2,psz*.65));g.restore();}else g.fillRect(q.x-psz/2,dy-psz/2,psz,psz);}g.globalAlpha=1;
- g.save();g.globalCompositeOperation='lighter';for(const f of fx){const t=1-f.l/.45,r=f.max*(.35+.65*t),gr=g.createRadialGradient(f.x,f.y,0,f.x,f.y,r);gr.addColorStop(0,'rgba(255,250,200,'+(1-t)+')');gr.addColorStop(.45,'rgba(255,140,30,'+.8*(1-t)+')');gr.addColorStop(1,'rgba(160,30,0,0)');g.fillStyle=gr;g.beginPath();g.arc(f.x,f.y,r,0,6.28);g.fill();}g.restore();
+ for(const q of parts){const psz=q.sz||4,dy=q.y-(q.z||0);if(q.x+psz<cx-30||q.x-psz>cx+W+30||dy+psz<cy-30||dy-psz>cy+H+30)continue;g.globalAlpha=Math.min(1,q.life*2);g.fillStyle=q.col;if(q.arcFrag){g.save();g.translate(q.x,dy);g.rotate(q.rot||0);g.fillRect(-psz/2,-psz/2,psz,Math.max(2,psz*.65));g.restore();}else g.fillRect(q.x-psz/2,dy-psz/2,psz,psz);}g.globalAlpha=1;
+ g.save();g.globalCompositeOperation='lighter';for(const f of fx){if(f.x+f.max<cx-40||f.x-f.max>cx+W+40||f.y+f.max<cy-40||f.y-f.max>cy+H+40)continue;const t=1-f.l/.45,r=f.max*(.35+.65*t),gr=g.createRadialGradient(f.x,f.y,0,f.x,f.y,r);gr.addColorStop(0,'rgba(255,250,200,'+(1-t)+')');gr.addColorStop(.45,'rgba(255,140,30,'+.8*(1-t)+')');gr.addColorStop(1,'rgba(160,30,0,0)');g.fillStyle=gr;g.beginPath();g.arc(f.x,f.y,r,0,6.28);g.fill();}g.restore();
  g.restore();
  g=gm;gm.imageSmoothingEnabled=false;gm.drawImage(oc,0,0,W,H);drawWeatherOverlay();
  // 掘削中：画面全体を徐々に暗くする。HUDはこの後に描画して可読性を維持。
@@ -3192,9 +3236,9 @@ highScoreData=loadHighScore();
 state='title';rollSkillChoices();
 let firstMenuFrame=true,last=performance.now(),prevState=state;
 function loop(n){
- const elapsed=Math.max(0,Math.min(.12,(n-last)/1000));last=n;let remain=elapsed,near=null;
+ const elapsed=Math.max(0,Math.min(.099,(n-last)/1000));last=n;let remain=elapsed,near=null;
  // 低FPSでもタイマーや移動速度が実時間に近づくよう、最大33msずつ複数回更新する。
- // タブ復帰直後などの巨大な時間差だけは120msで打ち切り、更新の暴走を防ぐ。
+ // タブ復帰直後などの巨大な時間差は99msで打ち切り、1描画あたり最大3回までに抑える。
  do{
   const dt=Math.min(.033,remain||.000001);remain=Math.max(0,remain-dt);
   if(state!==prevState)resultAnimT=0;else if(state==='win'||state==='lose')resultAnimT+=dt;else resultAnimT=0;
@@ -3235,7 +3279,7 @@ if(debugToggleBtn){
  debugToggleBtn.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();},{passive:false});
  debugToggleBtn.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();if(state!=='play')return;toggleDebugInvincible();syncDebugToggleButton();});
  syncDebugToggleButton();
- requestAnimationFrame(function loopDebugToggle(){syncDebugToggleButton();requestAnimationFrame(loopDebugToggle);});
+ setInterval(syncDebugToggleButton,250);
 }
 
 document.querySelectorAll('[data-k]').forEach(el=>{const c=el.dataset.k;
@@ -3252,8 +3296,8 @@ const actionBtn=document.getElementById('actionBtn'),actionGlyph=document.getEle
 const skillBtn=document.getElementById('skillBtn'),skillLabel=document.getElementById('skillLabel'),skillCooldown=document.getElementById('skillCooldown'),skillCooldownText=document.getElementById('skillCooldownText');
 let actionKey=null,lastActionMode='',lastActionUiFrame=0,lastActionLabel='',lastSkillLabel='';
 const paintRing=(el,rem,max)=>{const ratio=Math.max(0,Math.min(1,rem/Math.max(.01,max))),deg=ratio*360;el.style.background='conic-gradient(#ffd27a '+deg+'deg, rgba(255,255,255,.13) '+deg+'deg)';el.classList.toggle('on',rem>.02);};
-const syncActionButton=now=>{
- if(now-lastActionUiFrame<33){requestAnimationFrame(syncActionButton);return;}lastActionUiFrame=now;
+const syncActionButton=()=>{
+ const now=performance.now();if(now-lastActionUiFrame<45)return;lastActionUiFrame=now;
  const truckMode=!!(p&&p.tank&&p.tank.kind==='truck'),fighterMode=!!(p&&p.tank&&p.tank.kind==='fighter'),tankMode=!!(p&&p.tank&&p.tank.kind==='tank'),planted=!!(p&&!p.tank&&bombs&&bombs.some(b=>b.own==='p'&&!(b.fly>0))),mode=truckMode?'truck':fighterMode?'fighter':tankMode?'tank':planted?'detonate':'human';
  if(mode!==lastActionMode){lastActionMode=mode;actionGlyph.textContent=truckMode?'×':'D';actionBtn.setAttribute('aria-label',truckMode?'攻撃不可':fighterMode?'爆撃':tankMode?'主砲':planted?'起爆':'爆弾');}
  const nextActionLabel=truckMode?'攻撃不可':fighterMode?'爆撃':tankMode?'主砲':planted?'起爆':'爆弾',nextSkillLabel=tankMode?'MG':fighterMode||truckMode?'—':(p&&p.drill>0?'突貫':SKN[skill]);
@@ -3261,7 +3305,6 @@ const syncActionButton=now=>{
  if(nextSkillLabel!==lastSkillLabel){lastSkillLabel=nextSkillLabel;skillLabel.textContent=nextSkillLabel;}
  if((tankMode||fighterMode)&&p&&p.tank)paintRing(actionCooldown,Math.max(0,p.cc),p.tank.t.ccd);else paintRing(actionCooldown,0,1);
  if(tankMode&&p&&p.tank)paintRing(skillCooldown,Math.max(0,p.vc),Math.max(.01,p.tank.t.vcd));else if(!p?.tank){if(skill==='flame')paintRing(skillCooldown,Math.max(0,3-(p?.flameFuel||0)),3);else paintRing(skillCooldown,Math.max(0,p?.scd||0),Math.max(.01,p?.scdMax||1));}else paintRing(skillCooldown,0,1);
- requestAnimationFrame(syncActionButton);
 };
 const actionDown=e=>{e.preventDefault();cap(actionBtn,e);actionBtn.classList.add('on');if(p&&p.tank&&p.tank.kind==='truck'){say('トラックは攻撃できない');actionKey=null;return;}actionKey='KeyD';press(actionKey);};
 const actionUp=e=>{if(e)e.preventDefault();actionBtn.classList.remove('on');if(actionKey)release(actionKey);actionKey=null;};
@@ -3269,7 +3312,7 @@ actionBtn.addEventListener('pointerdown',actionDown,{passive:false});
 actionBtn.addEventListener('pointerup',actionUp,{passive:false});
 actionBtn.addEventListener('pointercancel',actionUp,{passive:false});
 actionBtn.addEventListener('lostpointercapture',actionUp,{passive:false});
-requestAnimationFrame(syncActionButton);
+syncActionButton();setInterval(syncActionButton,50);
 
 const pad=document.getElementById('stick'),knob=document.getElementById('knob'),st={ArrowUp:0,ArrowDown:0,ArrowLeft:0,ArrowRight:0};let act=null;
 function setDir(x,y){const m=.3,n={ArrowLeft:x<-m,ArrowRight:x>m,ArrowUp:y<-m,ArrowDown:y>m};for(const k in n)if(!!st[k]!==n[k]){st[k]=n[k]?1:0;n[k]?press(k):release(k);}}
