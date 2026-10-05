@@ -64,7 +64,7 @@ p{font-size:12px;opacity:.75;margin:8px 0 0;text-align:center;line-height:1.6}
 <p>移動: ↑↓←→ / E: 搭乗・降車・近接気絶 / 再開: Enter<br>歩兵: D=爆弾設置/起爆　S=スキル　E=近くの敵兵を10秒気絶　戦車: D=主砲、S=マシンガン（車種で性能差）　戦闘機: D=爆撃　iPhone版もD/S/Eに対応</p>
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.05.98',FILE_CREATED_AT='2026/10/05 10:21',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
+const GAME_VERSION='2026.10.05.98',FILE_CREATED_AT='2026/10/05 10:29',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
 let audioCtx=null;
 function ensureAudio(){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(_){}}
 function tone(f=440,d=.08,v=.035,type='square',f2=null){if(!audioCtx)return;const t=audioCtx.currentTime,o=audioCtx.createOscillator(),a=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t+d);a.gain.setValueAtTime(v,t);a.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(a);a.connect(audioCtx.destination);o.start(t);o.stop(t+d+.02);}
@@ -571,7 +571,7 @@ const SK=[
  {id:'drill',n:'突貫',d:'正面にドリルを展開\n0.5秒で遮蔽物を破壊\n持続5秒'},
  {id:'build',n:'建築',d:'正面にコンクリート防護壁を設置\n最大5枚／チャージ1.5秒\n画面外へ流れると消滅'},
  {id:'flame',n:'火炎',d:'正面200pxへ火炎放射（先端到達1秒）\n最大3秒・使用分×4秒で全回復\n回復中も再使用可能'},
- {id:'hound',n:'猟犬',d:'猟犬が斜め後ろを追従\nSで正面へ200px以上ダッシュ→周囲75pxの敵兵へ突撃\n敵がいなければ帰還／3秒噛みついて気絶'}
+ {id:'hound',n:'猟犬',d:'猟犬が斜め後ろを追従\nSで正面へ200px以上ダッシュ→周囲100pxの敵兵へ突撃\n敵がいなければ帰還／3秒噛みついて気絶'}
 ];
 const TOUCH=matchMedia('(pointer:coarse)').matches;
 const SKN={throw:'投擲',dig:'掘削',decoy:'偽装',buddy:'相棒',drill:'突貫',build:'建築',flame:'火炎',hound:'猟犬'};
@@ -1631,7 +1631,7 @@ function houndTryStep(a,sp,dt,allowAvoid=true){
 }
 function beginHoundAttack(){
  if(!hound){spawnHound();}if(hound.stun>0){say('猟犬は気絶中');return false;}if(hound.state!=='follow'){say('猟犬は行動中');return false;}
- hound.state='dashOut';hound.face=p.body;hound.attackA=p.body;hound.dashDist=0;hound.target=null;hound.blocked=0;setSkillCooldown(8);sfx('skill');say('猟犬、突撃!');return true;
+ hound.state='dashOut';hound.face=p.body;hound.attackA=p.body;hound.dashDist=0;hound.target=null;hound.blocked=0;setSkillCooldown(3);sfx('skill');say('猟犬、突撃!');return true;
 }
 function houndNearestHuman(maxDist=Infinity){let best=null,bd=maxDist;for(const h of humans||[]){if(!h.alive||h.stun>0||h.houndPinned)continue;const d=Math.hypot(h.x-hound.x,h.y-hound.y);if(d<=bd){bd=d;best=h;}}return best;}
 function finishHoundBite(){
@@ -1648,7 +1648,7 @@ function updateHound(dt){
   const a=hound.attackA??p.body,sp=375,step=sp*dt,nx=hound.x+Math.cos(a)*step,ny=hound.y+Math.sin(a)*step;
   if(nx<=7||nx>=WW-7||ny<=7||ny>=WH-7||hitsC(nx,ny,7)){hound.state='return';say('猟犬のダッシュが遮られた');return;}
   hound.x=nx;hound.y=ny;hound.face=a;hound.dashDist+=step;
-  if(hound.dashDist>=200&&!keys.KeyS){const target=houndNearestHuman(75);if(target){hound.target=target;hound.state='chase';say('猟犬が敵兵を発見!');}else{hound.target=null;hound.state='return';say('周囲に敵兵なし、猟犬が帰還');}}return;
+  if(hound.dashDist>=200&&!keys.KeyS){const target=houndNearestHuman(100);if(target){hound.target=target;hound.state='chase';say('猟犬が敵兵を発見!');}else{hound.target=null;hound.state='return';say('周囲に敵兵なし、猟犬が帰還');}}return;
  }
  if(hound.state==='chase'){
   const h=hound.target;if(!h||!h.alive||h.stun>0){if(h)h.houndPinned=false;hound.target=null;hound.state='return';return;}
