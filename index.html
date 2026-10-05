@@ -64,7 +64,7 @@ p{font-size:12px;opacity:.75;margin:8px 0 0;text-align:center;line-height:1.6}
 <p>移動: ↑↓←→ / E: 搭乗・降車・近接気絶 / 再開: Enter<br>歩兵: D=爆弾設置/起爆　S=スキル　E=近くの敵兵を10秒気絶　戦車: D=主砲、S=マシンガン（車種で性能差）　戦闘機: D=爆撃　iPhone版もD/S/Eに対応</p>
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.05.98',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
+const GAME_VERSION='2026.10.05.98',FILE_CREATED_AT='2026/10/05 09:48',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
 let audioCtx=null;
 function ensureAudio(){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(_){}}
 function tone(f=440,d=.08,v=.035,type='square',f2=null){if(!audioCtx)return;const t=audioCtx.currentTime,o=audioCtx.createOscillator(),a=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t+d);a.gain.setValueAtTime(v,t);a.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(a);a.connect(audioCtx.destination);o.start(t);o.stop(t+d+.02);}
@@ -1198,6 +1198,13 @@ function findDetectedTarget(o,face){
  seen.sort((a,b)=>a.d-b.d);return seen[0]||null;
 }
 function burst(x,y,n,col,sp){for(let i=0;i<n;i++){const a=R()*6.28,s=R()*sp;parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.4+R()*.4,col});}}
+function digSoilBurst(x,y,power=1){
+ const n=Math.round(24*power);
+ for(let i=0;i<n;i++){
+  const a=R()*6.28,sp=(55+R()*150)*power,sz=(5+R()*5)*Math.min(1.2,power);
+  parts.push({x:x+(R()-.5)*10,y:y+(R()-.5)*8,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp*.72,life:.48+R()*.42,col:R()<.5?'#7a5a38':'#9a744b',sz});
+ }
+}
 function say(t){msg=t;msgT=2.5;}
 const SCORE_KEY='tankGameHighScoreV1';
 function loadHighScore(){
@@ -1523,7 +1530,7 @@ function finishDig(msg,withBurst=true){
  if(!(p.digPrep>0||p.dig>0||p.digElapsed>0))return false;
  p.dig=0;p.digPrep=0;p.digElapsed=0;setSkillCooldown(5);
  p.digExitAnim=1.05;p.digExitX=p.x;p.digExitY=p.y;
- if(withBurst)burst(p.x,p.y,20,'#7a5a38',190);
+ if(withBurst)digSoilBurst(p.x,p.y,1.12);
  sfx('skill');if(msg)say(msg);return true;
 }
 function explode(x,y,rad,big,source='',actionId=0){if(big)sfx(source==='air'?'airExplosion':'explosion');fb(x,y,big?46:22);
@@ -1796,11 +1803,11 @@ function update(dt){
  const areaDebugInfiniteFuel=!!(areaDebugEnabled&&p.tank&&(p.tank.kind==='tank'||p.tank.kind==='truck'));
  cleanBuiltWalls(cy,cx);updateFlame(dt);if(debugMode>=2)clearPlayerDetection();if(areaDebugInfiniteFuel)p.tank.f=p.tank.t.fmax||100;if(debugMode===3&&p.tank&&p.tank.kind==='fighter'){p.tank.f=FIGHTER_TYPE.fmax;p.tank.hp=FIGHTER_TYPE.hp;}
  if((ix||iy)&&!(p.grappleT>0)&&!prepDig&&!playerAir){if(!p.tank||p.tank.f>0){frameMove=playerMove(ix/il*sp*dt,iy/il*sp*dt,r,dt);if(p.tank){if(areaDebugInfiniteFuel)p.tank.f=p.tank.t.fmax||100;else if(!(debugMode===3&&isFighter))p.tank.f=Math.max(0,p.tank.f-frameMove*.04);else p.tank.f=FIGHTER_TYPE.fmax;if(isTruck&&frameMove>0){p.tank.lastDriveSpeed=frameMove/Math.max(.001,dt);p.tank.lastDriveAt=performance.now();}}p.body=Math.atan2(iy,ix);if(isTruck||isFighter)p.ang=p.body;if(isTruck&&frameMove>0)checkDrivenTruckCrash();}else if(msgT<=0)say('ガソリン切れ!Eで降車');}
- if(p.digPrep>0){p.digPrep=Math.max(0,p.digPrep-dt);if(R()<.85)parts.push({x:p.x+(R()-.5)*18,y:p.y+7+(R()-.5)*6,vx:(R()-.5)*34,vy:-12-R()*18,life:.28,col:R()<.5?'#7a5a38':'#8d6b46'});if(p.digPrep<=0){p.dig=5;p.digElapsed=0;sfx('skill');say('掘削! 地中に潜行');burst(p.x,p.y,18,'#7a5a38',180);}}
+ if(p.digPrep>0){p.digPrep=Math.max(0,p.digPrep-dt);if(R()<.9)parts.push({x:p.x+(R()-.5)*20,y:p.y+7+(R()-.5)*7,vx:(R()-.5)*42,vy:-16-R()*24,life:.34,col:R()<.5?'#7a5a38':'#9a744b',sz:5+R()*4});if(p.digPrep<=0){p.dig=5;p.digElapsed=0;sfx('skill');say('掘削! 地中に潜行');digSoilBurst(p.x,p.y,1.08);}}
  if(p.dig>0&&(inWaterAt(p.x,p.y,5)||inMudAt(p.x,p.y,5))){sfx('splash');finishDig('川・泥では掘削を継続できない',false);burst(p.x,p.y,14,'#705238',120);}
  if(T&&!isTruck&&!isFighter)p.ang=(performance.now()-lastMouse<1500)?Math.atan2(wy-p.y,wx-p.x):p.body;
  p.cc=Math.max(0,p.cc-dt);p.vc=Math.max(0,p.vc-dt);p.scd=Math.max(0,p.scd-dt);p.digExitAnim=Math.max(0,(p.digExitAnim||0)-dt);p.grappleT=Math.max(0,(p.grappleT||0)-dt);if(p.grappleT<=0)p.grappleTarget=null;if(p.scd<=0)p.scdMax=0;if(decoy){decoy.t-=dt;decoy.sound=(decoy.sound||0)-dt;if(decoy.sound<=0){decoy.sound=.75;sfx('decoy');burst(decoy.x,decoy.y,3,'#ffd27a',35);}if(decoy.t<=0)decoy=null;}
- if(p.dig>0){p.digElapsed=(p.digElapsed||0)+dt;p.dig-=dt;if(R()<.6)parts.push({x:p.x,y:p.y,vx:(R()-.5)*60,vy:(R()-.5)*60,life:.35,col:'#7a5a38'});if(p.dig<=0)finishDig('潜航解除：地上に出た');}
+ if(p.dig>0){p.digElapsed=(p.digElapsed||0)+dt;p.dig-=dt;if(R()<.6)parts.push({x:p.x,y:p.y,vx:(R()-.5)*60,vy:(R()-.5)*60,life:.35,col:'#7a5a38',sz:4+R()*3});if(p.dig<=0)finishDig('潜航解除：地上に出た');}
  if(p.grappleT>0||playerAir){skillReq=false;bombReq=false;interact=false;}
  if(skillReq){skillReq=false;if(T)say('スキルは歩兵のときに使える');else if(skill==='dig'&&p.dig>0){finishDig('潜航解除：地上に出た');}else if(skill==='dig'&&p.digPrep>0){say('掘削準備中');}else if(skill==='flame'){}else if(skill==='throw'){const pb=bombs.findIndex(b=>b.own==='p');if(pb>=0&&!(bombs[pb].fly>0)){bombBlast(bombs[pb].x,bombs[pb].y);bombs.splice(pb,1);say('起爆!');}else if(p.scd>0)say('スキル準備中');else if(p.dig<=0&&p.digPrep<=0)useSkill(wx,wy);}else if(p.scd>0)say('スキル準備中');else if(p.dig<=0&&p.digPrep<=0&&p.drill<=0)useSkill(wx,wy);}
  if(bombReq){bombReq=false;if(!T&&!(p.dig>0)&&!(p.digPrep>0)){const pb=bombs.findIndex(b=>b.own==='p');if(pb<0){bombs.push({x:p.x,y:p.y,own:'p',armed:false});sfx('skill');say('爆弾を設置(Dで起爆)');}else if(!(bombs[pb].fly>0)){bombBlast(bombs[pb].x,bombs[pb].y);bombs.splice(pb,1);}}}
@@ -2531,7 +2538,7 @@ function drawMenuOnlyState(){
   const creditY=TB.help.y+TB.help.h+30;
   g.textAlign='center';g.lineWidth=4;g.strokeStyle='rgba(0,0,0,.82)';
   g.font='bold 18px system-ui';g.strokeText('Created by terauchi takeharu',W/2,creditY);g.fillStyle='#e7f7c8';g.fillText('Created by terauchi takeharu',W/2,creditY);
-  g.font='bold 16px system-ui';g.strokeText('Version '+GAME_VERSION+'  10/5 08:51',W/2,creditY+27);g.fillStyle='#ffe2a1';g.fillText('Version '+GAME_VERSION+'  10/5 08:51',W/2,creditY+27);
+  g.font='bold 16px system-ui';g.strokeText('Version '+GAME_VERSION+'  '+FILE_CREATED_AT,W/2,creditY+27);g.fillStyle='#ffe2a1';g.fillText('Version '+GAME_VERSION+'  '+FILE_CREATED_AT,W/2,creditY+27);
  }
  else if(state==='help'){
   g.fillStyle='rgba(10,12,8,.98)';g.fillRect(0,0,W,H);g.textAlign='center';
@@ -2674,7 +2681,7 @@ function draw(near){
  g.save();g.globalAlpha*=enemyAlpha;for(const e of etanks)if(e.alive)tankShape(e.x,e.y,e.body,e.ang,{id:'enemy',col:'#4b5f9e'},TANK_DRAW);g.restore();
  if(p.tank)drawVehicle(p.tank,p.x,p.y,p.body,p.ang);
  drawAllWaterCrossings(cx,cy);
- for(const q of parts){g.globalAlpha=Math.min(1,q.life*2);g.fillStyle=q.col;g.fillRect(q.x-2,q.y-2,4,4);}g.globalAlpha=1;
+ for(const q of parts){const psz=q.sz||4;g.globalAlpha=Math.min(1,q.life*2);g.fillStyle=q.col;g.fillRect(q.x-psz/2,q.y-psz/2,psz,psz);}g.globalAlpha=1;
  g.save();g.globalCompositeOperation='lighter';for(const f of fx){const t=1-f.l/.45,r=f.max*(.35+.65*t),gr=g.createRadialGradient(f.x,f.y,0,f.x,f.y,r);gr.addColorStop(0,'rgba(255,250,200,'+(1-t)+')');gr.addColorStop(.45,'rgba(255,140,30,'+.8*(1-t)+')');gr.addColorStop(1,'rgba(160,30,0,0)');g.fillStyle=gr;g.beginPath();g.arc(f.x,f.y,r,0,6.28);g.fill();}g.restore();
  g.restore();
  g=gm;gm.imageSmoothingEnabled=false;gm.drawImage(oc,0,0,W,H);drawWeatherOverlay();
@@ -2694,8 +2701,8 @@ function draw(near){
   g.strokeStyle='rgba(202,166,102,'+(0.82*a)+')';g.lineWidth=2.5;g.beginPath();g.arc(0,4,12+38*k,0,6.28);g.stroke();
   g.strokeStyle='rgba(113,82,49,'+(0.70*a)+')';g.lineWidth=4;g.beginPath();g.arc(0,5,7+25*k,0,6.28);g.stroke();
   g.fillStyle='rgba(127,93,55,'+(0.72*a)+')';
-  for(let q=0;q<8;q++){const an=q*.785+0.35,r=8+28*k+(q%3)*3;g.beginPath();g.arc(Math.cos(an)*r,5+Math.sin(an)*r*.42,2.8+(q%2),0,6.28);g.fill();}
-  g.globalAlpha=Math.min(1,a*1.5);g.fillStyle='#ffd99a';g.font='bold 12px system-ui';g.textAlign='center';g.fillText('掘削解除',0,-30-8*k);g.restore();
+  for(let q=0;q<10;q++){const an=q*.628+0.35,r=9+31*k+(q%3)*3;g.beginPath();g.arc(Math.cos(an)*r,5+Math.sin(an)*r*.42,3.6+(q%2)*1.2,0,6.28);g.fill();}
+  g.restore();
  }
  drawLabels(cx,cy);drawVehicleMarkers(cx,cy);
  g.fillStyle='#e6e9d8';g.font='bold 14px system-ui';g.textAlign='left';
@@ -2741,7 +2748,7 @@ function draw(near){
   const creditY=TB.help.y+TB.help.h+30;
   g.textAlign='center';g.lineWidth=4;g.strokeStyle='rgba(0,0,0,.82)';
   g.font='bold 18px system-ui';g.strokeText('Created by terauchi takeharu',W/2,creditY);g.fillStyle='#e7f7c8';g.fillText('Created by terauchi takeharu',W/2,creditY);
-  g.font='bold 16px system-ui';g.strokeText('Version '+GAME_VERSION+'  10/5 08:51',W/2,creditY+27);g.fillStyle='#ffe2a1';g.fillText('Version '+GAME_VERSION+'  10/5 08:51',W/2,creditY+27);
+  g.font='bold 16px system-ui';g.strokeText('Version '+GAME_VERSION+'  '+FILE_CREATED_AT,W/2,creditY+27);g.fillStyle='#ffe2a1';g.fillText('Version '+GAME_VERSION+'  '+FILE_CREATED_AT,W/2,creditY+27);
  }
  else if(state==='help'){
   g.fillStyle='rgba(10,12,8,.92)';g.fillRect(0,0,W,H);g.textAlign='center';
