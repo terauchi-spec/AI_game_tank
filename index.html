@@ -64,7 +64,7 @@ p{font-size:12px;opacity:.75;margin:8px 0 0;text-align:center;line-height:1.6}
 <p>移動: ↑↓←→ / E: 搭乗・降車・近接気絶 / 再開: Enter<br>歩兵: D=爆弾設置/起爆　S=スキル　E=近くの敵兵を10秒気絶　戦車: D=主砲、S=マシンガン（車種で性能差）　戦闘機: D=爆撃　iPhone版もD/S/Eに対応</p>
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.05.98',FILE_CREATED_AT='2026/10/06 08:07',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
+const GAME_VERSION='2026.10.05.98',FILE_CREATED_AT='2026/10/06 09:24',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
 let audioCtx=null;
 function ensureAudio(){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(_){}}
 function tone(f=440,d=.08,v=.035,type='square',f2=null){if(!audioCtx)return;const t=audioCtx.currentTime,o=audioCtx.createOscillator(),a=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t+d);a.gain.setValueAtTime(v,t);a.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(a);a.connect(audioCtx.destination);o.start(t);o.stop(t+d+.02);}
@@ -1164,7 +1164,7 @@ function reset(rerollSkills=true){
  for(const z of ZONES){const y0=z.y0/MAP_SCALE,y1=Math.max(0,z.y1/MAP_SCALE),n=bushCount[z.n]||0;for(let k=0,m=0;k<30000&&m<n;k++){
   let bw=30+R()*30,bh=22+R()*22,margin=4;
   if(z.n==='村'){bw=34+R()*28;bh=24+R()*22;margin=5;}else if(z.n==='森林'){bw=28+R()*26;bh=22+R()*18;margin=5;}else if(z.n==='湿地'){bw=36+R()*32;bh=23+R()*23;margin=7;}
-  const scale=z.n==='草原'?(1.8+R()*.5):(1.5+R()*.3),w=Math.min(WW-28,bw*scale),h=bh*scale,b={x:14+R()*Math.max(16,WW-w-28),y:y1+8+R()*Math.max(20,y0-y1-h-16),w,h};
+  const scale=z.n==='草原'?(2.2+R()*.3):(1.8+R()*.5),w=Math.min(WW-28,bw*scale),h=bh*scale,b={x:14+R()*Math.max(16,WW-w-28),y:y1+8+R()*Math.max(20,y0-y1-h-16),w,h};
   if(addBush(b,margin,z.n==='草原'))m++;
  }}
  genCovers();genObjects();
@@ -1288,7 +1288,13 @@ function enemyUnitBlocked(self,x,y,r){
  for(const e of ts)if(e!==self&&e.alive){const dx=e.x-x,dy=e.y-y;if(Math.abs(dx)<tm&&Math.abs(dy)<tm&&dx*dx+dy*dy<tm*tm)return true;}
  return false;
 }
-function mv(o,dx,dy,r){const slow=(inSlowTerrainAt(o.x,o.y,r)||inSlowTerrainAt(o.x+dx,o.y+dy,r))?.3:1;dx*=slow;dy*=slow;const nx=o.x+dx;if(nx>r&&nx<WW-r&&!hitsC(nx,o.y,r)&&!tankBlocked(o,nx,o.y,r)&&!enemyUnitBlocked(o,nx,o.y,r))o.x=nx;const ny=o.y+dy;if(ny>r&&ny<WH-r&&!hitsC(o.x,ny,r)&&!tankBlocked(o,o.x,ny,r)&&!enemyUnitBlocked(o,o.x,ny,r))o.y=ny;}
+// 敵戦車は描画・被弾判定に近い半径で木箱／ドラム缶を避ける。
+// 従来の移動半径15pxだけだと、見た目上オブジェクトの上へ乗り上げて見えることがあった。
+function enemyTankObjectBlocked(self,x,y){
+ if(!(etanks||[]).includes(self))return false;
+ return nearbyObjects(x,y,TANK_HIT+8).some(o=>circleHitsObject(x,y,TANK_HIT,o));
+}
+function mv(o,dx,dy,r){const slow=(inSlowTerrainAt(o.x,o.y,r)||inSlowTerrainAt(o.x+dx,o.y+dy,r))?.3:1;dx*=slow;dy*=slow;const nx=o.x+dx;if(nx>r&&nx<WW-r&&!hitsC(nx,o.y,r)&&!enemyTankObjectBlocked(o,nx,o.y)&&!tankBlocked(o,nx,o.y,r)&&!enemyUnitBlocked(o,nx,o.y,r))o.x=nx;const ny=o.y+dy;if(ny>r&&ny<WH-r&&!hitsC(o.x,ny,r)&&!enemyTankObjectBlocked(o,o.x,ny)&&!tankBlocked(o,o.x,ny,r)&&!enemyUnitBlocked(o,o.x,ny,r))o.y=ny;}
 let lastEnemySeparationAt=-1e9;
 function separateEnemyUnits(force=false){
  const now=performance.now();if(!force&&now-lastEnemySeparationAt<100)return;lastEnemySeparationAt=now;
@@ -1421,7 +1427,7 @@ function updateScoreTracking(dt,moved=0){
  trackEnemyDeaths();
 }
 function scoreGrade(v,a,b){return v>=a?'A':v>=b?'B':'C';}
-function overallRank(v){return v>=8000?'S':v>=6000?'A':v>=4000?'B':v>=2000?'C':'D';}
+function overallRank(v){return v>=10000?'S':v>=7500?'A':v>=5000?'B':v>=2500?'C':'D';}
 function formatRunTime(sec){sec=Math.max(0,Math.round(sec));return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');}
 function finalizeScore(cleared){
  if(!scoreStats||scoreStats.finalized)return;
@@ -1435,7 +1441,7 @@ function finalizeScore(cleared){
  const chainBonus=Math.min(350,Math.max(0,scoreStats.maxKillChain-1)*70);
  const alertCombatBonus=Math.min(350,scoreStats.alertCombatKills*35);
  const combat=scoreStats.humanKills*100+scoreStats.eliteKills*250+scoreStats.tankKills*400+forwardPaceBonus+destructionBonus+scoreStats.multiKillBonus+chainBonus+alertCombatBonus;
- const stealthRank=scoreGrade(stealth,1800,900),combatRank=scoreGrade(combat,3200,1400);
+ const stealthRank=scoreGrade(stealth,2250,1125),combatRank=scoreGrade(combat,4000,1750);
  const hqBonus=cleared?1000:0;
  let timeBonus=0;if(cleared){const t=scoreStats.time;timeBonus=t<=180?1000:t<=300?700:t<=480?400:t<=720?200:0;}
  const bonus=hqBonus+timeBonus,total=stealth+combat+bonus,rank=overallRank(total);
@@ -1738,21 +1744,21 @@ function updateAlly(dt){
 const HOUND_COLORS=['#222222','#e8e5da','#7d8285','#c9a878'];
 function spawnHound(){
  const side=R()<.5?-1:1,a=p.body,bx=p.x-Math.cos(a)*30+Math.cos(a+Math.PI/2)*side*20,by=p.y-Math.sin(a)*30+Math.sin(a+Math.PI/2)*side*20;
- hound={x:bx,y:by,face:a,side,col:HOUND_COLORS[R()*HOUND_COLORS.length|0],state:'follow',stun:0,dashDist:0,biteT:0,target:null,blocked:0,coverContact:0,returnFromBite:false,reacquired:false,lostFace:a,lostTurn:R()<.5?-1:1,lostMode:null};
+ hound={x:bx,y:by,face:a,side,col:HOUND_COLORS[R()*HOUND_COLORS.length|0],state:'follow',stun:0,dashDist:0,biteT:0,target:null,blocked:0,coverContact:0,avoidSide:0,avoidT:0,returnFromBite:false,reacquired:false,lostFace:a,lostTurn:R()<.5?-1:1,lostMode:null};
  houndTrail=[{x:p.x,y:p.y,a:p.body}];resetHoundPosition();
 }
 function resetHoundPosition(){
  if(!hound||!p)return;const a=p.body,side=hound.side||1;
  const opts=[[-30,20*side],[-28,-20*side],[-42,16*side],[-18,28*side]];
  for(const [back,lat] of opts){const x=p.x+Math.cos(a)*back+Math.cos(a+Math.PI/2)*lat,y=p.y+Math.sin(a)*back+Math.sin(a+Math.PI/2)*lat;if(x>8&&x<WW-8&&y>8&&y<WH-8&&!hitsC(x,y,7)){hound.x=x;hound.y=y;break;}}
- hound.face=a;hound.state='follow';hound.stun=0;hound.dashDist=0;hound.biteT=0;hound.coverContact=0;hound.returnFromBite=false;hound.reacquired=false;hound.lostMode=null;if(hound.target)hound.target.houndPinned=false;hound.target=null;houndTrail=[{x:p.x,y:p.y,a:p.body}];
+ hound.face=a;hound.state='follow';hound.stun=0;hound.dashDist=0;hound.biteT=0;hound.coverContact=0;hound.avoidSide=0;hound.avoidT=0;hound.returnFromBite=false;hound.reacquired=false;hound.lostMode=null;if(hound.target)hound.target.houndPinned=false;hound.target=null;houndTrail=[{x:p.x,y:p.y,a:p.body}];
 }
 function onHoundPlayerDismount(){
  if(!hound||skill!=='hound'||!p)return;
  // 乗車中にできた長い追従履歴や迷子状態を捨て、降車地点を新しい帰還先にする。
  if(hound.target){hound.target.houndPinned=false;hound.target=null;}
  houndTrail=[{x:p.x,y:p.y,a:p.body}];
- hound.blocked=0;hound.coverContact=0;hound.dashDist=0;hound.returnFromBite=false;hound.reacquired=false;hound.lostMode=null;
+ hound.blocked=0;hound.coverContact=0;hound.avoidSide=0;hound.avoidT=0;hound.dashDist=0;hound.returnFromBite=false;hound.reacquired=false;hound.lostMode=null;
  if(hound.stun>0){hound.state='stunned';return;}
  hound.state='return';
  // すでに近くにいる場合も次フレームで自然に斜め後ろの追従位置へ戻す。
@@ -1762,7 +1768,7 @@ function onHoundPlayerVehicleChange(){
  // 通常乗車だけでなく、Pキーのデバッグ戦闘機への切替でも追従先を現在のプレイヤー位置へ更新する。
  if(hound.target){hound.target.houndPinned=false;hound.target=null;}
  houndTrail=[{x:p.x,y:p.y,a:p.body}];
- hound.blocked=0;hound.coverContact=0;hound.dashDist=0;hound.returnFromBite=false;hound.reacquired=false;hound.lostMode=null;
+ hound.blocked=0;hound.coverContact=0;hound.avoidSide=0;hound.avoidT=0;hound.dashDist=0;hound.returnFromBite=false;hound.reacquired=false;hound.lostMode=null;
  if(hound.stun>0){hound.state='stunned';return;}
  hound.state='return';
 }
@@ -1782,8 +1788,26 @@ function updateHoundTrail(){
  if(!hound||!p)return;const q=houndTrail[houndTrail.length-1];if(!q||Math.hypot(p.x-q.x,p.y-q.y)>7)houndTrail.push({x:p.x,y:p.y,a:p.body});else{q.a=p.body;q.x=p.x;q.y=p.y;}while(houndTrail.length>90)houndTrail.shift();
 }
 function houndTryStep(a,sp,dt,allowAvoid=true){
- if(!hound)return false;const terrainSlow=inSlowTerrainAt(hound.x,hound.y,7)?.3:1,step=sp*terrainSlow*dt,angles=allowAvoid?[0,.48,-.48,.9,-.9,1.35,-1.35,Math.PI]:[0];
- for(const off of angles){const aa=a+off,nx=hound.x+Math.cos(aa)*step,ny=hound.y+Math.sin(aa)*step;if(nx<=7||nx>=WW-7||ny<=7||ny>=WH-7||hitsC(nx,ny,7))continue;const wasWater=inWaterAt(hound.x,hound.y,7),nowWater=inWaterAt(nx,ny,7);hound.x=nx;hound.y=ny;hound.face=aa;if(nowWater&&!wasWater){sfx('splash');burst(hound.x,hound.y+3,8,'#9fd8ee',65);}return true;}return false;
+ if(!hound)return false;
+ const terrainSlow=inSlowTerrainAt(hound.x,hound.y,7)?.3:1,step=sp*terrainSlow*dt;
+ // 遮蔽物の縁で毎フレーム左右の回避方向を選び直すと、犬がブルブル向きを変える。
+ // 一度選んだ回避側を短時間維持して、同じ側から滑らかに回り込む。
+ if(allowAvoid)hound.avoidT=Math.max(0,(hound.avoidT||0)-dt);
+ const pref=hound.avoidSide||1;
+ const angles=!allowAvoid?[0]:(hound.avoidT>0?[.48*pref,.9*pref,0,1.35*pref,-.48*pref,-.9*pref,Math.PI]:[0,.48,-.48,.9,-.9,1.35,-1.35,Math.PI]);
+ for(const off of angles){
+  const aa=a+off,nx=hound.x+Math.cos(aa)*step,ny=hound.y+Math.sin(aa)*step;
+  if(nx<=7||nx>=WW-7||ny<=7||ny>=WH-7||hitsC(nx,ny,7))continue;
+  if(allowAvoid){
+   if(Math.abs(off)>.08&&Math.abs(off)<2){hound.avoidSide=off>0?1:-1;hound.avoidT=Math.max(hound.avoidT||0,.34);}
+   else if(off===0&&(hound.avoidT||0)<=0)hound.avoidSide=0;
+  }
+  const wasWater=inWaterAt(hound.x,hound.y,7),nowWater=inWaterAt(nx,ny,7);
+  hound.x=nx;hound.y=ny;hound.face=aa;
+  if(nowWater&&!wasWater){sfx('splash');burst(hound.x,hound.y+3,8,'#9fd8ee',65);}
+  return true;
+ }
+ return false;
 }
 function houndDirectStepBlocked(a,sp,dt){if(!hound)return true;const slow=inSlowTerrainAt(hound.x,hound.y,7)?.3:1,step=sp*slow*dt,nx=hound.x+Math.cos(a)*step,ny=hound.y+Math.sin(a)*step;return nx<=7||nx>=WW-7||ny<=7||ny>=WH-7||hitsC(nx,ny,7);}
 function houndDirectStepTouchesCover(a,sp,dt){if(!hound)return false;const slow=inSlowTerrainAt(hound.x,hound.y,7)?.3:1,step=sp*slow*dt,nx=hound.x+Math.cos(a)*step,ny=hound.y+Math.sin(a)*step;if(nx<=7||nx>=WW-7||ny<=7||ny>=WH-7)return false;return nearbyCovers(nx,ny,14).some(c=>circleHitsCover(nx,ny,7,c));}
@@ -1890,7 +1914,7 @@ function drawHound(){
  g.fillStyle=dark;g.globalAlpha=.11;g.beginPath();g.ellipse(-7.0,0,2.7,5.5,0,0,Math.PI*2);g.fill();g.beginPath();g.ellipse(5.2,0,3.2,6.0,0,0,Math.PI*2);g.fill();g.globalAlpha=1;
  // 首と首輪。
  g.fillStyle=fur;g.beginPath();g.moveTo(8.4,-4.2);g.lineTo(14.6,-3.5);g.lineTo(14.6,3.5);g.lineTo(8.4,4.2);g.closePath();g.fill();
- g.strokeStyle='#d6322f';g.lineWidth=3.2;g.beginPath();g.moveTo(8.8,-4.5);g.lineTo(9.6,4.5);g.stroke();
+ g.strokeStyle='#d6322f';g.lineWidth=2.2;g.beginPath();g.moveTo(8.8,-4.5);g.lineTo(9.6,4.5);g.stroke();
  g.fillStyle='#f0c24f';g.beginPath();g.arc(9.8,4.9,1.2,0,Math.PI*2);g.fill();
  // 頭。鼻先を長めにしてシェパードのスマートな輪郭にする。
  g.fillStyle=fur;g.beginPath();
