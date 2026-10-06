@@ -65,7 +65,7 @@ p{font-size:12px;opacity:.75;margin:8px 0 0;text-align:center;line-height:1.6}
 <p>移動: ↑↓←→ / E: 搭乗・降車・近接気絶 / 再開: Enter<br>歩兵: D=爆弾設置/起爆　S=スキル　E=近くの敵兵を10秒気絶　戦車: D=主砲、S=マシンガン（車種で性能差）　戦闘機: D=爆撃　スマホ戦車: Dドラッグで照準→離して主砲、S長押し＋ドラッグでMG照準</p>
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.05.98',FILE_CREATED_AT='2026/10/06 20:19',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
+const GAME_VERSION='2026.10.05.98',FILE_CREATED_AT='2026/10/06 23:45',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
 let audioCtx=null;
 function ensureAudio(){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(_){}}
 function tone(f=440,d=.08,v=.035,type='square',f2=null){if(!audioCtx)return;const t=audioCtx.currentTime,o=audioCtx.createOscillator(),a=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t+d);a.gain.setValueAtTime(v,t);a.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(a);a.connect(audioCtx.destination);o.start(t);o.stop(t+d+.02);}
@@ -98,7 +98,7 @@ addEventListener('keydown',e=>{
  if(code==='KeyE'&&first&&!e.repeat)interact=true;
  if(code==='KeyS'&&!(p&&p.tank)&&first&&!e.repeat)skillReq=true;
  if(code==='KeyP'&&state==='play'&&first&&!e.repeat)toggleDebugInvincible();
- if(code==='KeyO'&&state==='play'&&areaDebugEnabled&&first&&!e.repeat)spawnAreaDebugTankAhead();
+ if(code==='KeyO'&&state==='play'&&first&&!e.repeat)spawnAreaDebugTankAhead();
  if(e.repeat)return;
  if(code==='Enter'){
   if(state==='title'){rollSkillChoices();state='skill';}
@@ -135,11 +135,13 @@ const canvasUp=()=>{mdown=false;};cv.addEventListener('pointerup',canvasUp);cv.a
 
 // 戦車性能: cmax=砲弾数, vmax=MG弾数, sp=速度, fmax=燃料容量,
 // crng=主砲射程, ccd=主砲装填時間, armor=耐久。主要性能差は最大2倍以内。
+// プレイヤーが使用できる戦車の燃料容量は従来値の1.3倍。
+const PLAYER_TANK_FUEL_SCALE=1.3;
 const TYPES=[
- {id:'t34',n:'T-34(ソ連)',hp:8,armor:1.35,cmax:11,vmax:72,fmax:81,sp:99,cdmg:2.7,ccd:2.42,cspd:558,crng:504,vcd:.165,col:'#556a34'},
- {id:'tiger',n:'Tiger I(独)',hp:16,armor:2.0,cmax:9,vmax:54,fmax:72,sp:72,cdmg:5.4,ccd:3.08,cspd:648,crng:684,vcd:.22,col:'#8f8666'},
- {id:'type10',n:'10式(日)',hp:12,armor:1.55,cmax:14,vmax:90,fmax:117,sp:126,cdmg:3.6,ccd:1.65,cspd:630,crng:630,vcd:.121,col:'#4e6350'},
- {id:'m1',n:'M1 エイブラムス(米)',hp:15,armor:1.8,cmax:13,vmax:108,fmax:126,sp:113,cdmg:4.5,ccd:1.87,cspd:720,crng:738,vcd:.11,col:'#a78957'}];
+ {id:'t34',n:'T-34(ソ連)',hp:8,armor:1.35,cmax:11,vmax:72,fmax:81*PLAYER_TANK_FUEL_SCALE,sp:99,cdmg:2.7,ccd:2.42,cspd:558,crng:504,vcd:.165,col:'#556a34'},
+ {id:'tiger',n:'Tiger I(独)',hp:16,armor:2.0,cmax:9,vmax:54,fmax:72*PLAYER_TANK_FUEL_SCALE,sp:72,cdmg:5.4,ccd:3.08,cspd:648,crng:684,vcd:.22,col:'#8f8666'},
+ {id:'type10',n:'10式(日)',hp:12,armor:1.55,cmax:14,vmax:90,fmax:117*PLAYER_TANK_FUEL_SCALE,sp:126,cdmg:3.6,ccd:1.65,cspd:630,crng:630,vcd:.121,col:'#4e6350'},
+ {id:'m1',n:'M1 エイブラムス(米)',hp:15,armor:1.8,cmax:13,vmax:108,fmax:126*PLAYER_TANK_FUEL_SCALE,sp:113,cdmg:4.5,ccd:1.87,cspd:720,crng:738,vcd:.11,col:'#a78957'}];
 const TRUCK_TYPE={id:'truck',n:'トラック',hp:5,fmax:100,sp:217.5,cdmg:0,ccd:1,cspd:0,crng:0,vcd:1,col:'#65705a'};
 const FIGHTER_TYPE={id:'fighter',n:'戦闘機',hp:8,fmax:100,sp:260,cdmg:0,ccd:2.2,cspd:0,crng:0,vcd:1,col:'#64788f'};
 const ZONE_STYLE={
@@ -164,7 +166,8 @@ const TERRAIN_ASSET_SRC={
  "街":ASSET_DIR+'terrain/maze_base.webp',
  "敵迷路基地":ASSET_DIR+'terrain/maze_base.webp',
  "湿地":ASSET_DIR+'terrain/wetland.webp',
- "敵司令本部":ASSET_DIR+'terrain/hq.webp'
+ "敵司令本部":ASSET_DIR+'terrain/hq.webp',
+ "川":ASSET_DIR+'terrain/river_surface.webp'
 };
 const COVER_ASSET_SRC={
  "logs":ASSET_DIR+'cover/logs.webp',
@@ -183,6 +186,7 @@ const COVER_ASSET_SRC={
  "command_building_1":ASSET_DIR+'cover/command_building_1.webp'
 };
 const TERRAIN_IMG={},COVER_IMG={};
+const RIVER_CACHE_SCALE=.5,RIVER_BANK_PAD=36;let riverSurfaceVersion=1;
 let assetLoadTotal=0,assetLoadDone=0,assetLoadFailed=0,assetLoadStart=0,assetInitStarted=false;
 function makeAssetImage(src,onload){
  assetLoadTotal++;
@@ -195,11 +199,144 @@ function startAssetLoading(){
  if(assetInitStarted)return;
  assetInitStarted=true;assetLoadStart=performance.now();
  // 初回タイトルを先に1フレーム描画してから、画像の読み込みをバックグラウンドで開始する。
- for(const [k,v] of Object.entries(TERRAIN_ASSET_SRC))TERRAIN_IMG[k]=makeAssetImage(v,()=>{for(const z of ZONES||[])z.pat=null;});
+ for(const [k,v] of Object.entries(TERRAIN_ASSET_SRC))TERRAIN_IMG[k]=makeAssetImage(v,()=>{for(const z of ZONES||[])z.pat=null;if(k==='川'){riverSurfaceVersion++;invalidateRiverVisualCaches();}});
  for(const [k,v] of Object.entries(COVER_ASSET_SRC))COVER_IMG[k]=makeAssetImage(v);
 }
 function assetsLoading(){return assetInitStarted&&assetLoadTotal>0&&assetLoadDone<assetLoadTotal;}
 function assetOK(im){return !!(im&&im.complete&&im.naturalWidth>0);}
+function invalidateRiverVisualCaches(){
+ for(const w of (water||[])){delete w._riverCache;delete w._riverCacheVersion;}
+}
+function riverHash(w,salt=0){
+ const n=Math.sin((w.x||0)*.017+(w.y||0)*.031+(w.w||0)*.007+(w.h||0)*.013+salt*12.9898)*43758.5453;
+ return n-Math.floor(n);
+}
+// 橋で左右に分割された同じ川は、y/hだけで同じ流向を共有する。
+function riverFlowHash(w,salt=0){
+ const n=Math.sin((w.y||0)*.031+(w.h||0)*.013+salt*9.731)*43758.5453;
+ return n-Math.floor(n);
+}
+function riverFlowDir(w){return riverFlowHash(w,2718)>=.5?1:-1;}
+function makeRiverVisualCache(w){
+ const pad=RIVER_BANK_PAD,S=RIVER_CACHE_SCALE,c=document.createElement('canvas');
+ c.width=Math.max(1,Math.ceil((w.w+pad*2)*S));c.height=Math.max(1,Math.ceil((w.h+pad*2)*S));
+ const q=c.getContext('2d');q.setTransform(S,0,0,S,0,0);q.imageSmoothingEnabled=true;
+ const ox=pad,oy=pad,ww=w.w,hh=w.h,im=TERRAIN_IMG['川'];
+ // 1) 水面。川1区間を1枚として合成する。内部でタイル分割しないため継ぎ目が出ない。
+ // 川区間ごとに元画像の切り出し位置だけ少し変え、同じ見た目の連続も避ける。
+ if(assetOK(im)){
+  const iw=Math.max(8,im.naturalWidth||im.width||256),ih=Math.max(8,im.naturalHeight||im.height||256);
+  const h1=riverHash(w,611),h2=riverHash(w,977),h3=riverHash(w,1421);
+  // 縦長・横長の川区間へ画像を無理に引き伸ばさない。
+  // 描画先と同じアスペクト比になるよう元画像をクロップし、縦横同倍率で拡大する。
+  const dstAR=Math.max(.03,ww/Math.max(1,hh));
+  const srcAR=iw/ih;
+  let sw,sh;
+  if(dstAR>=srcAR){sw=iw;sh=Math.max(8,iw/dstAR);}else{sh=ih;sw=Math.max(8,ih*dstAR);}
+  // 端を少し内側へ寄せた範囲で川ごとの位相を変える。橋で隠れる継ぎ目は維持しつつ、圧縮はしない。
+  const marginX=Math.max(0,(iw-sw)*.08),marginY=Math.max(0,(ih-sh)*.08);
+  const sx=marginX+(iw-sw-marginX*2)*h2,sy=marginY+(ih-sh-marginY*2)*h3;
+  const flipX=riverHash(w,1889)>.5?-1:1;
+  q.save();
+  q.beginPath();q.rect(ox,oy,ww,hh);q.clip();
+  q.translate(ox+ww*.5,oy+hh*.5);q.scale(flipX,1);
+  q.globalAlpha=.96;
+  q.drawImage(im,sx,sy,sw,sh,-ww*.5,-hh*.5,ww,hh);
+  q.restore();
+  // 川全体へ非常に薄い流れ筋だけ焼き込み、引き伸ばし感を和らげる。
+  q.strokeStyle='rgba(192,226,222,.075)';q.lineWidth=1.6;
+  const flowGap=Math.max(24,Math.min(38,hh/8));
+  for(let yy=oy+flowGap*.65,i=0;yy<oy+hh-flowGap*.25;yy+=flowGap,i++){
+   const wob=(riverHash(w,2300+i)-.5)*5;
+   q.beginPath();q.moveTo(ox,yy+wob);
+   q.bezierCurveTo(ox+ww*.26,yy-2+wob,ox+ww*.62,yy+3+wob,ox+ww,yy+wob);
+   q.stroke();
+  }
+ }else{
+  const gr=q.createLinearGradient(0,oy,0,oy+hh);
+  gr.addColorStop(0,'#315f68');gr.addColorStop(.5,'#285764');gr.addColorStop(1,'#234d5a');
+  q.fillStyle=gr;q.fillRect(ox,oy,ww,hh);
+  q.strokeStyle='rgba(150,205,204,.16)';q.lineWidth=1.4;
+  for(let yy=oy+14;yy<oy+hh;yy+=28){q.beginPath();q.moveTo(ox,yy);q.bezierCurveTo(ox+ww*.28,yy-5,ox+ww*.62,yy+5,ox+ww,yy);q.stroke();}
+ }
+ // 深度差を固定で焼き込む。
+ q.fillStyle='rgba(8,31,39,.08)';q.fillRect(ox,oy+hh*.42,ww,hh*.18);
+ q.fillStyle='rgba(137,193,188,.045)';q.fillRect(ox,oy+hh*.12,ww,Math.max(5,hh*.08));
+ const step=Math.max(24,Math.min(42,ww/10)),topPts=[],botPts=[];
+ for(let x=0;x<=ww+1;x+=step){
+  const j=(riverHash(w,x*.19)-.5)*8;
+  topPts.push([ox+Math.min(ww,x),oy+4+j]);
+  const j2=(riverHash(w,90+x*.23)-.5)*8;
+  botPts.push([ox+Math.min(ww,x),oy+hh-4+j2]);
+ }
+ if(topPts[topPts.length-1][0]<ox+ww)topPts.push([ox+ww,oy+4+(riverHash(w,31)-.5)*8]);
+ if(botPts[botPts.length-1][0]<ox+ww)botPts.push([ox+ww,oy+hh-4+(riverHash(w,47)-.5)*8]);
+ // 2) 岸辺。1本の硬い境界線ではなく、地面→土→浅瀬→水面を半透明で重ねる。
+ // すべてキャッシュ生成時のみ描くため、プレイ中の負荷は増やさない。
+ const traceBank=(pts,dy=0)=>{q.beginPath();pts.forEach((v,i)=>i?q.lineTo(v[0],v[1]+dy):q.moveTo(v[0],v[1]+dy));q.stroke();};
+ // 外側の土・湿り気。幅広く薄くして背景を透かす。
+ q.lineCap='round';q.lineJoin='round';
+ q.strokeStyle='rgba(62,58,42,.16)';q.lineWidth=20;traceBank(topPts,-2);traceBank(botPts,2);
+ q.strokeStyle='rgba(116,105,70,.20)';q.lineWidth=13;traceBank(topPts,0);traceBank(botPts,0);
+ q.strokeStyle='rgba(175,158,105,.15)';q.lineWidth=7;traceBank(topPts,1);traceBank(botPts,-1);
+ // 水際は暗い浅瀬と淡い反射を重ねて、地面との切断感を弱める。
+ q.strokeStyle='rgba(18,55,59,.24)';q.lineWidth=9;traceBank(topPts,6);traceBank(botPts,-6);
+ q.strokeStyle='rgba(130,184,171,.13)';q.lineWidth=4;traceBank(topPts,8);traceBank(botPts,-8);
+ // 小石・湿った土の点を岸沿いに散らし、直線的な境界をさらに崩す。
+ const bankDecoN=Math.max(8,Math.min(42,Math.round(ww/24)));
+ for(let i=0;i<bankDecoN;i++){
+  const tx=ox+riverHash(w,5100+i)*ww,top=riverHash(w,5200+i)>.5;
+  const idx=Math.min(topPts.length-1,Math.max(0,Math.round((tx-ox)/Math.max(1,ww)*(topPts.length-1))));
+  const py=(top?topPts[idx][1]:botPts[idx][1])+(top?-1:1)*(1+riverHash(w,5300+i)*9);
+  const rr=1+riverHash(w,5400+i)*2.5;
+  q.fillStyle=i%3===0?'rgba(164,149,104,.20)':'rgba(67,66,49,.22)';
+  q.beginPath();q.ellipse(tx,py,rr*1.5,rr,riverHash(w,5500+i)*.7-.35,0,Math.PI*2);q.fill();
+ }
+ // 3) 小装飾。固定配置なのでアニメーション・乱数更新なし。
+ const decoN=Math.max(3,Math.min(22,Math.round(ww/52)));
+ for(let i=0;i<decoN;i++){
+  const rx=ox+10+riverHash(w,120+i)*Math.max(1,ww-20),top=riverHash(w,180+i)>.5;
+  const ey=top?oy+6+riverHash(w,210+i)*9:oy+hh-6-riverHash(w,240+i)*9;
+  const rr=1.7+riverHash(w,270+i)*3.2;
+  q.fillStyle='rgba(92,88,67,.58)';q.beginPath();q.ellipse(rx,ey,rr*1.45,rr,riverHash(w,300+i)*.8-.4,0,Math.PI*2);q.fill();
+  if(i%3===0){
+   q.strokeStyle='rgba(74,104,58,.52)';q.lineWidth=1.2;
+   const dir=top?-1:1;
+   for(let k=-1;k<=1;k++){q.beginPath();q.moveTo(rx+k*2,ey);q.lineTo(rx+k*3,ey+dir*(5+riverHash(w,330+i+k)*7));q.stroke();}
+  }
+ }
+ const foamN=Math.max(2,Math.min(16,Math.round(ww/75)));
+ q.strokeStyle='rgba(205,226,217,.25)';q.lineWidth=1.3;
+ for(let i=0;i<foamN;i++){
+  const fx=ox+riverHash(w,400+i)*ww,fy=oy+10+riverHash(w,440+i)*Math.max(1,hh-20),len=8+riverHash(w,470+i)*20;
+  q.beginPath();q.moveTo(fx,fy);q.quadraticCurveTo(fx+len*.5,fy+(riverHash(w,500+i)-.5)*4,fx+len,fy);q.stroke();
+ }
+ // 流れのアニメーション用オーバーレイ。生成は一度だけ、実行中は横にずらすだけ。
+ // 0.5倍キャッシュでも見えるよう、淡い太線＋細いハイライトの2層にする。
+ const fc=document.createElement('canvas');
+ fc.width=Math.max(1,Math.ceil(ww*S));fc.height=Math.max(1,Math.ceil(hh*S));
+ const fq=fc.getContext('2d');fq.setTransform(S,0,0,S,0,0);fq.imageSmoothingEnabled=true;fq.lineCap='round';
+ const flowN=ww<120?Math.max(2,Math.min(5,Math.round(hh/125))):Math.max(5,Math.min(14,Math.round(hh/42)+3));
+ for(let i=0;i<flowN;i++){
+  const fy=8+riverHash(w,3100+i)*Math.max(1,hh-16),start=riverHash(w,3200+i)*Math.max(1,ww*.62),len=34+riverHash(w,3300+i)*Math.min(145,Math.max(42,ww*.32));
+  const bend=(riverHash(w,3400+i)-.5)*7;
+  fq.strokeStyle='rgba(160,211,207,.18)';fq.lineWidth=3.2;
+  fq.beginPath();fq.moveTo(start,fy);fq.bezierCurveTo(start+len*.28,fy+bend,start+len*.66,fy-bend*.6,start+len,fy);fq.stroke();
+  fq.strokeStyle='rgba(226,244,239,.25)';fq.lineWidth=1.15;
+  fq.beginPath();fq.moveTo(start+3,fy);fq.bezierCurveTo(start+len*.30,fy+bend*.85,start+len*.64,fy-bend*.5,start+len-3,fy);fq.stroke();
+  if(i%3===0){
+   const s2=start+len*.18,l2=len*.38;
+   fq.strokeStyle='rgba(215,239,232,.14)';fq.lineWidth=1.3;fq.beginPath();fq.moveTo(s2,fy+5);fq.quadraticCurveTo(s2+l2*.5,fy+5-bend*.25,s2+l2,fy+5);fq.stroke();
+  }
+ }
+ return{c,flow:fc,pad,version:riverSurfaceVersion};
+}
+function riverVisualCache(w){
+ if(!w._riverCache||w._riverCacheVersion!==riverSurfaceVersion){
+  w._riverCache=makeRiverVisualCache(w);w._riverCacheVersion=riverSurfaceVersion;
+ }
+ return w._riverCache;
+}
 function drawLoadingOverlay(){
  if(state==='title'||state==='help'||state==='skill')return;
  if(!assetsLoading()||performance.now()-assetLoadStart<120)return;
@@ -542,6 +679,41 @@ function drawCoverAsset(c){
 }
 
 
+// 建物の足元に残す「焼け跡／影」は、種類ごとに小さなCanvasを一度だけ生成して再利用する。
+// 毎フレームのblur/filterは使わず、画面内の建物跡ごとにdrawImage 1回だけ。
+const BUILDING_SHADOW_KDS=new Set([3,4,9,10]),buildingShadowCache={};
+function buildingShadowKind(kd){return (kd===4||kd===10)?'wood':'concrete';}
+function buildingShadowSprite(kind){
+ if(buildingShadowCache[kind])return buildingShadowCache[kind];
+ const c=document.createElement('canvas');c.width=96;c.height=72;const q=c.getContext('2d');
+ const col=kind==='wood'?'58,38,24':kind==='hq'?'28,29,31':'43,43,41';
+ q.fillStyle='rgba('+col+',.16)';
+ q.beginPath();q.moveTo(8,14);q.lineTo(88,10);q.lineTo(93,56);q.lineTo(81,65);q.lineTo(13,63);q.lineTo(4,51);q.closePath();q.fill();
+ q.fillStyle='rgba('+col+',.09)';
+ const blobs=[[18,19,16,9],[43,24,20,11],[72,18,17,10],[25,48,21,12],[58,51,25,12],[83,43,12,9]];
+ for(const [x,y,rx,ry] of blobs){q.beginPath();q.ellipse(x,y,rx,ry,0,0,Math.PI*2);q.fill();}
+ q.fillStyle='rgba(12,12,11,.055)';
+ for(const [x,y,w,h] of [[13,12,21,4],[39,16,28,3],[20,38,17,4],[50,42,28,4],[68,29,15,3]])q.fillRect(x,y,w,h);
+ buildingShadowCache[kind]=c;return c;
+}
+function captureBuildingGroundMarks(){
+ buildingGroundMarks=[];
+ for(const c of (covers||[])){
+  if(c.fr||c.playerBuilt||!BUILDING_SHADOW_KDS.has(c.kd))continue;
+  buildingGroundMarks.push({x:c.x+c.w*.01,y:c.y+c.h*.01,w:c.w*.98,h:c.h*.98,kind:buildingShadowKind(c.kd)});
+ }
+ if(base)buildingGroundMarks.push({x:base.x,y:base.y,w:base.w,h:base.h,kind:'hq',hq:true});
+}
+function drawBuildingGroundMarks(cx,cy){
+ if(!buildingGroundMarks||!buildingGroundMarks.length)return;
+ for(const m of buildingGroundMarks){
+  if(m.x+m.w<cx-30||m.x>cx+W+30||m.y+m.h<cy-30||m.y>cy+H+30)continue;
+  const im=buildingShadowSprite(m.kind),pad=m.hq?7:4;
+  g.drawImage(im,m.x-pad,m.y-pad*.45,m.w+pad*2,m.h+pad*1.15);
+ }
+}
+
+
 
 function drawCoverFragment(c){
  const src={kd:c.kd,x:c.ox0??c.x,y:c.oy0??c.y,w:c.ow0??c.ow??c.w,h:c.oh0??c.oh??c.h,playerBuilt:!!c.pb};
@@ -763,7 +935,7 @@ const CCol=['#8a7a55','#8c8c86','#7a5f3a','#55504a','#b9ab8a','#7a5f3a','#2f6b34
 const FRAG_COLORS={0:['#8a7a55','#6a5d40'],1:['#8c8c86','#6a6a66'],2:['#7a5f3a','#4e3c24'],3:['#55504a','#35322e'],4:['#b9ab8a','#8a4a3a','#5a2e24'],5:['#7a5f3a','#4e3c24'],6:['#2f6b34','#3d8a42','#4a3622'],7:['#4a5a4a','#33403a','#8fb0c4'],8:['#7a7468','#9a9484','#57534a'],9:['#666865','#8c8f8a','#4e514e'],10:['#b9ab8a','#8a4a3a','#5a2e24']};
 const labels=[];function lab(t,x,y,f,c,ns){labels.push({t,x,y,f,c,ns});}
 function drawLabels(cx,cy){gm.textAlign='center';for(const l of labels){gm.font=l.f;if(!l.ns){gm.lineWidth=3;gm.strokeStyle='rgba(0,0,0,.8)';gm.strokeText(l.t,l.x-cx,l.y-cy);}gm.fillStyle=l.c;gm.fillText(l.t,l.x-cx,l.y-cy);}}
-let state,p,cars,etanks,humans,covers,objects,bullets,parts,base,shake,flash,msg,msgT,bombs,items,waves,water,bridges,mud,fx,bushes,decoy,allies,hound=null,houndTrail=[],radio,airstrike,airbombs,weather,weatherT,weatherNext,baseSpawnT,deathT=0,cam=0,camX=0,blastT,bq,skillReq,lastMouse=0,allySeq=0,builtWalls=[],scoreStats=null,highScoreData=null,resultAnimT=0,vehicleNameT=0,debugMode=0,debugInvincible=false,touchTurretAngle=null;
+let state,p,cars,etanks,humans,covers,objects,bullets,parts,base,shake,flash,msg,msgT,bombs,items,waves,water,bridges,mud,fx,bushes,decoy,allies,hound=null,houndTrail=[],radio,airstrike,airbombs,weather,weatherT,weatherNext,baseSpawnT,deathT=0,cam=0,camX=0,blastT,bq,skillReq,lastMouse=0,allySeq=0,builtWalls=[],buildingGroundMarks=[],scoreStats=null,highScoreData=null,resultAnimT=0,vehicleNameT=0,debugMode=0,debugInvincible=false,touchTurretAngle=null;
 const DETECT_RANGE_BASE=315,DETECT_CENTER_HALF=7.5*Math.PI/180,DETECT_OUTER_HALF=52.5*Math.PI/180,DETECT_OUTER_SCALE=.7,DETECT_MEMORY=3,TANK_DRAW=30,TANK_HIT=28,LOG_LONG=126,LOG_SHORT=39,CRATE_W=74.8,CRATE_H=74.8,BARREL_SIZE=39.1,CONCRETE_W=264,CONCRETE_H=183.7,WOOD_W=278.3,WOOD_H=223.85,MINI_CONCRETE_W=151.3,MINI_CONCRETE_H=151.3,MINI_WOOD_W=213.6,MINI_WOOD_H=213.6,CONCRETE_MINI_W=151.3,CONCRETE_MINI_H=151.3,WOOD_MINI_W=213.6,WOOD_MINI_H=213.6,TREE_BOX=83,TREE_BOX_MAX=124.5,ROCK_W=58,ROCK_H=40,BARRIER_LONG=208,BARRIER_SHORT=52,FENCE_LONG=188,FENCE_SHORT=81,COMMAND_BASE_W=390,COMMAND_BASE_H=336.7;
 const playerMoving=()=>!!(p&&(keys.ArrowUp||keys.ArrowDown||keys.ArrowLeft||keys.ArrowRight)&&(!p.tank||p.tank.f>0));
 const detectRange=(key='p')=>DETECT_RANGE_BASE*((key==='p'&&p&&p.tank)?2:1)*((key==='p'&&!playerMoving())?.8:1)*(weather==='rain'?.75:1),detectOuterRange=(key='p')=>detectRange(key)*DETECT_OUTER_SCALE,detectDropRange=(key='p')=>detectRange(key)*1.5;
@@ -1034,8 +1206,8 @@ function setupAreaDebugStage(){
  cam=Math.max(0,p.y-H*.6);camX=Math.max(0,Math.min(WW-W,p.x-W/2));say('エリアデバッグ：全エリアと遮蔽物を確認できます');
 }
 function spawnAreaDebugTankAhead(){
- if(!areaDebugEnabled||state!=='play'||!p||!cars)return false;
- const t=TYPES[0],r=40,face=(p.tank&&p.tank.kind==='tank')?p.ang:(p.body??-Math.PI/2),ux=Math.cos(face),uy=Math.sin(face),px=-uy,py=ux;
+ if(state!=='play'||!p||!cars)return false;
+ const t=TYPES[R()*TYPES.length|0],r=40,face=(p.tank&&p.tank.kind==='tank')?p.ang:(p.body??-Math.PI/2),ux=Math.cos(face),uy=Math.sin(face),px=-uy,py=ux;
  const dists=[110,145,180,220],sides=[0,42,-42,78,-78,118,-118];
  const blocked=(x,y)=>{
   if(x<r+10||x>WW-r-10||y<r+10||y>WH-r-10||hitsM(x,y,r))return true;
@@ -1047,10 +1219,10 @@ function spawnAreaDebugTankAhead(){
  };
  for(const dist of dists)for(const side of sides){
   const x=p.x+ux*dist+px*side,y=p.y+uy*dist+py*side;if(blocked(x,y))continue;
-  cars.push({x,y,t,kind:'tank',hp:t.hp,c:t.cmax,v:t.vmax,f:t.fmax,ch:0,mgHits:0,body:face,areaDebug:1,debugSpawned:1});
-  sfx('enter');say('AREA DEBUG：戦車をスポーン');return true;
+  cars.push({x,y,t,kind:'tank',hp:t.hp,c:t.cmax,v:t.vmax,f:t.fmax,ch:0,mgHits:0,body:face,areaDebug:areaDebugEnabled?1:0,debugSpawned:1,debugInfinite:1});
+  sfx('enter');say('デバッグ：'+t.n+' を出現（燃料・弾数∞）');return true;
  }
- say('AREA DEBUG：前方に戦車を配置できません');return false;
+ say('デバッグ：前方に戦車を配置できません');return false;
 }
 function freeSpot(x,y,r,n){
  const scaledWorld=(covers||[]).some(c=>c.y>WH/MAP_SCALE+180)||(objects||[]).some(o=>o.y>WH/MAP_SCALE+180),maxY=(scaledWorld?WH:WH/MAP_SCALE)-r;
@@ -1220,6 +1392,8 @@ function reset(rerollSkills=true){
  // マップ生成は旧座標系(高さ3200)で行い、配置だけ縦4倍に拡張する。
  const sy=o=>{if(o&&Number.isFinite(o.y))o.y*=MAP_SCALE;};
  sy(p);sy(base);sy(radio);water.forEach(sy);bridges.forEach(sy);mud.forEach(sy);bushes.forEach(sy);covers.forEach(sy);objects.forEach(sy);cars.forEach(sy);items.forEach(sy);
+ // 建物の足元跡は拡大後の最終座標で固定し、建物本体が破片化・消滅しても残す。
+ captureBuildingGroundMarks();
  // 縦4倍化は配列要素をin-placeで動かすため、旧座標で作られた空間グリッドをここで必ず再構築する。
  // これを行わないと、迷路基地など拡大後に行うスポーン判定が古い壁位置を参照してしまう。
  rebuildSpatialGrid();ensurePlayerVehicleSpawns();
@@ -1295,7 +1469,31 @@ function baseHitRect(){
 }
 const inBase=(x,y)=>{const b=baseHitRect();return x>b.x&&x<b.x+b.w&&y>b.y&&y<b.y+b.h;};
 const hitsC=(x,y,r)=>{const b=baseHitRect();return nearbyCovers(x,y,r+6).some(c=>circleHitsCover(x,y,r,c))||nearbyObjects(x,y,r+6).some(o=>circleHitsObject(x,y,r,o))||(x+r>b.x&&x-r<b.x+b.w&&y+r>b.y&&y-r<b.y+b.h);};
-const inWaterAt=(x,y,r=0)=>water.some(c=>x+r>c.x&&x-r<c.x+c.w&&y+r>c.y&&y-r<c.y+c.h);
+const waterAt=(x,y,r=0)=>water.find(c=>x+r>c.x&&x-r<c.x+c.w&&y+r>c.y&&y-r<c.y+c.h)||null;
+const inWaterAt=(x,y,r=0)=>!!waterAt(x,y,r);
+const RIVER_CURRENT_SPEED=12;
+function pushByRiverCurrent(o,dt,r=8,weight=1){
+ if(!o||!(dt>0))return false;
+ const w=waterAt(o.x,o.y,Math.min(r,4));if(!w)return false;
+ const dx=riverFlowDir(w)*RIVER_CURRENT_SPEED*weight*dt,nx=o.x+dx;
+ if(nx<=r||nx>=WW-r)return false;
+ if(hitsC(nx,o.y,r)||enemyTankObjectBlocked(o,nx,o.y)||tankBlocked(o,nx,o.y,r)||enemyUnitBlocked(o,nx,o.y,r))return false;
+ o.x=nx;return true;
+}
+function applyRiverCurrents(dt){
+ if(!water||!water.length)return;
+ // プレイヤー：歩兵は流されやすく、戦車・トラックは重量分だけ弱くする。戦闘機は対象外。
+ if(p&&state==='play'&&!(p.tank&&p.tank.kind==='fighter')){
+  const pr=p.tank?(p.tank.kind==='truck'?20:15):8,wt=p.tank?(p.tank.kind==='truck'?.55:.35):1;
+  pushByRiverCurrent(p,dt,pr,wt);
+ }
+ for(const h of humans||[])if(h.alive&&!h.areaDebugStatic)pushByRiverCurrent(h,dt,8,1);
+ for(const e of etanks||[])if(e.alive&&!e.areaDebugStatic)pushByRiverCurrent(e,dt,TANK_HIT,.35);
+ for(const a of allies||[])if(a.alive)pushByRiverCurrent(a,dt,8,1);
+ if(hound&&skill==='hound')pushByRiverCurrent(hound,dt,7,1);
+ // 未搭乗の地上車両も水中にあれば少し流される。戦闘機は除外。
+ for(const c of cars||[])if(c&&c.kind!=='fighter')pushByRiverCurrent(c,dt,c.kind==='truck'?20:15,c.kind==='truck'?.55:.35);
+}
 const inMudAt=(x,y,r=0)=>(mud||[]).some(m=>{const rx=m.w/2+r,ry=m.h/2+r;if(rx<=0||ry<=0)return false;const dx=(x-(m.x+m.w/2))/rx,dy=(y-(m.y+m.h/2))/ry;return dx*dx+dy*dy<=1;});
 const inSlowTerrainAt=(x,y,r=0)=>inWaterAt(x,y,r)||inMudAt(x,y,r);
 const hitsM=(x,y,r)=>hitsC(x,y,r)||inWaterAt(x,y,r);
@@ -2234,8 +2432,8 @@ function update(dt){
  const cy=Math.max(0,Math.min(WH-H,p.y-H*.6)),cx=Math.max(0,Math.min(WW-W,p.x-W/2)),wx=mx+cx,wy=my+cy;
  const ix=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0),iy=(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0),il=Math.hypot(ix,iy)||1,V=p.tank,T=V&&V.t,isTruck=!!(V&&V.kind==='truck'),isFighter=!!(V&&V.kind==='fighter');
  const prepDig=p.digPrep>0,sp=T?(debugMode===3&&isFighter?T.sp*2:T.sp):150,r=T?(isFighter?24:isTruck?20:15):8;let frameMove=0;
- const areaDebugInfiniteFuel=!!(areaDebugEnabled&&p.tank&&(p.tank.kind==='tank'||p.tank.kind==='truck'));
- const areaDebugInfiniteAmmo=!!(areaDebugEnabled&&p.tank&&p.tank.kind==='tank');
+ const areaDebugInfiniteFuel=!!(p.tank&&(p.tank.kind==='tank'||p.tank.kind==='truck')&&(areaDebugEnabled||p.tank.debugInfinite));
+ const areaDebugInfiniteAmmo=!!(p.tank&&p.tank.kind==='tank'&&(areaDebugEnabled||p.tank.debugInfinite));
  cleanBuiltWalls(cy,cx);updateFlame(dt);if(debugMode>=2)clearPlayerDetection();if(areaDebugInfiniteFuel)p.tank.f=p.tank.t.fmax||100;if(areaDebugInfiniteAmmo){p.tank.c=p.tank.t.cmax;p.tank.v=p.tank.t.vmax;}if(debugMode===3&&p.tank&&p.tank.kind==='fighter'){p.tank.f=FIGHTER_TYPE.fmax;p.tank.hp=FIGHTER_TYPE.hp;}
  if((ix||iy)&&!(p.grappleT>0)&&!prepDig&&!playerAir){if(!p.tank||p.tank.f>0){frameMove=playerMove(ix/il*sp*dt,iy/il*sp*dt,r,dt);if(p.tank){if(areaDebugInfiniteFuel)p.tank.f=p.tank.t.fmax||100;else if(!(debugMode===3&&isFighter))p.tank.f=Math.max(0,p.tank.f-frameMove*.04);else p.tank.f=FIGHTER_TYPE.fmax;if(isTruck&&frameMove>0){p.tank.lastDriveSpeed=frameMove/Math.max(.001,dt);p.tank.lastDriveAt=performance.now();}}if(!p.flameActive)p.body=Math.atan2(iy,ix);else if(Number.isFinite(p.flameLockA))p.body=p.flameLockA;if(isTruck||isFighter)p.ang=p.body;if(isTruck&&frameMove>0)checkDrivenTruckCrash();}else if(msgT<=0)say('ガソリン切れ!Eで降車');}
  if(p.digPrep>0){p.digPrep=Math.max(0,p.digPrep-dt);if(R()<.9){trimParts(1);parts.push({x:p.x+(R()-.5)*20,y:p.y+7+(R()-.5)*7,vx:(R()-.5)*42,vy:-16-R()*24,life:.34,col:R()<.5?'#7a5a38':'#9a744b',sz:5+R()*4});}if(p.digPrep<=0){p.dig=5;p.digElapsed=0;sfx('skill');say('潜伏! 地中に潜行');digSoilBurst(p.x,p.y,1.08);}}
@@ -2262,7 +2460,7 @@ function update(dt){
  else if(p.tank&&p.tank.kind==='tank'){const t=p.tank.t;
   if(dAttack&&p.cc<=0&&p.tank.c>0){p.cc=t.ccd;if(!areaDebugInfiniteAmmo)p.tank.c--;fire(p.x+Math.cos(p.ang)*44,p.y+Math.sin(p.ang)*44,p.ang,'p','c',t.cspd,t.crng,t.cdmg);shake=6;burst(p.x+Math.cos(p.ang)*47,p.y+Math.sin(p.ang)*47,8,'#ffd27a',140);}
   if(keys.KeyS&&p.vc<=0&&p.tank.v>0){p.vc=t.vcd;if(!areaDebugInfiniteAmmo)p.tank.v--;fire(p.x+Math.cos(p.ang)*36,p.y+Math.sin(p.ang)*36,p.ang+(R()-.5)*.1,'p','v',468,306);}}
- for(const it of items)if(p.tank&&!it.got&&D(it,p)<38){it.got=true;const fm=p.tank.t.fmax||100;p.tank.f=Math.min(fm,p.tank.f+45);sfx('pickup');say('ガソリン補給!');}
+ for(const it of items)if(p.tank&&!it.got&&D(it,p)<38){it.got=true;const fm=p.tank.t.fmax||100;p.tank.f=fm;sfx('pickup');say('ガソリン満タン!');}
  if(radio&&!radio.got&&D(radio,p)<30){radio.got=true;startAirstrike();}
  updateHound(dt);
  const stealthCover=(!p.tank&&inBush(p))||(weather==='rain'&&inWaterAt(p.x,p.y,0))||(p.dig>0);
@@ -2384,6 +2582,8 @@ function update(dt){
  for(const w of waves){w.r+=260*dt;if(!w.houndHit&&hound&&D(w,hound)<w.r){w.houndHit=true;stunHound(5);}if(!w.bh){const br=baseHitRect(),nx=Math.max(br.x,Math.min(br.x+br.w,w.x)),ny=Math.max(br.y,Math.min(br.y+br.h,w.y));if(Math.hypot(nx-w.x,ny-w.y)<w.r){w.bh=true;base.hp-=8;fb(nx,ny,34);burst(nx,ny,30,'#ffb347',300);shake=Math.max(shake,10);if(base.hp<=0&&state==='play')winSeq();}}for(const h of humans)if(h.alive&&Math.hypot(h.x-w.x,h.y-w.y)<w.r){h.alive=false;recordPlayerKill(w.actionId||0);burst(h.x,h.y,12,'#c05a3a',180);}
   if(!w.hit&&!p.tank&&!(p.dig>0)&&D(w,p)<w.r){w.hit=true;triggerPlayerDeath();}}waves=waves.filter(w=>w.r<w.max);
  updateAlly(dt);updateAirstrike(dt);
+ // 水面アニメーションと同じ向きの流れを地上ユニットへ反映する。
+ applyRiverCurrents(dt);
  for(const f of fx)f.l-=dt;fx=fx.filter(f=>f.l>0);
  updateParts(dt);
  shake=Math.max(0,shake-35*dt);flash=Math.max(0,flash-dt*2.5);msgT-=dt;vehicleNameT=Math.max(0,vehicleNameT-dt);updateScoreTracking(dt,frameMove);return near;
@@ -2956,16 +3156,13 @@ function drawBase(){
  const im=COVER_IMG.command_building_1;
  g.save();
  // 素材の比率(256x221)を維持した司令本部グラフィック。
- if(assetOK(im)){
-  g.save();
-  if(dead){g.globalAlpha=.72;g.filter='grayscale(85%) brightness(55%)';}
+ if(!dead&&assetOK(im)){
   g.drawImage(im,b.x,b.y,b.w,b.h);
-  g.restore();
- }else{
+ }else if(!dead){
   // 画像未読込時のフォールバック。
   g.fillStyle='#0c0c0c';g.fillRect(b.x-3,b.y-3,b.w+6,b.h+6);
-  g.fillStyle=dead?'#3a3836':'#6b6d78';g.fillRect(b.x,b.y,b.w,b.h);
-  g.fillStyle=dead?'#2a2826':'#4a4c56';for(let y=b.y+10;y<=b.y+b.h;y+=10){g.fillRect(b.x,y,b.w,1);for(let x=b.x+((((y-b.y)/10)|0)%2?0:10);x<b.x+b.w;x+=20)g.fillRect(x,y-10,1,10);}
+  g.fillStyle='#6b6d78';g.fillRect(b.x,b.y,b.w,b.h);
+  g.fillStyle='#4a4c56';for(let y=b.y+10;y<=b.y+b.h;y+=10){g.fillRect(b.x,y,b.w,1);for(let x=b.x+((((y-b.y)/10)|0)%2?0:10);x<b.x+b.w;x+=20)g.fillRect(x,y-10,1,10);}
  }
  if(!dead){
   // HPバーは建物上部に表示。
@@ -3182,15 +3379,15 @@ function drawVehicleBottomHud(){
   if(v.kind==='fighter'){
    const h=58,fmax=v.t.fmax||100,fr=Math.max(0,v.f)/fmax;g.fillStyle='rgba(8,10,7,.80)';g.fillRect(x,y,w,h);g.strokeStyle='rgba(230,233,216,.28)';g.strokeRect(x+.5,y+.5,w-1,h-1);
    g.fillStyle='#d9efff';g.font='bold 10px system-ui';g.fillText('戦闘機  機体 '+Math.max(0,Math.ceil(v.hp))+'/'+FIGHTER_TYPE.hp,x+8,y+14);g.fillStyle=p.cc<=0?'#ffd27a':'#9aa7b2';g.fillText('D '+(p.cc<=0?'爆撃 READY':'爆撃 CHARGE'),x+8,y+29);
-   g.fillStyle='#34392d';g.fillRect(x+8,y+36,w-16,7);g.fillStyle=fr>.25?'#dce7b8':v.f>0?'#ffd27a':'#ff7666';g.fillRect(x+8,y+36,(w-16)*fr,7);g.fillStyle='#e6e9d8';g.font='9px system-ui';g.fillText(debugMode===3?'燃料 ∞':'燃料 '+Math.ceil(v.f)+' / '+fmax,x+8,y+54);
+   g.fillStyle='#34392d';g.fillRect(x+8,y+36,w-16,7);g.fillStyle=fr>.25?'#dce7b8':v.f>0?'#ffd27a':'#ff7666';g.fillRect(x+8,y+36,(w-16)*fr,7);g.fillStyle='#e6e9d8';g.font='9px system-ui';g.fillText(debugMode===3?'燃料 ∞':'燃料 '+Math.ceil(v.f)+' / '+Math.ceil(fmax),x+8,y+54);
   }else if(v.kind==='truck'){
    const h=48,fmax=v.t.fmax||100,fr=Math.max(0,v.f)/fmax;g.fillStyle='rgba(8,10,7,.80)';g.fillRect(x,y,w,h);g.strokeStyle='rgba(230,233,216,.28)';g.strokeRect(x+.5,y+.5,w-1,h-1);
-   g.fillStyle='#e6e9d8';g.font='bold 10px system-ui';g.fillText('トラック  耐久 '+Math.max(0,5-(v.mgHits||0))+'/5',x+8,y+14);g.fillStyle='#34392d';g.fillRect(x+8,y+22,w-16,7);g.fillStyle=fr>.25?'#dce7b8':v.f>0?'#ffd27a':'#ff7666';g.fillRect(x+8,y+22,(w-16)*fr,7);g.fillStyle='#e6e9d8';g.font='9px system-ui';g.fillText(areaDebugEnabled?'燃料 ∞':'燃料 '+Math.ceil(v.f)+' / '+fmax,x+8,y+43);
+   g.fillStyle='#e6e9d8';g.font='bold 10px system-ui';g.fillText('トラック  耐久 '+Math.max(0,5-(v.mgHits||0))+'/5',x+8,y+14);g.fillStyle='#34392d';g.fillRect(x+8,y+22,w-16,7);g.fillStyle=fr>.25?'#dce7b8':v.f>0?'#ffd27a':'#ff7666';g.fillRect(x+8,y+22,(w-16)*fr,7);g.fillStyle='#e6e9d8';g.font='9px system-ui';g.fillText((areaDebugEnabled||v.debugInfinite)?'燃料 ∞':'燃料 '+Math.ceil(v.f)+' / '+Math.ceil(fmax),x+8,y+43);
   }else{
    const h=64,armorMax=v.t.armor||3,fmax=v.t.fmax||100,cmax=v.t.cmax||10,vmax=v.t.vmax||60,fr=Math.max(0,v.f)/fmax;g.fillStyle='rgba(8,10,7,.80)';g.fillRect(x,y,w,h);g.strokeStyle='rgba(230,233,216,.28)';g.strokeRect(x+.5,y+.5,w-1,h-1);
    g.fillStyle='#e6e9d8';g.font='bold 10px system-ui';g.fillText(v.t.n+'  耐久 '+Math.max(0,Math.ceil(armorMax-(v.ch||0)))+'/'+armorMax,x+8,y+14);
-   g.fillStyle='#ffd27a';g.fillText(areaDebugEnabled?'D 砲弾 ∞':'D '+String(v.c).padStart(2,'0')+'/'+cmax,x+8,y+29);g.fillStyle='#d8e7ff';g.fillText(areaDebugEnabled?'S MG ∞':'S '+String(v.v).padStart(3,'0')+'/'+vmax,x+108,y+29);
-   g.fillStyle='#34392d';g.fillRect(x+8,y+36,w-16,7);g.fillStyle=fr>.25?'#dce7b8':v.f>0?'#ffd27a':'#ff7666';g.fillRect(x+8,y+36,(w-16)*fr,7);g.fillStyle='#e6e9d8';g.font='9px system-ui';g.fillText(areaDebugEnabled?'燃料 ∞':'燃料 '+Math.ceil(v.f)+' / '+fmax,x+8,y+58);g.fillStyle='#34392d';g.fillRect(x+124,y+52,84,4);g.fillStyle=p.cc<=0?'#ffd27a':'#8f8159';g.fillRect(x+124,y+52,84*(1-Math.max(0,p.cc)/v.t.ccd),4);
+   g.fillStyle='#ffd27a';g.fillText((areaDebugEnabled||v.debugInfinite)?'D 砲弾 ∞':'D '+String(v.c).padStart(2,'0')+'/'+cmax,x+8,y+29);g.fillStyle='#d8e7ff';g.fillText((areaDebugEnabled||v.debugInfinite)?'S MG ∞':'S '+String(v.v).padStart(3,'0')+'/'+vmax,x+108,y+29);
+   g.fillStyle='#34392d';g.fillRect(x+8,y+36,w-16,7);g.fillStyle=fr>.25?'#dce7b8':v.f>0?'#ffd27a':'#ff7666';g.fillRect(x+8,y+36,(w-16)*fr,7);g.fillStyle='#e6e9d8';g.font='9px system-ui';g.fillText((areaDebugEnabled||v.debugInfinite)?'燃料 ∞':'燃料 '+Math.ceil(v.f)+' / '+Math.ceil(fmax),x+8,y+58);g.fillStyle='#34392d';g.fillRect(x+124,y+52,84,4);g.fillStyle=p.cc<=0?'#ffd27a':'#8f8159';g.fillRect(x+124,y+52,84*(1-Math.max(0,p.cc)/v.t.ccd),4);
   }
   g.restore();return;
  }
@@ -3200,17 +3397,17 @@ function drawVehicleBottomHud(){
   g.fillStyle='#d9efff';g.font='bold 12px system-ui';g.fillText('戦闘機  機体 '+Math.max(0,Math.ceil(v.hp))+'/'+FIGHTER_TYPE.hp,16,y+16);
   g.fillStyle=p.cc<=0?'#ffd27a':'#9aa7b2';g.font='bold 12px system-ui';g.fillText('D  '+(p.cc<=0?'爆撃 READY':'爆撃 CHARGE'),16,y+34);
   g.fillStyle='#34392d';g.fillRect(126,y+25,102,7);g.fillStyle=p.cc<=0?'#ffd27a':'#718093';g.fillRect(126,y+25,102*(1-Math.max(0,p.cc)/v.t.ccd),7);
-  const fmax=v.t.fmax||100,fr=Math.max(0,v.f)/fmax;g.fillStyle='#34392d';g.fillRect(16,y+45,212,9);g.fillStyle=fr>.25?'#dce7b8':v.f>0?'#ffd27a':'#ff7666';g.fillRect(16,y+45,212*fr,9);g.fillStyle='#e6e9d8';g.font='bold 10px system-ui';g.fillText(debugMode===3?'燃料 ∞':'燃料 '+Math.ceil(v.f)+' / '+fmax,16,y+66);
+  const fmax=v.t.fmax||100,fr=Math.max(0,v.f)/fmax;g.fillStyle='#34392d';g.fillRect(16,y+45,212,9);g.fillStyle=fr>.25?'#dce7b8':v.f>0?'#ffd27a':'#ff7666';g.fillRect(16,y+45,212*fr,9);g.fillStyle='#e6e9d8';g.font='bold 10px system-ui';g.fillText(debugMode===3?'燃料 ∞':'燃料 '+Math.ceil(v.f)+' / '+Math.ceil(fmax),16,y+66);
  }else if(v.kind==='truck'){
   const h=54,y=baseBottom-h,fmax=v.t.fmax||100,fr=Math.max(0,v.f)/fmax;g.fillStyle='rgba(8,10,7,.78)';g.fillRect(8,y,w,h);g.strokeStyle='rgba(230,233,216,.28)';g.strokeRect(8.5,y+.5,w-1,h-1);
-  g.fillStyle='#e6e9d8';g.font='bold 12px system-ui';g.fillText('トラック  耐久 '+Math.max(0,5-(v.mgHits||0))+'/5',16,y+16);g.fillStyle='#34392d';g.fillRect(16,y+25,212,9);g.fillStyle=fr>.25?'#dce7b8':v.f>0?'#ffd27a':'#ff7666';g.fillRect(16,y+25,212*fr,9);g.fillStyle='#e6e9d8';g.font='bold 10px system-ui';g.fillText(areaDebugEnabled?'燃料 ∞':'燃料 '+Math.ceil(v.f)+' / '+fmax,16,y+49);
+  g.fillStyle='#e6e9d8';g.font='bold 12px system-ui';g.fillText('トラック  耐久 '+Math.max(0,5-(v.mgHits||0))+'/5',16,y+16);g.fillStyle='#34392d';g.fillRect(16,y+25,212,9);g.fillStyle=fr>.25?'#dce7b8':v.f>0?'#ffd27a':'#ff7666';g.fillRect(16,y+25,212*fr,9);g.fillStyle='#e6e9d8';g.font='bold 10px system-ui';g.fillText((areaDebugEnabled||v.debugInfinite)?'燃料 ∞':'燃料 '+Math.ceil(v.f)+' / '+Math.ceil(fmax),16,y+49);
  }else{
   const h=78,y=baseBottom-h,armorMax=v.t.armor||3,fmax=v.t.fmax||100,cmax=v.t.cmax||10,vmax=v.t.vmax||60,fr=Math.max(0,v.f)/fmax;
   g.fillStyle='rgba(8,10,7,.78)';g.fillRect(8,y,w,h);g.strokeStyle='rgba(230,233,216,.28)';g.strokeRect(8.5,y+.5,w-1,h-1);
   g.fillStyle='#e6e9d8';g.font='bold 11px system-ui';g.fillText(v.t.n+'  耐久 '+Math.max(0,Math.ceil(armorMax-(v.ch||0)))+'/'+armorMax,16,y+15);
-  g.font='bold 12px system-ui';g.fillStyle='#ffd27a';g.fillText(areaDebugEnabled?'D 砲弾 ∞':'D 砲弾 '+String(v.c).padStart(2,'0')+'/'+cmax,16,y+34);g.fillStyle='#d8e7ff';g.fillText(areaDebugEnabled?'S MG ∞':'S MG '+String(v.v).padStart(3,'0')+'/'+vmax,125,y+34);
+  g.font='bold 12px system-ui';g.fillStyle='#ffd27a';g.fillText((areaDebugEnabled||v.debugInfinite)?'D 砲弾 ∞':'D 砲弾 '+String(v.c).padStart(2,'0')+'/'+cmax,16,y+34);g.fillStyle='#d8e7ff';g.fillText((areaDebugEnabled||v.debugInfinite)?'S MG ∞':'S MG '+String(v.v).padStart(3,'0')+'/'+vmax,125,y+34);
   g.fillStyle='#34392d';g.fillRect(16,y+43,212,9);g.fillStyle=fr>.25?'#dce7b8':v.f>0?'#ffd27a':'#ff7666';g.fillRect(16,y+43,212*fr,9);g.strokeStyle='rgba(255,255,255,.28)';g.strokeRect(16.5,y+43.5,211,8);
-  g.fillStyle='#e6e9d8';g.font='bold 10px system-ui';g.fillText(areaDebugEnabled?'燃料 ∞':'燃料 '+Math.ceil(v.f)+' / '+fmax,16,y+67);g.fillStyle='#34392d';g.fillRect(132,y+61,96,5);g.fillStyle=p.cc<=0?'#ffd27a':'#8f8159';g.fillRect(132,y+61,96*(1-Math.max(0,p.cc)/v.t.ccd),5);
+  g.fillStyle='#e6e9d8';g.font='bold 10px system-ui';g.fillText((areaDebugEnabled||v.debugInfinite)?'燃料 ∞':'燃料 '+Math.ceil(v.f)+' / '+Math.ceil(fmax),16,y+67);g.fillStyle='#34392d';g.fillRect(132,y+61,96,5);g.fillStyle=p.cc<=0?'#ffd27a':'#8f8159';g.fillRect(132,y+61,96*(1-Math.max(0,p.cc)/v.t.ccd),5);
  }
  g.restore();
 }
@@ -3233,8 +3430,25 @@ function draw(near){
  for(let i=0;i<ZONES.length-1;i++)drawZoneTransition(ZONES[i],ZONES[i+1],cy,cy+H);
  if(areaDebugEnabled)for(const l of areaDebugLabels)lab(l.t,l.x,l.y,l.f,l.c);
  for(const m of (mud||[])){const cxm=m.x+m.w/2,cym=m.y+m.h/2;g.fillStyle='#5b4935';g.beginPath();g.ellipse(cxm,cym,m.w/2,m.h/2,0,0,6.28);g.fill();g.strokeStyle='rgba(118,94,62,.65)';g.lineWidth=3;g.beginPath();g.ellipse(cxm,cym,Math.max(4,m.w/2-4),Math.max(4,m.h/2-4),0,0,6.28);g.stroke();g.fillStyle='rgba(79,64,47,.55)';for(let q=0;q<6;q++){const a=(q*2.17+(m.x*.013))%6.28,rr=.18+.1*(q%3);g.beginPath();g.ellipse(cxm+Math.cos(a)*m.w*rr,cym+Math.sin(a)*m.h*rr,8+q%3*4,3,0,0,6.28);g.fill();}}
- for(const w of water){g.fillStyle='#2f5f8a';g.fillRect(w.x,w.y,w.w,w.h);g.fillStyle='#4a7fae';for(let x=(w.x+10)|0;x<w.x+w.w;x+=36)for(let yy=w.y+12;yy<w.y+w.h-8;yy+=40){g.fillRect(x,yy,16,3);g.fillRect(x+14,yy+20,16,3);}}
+ for(const w of water){
+  const pad=RIVER_BANK_PAD;
+  if(w.x+w.w<cx-pad||w.x>cx+W+pad||w.y+w.h<cy-pad||w.y>cy+H+pad)continue;
+  const rc=riverVisualCache(w);
+  g.drawImage(rc.c,w.x-rc.pad,w.y-rc.pad,w.w+rc.pad*2,w.h+rc.pad*2);
+  // 川本体は静止キャッシュのまま。薄い流れ筋だけを低速でスライドさせる。
+  if(rc.flow&&w.w>2&&w.h>2){
+   // 川ごとに右→左 / 左→右を疑似ランダムで固定。橋で分割された左右区間も同じ方向にする。
+   const dir=riverFlowDir(w),off=(performance.now()*.014+riverHash(w,3600)*w.w)%w.w;
+   const start=dir>0?(w.x+off-w.w):(w.x-off);
+   g.save();g.beginPath();g.rect(w.x+3,w.y+8,Math.max(0,w.w-6),Math.max(0,w.h-16));g.clip();g.globalAlpha=.88;
+   g.drawImage(rc.flow,start,w.y,w.w,w.h);
+   g.drawImage(rc.flow,start+w.w,w.y,w.w,w.h);
+   g.restore();
+  }
+ }
  for(const b of bridges)drawBridgeFancy(b);
+ // 背景と建物の間に薄い建物跡を置く。建物破壊後も同じ位置に残る。
+ drawBuildingGroundMarks(cx,cy);
  const CC=[['#8a7a55','#6a5d40'],['#8c8c86','#6a6a66'],['#7a5f3a','#4e3c24'],['#55504a','#35322e'],['#b9ab8a','#8f8263'],['#7a5f3a','#4e3c24'],['#2f6b34','#1d4a22'],['#4a5a4a','#33403a'],['#7a7468','#57534a'],['#666865','#4e514e'],['#b9ab8a','#8f8263']];
  for(const c of coversInBox(cx-100,cy-100,cx+W+100,cy+H+100)){
   // 空間グリッドで画面周辺の遮蔽物だけ描画する。
