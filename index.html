@@ -64,7 +64,7 @@ p{font-size:12px;opacity:.75;margin:8px 0 0;text-align:center;line-height:1.6}
 <p>移動: ↑↓←→ / E: 搭乗・降車・近接気絶 / 再開: Enter<br>歩兵: D=爆弾設置/起爆　S=スキル　E=近くの敵兵を10秒気絶　戦車: D=主砲、S=マシンガン（車種で性能差）　戦闘機: D=爆撃　iPhone版もD/S/Eに対応</p>
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.05.98',FILE_CREATED_AT='2026/10/06 11:15',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
+const GAME_VERSION='2026.10.05.98',FILE_CREATED_AT='2026/10/06 11:23',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
 let audioCtx=null;
 function ensureAudio(){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(_){}}
 function tone(f=440,d=.08,v=.035,type='square',f2=null){if(!audioCtx)return;const t=audioCtx.currentTime,o=audioCtx.createOscillator(),a=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t+d);a.gain.setValueAtTime(v,t);a.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(a);a.connect(audioCtx.destination);o.start(t);o.stop(t+d+.02);}
@@ -1881,7 +1881,11 @@ function finishHoundBite(){
 }
 function updateHound(dt){
  if(!hound||skill!=='hound')return;updateHoundTrail();houndRespawnIfLost();
- if(hound.stun>0){hound.stun=Math.max(0,hound.stun-dt);if(hound.stun<=0){hound.state='return';say('猟犬が復帰した');}return;}
+ if(hound.stun>0){
+  // 気絶中の猟犬に歩兵状態のプレイヤーが触れると、その場で気絶解除。
+  if(!p.tank&&!(p.dig>0)&&Math.hypot(p.x-hound.x,p.y-hound.y)<=18){hound.stun=0;hound.state='return';hound.blocked=0;hound.coverContact=0;hound.avoidT=0;houndTrail=[{x:p.x,y:p.y,a:p.body}];sfx('skill');burst(hound.x,hound.y,8,'#d7cf9a',85);say('猟犬の気絶を解除した');return;}
+  hound.stun=Math.max(0,hound.stun-dt);if(hound.stun<=0){hound.state='return';say('猟犬が復帰した');}return;
+ }
  if(hound.state==='bite'){
   const h=hound.target;if(!h||!h.alive){if(h)h.houndPinned=false;hound.target=null;hound.state='return';return;}h.houndPinned=true;h.st=0;h.target=null;h.sus=0;h.cd=0;h.burstLeft=0;h.plantT=0;hound.face=Math.atan2(h.y-hound.y,h.x-hound.x);const a=hound.face,t=performance.now()*.018;hound.x=h.x-Math.cos(a)*(9+Math.sin(t)*2);hound.y=h.y-Math.sin(a)*(9+Math.sin(t)*2);hound.biteT-=dt;if(hound.biteT<=0)finishHoundBite();return;
  }
