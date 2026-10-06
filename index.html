@@ -64,7 +64,7 @@ p{font-size:12px;opacity:.75;margin:8px 0 0;text-align:center;line-height:1.6}
 <p>移動: ↑↓←→ / E: 搭乗・降車・近接気絶 / 再開: Enter<br>歩兵: D=爆弾設置/起爆　S=スキル　E=近くの敵兵を10秒気絶　戦車: D=主砲、S=マシンガン（車種で性能差）　戦闘機: D=爆撃　iPhone版もD/S/Eに対応</p>
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.05.98',FILE_CREATED_AT='2026/10/06 09:24',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
+const GAME_VERSION='2026.10.05.98',FILE_CREATED_AT='2026/10/06 09:45',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
 let audioCtx=null;
 function ensureAudio(){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(_){}}
 function tone(f=440,d=.08,v=.035,type='square',f2=null){if(!audioCtx)return;const t=audioCtx.currentTime,o=audioCtx.createOscillator(),a=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t+d);a.gain.setValueAtTime(v,t);a.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(a);a.connect(audioCtx.destination);o.start(t);o.stop(t+d+.02);}
@@ -1228,23 +1228,25 @@ function reset(rerollSkills=true){
  if(mazeZone){
   humans=humans.filter(h=>zoneAt(h.y).n!=='敵迷路基地');
   const mazeHumans=[],targetMazeHumans=20;
-  const clearSegment=(a,b,r=8)=>{
-   const d=Math.hypot(b.x-a.x,b.y-a.y);if(d<8)return false;
-   for(let q=0;q<=d;q+=6){const t=q/d,x=a.x+(b.x-a.x)*t,y=a.y+(b.y-a.y)*t;if(hitsM(x,y,r))return false;}
+  // 歩兵の見た目より広めの余白を確保し、壁際・細い角へ初期配置されないようにする。
+  const mazeHumanClear=(x,y,r=15)=>!hitsM(x,y,r)&&!inBase(x,y);
+  const clearSegment=(a,b,r=13)=>{
+   const d=Math.hypot(b.x-a.x,b.y-a.y);if(d<12)return false;
+   for(let q=0;q<=d;q+=5){const t=q/d,x=a.x+(b.x-a.x)*t,y=a.y+(b.y-a.y)*t;if(!mazeHumanClear(x,y,r))return false;}
    return true;
   };
   const shuffledDirs=()=>{const d=[[1,0],[-1,0],[0,1],[0,-1]];for(let i=d.length-1;i>0;i--){const j=R()*(i+1)|0;[d[i],d[j]]=[d[j],d[i]];}return d;};
   for(let tries=0;tries<9000&&mazeHumans.length<targetMazeHumans;tries++){
    const x=34+R()*(WW-68),y=mazeZone.y1+38+R()*Math.max(60,mazeZone.y0-mazeZone.y1-76);
-   if(hitsM(x,y,10)||inBase(x,y))continue;
+   if(!mazeHumanClear(x,y,15))continue;
    const minDist=tries<5000?90:tries<7500?72:58;
    if(humans.some(h=>h.alive&&Math.hypot(h.x-x,h.y-y)<minDist)||mazeHumans.some(h=>Math.hypot(h.x-x,h.y-y)<minDist))continue;
    let end=null;
    for(const [dx,dy] of shuffledDirs()){
     for(const len of [86,68,52,38]){
      const b={x:x+dx*len,y:y+dy*len};
-     if(b.x<18||b.x>WW-18||b.y<mazeZone.y1+20||b.y>mazeZone.y0-20)continue;
-     if(clearSegment({x,y},b,8)){end=b;break;}
+     if(b.x<24||b.x>WW-24||b.y<mazeZone.y1+26||b.y>mazeZone.y0-26||!mazeHumanClear(b.x,b.y,15))continue;
+     if(clearSegment({x,y},b,13)){end=b;break;}
     }
     if(end)break;
    }
@@ -2051,10 +2053,23 @@ function natureHitByPath(path){
  for(const br of bridges){if(br.burnT>0)continue;for(let i=1;i<path.length;i++){const a=path[i-1],b=path[i];if(segmentHitsRect(a,b,{x:br.x-5,y:br.y-5,w:(br.w||100)+10,h:(br.h||100)+10})){igniteBridge(br);break;}}}
  for(const o of objectsInBox(minX-12,minY-12,maxX+12,maxY+12)){for(let i=1;i<path.length;i++){const a=path[i-1],b=path[i];if(segmentHitsObject(a,b,o,8)){damageObject(o,'flame');break;}}}
 }
+const MAX_SPREAD_TARGETS=2,MAX_SPREAD_BURNING_BUSHES=20;
 function spreadNatureFire(src){
- if(weather==='rain')return;const cx=src.x+(src.w||0)/2,cy=src.y+(src.h||0)/2,rr=Math.max(src.w||0,src.h||0)/2+60;
- for(const c of nearbyCovers(cx,cy,rr))if(!c.fr&&c.kd===6&&!(c.burnT>0)&&c!==src&&rectGap(src,c)<=48)igniteNature(c);
- for(const b of nearbyBushes(cx,cy,rr))if(!(b.burnT>0)&&b!==src&&rectGap(src,b)<=48)igniteNature(b);
+ if(weather==='rain')return;
+ const cx=src.x+(src.w||0)/2,cy=src.y+(src.h||0)/2,rr=Math.max(src.w||0,src.h||0)/2+60;
+ let budget=MAX_SPREAD_TARGETS;
+ // 1つの炎から一度に広がる対象数を制限し、草原で指数的に炎上数が増えないようにする。
+ for(const c of nearbyCovers(cx,cy,rr)){
+  if(budget<=0)break;
+  if(!c.fr&&c.kd===6&&!(c.burnT>0)&&c!==src&&rectGap(src,c)<=48){igniteNature(c);budget--;}
+ }
+ if(budget<=0)return;
+ let burningBushes=0;for(const o of burningNatureSet)if(o&&o.burnT>0&&(bushes||[]).includes(o))burningBushes++;
+ if(burningBushes>=MAX_SPREAD_BURNING_BUSHES)return;
+ for(const b of nearbyBushes(cx,cy,rr)){
+  if(budget<=0||burningBushes>=MAX_SPREAD_BURNING_BUSHES)break;
+  if(!(b.burnT>0)&&b!==src&&rectGap(src,b)<=48){if(igniteNature(b)){budget--;burningBushes++;}}
+ }
 }
 function burningAt(x,y,r=5){
  for(const c of nearbyCovers(x,y,r+70))if(c.burnT>0&&x+r>c.x&&x-r<c.x+c.w&&y+r>c.y&&y-r<c.y+c.h)return true;
@@ -2063,13 +2078,20 @@ function burningAt(x,y,r=5){
  return false;
 }
 function updateBurningNature(dt){
- // 炎上中の自然物だけを更新し、全遮蔽物・全草むらの毎フレーム走査を避ける。
- for(const o of Array.from(burningNatureSet)){
+ // 炎上中の自然物だけを更新。Setの配列化と、草むらの1個ずつspliceを避ける。
+ let deadBushes=null,deadTrees=null;
+ for(const o of burningNatureSet){
   if(!o||!(o.burnT>0)){burningNatureSet.delete(o);continue;}
   if(weather==='rain'){o.burnT=undefined;o.burnSpread=undefined;o.burnSpreadDone=false;burningNatureSet.delete(o);continue;}
   o.burnT-=dt;o.burnSpread-=dt;if(!o.burnSpreadDone&&o.burnSpread<=0){o.burnSpreadDone=true;spreadNatureFire(o);}
-  if(o.burnT<=0){burningNatureSet.delete(o);const ci=covers.indexOf(o);if(ci>=0&&o.kd===6)covers.splice(ci,1);else{const bi=bushes.indexOf(o);if(bi>=0)bushes.splice(bi,1);}}
+  if(o.burnT<=0){
+   burningNatureSet.delete(o);
+   if(o.kd===6&&(covers||[]).includes(o)){(deadTrees||(deadTrees=new Set())).add(o);}
+   else if((bushes||[]).includes(o)){markGrassBushChunkDirty(o);(deadBushes||(deadBushes=new Set())).add(o);}
+  }
  }
+ if(deadTrees){let w=0;for(let i=0;i<covers.length;i++){const o=covers[i];if(!deadTrees.has(o))covers[w++]=o;}covers.length=w;}
+ if(deadBushes){let w=0;for(let i=0;i<bushes.length;i++){const o=bushes[i];if(!deadBushes.has(o))bushes[w++]=o;}bushes.length=w;}
  const survivingBridges=[];
  for(const br of bridges){
   if(br.burnT>0)br.burnT-=dt;
@@ -2170,8 +2192,14 @@ function drawFlame(){
 function drawBurningNature(cx=0,cy=0){
  const tm=performance.now()*.02,gx0=cx-80,gx1=cx+W+80,gy0=cy-80,gy1=cy+H+80;g.save();g.globalCompositeOperation='lighter';
  const visible=o=>o&&o.x+(o.w||100)>=gx0&&o.x<=gx1&&o.y+(o.h||100)>=gy0&&o.y<=gy1;
- const drawObj=o=>{const count=Math.max(3,Math.min(12,Math.round((o.w+o.h)/28)));for(let i=0;i<count;i++){const x=o.x+(i+.5)/count*o.w+(R()-.5)*5,y=o.y+o.h*(.45+.35*((i*7)%5)/4),r=5+((i*3)%4)*2;flameBlob(x,y,r,tm+i*1.7);}};
- for(const c of coversInBox(gx0,gy0,gx1,gy1))if(c.burnT>0&&visible(c))drawObj(c);for(const b of spatialQuery(spatialBushGrid,gx0,gy0,gx1,gy1))if(b.burnT>0&&visible(b))drawObj(b);for(const br of bridges)if(br.burnT>0&&visible(br))drawObj({x:br.x,y:br.y,w:br.w||100,h:br.h||100});for(const o of objectsInBox(gx0,gy0,gx1,gy1))if(o.burnT>0&&visible(o))drawObj(o);g.restore();
+ // 炎上数が増えた時の描画負荷を抑えるため、草むらは最大5個の炎パーツで表現。
+ // 毎フレームMath.randomを呼ばず、位置由来の固定ジッターを使う。
+ const drawObj=(o,maxCount=7)=>{const count=Math.max(2,Math.min(maxCount,Math.round((o.w+o.h)/32)));for(let i=0;i<count;i++){const seed=(((o.x|0)*13+(o.y|0)*17+i*23)%101)/100,x=o.x+(i+.5)/count*o.w+(seed-.5)*5,y=o.y+o.h*(.45+.35*((i*7)%5)/4),r=5+((i*3)%4)*2;flameBlob(x,y,r,tm+i*1.7);}};
+ for(const c of coversInBox(gx0,gy0,gx1,gy1))if(c.burnT>0&&visible(c))drawObj(c,7);
+ for(const b of spatialQuery(spatialBushGrid,gx0,gy0,gx1,gy1))if(b.burnT>0&&visible(b))drawObj(b,5);
+ for(const br of bridges)if(br.burnT>0&&visible(br))drawObj({x:br.x,y:br.y,w:br.w||100,h:br.h||100},7);
+ for(const o of objectsInBox(gx0,gy0,gx1,gy1))if(o.burnT>0&&visible(o))drawObj(o,5);
+ g.restore();
 }
 function update(dt){
  updateWeather(dt);updateHQSpawn(dt);updateDrill(dt);
@@ -2518,9 +2546,52 @@ function makeBushSprite(variant){
  q.strokeStyle='rgba(77,153,79,.24)';q.lineWidth=1.15;q.lineCap='round';for(let i=2;i<126;i+=16){const s=rnd(),px=i+s*3.5,baseY=50+12*s,tipY=baseY-(5+s*6.2);q.beginPath();q.moveTo(px,baseY);q.lineTo(px-(.9+s*1.2),tipY);q.stroke();}
  return c;
 }
-function drawBushCached(b){
- const variant=Math.abs((((b.x|0)*17+(b.y|0)*31+(b.w|0)*7+(b.h|0)*11)%12));if(!bushSpriteCache[variant])bushSpriteCache[variant]=makeBushSprite(variant);g.drawImage(bushSpriteCache[variant],b.x,b.y,b.w,b.h);
+function bushSpriteFor(b){
+ const variant=Math.abs((((b.x|0)*17+(b.y|0)*31+(b.w|0)*7+(b.h|0)*11)%12));
+ if(!bushSpriteCache[variant])bushSpriteCache[variant]=makeBushSprite(variant);
+ return bushSpriteCache[variant];
 }
+function drawBushCached(b){g.drawImage(bushSpriteFor(b),b.x,b.y,b.w,b.h);}
+
+// 草原は草むら数が多いため、512px高のチャンクへ事前合成して描画回数を減らす。
+// 画面内のチャンクだけを描く。草むら配列が入れ替わる／増減した時だけ自動で再生成する。
+const GRASS_BUSH_CHUNK_H=512,GRASS_BUSH_CACHE_SCALE=.5;
+let grassBushChunkCache=new Map(),grassBushCacheRef=null;
+function redrawGrassBushChunk(z,ch){
+ const q=ch.c.getContext('2d');q.setTransform(1,0,0,1,0,0);q.clearRect(0,0,ch.c.width,ch.c.height);q.imageSmoothingEnabled=true;
+ for(const b of bushes||[]){
+  const cy=b.y+b.h*.5;if(cy<=z.y1||cy>z.y0)continue;
+  if(b.y+b.h<ch.y||b.y>ch.y+ch.h)continue;
+  q.drawImage(bushSpriteFor(b),b.x*GRASS_BUSH_CACHE_SCALE,(b.y-ch.y)*GRASS_BUSH_CACHE_SCALE,b.w*GRASS_BUSH_CACHE_SCALE,b.h*GRASS_BUSH_CACHE_SCALE);
+ }
+ ch.dirty=false;
+}
+function rebuildGrassBushChunkCache(){
+ grassBushChunkCache.clear();
+ const grassZones=ZONES.filter(z=>z.n==='草原');
+ for(const z of grassZones){
+  const chunks=[];
+  for(let yy=z.y1;yy<z.y0;yy+=GRASS_BUSH_CHUNK_H){
+   const hh=Math.min(GRASS_BUSH_CHUNK_H,z.y0-yy),c=document.createElement('canvas');
+   c.width=Math.ceil(WW*GRASS_BUSH_CACHE_SCALE);c.height=Math.ceil(hh*GRASS_BUSH_CACHE_SCALE);
+   const ch={y:yy,h:hh,c,dirty:true};redrawGrassBushChunk(z,ch);chunks.push(ch);
+  }
+  grassBushChunkCache.set(z,chunks);
+ }
+ grassBushCacheRef=bushes;
+}
+function markGrassBushChunkDirty(b){
+ if(!b||grassBushCacheRef!==bushes)return;const z=zoneAt(b.y+b.h*.5);if(!z||z.n!=='草原')return;
+ const chunks=grassBushChunkCache.get(z);if(!chunks)return;for(const ch of chunks)if(!(b.y+b.h<ch.y||b.y>ch.y+ch.h))ch.dirty=true;
+}
+function ensureGrassBushChunkCache(){if(grassBushCacheRef!==bushes)rebuildGrassBushChunkCache();}
+function drawGrassBushChunks(cx,cy){
+ ensureGrassBushChunkCache();const top=cy-50,bottom=cy+H+50;
+ for(const z of ZONES){if(z.n!=='草原'||z.y1>bottom||z.y0<top)continue;const chunks=grassBushChunkCache.get(z)||[];
+  for(const ch of chunks){if(ch.y>bottom||ch.y+ch.h<top)continue;if(ch.dirty)redrawGrassBushChunk(z,ch);g.drawImage(ch.c,0,ch.y,WW,ch.h);}
+ }
+}
+function isGrassBush(b){return zoneAt(b.y+b.h*.5).n==='草原';}
 function tankShape(x,y,body,ang,tank,sz){
  const t=typeof tank==='object'?tank:{id:'enemy',col:tank},id=t.id||'enemy';
  let col=t.col||'#4b5f9e',accent=shade(col,.82),hi=shade(col,1.18),low=shade(col,.62),dark='#111214',steel='#5a606a';
@@ -3130,7 +3201,8 @@ function draw(near){
  else if(p.digPrep>0){soldier(p.x,p.y,p.body,true,false,false);const k=1-p.digPrep/1;g.save();g.translate(p.x,p.y+4);g.strokeStyle='rgba(205,175,110,'+(0.45+.35*Math.sin(performance.now()/110))+')';g.lineWidth=2;g.beginPath();g.arc(0,0,10+k*14,0,6.28);g.stroke();g.strokeStyle='rgba(122,90,56,.65)';g.beginPath();g.arc(0,0,18+k*10,0,6.28);g.stroke();g.fillStyle='rgba(122,90,56,.55)';for(let q=0;q<5;q++){const a=performance.now()/300+q*1.26,r=12+k*10+(q%2)*4;g.beginPath();g.arc(Math.cos(a)*r*.45,4+Math.sin(a*1.3)*2,2.4,0,6.28);g.fill();}g.restore();}
  else{drawBlastShadow(p);soldier(p.x,p.y-blastLift(p),p.body,true,false,!!(keys.ArrowUp||keys.ArrowDown||keys.ArrowLeft||keys.ArrowRight));}
  if(!p.tank&&p.drill>0){const a=p.body,t=performance.now()/90;g.save();g.translate(p.x,p.y);g.rotate(a);g.fillStyle='#30343a';g.beginPath();g.moveTo(10,-10);g.lineTo(48,0);g.lineTo(10,10);g.closePath();g.fill();g.strokeStyle='#d6d9dd';g.lineWidth=2;for(let q=0;q<4;q++){const xx=14+q*8,yy=Math.sin(t+q*1.7)*6;g.beginPath();g.moveTo(xx,-8+yy*.25);g.lineTo(xx+6,8-yy*.25);g.stroke();}g.fillStyle='#ffd27a';g.beginPath();g.arc(49,0,3+Math.sin(t)*1.2,0,6.28);g.fill();g.restore();if(p.drillTarget){g.fillStyle='rgba(0,0,0,.58)';g.fillRect(p.x-22,p.y-31,44,5);g.fillStyle='#ffd27a';g.fillRect(p.x-22,p.y-31,44*Math.min(1,p.drillHit/.5),5);}}
- for(const b of nearbyBushes(cx+W/2,cy+H/2,Math.max(W,H)*.8+100)){if(b.x+b.w<cx-40||b.x>cx+W+40||b.y+b.h<cy-40||b.y>cy+H+40)continue;drawBushCached(b);}
+ drawGrassBushChunks(cx,cy);
+ for(const b of nearbyBushes(cx+W/2,cy+H/2,Math.max(W,H)*.8+100)){if(isGrassBush(b)||b.x+b.w<cx-40||b.x>cx+W+40||b.y+b.h<cy-40||b.y>cy+H+40)continue;drawBushCached(b);}
  // 草むら内では本体を再描画せず、歩兵の輪郭だけを草の上に表示する。
  // プレイヤー・相棒・敵人間で同じ処理を使う。
  if(!p.tank&&!(p.dig>0)&&!(p.blastAirT>0)&&inBush(p))soldierBushOutline(p.x,p.y,p.body,true,false,false);
