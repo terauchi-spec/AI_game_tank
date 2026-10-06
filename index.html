@@ -65,7 +65,7 @@ p{font-size:12px;opacity:.75;margin:8px 0 0;text-align:center;line-height:1.6}
 <p>移動: ↑↓←→ / E: 搭乗・降車・近接気絶 / 再開: Enter<br>歩兵: D=爆弾設置/起爆　S=スキル　E=近くの敵兵を10秒気絶　戦車: D=主砲、S=マシンガン（車種で性能差）　戦闘機: D=爆撃　スマホ戦車: Dドラッグで照準→離して主砲、S長押し＋ドラッグでMG照準</p>
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.05.98',FILE_CREATED_AT='2026/10/06 23:24',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
+const GAME_VERSION='2026.10.05.98',FILE_CREATED_AT='2026/10/07 00:11',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
 let audioCtx=null;
 function ensureAudio(){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(_){}}
 function tone(f=440,d=.08,v=.035,type='square',f2=null){if(!audioCtx)return;const t=audioCtx.currentTime,o=audioCtx.createOscillator(),a=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t+d);a.gain.setValueAtTime(v,t);a.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(a);a.connect(audioCtx.destination);o.start(t);o.stop(t+d+.02);}
@@ -1110,7 +1110,7 @@ function setupAreaDebugStage(){
  ZONES=AREA_DEBUG_ORDER.map((n,i)=>{const y0=bottom-i*areaH,y1=y0-areaH;return{n,y0,y1,g:ZONE_STYLE[n].g,p:ZONE_STYLE[n].p.slice(),pat:null,areaDebug:1};});
  areaDebugLabels=[];covers=[];objects=[];bushes=[];mud=[];water=[];bridges=[];cars=[];etanks=[];humans=[];bullets=[];parts=[];bombs=[];items=[];waves=[];fx=[];allies=[];builtWalls=[];decoy=null;radio=null;airstrike=null;airbombs=[];weather='clear';weatherT=0;weatherNext=99999;baseSpawnT=99999;
  p.tank=null;p.hp=2;p.x=WW/2;p.y=ZONES[0].y0-220;p.body=-Math.PI/2;p.ang=-Math.PI/2;p.dig=0;p.digPrep=0;p.drill=0;p.scd=0;p.bushHide=0;p.grappleT=0;
- const hq=ZONES[ZONES.length-1];base={x:WW/2-COMMAND_BASE_W/2,y:hq.y1+115,w:COMMAND_BASE_W,h:COMMAND_BASE_H,hp:30,maxHp:30,holes:[],deadAt:0};
+ const hq=ZONES[ZONES.length-1];base={x:WW/2-COMMAND_BASE_W/2,y:hq.y1+115,w:COMMAND_BASE_W,h:COMMAND_BASE_H,hp:30,maxHp:30,deadAt:0};
  cars.push({x:WW/2-92,y:p.y-36,t:TRUCK_TYPE,kind:'truck',hp:5,c:0,v:0,f:TRUCK_TYPE.fmax,mgHits:0,body:-1.57,areaDebug:1});
  cars.push({x:WW/2+92,y:p.y-36,t:TYPES[0],kind:'tank',hp:TYPES[0].hp,c:TYPES[0].cmax,v:TYPES[0].vmax,f:TYPES[0].fmax,ch:0,mgHits:0,body:-1.57,areaDebug:1});
  const addLabel=(t,x,y,c='#e6e9d8',f='bold 13px system-ui')=>areaDebugLabels.push({t,x,y,c,f});
@@ -1312,7 +1312,7 @@ function reset(rerollSkills=true){
  state='play';shake=0;flash=0;msg='';msgT=0;interact=false;bombReq=false;skillReq=false;decoy=null;allies=[];hound=null;houndTrail=[];allySeq=0;builtWalls=[];radio=null;airstrike=null;airbombs=[];weather='clear';weatherT=0;weatherNext=15+R()*35;baseSpawnT=5;deathT=0;cam=0;camX=0;scoreStats=newScoreStats();
  setupZones();if(rerollSkills)rollSkillChoices();
  p={x:WW/2,y:3100,hp:2,tank:null,cc:0,vc:0,ang:-1.57,body:-1.57,dig:0,digPrep:0,digElapsed:0,digExitAnim:0,digExitX:0,digExitY:0,scd:0,scdMax:0,drill:0,drillHit:0,drillTarget:null,drillSfx:0,bushHide:0,grappleT:0,grappleTarget:null,flameFuel:3,flameActive:false,flameLockA:null,flamePath:[],flameSfx:0,flameReach:0,fireExposure:0};touchTurretAngle=null;
- base={x:WW/2-COMMAND_BASE_W/2,y:60,w:COMMAND_BASE_W,h:COMMAND_BASE_H,hp:30,maxHp:30,holes:[],deadAt:0};bullets=[];parts=[];bombs=[];waves=[];fx=[];items=[];bushes=[];
+ base={x:WW/2-COMMAND_BASE_W/2,y:60,w:COMMAND_BASE_W,h:COMMAND_BASE_H,hp:30,maxHp:30,deadAt:0};bullets=[];parts=[];bombs=[];waves=[];fx=[];items=[];bushes=[];
  water=[];bridges=[];mud=[];
  for(const ry of [2675,1325]){
   // 各候補地点で75%の確率で川を生成。最小幅は従来70pxの半分=35px、最大は約600pxを維持。
@@ -1478,56 +1478,73 @@ function baseHitRect(){
 }
 function ensureBaseState(){
  if(!base)return null;
- if(!Array.isArray(base.holes))base.holes=[];
  if(!base.maxHp)base.maxHp=30;
  if(base.deadAt===undefined)base.deadAt=0;
  if(!Number.isFinite(base.damageVersion))base.damageVersion=0;
  return base;
 }
-function recordBaseDamage(ix,iy,rr=20,multi=1){
- const b=ensureBaseState();if(!b)return;
- const hr=baseHitRect(),maxDim=Math.max(b.w,b.h);
- for(let i=0;i<multi;i++){
-  const ox=(R()-.5)*Math.min(14,rr*.28),oy=(R()-.5)*Math.min(14,rr*.28);
-  const x=Math.max(hr.x+8,Math.min(hr.x+hr.w-8,ix+ox));
-  const y=Math.max(hr.y+8,Math.min(hr.y+hr.h-8,iy+oy));
-  // 1発ごとの欠損は小さく保つ。HP0時にも巨大な穴を追加せず、着弾の蓄積で壊れて見えるようにする。
-  b.holes.push({rx:(x-b.x)/b.w,ry:(y-b.y)/b.h,rr:Math.max(.035,Math.min(.105,(rr*(.52+R()*.38))/maxDim)),a:R()*6.28,sx:.82+R()*.36,sy:.82+R()*.36});
+const BASE_FRAG_TILE=14;
+function initBaseFragments(){
+ const b=ensureBaseState();if(!b||b.fragMask)return b;
+ b.fragTile=BASE_FRAG_TILE;
+ b.fragCols=Math.max(1,Math.ceil(b.w/b.fragTile));
+ b.fragRows=Math.max(1,Math.ceil(b.h/b.fragTile));
+ b.fragMask=new Uint8Array(b.fragCols*b.fragRows);b.fragMask.fill(1);
+ b.damageVersion++;b._damageCanvas=null;b._damageCanvasKey='';
+ return b;
+}
+function carveBaseFragments(ix,iy,rr=20){
+ const b=initBaseFragments();if(!b)return 0;
+ const t=b.fragTile,cols=b.fragCols,rows=b.fragRows;
+ const minC=Math.max(0,Math.floor((ix-rr-b.x)/t)),maxC=Math.min(cols-1,Math.floor((ix+rr-b.x)/t));
+ const minR=Math.max(0,Math.floor((iy-rr-b.y)/t)),maxR=Math.min(rows-1,Math.floor((iy+rr-b.y)/t));
+ let removed=0;
+ for(let ry=minR;ry<=maxR;ry++)for(let cx=minC;cx<=maxC;cx++){
+  const idx=ry*cols+cx;if(!b.fragMask[idx])continue;
+  const x=b.x+cx*t,y=b.y+ry*t,w=Math.min(t,b.x+b.w-x),h=Math.min(t,b.y+b.h-y);
+  const nx=Math.max(x,Math.min(x+w,ix)),ny=Math.max(y,Math.min(y+h,iy));
+  if(Math.hypot(nx-ix,ny-iy)<=rr){b.fragMask[idx]=0;removed++;}
  }
- if(b.holes.length>42)b.holes.splice(0,b.holes.length-42);
- b.damageVersion++;
- b._damageCanvas=null;b._damageCanvasKey='';
+ if(removed){b.damageVersion++;b._damageCanvas=null;b._damageCanvasKey='';}
+ return removed;
 }
 function damageBase(amount,ix,iy,rr=20,multi=1){
  const b=ensureBaseState();if(!b||b.hp<=0)return;
  b.hp=Math.max(0,b.hp-amount);
- recordBaseDamage(ix,iy,rr,multi);
- burst(ix,iy,16,'#a89a74',180);shake=Math.max(shake,6);
- if(b.hp<=0){
-  b.deadAt=performance.now();
-  // 最終破壊でも建物を突然消さない。最後の着弾痕だけで確定する。
-  b.damageVersion++;b._damageCanvas=null;b._damageCanvasKey='';
-  if(state==='play')winSeq();
+ // 他の建築物と同じく、着弾範囲内の細かな建物片だけを消す。
+ // multi は爆発系の広がりにだけ使い、HP0時に追加崩壊はさせない。
+ const hits=Math.max(1,multi|0),baseR=Math.max(16,rr);
+ for(let i=0;i<hits;i++){
+  const a=hits===1?0:(i/hits)*Math.PI*2+riverHash({x:ix,y:iy,w:rr,h:amount},i)*.7;
+  const spread=hits===1?0:Math.min(rr*.32,12);
+  carveBaseFragments(ix+Math.cos(a)*spread,iy+Math.sin(a)*spread,baseR*(hits===1?1:.82));
  }
+ burst(ix,iy,16,'#a89a74',180);shake=Math.max(shake,6);
+ if(b.hp<=0){b.deadAt=performance.now();if(state==='play')winSeq();}
 }
-function baseHoleClearsPoint(x,y,clearance=0){
- const b=ensureBaseState();if(!b||!b.holes.length)return false;
- const md=Math.max(b.w,b.h);
- for(const h of b.holes){
-  const hx=b.x+b.w*h.rx,hy=b.y+b.h*h.ry,rx=Math.max(1,h.rr*md*h.sx-clearance),ry=Math.max(1,h.rr*md*h.sy-clearance);
-  if(rx<=1||ry<=1)continue;
-  const dx=(x-hx)/rx,dy=(y-hy)/ry;if(dx*dx+dy*dy<=1)return true;
+function baseFragmentAliveAt(x,y){
+ const b=ensureBaseState();if(!b)return false;
+ const br=baseHitRect();if(x<br.x||x>br.x+br.w||y<br.y||y>br.y+br.h)return false;
+ if(!b.fragMask)return true;
+ const c=Math.floor((x-b.x)/b.fragTile),r=Math.floor((y-b.y)/b.fragTile);
+ if(c<0||r<0||c>=b.fragCols||r>=b.fragRows)return false;
+ return !!b.fragMask[r*b.fragCols+c];
+}
+function circleHitsBase(x,y,r=0){
+ const b=ensureBaseState(),br=baseHitRect();if(!b)return false;
+ if(!(x+r>br.x&&x-r<br.x+br.w&&y+r>br.y&&y-r<br.y+br.h))return false;
+ if(!b.fragMask)return true;
+ const t=b.fragTile,minC=Math.max(0,Math.floor((x-r-b.x)/t)),maxC=Math.min(b.fragCols-1,Math.floor((x+r-b.x)/t));
+ const minR=Math.max(0,Math.floor((y-r-b.y)/t)),maxR=Math.min(b.fragRows-1,Math.floor((y+r-b.y)/t));
+ for(let ry=minR;ry<=maxR;ry++)for(let cx=minC;cx<=maxC;cx++){
+  if(!b.fragMask[ry*b.fragCols+cx])continue;
+  const tx=b.x+cx*t,ty=b.y+ry*t,tw=Math.min(t,b.x+b.w-tx),th=Math.min(t,b.y+b.h-ty);
+  const rx=Math.max(tx,br.x),ry0=Math.max(ty,br.y),rx2=Math.min(tx+tw,br.x+br.w),ry2=Math.min(ty+th,br.y+br.h);
+  if(rx2>rx&&ry2>ry0&&circleHitsRect(x,y,r,{x:rx,y:ry0,w:rx2-rx,h:ry2-ry0}))return true;
  }
  return false;
 }
-function circleHitsBase(x,y,r=0){
- const br=baseHitRect();
- if(!(x+r>br.x&&x-r<br.x+br.w&&y+r>br.y&&y-r<br.y+br.h))return false;
- // 十分大きな破壊穴の中央なら通過可能。建物の破損に合わせてコリジョンも徐々に抜ける。
- if(baseHoleClearsPoint(x,y,r+1))return false;
- return true;
-}
-const inBase=(x,y)=>{const br=baseHitRect();return x>br.x&&x<br.x+br.w&&y>br.y&&y<br.y+br.h&&!baseHoleClearsPoint(x,y,1);};
+const inBase=(x,y)=>baseFragmentAliveAt(x,y);
 const hitsC=(x,y,r)=>nearbyCovers(x,y,r+6).some(c=>circleHitsCover(x,y,r,c))||nearbyObjects(x,y,r+6).some(o=>circleHitsObject(x,y,r,o))||circleHitsBase(x,y,r);
 const waterAt=(x,y,r=0)=>water.find(c=>x+r>c.x&&x-r<c.x+c.w&&y+r>c.y&&y-r<c.y+c.h)||null;
 const inWaterAt=(x,y,r=0)=>!!waterAt(x,y,r);
@@ -3212,57 +3229,48 @@ function drawAllyParachute(ally){
  soldier(ally.x,ally.y,ally.face,true,false,false);
 }
 function baseDamageCanvas(){
- const b=ensureBaseState(),im=COVER_IMG.command_building_1;if(!b||!assetOK(im))return null;
+ const b=ensureBaseState(),im=COVER_IMG.command_building_1;if(!b||!assetOK(im)||!b.fragMask)return null;
  const key=(b.damageVersion||0)+':'+(b.hp<=0?1:0)+':'+b.w+'x'+b.h;
  if(b._damageCanvas&&b._damageCanvasKey===key)return b._damageCanvas;
  const c=document.createElement('canvas');c.width=Math.max(1,Math.round(b.w));c.height=Math.max(1,Math.round(b.h));
- const q=c.getContext('2d');q.imageSmoothingEnabled=true;q.drawImage(im,0,0,c.width,c.height);
- const md=Math.max(c.width,c.height);
- if(b.holes&&b.holes.length){
-  q.save();q.globalCompositeOperation='destination-out';
-  for(const h of b.holes){
-   const hx=c.width*h.rx,hy=c.height*h.ry,rr=Math.max(7,h.rr*md);
-   q.beginPath();q.ellipse(hx,hy,rr*h.sx,rr*h.sy,h.a,0,Math.PI*2);q.fill();
-   q.beginPath();q.ellipse(hx+rr*.12,hy-rr*.07,rr*.32*h.sx,rr*.24*h.sy,h.a*.7,0,Math.PI*2);q.fill();
+ const q=c.getContext('2d');q.imageSmoothingEnabled=true;
+ const t=b.fragTile,cols=b.fragCols,rows=b.fragRows,pal=['#666865','#8c8f8a','#4e514e'];
+ const alive=(cx,ry)=>cx>=0&&ry>=0&&cx<cols&&ry<rows&&b.fragMask[ry*cols+cx];
+ for(let ry=0;ry<rows;ry++)for(let cx=0;cx<cols;cx++){
+  const idx=ry*cols+cx;if(!b.fragMask[idx])continue;
+  const x=cx*t,y=ry*t,w=Math.min(t,c.width-x),h=Math.min(t,c.height-y);
+  const sx=x/c.width*im.naturalWidth,sy=y/c.height*im.naturalHeight,sw=w/c.width*im.naturalWidth,sh=h/c.height*im.naturalHeight;
+  // 他の建築物の破片描画と同じく、わずかに重ねて継ぎ目を防止。
+  q.save();q.beginPath();q.rect(x-.7,y-.7,w+1.4,h+1.4);q.clip();q.drawImage(im,sx,sy,sw,sh,x,y,w,h);q.restore();
+  const edge=!alive(cx-1,ry)||!alive(cx+1,ry)||!alive(cx,ry-1)||!alive(cx,ry+1);
+  if(edge){
+   const seed=(cx*17+ry*29+idx*3)|0,col=pal[Math.abs(seed)%pal.length];
+   q.globalAlpha=.72;q.fillStyle=col;
+   const rw=Math.max(3,w*(.25+(Math.abs(seed)%4)*.07)),rh=Math.max(2,h*(.18+(Math.abs(seed>>2)%3)*.08));
+   q.save();q.translate(x+w*.5,y+h*.5);q.rotate((((seed%9)+9)%9-4)*.08);q.fillRect(-rw/2,-rh/2,rw,rh);q.restore();
+   q.globalAlpha=.36;q.fillStyle='rgba(40,34,30,.8)';q.fillRect(x,y+h*.7,w,Math.max(2,h*.2));q.globalAlpha=1;
   }
-  q.restore();
-  // 焦げ・欠けの縁もキャッシュへ焼き込む。毎フレームの合成処理は行わない。
-  q.save();q.globalCompositeOperation='source-atop';
-  for(const h of b.holes){
-   const hx=c.width*h.rx,hy=c.height*h.ry,rr=Math.max(7,h.rr*md);
-   q.strokeStyle='rgba(46,29,18,.55)';q.lineWidth=Math.max(2,rr*.14);
-   q.beginPath();q.ellipse(hx,hy,rr*h.sx*1.08,rr*h.sy*1.08,h.a,0,Math.PI*2);q.stroke();
-  }
-  if(b.hp<=0){q.fillStyle='rgba(24,20,18,.28)';q.fillRect(0,0,c.width,c.height);}
-  q.restore();
  }
+ if(b.hp<=0){q.fillStyle='rgba(24,20,18,.12)';q.fillRect(0,0,c.width,c.height);}
  b._damageCanvas=c;b._damageCanvasKey=key;return c;
 }
 function drawBase(){
- const b=ensureBaseState(),dead=b.hp<=0,cx=b.x+b.w/2,cy=b.y+b.h/2;
- const dmg=baseDamageCanvas(),im=COVER_IMG.command_building_1;
+ const b=ensureBaseState(),dead=b.hp<=0,cx=b.x+b.w/2,cy=b.y+b.h/2,im=COVER_IMG.command_building_1,dmg=baseDamageCanvas();
  g.save();
  if(dmg)g.drawImage(dmg,b.x,b.y,b.w,b.h);
  else if(assetOK(im))g.drawImage(im,b.x,b.y,b.w,b.h);
  else{
-  g.fillStyle='#0c0c0c';g.fillRect(b.x-3,b.y-3,b.w+6,b.h+6);
-  g.fillStyle='#6b6d78';g.fillRect(b.x,b.y,b.w,b.h);
-  g.fillStyle='#4a4c56';for(let y=b.y+10;y<=b.y+b.h;y+=10){g.fillRect(b.x,y,b.w,1);for(let x=b.x+((((y-b.y)/10)|0)%2?0:10);x<b.x+b.w;x+=20)g.fillRect(x,y-10,1,10);}
+  g.fillStyle='#0c0c0c';g.fillRect(b.x-3,b.y-3,b.w+6,b.h+6);g.fillStyle='#6b6d78';g.fillRect(b.x,b.y,b.w,b.h);
  }
  if(dead){
-  // 破壊後も残った外壁・瓦礫を表示し続ける。全体を消さない。
-  g.save();g.globalCompositeOperation='lighter';g.fillStyle='rgba(255,105,28,.32)';
-  g.beginPath();g.arc(cx-b.w*.14,cy+b.h*.04,16+Math.sin(performance.now()/130)*4,0,6.28);g.fill();
-  g.beginPath();g.arc(cx+b.w*.18,cy-b.h*.07,12+Math.cos(performance.now()/145)*3,0,6.28);g.fill();g.restore();
+  g.save();g.globalCompositeOperation='lighter';g.fillStyle='rgba(255,105,28,.28)';
+  g.beginPath();g.arc(cx-b.w*.14,cy+b.h*.04,15+Math.sin(performance.now()/130)*4,0,6.28);g.fill();
+  g.beginPath();g.arc(cx+b.w*.18,cy-b.h*.07,11+Math.cos(performance.now()/145)*3,0,6.28);g.fill();g.restore();
   lab('敵司令本部跡',cx,b.y+b.h+18,'bold 14px system-ui','#d2d4c4');
  }else{
-  g.fillStyle='#3b1717';g.fillRect(b.x+10,b.y-16,b.w-20,7);
-  g.fillStyle='#ff8a8a';g.fillRect(b.x+10,b.y-16,(b.w-20)*Math.max(0,b.hp)/(b.maxHp||30),7);
+  g.fillStyle='#3b1717';g.fillRect(b.x+10,b.y-16,b.w-20,7);g.fillStyle='#ff8a8a';g.fillRect(b.x+10,b.y-16,(b.w-20)*Math.max(0,b.hp)/(b.maxHp||30),7);
   g.strokeStyle='rgba(255,255,255,.35)';g.lineWidth=1;g.strokeRect(b.x+10.5,b.y-15.5,b.w-21,6);
-  if(b.hp<(b.maxHp||30)*.5){
-   g.save();g.globalCompositeOperation='lighter';g.fillStyle='rgba(255,120,30,.45)';
-   g.beginPath();g.arc(b.x+b.w*.24,b.y+b.h*.34,12+Math.sin(performance.now()/110)*3,0,6.28);g.arc(b.x+b.w*.76,b.y+b.h*.48,10+Math.cos(performance.now()/130)*3,0,6.28);g.fill();g.restore();
-  }
+  if(b.hp<(b.maxHp||30)*.5){g.save();g.globalCompositeOperation='lighter';g.fillStyle='rgba(255,120,30,.42)';g.beginPath();g.arc(b.x+b.w*.24,b.y+b.h*.34,11+Math.sin(performance.now()/110)*3,0,6.28);g.arc(b.x+b.w*.76,b.y+b.h*.48,9+Math.cos(performance.now()/130)*3,0,6.28);g.fill();g.restore();}
   lab('敵司令本部',cx,b.y+b.h+18,'bold 14px system-ui','#e6e9d8');
  }
  g.restore();
