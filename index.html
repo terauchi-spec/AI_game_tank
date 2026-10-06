@@ -40,7 +40,7 @@ p{font-size:12px;opacity:.75;margin:8px 0 0;text-align:center;line-height:1.6}
  canvas{position:fixed;inset:0;width:100vw;height:100dvh;max-width:none;max-height:none;border:0;border-radius:0;display:block}
  p{display:none}
  #pad{display:block;position:fixed;inset:0;z-index:20;width:100%;height:100%;pointer-events:none;touch-action:none}
- #debugToggleBtn{display:flex}
+ #debugToggleBtn{display:flex;top:max(54px,calc(env(safe-area-inset-top,0px) + 54px));left:max(10px,calc(env(safe-area-inset-left,0px) + 8px))}
  #stick{position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:max(18px,calc(env(safe-area-inset-bottom,0px) + 12px));width:132px;height:132px}
  #knob{left:42px;top:42px;width:48px;height:48px}
  .btns{position:absolute;right:max(12px,env(safe-area-inset-right,0px));bottom:max(18px,calc(env(safe-area-inset-bottom,0px) + 12px));grid-template-columns:repeat(2,64px);grid-template-rows:repeat(2,64px);gap:10px}
@@ -61,10 +61,10 @@ p{font-size:12px;opacity:.75;margin:8px 0 0;text-align:center;line-height:1.6}
 <button id="debugToggleBtn" type="button" aria-label="無敵モード切替" title="無敵モード切替"><span class="icon">🛡</span><span class="key">P</span></button>
 <div id="debugBadge" hidden>無敵モード</div>
 <div id="pad"><div id="stick"><div id="knob"></div></div><div class="btns"><button class="b" id="skillBtn" data-k="KeyS"><span class="coolRing" id="skillCooldown"></span><span class="coolText" id="skillCooldownText"></span><b>S</b><small id="skillLabel">スキル</small></button><button class="b" id="actionBtn" type="button"><span class="coolRing" id="actionCooldown"></span><span class="coolText" id="actionCooldownText"></span><b id="actionGlyph">D</b><small id="actionLabel">爆弾</small></button><button class="b" data-k="KeyE"><b>E</b><small>操作</small></button></div></div>
-<p>移動: ↑↓←→ / E: 搭乗・降車・近接気絶 / 再開: Enter<br>歩兵: D=爆弾設置/起爆　S=スキル　E=近くの敵兵を10秒気絶　戦車: D=主砲、S=マシンガン（車種で性能差）　戦闘機: D=爆撃　iPhone版もD/S/Eに対応</p>
+<p>移動: ↑↓←→ / E: 搭乗・降車・近接気絶 / 再開: Enter<br>歩兵: D=爆弾設置/起爆　S=スキル　E=近くの敵兵を10秒気絶　戦車: D=主砲、S=マシンガン（車種で性能差）　戦闘機: D=爆撃　スマホ戦車: Dドラッグで照準→離して主砲、S長押し＋ドラッグでMG照準</p>
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.05.98',FILE_CREATED_AT='2026/10/06 11:23',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
+const GAME_VERSION='2026.10.05.98',FILE_CREATED_AT='2026/10/06 20:02',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
 let audioCtx=null;
 function ensureAudio(){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(_){}}
 function tone(f=440,d=.08,v=.035,type='square',f2=null){if(!audioCtx)return;const t=audioCtx.currentTime,o=audioCtx.createOscillator(),a=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t+d);a.gain.setValueAtTime(v,t);a.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(a);a.connect(audioCtx.destination);o.start(t);o.stop(t+d+.02);}
@@ -719,7 +719,7 @@ function drawHelpTouch(x,y){
  g.strokeStyle='#65705a';g.lineWidth=2;g.beginPath();g.arc(x+78,y+108,42,0,6.28);g.stroke();
  g.beginPath();g.arc(x+78,y+108,18,0,6.28);g.stroke();
  g.textAlign='center';g.fillStyle='#e6e9d8';g.font='12px system-ui';g.fillText('移動',x+78,y+168);
- const buttons=[['S','スキル / MG',x+178,y+68],['D','爆弾 / 主砲',x+236,y+112],['E','操作',x+178,y+156]];
+ const buttons=[['S','スキル / MG＋照準',x+178,y+68],['D','爆弾 / 主砲＋照準',x+236,y+112],['E','操作',x+178,y+156]];
  buttons.forEach(([k,lb,bx,by])=>{
   g.fillStyle='rgba(38,48,35,.96)';g.beginPath();g.arc(bx,by,22,0,6.28);g.fill();g.strokeStyle='#65705a';g.lineWidth=2;g.stroke();
   g.fillStyle='#e6e9d8';g.font='bold 18px system-ui';g.fillText(k,bx,by+6);
@@ -762,7 +762,7 @@ const CCol=['#8a7a55','#8c8c86','#7a5f3a','#55504a','#b9ab8a','#7a5f3a','#2f6b34
 const FRAG_COLORS={0:['#8a7a55','#6a5d40'],1:['#8c8c86','#6a6a66'],2:['#7a5f3a','#4e3c24'],3:['#55504a','#35322e'],4:['#b9ab8a','#8a4a3a','#5a2e24'],5:['#7a5f3a','#4e3c24'],6:['#2f6b34','#3d8a42','#4a3622'],7:['#4a5a4a','#33403a','#8fb0c4'],8:['#7a7468','#9a9484','#57534a'],9:['#666865','#8c8f8a','#4e514e'],10:['#b9ab8a','#8a4a3a','#5a2e24']};
 const labels=[];function lab(t,x,y,f,c,ns){labels.push({t,x,y,f,c,ns});}
 function drawLabels(cx,cy){gm.textAlign='center';for(const l of labels){gm.font=l.f;if(!l.ns){gm.lineWidth=3;gm.strokeStyle='rgba(0,0,0,.8)';gm.strokeText(l.t,l.x-cx,l.y-cy);}gm.fillStyle=l.c;gm.fillText(l.t,l.x-cx,l.y-cy);}}
-let state,p,cars,etanks,humans,covers,objects,bullets,parts,base,shake,flash,msg,msgT,bombs,items,waves,water,bridges,mud,fx,bushes,decoy,allies,hound=null,houndTrail=[],radio,airstrike,airbombs,weather,weatherT,weatherNext,baseSpawnT,deathT=0,cam=0,camX=0,blastT,bq,skillReq,lastMouse=0,allySeq=0,builtWalls=[],scoreStats=null,highScoreData=null,resultAnimT=0,vehicleNameT=0,debugMode=0,debugInvincible=false;
+let state,p,cars,etanks,humans,covers,objects,bullets,parts,base,shake,flash,msg,msgT,bombs,items,waves,water,bridges,mud,fx,bushes,decoy,allies,hound=null,houndTrail=[],radio,airstrike,airbombs,weather,weatherT,weatherNext,baseSpawnT,deathT=0,cam=0,camX=0,blastT,bq,skillReq,lastMouse=0,allySeq=0,builtWalls=[],scoreStats=null,highScoreData=null,resultAnimT=0,vehicleNameT=0,debugMode=0,debugInvincible=false,touchTurretAngle=null;
 const DETECT_RANGE_BASE=315,DETECT_CENTER_HALF=7.5*Math.PI/180,DETECT_OUTER_HALF=52.5*Math.PI/180,DETECT_OUTER_SCALE=.7,DETECT_MEMORY=3,TANK_DRAW=30,TANK_HIT=28,LOG_LONG=126,LOG_SHORT=39,CRATE_W=74.8,CRATE_H=74.8,BARREL_SIZE=39.1,CONCRETE_W=264,CONCRETE_H=183.7,WOOD_W=278.3,WOOD_H=223.85,MINI_CONCRETE_W=151.3,MINI_CONCRETE_H=151.3,MINI_WOOD_W=213.6,MINI_WOOD_H=213.6,CONCRETE_MINI_W=151.3,CONCRETE_MINI_H=151.3,WOOD_MINI_W=213.6,WOOD_MINI_H=213.6,TREE_BOX=83,TREE_BOX_MAX=124.5,ROCK_W=58,ROCK_H=40,BARRIER_LONG=208,BARRIER_SHORT=52,FENCE_LONG=188,FENCE_SHORT=81,COMMAND_BASE_W=390,COMMAND_BASE_H=336.7;
 const playerMoving=()=>!!(p&&(keys.ArrowUp||keys.ArrowDown||keys.ArrowLeft||keys.ArrowRight)&&(!p.tank||p.tank.f>0));
 const detectRange=(key='p')=>DETECT_RANGE_BASE*((key==='p'&&p&&p.tank)?2:1)*((key==='p'&&!playerMoving())?.8:1)*(weather==='rain'?.75:1),detectOuterRange=(key='p')=>detectRange(key)*DETECT_OUTER_SCALE,detectDropRange=(key='p')=>detectRange(key)*1.5;
@@ -1129,7 +1129,7 @@ function reset(rerollSkills=true){
  burningNatureSet.clear();lastEnemySeparationAt=-1e9;allyTargetRefreshAt=0;
  state='play';shake=0;flash=0;msg='';msgT=0;interact=false;bombReq=false;skillReq=false;decoy=null;allies=[];hound=null;houndTrail=[];allySeq=0;builtWalls=[];radio=null;airstrike=null;airbombs=[];weather='clear';weatherT=0;weatherNext=15+R()*35;baseSpawnT=5;deathT=0;cam=0;camX=0;scoreStats=newScoreStats();
  setupZones();if(rerollSkills)rollSkillChoices();
- p={x:WW/2,y:3100,hp:2,tank:null,cc:0,vc:0,ang:-1.57,body:-1.57,dig:0,digPrep:0,digElapsed:0,digExitAnim:0,digExitX:0,digExitY:0,scd:0,scdMax:0,drill:0,drillHit:0,drillTarget:null,drillSfx:0,bushHide:0,grappleT:0,grappleTarget:null,flameFuel:3,flameActive:false,flameLockA:null,flamePath:[],flameSfx:0,flameReach:0,fireExposure:0};
+ p={x:WW/2,y:3100,hp:2,tank:null,cc:0,vc:0,ang:-1.57,body:-1.57,dig:0,digPrep:0,digElapsed:0,digExitAnim:0,digExitX:0,digExitY:0,scd:0,scdMax:0,drill:0,drillHit:0,drillTarget:null,drillSfx:0,bushHide:0,grappleT:0,grappleTarget:null,flameFuel:3,flameActive:false,flameLockA:null,flamePath:[],flameSfx:0,flameReach:0,fireExposure:0};touchTurretAngle=null;
  base={x:WW/2-COMMAND_BASE_W/2,y:60,w:COMMAND_BASE_W,h:COMMAND_BASE_H,hp:30};bullets=[];parts=[];bombs=[];waves=[];fx=[];items=[];bushes=[];
  water=[];bridges=[];mud=[];
  for(const ry of [2675,1325]){
@@ -2239,7 +2239,7 @@ function update(dt){
  if((ix||iy)&&!(p.grappleT>0)&&!prepDig&&!playerAir){if(!p.tank||p.tank.f>0){frameMove=playerMove(ix/il*sp*dt,iy/il*sp*dt,r,dt);if(p.tank){if(areaDebugInfiniteFuel)p.tank.f=p.tank.t.fmax||100;else if(!(debugMode===3&&isFighter))p.tank.f=Math.max(0,p.tank.f-frameMove*.04);else p.tank.f=FIGHTER_TYPE.fmax;if(isTruck&&frameMove>0){p.tank.lastDriveSpeed=frameMove/Math.max(.001,dt);p.tank.lastDriveAt=performance.now();}}if(!p.flameActive)p.body=Math.atan2(iy,ix);else if(Number.isFinite(p.flameLockA))p.body=p.flameLockA;if(isTruck||isFighter)p.ang=p.body;if(isTruck&&frameMove>0)checkDrivenTruckCrash();}else if(msgT<=0)say('ガソリン切れ!Eで降車');}
  if(p.digPrep>0){p.digPrep=Math.max(0,p.digPrep-dt);if(R()<.9){trimParts(1);parts.push({x:p.x+(R()-.5)*20,y:p.y+7+(R()-.5)*7,vx:(R()-.5)*42,vy:-16-R()*24,life:.34,col:R()<.5?'#7a5a38':'#9a744b',sz:5+R()*4});}if(p.digPrep<=0){p.dig=5;p.digElapsed=0;sfx('skill');say('潜伏! 地中に潜行');digSoilBurst(p.x,p.y,1.08);}}
  if(p.dig>0&&(inWaterAt(p.x,p.y,5)||inMudAt(p.x,p.y,5))){sfx('splash');finishDig('川・泥では潜伏を継続できない',false);burst(p.x,p.y,14,'#705238',120);}
- if(T&&!isTruck&&!isFighter)p.ang=(performance.now()-lastMouse<1500)?Math.atan2(wy-p.y,wx-p.x):p.body;
+ if(T&&!isTruck&&!isFighter){if(TOUCH&&Number.isFinite(touchTurretAngle))p.ang=touchTurretAngle;else p.ang=(performance.now()-lastMouse<1500)?Math.atan2(wy-p.y,wx-p.x):p.body;}
  p.cc=Math.max(0,p.cc-dt);p.vc=Math.max(0,p.vc-dt);p.scd=Math.max(0,p.scd-dt);p.digExitAnim=Math.max(0,(p.digExitAnim||0)-dt);p.grappleT=Math.max(0,(p.grappleT||0)-dt);if(p.grappleT<=0)p.grappleTarget=null;if(p.scd<=0)p.scdMax=0;if(decoy){decoy.t-=dt;decoy.sound=(decoy.sound||0)-dt;if(decoy.sound<=0){decoy.sound=.75;sfx('decoy');burst(decoy.x,decoy.y,3,'#ffd27a',35);}if(decoy.t<=0)decoy=null;}
  if(p.dig>0){p.digElapsed=(p.digElapsed||0)+dt;p.dig-=dt;if(R()<.6){trimParts(1);parts.push({x:p.x,y:p.y,vx:(R()-.5)*60,vy:(R()-.5)*60,life:.35,col:'#7a5a38',sz:4+R()*3});}if(p.dig<=0)finishDig('潜航解除：地上に出た');}
  if(p.grappleT>0||playerAir){skillReq=false;bombReq=false;interact=false;}
@@ -2251,10 +2251,10 @@ function update(dt){
   else if(T){const veh=p.tank,spot=findDismountSpot(p.x,p.y,veh.kind);if(!spot){say('ここでは降車できない');}else{
    Object.assign(veh,{x:p.x,y:p.y,body:p.body});
    if(veh.kind==='truck'){const recent=performance.now()-(veh.lastDriveAt||0)<650;veh.coastMax=recent?1.4:.38;veh.coastT=veh.coastMax;veh.coastSp=recent?Math.max(45,Math.min(veh.t.sp,veh.lastDriveSpeed||veh.t.sp*.7)):veh.t.sp*.22;veh.coastActionId=newCombatAction('truckCoast');}
-   cars.push(veh);p.tank=null;p.x=spot.x;p.y=spot.y;onHoundPlayerDismount();sfx('enter');say('降車');
+   cars.push(veh);p.tank=null;touchTurretAngle=null;p.x=spot.x;p.y=spot.y;onHoundPlayerDismount();sfx('enter');say('降車');
   }}
   else if(nearHuman){if(stunHuman(nearHuman)){p.grappleT=.3;p.grappleTarget=nearHuman;p.body=Math.atan2(nearHuman.y-p.y,nearHuman.x-p.x);}}
-  else if(near&&!(p.dig>0)&&!(p.drill>0)){cars=cars.filter(c=>c!==near);p.tank=near;p.body=near.body??p.body;p.ang=p.body;sfx('enter');vehicleNameT=1.8;say(near.t.n+' に搭乗!');}else if(near&&p.drill>0)say('突貫中は搭乗できない');}
+  else if(near&&!(p.dig>0)&&!(p.drill>0)){cars=cars.filter(c=>c!==near);p.tank=near;p.body=near.body??p.body;p.ang=p.body;touchTurretAngle=null;sfx('enter');vehicleNameT=1.8;say(near.t.n+' に搭乗!');}else if(near&&p.drill>0)say('突貫中は搭乗できない');}
  updateCoastingTrucks(dt);
  const dAttack=!!(keys.KeyD||mdown||cannonReq);cannonReq=false;
  if(p.tank&&p.tank.kind==='fighter'){if(dAttack&&p.cc<=0)fighterBomb();}
@@ -3148,11 +3148,12 @@ function drawHudHeart(x,y,fillRatio){
  if(r>0){g.save();hudHeartPath(x,y,.62);g.clip();g.fillStyle='#ff6f61';g.fillRect(x-14,y+10-22*r,28,22*r);g.restore();hudHeartPath(x,y,.62);g.strokeStyle='rgba(255,235,220,.78)';g.stroke();}g.restore();
 }
 function drawHudBomb(x,y,planted){
- g.save();if(planted){const pulse=1+(Math.sin(performance.now()/130)+1)*.08;g.strokeStyle='rgba(255,95,75,.88)';g.lineWidth=2;g.beginPath();g.arc(x,y,13*pulse,0,6.28);g.stroke();}
- g.fillStyle=planted?'#202020':'#30342f';g.beginPath();g.arc(x,y+2,8,0,6.28);g.fill();g.strokeStyle=planted?'#ff7a62':'#dfe6ce';g.lineWidth=1.5;g.stroke();g.strokeStyle='#d8b86a';g.lineWidth=2;g.beginPath();g.moveTo(x+5,y-4);g.quadraticCurveTo(x+9,y-10,x+12,y-9);g.stroke();g.fillStyle=planted?'#ff5f4b':'#ffd27a';g.beginPath();g.arc(x+12,y-9,2.2,0,6.28);g.fill();g.restore();
+ g.save();
+ // 設置中は外周リングではなく、爆弾本体そのものを赤くする。
+ g.fillStyle=planted?'#d94a3f':'#30342f';g.beginPath();g.arc(x,y+2,8,0,6.28);g.fill();g.strokeStyle=planted?'#ffd0c8':'#dfe6ce';g.lineWidth=1.5;g.stroke();g.strokeStyle=planted?'#f0a095':'#d8b86a';g.lineWidth=2;g.beginPath();g.moveTo(x+5,y-4);g.quadraticCurveTo(x+9,y-10,x+12,y-9);g.stroke();g.fillStyle='#ffd27a';g.beginPath();g.arc(x+12,y-9,2.2,0,6.28);g.fill();g.restore();
 }
 function drawInfantryBottomHud(){
- if(p.tank)return;const baseBottom=TOUCH?H-160:H-8,cy=TOUCH?baseBottom-18:H-55,x=12;
+ if(p.tank)return;const x=12,cy=TOUCH?28:H-55;
  g.save();g.fillStyle='rgba(8,10,7,.72)';g.fillRect(x-4,cy-16,92,31);g.strokeStyle='rgba(230,233,216,.22)';g.strokeRect(x-3.5,cy-15.5,91,30);
  drawHudHeart(x+12,cy,Math.min(1,p.hp));drawHudHeart(x+31,cy,Math.max(0,Math.min(1,p.hp-1)));drawHudBomb(x+64,cy,!!bombs.some(b=>b.own==='p'));g.restore();
 }
@@ -3495,12 +3496,38 @@ const syncActionButton=()=>{
  if((tankMode||fighterMode)&&p&&p.tank)paintRing(actionCooldown,Math.max(0,p.cc),p.tank.t.ccd);else paintRing(actionCooldown,0,1);
  if(tankMode&&p&&p.tank)paintRing(skillCooldown,Math.max(0,p.vc),Math.max(.01,p.tank.t.vcd));else if(!p?.tank){if(skill==='flame')paintRing(skillCooldown,Math.max(0,3-(p?.flameFuel||0)),3);else paintRing(skillCooldown,Math.max(0,p?.scd||0),Math.max(.01,p?.scdMax||1));}else paintRing(skillCooldown,0,1);
 };
-const actionDown=e=>{e.preventDefault();cap(actionBtn,e);actionBtn.classList.add('on');if(p&&p.tank&&p.tank.kind==='truck'){say('トラックは攻撃できない');actionKey=null;return;}actionKey='KeyD';press(actionKey);};
-const actionUp=e=>{if(e)e.preventDefault();actionBtn.classList.remove('on');if(actionKey)release(actionKey);actionKey=null;};
+let actionAimPointer=null,actionAimStartX=0,actionAimStartY=0,skillAimPointer=null,skillAimStartX=0,skillAimStartY=0;
+const updateTouchTurretAim=(e,sx,sy)=>{
+ if(!p||!p.tank||p.tank.kind!=='tank')return false;
+ const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.hypot(dx,dy)<7)return false;
+ touchTurretAngle=Math.atan2(dy,dx);p.ang=touchTurretAngle;return true;
+};
+const actionDown=e=>{
+ e.preventDefault();cap(actionBtn,e);actionBtn.classList.add('on');
+ if(p&&p.tank&&p.tank.kind==='truck'){say('トラックは攻撃できない');actionKey=null;return;}
+ if(p&&p.tank&&p.tank.kind==='tank'){
+  // スマホ戦車: Dは照準スティック。ドラッグで砲塔旋回し、指を離した時だけ主砲を発射する。
+  actionAimPointer=e.pointerId;actionAimStartX=e.clientX;actionAimStartY=e.clientY;actionKey=null;return;
+ }
+ actionKey='KeyD';press(actionKey);
+};
+const finishAction=(e,fireTank)=>{
+ if(e)e.preventDefault();
+ const wasTankAim=actionAimPointer!==null&&(!e||e.pointerId===actionAimPointer);
+ if(wasTankAim&&e)updateTouchTurretAim(e,actionAimStartX,actionAimStartY);
+ if(wasTankAim&&fireTank&&p&&p.tank&&p.tank.kind==='tank')cannonReq=true;
+ actionAimPointer=null;actionBtn.classList.remove('on');if(actionKey)release(actionKey);actionKey=null;
+};
 actionBtn.addEventListener('pointerdown',actionDown,{passive:false});
-actionBtn.addEventListener('pointerup',actionUp,{passive:false});
-actionBtn.addEventListener('pointercancel',actionUp,{passive:false});
-actionBtn.addEventListener('lostpointercapture',actionUp,{passive:false});
+actionBtn.addEventListener('pointermove',e=>{if(actionAimPointer===e.pointerId){e.preventDefault();updateTouchTurretAim(e,actionAimStartX,actionAimStartY);}},{passive:false});
+actionBtn.addEventListener('pointerup',e=>finishAction(e,true),{passive:false});
+actionBtn.addEventListener('pointercancel',e=>finishAction(e,false),{passive:false});
+actionBtn.addEventListener('lostpointercapture',e=>finishAction(e,false),{passive:false});
+// スマホ戦車: SはMGを押下中ずっと発射。ドラッグ中は射撃しながら砲塔を旋回する。
+skillBtn.addEventListener('pointerdown',e=>{if(p&&p.tank&&p.tank.kind==='tank'){skillAimPointer=e.pointerId;skillAimStartX=e.clientX;skillAimStartY=e.clientY;}},{passive:false});
+skillBtn.addEventListener('pointermove',e=>{if(skillAimPointer===e.pointerId){e.preventDefault();updateTouchTurretAim(e,skillAimStartX,skillAimStartY);}},{passive:false});
+const finishSkillAim=e=>{if(skillAimPointer!==null&&(!e||e.pointerId===skillAimPointer))skillAimPointer=null;};
+skillBtn.addEventListener('pointerup',finishSkillAim,{passive:false});skillBtn.addEventListener('pointercancel',finishSkillAim,{passive:false});skillBtn.addEventListener('lostpointercapture',finishSkillAim,{passive:false});
 syncActionButton();setInterval(syncActionButton,50);
 
 const pad=document.getElementById('stick'),knob=document.getElementById('knob'),st={ArrowUp:0,ArrowDown:0,ArrowLeft:0,ArrowRight:0};let act=null;
@@ -3516,7 +3543,7 @@ if(!window.PointerEvent){
  cv.addEventListener('touchstart',e=>{const t=e.changedTouches[0];if(!t)return;e.preventDefault();const r=cv.getBoundingClientRect();mx=(t.clientX-r.left)*W/r.width;my=(t.clientY-r.top)*H/r.height;if(state==='title')handleTitlePointer(mx,my);else if(state==='help')handleHelpPointer(mx,my);else if(state==='skill'){handleSkillMenuPointer(mx,my);}else if(state==='win'||state==='lose'){handleResultPointer(mx,my);}},{passive:false});
 }
 
-const clearInputs=()=>{for(const k in keys)keys[k]=false;for(const k in st)st[k]=0;act=null;actionKey=null;dPressHandled=false;bombReq=false;cannonReq=false;interact=false;skillReq=false;knob.style.transform='';document.querySelectorAll('[data-k]').forEach(el=>el.classList.remove('on'));actionBtn.classList.remove('on');mdown=false;};
+const clearInputs=()=>{for(const k in keys)keys[k]=false;for(const k in st)st[k]=0;act=null;actionKey=null;actionAimPointer=null;skillAimPointer=null;touchTurretAngle=null;dPressHandled=false;bombReq=false;cannonReq=false;interact=false;skillReq=false;knob.style.transform='';document.querySelectorAll('[data-k]').forEach(el=>el.classList.remove('on'));actionBtn.classList.remove('on');mdown=false;};
 const resetBtn=document.getElementById('resetBtn');
 const backToTitle=e=>{
  if(e){e.preventDefault();e.stopPropagation();}
