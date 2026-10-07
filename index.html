@@ -65,7 +65,7 @@ p{font-size:12px;opacity:.75;margin:8px 0 0;text-align:center;line-height:1.6}
 <p>移動: ↑↓←→ / E: 搭乗・降車・近接気絶 / 再開: Enter<br>歩兵: D=爆弾設置/起爆　S=スキル　E=近くの敵兵を10秒気絶　戦車: D=主砲、S=マシンガン（車種で性能差）　戦闘機: D=爆撃　スマホ戦車: Dドラッグで照準→離して主砲、S長押し＋ドラッグでMG照準</p>
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.05.98',FILE_CREATED_AT='2026/10/07 18:09',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
+const GAME_VERSION='2026.10.05.98',FILE_CREATED_AT='2026/10/07 18:50',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
 let audioCtx=null;
 function ensureAudio(){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(_){}}
 function tone(f=440,d=.08,v=.035,type='square',f2=null){if(!audioCtx)return;const t=audioCtx.currentTime,o=audioCtx.createOscillator(),a=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t+d);a.gain.setValueAtTime(v,t);a.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(a);a.connect(audioCtx.destination);o.start(t);o.stop(t+d+.02);}
@@ -552,7 +552,7 @@ function destroyObject(o,fxOn=true){return explodeObject(o,fxOn);}
 function damageObject(o,source='impact'){
  if(!objects||!o||!objects.includes(o))return false;
  // 直撃・衝突系は即爆発。爆風・火炎・銃撃は3秒炎上してから爆発する。
- const instant=source==='cannonDirect'||source==='bombDirect'||source==='drill'||source==='vehicle'||source==='impact';
+ const instant=source==='cannonDirect'||source==='bombDirect'||source==='drill'||source==='vehicle'||source==='impact'||source==='sniper';
  const burn=source==='cannonBlast'||source==='bombBlast'||source==='objectBlast'||source==='flame'||source==='mg'||source==='cannon'||source==='bomb';
  if(instant)return explodeObject(o,true);
  // サブマシンガン系の弾は2発命中で炎上開始。炎上後の追加弾は爆発を早めない。
@@ -2711,6 +2711,74 @@ function drawSniperStatusIcon(x,y,o){
  }
  g.restore();
 }
+function drawSniperSilhouette(it,sw,sh,top,near){
+ const x=it.p.x,y=top,w=sw,h=sh,col=sniperPanelColor(it.kind,it.kd),edge='rgba(15,18,15,.86)',hi='rgba(255,255,255,'+(.06+.11*near)+')';
+ g.save();g.translate(x,y);g.lineWidth=Math.max(1,Math.min(2.2,w*.035));g.strokeStyle=edge;g.fillStyle=col;
+ const kd=it.kd,o=it.o||{};
+ if(it.kind==='cover'){
+  if(kd===6){
+   // 木：幹＋不整形の樹冠。近距離でも板に見えない程度の簡易形状。
+   const trunkW=Math.max(3,w*.18),trunkH=h*.48;g.fillStyle='#66533a';g.fillRect(-trunkW/2,h-trunkH,trunkW,trunkH);
+   g.fillStyle=col;g.beginPath();g.arc(-w*.17,h*.38,w*.28,0,6.28);g.arc(w*.15,h*.34,w*.31,0,6.28);g.arc(0,h*.18,w*.30,0,6.28);g.fill();
+   g.globalAlpha=.22;g.fillStyle='#d9e7c9';g.beginPath();g.arc(-w*.12,h*.23,w*.13,0,6.28);g.fill();
+  }else if(kd===8){
+   // 岩：低い多角形。
+   g.beginPath();g.moveTo(-w*.48,h*.84);g.lineTo(-w*.37,h*.39);g.lineTo(-w*.10,h*.17);g.lineTo(w*.30,h*.25);g.lineTo(w*.49,h*.60);g.lineTo(w*.40,h*.88);g.closePath();g.fill();g.stroke();
+   g.fillStyle=hi;g.beginPath();g.moveTo(-w*.30,h*.43);g.lineTo(-w*.08,h*.25);g.lineTo(w*.13,h*.31);g.lineTo(-w*.06,h*.48);g.closePath();g.fill();
+  }else if(kd===3||kd===9||kd===4||kd===10){
+   // 建物：木造は屋根を強調、コンクリートは箱型＋窓。
+   const wood=kd===4||kd===10;
+   if(wood){g.fillRect(-w*.46,h*.35,w*.92,h*.62);g.fillStyle='#48523f';g.beginPath();g.moveTo(-w*.54,h*.36);g.lineTo(0,h*.06);g.lineTo(w*.54,h*.36);g.closePath();g.fill();g.stroke();}
+   else{g.fillRect(-w*.48,h*.18,w*.96,h*.79);g.fillStyle=hi;g.fillRect(-w*.44,h*.22,w*.88,Math.max(2,h*.10));}
+   g.fillStyle='rgba(22,25,22,.72)';const ww=Math.max(2,w*.12),wh=Math.max(2,h*.12);for(const q of [-.25,.08,.32])g.fillRect(q*w-ww/2,h*.47,ww,wh);
+   g.fillRect(-w*.09,h*.68,w*.18,h*.29);
+  }else if(kd===5){
+   // フェンス：支柱＋横桟。
+   g.strokeStyle=col;g.lineWidth=Math.max(1.2,h*.11);for(const q of [-.42,-.14,.14,.42]){g.beginPath();g.moveTo(q*w,h*.14);g.lineTo(q*w,h*.94);g.stroke();}
+   g.lineWidth=Math.max(1,h*.09);for(const yy of [.35,.64]){g.beginPath();g.moveTo(-w*.5,h*yy);g.lineTo(w*.5,h*yy);g.stroke();}
+  }else if(kd===0){
+   // 丸太：積み上げを3本の円柱で表現。
+   const rh=Math.max(3,h*.22);for(let i=0;i<3;i++){const yy=h*(.40+i*.20);g.fillStyle=col;g.roundRect(-w*.48,yy-rh/2,w*.96,rh,rh*.45);g.fill();g.strokeStyle=edge;g.stroke();g.fillStyle='#a58a62';g.beginPath();g.ellipse(w*.43,yy,rh*.42,rh*.48,0,0,6.28);g.fill();}
+  }else{
+   // 壁・防護壁・木箱など。
+   g.fillRect(-w*.49,h*.28,w*.98,h*.70);g.strokeRect(-w*.49,h*.28,w*.98,h*.70);
+   g.fillStyle=hi;g.fillRect(-w*.45,h*.32,w*.90,Math.max(2,h*.10));
+   if(kd===2){g.strokeStyle='rgba(42,31,20,.75)';g.beginPath();g.moveTo(-w*.42,h*.35);g.lineTo(w*.42,h*.91);g.moveTo(w*.42,h*.35);g.lineTo(-w*.42,h*.91);g.stroke();}
+   if(kd===7){g.fillStyle='rgba(25,27,25,.34)';for(let q=-.33;q<=.33;q+=.22)g.fillRect(q*w,h*.35,Math.max(2,w*.055),h*.52);}
+  }
+ }else if(it.kind==='object'){
+  if(o.kind==='barrel'){
+   // ドラム缶：円筒形。
+   g.beginPath();g.ellipse(0,h*.24,w*.43,h*.12,0,0,6.28);g.fill();g.fillRect(-w*.43,h*.24,w*.86,h*.62);g.beginPath();g.ellipse(0,h*.86,w*.43,h*.12,0,0,6.28);g.fill();g.stroke();
+   g.strokeStyle=hi;g.beginPath();g.moveTo(-w*.40,h*.48);g.lineTo(w*.40,h*.48);g.moveTo(-w*.40,h*.70);g.lineTo(w*.40,h*.70);g.stroke();
+  }else{
+   // 木箱。
+   g.fillRect(-w*.46,h*.14,w*.92,h*.82);g.strokeRect(-w*.46,h*.14,w*.92,h*.82);g.strokeStyle='rgba(58,39,25,.82)';g.beginPath();g.moveTo(-w*.38,h*.22);g.lineTo(w*.38,h*.88);g.moveTo(w*.38,h*.22);g.lineTo(-w*.38,h*.88);g.stroke();
+  }
+ }else if(it.kind==='tank'){
+  // 戦車：車体＋履帯＋砲塔＋砲身。砲塔の実向きも横振りとして軽く反映。
+  g.fillStyle='rgba(20,23,21,.78)';g.fillRect(-w*.50,h*.66,w,h*.24);g.fillStyle=col;g.beginPath();g.moveTo(-w*.43,h*.70);g.lineTo(-w*.32,h*.43);g.lineTo(w*.31,h*.43);g.lineTo(w*.45,h*.70);g.closePath();g.fill();g.stroke();
+  g.fillStyle='rgba(18,20,19,.88)';g.fillRect(-w*.50,h*.78,w,h*.13);
+  g.fillStyle=col;g.beginPath();g.ellipse(0,h*.40,w*.24,h*.18,0,0,6.28);g.fill();g.stroke();
+  const rel=Number.isFinite(o.ang)?angD(o.ang,sniperAimAngle()):0,gunX=Math.max(-w*.46,Math.min(w*.46,Math.sin(rel)*w*.52));g.strokeStyle='#c2c8c0';g.lineWidth=Math.max(2,h*.075);g.beginPath();g.moveTo(0,h*.38);g.lineTo(gunX,h*.13);g.stroke();
+  g.fillStyle=hi;g.fillRect(-w*.32,h*.50,w*.64,Math.max(2,h*.08));
+ }else if(it.kind==='vehicle'){
+  if(o.kind==='truck'){
+   // トラック：荷台＋キャビン＋車輪。
+   g.fillStyle=col;g.fillRect(-w*.48,h*.34,w*.60,h*.49);g.fillRect(w*.10,h*.48,w*.34,h*.35);g.fillStyle=hi;g.fillRect(w*.16,h*.52,w*.20,h*.11);
+   g.fillStyle='rgba(15,17,16,.90)';for(const q of [-.31,-.05,.28]){g.beginPath();g.arc(q*w,h*.88,Math.max(2,h*.10),0,6.28);g.fill();}
+  }else{
+   // 乗車可能戦車。
+   g.fillStyle=col;g.beginPath();g.moveTo(-w*.46,h*.75);g.lineTo(-w*.34,h*.48);g.lineTo(w*.34,h*.48);g.lineTo(w*.47,h*.75);g.closePath();g.fill();g.fillStyle='rgba(18,20,19,.85)';g.fillRect(-w*.48,h*.78,w*.96,h*.13);g.fillStyle=col;g.beginPath();g.ellipse(0,h*.43,w*.23,h*.17,0,0,6.28);g.fill();g.strokeStyle='#b7bdb5';g.lineWidth=Math.max(2,h*.07);g.beginPath();g.moveTo(0,h*.41);g.lineTo(w*.34,h*.17);g.stroke();
+  }
+ }else if(it.kind==='base'){
+  // 司令本部：低い大型建築物＋中央上部を強調。
+  g.fillStyle=col;g.fillRect(-w*.48,h*.28,w*.96,h*.68);g.strokeRect(-w*.48,h*.28,w*.96,h*.68);g.fillStyle='#666b66';g.fillRect(-w*.22,h*.10,w*.44,h*.20);g.fillStyle='rgba(25,28,25,.72)';for(const q of [-.30,-.10,.10,.30])g.fillRect(q*w-w*.045,h*.49,w*.09,h*.16);g.fillRect(-w*.10,h*.69,w*.20,h*.27);
+ }else{
+  g.fillRect(-w*.49,h*.24,w*.98,h*.74);g.strokeRect(-w*.49,h*.24,w*.98,h*.74);
+ }
+ g.restore();
+}
 function drawSniperScope(){
  if(!p||!p.sniperMode)return;
  const viewRange=sniperViewRange(),R=Math.min(W,H)*.46,cx=W*.5,cy=H*.49,minX=Math.max(0,p.x-viewRange),maxX=Math.min(WW,p.x+viewRange),minY=Math.max(0,p.y-viewRange),maxY=Math.min(WH,p.y+viewRange),env=[];
@@ -2739,7 +2807,8 @@ function drawSniperScope(){
    g.textAlign='center';g.font='bold '+Math.max(10,Math.min(14,hh*.11))+'px system-ui';g.fillStyle='#eef3e8';g.fillText(distM+'m',pr.x,Math.min(cy+R-10,top+hh+15));
    if(!falling)drawSniperStatusIcon(pr.x,Math.max(cy-R+15,top-14),it.o);
   }else{
-   const enemyScale=it.kind==='tank'?1.18:1,sw=Math.max(5,Math.min(R*.7,it.w*baseScale*2.2*enemyScale)),sh=Math.max(4,Math.min(R*.5,it.h*baseScale*1.8*enemyScale)),top=pr.y-sh*.5;g.fillStyle=sniperPanelColor(it.kind,it.kd);g.fillRect(pr.x-sw/2,top,sw,sh);g.fillStyle='rgba(255,255,255,'+(.05+.10*near)+')';g.fillRect(pr.x-sw/2,top,sw,Math.max(2,sh*.12));
+   const enemyScale=it.kind==='tank'?1.18:1,sw=Math.max(5,Math.min(R*.7,it.w*baseScale*2.2*enemyScale)),sh=Math.max(4,Math.min(R*.5,it.h*baseScale*1.8*enemyScale)),top=pr.y-sh*.5;
+   drawSniperSilhouette(it,sw,sh,top,near);
    if(it.kind==='tank')drawSniperStatusIcon(pr.x,top-9,it.o);
   }
  }
@@ -2888,7 +2957,7 @@ function update(dt){
   // 最適化後も砲弾が薄い遮蔽物をすり抜けないよう、前フレーム位置→現在位置の線分で判定する。
   if(!dead){const minX=Math.min(ox,b.x)-4,maxX=Math.max(ox,b.x)+4,minY=Math.min(oy,b.y)-4,maxY=Math.max(oy,b.y)+4,segA={x:ox,y:oy},segB={x:b.x,y:b.y};
    const hitObject=objectsInBox(minX,minY,maxX,maxY).find(o=>segmentHitsObject(segA,segB,o,b.k==='c'?2:0));
-   if(hitObject){dead=true;if(b.k==='c'){damageObject(hitObject,'cannonDirect');}else{if(b.k!=='s')damageObject(hitObject,'mg');burst(b.x,b.y,4,b.k==='s'?'#e7e2c9':'#b9b39a',90);}}
+   if(hitObject){dead=true;if(b.k==='c'){damageObject(hitObject,'cannonDirect');}else if(b.k==='s'){damageObject(hitObject,'sniper');burst(b.x,b.y,8,'#e7e2c9',150);}else{damageObject(hitObject,'mg');burst(b.x,b.y,4,'#b9b39a',90);}}
    if(!dead){const hitCover=coversInBox(minX,minY,maxX,maxY).find(c=>segmentHitsCover(segA,segB,c,b.k==='c'?2:0));
     if(hitCover){dead=true;if(b.k==='c'){if(b.from==='p')playerCannonGroundImpact(b.x,b.y,b.actionId);else{cannonImpact(b.x,b.y,b.from);explode(b.x,b.y,28,false,b.from,0);carve(b.x,b.y,48,false,'cannonBlast');burst(b.x,b.y,22,'#a89a74',260);shake=Math.max(shake,8);}}else burst(b.x,b.y,4,'#b9b39a',90);}
    }
