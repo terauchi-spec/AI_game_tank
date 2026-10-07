@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車大戦 v97</title>
+<title>戦車ゲーム 評価画面更新 2026/10/08 08:17</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -54,6 +54,12 @@ p{font-size:12px;opacity:.75;margin:8px 0 0;text-align:center;line-height:1.6}
  .btns{grid-template-columns:repeat(2,58px);grid-template-rows:repeat(2,58px);gap:8px}
  .b{width:58px;height:58px}
 }
+
+/* Result screen: independent scrollable responsive layer */
+#resultScreen{display:none;position:fixed;inset:0;z-index:70;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:radial-gradient(ellipse at 50% 0%,#293326,#10140f 70%);color:#edf1e4;box-sizing:border-box;padding:max(22px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(28px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));touch-action:pan-y;user-select:text;-webkit-user-select:text}
+body.result-open #resultScreen{display:block}body.result-open #pad,body.result-open #resetBtn,body.result-open #debugToggleBtn,body.result-open #debugBadge{display:none!important}
+.res-wrap{max-width:860px;margin:0 auto}.res-kicker{letter-spacing:.23em;font-size:12px;color:#aab89a;font-weight:800}.res-header{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:18px}.res-status{font-size:clamp(23px,5vw,40px);font-weight:950;letter-spacing:.09em;margin:4px 0}.res-card{background:rgba(31,40,28,.94);border:1px solid #5b6a51;border-radius:13px;padding:18px;margin-bottom:14px;box-shadow:0 8px 25px #0003}.res-summary{display:flex;align-items:center;justify-content:space-between;gap:14px}.res-score-label{font-size:12px;color:#aab89a;font-weight:800;letter-spacing:.13em}.res-score{font-size:clamp(40px,8vw,66px);font-weight:900;color:#ffe09a;line-height:1.12;font-variant-numeric:tabular-nums}.res-medal{min-width:115px;text-align:center}.res-medal-art{font-size:40px;color:#ffe09a;text-shadow:0 0 18px #ddbd5666;letter-spacing:-.14em}.res-medal-rank{font-size:38px;font-weight:950;line-height:1}.res-section{font-size:19px;font-weight:850;margin:0 0 13px}.res-sub{color:#acb9a3;font-size:12px;margin-top:5px}.res-style{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);align-items:center;gap:10px}.res-radar{width:100%;max-height:330px;display:block}.res-axes{display:grid;grid-template-columns:1fr 1fr;gap:8px}.res-axis{border-bottom:1px solid #43503f;padding:7px 2px;display:flex;justify-content:space-between;align-items:center;gap:5px;font-size:13px}.res-stars{color:#f2ce83;letter-spacing:.03em;white-space:nowrap}.res-title-badge{margin:10px 0 13px;background:#3a442c;border:1px solid #87976c;border-radius:8px;padding:12px 14px}.res-title-name{font-size:21px;font-weight:900;color:#ffe09a}.res-title-note{font-size:12px;color:#c4ceb9;margin-top:6px}.res-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.res-stat{background:#252e22;border-radius:9px;padding:13px 12px}.res-stat label{display:block;font-size:12px;color:#abb9a3}.res-stat strong{display:block;font-size:24px;margin-top:6px;font-variant-numeric:tabular-nums}.res-detail{display:grid;grid-template-columns:1fr 1fr;gap:0 24px}.res-detail-row{display:flex;justify-content:space-between;border-bottom:1px solid #43503f;padding:10px 0;font-size:13px;gap:10px}.res-detail-row span{color:#b5c1af}.res-actions{display:flex;gap:12px;margin:15px 0 24px}.res-btn{flex:1;min-height:52px;border:1px solid #839473;color:#edf1e4;background:#303e2e;border-radius:9px;font:800 16px system-ui;cursor:pointer;touch-action:manipulation}.res-btn.primary{background:#d9bd78;color:#1b2116;border-color:#ffe1a1}.res-btn:active{transform:translateY(1px)}
+@media(max-width:580px){.res-card{padding:14px}.res-style{grid-template-columns:1fr}.res-radar{max-height:290px}.res-axes{gap:5px}.res-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.res-detail{grid-template-columns:1fr}.res-medal{min-width:92px}.res-medal-art{font-size:32px}}
 </style>
 </head>
 <body>
@@ -63,6 +69,14 @@ p{font-size:12px;opacity:.75;margin:8px 0 0;text-align:center;line-height:1.6}
 <div id="debugBadge" hidden>無敵モード</div>
 <div id="pad"><div id="stick"><div id="knob"></div></div><div class="btns"><button class="b" id="skillBtn" data-k="KeyS"><span class="coolRing" id="skillCooldown"></span><span class="coolText" id="skillCooldownText"></span><b>S</b><small id="skillLabel">スキル</small></button><button class="b" id="actionBtn" type="button"><span class="coolRing" id="actionCooldown"></span><span class="coolText" id="actionCooldownText"></span><b id="actionGlyph">D</b><small id="actionLabel">爆弾</small></button><button class="b" data-k="KeyE"><b>E</b><small>操作</small></button></div></div>
 <p>移動: ↑↓←→ / E: 搭乗・降車・近接気絶 / 再開: Enter<br>歩兵: D=爆弾設置/起爆　S=スキル　E=近くの敵兵を10秒気絶　戦車: D=主砲、S=マシンガン（車種で性能差）　戦闘機: D=爆撃　スマホ戦車: Dドラッグで照準→離して主砲、S長押し＋ドラッグでMG照準</p>
+<div id="resultScreen" aria-label="プレイ結果" role="region"><div class="res-wrap">
+<header class="res-header"><div><div class="res-kicker">MISSION REPORT</div><div id="resStatus" class="res-status"></div><div id="resArea" class="res-sub"></div></div><div class="res-kicker">AFTER ACTION REPORT</div></header>
+<section class="res-card res-summary"><div><div class="res-score-label">TOTAL SCORE</div><div id="resScore" class="res-score">0</div><div id="resHigh" class="res-sub"></div></div><div class="res-medal"><div id="resInsignia" class="res-medal-art"></div><div id="resRank" class="res-medal-rank"></div><div class="res-score-label">RANK</div></div></section>
+<section class="res-card"><h2 class="res-section">プレイスタイル <span class="res-sub">8軸 × 5段階</span></h2><div class="res-style"><svg id="resRadar" class="res-radar" viewBox="0 0 360 340" role="img" aria-label="8軸のプレイスタイルレーダーチャート"></svg><div id="resAxes" class="res-axes"></div></div><div class="res-title-badge"><div class="res-score-label">戦闘スタイル称号</div><div id="resTitle" class="res-title-name"></div><div id="resTitleNote" class="res-title-note"></div></div><div class="res-sub">各レベルは今回の行動傾向を示します。全項目Lv5を目指す評価ではありません。</div></section>
+<section class="res-card"><h2 class="res-section">戦績サマリー</h2><div id="resQuick" class="res-stats"></div></section>
+<section class="res-card"><h2 class="res-section">詳細戦績</h2><div id="resDetail" class="res-detail"></div></section>
+<div class="res-actions"><button class="res-btn primary" id="resRetry" type="button">もう一度</button><button class="res-btn" id="resHome" type="button">タイトルへ</button></div>
+</div></div>
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
 const GAME_VERSION='2026.10.05.98',FILE_CREATED_AT='2026/10/07 18:50',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
@@ -1692,7 +1706,7 @@ function newScoreStats(){return{
  time:0,unseenDist:0,forwardDist:0,lastY:null,coverDestroyed:0,
  unseenForwardStreak:0,maxUnseenForwardStreak:0,
  detections:0,foundEntries:0,suspicionEntries:0,stuns:0,
- humanKills:0,eliteKills:0,tankKills:0,
+ humanKills:0,eliteKills:0,tankKills:0, shots:0, sniperShots:0, cannonShots:0, mgShots:0, skillUses:0, bombBlasts:0, vehicleTime:0, vehicleKinds:{}, vehicleBoards:0, damageHits:0, totalTravel:0, detectedTime:0, maxProgress:0,
  actionSeq:0,actionKills:{},multiKillBonus:0,
  lastPlayerKillTime:-999,killChain:0,maxKillChain:0,alertCombatKills:0,
  wasDetected:false,final:null,finalized:false,newHigh:false
@@ -1723,11 +1737,11 @@ function trackEnemyDeaths(){
 }
 function updateScoreTracking(dt,moved=0){
  if(!scoreStats||scoreStats.finalized)return;
- scoreStats.time+=dt;
+ scoreStats.time+=dt;scoreStats.totalTravel+=Math.max(0,moved);scoreStats.maxProgress=Math.max(scoreStats.maxProgress,Math.max(0,WH-p.y));if(p.tank){scoreStats.vehicleTime+=dt;scoreStats.vehicleKinds[p.tank.kind]=true;}
  let forwardStep=0;
  if(scoreStats.lastY==null)scoreStats.lastY=p.y;
  else{forwardStep=Math.max(0,scoreStats.lastY-p.y);scoreStats.forwardDist+=forwardStep;scoreStats.lastY=p.y;}
- const detected=playerDetectedNow();
+ const detected=playerDetectedNow();if(detected)scoreStats.detectedTime+=dt;
  if(!detected){
   scoreStats.unseenDist+=Math.max(0,moved);
   scoreStats.unseenForwardStreak+=forwardStep;
@@ -1738,7 +1752,7 @@ function updateScoreTracking(dt,moved=0){
  trackEnemyDeaths();
 }
 function scoreGrade(v,a,b){return v>=a?'A':v>=b?'B':'C';}
-function overallRank(v){return v>=10000?'S':v>=7500?'A':v>=5000?'B':v>=2500?'C':'D';}
+function overallRank(v){return v>=10000?'S':v>=7500?'A':v>=5000?'B':v>=2500?'C':v>=1200?'D':v>=400?'E':'F';}
 function formatRunTime(sec){sec=Math.max(0,Math.round(sec));return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');}
 function finalizeScore(cleared){
  if(!scoreStats||scoreStats.finalized)return;
@@ -1912,7 +1926,7 @@ function triggerPlayerDeath(){
 function damagePlayerByOwnBomb(){
  if(state!=='play'||p.tank||p.dig>0)return false;
  if(debugInvincible){shake=Math.max(shake,3);flash=Math.max(flash,.12);return true;}
- p.hp=Math.max(0,(p.hp||0)-1);
+ if(scoreStats)scoreStats.damageHits++;p.hp=Math.max(0,(p.hp||0)-1);
  if(p.hp<=0){triggerPlayerDeath();return true;}
  shake=Math.max(shake,9);flash=Math.max(flash,.32);sfx('vehicleHit');fb(p.x,p.y,20);burst(p.x,p.y,18,'#ff8a4a',150);say('爆風でハートが1つ減った');return true;
 }
@@ -1934,7 +1948,7 @@ function damageBridgeByBomb(x,y,r=42){
  if(damaged){bridges=next;shake=Math.max(shake,10);}
  return damaged;
 }
-function bombBlast(x,y,actionId=0,selfHit=false){if(!actionId)actionId=newCombatAction('bomb');sfx('explosion');stunHoundAtBlast(x,y,95);suspectHumansNear(x,y,500);for(const e of (etanks||[]))if(e.alive&&Math.hypot(e.x-x,e.y-y)<=100)enterTankFound(e,'p',.5);/* 自分の設置爆弾は、歩兵プレイヤーと相棒を短時間だけ押し流す。相棒にはダメージを与えない。 */if(p&&!p.tank&&!(p.dig>0))beginBlastFlight(p,x,y,95,58,8,0);for(const a of (allies||[]))if(a.alive&&!(a.chute>0))beginBlastFlight(a,x,y,95,42,8,0);damageBridgeByBomb(x,y,42);/* 外側の爆風は炎上、近距離の爆芯は即爆発。 */damageObjectsInRadius(x,y,95,'bombBlast');damageObjectsInRadius(x,y,28,'bombDirect');carve(x,y,28,true,null);fb(x,y,52);burst(x,y,70,'#ff8a3a',420);burst(x,y,25,'#fff3b0',520);shake=18;flash=.7;waves.push({x,y,r:0,max:95,hit:!!selfHit,actionId});return actionId;}
+function bombBlast(x,y,actionId=0,selfHit=false){if(scoreStats&&!scoreStats.finalized)scoreStats.bombBlasts++;if(!actionId)actionId=newCombatAction('bomb');sfx('explosion');stunHoundAtBlast(x,y,95);suspectHumansNear(x,y,500);for(const e of (etanks||[]))if(e.alive&&Math.hypot(e.x-x,e.y-y)<=100)enterTankFound(e,'p',.5);/* 自分の設置爆弾は、歩兵プレイヤーと相棒を短時間だけ押し流す。相棒にはダメージを与えない。 */if(p&&!p.tank&&!(p.dig>0))beginBlastFlight(p,x,y,95,58,8,0);for(const a of (allies||[]))if(a.alive&&!(a.chute>0))beginBlastFlight(a,x,y,95,42,8,0);damageBridgeByBomb(x,y,42);/* 外側の爆風は炎上、近距離の爆芯は即爆発。 */damageObjectsInRadius(x,y,95,'bombBlast');damageObjectsInRadius(x,y,28,'bombDirect');carve(x,y,28,true,null);fb(x,y,52);burst(x,y,70,'#ff8a3a',420);burst(x,y,25,'#fff3b0',520);shake=18;flash=.7;waves.push({x,y,r:0,max:95,hit:!!selfHit,actionId});return actionId;}
 function tankWreckId(t){return (t&&t.id)||'enemy';}
 function spawnTankWreck(x,y,body,ang,tank,impactX=null,impactY=null){
  if(!tankWrecks)tankWrecks=[];
@@ -2076,7 +2090,7 @@ function cannonBlastPush(x,y,from){
  // 敵戦車砲を含め、歩兵状態のプレイヤーも爆風で吹き飛ぶ。
  if(p&&!p.tank&&!(p.dig>0))beginBlastFlight(p,x,y,rad,baseForce,8,0);
 }
-function fire(x,y,a,from,k,spd,rng,dmg){if(from==='p')sfx(k==='c'?'cannon':k==='s'?'sniper':'mg');else if(from==='ally')sfx('mg');else if(from==='e')sfx(k==='c'?'enemyCannon':'enemyGun');const actionId=(from==='p'&&(k==='c'||k==='s'))?newCombatAction(k==='s'?'sniper':'cannon'):0;bullets.push({x,y,sx:x,sy:y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,from,k,dmg:dmg||0,life:rng/spd,actionId});}
+function fire(x,y,a,from,k,spd,rng,dmg){if(from==='p'&&scoreStats&&!scoreStats.finalized){scoreStats.shots++;if(k==='s')scoreStats.sniperShots++;else if(k==='c')scoreStats.cannonShots++;else scoreStats.mgShots++;}if(from==='p')sfx(k==='c'?'cannon':k==='s'?'sniper':'mg');else if(from==='ally')sfx('mg');else if(from==='e')sfx(k==='c'?'enemyCannon':'enemyGun');const actionId=(from==='p'&&(k==='c'||k==='s'))?newCombatAction(k==='s'?'sniper':'cannon'):0;bullets.push({x,y,sx:x,sy:y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,from,k,dmg:dmg||0,life:rng/spd,actionId});}
 function enemyCannonSpeed(){return p&&p.tank&&p.tank.kind==='tank'?(p.tank.t.cspd||630):630;}
 function cannonImpactFx(x,y){fb(x,y,125);burst(x,y,165,'#ff7a28',560);burst(x,y,78,'#fff2a6',720);burst(x,y,30,'#ffffff',820);shake=Math.max(shake,18);flash=Math.max(flash,.62);}
 function cannonImpact(x,y,from){cannonImpactFx(x,y);cannonBlastPush(x,y,from);stunHoundAtBlast(x,y,95);damageObjectsInRadius(x,y,60,'cannonBlast');if(from==='p')suspectHumansNear(x,y,500);}
@@ -2860,7 +2874,7 @@ function update(dt){
    cars.push(veh);p.tank=null;touchTurretAngle=null;p.x=spot.x;p.y=spot.y;onHoundPlayerDismount();sfx('enter');say('降車');
   }}
   else if(nearHuman){if(stunHuman(nearHuman)){p.grappleT=.3;p.grappleTarget=nearHuman;p.body=Math.atan2(nearHuman.y-p.y,nearHuman.x-p.x);}}
-  else if(near&&!(p.dig>0)&&!(p.drill>0)){cars=cars.filter(c=>c!==near);p.tank=near;p.body=near.body??p.body;p.ang=p.body;touchTurretAngle=null;sfx('enter');vehicleNameT=1.8;say(near.t.n+' に搭乗!');}else if(near&&p.drill>0)say('突貫中は搭乗できない');}
+  else if(near&&!(p.dig>0)&&!(p.drill>0)){cars=cars.filter(c=>c!==near);p.tank=near;if(scoreStats){scoreStats.vehicleBoards++;scoreStats.vehicleKinds[near.kind]=true;}p.body=near.body??p.body;p.ang=p.body;touchTurretAngle=null;sfx('enter');vehicleNameT=1.8;say(near.t.n+' に搭乗!');}else if(near&&p.drill>0)say('突貫中は搭乗できない');}
  updateCoastingTrucks(dt);
  const dAttack=!!(keys.KeyD||mdown||cannonReq);cannonReq=false;
  if(p.tank&&p.tank.kind==='fighter'){if(dAttack&&p.cc<=0)fighterBomb();}
@@ -2983,7 +2997,7 @@ function update(dt){
    if(!dead&&decoy&&D(b,decoy)<10){dead=true;if(b.k==='c')cannonImpact(b.x,b.y,b.from);burst(b.x,b.y,8,'#ff5a5a',150);}
    if(!dead&&!(p.dig>0)&&D(b,p)<(p.tank?TANK_HIT:9)){dead=true;if(b.k==='c')cannonImpact(b.x,b.y,b.from);burst(b.x,b.y,8,'#ff5a5a',150);
     if(p.tank){if(p.tank.kind==='truck'){if(b.k==='c'){wreck();}else{p.tank.mgHits=(p.tank.mgHits||0)+1;sfx('vehicleHit');shake=Math.max(shake,3);if(p.tank&&p.tank.mgHits>=5)wreck();}}else if(p.tank.kind==='fighter'){if(b.k==='c')p.tank.hp-=3;else p.tank.hp-=1;sfx('vehicleHit');shake=Math.max(shake,b.k==='c'?9:3);if(p.tank&&p.tank.hp<=0)wreck();}else{const armor=p.tank.t.armor||3;if(b.k==='c')p.tank.ch=(p.tank.ch||0)+1.1;else if(b.k==='v')p.tank.ch=(p.tank.ch||0)+.066;shake=Math.max(shake,b.k==='c'?10:2);if((p.tank.ch||0)>=armor)wreck();}}
-    else{p.hp-=({c:2,v:.5,r:1})[b.k];shake=6;if(p.hp<=0)triggerPlayerDeath();}}
+    else{if(scoreStats)scoreStats.damageHits++;p.hp-=({c:2,v:.5,r:1})[b.k];shake=6;if(p.hp<=0)triggerPlayerDeath();}}
   }
   if(dead)bullets.splice(i,1);}
  for(const w of waves){w.r+=260*dt;if(!w.houndHit&&hound&&D(w,hound)<w.r){w.houndHit=true;stunHound(5);}if(!w.bh){const br=baseHitRect(),nx=Math.max(br.x,Math.min(br.x+br.w,w.x)),ny=Math.max(br.y,Math.min(br.y+br.h,w.y));if(Math.hypot(nx-w.x,ny-w.y)<w.r){w.bh=true;damageBase(6,nx,ny,30,1);fb(nx,ny,34);burst(nx,ny,30,'#ffb347',300);shake=Math.max(shake,10);}}for(const h of humans)if(h.alive&&Math.hypot(h.x-w.x,h.y-w.y)<w.r){h.alive=false;recordPlayerKill(w.actionId||0);burst(h.x,h.y,12,'#c05a3a',180);}
@@ -3068,7 +3082,7 @@ function carve(x,y,r,credit=false,objectDamageSource='impact'){
  if(credit&&scoreStats&&!scoreStats.finalized)scoreStats.coverDestroyed+=removedArea;
  return removedArea;
 }
-function useSkill(wx,wy){
+function useSkill(wx,wy){if(scoreStats&&!scoreStats.finalized)scoreStats.skillUses++;
  if(skill==='throw'){if(bombs.some(b=>b.own==='p')){say('爆弾は1つまで');return;}const a=p.body;let d=0;for(let k=4;k<=110;k+=2){if(hitsM(p.x+Math.cos(a)*k,p.y+Math.sin(a)*k,4))break;d=k;}
   bombs.push({x:p.x,y:p.y,own:'p',armed:false,fly:.35,sx:p.x,sy:p.y,tx:p.x+Math.cos(a)*d,ty:p.y+Math.sin(a)*d});setSkillCooldown(5);sfx('skill');say('爆弾を投擲（Dで起爆）');}
  else if(skill==='dig'){p.digPrep=.5;p.dig=0;p.digElapsed=0;sfx('skill');say('潜伏準備…');}
@@ -4093,6 +4107,69 @@ function draw(near){
  }
  drawLoadingOverlay();
 }
+// Responsive result display. Existing score calculation is preserved.
+const RES_AXES=['潜入','索敵','射撃','戦闘','爆破','機動','戦術','生存'];
+const resClamp=(v)=>Math.max(0,Math.min(100,Math.round(Number.isFinite(v)?v:0)));
+const resLevel=v=>v>=85?5:v>=65?4:v>=45?3:v>=25?2:1;
+function resultMetrics(s,r){
+ const kills=s.humanKills+s.eliteKills+s.tankKills, minutes=Math.max(1,s.time/60), progress=Math.min(1,s.maxProgress/WH), unique=Object.keys(s.vehicleKinds||{}).length;
+ const stealth=resClamp(25+45*Math.min(1,s.unseenDist/Math.max(1,s.totalTravel))+20*Math.min(1,s.maxUnseenForwardStreak/1800)-Math.min(35,s.detections*7));
+ // 索敵は観測専用の追跡記録がないため、現時点では未発見進行・発見抑制を代理指標にする。
+ const recon=resClamp(12+48*Math.min(1,s.maxUnseenForwardStreak/2300)+35*Math.min(1,s.unseenDist/Math.max(1,s.totalTravel))-s.detections*3);
+ // 射撃命中率は未計測のため発射数と撃破実績に基づく参考推定（命中率とは表示しない）。
+ const shooting=resClamp(s.shots?15+50*Math.min(1,(kills/Math.max(1,s.shots))/.22)+Math.min(35,s.sniperShots*6+s.cannonShots*1.5):0);
+ const combat=resClamp(10+Math.min(60,(s.humanKills+2*s.eliteKills+3*s.tankKills)*5)+Math.min(30,s.maxKillChain*8));
+ const blast=resClamp(s.bombBlasts||s.cannonShots?10+Math.min(45,s.bombBlasts*9+s.cannonShots*3)+Math.min(45,s.multiKillBonus/12):0);
+ const mobility=resClamp(10+Math.min(35,s.totalTravel/160)+Math.min(35,s.vehicleTime/5)+unique*8);
+ const tactics=resClamp(10+Math.min(36,s.skillUses*7)+Math.min(24,s.stuns*10)+Math.min(30,unique*10+s.bombBlasts*3));
+ const survival=resClamp(30+progress*35+(r.cleared?25:0)-s.damageHits*14-Math.min(18,s.detections*2));
+ return [stealth,recon,shooting,combat,blast,mobility,tactics,survival];
+}
+function resultStyle(levels,s){
+ const [stealth,recon,shooting,combat,blast,mobility,tactics,survival]=levels;
+ if(stealth>=4&&shooting>=4)return['ゴーストスナイパー','潜伏と精密攻撃を組み合わせた狩人'];
+ if(stealth>=4&&s.detections<=1)return['ゴースト','気配を消して前進する潜入の達人'];
+ if(blast>=4&&combat>=3)return['破壊工作員','爆発を駆使して戦場を切り開いた'];
+ if(mobility>=4&&Object.keys(s.vehicleKinds).length>=2)return['機動戦のエース','複数の乗り物を使い分けた'];
+ if(combat>=4&&stealth<=2)return['正面突破の猛者','火力で敵陣を押し切る戦闘型'];
+ if(shooting>=4)return['狙撃手','限られた射撃機会で戦果を収めた'];
+ if(tactics>=4)return['戦術家','装備と状況に応じて戦術を組み立てた'];
+ if(survival>=4)return['サバイバー','危機を切り抜け前進した'];
+ if(mobility>=4)return['スピードスター','機動力を武器に駆け抜けた'];
+ if(combat>=3)return['突撃兵','敵との交戦に積極的に臨んだ'];
+ return['戦場の挑戦者','自分だけの戦い方を切り開いている'];
+}
+function resultRadar(levels){
+ const cx=180,cy=167,R=111,pt=(i,lv)=>{const a=-Math.PI/2+i*Math.PI/4;return [cx+Math.cos(a)*R*lv/5,cy+Math.sin(a)*R*lv/5];};
+ const poly=(lv)=>Array.from({length:8},(_,i)=>pt(i,lv).map(v=>v.toFixed(1)).join(',')).join(' ');
+ let out='';for(let j=1;j<=5;j++)out+=`<polygon points="${poly(j)}" fill="${j===5?'#46583d22':'none'}" stroke="#687962" stroke-width="1"/>`;
+ for(let i=0;i<8;i++){const [x,y]=pt(i,5),[tx,ty]=pt(i,6.17);out+=`<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="#607459" stroke-width="1"/>`;
+ out+=`<text x="${tx}" y="${ty+4}" text-anchor="middle" font-size="14" font-weight="800" fill="#dae4ce">${RES_AXES[i]}</text>`;}
+ out+=`<polygon points="${levels.map((lv,i)=>pt(i,lv).join(',')).join(' ')}" fill="#eacb7a66" stroke="#ffe0a1" stroke-width="3"/>`;
+ for(let i=0;i<8;i++){const [x,y]=pt(i,levels[i]);out+=`<circle cx="${x}" cy="${y}" r="4" fill="#fff0bd"/>`;}
+ return out;
+}
+function renderResultScreen(){const s=scoreStats,r=s&&s.final;if(!r)return;
+ const el=id=>document.getElementById(id),kills=s.humanKills+s.eliteKills+s.tankKills;
+ const metrics=resultMetrics(s,r),levels=metrics.map(resLevel),sty=resultStyle(levels,s);
+ el('resStatus').textContent=r.cleared?'MISSION COMPLETE':'MISSION FAILED';el('resStatus').style.color=r.cleared?'#dff3b0':'#ffb0a0';
+ const zone=(ZONES||[]).find(z=>p&&p.y>=z.y0&&p.y<=z.y1);
+ el('resArea').textContent='到達エリア：'+(zone?zone.name||zone.n||zone.label||'—':'—');
+ el('resScore').textContent=Math.round(r.total).toLocaleString('ja-JP');el('resHigh').textContent=s.newHigh?'★ NEW HIGH SCORE':'HIGH SCORE  '+(highScoreData?highScoreData.score.toLocaleString('ja-JP'):'—');
+ el('resRank').textContent=r.rank;
+ const glyph={F:'╱',E:'╱╱',D:'◆',C:'◆◆',B:'◆◆◆',A:'★ ★',S:'★ ★ ★'};
+ el('resInsignia').textContent=glyph[r.rank];el('resInsignia').style.color=r.rank==='S'?'#ffdb71':'#e2d4b0';
+ el('resRadar').innerHTML=resultRadar(levels);
+ el('resAxes').innerHTML=RES_AXES.map((name,i)=>`<div class="res-axis"><span>${name}</span><span class="res-stars" aria-label="レベル${levels[i]}">${'★'.repeat(levels[i])}<span style="color:#65705d">${'☆'.repeat(5-levels[i])}</span></span></div>`).join('');
+ el('resTitle').textContent=sty[0];el('resTitleNote').textContent=sty[1];
+ const quick=[['プレイ時間',formatRunTime(s.time)],['到達距離',Math.round(s.maxProgress/10)+'m'],['総撃破数',kills],['発見回数',s.detections],['被弾回数',s.damageHits],['気絶数',s.stuns]];
+ el('resQuick').innerHTML=quick.map(([n,v])=>`<div class="res-stat"><label>${n}</label><strong>${v}</strong></div>`).join('');
+ const entries=[['歩兵撃破',s.humanKills],['エリート撃破',s.eliteKills],['戦車撃破',s.tankKills],['最大連続撃破',s.maxKillChain],['未発見移動距離',Math.round(s.unseenDist/10)+'m'],['累計移動距離',Math.round(s.totalTravel/10)+'m'],['発見状態の累計時間',formatRunTime(s.detectedTime)],['疑惑状態の発生',s.suspicionEntries],['遮蔽物破壊面積',Math.round(s.coverDestroyed)],['射撃数（記録対象）',s.shots],['狙撃発射数',s.sniperShots],['主砲発射数',s.cannonShots],['MG等発射数',s.mgShots],['爆弾爆発数',s.bombBlasts],['スキル発動数（記録対象）',s.skillUses],['乗り物搭乗回数',s.vehicleBoards],['乗り物利用時間',formatRunTime(s.vehicleTime)],['乗り物の種類数',Object.keys(s.vehicleKinds).length],['潜入スコア',r.stealth],['戦闘スコア',r.combat],['任務達成・タイムボーナス',r.bonus]];
+ el('resDetail').innerHTML=entries.map(([n,v])=>`<div class="res-detail-row"><span>${n}</span><strong>${v}</strong></div>`).join('');
+}
+function syncResultScreen(){const show=(state==='win'||state==='lose')&&!!(scoreStats&&scoreStats.final);const open=document.body.classList.contains('result-open');if(show&&!open){renderResultScreen();document.body.classList.add('result-open');document.getElementById('resultScreen').scrollTop=0;}else if(!show&&open)document.body.classList.remove('result-open');}
+document.getElementById('resRetry').addEventListener('click',()=>{rollSkillChoices();state='skill';bombReq=false;cannonReq=false;interact=false;skillReq=false;syncResultScreen();sfx('skill');});
+document.getElementById('resHome').addEventListener('click',()=>{state='title';bombReq=false;cannonReq=false;interact=false;skillReq=false;syncResultScreen();sfx('skill');});
 highScoreData=loadHighScore();
 // 初回起動ではマップ生成を行わない。タイトル描画に必要な最小状態だけ用意する。
 state='title';rollSkillChoices();
@@ -4109,7 +4186,7 @@ function loop(n){
   }
   prevState=state;
  }while(remain>.000001);
- draw(near);
+ draw(near);syncResultScreen();
  if(firstMenuFrame){firstMenuFrame=false;setTimeout(startAssetLoading,0);}
  requestAnimationFrame(loop);
 }
