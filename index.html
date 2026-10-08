@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 更新 2026/10/08 12:18</title>
+<title>戦車ゲーム 更新 2026/10/08 13:27</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -216,7 +216,7 @@ body.trophy-open #pad,body.trophy-open #resetBtn{display:none!important}
 </div></div>
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.08.101',FILE_CREATED_AT='2026/10/08 12:40',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
+const GAME_VERSION='2026.10.08.102',FILE_CREATED_AT='2026/10/08 13:27',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
 let audioCtx=null;
 function ensureAudio(){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(_){}}
 function tone(f=440,d=.08,v=.035,type='square',f2=null){if(!audioCtx)return;const t=audioCtx.currentTime,o=audioCtx.createOscillator(),a=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t+d);a.gain.setValueAtTime(v,t);a.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(a);a.connect(audioCtx.destination);o.start(t);o.stop(t+d+.02);}
@@ -4586,8 +4586,13 @@ function syncSkillScreen(){
 function syncTitleScreen(){
  const show=state==='title',isOpen=document.body.classList.contains('title-open');
  if(show&&!isOpen){document.body.classList.add('title-open');document.getElementById('titleScreen').scrollTop=0;}
- if(!show)closeTrophyArchive();
- else if(!show&&isOpen)document.body.classList.remove('title-open');
+ // タイトル以外の画面では必ずタイトルのオーバーレイを外す。
+ // 前版は if(!show) の後の else if(!show&&isOpen) が到達不能で、
+ // 出撃後もタイトルが最前面に残ってゲームを隠していた。
+ if(!show){
+  if(isOpen)document.body.classList.remove('title-open');
+  closeTrophyArchive();
+ }
  if(show){const hs=highScoreData||loadHighScore();
   document.getElementById('titleHighScore').textContent=Number(hs?.score||0).toLocaleString('ja-JP');
   document.getElementById('titleHighRank').textContent=hs?.rank||'—';
