@@ -393,7 +393,7 @@ body.result-open #resultScreen .res-actions{animation:resEnter .45s .85s ease-ou
 </div></div>
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.09.117',FILE_CREATED_AT='2026/10/09 07:34',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
+const GAME_VERSION='2026.10.09.118',FILE_CREATED_AT='2026/10/09 07:54',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
 let audioCtx=null;
 function ensureAudio(){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(_){}}
 function tone(f=440,d=.08,v=.035,type='square',f2=null){if(!audioCtx)return;const t=audioCtx.currentTime,o=audioCtx.createOscillator(),a=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t+d);a.gain.setValueAtTime(v,t);a.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(a);a.connect(audioCtx.destination);o.start(t);o.stop(t+d+.02);}
@@ -1151,7 +1151,7 @@ function readSkillProgress(){
  }catch(_){return{unlocked:['throw'],clears:0};}
 }
 function rollSkillChoices(){
- // 解放済みのスキルはすべて選択可能。未解放スキルは全表示でのみ確認可能。
+ // 通常時は解放済みだけ選択可能。デバッグの全スキル表示中は未解放スキルも選択可能。
  const saved=readSkillProgress();skillChoices=SK.filter(k=>saved.unlocked.includes(k.id)).map(k=>k.id);
  skillDebugAll=false;skillMenuDirty=true;
 }
@@ -1163,7 +1163,7 @@ function unlockSkillOnClear(s){
  if(next){progress.unlocked.push(next.id);s.unlockedSkill=next.id;}
  try{localStorage.setItem(SKILL_PROGRESS_KEY,JSON.stringify(progress));}catch(_){s.unlockSaveFailed=true;}
 }
-function skillSelectable(id){return areaDebugEnabled||readSkillProgress().unlocked.includes(id);}
+function skillSelectable(id){return (skillDebugAll||areaDebugEnabled||readSkillProgress().unlocked.includes(id))&&SK.some(k=>k.id===id);}
 function skillMenuLayout(){return skillDebugAll?{sy0:88,ch:56,h:52,debugY:602,debugH:34}:{sy0:126,ch:116,h:102,debugY:494,debugH:40};}
 let gameBuildQueued=false,gameBuildGeneration=0;
 function selectSkillIndex(i){
@@ -2040,7 +2040,7 @@ function newScoreStats(){return{
  time:0,unseenDist:0,forwardDist:0,lastY:null,coverDestroyed:0,
  unseenForwardStreak:0,maxUnseenForwardStreak:0,
  detections:0,foundEntries:0,suspicionEntries:0,stuns:0,
- humanKills:0,eliteKills:0,tankKills:0, shots:0, sniperShots:0, cannonShots:0, mgShots:0, skillUses:0, bombBlasts:0, vehicleTime:0, vehicleKinds:{}, vehicleBoards:0, damageHits:0, totalTravel:0, detectedTime:0, maxProgress:0, sniperKills:0, mgKills:0, cannonKills:0, rangedKills:0, bombKills:0, explosiveKills:0, tankVehicleKills:0, actionKinds:{}, debugUsed:!!areaDebugEnabled,
+ humanKills:0,eliteKills:0,tankKills:0, shots:0, sniperShots:0, cannonShots:0, mgShots:0, skillUses:0, bombBlasts:0, vehicleTime:0, vehicleKinds:{}, vehicleBoards:0, damageHits:0, totalTravel:0, detectedTime:0, maxProgress:0, sniperKills:0, mgKills:0, cannonKills:0, rangedKills:0, bombKills:0, explosiveKills:0, tankVehicleKills:0, actionKinds:{}, debugUsed:!!(areaDebugEnabled||skillDebugAll),
  actionSeq:0,actionKills:{},multiKillBonus:0,maxOneShotKills:0,oneShotEvents:0,
  lastPlayerKillTime:-999,killChain:0,maxKillChain:0,alertCombatKills:0,
  wasDetected:false,final:null,finalized:false,newHigh:false
@@ -5091,7 +5091,7 @@ function setSelectedSkill(id){
  const chosen=list.find(k=>k.id===id&&skillSelectable(k.id)),deploy=document.getElementById('skDeploy');
  deploy.disabled=!chosen||gameBuildQueued;
  deploy.textContent=chosen?'「'+chosen.n+'」で出撃 →':'スキルを選択してください';
- document.getElementById('skSelectionNote').textContent=chosen?'選択スキル：'+chosen.n+'　｜　ⓘ で操作説明':'スキルを選択してください';
+ document.getElementById('skSelectionNote').textContent=chosen?'選択スキル：'+chosen.n+(skillDebugAll?'　｜　デバッグ使用中':'　｜　ⓘ で操作説明'):'スキルを選択してください';
 }
 // Selection cards intentionally use lightweight square placeholder pictograms.
 // The original detailed artwork is kept for the skill-help lightbox.
