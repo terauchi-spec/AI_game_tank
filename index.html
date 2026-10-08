@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 更新 2026/10/08 13:27</title>
+<title>戦車ゲーム 更新 2026/10/08 13:52</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -216,7 +216,7 @@ body.trophy-open #pad,body.trophy-open #resetBtn{display:none!important}
 </div></div>
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.08.102',FILE_CREATED_AT='2026/10/08 13:27',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
+const GAME_VERSION='2026.10.08.105',FILE_CREATED_AT='2026/10/08 13:52',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
 let audioCtx=null;
 function ensureAudio(){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(_){}}
 function tone(f=440,d=.08,v=.035,type='square',f2=null){if(!audioCtx)return;const t=audioCtx.currentTime,o=audioCtx.createOscillator(),a=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t+d);a.gain.setValueAtTime(v,t);a.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(a);a.connect(audioCtx.destination);o.start(t);o.stop(t+d+.02);}
@@ -960,7 +960,7 @@ const SK=[
  {id:'build',n:'建築',d:'正面にコンクリート防護壁を設置\n最大5枚／チャージ1.5秒\n画面外へ流れると消滅'},
  {id:'flame',n:'火炎',d:'正面200pxへ火炎放射（先端到達1秒）\n最大3秒・使用分×4秒で全回復\n回復中も再使用可能'},
  {id:'hound',n:'猟犬',d:'猟犬が斜め後ろを追従\nSで正面へ30px自動ダッシュ（長押しで延長）→周囲100pxの敵兵へ突撃\n敵がいなければ帰還／3秒噛みついて気絶\n帰還中に障害物へ当たるとS字で迷子→前方120°・500px＋全周150pxで再発見'},
- {id:'sniper',n:'狙撃',d:'伏せてライフル展開→1秒静止後にスコープへ\n←→でスコープ視点移動／Sで狙撃\n敵兵・エリートは1発撃破／Eで解除'}
+ {id:'sniper',n:'狙撃',d:'伏せてライフル展開→1秒静止後にスコープへ\n←→で視点移動／↑↓で1.5〜3倍ズーム\nSで狙撃／Eで解除。敵兵・エリートは1発撃破'}
 ];
 const TOUCH=matchMedia('(pointer:coarse)').matches;
 const SKN={throw:'投擲',dig:'潜伏',decoy:'偽装',buddy:'相棒',drill:'突貫',build:'建築',flame:'火炎',hound:'猟犬',sniper:'狙撃'};
@@ -1466,7 +1466,7 @@ function reset(rerollSkills=true){
  burningNatureSet.clear();lastEnemySeparationAt=-1e9;allyTargetRefreshAt=0;
  state='play';shake=0;flash=0;msg='';msgT=0;interact=false;bombReq=false;skillReq=false;decoy=null;allies=[];hound=null;houndTrail=[];allySeq=0;builtWalls=[];tankWrecks=[];radio=null;airstrike=null;airbombs=[];weather='clear';weatherT=0;weatherNext=15+R()*35;baseSpawnT=5;deathT=0;cam=0;camX=0;scoreStats=newScoreStats();
  setupZones();if(rerollSkills)rollSkillChoices();
- p={x:WW/2,y:3100,hp:2,tank:null,cc:0,vc:0,ang:-1.57,body:-1.57,dig:0,digPrep:0,digElapsed:0,digExitAnim:0,digExitX:0,digExitY:0,scd:0,scdMax:0,drill:0,drillHit:0,drillTarget:null,drillSfx:0,bushHide:0,grappleT:0,grappleTarget:null,flameFuel:3,flameActive:false,flameLockA:null,flamePath:[],flameSfx:0,flameReach:0,fireExposure:0,sniperMode:false,sniperLockA:null,sniperAimN:0,sniperEnterT:0,sniperReadyT:0,sniperExitT:0,sniperFlash:0,sniperHitT:0,sniperHitX:0,sniperHitY:0,sniperFireCd:0,sniperNoiseEvents:[]};touchTurretAngle=null;
+ p={x:WW/2,y:3100,hp:2,tank:null,cc:0,vc:0,ang:-1.57,body:-1.57,dig:0,digPrep:0,digElapsed:0,digExitAnim:0,digExitX:0,digExitY:0,scd:0,scdMax:0,drill:0,drillHit:0,drillTarget:null,drillSfx:0,bushHide:0,grappleT:0,grappleTarget:null,flameFuel:3,flameActive:false,flameLockA:null,flamePath:[],flameSfx:0,flameReach:0,fireExposure:0,sniperMode:false,sniperLockA:null,sniperAimN:0,sniperZoom:1.5,sniperEnterT:0,sniperReadyT:0,sniperExitT:0,sniperFlash:0,sniperHitT:0,sniperHitX:0,sniperHitY:0,sniperFireCd:0,sniperNoiseEvents:[]};touchTurretAngle=null;
  base={x:WW/2-COMMAND_BASE_W/2,y:60,w:COMMAND_BASE_W,h:COMMAND_BASE_H,hp:30,maxHp:30,deadAt:0};bullets=[];parts=[];bombs=[];waves=[];fx=[];items=[];bushes=[];
  water=[];bridges=[];mud=[];
  for(const ry of [2675,1325]){
@@ -2752,11 +2752,13 @@ function drawBurningNature(cx=0,cy=0){
  g.restore();
 }
 
-const SNIPER_RANGE=1000,SNIPER_BULLET_SPEED=630,SNIPER_ZOOM=2,SNIPER_FOV=Math.PI/10,SNIPER_AIM_LIMIT=.82,SNIPER_AIM_SPEED=1.25,SNIPER_DEPLOY_TIME=.7,SNIPER_SETTLE_TIME=1,SNIPER_FIRE_INTERVAL=3;
+const SNIPER_RANGE=1000,SNIPER_BULLET_SPEED=630,SNIPER_ZOOM_MIN=1.5,SNIPER_ZOOM_MAX=3,SNIPER_ZOOM_SPEED=1.25,SNIPER_AIM_FOV=Math.PI/(5*SNIPER_ZOOM_MIN),SNIPER_AIM_LIMIT=.82,SNIPER_AIM_SPEED=1.25,SNIPER_DEPLOY_TIME=.7,SNIPER_SETTLE_TIME=1,SNIPER_FIRE_INTERVAL=3;
+function sniperZoom(){return Math.max(SNIPER_ZOOM_MIN,Math.min(SNIPER_ZOOM_MAX,p&&Number.isFinite(p.sniperZoom)?p.sniperZoom:SNIPER_ZOOM_MIN));}
+function sniperFov(){return Math.PI/(5*sniperZoom());}
 function sniperViewRange(){return weather==='rain'?SNIPER_RANGE*.7:SNIPER_RANGE;}
 function enterSniperMode(){
  if(!p||p.tank||p.dig>0||p.digPrep>0||p.drill>0||p.grappleT>0||p.sniperMode||p.sniperEnterT>0||p.sniperReadyT>0)return false;
- p.sniperMode=false;p.sniperLockA=p.body;p.sniperAimN=0;p.sniperExitT=0;p.sniperFlash=0;p.sniperHitT=0;p.sniperEnterT=SNIPER_DEPLOY_TIME;p.sniperReadyT=SNIPER_SETTLE_TIME;p.body=p.sniperLockA;
+ p.sniperMode=false;p.sniperLockA=p.body;p.sniperAimN=0;p.sniperZoom=SNIPER_ZOOM_MIN;p.sniperExitT=0;p.sniperFlash=0;p.sniperHitT=0;p.sniperEnterT=SNIPER_DEPLOY_TIME;p.sniperReadyT=SNIPER_SETTLE_TIME;p.body=p.sniperLockA;
  bombReq=false;interact=false;sfx('skill');say('狙撃準備：伏せてライフルを展開…');return true;
 }
 function beginSniperExit(){
@@ -2768,7 +2770,7 @@ function finishSniperExit(){
 }
 function sniperAimAngle(){
  if(!p||!Number.isFinite(p.sniperLockA))return p?.body||0;
- return p.sniperLockA+Math.atan((p.sniperAimN||0)*Math.tan(SNIPER_FOV*.5));
+ return p.sniperLockA+Math.atan((p.sniperAimN||0)*Math.tan(SNIPER_AIM_FOV*.5));
 }
 function fireSniper(){
  if(!p||!p.sniperMode||p.sniperExitT>0||!Number.isFinite(p.sniperLockA))return false;
@@ -2807,11 +2809,14 @@ function updateSniperState(dt){
   if(before>0&&p.sniperEnterT<=0)say('伏せ姿勢完了：1秒間照準を安定…');
  }else if(p.sniperReadyT>0){
   p.sniperReadyT=Math.max(0,p.sniperReadyT-dt);
-  if(p.sniperReadyT<=0){p.sniperMode=true;p.sniperReadyT=0;say('狙撃モード：←→ スコープ / S 発射 / E 解除');}
+  if(p.sniperReadyT<=0){p.sniperMode=true;p.sniperReadyT=0;say('狙撃：←→ 視点 / ↑↓ 1.5〜3倍ズーム / S 発射 / E 解除');}
  }
  if(p.sniperMode&&Number.isFinite(p.sniperLockA)&&!(p.sniperExitT>0)){
   const aimDir=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0);
   if(aimDir)p.sniperAimN=Math.max(-SNIPER_AIM_LIMIT,Math.min(SNIPER_AIM_LIMIT,(p.sniperAimN||0)+aimDir*SNIPER_AIM_SPEED*dt));
+  // 上下キー（スマホでは仮想スティックの上下）で光学倍率のみを変更。狙っている角度は動かさない。
+  const zoomDir=(keys.ArrowUp?1:0)-(keys.ArrowDown?1:0);
+  if(zoomDir)p.sniperZoom=Math.max(SNIPER_ZOOM_MIN,Math.min(SNIPER_ZOOM_MAX,sniperZoom()+zoomDir*SNIPER_ZOOM_SPEED*dt));
  }
  if(p.sniperExitT>0){p.sniperExitT=Math.max(0,p.sniperExitT-dt);if(p.sniperExitT<=0)finishSniperExit();}
  return !!(p.sniperMode||p.sniperExitT>0||p.sniperEnterT>0||p.sniperReadyT>0);
@@ -2849,10 +2854,10 @@ function sniperProjection(x,y){
  if(!p||!Number.isFinite(p.sniperLockA))return null;
  const viewRange=sniperViewRange(),a=sniperAimAngle(),dx=x-p.x,dy=y-p.y,ca=Math.cos(a),sa=Math.sin(a),forward=dx*ca+dy*sa;
  if(forward<18||forward>viewRange)return null;
- const side=-dx*sa+dy*ca,tanHalf=Math.tan(SNIPER_FOV*.5),nx=side/Math.max(1,forward*tanHalf);
+ const side=-dx*sa+dy*ca,tanHalf=Math.tan(sniperFov()*.5),nx=side/Math.max(1,forward*tanHalf);
  if(Math.abs(nx)>1.12)return null;
  const sr=Math.min(W,H)*.455,aimY=H*.49+sr*.12*(1-forward/viewRange);
- return{d:forward,x:W*.5+nx*sr*.92,y:aimY,scale:Math.max(.18,Math.min(2.2,(180*SNIPER_ZOOM)/(forward+36)))};
+ return{d:forward,x:W*.5+nx*sr*.92,y:aimY,scale:Math.max(.18,Math.min(3.4,(180*sniperZoom())/(forward+36)))};
 }
 function sniperPanelColor(kind,kd=0){
  if(kind==='human')return'#397cbd';if(kind==='elite')return'#ecf0f2';if(kind==='tank')return'#4b5f9e';if(kind==='vehicle')return'#65705a';if(kind==='base')return'#7e807d';if(kind==='object')return'#8a704b';
@@ -2952,12 +2957,15 @@ function drawSniperSilhouette(it,sw,sh,top,near){
  }
  g.restore();
 }
-// 狙撃スコープ用の歩兵。実際の距離による変化は残すが、至近距離でも誇張して巨大化しない。
+// スコープ内の敵兵は距離が半分になるほど大きく見える遠近表現にする。
+// 遠距離では見やすさを保ち、接近時は十分な迫力を出すが、至近距離はスコープ径で上限を設ける。
+function sniperHumanHeight(distance,scopeRadius){
+ return Math.max(18,Math.min(scopeRadius*.74,(27000*sniperZoom()/2)/(Math.max(0,distance)+105)));
+}
 function drawSniperScopedHuman(it,pr,viewRange,cy,R){
  const elite=it.kind==='elite',o=it.o||{};
- // 遠距離で24px、近距離でも最大68px。旧版の二次的な近距離拡大補正は使わない。
- const depth=Math.max(0,Math.min(1,1-pr.d/viewRange));
- const hh=24+44*depth,ww=hh*.43,top=pr.y-hh*.52;
+ // 従来の24〜68pxの線形補間では接近しても差が小さいため、距離に反比例して拡大。
+ const hh=sniperHumanHeight(pr.d,R),ww=hh*.43,top=pr.y-hh*.52;
  const falling=!o.alive&&o.sniperFallT>0;
  const fallK=falling?1-o.sniperFallT/Math.max(.01,o.sniperFallMax||.72):0;
  const uniform=elite?'#ecf0f2':'#367fc0',helmet=elite?'#f8fafb':'#428fd1';
@@ -3080,7 +3088,15 @@ function drawSniperScope(){
  // プレイヤー本体の向きは固定し、←→ではスコープ視点そのものを左右へ振る。十字は中央固定。
  g.strokeStyle='#dfe7d7';g.lineWidth=1.3;const gap=9,len=R*.60;g.beginPath();g.moveTo(cx-len,cy);g.lineTo(cx-gap,cy);g.moveTo(cx+gap,cy);g.lineTo(cx+len,cy);g.moveTo(cx,cy-len);g.lineTo(cx,cy-gap);g.moveTo(cx,cy+gap);g.lineTo(cx,cy+len);g.stroke();g.beginPath();g.arc(cx,cy,3.2,0,6.28);g.stroke();
  drawSniperPanIndicator(cx,cy,R);
- g.textAlign='center';g.fillStyle='#e6e9d8';g.font='bold 13px system-ui';g.fillText(p.sniperExitT>0?'ライフル収納中…':(weather==='rain'?'← →：スコープ　 S：発射　 E：解除　 雨天:視界70%':'← →：スコープ　 S：発射　 E：解除'),cx,H-18);g.restore();
+ // 光学倍率表示。視点移動の方位目盛りとは独立して、倍率を常時確認できる。
+ const zoom=sniperZoom(),zx=cx+R*.13,zy=cy-R*.64,zw=R*.50,zh=43;
+ g.fillStyle='rgba(6,13,8,.80)';g.beginPath();g.roundRect(zx,zy,zw,zh,8);g.fill();
+ g.strokeStyle='rgba(226,234,201,.48)';g.lineWidth=1;g.stroke();
+ g.textAlign='center';g.fillStyle='#ffdc8a';g.font='bold 21px system-ui';g.fillText(zoom.toFixed(1)+'×',zx+zw*.5,zy+24);
+ g.fillStyle='rgba(210,224,187,.25)';g.fillRect(zx+12,zy+31,zw-24,4);
+ g.fillStyle='#ffdc8a';g.fillRect(zx+12,zy+31,(zw-24)*(zoom-SNIPER_ZOOM_MIN)/(SNIPER_ZOOM_MAX-SNIPER_ZOOM_MIN),4);
+ g.textAlign='center';g.fillStyle='#e6e9d8';g.font='bold '+(W<=480?12:13)+'px system-ui';
+ g.fillText(p.sniperExitT>0?'ライフル収納中…':'←→ 視点　↑↓ 倍率　S 発射　E 解除'+(weather==='rain'?'　雨天70%':''),cx,H-18);g.restore();
 }
 function update(dt){
  updateWeather(dt);updateHQSpawn(dt);updateDrill(dt);
@@ -4519,7 +4535,7 @@ const SK_CONTROL={
  build:['S：防護壁を設置','前方にコンクリートの防護壁を建てます。'],
  flame:['S：火炎放射','進行方向へ火炎を放射。使用量に応じて再充填します。'],
  hound:['S：猟犬に指示（長押し可）','正面へ走らせ、敵兵を追跡して気絶させます。長押しで前進を延長。'],
- sniper:['S：狙撃 ／ E：解除','静止してスコープを展開。方向キー左右で照準移動し、Sで狙撃します。']
+ sniper:['←→：視点移動 ／ ↑：ズームイン ／ ↓：ズームアウト','倍率1.5〜3.0倍。S：狙撃 ／ E：解除。スマホでは左スティックの上下で倍率調整します。']
 };
 function closeSkillHelp(){document.getElementById('skillLightbox').classList.remove('open');}
 function openSkillHelp(id){
