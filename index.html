@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 評価画面更新 2026/10/08 08:17</title>
+<title>戦車ゲーム 更新 2026/10/08 09:14</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -55,11 +55,26 @@ p{font-size:12px;opacity:.75;margin:8px 0 0;text-align:center;line-height:1.6}
  .b{width:58px;height:58px}
 }
 
+/* タイトル・ヘルプ・スキル選択など、プレイ以外ではタッチ操作UIを隠す */
+body:not(.gameplay-active) #pad{display:none!important}
+body:not(.gameplay-active) #debugToggleBtn{display:none!important}
+
 /* Result screen: independent scrollable responsive layer */
+html:has(body.result-open),body.result-open{overscroll-behavior:auto}
+body.result-open #resultScreen,body.result-open #resultScreen *{touch-action:pan-y}
+body.result-open .res-btn{touch-action:manipulation}
 #resultScreen{display:none;position:fixed;inset:0;z-index:70;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:radial-gradient(ellipse at 50% 0%,#293326,#10140f 70%);color:#edf1e4;box-sizing:border-box;padding:max(22px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(28px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));touch-action:pan-y;user-select:text;-webkit-user-select:text}
 body.result-open #resultScreen{display:block}body.result-open #pad,body.result-open #resetBtn,body.result-open #debugToggleBtn,body.result-open #debugBadge{display:none!important}
 .res-wrap{max-width:860px;margin:0 auto}.res-kicker{letter-spacing:.23em;font-size:12px;color:#aab89a;font-weight:800}.res-header{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:18px}.res-status{font-size:clamp(23px,5vw,40px);font-weight:950;letter-spacing:.09em;margin:4px 0}.res-card{background:rgba(31,40,28,.94);border:1px solid #5b6a51;border-radius:13px;padding:18px;margin-bottom:14px;box-shadow:0 8px 25px #0003}.res-summary{display:flex;align-items:center;justify-content:space-between;gap:14px}.res-score-label{font-size:12px;color:#aab89a;font-weight:800;letter-spacing:.13em}.res-score{font-size:clamp(40px,8vw,66px);font-weight:900;color:#ffe09a;line-height:1.12;font-variant-numeric:tabular-nums}.res-medal{min-width:115px;text-align:center}.res-medal-art{font-size:40px;color:#ffe09a;text-shadow:0 0 18px #ddbd5666;letter-spacing:-.14em}.res-medal-rank{font-size:38px;font-weight:950;line-height:1}.res-section{font-size:19px;font-weight:850;margin:0 0 13px}.res-sub{color:#acb9a3;font-size:12px;margin-top:5px}.res-style{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);align-items:center;gap:10px}.res-radar{width:100%;max-height:330px;display:block}.res-axes{display:grid;grid-template-columns:1fr 1fr;gap:8px}.res-axis{border-bottom:1px solid #43503f;padding:7px 2px;display:flex;justify-content:space-between;align-items:center;gap:5px;font-size:13px}.res-stars{color:#f2ce83;letter-spacing:.03em;white-space:nowrap}.res-title-badge{margin:10px 0 13px;background:#3a442c;border:1px solid #87976c;border-radius:8px;padding:12px 14px}.res-title-name{font-size:21px;font-weight:900;color:#ffe09a}.res-title-note{font-size:12px;color:#c4ceb9;margin-top:6px}.res-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.res-stat{background:#252e22;border-radius:9px;padding:13px 12px}.res-stat label{display:block;font-size:12px;color:#abb9a3}.res-stat strong{display:block;font-size:24px;margin-top:6px;font-variant-numeric:tabular-nums}.res-detail{display:grid;grid-template-columns:1fr 1fr;gap:0 24px}.res-detail-row{display:flex;justify-content:space-between;border-bottom:1px solid #43503f;padding:10px 0;font-size:13px;gap:10px}.res-detail-row span{color:#b5c1af}.res-actions{display:flex;gap:12px;margin:15px 0 24px}.res-btn{flex:1;min-height:52px;border:1px solid #839473;color:#edf1e4;background:#303e2e;border-radius:9px;font:800 16px system-ui;cursor:pointer;touch-action:manipulation}.res-btn.primary{background:#d9bd78;color:#1b2116;border-color:#ffe1a1}.res-btn:active{transform:translateY(1px)}
 @media(max-width:580px){.res-card{padding:14px}.res-style{grid-template-columns:1fr}.res-radar{max-height:290px}.res-axes{gap:5px}.res-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.res-detail{grid-template-columns:1fr}.res-medal{min-width:92px}.res-medal-art{font-size:32px}}
+
+/* Skill selection: scroll-snap cards and tap-to-close lightbox */
+#skillScreen{display:none;position:fixed;inset:0;z-index:66;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;background:radial-gradient(ellipse at 48% -12%,#36442e,#151c15 58%,#0b100d);color:#edf1e4;box-sizing:border-box;padding:max(22px,env(safe-area-inset-top)) 0 max(24px,env(safe-area-inset-bottom));font-family:system-ui,-apple-system,'Hiragino Sans',sans-serif}
+body.skill-open #skillScreen{display:block}body.skill-open #pad,body.skill-open #resetBtn,body.skill-open #debugToggleBtn,body.skill-open #debugBadge{display:none!important}
+.sk-shell{max-width:900px;margin:auto}.sk-top{padding:10px 23px 8px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.sk-eyebrow{font-size:11px;font-weight:850;color:#b3bea5;letter-spacing:.24em}.sk-heading{font-size:clamp(26px,5vw,38px);font-weight:950;margin:5px 0;color:#f4f2df;letter-spacing:.04em}.sk-topnote{font-size:13px;color:#b6c4af;line-height:1.6}.sk-home{border:1px solid #697b62;background:#28352a;border-radius:9px;color:#e9f1da;padding:10px 12px;cursor:pointer;white-space:nowrap}.sk-hint{text-align:center;color:#b9c6ab;font-size:12px;margin:13px 0}.sk-scroll{display:flex;gap:15px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding:24px;padding:12px max(24px,calc((100% - 860px)/2 + 20px)) 23px;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:#81926d transparent}
+.sk-card{scroll-snap-align:center;flex:0 0 min(78vw,345px);box-sizing:border-box;min-height:365px;border:1px solid #637359;border-radius:19px;background:linear-gradient(160deg,#34422d,#202c22 53%,#1a241e);box-shadow:0 12px 24px #0005;padding:20px;display:flex;flex-direction:column;position:relative}.sk-number{font-size:12px;color:#c8d3bb;font-weight:800;letter-spacing:.13em}.sk-icon{width:84px;height:84px;display:flex;align-items:center;justify-content:center;border-radius:19px;background:#1b291e;border:1px solid #617656;font-size:45px;margin:19px auto 12px}.sk-name{text-align:center;font-weight:950;font-size:29px;color:#ffe2a1;margin:0 0 8px}.sk-desc{font-size:13px;color:#d1ddca;line-height:1.75;text-align:center;margin:0 0 15px;min-height:55px}.sk-spacer{flex:1}.sk-how{display:flex;align-items:center;gap:7px;justify-content:center;min-height:44px;padding:9px 12px;border-radius:10px;background:#354736;color:#f6e0aa;border:1px solid #a5a078;font-weight:800;font-size:14px;cursor:pointer;touch-action:manipulation}.sk-pick{margin-top:12px;border:1px solid #fff0b7;background:#eed08c;color:#232b1c;border-radius:10px;font-size:16px;font-weight:950;min-height:50px;cursor:pointer;touch-action:manipulation}.sk-pick:active,.sk-how:active{filter:brightness(1.15)}.sk-dots{display:flex;justify-content:center;gap:7px;margin:0 auto 15px}.sk-dot{width:7px;height:7px;background:#627059;border-radius:50%}.sk-dot.on{background:#f3d78f;width:20px;border-radius:6px}.sk-bottom{padding:5px 23px 18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}.sk-toggle{border:1px solid #667760;border-radius:9px;min-height:43px;background:#263226;color:#d8e4cc;padding:10px 15px;font-size:13px;font-weight:750;cursor:pointer}.sk-toggle.enabled{border-color:#dac18c;color:#ffe0a5;background:#4b4830}.sk-load{text-align:center;color:#87987b;font-size:11px;padding:8px}
+#skillLightbox{display:none;position:fixed;inset:0;z-index:80;background:rgba(4,8,5,.84);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);align-items:center;justify-content:center;box-sizing:border-box;padding:22px;touch-action:manipulation;cursor:pointer}#skillLightbox.open{display:flex}.sk-modal{width:min(100%,450px);border:1px solid #b5b78e;background:linear-gradient(155deg,#313f2f,#18241e);box-shadow:0 20px 70px #0009;border-radius:20px;box-sizing:border-box;padding:25px 23px;text-align:center;pointer-events:none}.sk-modal-label{color:#bac8af;letter-spacing:.21em;font-size:11px;font-weight:850}.sk-modal-name{font-size:29px;font-weight:950;color:#ffe0a0;margin:12px 0 20px}.sk-modal-key{font-size:15px;font-weight:850;background:#47573b;border:1px solid #a8af8b;padding:13px;border-radius:10px;color:#fff0bf;line-height:1.6}.sk-modal-text{color:#e6ebdf;white-space:pre-line;text-align:left;line-height:1.85;font-size:14px;margin:20px 0}.sk-modal-close{color:#b7c7b0;border-top:1px solid #596957;padding-top:18px;font-size:13px}
+@media(max-width:580px){.sk-card{flex-basis:83vw;min-height:400px}.sk-scroll{gap:12px;scroll-padding:8.5vw;padding-left:8.5vw;padding-right:8.5vw}.sk-top{padding-top:6px}.sk-heading{font-size:30px}.sk-hint{margin:10px 0}.sk-desc{min-height:70px}}
 </style>
 </head>
 <body>
@@ -69,17 +84,18 @@ body.result-open #resultScreen{display:block}body.result-open #pad,body.result-o
 <div id="debugBadge" hidden>無敵モード</div>
 <div id="pad"><div id="stick"><div id="knob"></div></div><div class="btns"><button class="b" id="skillBtn" data-k="KeyS"><span class="coolRing" id="skillCooldown"></span><span class="coolText" id="skillCooldownText"></span><b>S</b><small id="skillLabel">スキル</small></button><button class="b" id="actionBtn" type="button"><span class="coolRing" id="actionCooldown"></span><span class="coolText" id="actionCooldownText"></span><b id="actionGlyph">D</b><small id="actionLabel">爆弾</small></button><button class="b" data-k="KeyE"><b>E</b><small>操作</small></button></div></div>
 <p>移動: ↑↓←→ / E: 搭乗・降車・近接気絶 / 再開: Enter<br>歩兵: D=爆弾設置/起爆　S=スキル　E=近くの敵兵を10秒気絶　戦車: D=主砲、S=マシンガン（車種で性能差）　戦闘機: D=爆撃　スマホ戦車: Dドラッグで照準→離して主砲、S長押し＋ドラッグでMG照準</p>
+<div id="skillScreen" aria-label="スキル選択" role="region"><div class="sk-shell"><header class="sk-top"><div><div class="sk-eyebrow">PREPARE YOUR MISSION</div><h1 class="sk-heading">スキル選択</h1><div class="sk-topnote">特殊スキルを1つ選び、敵地へ出撃せよ。</div></div><button type="button" class="sk-home" id="skHome">⌂ タイトルへ</button></header><div class="sk-hint">‹ 横にスワイプしてスキルを確認 ›</div><div class="sk-scroll" id="skScroll" aria-label="スキル候補"></div><div class="sk-dots" id="skDots"></div><div class="sk-bottom"><button type="button" class="sk-toggle" id="skDebugAll">全スキル表示</button><button type="button" class="sk-toggle" id="skAreaDebug">エリアデバッグ OFF</button></div><div class="sk-load" id="skLoad"></div></div></div><div id="skillLightbox" role="dialog" aria-modal="true" aria-label="スキル操作方法"><div class="sk-modal"><div class="sk-modal-label">SKILL CONTROLS</div><div class="sk-modal-name" id="skModalName"></div><div class="sk-modal-key" id="skModalKey"></div><div class="sk-modal-text" id="skModalText"></div><div class="sk-modal-close">画面をもう一度タップして閉じる</div></div></div>
 <div id="resultScreen" aria-label="プレイ結果" role="region"><div class="res-wrap">
 <header class="res-header"><div><div class="res-kicker">MISSION REPORT</div><div id="resStatus" class="res-status"></div><div id="resArea" class="res-sub"></div></div><div class="res-kicker">AFTER ACTION REPORT</div></header>
 <section class="res-card res-summary"><div><div class="res-score-label">TOTAL SCORE</div><div id="resScore" class="res-score">0</div><div id="resHigh" class="res-sub"></div></div><div class="res-medal"><div id="resInsignia" class="res-medal-art"></div><div id="resRank" class="res-medal-rank"></div><div class="res-score-label">RANK</div></div></section>
-<section class="res-card"><h2 class="res-section">プレイスタイル <span class="res-sub">8軸 × 5段階</span></h2><div class="res-style"><svg id="resRadar" class="res-radar" viewBox="0 0 360 340" role="img" aria-label="8軸のプレイスタイルレーダーチャート"></svg><div id="resAxes" class="res-axes"></div></div><div class="res-title-badge"><div class="res-score-label">戦闘スタイル称号</div><div id="resTitle" class="res-title-name"></div><div id="resTitleNote" class="res-title-note"></div></div><div class="res-sub">各レベルは今回の行動傾向を示します。全項目Lv5を目指す評価ではありません。</div></section>
+<section class="res-card"><h2 class="res-section">プレイスタイル <span class="res-sub">8軸 × Lv0〜5</span></h2><div class="res-style"><svg id="resRadar" class="res-radar" viewBox="0 0 360 340" role="img" aria-label="8軸のプレイスタイルレーダーチャート"></svg><div id="resAxes" class="res-axes"></div></div><div class="res-title-badge"><div class="res-score-label">戦闘スタイル称号</div><div id="resTitle" class="res-title-name"></div><div id="resTitleNote" class="res-title-note"></div></div><div class="res-sub">行動・成果がない項目はLv0です。全項目Lv5を目指す評価ではありません。</div></section>
 <section class="res-card"><h2 class="res-section">戦績サマリー</h2><div id="resQuick" class="res-stats"></div></section>
 <section class="res-card"><h2 class="res-section">詳細戦績</h2><div id="resDetail" class="res-detail"></div></section>
 <div class="res-actions"><button class="res-btn primary" id="resRetry" type="button">もう一度</button><button class="res-btn" id="resHome" type="button">タイトルへ</button></div>
 </div></div>
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.05.98',FILE_CREATED_AT='2026/10/07 18:50',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
+const GAME_VERSION='2026.10.05.98',FILE_CREATED_AT='2026/10/08 09:14',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
 let audioCtx=null;
 function ensureAudio(){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(_){}}
 function tone(f=440,d=.08,v=.035,type='square',f2=null){if(!audioCtx)return;const t=audioCtx.currentTime,o=audioCtx.createOscillator(),a=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t+d);a.gain.setValueAtTime(v,t);a.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(a);a.connect(audioCtx.destination);o.start(t);o.stop(t+d+.02);}
@@ -829,14 +845,14 @@ let skill='throw',skillChoices=[],skillDebugAll=false,areaDebugEnabled=false,are
 function rollSkillChoices(){
  const pool=SK.slice();
  for(let i=pool.length-1;i>0;i--){const j=R()*(i+1)|0;[pool[i],pool[j]]=[pool[j],pool[i]];}
- skillChoices=pool.slice(0,3).map(k=>k.id);skillDebugAll=false;
+ skillChoices=pool.slice(0,3).map(k=>k.id);skillDebugAll=false;skillMenuDirty=true;
 }
 function skillMenuList(){return skillDebugAll?SK:skillChoices.map(id=>SK.find(k=>k.id===id)).filter(Boolean);}
 function skillMenuLayout(){return skillDebugAll?{sy0:88,ch:56,h:52,debugY:602,debugH:34}:{sy0:126,ch:116,h:102,debugY:494,debugH:40};}
 let gameBuildQueued=false,gameBuildGeneration=0;
 function selectSkillIndex(i){
  const list=skillMenuList();if(i<0||i>=list.length||gameBuildQueued)return false;
- const selected=list[i].id,buildGen=++gameBuildGeneration;skill=selected;
+ const selected=list[i].id,buildGen=++gameBuildGeneration;skill=selected;closeSkillHelp();
  state='preparing';bombReq=false;cannonReq=false;interact=false;skillReq=false;mdown=false;gameBuildQueued=true;sfx('skill');
  // 先に「準備中」を1フレーム描画してから重いステージ生成を行う。
  // その間にタイトルへ戻った場合は世代番号で予約済み生成を無効化する。
@@ -2710,7 +2726,7 @@ function sniperProjection(x,y){
  return{d:forward,x:W*.5+nx*sr*.92,y:aimY,scale:Math.max(.11,Math.min(1.3,180/(forward+45)))};
 }
 function sniperPanelColor(kind,kd=0){
- if(kind==='human')return'#9f3f37';if(kind==='elite')return'#c89a39';if(kind==='tank')return'#4b5f9e';if(kind==='vehicle')return'#65705a';if(kind==='base')return'#7e807d';if(kind==='object')return'#8a704b';
+ if(kind==='human')return'#397cbd';if(kind==='elite')return'#ecf0f2';if(kind==='tank')return'#4b5f9e';if(kind==='vehicle')return'#65705a';if(kind==='base')return'#7e807d';if(kind==='object')return'#8a704b';
  if(kd===4||kd===10)return'#876748';if(kd===6)return'#386b39';if(kd===8)return'#77736b';if(kd===3||kd===9)return'#8b8d89';return'#7d745f';
 }
 function drawSniperStatusIcon(x,y,o){
@@ -2793,6 +2809,93 @@ function drawSniperSilhouette(it,sw,sh,top,near){
  }
  g.restore();
 }
+// 狙撃スコープ用の歩兵。実際の距離による変化は残すが、至近距離でも誇張して巨大化しない。
+function drawSniperScopedHuman(it,pr,viewRange,cy,R){
+ const elite=it.kind==='elite',o=it.o||{};
+ // 遠距離で24px、近距離でも最大68px。旧版の二次的な近距離拡大補正は使わない。
+ const depth=Math.max(0,Math.min(1,1-pr.d/viewRange));
+ const hh=24+44*depth,ww=hh*.43,top=pr.y-hh*.52;
+ const falling=!o.alive&&o.sniperFallT>0;
+ const fallK=falling?1-o.sniperFallT/Math.max(.01,o.sniperFallMax||.72):0;
+ const uniform=elite?'#ecf0f2':'#367fc0',helmet=elite?'#f8fafb':'#428fd1';
+ const shade=elite?'#abb6bf':'#205486',trim=elite?'#d3dce2':'#8abbe4';
+ const outline=elite?'#58656a':'#132e49';
+ g.save();
+ if(falling){const anchorY=pr.y+hh*.48;g.translate(pr.x,anchorY);g.translate(fallK*ww*.35,fallK*hh*.16);g.rotate((o.sniperFallA&&Math.sin(o.sniperFallA)<0?-1:1)*fallK*1.18);g.translate(-pr.x,-anchorY);g.globalAlpha=Math.max(.28,1-fallK*.42);}
+ // 両脚・両腕。軍服と同じ青/白で、輪郭だけ暗めにして背景から分離する。
+ g.fillStyle=shade;g.strokeStyle=outline;g.lineWidth=Math.max(.9,hh*.021);
+ for(const sx of [-1,1]){
+  const legX=pr.x+sx*ww*.20-ww*.11;
+  g.fillRect(legX,top+hh*.64,ww*.22,hh*.32);g.strokeRect(legX,top+hh*.64,ww*.22,hh*.32);
+  const armX=pr.x+sx*ww*.38-ww*.10;
+  g.fillStyle=uniform;g.fillRect(armX,top+hh*.31,ww*.22,hh*.34);g.strokeRect(armX,top+hh*.31,ww*.22,hh*.34);g.fillStyle=shade;
+ }
+ // 胴体 / ベスト / 肩。通常兵は青、エリート兵は白。
+ g.fillStyle=uniform;g.fillRect(pr.x-ww*.34,top+hh*.29,ww*.68,hh*.40);g.strokeRect(pr.x-ww*.34,top+hh*.29,ww*.68,hh*.40);
+ g.fillStyle=trim;g.fillRect(pr.x-ww*.28,top+hh*.32,ww*.15,hh*.26);g.fillRect(pr.x+ww*.13,top+hh*.32,ww*.15,hh*.26);
+ g.fillStyle=shade;g.fillRect(pr.x-ww*.31,top+hh*.56,ww*.62,Math.max(1.5,hh*.055));
+ // 肌の見える顔と、その上に着用する青/白のヘルメット。
+ const headR=ww*.265,headY=top+hh*.16;
+ g.fillStyle='#e6b894';g.strokeStyle=outline;g.beginPath();g.arc(pr.x,headY,headR,0,Math.PI*2);g.fill();g.stroke();
+ g.fillStyle=helmet;g.beginPath();g.arc(pr.x,headY-headR*.10,headR*1.07,Math.PI,Math.PI*2);g.lineTo(pr.x+headR*1.07,headY+headR*.02);g.lineTo(pr.x-headR*1.07,headY+headR*.02);g.closePath();g.fill();g.stroke();
+ g.fillStyle=shade;g.fillRect(pr.x-headR*1.17,headY,headR*2.34,Math.max(1.6,hh*.035));
+ // エリートはヘルメット前面に控えめな銀の徽章を付ける。
+ if(elite){g.fillStyle='#576670';g.beginPath();g.arc(pr.x,headY-headR*.35,Math.max(1.2,ww*.055),0,Math.PI*2);g.fill();}
+ g.restore();
+ const distM=Math.max(1,Math.round(pr.d/10));
+ g.textAlign='center';g.font='bold '+Math.max(10,Math.min(13,hh*.16))+'px system-ui';g.fillStyle='#eef3e8';
+ g.fillText(distM+'m',pr.x,Math.min(cy+R-10,top+hh+15));
+ if(!falling)drawSniperStatusIcon(pr.x,Math.max(cy-R+15,top-14),o);
+}
+// 狙撃の視点移動量を地形と方位目盛りの両方へ反映する。
+function drawSniperPanBackdrop(cx,cy,R){
+ const sweep=Math.max(-SNIPER_AIM_LIMIT,Math.min(SNIPER_AIM_LIMIT,p.sniperAimN||0));
+ // 右へ振ると風景が左へ流れる。物体が何もなくても移動方向が分かる。
+ for(let layer=0;layer<2;layer++){
+  const yy=cy-R*.05+layer*R*.20,gap=R*(layer===0?.37:.52),offset=-sweep*R*(layer===0?1.42:.98);
+  g.fillStyle=layer===0?'rgba(91,115,84,.25)':'rgba(115,132,99,.16)';
+  for(let i=-7;i<=7;i++){
+   const xx=cx+i*gap+offset,ht=R*(layer===0?.095:.065)*(1+((i*7+11)%4)*.13);
+   g.beginPath();g.moveTo(xx-gap*.51,yy);g.lineTo(xx-gap*.27,yy-ht*.53);g.lineTo(xx-gap*.05,yy-ht);g.lineTo(xx+gap*.22,yy-ht*.39);g.lineTo(xx+gap*.53,yy);g.closePath();g.fill();
+  }
+ }
+ // 遠近感のある地表の縦線も、同じ角度に連動して横方向に流す。
+ g.strokeStyle='rgba(200,216,185,.18)';g.lineWidth=1;
+ const offset=-sweep*R*1.26,step=R*.30;
+ for(let i=-7;i<=7;i++){
+  const x=cx+i*step+offset;
+  g.beginPath();g.moveTo(x,cy+R*.03);g.lineTo(cx+(x-cx)*1.45,cy+R);g.stroke();
+ }
+}
+// スコープの中央ポインターは固定し、方位目盛りが左右へ流れるようにする。
+function drawSniperPanIndicator(cx,cy,R){
+ g.save();
+ const sweep=Math.max(-SNIPER_AIM_LIMIT,Math.min(SNIPER_AIM_LIMIT,p.sniperAimN||0));
+ const turn=(sniperAimAngle()-p.sniperLockA)*180/Math.PI;
+ const dir=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0);
+ const moving=dir!==0&&((dir>0&&sweep<SNIPER_AIM_LIMIT-.005)||(dir<0&&sweep>-SNIPER_AIM_LIMIT+.005));
+ const trackY=cy-R+32,trackW=R*.70;
+ g.save();g.beginPath();g.rect(cx-trackW,trackY-13,trackW*2,41);g.clip();
+ g.fillStyle='rgba(7,13,10,.57)';g.fillRect(cx-trackW,trackY-13,trackW*2,39);
+ // 目盛りが動くこと自体を視点移動の手がかりとする。
+ const unit=trackW/5,shift=-turn*unit/5;
+ for(let i=-35;i<=35;i++){
+  const tx=cx+i*unit+shift;if(tx<cx-trackW-3||tx>cx+trackW+3)continue;
+  const major=i%5===0;
+  g.strokeStyle=major?'rgba(231,233,201,.80)':'rgba(204,219,188,.36)';g.lineWidth=major?1.4:1;
+  g.beginPath();g.moveTo(tx,trackY+2);g.lineTo(tx,trackY+(major?15:9));g.stroke();
+ }
+ g.restore();
+ g.fillStyle='#ffdc8a';g.beginPath();g.moveTo(cx,trackY+19);g.lineTo(cx-6,trackY+10);g.lineTo(cx+6,trackY+10);g.closePath();g.fill();
+ g.textAlign='center';g.fillStyle=moving?'#ffdc8a':'#d5e3c7';g.font='bold 12px system-ui';
+ g.fillText((moving?(dir>0?'▶ 右へ視点移動中':'◀ 左へ視点移動中'):'◀  左右に視点移動  ▶')+'  '+(turn>=0?'+':'')+turn.toFixed(1)+'°',cx,trackY-21);
+ // 水平移動量を示す独立したゲージ。中央は初期視点、両端が可動域の端。
+ const gy=cy+R-24,gw=R*.56;
+ g.strokeStyle='rgba(222,234,213,.48)';g.lineWidth=2;g.beginPath();g.moveTo(cx-gw,gy);g.lineTo(cx+gw,gy);g.stroke();
+ g.strokeStyle='rgba(222,234,213,.55)';for(const k of [-1,0,1]){const xx=cx+gw*k;g.beginPath();g.moveTo(xx,gy-4);g.lineTo(xx,gy+4);g.stroke();}
+ const px=cx+gw*sweep/SNIPER_AIM_LIMIT;g.fillStyle='#ffdc8a';g.beginPath();g.arc(px,gy,4.5,0,Math.PI*2);g.fill();
+ g.restore();
+}
 function drawSniperScope(){
  if(!p||!p.sniperMode)return;
  const viewRange=sniperViewRange(),R=Math.min(W,H)*.46,cx=W*.5,cy=H*.49,minX=Math.max(0,p.x-viewRange),maxX=Math.min(WW,p.x+viewRange),minY=Math.max(0,p.y-viewRange),maxY=Math.min(WH,p.y+viewRange),env=[];
@@ -2807,19 +2910,10 @@ function drawSniperScope(){
  g.save();g.fillStyle='#040504';g.fillRect(0,0,W,H);g.beginPath();g.arc(cx,cy,R,0,Math.PI*2);g.clip();
  g.fillStyle='#172019';g.fillRect(cx-R,cy-R,R*2,R*2);g.fillStyle='#2a3128';g.fillRect(cx-R,cy,R*2,R);
  g.strokeStyle='rgba(205,220,190,.12)';g.lineWidth=1;for(let i=1;i<=6;i++){const k=i/7,yy=cy+R*.05+R*.72*k*k;g.beginPath();g.moveTo(cx-R,yy);g.lineTo(cx+R,yy);g.stroke();}
- for(const q of [-.72,-.36,.36,.72]){g.beginPath();g.moveTo(cx,cy);g.lineTo(cx+q*R,cy+R);g.stroke();}
+ drawSniperPanBackdrop(cx,cy,R);
  for(const it of env){const pr=it.p,near=Math.max(.12,Math.min(1,1-pr.d/viewRange)),baseScale=pr.scale;
   if(it.kind==='human'||it.kind==='elite'){
-   // 狙撃時だけ人間の遠近差を誇張。近距離ほど急激に大きくする。
-   let hh=Math.max(20,Math.min(188,19500/(pr.d+58)))*(1+near*near*.68),ww=Math.max(8,hh*.34),top=pr.y-hh*.52;
-   const falling=!it.o.alive&&it.o.sniperFallT>0,fallK=falling?1-it.o.sniperFallT/Math.max(.01,it.o.sniperFallMax||.72):0;
-   g.save();g.translate(pr.x,pr.y+hh*.48);if(falling){g.translate(fallK*ww*.35,fallK*hh*.16);g.rotate((it.o.sniperFallA&&Math.sin(it.o.sniperFallA)<0?-1:1)*fallK*1.18);g.globalAlpha=Math.max(.28,1-fallK*.42);}g.translate(-pr.x,-(pr.y+hh*.48));
-   g.fillStyle=sniperPanelColor(it.kind);g.fillRect(pr.x-ww/2,top,ww,hh);g.fillStyle='#d7c8aa';g.beginPath();g.arc(pr.x,top-ww*.30,Math.max(3,ww*.40),0,6.28);g.fill();
-   if(it.kind==='elite'){g.fillStyle='#ffd56a';g.fillRect(pr.x-ww*.55,top-7,ww*1.1,4);}
-   g.restore();
-   const distM=Math.max(1,Math.round(pr.d/10));
-   g.textAlign='center';g.font='bold '+Math.max(10,Math.min(14,hh*.11))+'px system-ui';g.fillStyle='#eef3e8';g.fillText(distM+'m',pr.x,Math.min(cy+R-10,top+hh+15));
-   if(!falling)drawSniperStatusIcon(pr.x,Math.max(cy-R+15,top-14),it.o);
+   drawSniperScopedHuman(it,pr,viewRange,cy,R);
   }else{
    const enemyScale=it.kind==='tank'?1.18:1,sw=Math.max(5,Math.min(R*.7,it.w*baseScale*2.2*enemyScale)),sh=Math.max(4,Math.min(R*.5,it.h*baseScale*1.8*enemyScale)),top=pr.y-sh*.5;
    drawSniperSilhouette(it,sw,sh,top,near);
@@ -2842,6 +2936,7 @@ function drawSniperScope(){
  g.save();g.strokeStyle='rgba(15,17,14,.98)';g.lineWidth=Math.max(12,R*.055);g.beginPath();g.arc(cx,cy,R,0,6.28);g.stroke();g.strokeStyle='rgba(225,235,215,.88)';g.lineWidth=1.4;g.beginPath();g.arc(cx,cy,R-7,0,6.28);g.stroke();
  // プレイヤー本体の向きは固定し、←→ではスコープ視点そのものを左右へ振る。十字は中央固定。
  g.strokeStyle='#dfe7d7';g.lineWidth=1.3;const gap=9,len=R*.60;g.beginPath();g.moveTo(cx-len,cy);g.lineTo(cx-gap,cy);g.moveTo(cx+gap,cy);g.lineTo(cx+len,cy);g.moveTo(cx,cy-len);g.lineTo(cx,cy-gap);g.moveTo(cx,cy+gap);g.lineTo(cx,cy+len);g.stroke();g.beginPath();g.arc(cx,cy,3.2,0,6.28);g.stroke();
+ drawSniperPanIndicator(cx,cy,R);
  g.textAlign='center';g.fillStyle='#e6e9d8';g.font='bold 13px system-ui';g.fillText(p.sniperExitT>0?'ライフル収納中…':(weather==='rain'?'← →：スコープ　 S：発射　 E：解除　 雨天:視界70%':'← →：スコープ　 S：発射　 E：解除'),cx,H-18);g.restore();
 }
 function update(dt){
@@ -4110,23 +4205,31 @@ function draw(near){
 // Responsive result display. Existing score calculation is preserved.
 const RES_AXES=['潜入','索敵','射撃','戦闘','爆破','機動','戦術','生存'];
 const resClamp=(v)=>Math.max(0,Math.min(100,Math.round(Number.isFinite(v)?v:0)));
-const resLevel=v=>v>=85?5:v>=65?4:v>=45?3:v>=25?2:1;
+const resLevel=v=>v<=0?0:v>=85?5:v>=65?4:v>=45?3:v>=25?2:1;
 function resultMetrics(s,r){
- const kills=s.humanKills+s.eliteKills+s.tankKills, minutes=Math.max(1,s.time/60), progress=Math.min(1,s.maxProgress/WH), unique=Object.keys(s.vehicleKinds||{}).length;
- const stealth=resClamp(25+45*Math.min(1,s.unseenDist/Math.max(1,s.totalTravel))+20*Math.min(1,s.maxUnseenForwardStreak/1800)-Math.min(35,s.detections*7));
- // 索敵は観測専用の追跡記録がないため、現時点では未発見進行・発見抑制を代理指標にする。
- const recon=resClamp(12+48*Math.min(1,s.maxUnseenForwardStreak/2300)+35*Math.min(1,s.unseenDist/Math.max(1,s.totalTravel))-s.detections*3);
- // 射撃命中率は未計測のため発射数と撃破実績に基づく参考推定（命中率とは表示しない）。
- const shooting=resClamp(s.shots?15+50*Math.min(1,(kills/Math.max(1,s.shots))/.22)+Math.min(35,s.sniperShots*6+s.cannonShots*1.5):0);
- const combat=resClamp(10+Math.min(60,(s.humanKills+2*s.eliteKills+3*s.tankKills)*5)+Math.min(30,s.maxKillChain*8));
- const blast=resClamp(s.bombBlasts||s.cannonShots?10+Math.min(45,s.bombBlasts*9+s.cannonShots*3)+Math.min(45,s.multiKillBonus/12):0);
- const mobility=resClamp(10+Math.min(35,s.totalTravel/160)+Math.min(35,s.vehicleTime/5)+unique*8);
- const tactics=resClamp(10+Math.min(36,s.skillUses*7)+Math.min(24,s.stuns*10)+Math.min(30,unique*10+s.bombBlasts*3));
- const survival=resClamp(30+progress*35+(r.cleared?25:0)-s.damageHits*14-Math.min(18,s.detections*2));
+ const kills=s.humanKills+s.eliteKills+s.tankKills;
+ const unique=Object.keys(s.vehicleKinds||{}).length;
+ const forward=Math.max(0,s.forwardDist||0), unseen=Math.max(0,s.unseenDist||0);
+ const unseenForward=Math.max(0,s.maxUnseenForwardStreak||0);
+ // 行動や成果がない領域は必ず0。生存時間や初期位置だけでは評価しない。
+ const stealth=unseenForward>=30?resClamp(10+45*Math.min(1,unseenForward/2200)+35*Math.min(1,unseen/Math.max(100,s.totalTravel))-Math.min(35,s.detections*7)):0;
+ // 索敵の専用検出値がないため、未発見での前進距離を代理値とし、前進のないケースは0。
+ const recon=unseenForward>=80?resClamp(8+60*Math.min(1,unseenForward/2300)+24*Math.min(1,unseen/Math.max(150,s.totalTravel))-s.detections*4):0;
+ // 命中率は未計測。射撃による実際の戦果がないと射撃評価を与えない。
+ const shooting=s.shots>0&&kills>0?resClamp(12+50*Math.min(1,(kills/s.shots)/.22)+Math.min(35,s.sniperShots*6+s.cannonShots*1.5)):0;
+ const combat=kills>0?resClamp(12+Math.min(60,(s.humanKills+2*s.eliteKills+3*s.tankKills)*5)+Math.min(28,s.maxKillChain*8)):0;
+ // 爆弾・主砲の使用実績だけでなく、爆発と撃破・破壊の組合せを評価。
+ const explosives=(s.bombBlasts||0)+(s.cannonShots||0);
+ const blast=explosives>0?resClamp(5+Math.min(40,s.bombBlasts*7+s.cannonShots*2)+Math.min(35,s.multiKillBonus/12)+Math.min(20,(s.coverDestroyed||0)/450)):0;
+ const mobility=(s.totalTravel>=30||s.vehicleTime>0)?resClamp(Math.min(35,s.totalTravel/170)+Math.min(35,s.vehicleTime/5)+unique*9):0;
+ const tactics=(s.skillUses>0||s.stuns>0||s.bombBlasts>0||unique>0)?resClamp(Math.min(40,s.skillUses*8)+Math.min(30,s.stuns*12)+Math.min(30,unique*10+s.bombBlasts*4)):0;
+ const progress=Math.max(0,s.maxProgress||0);
+ const survival=progress>=150?resClamp(10+Math.min(50,progress/WH*50)+(r.cleared?35:0)-s.damageHits*15-Math.min(20,s.detections*2)):0;
  return [stealth,recon,shooting,combat,blast,mobility,tactics,survival];
 }
 function resultStyle(levels,s){
  const [stealth,recon,shooting,combat,blast,mobility,tactics,survival]=levels;
+ if(levels.every(v=>v===0))return['戦果なし','今回のプレイでは評価対象の行動・成果がありません'];
  if(stealth>=4&&shooting>=4)return['ゴーストスナイパー','潜伏と精密攻撃を組み合わせた狩人'];
  if(stealth>=4&&s.detections<=1)return['ゴースト','気配を消して前進する潜入の達人'];
  if(blast>=4&&combat>=3)return['破壊工作員','爆発を駆使して戦場を切り開いた'];
@@ -4172,6 +4275,33 @@ document.getElementById('resRetry').addEventListener('click',()=>{rollSkillChoic
 document.getElementById('resHome').addEventListener('click',()=>{state='title';bombReq=false;cannonReq=false;interact=false;skillReq=false;syncResultScreen();sfx('skill');});
 highScoreData=loadHighScore();
 // 初回起動ではマップ生成を行わない。タイトル描画に必要な最小状態だけ用意する。
+
+// Accessible HTML skill selection. Canvas screen remains as legacy fallback.
+let skillMenuDirty=true,skillMenuSnapshot='',skillCardActive=0;
+const SK_VISUAL={throw:'💣',dig:'🥷',decoy:'🎭',buddy:'🪖',drill:'⚙️',build:'🧱',flame:'🔥',hound:'🐕',sniper:'🎯'};
+const SK_CONTROL={
+ throw:['S：爆弾を投げる','進行方向に爆弾を投げて設置。Dで起爆します。'],
+ dig:['S：潜伏／解除','静止して潜伏準備。潜伏中は敵の発見を避けられます。移動や地形に注意。'],
+ decoy:['S：偽装を設置','現在地に身代わりを置き、敵の注意をそらします。'],
+ buddy:['S：仲間を呼ぶ','味方兵士が降下して援護します。最大5人。'],
+ drill:['S：突貫を発動','向いている方向にドリルを展開。遮蔽物を破壊します。'],
+ build:['S：防護壁を設置','前方にコンクリートの防護壁を建てます。'],
+ flame:['S：火炎放射','進行方向へ火炎を放射。使用量に応じて再充填します。'],
+ hound:['S：猟犬に指示（長押し可）','正面へ走らせ、敵兵を追跡して気絶させます。長押しで前進を延長。'],
+ sniper:['S：狙撃 ／ E：解除','静止してスコープを展開。方向キー左右で照準移動し、Sで狙撃します。']
+};
+function closeSkillHelp(){document.getElementById('skillLightbox')?.classList.remove('open');}
+function openSkillHelp(id){const k=SK.find(v=>v.id===id);if(!k)return;const c=SK_CONTROL[id]||['S：スキルを使用',''];document.getElementById('skModalName').textContent=(SK_VISUAL[id]||'✦')+' '+k.n;document.getElementById('skModalKey').textContent=c[0];document.getElementById('skModalText').textContent=c[1]+'\n\n'+k.d.replaceAll('\n','\n');document.getElementById('skillLightbox').classList.add('open');}
+document.getElementById('skillLightbox').addEventListener('click',closeSkillHelp);
+document.getElementById('skHome').addEventListener('click',()=>{closeSkillHelp();state='title';sfx('skill');});
+document.getElementById('skDebugAll').addEventListener('click',()=>{skillDebugAll=!skillDebugAll;skillMenuDirty=true;sfx('skill');});
+document.getElementById('skAreaDebug').addEventListener('click',()=>{areaDebugEnabled=!areaDebugEnabled;skillMenuDirty=true;sfx('skill');});
+const skScroll=document.getElementById('skScroll');
+function updateSkillDots(){const a=[...skScroll.children],x=skScroll.scrollLeft+skScroll.clientWidth/2;let best=0,dist=Infinity;a.forEach((el,i)=>{const d=Math.abs(el.offsetLeft+el.offsetWidth/2-x);if(d<dist){best=i;dist=d;}});skillCardActive=best;document.getElementById('skDots').innerHTML=a.map((_,i)=>'<span class="sk-dot'+(i===best?' on':'')+'"></span>').join('');}
+skScroll.addEventListener('scroll',updateSkillDots,{passive:true});
+function renderSkillCards(){const list=skillMenuList();skScroll.replaceChildren();list.forEach((k,i)=>{const el=document.createElement('article');el.className='sk-card';const lines=k.d.split('\n');const detail=lines.slice(0,2).join(' ／ ');el.innerHTML='<div class="sk-number">SKILL '+String(i+1).padStart(2,'0')+' / '+String(list.length).padStart(2,'0')+'</div><div class="sk-icon" aria-hidden="true">'+(SK_VISUAL[k.id]||'✦')+'</div><h2 class="sk-name"></h2><p class="sk-desc"></p><div class="sk-spacer"></div><button class="sk-how" type="button">ⓘ 操作方法を見る</button><button class="sk-pick" type="button">このスキルで出撃 →</button>';el.querySelector('.sk-name').textContent=k.n;el.querySelector('.sk-desc').textContent=detail;el.querySelector('.sk-how').addEventListener('click',()=>openSkillHelp(k.id));el.querySelector('.sk-pick').addEventListener('click',()=>selectSkillIndex(i));skScroll.append(el);});skScroll.scrollLeft=0;updateSkillDots();document.getElementById('skDebugAll').textContent=skillDebugAll?'ランダム3候補に戻す':'全スキル表示';document.getElementById('skDebugAll').classList.toggle('enabled',skillDebugAll);document.getElementById('skAreaDebug').textContent='エリアデバッグ '+(areaDebugEnabled?'ON':'OFF');document.getElementById('skAreaDebug').classList.toggle('enabled',areaDebugEnabled);skillMenuDirty=false;}
+function syncSkillScreen(){const show=state==='skill';const isOpen=document.body.classList.contains('skill-open');if(show&&!isOpen){document.body.classList.add('skill-open');skillMenuDirty=true;}else if(!show&&isOpen){document.body.classList.remove('skill-open');closeSkillHelp();}if(show){const snapshot=skillChoices.join(',')+'|'+skillDebugAll+'|'+areaDebugEnabled;if(skillMenuDirty||snapshot!==skillMenuSnapshot){renderSkillCards();skillMenuSnapshot=snapshot;}document.getElementById('skLoad').textContent=assetsLoading()?'素材を読み込み中…':'スキル選択後、ステージを準備します';}}
+
 state='title';rollSkillChoices();
 let firstMenuFrame=true,last=performance.now(),prevState=state;
 function loop(n){
@@ -4186,7 +4316,8 @@ function loop(n){
   }
   prevState=state;
  }while(remain>.000001);
- draw(near);syncResultScreen();
+ document.body.classList.toggle('gameplay-active',state==='play');
+ draw(near);syncResultScreen();syncSkillScreen();
  if(firstMenuFrame){firstMenuFrame=false;setTimeout(startAssetLoading,0);}
  requestAnimationFrame(loop);
 }
@@ -4308,7 +4439,7 @@ resetBtn.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation
 resetBtn.addEventListener('click',backToTitle);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)clearInputs();});
 addEventListener('blur',clearInputs);
-document.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
+document.addEventListener('touchmove',e=>{if(document.body.classList.contains('result-open')&&e.target.closest('#resultScreen'))return;e.preventDefault();},{passive:false});
 document.addEventListener('gesturestart',e=>e.preventDefault(),{passive:false});
 document.addEventListener('contextmenu',e=>e.preventDefault());
 })();
