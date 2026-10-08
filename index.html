@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 更新 2026/10/08 13:52</title>
+<title>戦車ゲーム 更新 2026/10/08 18:34</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -216,12 +216,12 @@ body.trophy-open #pad,body.trophy-open #resetBtn{display:none!important}
 </div></div>
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.08.105',FILE_CREATED_AT='2026/10/08 13:52',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
+const GAME_VERSION='2026.10.08.107',FILE_CREATED_AT='2026/10/08 18:34',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
 let audioCtx=null;
 function ensureAudio(){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(_){}}
 function tone(f=440,d=.08,v=.035,type='square',f2=null){if(!audioCtx)return;const t=audioCtx.currentTime,o=audioCtx.createOscillator(),a=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t+d);a.gain.setValueAtTime(v,t);a.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(a);a.connect(audioCtx.destination);o.start(t);o.stop(t+d+.02);}
 function noise(d=.12,v=.025){if(!audioCtx)return;const sr=audioCtx.sampleRate,n=Math.max(1,Math.floor(sr*d)),buf=audioCtx.createBuffer(1,n,sr),ch=buf.getChannelData(0);for(let i=0;i<n;i++)ch[i]=(Math.random()*2-1)*(1-i/n);const src=audioCtx.createBufferSource(),a=audioCtx.createGain();src.buffer=buf;a.gain.value=v;src.connect(a);a.connect(audioCtx.destination);src.start();}
-function sfx(n){ensureAudio();if(!audioCtx)return;switch(n){case'cannon':tone(105,.14,.065,'sawtooth',45);noise(.18,.045);break;case'mg':tone(250,.045,.018,'square',150);break;case'explosion':tone(80,.22,.055,'sawtooth',32);noise(.28,.055);break;case'airExplosion':tone(80,.22,.033,'sawtooth',32);noise(.28,.033);break;case'pickup':tone(620,.08,.03,'sine',900);setTimeout(()=>tone(900,.09,.025,'sine',1200),65);break;case'skill':tone(420,.1,.025,'triangle',650);break;case'sniper':noise(.055,.070);tone(1180,.032,.045,'square',430);tone(185,.105,.050,'sawtooth',78);setTimeout(()=>{noise(.10,.018);tone(520,.055,.014,'triangle',260);},48);break;case'sniperHit':tone(920,.045,.018,'square',620);break;case'drill':tone(145,.07,.02,'sawtooth',110);break;case'drillBreak':noise(.2,.045);tone(120,.13,.04,'square',55);break;case'ally':tone(520,.08,.025,'triangle',720);setTimeout(()=>tone(720,.1,.025,'triangle',980),70);break;case'radio':tone(880,.05,.018,'square');setTimeout(()=>tone(660,.05,.018,'square'),80);setTimeout(()=>tone(980,.08,.02,'square'),160);break;case'enter':tone(280,.07,.022,'triangle',420);break;case'rain':noise(.35,.012);break;case'enemyCannon':tone(88,.11,.028,'sawtooth',50);noise(.11,.018);break;case'enemyGun':tone(190,.04,.009,'square',130);break;case'lose':tone(180,.18,.035,'sawtooth',75);setTimeout(()=>tone(120,.28,.025,'sawtooth',45),120);break;case'win':tone(440,.12,.03,'triangle',660);setTimeout(()=>tone(660,.16,.03,'triangle',990),120);break;case'crush':tone(120,.055,.022,'square',70);noise(.07,.022);break;case'vehicleHit':tone(210,.05,.018,'square',120);noise(.045,.012);break;case'decoy':tone(760,.06,.018,'square',1020);setTimeout(()=>tone(1020,.05,.014,'square',760),70);break;case'splash':noise(.09,.016);tone(190,.06,.012,'triangle',130);break;case'deathHit':tone(95,.18,.05,'sawtooth',42);noise(.22,.04);break;case'bombdrop':tone(330,.18,.018,'sine',120);setTimeout(()=>noise(.06,.01),100);break;}}
+function sfx(n){ensureAudio();if(!audioCtx)return;switch(n){case'cannon':tone(105,.14,.065,'sawtooth',45);noise(.18,.045);break;case'mg':tone(250,.045,.018,'square',150);break;case'explosion':tone(80,.22,.055,'sawtooth',32);noise(.28,.055);break;case'airExplosion':tone(80,.22,.033,'sawtooth',32);noise(.28,.033);break;case'pickup':tone(620,.08,.03,'sine',900);setTimeout(()=>tone(900,.09,.025,'sine',1200),65);break;case'skill':tone(420,.1,.025,'triangle',650);break;case'sniper':noise(.055,.070);tone(1180,.032,.045,'square',430);tone(185,.105,.050,'sawtooth',78);setTimeout(()=>{noise(.10,.018);tone(520,.055,.014,'triangle',260);},48);break;case'sniperHit':tone(920,.045,.018,'square',620);break;case'sniperLens':tone(760,.035,.020,'square',430);noise(.032,.008);setTimeout(()=>tone(390,.045,.018,'triangle',260),48);break;case'drill':tone(145,.07,.02,'sawtooth',110);break;case'drillBreak':noise(.2,.045);tone(120,.13,.04,'square',55);break;case'ally':tone(520,.08,.025,'triangle',720);setTimeout(()=>tone(720,.1,.025,'triangle',980),70);break;case'radio':tone(880,.05,.018,'square');setTimeout(()=>tone(660,.05,.018,'square'),80);setTimeout(()=>tone(980,.08,.02,'square'),160);break;case'enter':tone(280,.07,.022,'triangle',420);break;case'rain':noise(.35,.012);break;case'enemyCannon':tone(88,.11,.028,'sawtooth',50);noise(.11,.018);break;case'enemyGun':tone(190,.04,.009,'square',130);break;case'lose':tone(180,.18,.035,'sawtooth',75);setTimeout(()=>tone(120,.28,.025,'sawtooth',45),120);break;case'win':tone(440,.12,.03,'triangle',660);setTimeout(()=>tone(660,.16,.03,'triangle',990),120);break;case'crush':tone(120,.055,.022,'square',70);noise(.07,.022);break;case'vehicleHit':tone(210,.05,.018,'square',120);noise(.045,.012);break;case'decoy':tone(760,.06,.018,'square',1020);setTimeout(()=>tone(1020,.05,.014,'square',760),70);break;case'splash':noise(.09,.016);tone(190,.06,.012,'triangle',130);break;case'deathHit':tone(95,.18,.05,'sawtooth',42);noise(.22,.04);break;case'bombdrop':tone(330,.18,.018,'sine',120);setTimeout(()=>noise(.06,.01),100);break;}}
 addEventListener('pointerdown',ensureAudio,{passive:true});addEventListener('keydown',ensureAudio,{passive:true});
 const keys={};let mx=240,my=300,mdown=false,bombReq=false,cannonReq=false,interact=false;
 const normKeyCode=e=>{
@@ -245,6 +245,7 @@ addEventListener('keydown',e=>{
  if((state==='play'||state==='blast')&&(code.startsWith('Arrow')||code==='Space'))e.preventDefault();
  const first=!keys[code];keys[code]=true;
  // Dは移動キーとは完全に独立したアクションとして扱う。
+ if(first&&state==='play'&&(code==='ArrowUp'||code==='ArrowDown'))shiftSniperLens(code==='ArrowUp'?1:-1);
  if(code==='KeyD'&&!e.repeat)queueDAction();
  if(code==='KeyE'&&first&&!e.repeat)interact=true;
  if(code==='KeyS'&&!(p&&p.tank)&&first&&!e.repeat)skillReq=true;
@@ -960,7 +961,7 @@ const SK=[
  {id:'build',n:'建築',d:'正面にコンクリート防護壁を設置\n最大5枚／チャージ1.5秒\n画面外へ流れると消滅'},
  {id:'flame',n:'火炎',d:'正面200pxへ火炎放射（先端到達1秒）\n最大3秒・使用分×4秒で全回復\n回復中も再使用可能'},
  {id:'hound',n:'猟犬',d:'猟犬が斜め後ろを追従\nSで正面へ30px自動ダッシュ（長押しで延長）→周囲100pxの敵兵へ突撃\n敵がいなければ帰還／3秒噛みついて気絶\n帰還中に障害物へ当たるとS字で迷子→前方120°・500px＋全周150pxで再発見'},
- {id:'sniper',n:'狙撃',d:'伏せてライフル展開→1秒静止後にスコープへ\n←→で視点移動／↑↓で1.5〜3倍ズーム\nSで狙撃／Eで解除。敵兵・エリートは1発撃破'}
+ {id:'sniper',n:'狙撃',d:'伏せてライフル展開→1秒静止後にスコープへ\n←→で視点移動／↑↓で1.5倍・2.5倍・3.5倍のレンズ切替\nSで狙撃／Eで解除。敵兵・エリートは1発撃破'}
 ];
 const TOUCH=matchMedia('(pointer:coarse)').matches;
 const SKN={throw:'投擲',dig:'潜伏',decoy:'偽装',buddy:'相棒',drill:'突貫',build:'建築',flame:'火炎',hound:'猟犬',sniper:'狙撃'};
@@ -1466,7 +1467,7 @@ function reset(rerollSkills=true){
  burningNatureSet.clear();lastEnemySeparationAt=-1e9;allyTargetRefreshAt=0;
  state='play';shake=0;flash=0;msg='';msgT=0;interact=false;bombReq=false;skillReq=false;decoy=null;allies=[];hound=null;houndTrail=[];allySeq=0;builtWalls=[];tankWrecks=[];radio=null;airstrike=null;airbombs=[];weather='clear';weatherT=0;weatherNext=15+R()*35;baseSpawnT=5;deathT=0;cam=0;camX=0;scoreStats=newScoreStats();
  setupZones();if(rerollSkills)rollSkillChoices();
- p={x:WW/2,y:3100,hp:2,tank:null,cc:0,vc:0,ang:-1.57,body:-1.57,dig:0,digPrep:0,digElapsed:0,digExitAnim:0,digExitX:0,digExitY:0,scd:0,scdMax:0,drill:0,drillHit:0,drillTarget:null,drillSfx:0,bushHide:0,grappleT:0,grappleTarget:null,flameFuel:3,flameActive:false,flameLockA:null,flamePath:[],flameSfx:0,flameReach:0,fireExposure:0,sniperMode:false,sniperLockA:null,sniperAimN:0,sniperZoom:1.5,sniperEnterT:0,sniperReadyT:0,sniperExitT:0,sniperFlash:0,sniperHitT:0,sniperHitX:0,sniperHitY:0,sniperFireCd:0,sniperNoiseEvents:[]};touchTurretAngle=null;
+ p={x:WW/2,y:3100,hp:2,tank:null,cc:0,vc:0,ang:-1.57,body:-1.57,dig:0,digPrep:0,digElapsed:0,digExitAnim:0,digExitX:0,digExitY:0,scd:0,scdMax:0,drill:0,drillHit:0,drillTarget:null,drillSfx:0,bushHide:0,grappleT:0,grappleTarget:null,flameFuel:3,flameActive:false,flameLockA:null,flamePath:[],flameSfx:0,flameReach:0,fireExposure:0,sniperMode:false,sniperLockA:null,sniperAimN:0,sniperZoom:1.5,sniperLensChangeT:0,sniperEnterT:0,sniperReadyT:0,sniperExitT:0,sniperFlash:0,sniperHitT:0,sniperHitX:0,sniperHitY:0,sniperFireCd:0,sniperNoiseEvents:[]};touchTurretAngle=null;
  base={x:WW/2-COMMAND_BASE_W/2,y:60,w:COMMAND_BASE_W,h:COMMAND_BASE_H,hp:30,maxHp:30,deadAt:0};bullets=[];parts=[];bombs=[];waves=[];fx=[];items=[];bushes=[];
  water=[];bridges=[];mud=[];
  for(const ry of [2675,1325]){
@@ -2752,13 +2753,20 @@ function drawBurningNature(cx=0,cy=0){
  g.restore();
 }
 
-const SNIPER_RANGE=1000,SNIPER_BULLET_SPEED=630,SNIPER_ZOOM_MIN=1.5,SNIPER_ZOOM_MAX=3,SNIPER_ZOOM_SPEED=1.25,SNIPER_AIM_FOV=Math.PI/(5*SNIPER_ZOOM_MIN),SNIPER_AIM_LIMIT=.82,SNIPER_AIM_SPEED=1.25,SNIPER_DEPLOY_TIME=.7,SNIPER_SETTLE_TIME=1,SNIPER_FIRE_INTERVAL=3;
-function sniperZoom(){return Math.max(SNIPER_ZOOM_MIN,Math.min(SNIPER_ZOOM_MAX,p&&Number.isFinite(p.sniperZoom)?p.sniperZoom:SNIPER_ZOOM_MIN));}
+const SNIPER_RANGE=1000,SNIPER_BULLET_SPEED=630,SNIPER_LENSES=[1.5,2.5,3.5],SNIPER_ZOOM_MIN=1.5,SNIPER_ZOOM_MAX=3.5,SNIPER_AIM_FOV=Math.PI/(5*SNIPER_ZOOM_MIN),SNIPER_AIM_LIMIT=.82,SNIPER_AIM_SPEED=1.25,SNIPER_DEPLOY_TIME=.7,SNIPER_SETTLE_TIME=1,SNIPER_FIRE_INTERVAL=3;
+function sniperZoom(){return p&&SNIPER_LENSES.includes(p.sniperZoom)?p.sniperZoom:SNIPER_ZOOM_MIN;}
+function shiftSniperLens(dir){
+ // 1回のキー入力 / 仮想スティックの倒し始めにつき、レンズを1段だけ交換する。
+ if(state!=='play'||!p||!p.sniperMode||p.sniperExitT>0||!dir)return false;
+ const i=SNIPER_LENSES.indexOf(sniperZoom()),next=SNIPER_LENSES[Math.max(0,Math.min(SNIPER_LENSES.length-1,i+(dir>0?1:-1)))];
+ if(next===sniperZoom())return false;
+ p.sniperZoom=next;p.sniperLensChangeT=.24;sfx('sniperLens');return true;
+}
 function sniperFov(){return Math.PI/(5*sniperZoom());}
 function sniperViewRange(){return weather==='rain'?SNIPER_RANGE*.7:SNIPER_RANGE;}
 function enterSniperMode(){
  if(!p||p.tank||p.dig>0||p.digPrep>0||p.drill>0||p.grappleT>0||p.sniperMode||p.sniperEnterT>0||p.sniperReadyT>0)return false;
- p.sniperMode=false;p.sniperLockA=p.body;p.sniperAimN=0;p.sniperZoom=SNIPER_ZOOM_MIN;p.sniperExitT=0;p.sniperFlash=0;p.sniperHitT=0;p.sniperEnterT=SNIPER_DEPLOY_TIME;p.sniperReadyT=SNIPER_SETTLE_TIME;p.body=p.sniperLockA;
+ p.sniperMode=false;p.sniperLockA=p.body;p.sniperAimN=0;p.sniperZoom=SNIPER_ZOOM_MIN;p.sniperLensChangeT=0;p.sniperExitT=0;p.sniperFlash=0;p.sniperHitT=0;p.sniperEnterT=SNIPER_DEPLOY_TIME;p.sniperReadyT=SNIPER_SETTLE_TIME;p.body=p.sniperLockA;
  bombReq=false;interact=false;sfx('skill');say('狙撃準備：伏せてライフルを展開…');return true;
 }
 function beginSniperExit(){
@@ -2766,7 +2774,7 @@ function beginSniperExit(){
  p.sniperExitT=.5;skillReq=false;bombReq=false;say('ライフル収納中…');return true;
 }
 function finishSniperExit(){
- if(!p)return;p.sniperMode=false;p.sniperExitT=0;p.sniperEnterT=0;p.sniperReadyT=0;p.sniperLockA=null;p.sniperAimN=0;p.sniperFlash=0;p.sniperHitT=0;say('狙撃モード解除');
+ if(!p)return;p.sniperMode=false;p.sniperExitT=0;p.sniperEnterT=0;p.sniperReadyT=0;p.sniperLockA=null;p.sniperAimN=0;p.sniperLensChangeT=0;p.sniperFlash=0;p.sniperHitT=0;say('狙撃モード解除');
 }
 function sniperAimAngle(){
  if(!p||!Number.isFinite(p.sniperLockA))return p?.body||0;
@@ -2796,7 +2804,7 @@ function triggerSniperFound(ev){
 }
 function updateSniperState(dt){
  if(!p)return false;
- p.sniperFlash=Math.max(0,(p.sniperFlash||0)-dt);p.sniperHitT=Math.max(0,(p.sniperHitT||0)-dt);p.sniperFireCd=Math.max(0,(p.sniperFireCd||0)-dt);
+ p.sniperFlash=Math.max(0,(p.sniperFlash||0)-dt);p.sniperLensChangeT=Math.max(0,(p.sniperLensChangeT||0)-dt);p.sniperHitT=Math.max(0,(p.sniperHitT||0)-dt);p.sniperFireCd=Math.max(0,(p.sniperFireCd||0)-dt);
  if(Array.isArray(p.sniperNoiseEvents)&&p.sniperNoiseEvents.length){
   for(let i=p.sniperNoiseEvents.length-1;i>=0;i--){const ev=p.sniperNoiseEvents[i];ev.susT=(ev.susT??.5)-dt;ev.foundT=(ev.foundT??1)-dt;if(!ev.susDone&&ev.susT<=0){ev.susDone=true;triggerSniperSuspicion(ev);}if(ev.foundT<=0){if(!ev.susDone)triggerSniperSuspicion(ev);triggerSniperFound(ev);p.sniperNoiseEvents.splice(i,1);}}
  }
@@ -2809,14 +2817,11 @@ function updateSniperState(dt){
   if(before>0&&p.sniperEnterT<=0)say('伏せ姿勢完了：1秒間照準を安定…');
  }else if(p.sniperReadyT>0){
   p.sniperReadyT=Math.max(0,p.sniperReadyT-dt);
-  if(p.sniperReadyT<=0){p.sniperMode=true;p.sniperReadyT=0;say('狙撃：←→ 視点 / ↑↓ 1.5〜3倍ズーム / S 発射 / E 解除');}
+  if(p.sniperReadyT<=0){p.sniperMode=true;p.sniperReadyT=0;say('狙撃：←→ 視点 / ↑↓ レンズ切替 1.5・2.5・3.5倍 / S 発射 / E 解除');}
  }
  if(p.sniperMode&&Number.isFinite(p.sniperLockA)&&!(p.sniperExitT>0)){
   const aimDir=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0);
   if(aimDir)p.sniperAimN=Math.max(-SNIPER_AIM_LIMIT,Math.min(SNIPER_AIM_LIMIT,(p.sniperAimN||0)+aimDir*SNIPER_AIM_SPEED*dt));
-  // 上下キー（スマホでは仮想スティックの上下）で光学倍率のみを変更。狙っている角度は動かさない。
-  const zoomDir=(keys.ArrowUp?1:0)-(keys.ArrowDown?1:0);
-  if(zoomDir)p.sniperZoom=Math.max(SNIPER_ZOOM_MIN,Math.min(SNIPER_ZOOM_MAX,sniperZoom()+zoomDir*SNIPER_ZOOM_SPEED*dt));
  }
  if(p.sniperExitT>0){p.sniperExitT=Math.max(0,p.sniperExitT-dt);if(p.sniperExitT<=0)finishSniperExit();}
  return !!(p.sniperMode||p.sniperExitT>0||p.sniperEnterT>0||p.sniperReadyT>0);
@@ -3089,14 +3094,25 @@ function drawSniperScope(){
  g.strokeStyle='#dfe7d7';g.lineWidth=1.3;const gap=9,len=R*.60;g.beginPath();g.moveTo(cx-len,cy);g.lineTo(cx-gap,cy);g.moveTo(cx+gap,cy);g.lineTo(cx+len,cy);g.moveTo(cx,cy-len);g.lineTo(cx,cy-gap);g.moveTo(cx,cy+gap);g.lineTo(cx,cy+len);g.stroke();g.beginPath();g.arc(cx,cy,3.2,0,6.28);g.stroke();
  drawSniperPanIndicator(cx,cy,R);
  // 光学倍率表示。視点移動の方位目盛りとは独立して、倍率を常時確認できる。
- const zoom=sniperZoom(),zx=cx+R*.13,zy=cy-R*.64,zw=R*.50,zh=43;
- g.fillStyle='rgba(6,13,8,.80)';g.beginPath();g.roundRect(zx,zy,zw,zh,8);g.fill();
+ const zoom=sniperZoom(),zx=cx+R*.04,zy=cy-R*.65,zw=R*.64,zh=54;
+ g.fillStyle='rgba(6,13,8,.86)';g.beginPath();g.roundRect(zx,zy,zw,zh,8);g.fill();
  g.strokeStyle='rgba(226,234,201,.48)';g.lineWidth=1;g.stroke();
- g.textAlign='center';g.fillStyle='#ffdc8a';g.font='bold 21px system-ui';g.fillText(zoom.toFixed(1)+'×',zx+zw*.5,zy+24);
- g.fillStyle='rgba(210,224,187,.25)';g.fillRect(zx+12,zy+31,zw-24,4);
- g.fillStyle='#ffdc8a';g.fillRect(zx+12,zy+31,(zw-24)*(zoom-SNIPER_ZOOM_MIN)/(SNIPER_ZOOM_MAX-SNIPER_ZOOM_MIN),4);
+ g.textAlign='center';g.fillStyle='#cedbc0';g.font='bold 10px system-ui';g.fillText('LENS',zx+zw*.5,zy+13);
+ const padX=7,gapX=4,cellW=(zw-padX*2-gapX*2)/3;
+ for(let j=0;j<3;j++){const mag=SNIPER_LENSES[j],xx=zx+padX+j*(cellW+gapX),selected=mag===zoom;
+  g.fillStyle=selected?'#ffdc8a':'rgba(160,176,148,.18)';g.beginPath();g.roundRect(xx,zy+19,cellW,28,5);g.fill();
+  g.strokeStyle=selected?'#fff0b2':'rgba(207,222,189,.28)';g.stroke();
+  g.fillStyle=selected?'#1c2519':'#d0dec8';g.font='bold 16px system-ui';g.fillText(mag+'×',xx+cellW*.5,zy+39);
+ }
+ if(p.sniperLensChangeT>0){
+  // 瞬間的な絞りと輪のハイライトで、レンズ交換の「カシャッ」を視覚化する。
+  const t=p.sniperLensChangeT/.24;
+  g.save();g.strokeStyle='rgba(250,230,178,'+(t*.65)+')';g.lineWidth=2+t*3;g.beginPath();g.arc(cx,cy,R*(.72+.2*(1-t)),0,Math.PI*2);g.stroke();
+  g.fillStyle='rgba(5,10,6,'+(t*.22)+')';g.beginPath();g.arc(cx,cy,R*.98,0,Math.PI*2);g.arc(cx,cy,R*(.83+.12*(1-t)),0,Math.PI*2,true);g.fill('evenodd');
+  g.fillStyle='rgba(255,228,160,'+t+')';g.font='bold 14px system-ui';g.fillText('LENS '+zoom+'×',cx,cy+R*.65);g.restore();
+ }
  g.textAlign='center';g.fillStyle='#e6e9d8';g.font='bold '+(W<=480?12:13)+'px system-ui';
- g.fillText(p.sniperExitT>0?'ライフル収納中…':'←→ 視点　↑↓ 倍率　S 発射　E 解除'+(weather==='rain'?'　雨天70%':''),cx,H-18);g.restore();
+ g.fillText(p.sniperExitT>0?'ライフル収納中…':'←→ 視点　↑↓ レンズ切替　S 発射　E 解除'+(weather==='rain'?'　雨天70%':''),cx,H-18);g.restore();
 }
 function update(dt){
  updateWeather(dt);updateHQSpawn(dt);updateDrill(dt);
@@ -4535,7 +4551,7 @@ const SK_CONTROL={
  build:['S：防護壁を設置','前方にコンクリートの防護壁を建てます。'],
  flame:['S：火炎放射','進行方向へ火炎を放射。使用量に応じて再充填します。'],
  hound:['S：猟犬に指示（長押し可）','正面へ走らせ、敵兵を追跡して気絶させます。長押しで前進を延長。'],
- sniper:['←→：視点移動 ／ ↑：ズームイン ／ ↓：ズームアウト','倍率1.5〜3.0倍。S：狙撃 ／ E：解除。スマホでは左スティックの上下で倍率調整します。']
+ sniper:['←→：視点移動 ／ ↑：次のレンズへ ／ ↓：前のレンズへ','倍率は1.5倍・2.5倍・3.5倍の3段階。上下キー1回で1段階ずつ切り替え。S：狙撃 ／ E：解除。スマホでは左スティックの上下で切り替えます。']
 };
 function closeSkillHelp(){document.getElementById('skillLightbox').classList.remove('open');}
 function openSkillHelp(id){
@@ -4644,6 +4660,7 @@ requestAnimationFrame(loop);
 const press=(c)=>{
  if(keys[c]) return;
  keys[c]=true;
+ if(c==='ArrowUp'||c==='ArrowDown')shiftSniperLens(c==='ArrowUp'?1:-1);
  if(c==='KeyD'){if(p&&p.tank)cannonReq=true;else bombReq=true;}
  if(c==='KeyE')interact=true;
  if(c==='KeyS'&&!(p&&p.tank))skillReq=true;
