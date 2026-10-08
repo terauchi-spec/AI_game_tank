@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 更新 2026/10/09 00:10</title>
+<title>戦車ゲーム 更新 2026/10/09 00:36</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -178,6 +178,11 @@ body.trophy-open #pad,body.trophy-open #resetBtn{display:none!important}
 .res-award-chip{border:1px solid #858a61;background:#3c4a31;color:#f3e2b6;border-radius:999px;padding:7px 10px;font-size:12px;font-weight:800}
 .res-award-chip.new{border-color:#f3d17f;background:#65502c;color:#fff1b9}
 .res-award-notice{font-size:12px;color:#b5c6aa;line-height:1.6;margin-top:9px}
+/* v114: 再獲得した称号の累積取得回数 */
+.res-title-count{margin:7px 0 1px;color:#ffdc90;font-size:14px;font-weight:950;letter-spacing:.05em}
+.res-title-count:empty{display:none}
+.res-award-count{display:inline-block;margin-left:5px;color:#ffdc90;font-size:11px;white-space:nowrap}
+.trophy-card .tc-state{line-height:1.5}
 @media(max-width:560px){.trophy-grid{grid-template-columns:1fr}.trophy-nav{top:-18px}.trophy-heading{font-size:18px}}
 
 /* v109: title screen is now focused on the creator, update, and entry actions. */
@@ -299,7 +304,7 @@ body.trophy-open #pad,body.trophy-open #resetBtn{display:none!important}
 <div id="resultScreen" aria-label="プレイ結果" role="region"><div class="res-wrap">
 <header class="res-header"><div><div class="res-kicker">MISSION REPORT</div><div id="resStatus" class="res-status"></div><div id="resArea" class="res-sub"></div></div><div class="res-kicker">AFTER ACTION REPORT</div></header>
 <section class="res-card res-summary"><div><div class="res-score-label">TOTAL SCORE</div><div id="resScore" class="res-score">0</div><div id="resHigh" class="res-sub"></div></div><div class="res-medal"><div id="resInsignia" class="res-medal-art"></div><div id="resRank" class="res-medal-rank"></div><div class="res-score-label">RANK</div></div></section>
-<section class="res-card"><h2 class="res-section">プレイスタイル <span class="res-sub">8軸 × Lv0〜5</span></h2><div class="res-style"><svg id="resRadar" class="res-radar" viewBox="0 0 360 340" role="img" aria-label="8軸のプレイスタイルレーダーチャート"></svg><div id="resAxes" class="res-axes"></div></div><div class="res-title-badge"><div class="res-score-label">戦闘スタイル称号</div><div id="resTitle" class="res-title-name"></div><div id="resTitleNote" class="res-title-note"></div><div id="resNewTitles" class="res-award-list"></div></div><div class="res-sub">行動・成果がない項目はLv0です。全項目Lv5を目指す評価ではありません。</div></section>
+<section class="res-card"><h2 class="res-section">プレイスタイル <span class="res-sub">8軸 × Lv0〜5</span></h2><div class="res-style"><svg id="resRadar" class="res-radar" viewBox="0 0 360 340" role="img" aria-label="8軸のプレイスタイルレーダーチャート"></svg><div id="resAxes" class="res-axes"></div></div><div class="res-title-badge"><div class="res-score-label">戦闘スタイル称号</div><div id="resTitle" class="res-title-name"></div><div id="resTitleNote" class="res-title-note"></div><div id="resTitleCount" class="res-title-count" aria-live="polite"></div><div id="resNewTitles" class="res-award-list"></div></div><div class="res-sub">行動・成果がない項目はLv0です。全項目Lv5を目指す評価ではありません。</div></section>
 <section class="res-card"><h2 class="res-section">今回の獲得称号・勲章</h2><div id="resMedals" class="res-award-list"></div><div id="resMedalNote" class="res-award-notice"></div></section>
 <section class="res-card"><h2 class="res-section">戦績サマリー</h2><div id="resQuick" class="res-stats"></div></section>
 <section class="res-card"><h2 class="res-section">詳細戦績</h2><div id="resDetail" class="res-detail"></div></section>
@@ -307,7 +312,7 @@ body.trophy-open #pad,body.trophy-open #resetBtn{display:none!important}
 </div></div>
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.09.113',FILE_CREATED_AT='2026/10/09 00:21',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
+const GAME_VERSION='2026.10.09.114',FILE_CREATED_AT='2026/10/09 00:36',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
 let audioCtx=null;
 function ensureAudio(){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(_){}}
 function tone(f=440,d=.08,v=.035,type='square',f2=null){if(!audioCtx)return;const t=audioCtx.currentTime,o=audioCtx.createOscillator(),a=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t+d);a.gain.setValueAtTime(v,t);a.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(a);a.connect(audioCtx.destination);o.start(t);o.stop(t+d+.02);}
@@ -4655,25 +4660,47 @@ function resultStyle(levels,s){
  return[v.primary.name,v.primary.note];
 }
 function readTitleArchive(){try{const v=JSON.parse(localStorage.getItem(TITLE_ARCHIVE_KEY)||'null');if(v&&typeof v==='object')return{titles:v.titles&&typeof v.titles==='object'?v.titles:{},medals:v.medals&&typeof v.medals==='object'?v.medals:{},runs:Math.max(0,Number(v.runs)||0)};}catch(_){}return{titles:{},medals:{},runs:0};}
+// v114: 以前の獲得記録({at,score})は、保存済みの1回分として扱う。
+// 変更前の再獲得履歴は残っていないため遡及集計できない。
+function titleAcquisitionCount(record){
+ if(!record)return 0;
+ if(typeof record!=='object')return 1;
+ const n=Number(record.count);
+ return Number.isFinite(n)&&n>=1?Math.floor(n):1;
+}
 function recordRunAchievements(s){
- if(!s||!s.final)return;
+ if(!s||!s.final||s.awards)return; // 同じリザルトを二重計上しない
  const r=s.final,metrics=resultMetrics(s,r),levels=metrics.map(resLevel),evals=evaluateRunTitles(levels,metrics,s,r);
  const earnedMedals=MEDAL_CATALOG.filter(m=>m.valid(s,r));
- const result={primary:evals.primary.id,titles:evals.titles.map(v=>v.id),medals:earnedMedals.map(v=>v.id),newTitles:[],newMedals:[],disabled:false};
+ const result={primary:evals.primary.id,titles:evals.titles.map(v=>v.id),medals:earnedMedals.map(v=>v.id),newTitles:[],repeatTitles:[],titleCounts:{},newMedals:[],disabled:false};
  // 無敵モード・エリアデバッグは実績保存対象外。スコアの既存仕様は変えない。
  if(s.debugUsed||areaDebugEnabled){result.disabled=true;s.awards=result;return;}
  const archive=readTitleArchive(),stamp=new Date().toISOString();
- for(const t of evals.titles){if(!archive.titles[t.id]){archive.titles[t.id]={at:stamp,score:r.total};result.newTitles.push(t.id);}}
+ for(const t of evals.titles){
+  const previous=archive.titles[t.id],count=titleAcquisitionCount(previous)+1;
+  if(previous)result.repeatTitles.push(t.id);else result.newTitles.push(t.id);
+  archive.titles[t.id]={at:previous?.at||stamp,score:previous?.score??r.total,count,lastAt:stamp,lastScore:r.total};
+  result.titleCounts[t.id]=count;
+ }
  for(const m of earnedMedals){if(!archive.medals[m.id]){archive.medals[m.id]={at:stamp,score:r.total};result.newMedals.push(m.id);}}
  archive.runs++;s.awards=result;
  try{localStorage.setItem(TITLE_ARCHIVE_KEY,JSON.stringify(archive));}catch(_){s.awards.saveFailed=true;}
 }
 function renderAwardResult(s){
- const el=id=>document.getElementById(id),aw=s.awards||{titles:[],medals:[],newTitles:[],newMedals:[],disabled:false};
+ const el=id=>document.getElementById(id),aw=s.awards||{titles:[],medals:[],newTitles:[],newMedals:[],titleCounts:{},disabled:false};
  const titleById=new Map(TITLE_CATALOG.map(t=>[t.id,t]));
  const medalById=new Map(MEDAL_CATALOG.map(m=>[m.id,m]));
  const chips=(ids,lookup,news)=>ids.map(id=>{const entry=lookup.get(id);return entry?'<span class="res-award-chip'+(news.includes(id)?' new':'')+'">'+(news.includes(id)?'NEW! ':'')+entry.name+'</span>':'';}).join('');
- el('resNewTitles').innerHTML=chips(aw.newTitles,titleById,aw.newTitles);
+ const countOf=id=>aw.disabled||aw.saveFailed?0:Math.max(0,Number(aw.titleCounts?.[id])||0);
+ // 代表称号が2回目以降なら回数を強調。未獲得の仮称号やデバッグ時には表示しない。
+ const primaryCount=countOf(aw.primary);
+ el('resTitleCount').textContent=primaryCount>=2?'取得数 '+primaryCount+'回':'';
+ // 今回獲得した称号は、初獲得・再獲得のどちらも一覧表示する。
+ el('resNewTitles').innerHTML=(aw.titles||[]).map(id=>{
+  const entry=titleById.get(id);if(!entry)return '';
+  const fresh=aw.newTitles.includes(id),count=countOf(id);
+  return '<span class="res-award-chip'+(fresh?' new':'')+'">'+(fresh?'NEW! ':'')+entry.name+(count>=2?' <span class="res-award-count">取得数 '+count+'回</span>':'')+'</span>';
+ }).join('')||'<span class="res-sub">今回の獲得称号はありません</span>';
  el('resMedals').innerHTML=chips(aw.medals,medalById,aw.newMedals)||'<span class="res-sub">今回の勲章はありません</span>';
  el('resMedalNote').textContent=aw.disabled?'デバッグプレイ中のため称号・勲章は保存されません':aw.saveFailed?'保存できませんでした。ブラウザの保存設定をご確認ください。':aw.newTitles.length+aw.newMedals.length?'新しい称号 '+aw.newTitles.length+'件 ／ 新しい勲章 '+aw.newMedals.length+'件を獲得！':'獲得履歴はタイトル画面の「称号・勲章」から確認できます。';
 }
@@ -4693,7 +4720,7 @@ function renderTrophyArchive(){
   const mark=document.createElement('div');mark.className='tc-mark';mark.textContent=got?(isTitle?'★':d.icon):'♧';
   const name=document.createElement('div');name.className='tc-name';name.textContent=got?d.name:'？？？';
   const note=document.createElement('div');note.className='tc-note';note.textContent=d.note;
-  const st=document.createElement('div');st.className='tc-state';st.textContent=got?'✓ 獲得済み':'未獲得';
+  const st=document.createElement('div');st.className='tc-state';st.textContent=got?(isTitle?'✓ 獲得済み ／ 取得数 '+titleAcquisitionCount(found[d.id])+'回':'✓ 獲得済み'):'未獲得';
   card.append(type,mark,name,note,st);grid.append(card);
  }
 }
