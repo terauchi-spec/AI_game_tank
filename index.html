@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 更新 2026/10/09 00:36</title>
+<title>戦車ゲーム 更新 2026/10/09 07:34 v117</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -161,7 +161,7 @@ body.trophy-open #pad,body.trophy-open #resetBtn{display:none!important}
 .trophy-nav{position:sticky;top:-18px;z-index:2;display:flex;align-items:center;gap:12px;justify-content:space-between;background:#1d291eea;border:1px solid #52624d;border-radius:10px;padding:10px 12px;backdrop-filter:blur(6px)}
 .trophy-back{border:1px solid #a5b38b;border-radius:8px;color:#f2f3e9;background:#394633;padding:10px 14px;font:800 14px system-ui;touch-action:manipulation}
 .trophy-heading{font-weight:900;font-size:22px}.trophy-count{color:#e9d398;font-size:13px;font-weight:800;margin:17px 3px 10px}
-.trophy-overview{display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;margin:15px 1px 12px;padding:12px 10px;border:1px solid #63725b;border-radius:10px;background:#233121;color:#e8eccc;font-size:13px;font-weight:850}.trophy-overview strong{font-size:20px;color:#ffe09c}.trophy-overview span{white-space:nowrap}.trophy-overview .trophy-total{padding-right:10px;border-right:1px solid #607059;margin-right:2px}.trophy-tabs{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:16px 0 10px}
+.trophy-overview{display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;margin:15px 1px 12px;padding:12px 10px;border:1px solid #63725b;border-radius:10px;background:#233121;color:#e8eccc;font-size:13px;font-weight:850}.trophy-overview strong{font-size:20px;color:#ffe09c}.trophy-overview span{white-space:nowrap}.trophy-overview .trophy-total{padding-right:10px;border-right:1px solid #607059;margin-right:2px}.trophy-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:16px 0 10px}
 .trophy-tab{min-height:44px;border:1px solid #67745d;border-radius:8px;background:#29382a;color:#cedac5;font:800 14px system-ui;touch-action:manipulation}
 .trophy-tab.active{background:#cfb478;color:#20291c;border-color:#f8e2a7}
 .trophy-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
@@ -273,6 +273,56 @@ body.trophy-open #pad,body.trophy-open #resetBtn{display:none!important}
  #skillScreen .sk-ctrl{font-size:9.5px}
 }
 
+
+/* v115 progression, lifetime stats and light combat notification */
+.trophy-tab{font-size:13px}
+.trophy-stats[hidden],#trophyGrid[hidden],.res-unlock[hidden]{display:none!important}
+.trophy-stats{max-width:810px;margin:0 auto;color:#e6eedc}
+.trophy-stats h2{font-size:17px;margin:19px 0 10px;color:#ffe2aa}
+.trophy-stats-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.trophy-stat{border:1px solid #56664c;border-radius:10px;background:#1d2a20;padding:12px 10px;min-width:0}
+.trophy-stat small{display:block;color:#b6c6b0;font-size:11px}.trophy-stat strong{font-size:18px;color:#f4dfa8;overflow-wrap:anywhere}
+.trophy-run{border-bottom:1px solid #455640;padding:11px 5px;font-size:12px;color:#cdd6c5;line-height:1.7}
+.trophy-run>div:first-child{display:flex;gap:9px;flex-wrap:wrap}.trophy-run strong{color:#f2d9a0}.trophy-run span{color:#a1b29e}
+.trophy-reset-box{margin:24px 0 10px;padding:16px 13px;border:1px solid #9a584d;border-radius:12px;background:#301d1b}
+.trophy-reset-box p{font-size:12px;text-align:left;opacity:1;color:#e5c4be;line-height:1.65}
+#trophyReset{padding:12px 18px;border:1px solid #e1a197;border-radius:9px;background:#713a34;color:#ffebdf;font-weight:900;font-size:13px;cursor:pointer;touch-action:manipulation}
+.res-unlock{background:#344526;border:1px solid #d1bc78;border-radius:12px;padding:15px;text-align:center;color:#ffe6a3;font-size:17px;font-weight:900;margin-bottom:12px;line-height:1.5}
+.sk-card.locked{opacity:.54;border-color:#566455;filter:grayscale(.55)}
+.sk-card.locked .sk-name{color:#aebaaa}.sk-card.locked .sk-media{filter:grayscale(1)}
+.sk-locked-note{display:block;font-size:10px;font-weight:800;color:#ffe0a1;padding-top:3px}
+@media(max-width:400px){.trophy-stats-grid{gap:7px}.trophy-stat strong{font-size:15px}.trophy-tab{font-size:12px}}
+
+/* v116: self-contained, scrollable HTML controls guide */
+#helpScreen{display:none;position:fixed;inset:0;z-index:67;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;box-sizing:border-box;background:radial-gradient(ellipse at 50% -10%,#354530,#131c15 72%);color:#edf1e4;padding:max(15px,env(safe-area-inset-top)) max(13px,env(safe-area-inset-right)) max(26px,env(safe-area-inset-bottom)) max(13px,env(safe-area-inset-left));font-family:system-ui,-apple-system,'Hiragino Sans',sans-serif}
+body.help-open #helpScreen{display:block}body.help-open #pad,body.help-open #resetBtn,body.help-open #debugToggleBtn,body.help-open #debugBadge{display:none!important}
+.help-wrap{max-width:800px;margin:0 auto}.help-head{position:sticky;top:-15px;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 4px;background:#1a261ddf;backdrop-filter:blur(9px);border-bottom:1px solid #53654b}.help-overline{font-size:10px;font-weight:800;letter-spacing:.17em;color:#c0caaa}.help-title{font-size:clamp(25px,6vw,34px);line-height:1.2;font-weight:950;margin:3px 0 0;color:#ffe4a8}.help-back{min-height:43px;white-space:nowrap;border:1px solid #b8b38c;background:#344333;border-radius:10px;padding:9px 14px;font-size:13px;font-weight:900;color:#fff0d2;cursor:pointer;touch-action:manipulation}
+.help-lead{font-size:13px;line-height:1.7;color:#d0dcc9;margin:16px 3px}.help-block{margin:0 0 13px;border:1px solid #566950;background:linear-gradient(140deg,#28392a,#1b291e);border-radius:13px;padding:16px 15px}.help-block h2{font-size:18px;font-weight:900;color:#ffe1a0;margin:0 0 12px}.help-block p{font-size:12px;line-height:1.7;color:#cbd7c5;margin:7px 0}.help-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.help-rows{display:grid;gap:8px}.help-row{display:grid;grid-template-columns:minmax(95px,30%) minmax(0,1fr);align-items:start;gap:10px;padding:9px 0;border-bottom:1px solid #435640}.help-row:last-child{border-bottom:0}.help-key{display:inline-block;max-width:100%;font-size:12px;font-weight:950;color:#ffe19b}.help-text{font-size:12px;line-height:1.6;color:#e1e8da}.help-highlight{color:#ffdda0;font-weight:850}.help-pill{display:inline-block;padding:2px 6px;margin-right:4px;background:#41533f;border:1px solid #6c8061;border-radius:5px;color:#ffe4ad;font-size:12px;font-weight:900;white-space:nowrap}.help-note{margin-top:11px;padding:10px 11px;background:#364332;border-radius:8px;font-size:12px;line-height:1.65;color:#d6e3d1}.help-step{display:flex;gap:10px;align-items:flex-start;border-bottom:1px solid #435640;padding:9px 0}.help-step:last-child{border:0}.help-step strong{flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#b99f65;color:#182219;font-size:12px}.help-step span{font-size:12px;line-height:1.6;color:#dce6d5}.help-footer{font-size:11px;color:#acbda8;text-align:center;margin:18px 0 26px}
+/* Result screen: one-time staggered entrance, no gameplay frame cost */
+@keyframes resEnter{from{opacity:0;transform:translateY(17px)}to{opacity:1;transform:translateY(0)}}
+@keyframes resPop{0%{opacity:0;transform:scale(.70)}72%{opacity:1;transform:scale(1.085)}100%{opacity:1;transform:scale(1)}}
+@keyframes resGlow{0%,100%{filter:drop-shadow(0 0 0 transparent)}50%{filter:drop-shadow(0 0 13px #ffe49a99)}}
+body.result-open #resultScreen .res-header{animation:resEnter .42s ease-out both}
+body.result-open #resultScreen .res-summary{animation:resEnter .52s .10s cubic-bezier(.16,1,.3,1) both}
+body.result-open #resultScreen .res-summary .res-medal{animation:resPop .60s .48s cubic-bezier(.2,.9,.3,1.2) both}
+body.result-open #resultScreen .res-summary .res-score{animation:resGlow .85s .47s ease-in-out both}
+body.result-open #resultScreen .res-wrap>.res-card:not(.res-summary){animation:resEnter .50s .36s ease-out both}
+body.result-open #resultScreen .res-wrap>.res-card:nth-of-type(3){animation-delay:.52s}
+body.result-open #resultScreen .res-wrap>.res-card:nth-of-type(4){animation-delay:.63s}
+body.result-open #resultScreen .res-wrap>.res-card:nth-of-type(5){animation-delay:.74s}
+body.result-open #resultScreen .res-unlock:not([hidden]){animation:resPop .62s .72s ease-out both}
+body.result-open #resultScreen .res-actions{animation:resEnter .45s .85s ease-out both}
+.res-title-flavor{font-size:13px;line-height:1.5;font-weight:850;color:#ffe2ad;margin-top:7px}
+.trophy-card .tc-flavor{font-size:12px;line-height:1.6;font-weight:850;color:#ffdf9b;margin:9px 0 3px}
+.trophy-card.locked .tc-flavor{color:#b4c3ad}
+@media(max-width:580px){.help-grid{grid-template-columns:1fr}.help-row{grid-template-columns:minmax(87px,30%) minmax(0,1fr)}.help-head{top:-15px}.help-block{padding:14px 12px}.help-lead{font-size:12px}.res-title-flavor{font-size:12px}}
+@media(prefers-reduced-motion:reduce){body.result-open #resultScreen .res-header,body.result-open #resultScreen .res-summary,body.result-open #resultScreen .res-summary .res-medal,body.result-open #resultScreen .res-summary .res-score,body.result-open #resultScreen .res-wrap>.res-card,body.result-open #resultScreen .res-unlock:not([hidden]),body.result-open #resultScreen .res-actions{animation:none!important}}
+
+/* 伝説級称号：通常の称号・上級称号と区別する金の演出 */
+.trophy-card.legendary:not(.locked){border-color:#e8c875;background:linear-gradient(145deg,#534526,#312b1e);box-shadow:0 0 17px #f5c65a24}
+.trophy-card.legendary:not(.locked) .tc-name{color:#fff1b9}
+.trophy-card.legendary .tc-type{color:#e6bc63;font-weight:950}
+.res-award-chip.legendary{border-color:#ffdf92;background:linear-gradient(130deg,#6b5529,#4b3920);color:#ffefb5}
 </style>
 </head>
 <body>
@@ -293,18 +343,49 @@ body.trophy-open #pad,body.trophy-open #resetBtn{display:none!important}
   <div class="title-update"><span class="title-identity-label">LATEST UPDATE</span><strong class="title-update-date" id="titleUpdated"></strong><span class="title-update-version">VERSION <span id="titleVersion"></span></span></div>
 </div>
 </div></div>
+<div id="helpScreen" role="region" aria-label="操作説明"><div class="help-wrap">
+  <header class="help-head"><div><div class="help-overline">FIELD MANUAL</div><h1 class="help-title">操作説明</h1></div><button id="helpHome" class="help-back" type="button">← タイトルへ</button></header>
+  <p class="help-lead">歩兵で敵地に潜入し、乗り物やスキルを駆使して敵司令本部の破壊を目指そう。PCもスマホも、基本は<strong>移動 ＋ D・S・E</strong> の3ボタン。</p>
+  <div class="help-grid">
+    <section class="help-block"><h2>PC キーボード</h2><div class="help-rows">
+      <div class="help-row"><span class="help-key"><span class="help-pill">↑ ↓ ← →</span></span><span class="help-text">移動・向きの変更。狙撃中は左右で視点移動、上下でレンズ交換。</span></div>
+      <div class="help-row"><span class="help-key"><span class="help-pill">D</span> 攻撃</span><span class="help-text">歩兵：設置爆弾・起爆 ／ 戦車：主砲 ／ 戦闘機：爆撃</span></div>
+      <div class="help-row"><span class="help-key"><span class="help-pill">S</span> スキル</span><span class="help-text">歩兵：選択スキル ／ 戦車：マシンガン</span></div>
+      <div class="help-row"><span class="help-key"><span class="help-pill">E</span> 操作</span><span class="help-text">乗り物の乗降 ／ 敵兵の近接気絶 ／ 狙撃モード解除</span></div>
+    </div></section>
+    <section class="help-block"><h2>スマートフォン</h2><div class="help-rows">
+      <div class="help-row"><span class="help-key">左スティック</span><span class="help-text">動かした方向に移動。狙撃モードでは左右で視点、上下でレンズ交換。</span></div>
+      <div class="help-row"><span class="help-key"><span class="help-pill">D</span></span><span class="help-text">歩兵：爆弾 ／ 戦車：ドラッグで照準し、離して主砲発射</span></div>
+      <div class="help-row"><span class="help-key"><span class="help-pill">S</span></span><span class="help-text">歩兵：スキル ／ 戦車：長押し・ドラッグでMG照準と射撃</span></div>
+      <div class="help-row"><span class="help-key"><span class="help-pill">E</span></span><span class="help-text">乗り物・近接アクション・狙撃解除</span></div>
+    </div></section>
+  </div>
+  <section class="help-block"><h2>基本アクション</h2><div class="help-rows">
+    <div class="help-row"><span class="help-key">歩兵</span><span class="help-text">敵に見つからないよう草むらや障害物を活用。敵兵に近づいて<span class="help-highlight">Eで気絶</span>させられる。</span></div>
+    <div class="help-row"><span class="help-key">乗り物</span><span class="help-text">乗り物の近くで<span class="help-highlight">Eで乗降</span>。戦車は<span class="help-highlight">D＝主砲 ／ S＝MG</span>。トラックや戦闘機にも乗れる。</span></div>
+    <div class="help-row"><span class="help-key">スキル</span><span class="help-text">出撃前に1種類を選ぶ。詳しい使い方はスキルカードの<span class="help-highlight">ⓘ</span>から確認。</span></div>
+    <div class="help-row"><span class="help-key">狙撃</span><span class="help-text"><span class="help-highlight">Sで構え、狙撃中はSで発射</span>。←→で視点を動かし、↑↓でレンズを<span class="help-highlight">1.5 / 2.5 / 3.5倍</span>に切替。Eで解除。</span></div>
+  </div></section>
+  <section class="help-block"><h2>出撃からクリアまで</h2>
+    <div class="help-step"><strong>1</strong><span><b>スキル選択</b>：初回は「投擲」のみ。出撃するスキルを選んで開始。</span></div>
+    <div class="help-step"><strong>2</strong><span><b>潜入・戦闘</b>：敵の警戒と地形を見ながら進軍。連続撃破や一発連撃も評価の対象。</span></div>
+    <div class="help-step"><strong>3</strong><span><b>任務完了</b>：敵司令本部を破壊してクリア。通常プレイでクリアするたびにスキルが1つ解放される。</span></div>
+    <div class="help-step"><strong>4</strong><span><b>評価・戦績</b>：スコア、8軸のプレイスタイル、称号・勲章を確認。タイトルの「称号」では獲得履歴と戦績も見られる。</span></div>
+  </section>
+  <div class="help-footer">※ スキルごとの詳細な操作は、スキル選択画面のⓘから確認できます。</div>
+</div></div>
 <div id="skillScreen" aria-label="スキル選択" role="region"><div class="sk-shell"><header class="sk-top"><div><div class="sk-eyebrow">PREPARE YOUR MISSION</div><h1 class="sk-heading">スキル選択</h1><div class="sk-topnote">出撃するスキルを1つ選択してください。カードはコンパクト表示です。</div></div><button type="button" class="sk-home" id="skHome">⌂ タイトルへ</button></header><div class="sk-hint">↓ 上下にスクロールしてスキルを確認　・　ⓘ で操作説明</div><div class="sk-scroll" id="skScroll" aria-label="スキル候補"></div><footer class="sk-bottom"><button type="button" class="sk-toggle" id="skDebugAll">全スキル表示</button><button type="button" class="sk-toggle" id="skAreaDebug">エリアデバッグ OFF</button><div id="skSelectionNote" class="sk-selection-note">スキルを選択してください</div><button type="button" class="sk-deploy" id="skDeploy">出撃 →</button><div class="sk-load" id="skLoad"></div></footer></div></div>
 <div id="skillLightbox" role="dialog" aria-modal="true" aria-label="スキル操作方法"><div class="sk-modal"><div class="sk-modal-label">SKILL CONTROLS</div><img id="skModalVisual" class="sk-modal-visual" alt="スキルのイメージイラスト"><div class="sk-modal-name" id="skModalName"></div><div class="sk-modal-key" id="skModalKey"></div><div class="sk-modal-text" id="skModalText"></div><div class="sk-modal-close">画面をもう一度タップして閉じる</div></div></div>
 <div id="trophyScreen" aria-label="獲得した称号と勲章" role="region"><div class="trophy-shell">
  <div class="trophy-nav"><div class="trophy-heading">★ 称号・勲章コレクション</div><button id="trophyBack" class="trophy-back" type="button">← 戻る</button></div>
- <div class="trophy-overview" id="trophyOverview" aria-live="polite"></div><div class="trophy-tabs"><button id="trophyTabTitles" class="trophy-tab active" type="button">称号</button><button id="trophyTabMedals" class="trophy-tab" type="button">勲章</button></div>
- <div id="trophyCount" class="trophy-count"></div><div id="trophyGrid" class="trophy-grid"></div>
- <div class="trophy-empty">獲得履歴は、このブラウザ内に保存されます。<br>デバッグプレイでは称号・勲章は獲得できません。</div>
+ <div class="trophy-overview" id="trophyOverview" aria-live="polite"></div><div class="trophy-tabs"><button id="trophyTabTitles" class="trophy-tab active" type="button">称号</button><button id="trophyTabMedals" class="trophy-tab" type="button">勲章</button><button id="trophyTabStats" class="trophy-tab" type="button">戦績</button></div>
+ <div id="trophyCount" class="trophy-count"></div><div id="trophyGrid" class="trophy-grid"></div><div id="trophyStats" class="trophy-stats" hidden></div>
+ <div class="trophy-empty">獲得履歴と戦績は、このブラウザ内に保存されます。<br>デバッグプレイでは称号・勲章・戦績を記録しません。</div>
  </div></div>
 <div id="resultScreen" aria-label="プレイ結果" role="region"><div class="res-wrap">
 <header class="res-header"><div><div class="res-kicker">MISSION REPORT</div><div id="resStatus" class="res-status"></div><div id="resArea" class="res-sub"></div></div><div class="res-kicker">AFTER ACTION REPORT</div></header>
-<section class="res-card res-summary"><div><div class="res-score-label">TOTAL SCORE</div><div id="resScore" class="res-score">0</div><div id="resHigh" class="res-sub"></div></div><div class="res-medal"><div id="resInsignia" class="res-medal-art"></div><div id="resRank" class="res-medal-rank"></div><div class="res-score-label">RANK</div></div></section>
-<section class="res-card"><h2 class="res-section">プレイスタイル <span class="res-sub">8軸 × Lv0〜5</span></h2><div class="res-style"><svg id="resRadar" class="res-radar" viewBox="0 0 360 340" role="img" aria-label="8軸のプレイスタイルレーダーチャート"></svg><div id="resAxes" class="res-axes"></div></div><div class="res-title-badge"><div class="res-score-label">戦闘スタイル称号</div><div id="resTitle" class="res-title-name"></div><div id="resTitleNote" class="res-title-note"></div><div id="resTitleCount" class="res-title-count" aria-live="polite"></div><div id="resNewTitles" class="res-award-list"></div></div><div class="res-sub">行動・成果がない項目はLv0です。全項目Lv5を目指す評価ではありません。</div></section>
+<div id="resUnlock" class="res-unlock" hidden></div><section class="res-card res-summary"><div><div class="res-score-label">TOTAL SCORE</div><div id="resScore" class="res-score">0</div><div id="resHigh" class="res-sub"></div></div><div class="res-medal"><div id="resInsignia" class="res-medal-art"></div><div id="resRank" class="res-medal-rank"></div><div class="res-score-label">RANK</div></div></section>
+<section class="res-card"><h2 class="res-section">プレイスタイル <span class="res-sub">8軸 × Lv0〜5</span></h2><div class="res-style"><svg id="resRadar" class="res-radar" viewBox="0 0 360 340" role="img" aria-label="8軸のプレイスタイルレーダーチャート"></svg><div id="resAxes" class="res-axes"></div></div><div class="res-title-badge"><div class="res-score-label">戦闘スタイル称号</div><div id="resTitle" class="res-title-name"></div><div id="resTitleFlavor" class="res-title-flavor"></div><div id="resTitleNote" class="res-title-note"></div><div id="resNewTitles" class="res-award-list"></div></div><div class="res-sub">行動・成果がない項目はLv0です。全項目Lv5を目指す評価ではありません。</div></section>
 <section class="res-card"><h2 class="res-section">今回の獲得称号・勲章</h2><div id="resMedals" class="res-award-list"></div><div id="resMedalNote" class="res-award-notice"></div></section>
 <section class="res-card"><h2 class="res-section">戦績サマリー</h2><div id="resQuick" class="res-stats"></div></section>
 <section class="res-card"><h2 class="res-section">詳細戦績</h2><div id="resDetail" class="res-detail"></div></section>
@@ -312,7 +393,7 @@ body.trophy-open #pad,body.trophy-open #resetBtn{display:none!important}
 </div></div>
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.09.114',FILE_CREATED_AT='2026/10/09 00:36',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
+const GAME_VERSION='2026.10.09.117',FILE_CREATED_AT='2026/10/09 07:34',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
 let audioCtx=null;
 function ensureAudio(){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(_){}}
 function tone(f=440,d=.08,v=.035,type='square',f2=null){if(!audioCtx)return;const t=audioCtx.currentTime,o=audioCtx.createOscillator(),a=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t+d);a.gain.setValueAtTime(v,t);a.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(a);a.connect(audioCtx.destination);o.start(t);o.stop(t+d+.02);}
@@ -1062,17 +1143,32 @@ const SK=[
 const TOUCH=matchMedia('(pointer:coarse)').matches;
 const SKN={throw:'投擲',dig:'潜伏',decoy:'偽装',buddy:'増援',drill:'突貫',build:'建築',flame:'火炎',hound:'猟犬',sniper:'狙撃'};
 let skill='throw',skillChoices=[],skillDebugAll=false,areaDebugEnabled=false,areaDebugLabels=[];
+const SKILL_PROGRESS_KEY='tankGameSkillProgressV1';
+function readSkillProgress(){
+ try{const saved=JSON.parse(localStorage.getItem(SKILL_PROGRESS_KEY)||'null');
+  const unlocked=Array.isArray(saved?.unlocked)?saved.unlocked.filter(id=>SK.some(v=>v.id===id)):[];
+  return{unlocked:[...new Set(['throw',...unlocked])],clears:Math.max(0,Number(saved?.clears)||0)};
+ }catch(_){return{unlocked:['throw'],clears:0};}
+}
 function rollSkillChoices(){
- const pool=SK.slice();
- for(let i=pool.length-1;i>0;i--){const j=R()*(i+1)|0;[pool[i],pool[j]]=[pool[j],pool[i]];}
- skillChoices=pool.slice(0,3).map(k=>k.id);skillDebugAll=false;skillMenuDirty=true;
+ // 解放済みのスキルはすべて選択可能。未解放スキルは全表示でのみ確認可能。
+ const saved=readSkillProgress();skillChoices=SK.filter(k=>saved.unlocked.includes(k.id)).map(k=>k.id);
+ skillDebugAll=false;skillMenuDirty=true;
 }
 function skillMenuList(){return skillDebugAll?SK:skillChoices.map(id=>SK.find(k=>k.id===id)).filter(Boolean);}
+function unlockSkillOnClear(s){
+ if(!s?.final?.cleared||s.debugUsed||areaDebugEnabled)return;
+ const progress=readSkillProgress();progress.clears++;
+ const next=SK.find(k=>!progress.unlocked.includes(k.id));
+ if(next){progress.unlocked.push(next.id);s.unlockedSkill=next.id;}
+ try{localStorage.setItem(SKILL_PROGRESS_KEY,JSON.stringify(progress));}catch(_){s.unlockSaveFailed=true;}
+}
+function skillSelectable(id){return areaDebugEnabled||readSkillProgress().unlocked.includes(id);}
 function skillMenuLayout(){return skillDebugAll?{sy0:88,ch:56,h:52,debugY:602,debugH:34}:{sy0:126,ch:116,h:102,debugY:494,debugH:40};}
 let gameBuildQueued=false,gameBuildGeneration=0;
 function selectSkillIndex(i){
  const list=skillMenuList();if(i<0||i>=list.length||gameBuildQueued)return false;
- const selected=list[i].id,buildGen=++gameBuildGeneration;skill=selected;closeSkillHelp();
+ const selected=list[i].id;if(!skillSelectable(selected))return false;const buildGen=++gameBuildGeneration;skill=selected;closeSkillHelp();
  state='preparing';bombReq=false;cannonReq=false;interact=false;skillReq=false;mdown=false;gameBuildQueued=true;sfx('skill');
  // 先に「準備中」を1フレーム描画してから重いステージ生成を行う。
  // その間にタイトルへ戻った場合は世代番号で予約済み生成を無効化する。
@@ -1196,6 +1292,7 @@ const CCol=['#8a7a55','#8c8c86','#7a5f3a','#55504a','#b9ab8a','#7a5f3a','#2f6b34
 const FRAG_COLORS={0:['#8a7a55','#6a5d40'],1:['#8c8c86','#6a6a66'],2:['#7a5f3a','#4e3c24'],3:['#55504a','#35322e'],4:['#b9ab8a','#8a4a3a','#5a2e24'],5:['#7a5f3a','#4e3c24'],6:['#2f6b34','#3d8a42','#4a3622'],7:['#4a5a4a','#33403a','#8fb0c4'],8:['#7a7468','#9a9484','#57534a'],9:['#666865','#8c8f8a','#4e514e'],10:['#b9ab8a','#8a4a3a','#5a2e24']};
 const labels=[];function lab(t,x,y,f,c,ns){labels.push({t,x,y,f,c,ns});}
 function drawLabels(cx,cy){gm.textAlign='center';for(const l of labels){gm.font=l.f;if(!l.ns){gm.lineWidth=3;gm.strokeStyle='rgba(0,0,0,.8)';gm.strokeText(l.t,l.x-cx,l.y-cy);}gm.fillStyle=l.c;gm.fillText(l.t,l.x-cx,l.y-cy);}}
+let chainToast='',chainToastT=0,oneShotToast='',oneShotToastT=0;
 let state,p,cars,etanks,humans,covers,objects,bullets,parts,base,shake,flash,msg,msgT,bombs,items,waves,water,bridges,mud,fx,bushes,decoy,allies,hound=null,houndTrail=[],radio,airstrike,airbombs,weather,weatherT,weatherNext,baseSpawnT,deathT=0,cam=0,camX=0,blastT,bq,skillReq,lastMouse=0,allySeq=0,builtWalls=[],buildingGroundMarks=[],tankWrecks=[],scoreStats=null,highScoreData=null,resultAnimT=0,vehicleNameT=0,debugMode=0,debugInvincible=false,touchTurretAngle=null;
 const DETECT_RANGE_BASE=315,DETECT_CENTER_HALF=7.5*Math.PI/180,DETECT_OUTER_HALF=52.5*Math.PI/180,DETECT_OUTER_SCALE=.7,DETECT_MEMORY=3,TANK_DRAW=30,TANK_HIT=28,LOG_LONG=126,LOG_SHORT=39,CRATE_W=74.8,CRATE_H=74.8,BARREL_SIZE=39.1,CONCRETE_W=264,CONCRETE_H=183.7,WOOD_W=278.3,WOOD_H=223.85,MINI_CONCRETE_W=151.3,MINI_CONCRETE_H=151.3,MINI_WOOD_W=213.6,MINI_WOOD_H=213.6,CONCRETE_MINI_W=151.3,CONCRETE_MINI_H=151.3,WOOD_MINI_W=213.6,WOOD_MINI_H=213.6,TREE_BOX=83,TREE_BOX_MAX=124.5,ROCK_W=58,ROCK_H=40,BARRIER_LONG=208,BARRIER_SHORT=52,FENCE_LONG=188,FENCE_SHORT=81,COMMAND_BASE_W=390,COMMAND_BASE_H=336.7;
 const playerMoving=()=>!!(p&&(keys.ArrowUp||keys.ArrowDown||keys.ArrowLeft||keys.ArrowRight)&&(!p.tank||p.tank.f>0));
@@ -1561,7 +1658,7 @@ function patrol(o,dt,sp,r){
  const ox=o.x,oy=o.y;mv(o,Math.cos(a)*sp*dt,Math.sin(a)*sp*dt,r);o.stk=(o.x===ox&&o.y===oy)?o.stk+dt:0;return a;}
 function reset(rerollSkills=true){
  burningNatureSet.clear();lastEnemySeparationAt=-1e9;allyTargetRefreshAt=0;
- state='play';shake=0;flash=0;msg='';msgT=0;interact=false;bombReq=false;skillReq=false;decoy=null;allies=[];hound=null;houndTrail=[];allySeq=0;builtWalls=[];tankWrecks=[];radio=null;airstrike=null;airbombs=[];weather='clear';weatherT=0;weatherNext=15+R()*35;baseSpawnT=5;deathT=0;cam=0;camX=0;scoreStats=newScoreStats();
+ state='play';shake=0;flash=0;msg='';msgT=0;chainToastT=0;oneShotToastT=0;chainToast='';oneShotToast='';interact=false;bombReq=false;skillReq=false;decoy=null;allies=[];hound=null;houndTrail=[];allySeq=0;builtWalls=[];tankWrecks=[];radio=null;airstrike=null;airbombs=[];weather='clear';weatherT=0;weatherNext=15+R()*35;baseSpawnT=5;deathT=0;cam=0;camX=0;scoreStats=newScoreStats();
  setupZones();if(rerollSkills)rollSkillChoices();
  waterRipples=[];
  p={x:WW/2,y:3100,hp:2,tank:null,cc:0,vc:0,ang:-1.57,body:-1.57,dig:0,digPrep:0,digElapsed:0,digExitAnim:0,digExitX:0,digExitY:0,scd:0,scdMax:0,drill:0,drillHit:0,drillTarget:null,drillSfx:0,bushHide:0,grappleT:0,grappleTarget:null,flameFuel:3,flameActive:false,flameLockA:null,flamePath:[],flameSfx:0,flameReach:0,fireExposure:0,sniperMode:false,sniperLockA:null,sniperAimN:0,sniperZoom:1.5,sniperLensChangeT:0,sniperEnterT:0,sniperReadyT:0,sniperExitT:0,sniperFlash:0,sniperHitT:0,sniperHitX:0,sniperHitY:0,sniperFireCd:0,sniperNoiseEvents:[]};touchTurretAngle=null;
@@ -1944,7 +2041,7 @@ function newScoreStats(){return{
  unseenForwardStreak:0,maxUnseenForwardStreak:0,
  detections:0,foundEntries:0,suspicionEntries:0,stuns:0,
  humanKills:0,eliteKills:0,tankKills:0, shots:0, sniperShots:0, cannonShots:0, mgShots:0, skillUses:0, bombBlasts:0, vehicleTime:0, vehicleKinds:{}, vehicleBoards:0, damageHits:0, totalTravel:0, detectedTime:0, maxProgress:0, sniperKills:0, mgKills:0, cannonKills:0, rangedKills:0, bombKills:0, explosiveKills:0, tankVehicleKills:0, actionKinds:{}, debugUsed:!!areaDebugEnabled,
- actionSeq:0,actionKills:{},multiKillBonus:0,
+ actionSeq:0,actionKills:{},multiKillBonus:0,maxOneShotKills:0,oneShotEvents:0,
  lastPlayerKillTime:-999,killChain:0,maxKillChain:0,alertCombatKills:0,
  wasDetected:false,final:null,finalized:false,newHigh:false
 };}
@@ -1969,10 +2066,16 @@ function recordPlayerKill(actionId=0,weapon=""){
  scoreStats.killChain=(now-scoreStats.lastPlayerKillTime<=4)?scoreStats.killChain+1:1;
  scoreStats.lastPlayerKillTime=now;
  scoreStats.maxKillChain=Math.max(scoreStats.maxKillChain,scoreStats.killChain);
+ if(scoreStats.killChain>=2){chainToast='連続撃破 '+scoreStats.killChain;chainToastT=2.0;}
  if(playerDetectedNow())scoreStats.alertCombatKills++;
  if(actionId){
   const n=(scoreStats.actionKills[actionId]||0)+1;scoreStats.actionKills[actionId]=n;
-  if(n>=2)scoreStats.multiKillBonus=Math.min(700,scoreStats.multiKillBonus+(n===2?90:n===3?140:180));
+  if(n>=2){
+   if(n===2)scoreStats.oneShotEvents++;
+   scoreStats.maxOneShotKills=Math.max(scoreStats.maxOneShotKills||0,n);
+   scoreStats.multiKillBonus=Math.min(1000,scoreStats.multiKillBonus+(n===2?110:n===3?180:220));
+   oneShotToast='一発連撃 '+n;oneShotToastT=2.4;
+  }
  }
 }
 function trackEnemyDeaths(){
@@ -1982,6 +2085,7 @@ function trackEnemyDeaths(){
 }
 function updateScoreTracking(dt,moved=0){
  if(!scoreStats||scoreStats.finalized)return;
+ chainToastT=Math.max(0,chainToastT-dt);oneShotToastT=Math.max(0,oneShotToastT-dt);
  scoreStats.time+=dt;scoreStats.totalTravel+=Math.max(0,moved);scoreStats.maxProgress=Math.max(scoreStats.maxProgress,Math.max(0,3100-p.y));if(p.tank){scoreStats.vehicleTime+=dt;scoreStats.vehicleKinds[p.tank.kind]=true;}
  let forwardStep=0;
  if(scoreStats.lastY==null)scoreStats.lastY=p.y;
@@ -2008,7 +2112,7 @@ function finalizeScore(cleared){
  const forwardPace=scoreStats.time>0?scoreStats.forwardDist/scoreStats.time:0;
  const forwardPaceBonus=Math.min(500,Math.round(forwardPace*4));
  const destructionBonus=Math.min(500,Math.round(scoreStats.coverDestroyed/250));
- const chainBonus=Math.min(350,Math.max(0,scoreStats.maxKillChain-1)*70);
+ const chainBonus=Math.min(700,Math.max(0,scoreStats.maxKillChain-1)*115);
  const alertCombatBonus=Math.min(350,scoreStats.alertCombatKills*35);
  const combat=scoreStats.humanKills*100+scoreStats.eliteKills*250+scoreStats.tankKills*400+forwardPaceBonus+destructionBonus+scoreStats.multiKillBonus+chainBonus+alertCombatBonus;
  const stealthRank=scoreGrade(stealth,2250,1125),combatRank=scoreGrade(combat,4000,1750);
@@ -2016,8 +2120,10 @@ function finalizeScore(cleared){
  let timeBonus=0;if(cleared){const t=scoreStats.time;timeBonus=t<=180?1000:t<=300?700:t<=480?400:t<=720?200:0;}
  const bonus=hqBonus+timeBonus,total=stealth+combat+bonus,rank=overallRank(total);
  scoreStats.final={cleared,total,rank,stealth,stealthRank,combat,combatRank,hqBonus,timeBonus,bonus,alertControlBonus,unseenStreakBonus,forwardPace,forwardPaceBonus,destructionBonus,multiKillBonus:scoreStats.multiKillBonus,chainBonus,alertCombatBonus,time:scoreStats.time};
- scoreStats.newHigh=saveHighScore(total,rank);
+ scoreStats.newHigh=!(scoreStats.debugUsed||areaDebugEnabled)&&saveHighScore(total,rank);
  recordRunAchievements(scoreStats);
+ recordRunHistory(scoreStats);
+ unlockSkillOnClear(scoreStats);
 }
 function humanMemory(h){return DETECT_MEMORY*(h&&h.elite?1.5:1);}
 function foundModePause(){return .5+R()*.5;}
@@ -3282,6 +3388,35 @@ function drawSniperScope(){
  g.textAlign='center';g.fillStyle='#e6e9d8';g.font='bold '+(W<=480?12:13)+'px system-ui';
  g.fillText(p.sniperExitT>0?'ライフル収納中…':'←→ 視点　↑↓ レンズ切替　S 発射　E 解除'+(weather==='rain'?'　雨天70%':''),cx,H-18);g.restore();
 }
+// 狙撃弾専用の線分判定：敵歩兵のみ貫通。地形・オブジェクト・戦車で停止する。
+ // 1フレームに数十px進む弾も取りこぼさないよう、線分を約2.5px刻みで検査。
+ function updateSniperPiercingBullet(b,ox,oy){
+  const dx=b.x-ox,dy=b.y-oy,dist=Math.hypot(dx,dy),steps=Math.max(1,Math.ceil(dist/2.5));
+  const minX=Math.min(ox,b.x)-12,maxX=Math.max(ox,b.x)+12,minY=Math.min(oy,b.y)-12,maxY=Math.max(oy,b.y)+12;
+  const objCandidates=objectsInBox(minX,minY,maxX,maxY),coverCandidates=coversInBox(minX,minY,maxX,maxY);
+  const humanCandidates=humans.filter(h=>h.alive&&h.x>=minX&&h.x<=maxX&&h.y>=minY&&h.y<=maxY);
+  const tankCandidates=etanks.filter(e=>e.alive&&e.x>=minX-TANK_HIT&&e.x<=maxX+TANK_HIT&&e.y>=minY-TANK_HIT&&e.y<=maxY+TANK_HIT);
+  for(let j=1;j<=steps;j++){
+   const t=j/steps,x=ox+dx*t,y=oy+dy*t;
+   // あらゆる障害物より手前にいる敵兵だけを撃破する。
+   if(circleHitsBase(x,y,1)){b.x=x;b.y=y;burst(x,y,3,'#ffe28a',90);return true;}
+   const obj=objCandidates.find(o=>pointHitsObject(x,y,o));
+   if(obj){b.x=x;b.y=y;damageObject(obj,'sniper');fb(x,y,10);burst(x,y,8,'#ffb86c',170);burst(x,y,6,'#e7e2c9',135);shake=Math.max(shake,2.2);return true;}
+   if(coverCandidates.some(c=>pointHitsCover(x,y,c))){b.x=x;b.y=y;burst(x,y,4,'#b9b39a',90);return true;}
+   const tank=tankCandidates.find(e=>e.alive&&Math.hypot(x-e.x,y-e.y)<TANK_HIT);
+   if(tank){b.x=x;b.y=y;enterTankFound(tank,'p',.5);tank.sniperForcedFoundT=Math.max(tank.sniperForcedFoundT||0,4);fb(x,y,8);burst(x,y,6,'#ffb86c',150);burst(x,y,4,'#fff1b5',100);shake=Math.max(shake,2.5);return true;}
+   for(const h of humanCandidates){
+    if(!h.alive||Math.hypot(x-h.x,y-h.y)>=10)continue;
+    recordPlayerKill(b.actionId||0,'sniper');
+    h.sniperFallMax=.72;h.sniperFallT=.72;h.sniperFallA=Math.atan2(b.vy,b.vx);
+    if(p){p.sniperHitT=.42;p.sniperHitX=h.x;p.sniperHitY=h.y;}
+    sfx('sniperHit');burst(h.x,h.y,12,'#c05a3a',160);h.alive=false;
+    // deadを立てず、同じ弾が奥にいる別の敵兵にも命中する。
+   }
+  }
+  return false;
+ }
+
 function update(dt){
  updateWeather(dt);updateHQSpawn(dt);updateDrill(dt);
  const sniperLocked=updateSniperState(dt);
@@ -3405,6 +3540,7 @@ function update(dt){
    bombBlast(b.x,b.y,actionId,stepped&&!p.tank);if(stepped){if(p.tank)wreck();else damagePlayerByOwnBomb();}}}
  // 弾
  for(let i=bullets.length-1;i>=0;i--){const b=bullets[i],ox=b.x,oy=b.y;b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;let dead=b.life<=0;if(dead&&b.k==='c')cannonImpact(b.x,b.y,b.from);
+  if(b.from==='p'&&b.k==='s'){if(updateSniperPiercingBullet(b,ox,oy)||dead)bullets.splice(i,1);continue;}
   if(!dead){const bp=segmentBaseImpact({x:ox,y:oy},{x:b.x,y:b.y},b.k==='c'?2:1);if(bp){dead=true;b.x=bp.x;b.y=bp.y;if(b.k==='c'){cannonImpact(b.x,b.y,b.from);let removedBaseTiles=0;if(b.from==='p'||b.from==='ally'){const hqDmg=b.from==='p'?b.dmg*1.5:b.dmg;removedBaseTiles=damageBase(hqDmg,b.x,b.y,24,1);}if(b.from==='p'&&removedBaseTiles>0)cannonCoverDebris(b.x,b.y,'#666865',Math.max(2,Math.min(6,Math.ceil(removedBaseTiles*.8))));explode(b.x,b.y,20,true,b.from,b.from==='p'?b.actionId:0);}else burst(b.x,b.y,3,b.from==='e'?'#ffb08a':'#ffe28a',90);}}
   // 最適化後も砲弾が薄い遮蔽物をすり抜けないよう、前フレーム位置→現在位置の線分で判定する。
   if(!dead){const minX=Math.min(ox,b.x)-4,maxX=Math.max(ox,b.x)+4,minY=Math.min(oy,b.y)-4,maxY=Math.max(oy,b.y)+4,segA={x:ox,y:oy},segB={x:b.x,y:b.y};
@@ -4205,7 +4341,7 @@ function drawMenuOnlyState(){
  }
  else if(state==='skill'){
   g.fillStyle='rgba(10,12,8,.98)';g.fillRect(0,0,W,H);g.fillStyle='#e6e9d8';g.textAlign='center';g.font='bold 27px system-ui';g.fillText('スキルを選べ',W/2,56);
-  g.font='11px system-ui';g.fillStyle='#b9c19a';g.fillText((skillDebugAll?'全スキル表示中':'今回の候補はランダムで3つ')+(areaDebugEnabled?' ／ エリアデバッグ ON':''),W/2,80);
+  g.font='11px system-ui';g.fillStyle='#b9c19a';g.fillText((skillDebugAll?'全スキル表示中':'解放済みスキルから選択')+(areaDebugEnabled?' ／ エリアデバッグ ON':''),W/2,80);
   const L=skillMenuLayout(),list=skillMenuList();
   list.forEach((k,i)=>{
    const y=L.sy0+i*L.ch,hv=mx>=35&&mx<=W-35&&my>=y&&my<y+L.h;
@@ -4219,7 +4355,7 @@ function drawMenuOnlyState(){
   const dh=hitRect(mx,my,DL),ah=hitRect(mx,my,DR);
   g.fillStyle=dh?'rgba(255,210,122,.17)':'rgba(255,255,255,.05)';g.fillRect(DL.x,DL.y,DL.w,DL.h);g.strokeStyle=dh?'#ffd27a':'#59604d';g.lineWidth=1.5;g.strokeRect(DL.x+.5,DL.y+.5,DL.w-1,DL.h-1);
   g.fillStyle=ah?'rgba(255,210,122,.17)':areaDebugEnabled?'rgba(83,128,66,.26)':'rgba(255,255,255,.05)';g.fillRect(DR.x,DR.y,DR.w,DR.h);g.strokeStyle=ah?'#ffd27a':areaDebugEnabled?'#9bd477':'#59604d';g.strokeRect(DR.x+.5,DR.y+.5,DR.w-1,DR.h-1);
-  g.textAlign='center';g.font='bold 11px system-ui';g.fillStyle=dh?'#ffd27a':'#b9c19a';g.fillText(skillDebugAll?'ランダム3候補':'全スキル表示',DL.x+DL.w/2,DL.y+DL.h/2+4);
+  g.textAlign='center';g.font='bold 11px system-ui';g.fillStyle=dh?'#ffd27a':'#b9c19a';g.fillText(skillDebugAll?'解放済みに戻す':'全スキル表示',DL.x+DL.w/2,DL.y+DL.h/2+4);
   g.fillStyle=ah?'#ffd27a':areaDebugEnabled?'#bfe6a8':'#b9c19a';g.fillText('エリアデバッグ '+(areaDebugEnabled?'ON':'OFF'),DR.x+DR.w/2,DR.y+DR.h/2+4);
   // v81: 未定義の stagePreloadState を参照すると、スキル選択画面の描画ループが停止するため廃止。
   const menuAssetsReady=assetInitStarted&&!assetsLoading();
@@ -4464,6 +4600,14 @@ function draw(near){
  drawInfantryBottomHud();drawSkillBottomHud();drawVehicleBottomHud();
  if(msgT>0){g.textAlign='center';g.font=vehicleNameT>0?'bold 25px system-ui':'bold 17px system-ui';g.fillText(msg,W/2,vehicleNameT>0?70:64);}
  if(state==='play'&&p&&p.sniperMode)drawSniperScope();
+ if(state==='play'&&(chainToastT>0||oneShotToastT>0)){
+  g.save();g.textAlign='center';const top=Math.max(98,Math.min(H*.19,130));
+  const msgs=[];if(chainToastT>0)msgs.push([chainToast,'#fff0b7']);if(oneShotToastT>0)msgs.push([oneShotToast,'#ffb778']);
+  for(let i=0;i<msgs.length;i++){
+   const y=top+i*39;g.font='900 23px system-ui';g.lineWidth=5;g.strokeStyle='rgba(8,13,9,.88)';g.strokeText(msgs[i][0],W/2,y);
+   g.fillStyle=msgs[i][1];g.fillText(msgs[i][0],W/2,y);
+  }g.restore();
+ }
  if(flash>0){g.fillStyle='rgba(255,240,200,'+flash*.5+')';g.fillRect(0,0,W,H);}
  if(state==='dying'){const k=Math.max(0,deathT/1.35);g.fillStyle='rgba(80,0,0,'+(0.18+(.45*(1-k)))+')';g.fillRect(0,0,W,H);g.textAlign='center';g.font='bold 18px system-ui';g.fillStyle='rgba(255,230,210,'+(1-k*.35)+')';g.fillText('撃破された…',W/2,H*.42);}
  if(state==='title'){
@@ -4560,7 +4704,7 @@ function draw(near){
 const RES_AXES=['潜入','索敵','射撃','戦闘','爆破','機動','戦術','生存'];
 const resClamp=(v)=>Math.max(0,Math.min(100,Math.round(Number.isFinite(v)?v:0)));
 // 2026-10-08: Lv4/5を引き上げ、突出した戦績が必要なレベルに調整。
-const resLevel=v=>v<=0?0:v>=92?5:v>=72?4:v>=45?3:v>=25?2:1;
+const resLevel=v=>v<=0?0:v>=97?5:v>=82?4:v>=55?3:v>=32?2:1;
 function resultMetrics(s,r){
  const kills=s.humanKills+s.eliteKills+s.tankKills;
  const unique=Object.keys(s.vehicleKinds||{}).length;
@@ -4575,12 +4719,12 @@ function resultMetrics(s,r){
  const rangedKills=s.rangedKills||0;
  const weaponMastery=Math.max((s.sniperKills||0)/5,(s.mgKills||0)/12,(s.cannonKills||0)/5);
  const shooting=s.shots>0&&rangedKills>0?resClamp(8+50*Math.min(1,rangedKills/9)+30*Math.min(1,(rangedKills/s.shots)/.30)+12*Math.min(1,weaponMastery)):0;
- const combat=kills>0?resClamp(12+Math.min(60,(s.humanKills+2*s.eliteKills+3*s.tankKills)*5)+Math.min(28,s.maxKillChain*8)):0;
+ const combat=kills>0?resClamp(12+Math.min(60,(s.humanKills+2*s.eliteKills+3*s.tankKills)*4)+Math.min(28,s.maxKillChain*6)):0;
  // 爆弾・主砲の使用実績だけでなく、爆発と撃破・破壊の組合せを評価。
  const explosives=(s.bombBlasts||0)+(s.cannonShots||0);
  const blast=explosives>0?resClamp(5+Math.min(40,s.bombBlasts*7+s.cannonShots*2)+Math.min(35,s.multiKillBonus/12)+Math.min(20,(s.coverDestroyed||0)/450)):0;
  const mobility=(s.totalTravel>=30||s.vehicleTime>0)?resClamp(Math.min(35,s.totalTravel/170)+Math.min(35,s.vehicleTime/5)+unique*9):0;
- const tactics=(s.skillUses>0||s.stuns>0||s.bombBlasts>0||unique>0)?resClamp(Math.min(40,s.skillUses*8)+Math.min(30,s.stuns*12)+Math.min(30,unique*10+s.bombBlasts*4)):0;
+ const tactics=(s.skillUses>0||s.stuns>0||s.bombBlasts>0||unique>0)?resClamp(Math.min(40,s.skillUses*5)+Math.min(30,s.stuns*8)+Math.min(30,unique*7+s.bombBlasts*3)):0;
  const progress=Math.max(0,s.maxProgress||0);
  // maxProgress は開始地点(3100)からの実前進距離。初期値で加点されない。
  const survival=progress>=150?resClamp(10+55*Math.min(1,progress/3000)+(r.cleared?35:0)-s.damageHits*15-Math.min(20,s.detections*2)):0;
@@ -4610,7 +4754,9 @@ const TITLE_SPECIAL=[
  {id:'no_results',name:'戦果なし',note:'評価対象の行動・成果がなかった',priority:1000,valid:(lv,s,r)=>lv.every(v=>v===0)},
  {id:'challenger',name:'戦場の挑戦者',note:'戦果はあったが、ほかの称号条件には届かなかった',priority:180,valid:(lv,s,r)=>lv.some(v=>v>0)&&lv.every(v=>v<=2)},
  {id:'allrounder',name:'オールラウンダー',note:'8軸すべてLv3以上・6軸以上Lv4',priority:360,valid:(lv,s,r)=>lv.every(v=>v>=3)&&lv.filter(v=>v>=4).length>=6},
- {id:'lone_infantry',name:'孤高の歩兵',note:'車両に一度も乗らず、3体以上撃破してクリア',priority:370,valid:(lv,s,r)=>!!r.cleared&&s.vehicleBoards===0&&(s.humanKills+s.eliteKills+s.tankKills)>=3}
+ {id:'lone_infantry',name:'孤高の歩兵',note:'車両に一度も乗らず、3体以上撃破してクリア',priority:370,valid:(lv,s,r)=>!!r.cleared&&s.vehicleBoards===0&&(s.humanKills+s.eliteKills+s.tankKills)>=3},
+ {id:'chain_master',name:'連続撃破の達人',note:'4秒以内に続けて6体以上撃破',priority:450,valid:(lv,s,r)=>(s.maxKillChain||0)>=6},
+ {id:'one_shot_master',name:'一発連撃の達人',note:'一度の攻撃で4体以上撃破',priority:470,valid:(lv,s,r)=>(s.maxOneShotKills||0)>=4}
 ];
 const MEDAL_CATALOG=[
  {id:'mission_clear',name:'初任務完了',icon:'★',note:'敵司令本部を破壊してクリアする',valid:(s,r)=>!!r.cleared},
@@ -4621,7 +4767,8 @@ const MEDAL_CATALOG=[
  {id:'sniper_three',name:'一発必中の狩人',icon:'◎',note:'狙撃スキルで敵を3体以上撃破する',valid:s=>s.sniperKills>=3},
  {id:'bomb_three',name:'爆破の名手',icon:'✹',note:'設置・投擲爆弾で敵を3体以上撃破する',valid:s=>s.bombKills>=3},
  {id:'three_vehicles',name:'乗り物の達人',icon:'➤',note:'1回のプレイで3種類以上の乗り物を利用する',valid:s=>Object.keys(s.vehicleKinds||{}).length>=3},
- {id:'infantry_hero',name:'歩兵の英雄',icon:'♜',note:'一度も搭乗せずに司令本部を破壊する',valid:(s,r)=>!!r.cleared&&s.vehicleBoards===0}
+ {id:'infantry_hero',name:'歩兵の英雄',icon:'♜',note:'一度も搭乗せずに司令本部を破壊する',valid:(s,r)=>!!r.cleared&&s.vehicleBoards===0},
+ {id:'one_shot_three',name:'一発連撃',icon:'✹',note:'一度の攻撃で敵3体以上を撃破する',valid:s=>(s.maxOneShotKills||0)>=3}
 ];
 // Lvだけでは獲得不可。実際の行動実績を併せて検証する。
 const TITLE_AXIS_REQUIREMENTS=[
@@ -4642,8 +4789,62 @@ const TITLE_CATALOG=[
  ...TITLE_COMBOS.map(c=>({...c,type:'複合プレイ',priority:410,note:c.note+'（2軸Lv4以上・うち1軸Lv5）'})),
  ...TITLE_SPECIAL.map(c=>({...c,type:'特殊実績'}))
 ];
-function evaluateRunTitles(levels,metrics,s,r){
+// 伝説級：対応する上級称号を累計3回獲得した人だけが得られる第3段階。
+const TITLE_LEGENDS=Object.freeze([
+ {id:'legend_0',name:'幽影の覇者',from:'single_0_elite',axis:0,flavor:'気配さえ残さず敵地を駆け抜けた伝説の潜入兵。'},
+ {id:'legend_1',name:'万里眼',from:'single_1_elite',axis:1,flavor:'戦場のすべてを見通す伝説の偵察者。'},
+ {id:'legend_2',name:'神業の狙撃手',from:'single_2_elite',axis:2,flavor:'狙いを外さず敵を制する伝説の射撃手。'},
+ {id:'legend_3',name:'戦場の覇王',from:'single_3_elite',axis:3,flavor:'幾度も圧倒的な戦果を重ねた歴戦の猛者。'},
+ {id:'legend_4',name:'爆炎の支配者',from:'single_4_elite',axis:4,flavor:'幾多の爆破作戦を極めた伝説の破壊者。'},
+ {id:'legend_5',name:'疾風迅雷',from:'single_5_elite',axis:5,flavor:'戦場を縦横無尽に駆ける機動戦の伝説。'},
+ {id:'legend_6',name:'神算鬼謀',from:'single_6_elite',axis:6,flavor:'幾度もの勝利を戦術で導いた伝説の策士。'},
+ {id:'legend_7',name:'不滅の英雄',from:'single_7_elite',axis:7,flavor:'どんな戦場でも生還し続ける伝説の兵士。'}
+]);
+// 先に作成した称号カタログに伝説級の8種類を追加する。
+for(const t of TITLE_LEGENDS)TITLE_CATALOG.push({
+ id:t.id,name:t.name,type:'伝説級',priority:650,
+ note:'上級称号「'+TITLE_BASE[t.axis][2]+'」を累計3回獲得',
+ legendFrom:t.from,axis:t.axis,threshold:5,evidence:'elite'
+});
+const TITLE_FLAVOR=Object.freeze({
+ ...Object.fromEntries(TITLE_LEGENDS.map(t=>[t.id,t.flavor])),
+ 'single_0_normal':'人目を避けて敵地を進む潜入巧者。',
+ 'single_0_elite':'発見されずに長距離を進む隠密の達人。',
+ 'single_1_normal':'敵の気配を察し、静かに前進する偵察役。',
+ 'single_1_elite':'広い戦場を慎重に見通す熟練の斥候。',
+ 'single_2_normal':'射撃で敵を着実に仕留める戦士。',
+ 'single_2_elite':'遠距離戦で高い撃破力を発揮した名手。',
+ 'single_3_normal':'敵を次々に倒し、突破口を開いた兵士。',
+ 'single_3_elite':'圧倒的な戦果で前線を押し上げた猛者。',
+ 'single_4_normal':'爆発を使いこなし、敵を制圧した。',
+ 'single_4_elite':'激しい爆撃と破壊で戦場を制した。',
+ 'single_5_normal':'乗り物を活用して戦場を駆け抜けた。',
+ 'single_5_elite':'長距離を機動し、戦況を切り開いた。',
+ 'single_6_normal':'スキルを活用して戦況を操る策士。',
+ 'single_6_elite':'多彩な戦術で戦場を支配した指揮官。',
+ 'single_7_normal':'前進を続け、危機を乗り越えた生存者。',
+ 'single_7_elite':'被害を抑えて任務を完遂した強者。',
+ 'ghost_sniper':'身を隠しつつ遠距離から敵を撃破した。',
+ 'shadow_scout':'発見を抑えながら敵地深くまで偵察した。',
+ 'silent_saboteur':'隠密行動から爆破工作を仕掛けた。',
+ 'first_strike':'敵を見据え、遠方から先手を取った。',
+ 'battle_schemer':'敵の警戒をかわしつつスキルを駆使した。',
+ 'demolition_expert':'爆発で複数の敵を制圧した破壊工作の達人。',
+ 'armored_assault':'戦車の主砲で前線を突破した。',
+ 'unyielding_fighter':'傷を抑えながら多数の敵と戦い抜いた。',
+ 'lightning_demolition':'機動力と爆破を組み合わせて進撃した。',
+ 'maneuver_ace':'多様な乗り物とスキルを使い分けた。',
+ 'no_results':'今回は目立った戦果を残せなかった。',
+ 'challenger':'試行錯誤しながら戦場へ挑み続けた。',
+ 'allrounder':'あらゆる能力を高水準で発揮した。',
+ 'lone_infantry':'乗り物に頼らず歩兵の力で任務を果たした。',
+ 'chain_master':'間髪入れず敵を倒し続けた連撃の名手。',
+ 'one_shot_master':'一度の攻撃で多くの敵を一掃した。',
+});
+function evaluateRunTitles(levels,metrics,s,r,archive=readTitleArchive()){
  const eligible=TITLE_CATALOG.filter(t=>{
+  // 直前までに2回以上獲得し、今回もその上級称号の条件を達成した場合に伝説級を授与。
+  if(t.legendFrom)return titleAcquisitionCount(archive.titles[t.legendFrom])>=2&&levels[t.axis]>=5&&TITLE_AXIS_REQUIREMENTS[t.axis].elite(s,r);
   if(t.axis!=null)return levels[t.axis]>=t.threshold&&TITLE_AXIS_REQUIREMENTS[t.axis][t.evidence](s,r);
   if(t.axes)return t.axes.every(i=>levels[i]>=4)&&t.axes.some(i=>levels[i]>=5)&&t.valid(s,r);
   return t.valid(levels,s,r);
@@ -4659,7 +4860,26 @@ function resultStyle(levels,s){
  const metrics=resultMetrics(s,s.final),v=evaluateRunTitles(levels,metrics,s,s.final);
  return[v.primary.name,v.primary.note];
 }
-function readTitleArchive(){try{const v=JSON.parse(localStorage.getItem(TITLE_ARCHIVE_KEY)||'null');if(v&&typeof v==='object')return{titles:v.titles&&typeof v.titles==='object'?v.titles:{},medals:v.medals&&typeof v.medals==='object'?v.medals:{},runs:Math.max(0,Number(v.runs)||0)};}catch(_){}return{titles:{},medals:{},runs:0};}
+function readTitleArchive(){
+ try{
+  const v=JSON.parse(localStorage.getItem(TITLE_ARCHIVE_KEY)||'null');
+  if(v&&typeof v==='object'){
+   const archive={titles:v.titles&&typeof v.titles==='object'?v.titles:{},medals:v.medals&&typeof v.medals==='object'?v.medals:{},runs:Math.max(0,Number(v.runs)||0)};
+   // 旧バージョンで既に上級称号を3回獲得していた場合も伝説級を引き継ぐ。
+   let migrated=false;
+   for(const legend of TITLE_LEGENDS){
+    if(titleAcquisitionCount(archive.titles[legend.from])>=3&&!archive.titles[legend.id]){
+     const upper=archive.titles[legend.from];
+     archive.titles[legend.id]={at:upper.lastAt||upper.at||new Date().toISOString(),score:upper.lastScore??upper.score??0,count:1};
+     migrated=true;
+    }
+   }
+   if(migrated)try{localStorage.setItem(TITLE_ARCHIVE_KEY,JSON.stringify(archive));}catch(_){}
+   return archive;
+  }
+ }catch(_){}
+ return{titles:{},medals:{},runs:0};
+}
 // v114: 以前の獲得記録({at,score})は、保存済みの1回分として扱う。
 // 変更前の再獲得履歴は残っていないため遡及集計できない。
 function titleAcquisitionCount(record){
@@ -4682,7 +4902,11 @@ function recordRunAchievements(s){
   archive.titles[t.id]={at:previous?.at||stamp,score:previous?.score??r.total,count,lastAt:stamp,lastScore:r.total};
   result.titleCounts[t.id]=count;
  }
- for(const m of earnedMedals){if(!archive.medals[m.id]){archive.medals[m.id]={at:stamp,score:r.total};result.newMedals.push(m.id);}}
+ for(const m of earnedMedals){
+  const previous=archive.medals[m.id],count=titleAcquisitionCount(previous)+1;
+  if(!previous)result.newMedals.push(m.id);
+  archive.medals[m.id]={at:previous?.at||stamp,score:previous?.score??r.total,count,lastAt:stamp,lastScore:r.total};
+ }
  archive.runs++;s.awards=result;
  try{localStorage.setItem(TITLE_ARCHIVE_KEY,JSON.stringify(archive));}catch(_){s.awards.saveFailed=true;}
 }
@@ -4691,21 +4915,22 @@ function renderAwardResult(s){
  const titleById=new Map(TITLE_CATALOG.map(t=>[t.id,t]));
  const medalById=new Map(MEDAL_CATALOG.map(m=>[m.id,m]));
  const chips=(ids,lookup,news)=>ids.map(id=>{const entry=lookup.get(id);return entry?'<span class="res-award-chip'+(news.includes(id)?' new':'')+'">'+(news.includes(id)?'NEW! ':'')+entry.name+'</span>':'';}).join('');
- const countOf=id=>aw.disabled||aw.saveFailed?0:Math.max(0,Number(aw.titleCounts?.[id])||0);
- // 代表称号が2回目以降なら回数を強調。未獲得の仮称号やデバッグ時には表示しない。
- const primaryCount=countOf(aw.primary);
- el('resTitleCount').textContent=primaryCount>=2?'取得数 '+primaryCount+'回':'';
  // 今回獲得した称号は、初獲得・再獲得のどちらも一覧表示する。
  el('resNewTitles').innerHTML=(aw.titles||[]).map(id=>{
   const entry=titleById.get(id);if(!entry)return '';
-  const fresh=aw.newTitles.includes(id),count=countOf(id);
-  return '<span class="res-award-chip'+(fresh?' new':'')+'">'+(fresh?'NEW! ':'')+entry.name+(count>=2?' <span class="res-award-count">取得数 '+count+'回</span>':'')+'</span>';
+  const fresh=aw.newTitles.includes(id);
+  return '<span class="res-award-chip'+(fresh?' new':'')+(entry.type==='伝説級'?' legendary':'')+'">'+(fresh?'NEW! ':'')+entry.name+'</span>';
  }).join('')||'<span class="res-sub">今回の獲得称号はありません</span>';
  el('resMedals').innerHTML=chips(aw.medals,medalById,aw.newMedals)||'<span class="res-sub">今回の勲章はありません</span>';
- el('resMedalNote').textContent=aw.disabled?'デバッグプレイ中のため称号・勲章は保存されません':aw.saveFailed?'保存できませんでした。ブラウザの保存設定をご確認ください。':aw.newTitles.length+aw.newMedals.length?'新しい称号 '+aw.newTitles.length+'件 ／ 新しい勲章 '+aw.newMedals.length+'件を獲得！':'獲得履歴はタイトル画面の「称号・勲章」から確認できます。';
+ el('resMedalNote').textContent=aw.disabled?'デバッグプレイ中のため称号・勲章は保存されません':aw.saveFailed?'保存できませんでした。ブラウザの保存設定をご確認ください。':aw.newTitles.length+aw.newMedals.length?'新しい称号・勲章を獲得！':'獲得履歴はタイトル画面の「称号・勲章」から確認できます。';
 }
 let trophyTab='title';
 function renderTrophyArchive(){
+ const statsMode=trophyTab==='stats';
+ document.getElementById('trophyStats').hidden=!statsMode;
+ document.getElementById('trophyGrid').hidden=statsMode;
+ document.getElementById('trophyTabStats').classList.toggle('active',statsMode);
+ if(statsMode){renderTrophyStats();return;}
  const archive=readTitleArchive(),isTitle=trophyTab==='title',data=isTitle?TITLE_CATALOG:MEDAL_CATALOG,found=isTitle?archive.titles:archive.medals;
  const order=[...data].sort((a,b)=>Number(!!found[b.id])-Number(!!found[a.id]));
  const titleEarned=TITLE_CATALOG.filter(v=>!!archive.titles[v.id]).length,medalEarned=MEDAL_CATALOG.filter(v=>!!archive.medals[v.id]).length;
@@ -4716,13 +4941,47 @@ function renderTrophyArchive(){
  const grid=document.getElementById('trophyGrid');grid.replaceChildren();
  for(const d of order){
   const got=!!found[d.id],card=document.createElement('article');card.className='trophy-card'+(got?'':' locked');
+  if(isTitle&&d.type==='伝説級')card.classList.add('legendary');
   const type=document.createElement('div');type.className='tc-type';type.textContent=isTitle?d.type:'MISSION MEDAL';
   const mark=document.createElement('div');mark.className='tc-mark';mark.textContent=got?(isTitle?'★':d.icon):'♧';
   const name=document.createElement('div');name.className='tc-name';name.textContent=got?d.name:'？？？';
+  const flavor=document.createElement('div');flavor.className='tc-flavor';flavor.textContent=isTitle?(TITLE_FLAVOR[d.id]||''):'';
   const note=document.createElement('div');note.className='tc-note';note.textContent=d.note;
-  const st=document.createElement('div');st.className='tc-state';st.textContent=got?(isTitle?'✓ 獲得済み ／ 取得数 '+titleAcquisitionCount(found[d.id])+'回':'✓ 獲得済み'):'未獲得';
-  card.append(type,mark,name,note,st);grid.append(card);
+  const st=document.createElement('div');st.className='tc-state';st.textContent=got?'✓ 獲得済み ／ 取得数 '+titleAcquisitionCount(found[d.id])+'回':'未獲得';
+  card.append(type,mark,name);if(isTitle)card.append(flavor);card.append(note,st);grid.append(card);
  }
+}
+const RUN_HISTORY_KEY='tankGameRunHistoryV1';
+function readRunHistory(){
+ try{const x=JSON.parse(localStorage.getItem(RUN_HISTORY_KEY)||'null');
+  if(x&&typeof x==='object'&&Array.isArray(x.recent)&&x.summary)return x;
+ }catch(_){}
+ return{recent:[],summary:{plays:0,clears:0,scoreTotal:0,totalTime:0,totalDistance:0,humanKills:0,eliteKills:0,tankKills:0,stuns:0,detections:0,damageHits:0,maxChain:0,maxOneShot:0,oneShotEvents:0}};
+}
+function recordRunHistory(s){
+ if(!s?.final||s.historyRecorded||s.debugUsed||areaDebugEnabled)return;
+ s.historyRecorded=true;
+ const data=readRunHistory(),d=data.summary,r=s.final;
+ const v={at:new Date().toISOString(),cleared:!!r.cleared,score:Math.round(r.total),rank:r.rank,skill,seconds:Math.round(s.time),distance:Math.round(s.maxProgress/10),humanKills:s.humanKills,eliteKills:s.eliteKills,tankKills:s.tankKills,stuns:s.stuns,detections:s.detections,maxChain:s.maxKillChain,maxOneShot:s.maxOneShotKills||0};
+ data.recent.unshift(v);data.recent.length=Math.min(50,data.recent.length);
+ d.plays++;d.clears+=Number(r.cleared);d.scoreTotal+=v.score;d.totalTime+=s.time;d.totalDistance+=s.totalTravel;d.humanKills+=s.humanKills;d.eliteKills+=s.eliteKills;d.tankKills+=s.tankKills;d.stuns+=s.stuns;d.detections+=s.detections;d.damageHits+=s.damageHits;d.maxChain=Math.max(d.maxChain,s.maxKillChain);d.maxOneShot=Math.max(d.maxOneShot,s.maxOneShotKills||0);d.oneShotEvents+=s.oneShotEvents||0;
+ try{localStorage.setItem(RUN_HISTORY_KEY,JSON.stringify(data));}catch(_){s.historySaveFailed=true;}
+}
+function renderTrophyStats(){
+ const data=readRunHistory(),a=data.summary||{},archive=readTitleArchive(),progress=readSkillProgress(),high=loadHighScore();
+ document.getElementById('trophyOverview').innerHTML='<span>ハイスコア <strong>'+Math.round(high.score||0).toLocaleString('ja-JP')+'</strong>　'+high.rank+'</span><span>クリア <strong>'+(a.clears||0)+'</strong> 回</span><span>解放スキル <strong>'+progress.unlocked.length+'</strong> / '+SK.length+'</span>';
+ document.getElementById('trophyCount').textContent='累計プレイ記録 '+(a.plays||0)+'回（この更新版以降の記録）';
+ document.getElementById('trophyTabTitles').classList.remove('active');document.getElementById('trophyTabMedals').classList.remove('active');
+ const overview=[['ハイスコア',Math.round(high.score||0).toLocaleString('ja-JP')+' / '+high.rank],['プレイ回数',a.plays||0],['クリア回数',a.clears||0],['累計プレイ時間',formatRunTime(a.totalTime||0)],['累計移動距離',Math.round((a.totalDistance||0)/10)+'m'],['累計撃破数',(a.humanKills||0)+(a.eliteKills||0)+(a.tankKills||0)],['歩兵撃破',a.humanKills||0],['エリート撃破',a.eliteKills||0],['戦車撃破',a.tankKills||0],['気絶',a.stuns||0],['発見',a.detections||0],['被弾',a.damageHits||0],['最大連続撃破',a.maxChain||0],['最大一発連撃',a.maxOneShot||0],['一発連撃の回数',a.oneShotEvents||0],['スキル解放',progress.unlocked.length+' / '+SK.length]];
+ const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const recent=data.recent.map(v=>'<div class="trophy-run"><div><strong>'+(v.cleared?'CLEAR':'FAILED')+' / '+esc(v.rank)+'</strong><span>'+esc(new Date(v.at).toLocaleString('ja-JP'))+'</span></div><div>'+esc(SK.find(k=>k.id===v.skill)?.n||v.skill)+' ・ '+esc(v.score.toLocaleString('ja-JP'))+'点 ・ '+esc(v.distance)+'m ・ 撃破'+((v.humanKills||0)+(v.eliteKills||0)+(v.tankKills||0))+' ・ 連続撃破'+esc(v.maxChain||0)+' ・ 一発連撃'+esc(v.maxOneShot||0)+'</div></div>').join('');
+ document.getElementById('trophyStats').innerHTML='<h2>累計戦績</h2><div class="trophy-stats-grid">'+overview.map(([k,v])=>'<div class="trophy-stat"><small>'+esc(k)+'</small><strong>'+esc(v)+'</strong></div>').join('')+'</div><h2>最近の戦績（最大50件）</h2>'+(recent||'<p class="trophy-empty">まだプレイ記録はありません。</p>')+'<div class="trophy-reset-box"><h2>保存データの初期化</h2><p>称号・勲章・ハイスコア・戦績・スキル解放をすべて初期状態に戻します。この操作は取り消せません。</p><button id="trophyReset" type="button">すべてのデータをリセット</button></div>';
+ document.getElementById('trophyReset').addEventListener('click',()=>{
+  if(!confirm('すべての称号・勲章・ハイスコア・戦績・スキル解放を初期化します。よろしいですか？'))return;
+  for(const key of [TITLE_ARCHIVE_KEY,SCORE_KEY,RUN_HISTORY_KEY,SKILL_PROGRESS_KEY])try{localStorage.removeItem(key);}catch(_){}
+  highScoreData=loadHighScore();skill='throw';skillDebugAll=false;areaDebugEnabled=false;rollSkillChoices();
+  renderTrophyArchive();
+ });
 }
 function openTrophyArchive(){trophyTab='title';renderTrophyArchive();document.body.classList.add('trophy-open');document.getElementById('trophyScreen').scrollTop=0;}
 function closeTrophyArchive(){document.body.classList.remove('trophy-open');}
@@ -4743,18 +5002,40 @@ function renderResultScreen(){const s=scoreStats,r=s&&s.final;if(!r)return;
  const zone=(ZONES||[]).find(z=>p&&p.y>=z.y0&&p.y<=z.y1);
  el('resArea').textContent='到達エリア：'+(zone?zone.name||zone.n||zone.label||'—':'—');
  el('resScore').textContent=Math.round(r.total).toLocaleString('ja-JP');el('resHigh').textContent=s.newHigh?'★ NEW HIGH SCORE':'HIGH SCORE  '+(highScoreData?highScoreData.score.toLocaleString('ja-JP'):'—');
+ const unlock=el('resUnlock');
+ unlock.hidden=!s.unlockedSkill;unlock.textContent=s.unlockedSkill?'★ 新スキル解放！ 「'+(SK.find(k=>k.id===s.unlockedSkill)?.n||'')+'」が次回から選択できます':'';
  el('resRank').textContent=r.rank;
  const glyph={F:'╱',E:'╱╱',D:'◆',C:'◆◆',B:'◆◆◆',A:'★ ★',S:'★ ★ ★'};
  el('resInsignia').textContent=glyph[r.rank];el('resInsignia').style.color=r.rank==='S'?'#ffdb71':'#e2d4b0';
  el('resRadar').innerHTML=resultRadar(levels);
  el('resAxes').innerHTML=RES_AXES.map((name,i)=>`<div class="res-axis"><span>${name}</span><span class="res-stars" aria-label="レベル${levels[i]}">${'★'.repeat(levels[i])}<span style="color:#65705d">${'☆'.repeat(5-levels[i])}</span></span></div>`).join('');
- el('resTitle').textContent=sty[0];el('resTitleNote').textContent=sty[1];renderAwardResult(s);
+ el('resTitle').textContent=sty[0];el('resTitleFlavor').textContent=TITLE_FLAVOR[s.awards?.primary]||'';el('resTitleNote').textContent=sty[1];renderAwardResult(s);
  const quick=[['プレイ時間',formatRunTime(s.time)],['到達距離',Math.round(s.maxProgress/10)+'m'],['総撃破数',kills],['発見回数',s.detections],['被弾回数',s.damageHits],['気絶数',s.stuns]];
  el('resQuick').innerHTML=quick.map(([n,v])=>`<div class="res-stat"><label>${n}</label><strong>${v}</strong></div>`).join('');
- const entries=[['歩兵撃破',s.humanKills],['エリート撃破',s.eliteKills],['戦車撃破',s.tankKills],['最大連続撃破',s.maxKillChain],['未発見移動距離',Math.round(s.unseenDist/10)+'m'],['累計移動距離',Math.round(s.totalTravel/10)+'m'],['発見状態の累計時間',formatRunTime(s.detectedTime)],['疑惑状態の発生',s.suspicionEntries],['遮蔽物破壊面積',Math.round(s.coverDestroyed)],['射撃数（記録対象）',s.shots],['狙撃発射数',s.sniperShots],['狙撃撃破数',s.sniperKills],['爆弾撃破数',s.bombKills],['爆発による撃破',s.explosiveKills],['主砲発射数',s.cannonShots],['MG等発射数',s.mgShots],['爆弾爆発数',s.bombBlasts],['スキル発動数（記録対象）',s.skillUses],['乗り物搭乗回数',s.vehicleBoards],['乗り物利用時間',formatRunTime(s.vehicleTime)],['乗り物の種類数',Object.keys(s.vehicleKinds).length],['潜入スコア',r.stealth],['戦闘スコア',r.combat],['任務達成・タイムボーナス',r.bonus]];
+ const entries=[['歩兵撃破',s.humanKills],['エリート撃破',s.eliteKills],['戦車撃破',s.tankKills],['最大連続撃破',s.maxKillChain],['最大一発連撃',s.maxOneShotKills||0],['一発連撃発生数',s.oneShotEvents||0],['未発見移動距離',Math.round(s.unseenDist/10)+'m'],['累計移動距離',Math.round(s.totalTravel/10)+'m'],['発見状態の累計時間',formatRunTime(s.detectedTime)],['疑惑状態の発生',s.suspicionEntries],['遮蔽物破壊面積',Math.round(s.coverDestroyed)],['射撃数（記録対象）',s.shots],['狙撃発射数',s.sniperShots],['狙撃撃破数',s.sniperKills],['爆弾撃破数',s.bombKills],['爆発による撃破',s.explosiveKills],['主砲発射数',s.cannonShots],['MG等発射数',s.mgShots],['爆弾爆発数',s.bombBlasts],['スキル発動数（記録対象）',s.skillUses],['乗り物搭乗回数',s.vehicleBoards],['乗り物利用時間',formatRunTime(s.vehicleTime)],['乗り物の種類数',Object.keys(s.vehicleKinds).length],['潜入スコア',r.stealth],['戦闘スコア',r.combat],['連続撃破ボーナス',r.chainBonus],['一発連撃ボーナス',r.multiKillBonus],['任務達成・タイムボーナス',r.bonus]];
  el('resDetail').innerHTML=entries.map(([n,v])=>`<div class="res-detail-row"><span>${n}</span><strong>${v}</strong></div>`).join('');
 }
-function syncResultScreen(){const show=(state==='win'||state==='lose')&&!!(scoreStats&&scoreStats.final);const open=document.body.classList.contains('result-open');if(show&&!open){renderResultScreen();document.body.classList.add('result-open');document.getElementById('resultScreen').scrollTop=0;}else if(!show&&open)document.body.classList.remove('result-open');}
+let resultScoreAnimId=0;
+function animateResultScore(total){
+ const node=document.getElementById('resScore'),target=Math.round(total)||0;
+ const id=++resultScoreAnimId;
+ if(matchMedia('(prefers-reduced-motion: reduce)').matches){node.textContent=target.toLocaleString('ja-JP');return;}
+ const start=performance.now(),duration=1050;
+ node.textContent='0';
+ function step(now){
+  if(id!==resultScoreAnimId||!document.body.classList.contains('result-open'))return;
+  const t=Math.min(1,(now-start)/duration),ease=1-Math.pow(1-t,3);
+  node.textContent=Math.round(target*ease).toLocaleString('ja-JP');
+  if(t<1)requestAnimationFrame(step);
+ }
+ requestAnimationFrame(step);
+}
+function syncResultScreen(){
+ const show=(state==='win'||state==='lose')&&!!(scoreStats&&scoreStats.final);
+ const open=document.body.classList.contains('result-open');
+ if(show&&!open){renderResultScreen();document.body.classList.add('result-open');document.getElementById('resultScreen').scrollTop=0;animateResultScore(scoreStats.final.total);}
+ else if(!show&&open){resultScoreAnimId++;document.body.classList.remove('result-open');}
+}
 document.getElementById('resRetry').addEventListener('click',()=>{rollSkillChoices();state='skill';bombReq=false;cannonReq=false;interact=false;skillReq=false;syncResultScreen();sfx('skill');});
 document.getElementById('resHome').addEventListener('click',()=>{state='title';bombReq=false;cannonReq=false;interact=false;skillReq=false;syncResultScreen();sfx('skill');});
 highScoreData=loadHighScore();
@@ -4772,7 +5053,7 @@ const SK_CONTROL={
  build:['S：防護壁を設置','前方にコンクリートの防護壁を建てます。'],
  flame:['S：火炎放射','進行方向へ火炎を放射。使用量に応じて再充填します。'],
  hound:['S：猟犬に指示（長押し可）','正面へ走らせ、敵兵を追跡して気絶させます。長押しで前進を延長。'],
- sniper:['←→：視点移動 ／ ↑：次のレンズへ ／ ↓：前のレンズへ','倍率は1.5倍・2.5倍・3.5倍の3段階。上下キー1回で1段階ずつ切り替え。S：狙撃 ／ E：解除。スマホでは左スティックの上下で切り替えます。']
+ sniper:['←→：視点移動 ／ ↑：次のレンズへ ／ ↓：前のレンズへ','狙撃弾は敵兵を貫通します。倍率は1.5倍・2.5倍・3.5倍の3段階。上下キー1回で1段階ずつ切り替え。S：狙撃 ／ E：解除。スマホでは左スティックの上下で切り替えます。']
 };
 function skillArtSrc(id,name=''){
  if(SK_ART[id])return SK_ART[id];
@@ -4795,17 +5076,19 @@ document.getElementById('skDebugAll').addEventListener('click',()=>{skillDebugAl
 document.getElementById('skAreaDebug').addEventListener('click',()=>{areaDebugEnabled=!areaDebugEnabled;skillMenuDirty=true;sfx('skill');});
 document.getElementById('titleStart').addEventListener('click',()=>{rollSkillChoices();state='skill';sfx('skill');});
 document.getElementById('titleHelp').addEventListener('click',()=>{state='help';sfx('skill');});
+document.getElementById('helpHome').addEventListener('click',()=>{state='title';sfx('skill');});
 document.getElementById('titleAwards').addEventListener('click',()=>{openTrophyArchive();sfx('skill');});
 document.getElementById('trophyBack').addEventListener('click',()=>{closeTrophyArchive();sfx('skill');});
 document.getElementById('trophyTabTitles').addEventListener('click',()=>{trophyTab='title';renderTrophyArchive();});
 document.getElementById('trophyTabMedals').addEventListener('click',()=>{trophyTab='medals';renderTrophyArchive();});
+document.getElementById('trophyTabStats').addEventListener('click',()=>{trophyTab='stats';renderTrophyArchive();});
 document.getElementById('skDeploy').addEventListener('click',()=>{const list=skillMenuList();const i=list.findIndex(k=>k.id===selectedSkillId);if(i>=0)selectSkillIndex(i);});
 const skScroll=document.getElementById('skScroll');
 function setSelectedSkill(id){
- const list=skillMenuList();if(!list.some(k=>k.id===id))id=list[0]?.id||null;
+ const list=skillMenuList();if(!list.some(k=>k.id===id&&skillSelectable(k.id)))id=list.find(k=>skillSelectable(k.id))?.id||null;
  selectedSkillId=id;skillCardActive=list.findIndex(k=>k.id===id);
  for(const card of skScroll.children){const yes=card.dataset.skill===id;card.classList.toggle('selected',yes);card.setAttribute('aria-pressed',String(yes));}
- const chosen=list.find(k=>k.id===id),deploy=document.getElementById('skDeploy');
+ const chosen=list.find(k=>k.id===id&&skillSelectable(k.id)),deploy=document.getElementById('skDeploy');
  deploy.disabled=!chosen||gameBuildQueued;
  deploy.textContent=chosen?'「'+chosen.n+'」で出撃 →':'スキルを選択してください';
  document.getElementById('skSelectionNote').textContent=chosen?'選択スキル：'+chosen.n+'　｜　ⓘ で操作説明':'スキルを選択してください';
@@ -4839,7 +5122,7 @@ const SK_CARD_SUMMARY={
  build:'進行方向に防護壁を設置して身を守る',
  flame:'火炎を放射して敵や遮蔽物を燃やす',
  hound:'猟犬に指示を出し、敵兵を気絶させる',
- sniper:'スナイパーライフルで遠距離から狙撃を行う'
+ sniper:'スナイパーライフルで遠距離から狙撃。弾は敵兵を貫通する'
 };
 const SK_CARD_CONTROLS={
  throw:'S：投擲　／　D：起爆',
@@ -4856,19 +5139,20 @@ function renderSkillCards(){
  const list=skillMenuList();const keep=selectedSkillId;
  skScroll.replaceChildren();
  list.forEach((k,i)=>{
-  const el=document.createElement('article');el.className='sk-card';el.dataset.skill=k.id;
-  el.setAttribute('role','button');el.setAttribute('tabindex','0');el.setAttribute('aria-label',k.n+'を選択');
+  const el=document.createElement('article');el.className='sk-card';el.dataset.skill=k.id;const locked=!skillSelectable(k.id);if(locked)el.classList.add('locked');
+  el.setAttribute('role','button');el.setAttribute('tabindex',locked?'-1':'0');el.setAttribute('aria-disabled',String(locked));el.setAttribute('aria-label',k.n+(locked?'（未解放）':'を選択'));
   const detail=SK_CARD_SUMMARY[k.id]||k.d.split('\n')[0];
   const controls=SK_CARD_CONTROLS[k.id]||'S：使用';
   el.innerHTML='<img class="sk-media" alt="" loading="lazy"><div class="sk-copy"><h2 class="sk-name"></h2><p class="sk-desc"></p><p class="sk-ctrl"></p></div><button class="sk-how" type="button" aria-label="'+k.n+'の操作方法" title="操作方法を表示">ⓘ</button>';
   el.querySelector('.sk-media').src=skillCardIconSrc(k.id);el.querySelector('.sk-name').textContent=k.n;el.querySelector('.sk-desc').textContent=detail;el.querySelector('.sk-ctrl').textContent=controls;
   el.querySelector('.sk-how').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();openSkillHelp(k.id);});
-  el.addEventListener('click',()=>{setSelectedSkill(k.id);sfx('skill');});
-  el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setSelectedSkill(k.id);sfx('skill');}});
+  if(locked){el.querySelector('.sk-copy').insertAdjacentHTML('beforeend','<span class="sk-locked-note">🔒 未解放 ／ クリアで順次解放</span>');}
+  el.addEventListener('click',()=>{if(locked)return;setSelectedSkill(k.id);sfx('skill');});
+  el.addEventListener('keydown',e=>{if(!locked&&(e.key==='Enter'||e.key===' ')){e.preventDefault();setSelectedSkill(k.id);sfx('skill');}});
   skScroll.append(el);
  });
- setSelectedSkill(list.some(k=>k.id===keep)?keep:list[0]?.id);
- document.getElementById('skDebugAll').textContent=skillDebugAll?'ランダム3候補に戻す':'全スキル表示';
+ setSelectedSkill(list.some(k=>k.id===keep&&skillSelectable(k.id))?keep:list.find(k=>skillSelectable(k.id))?.id);
+ document.getElementById('skDebugAll').textContent=skillDebugAll?'解放済みに戻す':'全スキル表示';
  document.getElementById('skDebugAll').classList.toggle('enabled',skillDebugAll);
  document.getElementById('skAreaDebug').textContent='エリアデバッグ '+(areaDebugEnabled?'ON':'OFF');
  document.getElementById('skAreaDebug').classList.toggle('enabled',areaDebugEnabled);
@@ -4878,10 +5162,15 @@ function syncSkillScreen(){
  const show=state==='skill',isOpen=document.body.classList.contains('skill-open');
  if(show&&!isOpen){document.body.classList.add('skill-open');document.getElementById('skillScreen').scrollTop=0;selectedSkillId=null;skillMenuDirty=true;}
  else if(!show&&isOpen){document.body.classList.remove('skill-open');closeSkillHelp();}
- if(show){const snapshot=skillChoices.join(',')+'|'+skillDebugAll+'|'+areaDebugEnabled;
+ if(show){const snapshot=skillChoices.join(',')+'|'+skillDebugAll+'|'+areaDebugEnabled+'|'+readSkillProgress().unlocked.join(',');
   if(skillMenuDirty||snapshot!==skillMenuSnapshot){renderSkillCards();skillMenuSnapshot=snapshot;}
   document.getElementById('skLoad').textContent=assetsLoading()?'素材を読み込み中…':'スキル決定後、ステージを準備します';
  }
+}
+function syncHelpScreen(){
+ const show=state==='help',open=document.body.classList.contains('help-open');
+ if(show&&!open){document.body.classList.add('help-open');document.getElementById('helpScreen').scrollTop=0;}
+ else if(!show&&open)document.body.classList.remove('help-open');
 }
 function syncTitleScreen(){
  const show=state==='title',isOpen=document.body.classList.contains('title-open');
@@ -4912,7 +5201,7 @@ function loop(n){
   prevState=state;
  }while(remain>.000001);
  document.body.classList.toggle('gameplay-active',state==='play');
- draw(near);syncResultScreen();syncSkillScreen();syncTitleScreen();
+ draw(near);syncResultScreen();syncSkillScreen();syncTitleScreen();syncHelpScreen();
  if(firstMenuFrame){firstMenuFrame=false;setTimeout(startAssetLoading,0);}
  requestAnimationFrame(loop);
 }
@@ -5035,7 +5324,7 @@ resetBtn.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation
 resetBtn.addEventListener('click',backToTitle);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)clearInputs();});
 addEventListener('blur',clearInputs);
-document.addEventListener('touchmove',e=>{const inScrollableLayer=(document.body.classList.contains('trophy-open')&&e.target.closest('#trophyScreen'))||(document.body.classList.contains('result-open')&&e.target.closest('#resultScreen'))||(document.body.classList.contains('skill-open')&&e.target.closest('#skillScreen'))||(document.body.classList.contains('title-open')&&e.target.closest('#titleScreen'))||e.target.closest('#skillLightbox.open');if(inScrollableLayer)return;e.preventDefault();},{passive:false});
+document.addEventListener('touchmove',e=>{const inScrollableLayer=(document.body.classList.contains('trophy-open')&&e.target.closest('#trophyScreen'))||(document.body.classList.contains('result-open')&&e.target.closest('#resultScreen'))||(document.body.classList.contains('skill-open')&&e.target.closest('#skillScreen'))||(document.body.classList.contains('title-open')&&e.target.closest('#titleScreen'))||(document.body.classList.contains('help-open')&&e.target.closest('#helpScreen'))||e.target.closest('#skillLightbox.open');if(inScrollableLayer)return;e.preventDefault();},{passive:false});
 document.addEventListener('gesturestart',e=>e.preventDefault(),{passive:false});
 document.addEventListener('contextmenu',e=>e.preventDefault());
 })();
