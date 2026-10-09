@@ -415,7 +415,7 @@ body.result-open #resultScreen .res-unlock:not([hidden]){animation:resPop .7s .3
 </div></div>
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.09.132',FILE_CREATED_AT='2026/10/09 18:31',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
+const GAME_VERSION='2026.10.09.133',FILE_CREATED_AT='2026/10/09 18:39',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
 let audioCtx=null;
 function ensureAudio(){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(_){}}
 function tone(f=440,d=.08,v=.035,type='square',f2=null){if(!audioCtx)return;const t=audioCtx.currentTime,o=audioCtx.createOscillator(),a=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t+d);a.gain.setValueAtTime(v,t);a.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(a);a.connect(audioCtx.destination);o.start(t);o.stop(t+d+.02);}
@@ -3898,7 +3898,8 @@ function update(dt){
     if(!h.elite&&!h.bu&&!h.plantT&&h.ct>(h.bombAt??1.5)&&!movePause){h.bu=true;h.plantT=.35+R()*.4;h.plantA=toT;}
     if(h.plantT>0){h.plantT=Math.max(0,h.plantT-dt);h.face=h.plantA??toT;if(h.plantT<=0){const bp=enemyBombPoint(h,h.plantA??toT,100);bombs.push({x:bp.x,y:bp.y,own:'e',armed:true,t:4});h.plantA=null;}}
     else if(!movePause&&d>110)moveHumanChase(h,toT,moveSp,dt);
-    if(d<150&&h.cd<=0&&vis){if(h.elite){fire(h.x,h.y,toT+(R()-.5)*.08,'e','r',330,150);h.cd=1.35;}else{if(!(h.burstLeft>0))h.burstLeft=3;fire(h.x,h.y,toT+(R()-.5)*.15,'e','r',330,150);h.burstLeft--;h.cd=h.burstLeft>0?.14:2;}}}
+    // 発見モードへの移行直後は、0.5〜1秒の静止が終わるまで発砲しない。
+    if(!movePause&&d<150&&h.cd<=0&&vis){if(h.elite){fire(h.x,h.y,toT+(R()-.5)*.08,'e','r',330,150);h.cd=1.35;}else{if(!(h.burstLeft>0))h.burstLeft=3;fire(h.x,h.y,toT+(R()-.5)*.15,'e','r',330,150);h.burstLeft--;h.cd=h.burstLeft>0?.14:2;}}}
   }
   if(!h.st){h.wallFollow=null;if(!(h.chatResumeT>0))h.face=patrol(h,dt,30*(h.elite?1.2:1),8);}
  }
