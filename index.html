@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.11.162</title>
+<title>戦車ゲーム 2026.10.11.163</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -518,7 +518,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.11.162',FILE_CREATED_AT='2026/10/11 08:11',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.11.163',FILE_CREATED_AT='2026/10/11 08:13',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -1439,7 +1439,7 @@ const FRAG_COLORS={0:['#8a7a55','#6a5d40'],1:['#8c8c86','#6a6a66'],2:['#7a5f3a',
 const labels=[];function lab(t,x,y,f,c,ns){labels.push({t,x,y,f,c,ns});}
 function drawLabels(cx,cy){gm.textAlign='center';for(const l of labels){gm.font=l.f;if(!l.ns){gm.lineWidth=3;gm.strokeStyle='rgba(0,0,0,.8)';gm.strokeText(l.t,l.x-cx,l.y-cy);}gm.fillStyle=l.c;gm.fillText(l.t,l.x-cx,l.y-cy);}}
 let chainToast='',chainToastT=0,oneShotToast='',oneShotToastT=0;
-let state,p,cars,etanks,humans,covers,objects,bullets,parts,base,shake,flash,msg,msgT,bombs,items,waves,water,bridges,mud,fx,bushes,decoy,allies,hound=null,houndTrail=[],radio,airstrike,airbombs,weather,weatherT,weatherNext,baseSpawnT,deathT=0,cam=0,camX=0,blastT,bq,skillReq,lastMouse=0,allySeq=0,builtWalls=[],buildingGroundMarks=[],tankWrecks=[],scoreStats=null,highScoreData=null,resultAnimT=0,vehicleNameT=0,debugMode=0,debugInvincible=false,touchTurretAngle=null;
+let state,p,cars,etanks,humans,covers,objects,bullets,parts,base,shake,flash,msg,msgT,bombs,items,waves,water,bridges,mud,fx,bushes,decoy,allies,hound=null,houndTrail=[],radio,airstrike,airbombs,weather,weatherT,weatherNext,rainIntensity=0,baseSpawnT,deathT=0,cam=0,camX=0,blastT,bq,skillReq,lastMouse=0,allySeq=0,builtWalls=[],buildingGroundMarks=[],tankWrecks=[],scoreStats=null,highScoreData=null,resultAnimT=0,vehicleNameT=0,debugMode=0,debugInvincible=false,touchTurretAngle=null;
 const DETECT_RANGE_BASE=315,DETECT_CENTER_HALF=7.5*Math.PI/180,DETECT_OUTER_HALF=52.5*Math.PI/180,DETECT_OUTER_SCALE=.7,DETECT_MEMORY=3,TANK_DRAW=30,TANK_HIT=28,LOG_LONG=126,LOG_SHORT=39,CRATE_W=74.8,CRATE_H=74.8,BARREL_SIZE=39.1,CONCRETE_W=264,CONCRETE_H=183.7,WOOD_W=278.3,WOOD_H=223.85,MINI_CONCRETE_W=151.3,MINI_CONCRETE_H=151.3,MINI_WOOD_W=213.6,MINI_WOOD_H=213.6,CONCRETE_MINI_W=151.3,CONCRETE_MINI_H=151.3,WOOD_MINI_W=213.6,WOOD_MINI_H=213.6,TREE_BOX=83,TREE_BOX_MAX=124.5,ROCK_W=58,ROCK_H=40,BARRIER_LONG=208,BARRIER_SHORT=52,FENCE_LONG=188,FENCE_SHORT=81,COMMAND_BASE_W=390,COMMAND_BASE_H=336.7;
 const playerMoving=()=>!!(p&&(keys.ArrowUp||keys.ArrowDown||keys.ArrowLeft||keys.ArrowRight)&&(!p.tank||p.tank.f>0));
 const detectRange=(key='p')=>DETECT_RANGE_BASE*((key==='p'&&p&&p.tank)?2:1)*((key==='p'&&!playerMoving())?.8:1)*(weather==='rain'?.75:1),detectOuterRange=(key='p')=>detectRange(key)*DETECT_OUTER_SCALE,detectDropRange=(key='p')=>detectRange(key)*1.5;
@@ -1647,7 +1647,7 @@ const COVER_DEBUG_NAMES={1:'壁',2:'木箱',3:'コンクリート建物',4:'木�
 function setupAreaDebugStage(){
  const areaH=1350,bottom=WH-100;
  ZONES=AREA_DEBUG_ORDER.map((n,i)=>{const y0=bottom-i*areaH,y1=y0-areaH;return{n,y0,y1,g:ZONE_STYLE[n].g,p:ZONE_STYLE[n].p.slice(),pat:null,areaDebug:1};});
- areaDebugLabels=[];covers=[];objects=[];bushes=[];mud=[];water=[];bridges=[];cars=[];etanks=[];humans=[];bullets=[];parts=[];bombs=[];items=[];waves=[];fx=[];allies=[];builtWalls=[];tankWrecks=[];decoy=null;radio=null;airstrike=null;airbombs=[];weather='clear';weatherT=0;weatherNext=99999;baseSpawnT=99999;
+ areaDebugLabels=[];covers=[];objects=[];bushes=[];mud=[];water=[];bridges=[];cars=[];etanks=[];humans=[];bullets=[];parts=[];bombs=[];items=[];waves=[];fx=[];allies=[];builtWalls=[];tankWrecks=[];decoy=null;radio=null;airstrike=null;airbombs=[];weather='clear';weatherT=0;rainIntensity=0;weatherNext=99999;baseSpawnT=99999;
  p.tank=null;p.hp=3;p.x=WW/2;p.y=ZONES[0].y0-220;scoreStats.startY=p.y;p.body=-Math.PI/2;p.ang=-Math.PI/2;p.dig=0;p.digPrep=0;p.drill=0;p.scd=0;p.bushHide=0;p.grappleT=0;
  const hq=ZONES[ZONES.length-1];base={x:WW/2-COMMAND_BASE_W/2,y:hq.y1+115,w:COMMAND_BASE_W,h:COMMAND_BASE_H,hp:30,maxHp:30,deadAt:0};
  cars.push({x:WW/2-92,y:p.y-36,t:TRUCK_TYPE,kind:'truck',hp:5,c:0,v:0,f:TRUCK_TYPE.fmax,mgHits:0,body:-1.57,areaDebug:1});
@@ -2277,7 +2277,7 @@ function distributeFlankPatrols(){
 
 function reset(rerollSkills=true){
  radioStrikeKillContext=0;burningNatureSet.clear();lastEnemySeparationAt=-1e9;patrolChatScanT=0;allyTargetRefreshAt=0;
- state='play';shake=0;flash=0;msg='';msgT=0;chainToastT=0;oneShotToastT=0;chainToast='';oneShotToast='';interact=false;bombReq=false;skillReq=false;decoy=null;allies=[];hound=null;houndTrail=[];allySeq=0;builtWalls=[];tankWrecks=[];radio=null;airstrike=null;airbombs=[];weather='clear';weatherT=0;weatherNext=15+R()*35;baseSpawnT=5;deathT=0;cam=0;camX=0;scoreStats=newScoreStats();
+ state='play';shake=0;flash=0;msg='';msgT=0;chainToastT=0;oneShotToastT=0;chainToast='';oneShotToast='';interact=false;bombReq=false;skillReq=false;decoy=null;allies=[];hound=null;houndTrail=[];allySeq=0;builtWalls=[];tankWrecks=[];radio=null;airstrike=null;airbombs=[];weather='clear';weatherT=0;rainIntensity=0;weatherNext=15+R()*35;baseSpawnT=5;deathT=0;cam=0;camX=0;scoreStats=newScoreStats();
  setupZones();if(rerollSkills)rollSkillChoices();
  waterRipples=[];
  p={x:WW/2,y:3100,hp:3,tank:null,cc:0,vc:0,ang:-1.57,body:-1.57,dig:0,digPrep:0,digElapsed:0,digExitAnim:0,digExitX:0,digExitY:0,scd:0,scdMax:0,drill:0,drillHit:0,drillTarget:null,drillSfx:0,bushHide:0,grappleT:0,grappleTarget:null,flameFuel:3,flameActive:false,flameLockA:null,flamePath:[],flameSfx:0,flameReach:0,fireExposure:0,sniperMode:false,sniperLockA:null,sniperAimN:0,sniperZoom:1.5,sniperLensChangeT:0,sniperEnterT:0,sniperReadyT:0,sniperExitT:0,sniperFlash:0,sniperHitT:0,sniperHitX:0,sniperHitY:0,sniperFireCd:0,sniperNoiseEvents:[]};touchTurretAngle=null;
@@ -3643,6 +3643,9 @@ function updateAirstrike(dt){
 function updateWeather(dt){
  if(weather==='rain'){weatherT-=dt;if(weatherT<=0){weather='clear';weatherT=0;weatherNext=22+R()*38;say('雨が上がった');}}
  else{weatherNext-=dt;if(weatherNext<=0){weather='rain';weatherT=30;sfx('rain');say('雨が降り始めた');}}
+ // 最初の5秒は小雨から強まり、最後の6秒で弱まる。ゲーム効果の30秒は維持。
+ const ramp=weather==='rain'?Math.max(0,Math.min(1,(30-weatherT)/5,weatherT/6)):0;
+ rainIntensity=ramp*ramp*(3-2*ramp);
 }
 function spawnHQEnemy(){
  if(!base||base.hp<=0)return;const sy=base.y+base.h+55;let sp=null;
@@ -5391,12 +5394,12 @@ function drawBase(){
  g.restore();
 }
 function drawWeatherOverlay(){
- if(weather!=='rain')return;const t=performance.now();gm.save();
- gm.fillStyle='rgba(5,11,18,.34)';gm.fillRect(0,0,W,H);
- for(let i=0;i<4;i++){const yy=((t*.055+i*190)%(H+240))-120,gr=gm.createLinearGradient(0,yy-70,0,yy+90);gr.addColorStop(0,'rgba(120,155,178,0)');gr.addColorStop(.5,'rgba(120,155,178,.075)');gr.addColorStop(1,'rgba(120,155,178,0)');gm.fillStyle=gr;gm.fillRect(0,yy-70,W,160);}
- gm.save();gm.translate(-45,0);gm.rotate(-.16);for(let i=0;i<48;i++){const x=(i*71+((i*37)%53))%(W+150),y=((i*113+t*(.52+(i%5)*.035))%(H+190))-95,len=34+(i%4)*10;gm.fillStyle='rgba(205,230,245,'+(.22+(i%3)*.08)+')';gm.fillRect(x,y,2+(i%2),len);}gm.restore();
- gm.lineWidth=1.4;for(let i=0;i<9;i++){const x=(i*97+43)%W,y=70+((i*149+t*.018)%(H-140)),r=4+(i%4)*2;gm.strokeStyle='rgba(220,240,250,.18)';gm.beginPath();gm.arc(x,y,r,0,Math.PI*1.55);gm.stroke();}
- for(let i=0;i<14;i++){const x=(i*41+t*.11)%W,y=H-18-(i%3)*16,r=5+(i%3)*3;gm.strokeStyle='rgba(200,230,245,.28)';gm.beginPath();gm.ellipse(x,y,r,r*.28,0,0,6.28);gm.stroke();}
+ if(rainIntensity<=0)return;const t=performance.now(),rain=rainIntensity;gm.save();
+ gm.fillStyle='rgba(5,11,18,'+(.34*rain)+')';gm.fillRect(0,0,W,H);
+ for(let i=0;i<4;i++){const yy=((t*.055+i*190)%(H+240))-120,gr=gm.createLinearGradient(0,yy-70,0,yy+90);gr.addColorStop(0,'rgba(120,155,178,0)');gr.addColorStop(.5,'rgba(120,155,178,'+(.075*rain)+')');gr.addColorStop(1,'rgba(120,155,178,0)');gm.fillStyle=gr;gm.fillRect(0,yy-70,W,160);}
+ gm.save();gm.translate(-45,0);gm.rotate(-.16);for(let i=0;i<48;i++){const x=(i*71+((i*37)%53))%(W+150),y=((i*113+t*(.52+(i%5)*.035))%(H+190))-95,len=(34+(i%4)*10)*(.35+.65*rain),visible=Math.max(0,Math.min(1,(rain-(i*17%48)/48)*12));if(visible<=0)continue;gm.fillStyle='rgba(205,230,245,'+((.22+(i%3)*.08)*visible)+')';gm.fillRect(x,y,2+(i%2),len);}gm.restore();
+ gm.lineWidth=1.4;for(let i=0;i<9;i++){const x=(i*97+43)%W,y=70+((i*149+t*.018)%(H-140)),r=4+(i%4)*2;gm.strokeStyle='rgba(220,240,250,'+(.18*rain*rain)+')';gm.beginPath();gm.arc(x,y,r,0,Math.PI*1.55);gm.stroke();}
+ for(let i=0;i<14;i++){const x=(i*41+t*.11)%W,y=H-18-(i%3)*16,r=5+(i%3)*3;gm.strokeStyle='rgba(200,230,245,'+(.28*rain*rain)+')';gm.beginPath();gm.ellipse(x,y,r,r*.28,0,0,6.28);gm.stroke();}
  gm.restore();
 }
 const enemyInView=(o,cx,cy,m=120)=>o&&o.x>=cx-m&&o.x<=cx+W+m&&o.y>=cy-m&&o.y<=cy+H+m;
@@ -6557,11 +6560,11 @@ function loop(n){
 }
 let gameErrorCount=0;
 function reportGameError(error){
- gameErrorCount++;console.error('Tank game v162',error);
+ gameErrorCount++;console.error('Tank game v163',error);
  let panel=document.getElementById('runtimeError');
  if(!panel){panel=document.createElement('div');panel.id='runtimeError';panel.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;background:#422018;color:#fff2dc;padding:12px;border:1px solid #f7b083;border-radius:8px;font:12px system-ui;white-space:pre-wrap;max-height:35vh;overflow:auto';document.body.appendChild(panel);}
  const stack=String(error&&error.stack||error).split('\n').slice(0,4).join('\n');
- panel.textContent='v162 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
+ panel.textContent='v163 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 requestAnimationFrame(loop);
 </script>
