@@ -518,7 +518,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.10.147',FILE_CREATED_AT='2026/10/10 16:23',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.10.147',FILE_CREATED_AT='2026/10/10 16:30',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -2745,6 +2745,14 @@ function finalizeScore(cleared){
 }
 function humanMemory(h){return DETECT_MEMORY*(h&&h.elite?1.5:1);}
 function foundModePause(){return .5+R()*.5;}
+function enemyModePaused(o,dt=0){
+ const mode=o.st?'found':o.sus>0?'suspicious':'patrol';
+ if(o.lastAiMode===undefined)o.lastAiMode=mode;
+ if(o.lastAiMode!==mode){o.lastAiMode=mode;o.modePause=Math.max(o.foundPause||0,o.susPause||0,.5+R()*.5);}
+ const paused=(o.modePause||0)>0;
+ if(paused){o.modePause=Math.max(0,o.modePause-dt);o.foundPause=Math.max(0,(o.foundPause||0)-dt);o.susPause=Math.max(0,(o.susPause||0)-dt);o.sharePause=Math.max(0,(o.sharePause||0)-dt);o.firePause=Math.max(0,(o.firePause||0)-dt);}
+ return paused;
+}
 function enterHumanFound(h,key,pause=null){
  if(!h||!h.alive||h.stun>0||(key==='p'&&debugMode>=2))return false;
  if(h.chatT>0)cancelPatrolChat(h);
@@ -2752,6 +2760,7 @@ function enterHumanFound(h,key,pause=null){
  if(tg)h.face=Math.atan2(tg.y-h.y,tg.x-h.x);
  if(fresh){
   h.foundPause=Math.max(h.foundPause||0,foundModePause());
+  enemyModePaused(h);
   h.ct=0;
   if(!h.elite&&!h.bu)h.bombAt=.8+R()*3.7;
   if(key==='p'&&scoreStats&&!scoreStats.finalized)scoreStats.foundEntries++;
@@ -2773,7 +2782,7 @@ function enterTankFound(e,key,pause=null){
  const fresh=!e.st,tg=targetObj(key);e.sus=0;e.susPhase=0;e.susHold=0;e.st=1;e.target=key;e.lost=DETECT_MEMORY;
  if(tg)e.ang=Math.atan2(tg.y-e.y,tg.x-e.x);
  if(fresh){
-  const react=pause==null?foundModePause():Math.max(0,pause);e.foundPause=Math.max(e.foundPause||0,react);e.firePause=Math.max(e.firePause||0,.5);activateStaticTank(e);
+  const react=foundModePause();e.foundPause=Math.max(e.foundPause||0,react);e.firePause=Math.max(e.firePause||0,react);enemyModePaused(e);activateStaticTank(e);
   if(key==='p'&&scoreStats&&!scoreStats.finalized)scoreStats.foundEntries++;
  }
  return fresh;
@@ -4200,6 +4209,7 @@ function update(dt){
   if(h.stunRecover>0){
    h.stunRecover=Math.max(0,h.stunRecover-dt);h.sus=0;h.st=0;h.target=null;h.lost=0;h.wallFollow=null;h.burstLeft=0;h.cd=0;continue;
   }
+  if(enemyModePaused(h,dt))continue;
   // 疑惑モード：開始時に0.5〜1秒停止し、その後2秒間の円形索敵。索敵距離は通常の1.5倍。
   // エリートは最初の2秒、プレイヤー方向へ接近してから2秒間の円形索敵を行う。
   if(h.sus>0&&!h.st){
@@ -4224,12 +4234,13 @@ function update(dt){
     // 発見モードへの移行直後は、0.5〜1秒の静止が終わるまで発砲しない。
     if(!movePause&&d<150&&h.cd<=0&&vis){if(h.elite){fire(h.x,h.y,toT+(R()-.5)*.08,'e','r',330,150);h.cd=1.35;}else{if(!(h.burstLeft>0))h.burstLeft=3;fire(h.x,h.y,toT+(R()-.5)*.15,'e','r',330,150);h.burstLeft--;h.cd=h.burstLeft>0?.14:2;}}}
   }
-  if(!h.st){h.wallFollow=null;if(!(h.chatResumeT>0))h.face=patrol(h,dt,30*(h.elite?1.2:1),8);}
+  if(!h.st){h.wallFollow=null;if(!enemyModePaused(h)&&!(h.chatResumeT>0))h.face=patrol(h,dt,30*(h.elite?1.2:1),8);}
  }
  for(const h of humans)h.walking=enemyIsWalking(h);
  // 敵戦車も歩兵と同じ索敵ルール。相棒も標的になる。
  for(const e of etanks){if(!e.alive)continue;
   if(e.areaDebugStatic){e.st=0;e.target=null;e.lost=0;e.sus=0;e.cc=99;e.vc=99;continue;}
+  if(enemyModePaused(e,dt))continue;
   const silentDrill=!!(p.drill>0&&p.drillSilentTank===e&&p.drillTankTarget===e&&!e.st&&!e.static);
   const detected=silentDrill?null:findDetectedTarget(e,e.ang);if(detected)enterTankFound(e,detected.key,.5);
   let tg=targetObj(e.target);if(e.st&&!tg){e.st=0;e.target=null;e.foundPause=0;}tg=targetObj(e.target);
@@ -4251,7 +4262,7 @@ function update(dt){
    else continue; // 発見していない間は、走行も射撃もしない。
   }
   if(!e.st){
-   if(!e.static){const a=patrol(e,dt,20,TANK_HIT);e.body=a;}
+   if(!enemyModePaused(e)&&!e.static){const a=patrol(e,dt,20,TANK_HIT);e.body=a;}
    if(e.scanTurret){
     // 通常戦車・停止戦車とも、探索型は車体正面を中心に左右75°を走査する。
     e.scanPhase=(e.scanPhase||0)+(e.scanRate||.5)*dt;
@@ -4844,7 +4855,7 @@ function fighterShape(x,y,body,sz=34){
 function drawVehicle(v,x,y,body,ang,layer='both'){if(v&&v.kind==='truck'){if(layer==='both')truckShape(x,y,body,28);}else if(v&&v.kind==='fighter'){if(layer==='both')fighterShape(x,y,body,36);}else if(v)tankShape(x,y,body,ang,v.t,TANK_DRAW,layer);}
 function enemyIsWalking(h){return !!(h.alive&&!(h.stun>0)&&!(h.stunRecover>0)&&!h.houndPinned&&!(h.blastAirT>0)&&Math.hypot(h.x-h.walkStartX,h.y-h.walkStartY)>.02);}
 function soldier(x,y,face,isP,alert,moving,elite=false){
- const sw=moving?Math.sin(performance.now()/110)*3:0;
+ const sw=moving?Math.sin(performance.now()/110)*3:0,armSw=!isP&&alert?0:sw;
  const uni=isP?'#6f8a55':elite?'#f2f1e9':alert?'#a8463c':'#56628a',dk=isP?'#4a6038':elite?'#b9bab5':alert?'#6e2a24':'#3c4566',hel=isP?'#587044':elite?'#dedfd9':alert?'#7a2e28':'#444f70';
  g.save();g.translate(x,y);
  g.fillStyle='rgba(0,0,0,.28)';g.beginPath();g.ellipse(1,2,8,10,0,0,6.28);g.fill();
@@ -4855,11 +4866,11 @@ function soldier(x,y,face,isP,alert,moving,elite=false){
  g.fillStyle='#0c0c0c';g.beginPath();g.ellipse(0,0,6.5,9.5,0,0,6.28);g.fill();g.fillStyle=uni;g.beginPath();g.ellipse(0,0,5.3,8.3,0,0,6.28);g.fill();
  if(!isP){
   if(alert){g.fillStyle='#0c0c0c';g.fillRect(2,-2.5,18,5);g.fillStyle='#3a3a42';g.fillRect(4,-1.5,15,3);g.fillStyle='#7a5a3a';g.fillRect(2,-2,6,4);}
-  g.fillStyle='#0c0c0c';g.fillRect(-2+sw,-9,11,4.5);g.fillRect(-2-sw,4.5,9,4.5);g.fillStyle=uni;g.fillRect(-1+sw,-8,9,2.5);g.fillRect(-1-sw,5.5,7,2.5);
-  g.fillStyle='#e0b890';g.fillRect(7+sw,-3.5,3,2);g.fillRect(5-sw,3,3,2);
+  g.fillStyle='#0c0c0c';g.fillRect(-2+armSw,-9,11,4.5);g.fillRect(-2-armSw,4.5,9,4.5);g.fillStyle=uni;g.fillRect(-1+armSw,-8,9,2.5);g.fillRect(-1-armSw,5.5,7,2.5);
+  g.fillStyle='#e0b890';g.fillRect(7+armSw,-3.5,3,2);g.fillRect(5-armSw,3,3,2);
  }else{
-  g.fillStyle='#0c0c0c';g.fillRect(-3+sw,-10.5,10,4.5);g.fillRect(-3-sw,6,10,4.5);g.fillStyle=uni;g.fillRect(-2+sw,-9.5,8,2.5);g.fillRect(-2-sw,7,8,2.5);
-  g.fillStyle='#e0b890';g.fillRect(5+sw,-9.5,2.5,2.5);g.fillRect(5-sw,7,2.5,2.5);
+  g.fillStyle='#0c0c0c';g.fillRect(-3+sw,-10.5,10,4.5);g.fillRect(-3-sw,6,10,4.5);g.fillStyle=uni;g.fillRect(-2+armSw,-9.5,8,2.5);g.fillRect(-2-armSw,7,8,2.5);
+  g.fillStyle='#e0b890';g.fillRect(5+sw,-9.5,2.5,2.5);g.fillRect(5-armSw,7,2.5,2.5);
  }
  g.fillStyle='#0c0c0c';g.beginPath();g.arc(1,0,6,0,6.28);g.fill();
  g.fillStyle='#e0b890';g.beginPath();g.arc(1.6,0,4.9,0,6.28);g.fill();
