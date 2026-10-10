@@ -518,7 +518,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.10.147',FILE_CREATED_AT='2026/10/10 14:53',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.10.147',FILE_CREATED_AT='2026/10/10 14:58',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -5370,7 +5370,7 @@ function draw(near){
  drawTankWrecks(cx,cy);
  for(const b of bombs){const own=b.own==='p',rr=own?7.5:5.5;g.fillStyle=own?'#181818':'#111';g.beginPath();g.arc(b.x,b.y,rr,0,6.28);g.fill();if(own){g.strokeStyle='rgba(255,95,75,.8)';g.lineWidth=1.5;g.beginPath();g.arc(b.x,b.y,rr+2+(Math.sin(performance.now()/130)+1)*1.2,0,6.28);g.stroke();}if(Math.floor(performance.now()/(own?240:400))%2){g.fillStyle=own?'#ff4f45':'#ff9a2a';g.fillRect(b.x-(own?2:1.5),b.y-(own?2:1.5),own?4:3,own?4:3);}}
  for(const w of waves){const k=1-w.r/w.max;g.strokeStyle='rgba(255,170,60,'+k+')';g.lineWidth=6;g.beginPath();g.arc(w.x,w.y,w.r,0,6.28);g.stroke();g.fillStyle='rgba(255,200,100,'+.35*k+')';g.fill();}
- for(const c of cars){const bushTank=c.kind==='tank'&&inBush(c);if(!bushTank)drawVehicle(c,c.x,c.y,c.body??-1.57,c.body??-1.57);const iy=c.y-(c.kind==='fighter'?66:c.kind==='truck'?42:50);markVehicle(c.x,iy,c.f<=0?'fuel':'ride');if(near===c)lab(c.t.n,c.x,iy-24,c.kind==='tank'?'bold 17px system-ui':'bold 14px system-ui','#fff');}
+ for(const c of cars){const foregroundVehicle=c.kind==='truck'||(c.kind==='tank'&&inBush(c));if(!foregroundVehicle)drawVehicle(c,c.x,c.y,c.body??-1.57,c.body??-1.57);const iy=c.y-(c.kind==='fighter'?66:c.kind==='truck'?42:50);markVehicle(c.x,iy,c.f<=0?'fuel':'ride');if(near===c)lab(c.t.n,c.x,iy-24,c.kind==='tank'?'bold 17px system-ui':'bold 14px system-ui','#fff');}
  const enemyAlpha=digEnemyAlpha();if(enemyAlpha>.001)for(const e of etanks){if(!enemyInView(e,cx,cy,140))continue;g.save();g.globalAlpha*=enemyAlpha;if(e.alive){if(!e.st){g.fillStyle='rgba(255,80,80,.035)';g.beginPath();g.moveTo(e.x,e.y);g.arc(e.x,e.y,detectOuterRange('p'),e.ang-DETECT_OUTER_HALF,e.ang+DETECT_OUTER_HALF);g.closePath();g.fill();g.fillStyle='rgba(255,80,80,.055)';g.beginPath();g.moveTo(e.x,e.y);g.arc(e.x,e.y,detectRange('p'),e.ang-DETECT_CENTER_HALF,e.ang+DETECT_CENTER_HALF);g.closePath();g.fill();}if(!inBush(e))tankShape(e.x,e.y,e.body,e.ang,{id:'enemy',col:'#4b5f9e'},TANK_DRAW);}else if(!e.wreckSpawned){g.fillStyle='#1c1a18';g.beginPath();g.arc(e.x,e.y,14,0,6.28);g.fill();}g.restore();if(e.alive&&enemyAlpha>.18){if(e.st)lab('!',e.x,e.y-38,'bold 18px system-ui','#ff5a5a');else if(e.sus>0)lab('?',e.x,e.y-38,'bold 18px system-ui','#ffd27a');}}
  for(const h of humans){const sniperFalling=!h.alive&&h.sniperFallT>0;if((!h.alive&&!sniperFalling)||!enemyInView(h,cx,cy,100))continue;const lift=sniperFalling?0:blastLift(h);if(!sniperFalling)drawBlastShadow(h);g.save();g.translate(0,-lift);g.globalAlpha*=enemyAlpha;if(sniperFalling){const fk=Math.max(0,Math.min(1,1-h.sniperFallT/Math.max(.01,h.sniperFallMax||.72))),side=(h.sniperFallA&&Math.sin(h.sniperFallA)<0?-1:1);g.translate(h.x,h.y);g.rotate(side*fk*1.18);g.translate(-h.x,-h.y);g.globalAlpha*=Math.max(.35,1-fk*.38);}soldier(h.x,h.y,h.face,false,sniperFalling?false:h.st,!sniperFalling&&!!h.walking,!!h.elite);if(h.elite){g.save();g.translate(h.x,h.y-12);g.fillStyle='#ffd56a';g.strokeStyle='#3a2a10';g.lineWidth=1;g.beginPath();g.moveTo(0,-5);g.lineTo(5,0);g.lineTo(0,5);g.lineTo(-5,0);g.closePath();g.fill();g.stroke();g.restore();}
  if(!sniperFalling&&h.humanBurnT>0){const tt=performance.now()*.018;g.save();g.globalCompositeOperation='lighter';flameBlob(h.x-4+Math.sin(tt)*2,h.y+2,7+Math.sin(tt*1.3)*1.5,tt,.42);flameBlob(h.x+4+Math.cos(tt*.8)*2,h.y-5,9+Math.sin(tt*.9+1)*2,tt+1.7,.7);flameBlob(h.x+Math.sin(tt*.65)*3,h.y-12,6+Math.sin(tt*1.6+2)*1.5,tt+3.1,.9);g.restore();}
@@ -5411,7 +5411,7 @@ function draw(near){
  for(const ally of (allies||[]))if(ally.alive&&ally.chute>0)drawAllyParachute(ally);
  drawBurningNature(cx,cy);drawFlame();
  // 草むらにいる戦車は車体も砲塔もここで一度だけ描画し、すべての草より手前に表示する。
- for(const c of cars)if(c.kind==='tank'&&inBush(c))drawVehicle(c,c.x,c.y,c.body??-1.57,c.body??-1.57);
+ for(const c of cars)if(c.kind==='truck'||(c.kind==='tank'&&inBush(c)))drawVehicle(c,c.x,c.y,c.body??-1.57,c.body??-1.57);
  if(enemyAlpha>.001){g.save();g.globalAlpha*=enemyAlpha;for(const e of etanks)if(e.alive&&inBush(e))tankShape(e.x,e.y,e.body,e.ang,{id:'enemy',col:'#4b5f9e'},TANK_DRAW);g.restore();}
  if(p.tank&&p.tank.kind==='tank'&&inBush(p))drawVehicle(p.tank,p.x,p.y,p.body,p.ang);
  drawAllWaterCrossings(cx,cy);
