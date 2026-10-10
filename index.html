@@ -518,7 +518,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.10.147',FILE_CREATED_AT='2026/10/10 16:21',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.10.147',FILE_CREATED_AT='2026/10/10 16:23',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -4854,7 +4854,7 @@ function soldier(x,y,face,isP,alert,moving,elite=false){
  g.fillStyle='#0c0c0c';g.fillRect(-10,-5.5,6,11);g.fillStyle=dk;g.fillRect(-9,-4.5,4,9);
  g.fillStyle='#0c0c0c';g.beginPath();g.ellipse(0,0,6.5,9.5,0,0,6.28);g.fill();g.fillStyle=uni;g.beginPath();g.ellipse(0,0,5.3,8.3,0,0,6.28);g.fill();
  if(!isP){
-  g.fillStyle='#0c0c0c';g.fillRect(2,-2.5,18,5);g.fillStyle='#3a3a42';g.fillRect(4,-1.5,15,3);g.fillStyle='#7a5a3a';g.fillRect(2,-2,6,4);
+  if(alert){g.fillStyle='#0c0c0c';g.fillRect(2,-2.5,18,5);g.fillStyle='#3a3a42';g.fillRect(4,-1.5,15,3);g.fillStyle='#7a5a3a';g.fillRect(2,-2,6,4);}
   g.fillStyle='#0c0c0c';g.fillRect(-2+sw,-9,11,4.5);g.fillRect(-2-sw,4.5,9,4.5);g.fillStyle=uni;g.fillRect(-1+sw,-8,9,2.5);g.fillRect(-1-sw,5.5,7,2.5);
   g.fillStyle='#e0b890';g.fillRect(7+sw,-3.5,3,2);g.fillRect(5-sw,3,3,2);
  }else{
