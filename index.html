@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.10.150</title>
+<title>戦車ゲーム 2026.10.10.151</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -456,7 +456,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <p>詳しいキー配置と各スキルの操作はタイトル画面の「操作説明」、またはスキル選択画面のⓘでも確認できます。</p>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-player"><h2>4. 歩兵・潜入・地形</h2>
-<ul><li>歩兵のライフはハート3個。乗り物に搭乗していないときは爆弾やスキルを使用できます。</li><li>近くの敵兵にAで組み付くと、敵を気絶させられます。</li><li>草むらは敵の視線を避けるための隠蔽場所です。雨天時は水中にいることも発見を避ける条件になります。</li><li>停止中は敵の索敵距離が短くなります。見つかった後も、条件を満たして隠れ続けると発見状態を解除できます。</li><li>建物・岩・木・防護壁などは、種類に応じて通行や射線を遮ります。川や泥は移動にも影響します。</li></ul>
+<ul><li>歩兵のライフはハート3個。乗り物に搭乗していないときは爆弾やスキルを使用できます。</li><li>近くの敵兵にAで組み付くと、敵を気絶させられます。</li><li>草むらは敵の視線を避けるための隠蔽場所です。草に隠れる人のアイコンと緑の「隠密」が隠れた状態の目印です。発見解除前は黄色の「解除待ち」を表示します。雨天時は水中にいることも発見を避ける条件になります。</li><li>停止中は敵の索敵距離が短くなります。見つかった後も、条件を満たして隠れ続けると発見状態を解除できます。</li><li>建物・岩・木・防護壁などは、種類に応じて通行や射線を遮ります。川や泥は移動にも影響します。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-enemies"><h2>5. 敵兵と敵戦車のAI</h2>
 <h3>敵歩兵</h3><p>巡回・疑惑・発見の状態を持ちます。通常の巡回に加え、建物の周囲を回る巡回ルートもあります。音や爆発を警戒し、プレイヤーを発見すると短い反応時間を挟んで追跡・射撃します。エリート兵は通常兵と性能・挙動が異なります。</p>
@@ -518,7 +518,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.10.150',FILE_CREATED_AT='2026/10/10 23:17',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.10.151',FILE_CREATED_AT='2026/10/10 23:18',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -5420,14 +5420,23 @@ function drawHudBomb(x,y,planted){
  if(im&&im.complete&&im.naturalWidth>0)g.drawImage(im,x-13.5,y-13.5,27,27);
 }
 function drawStealthHudIcon(x,y,col){
- const im=HUD_ICONS.stealth;
- if(im&&im.complete&&im.naturalWidth>0){
-  g.save();
-  if(col==='#ffd27a'){g.shadowColor='rgba(255,210,122,.55)';g.shadowBlur=8;}
-  else if(col==='#9be07a'){g.shadowColor='rgba(155,224,122,.35)';g.shadowBlur=6;}
-  g.drawImage(im,x-14.5,y-12,29,24);
-  g.restore();
- }
+ const waiting=col==='#ffd27a';
+ g.save();g.translate(x,y);
+ // 草の陰にいる人と状態記号を、画像読み込みに依存せず描画する。
+ g.lineWidth=2.5;g.lineJoin='round';g.lineCap='round';
+ g.strokeStyle='#182014';g.fillStyle='#eee9d3';
+ g.beginPath();g.arc(-2,-8,5,0,Math.PI*2);g.fill();g.stroke();
+ g.beginPath();g.moveTo(-9,6);g.lineTo(-8,-1);g.quadraticCurveTo(-2,-6,4,-1);g.lineTo(5,6);g.closePath();g.fill();g.stroke();
+ g.fillStyle=waiting?'#c49336':'#659b3f';g.strokeStyle='#182014';
+ g.beginPath();g.moveTo(-16,13);g.lineTo(-16,1);g.lineTo(-9,7);g.lineTo(-10,-1);g.lineTo(-2,7);g.lineTo(3,0);g.lineTo(5,8);g.lineTo(13,2);g.lineTo(14,13);g.closePath();g.fill();g.stroke();
+ g.fillStyle=col;g.beginPath();g.arc(11,-10,7,0,Math.PI*2);g.fill();g.stroke();
+ g.strokeStyle='#182014';g.lineWidth=2;
+ if(waiting){g.beginPath();g.moveTo(11,-14);g.lineTo(11,-10);g.lineTo(14,-8);g.stroke();}
+ else{g.beginPath();g.moveTo(7.5,-10);g.lineTo(10,-7.5);g.lineTo(14.5,-12);g.stroke();}
+ g.textAlign='left';g.textBaseline='middle';g.font='bold 12px system-ui';g.lineWidth=3.5;
+ const label=waiting?'解除待ち':'隠密';
+ g.strokeStyle='rgba(8,12,6,.95)';g.strokeText(label,22,1);g.fillStyle=col;g.fillText(label,22,1);
+ g.restore();
 }
 function drawInfantryBottomHud(){
  if(p.tank)return;
@@ -6371,11 +6380,11 @@ function loop(n){
 }
 let gameErrorCount=0;
 function reportGameError(error){
- gameErrorCount++;console.error('Tank game v150',error);
+ gameErrorCount++;console.error('Tank game v151',error);
  let panel=document.getElementById('runtimeError');
  if(!panel){panel=document.createElement('div');panel.id='runtimeError';panel.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;background:#422018;color:#fff2dc;padding:12px;border:1px solid #f7b083;border-radius:8px;font:12px system-ui;white-space:pre-wrap;max-height:35vh;overflow:auto';document.body.appendChild(panel);}
  const stack=String(error&&error.stack||error).split('\n').slice(0,4).join('\n');
- panel.textContent='v150 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
+ panel.textContent='v151 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 requestAnimationFrame(loop);
 </script>
