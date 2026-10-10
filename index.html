@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.10.151</title>
+<title>戦車ゲーム 2026.10.10.152</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -456,7 +456,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <p>詳しいキー配置と各スキルの操作はタイトル画面の「操作説明」、またはスキル選択画面のⓘでも確認できます。</p>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-player"><h2>4. 歩兵・潜入・地形</h2>
-<ul><li>歩兵のライフはハート3個。乗り物に搭乗していないときは爆弾やスキルを使用できます。</li><li>近くの敵兵にAで組み付くと、敵を気絶させられます。</li><li>草むらは敵の視線を避けるための隠蔽場所です。草に隠れる人のアイコンと緑の「隠密」が隠れた状態の目印です。発見解除前は黄色の「解除待ち」を表示します。雨天時は水中にいることも発見を避ける条件になります。</li><li>停止中は敵の索敵距離が短くなります。見つかった後も、条件を満たして隠れ続けると発見状態を解除できます。</li><li>建物・岩・木・防護壁などは、種類に応じて通行や射線を遮ります。川や泥は移動にも影響します。</li></ul>
+<ul><li>歩兵のライフはハート3個。乗り物に搭乗していないときは爆弾やスキルを使用できます。</li><li>近くの敵兵にAで組み付くと、敵を気絶させられます。</li><li>草むらは敵の視線を避けるための隠蔽場所です。目に斜線のアイコンと緑の「隠密」が隠れた状態の目印です。発見解除前は黄色の「解除待ち」を表示します。雨天時は水中にいることも発見を避ける条件になります。</li><li>停止中は敵の索敵距離が短くなります。見つかった後も、条件を満たして隠れ続けると発見状態を解除できます。</li><li>建物・岩・木・防護壁などは、種類に応じて通行や射線を遮ります。川や泥は移動にも影響します。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-enemies"><h2>5. 敵兵と敵戦車のAI</h2>
 <h3>敵歩兵</h3><p>巡回・疑惑・発見の状態を持ちます。通常の巡回に加え、建物の周囲を回る巡回ルートもあります。音や爆発を警戒し、プレイヤーを発見すると短い反応時間を挟んで追跡・射撃します。エリート兵は通常兵と性能・挙動が異なります。</p>
@@ -475,7 +475,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <li><strong>投擲：</strong>進行方向へ最大11mの距離で爆弾を投げます。5秒で再使用可能。</li>
 <li><strong>潜伏：</strong>0.5秒静止して潜伏準備後、最大5秒間潜伏。解除後は5秒チャージ。水中は移動速度60%、泥では潜伏を解除します。潜伏開始1秒後に敵表示が隠れます。</li>
 <li><strong>偽装：</strong>5秒間残る身代わりを設置して敵の注意をそらします。チャージ8秒。</li>
-<li><strong>増援：</strong>味方兵士がパラシュート降下して戦闘を援護。同時に最大5人。チャージ6秒。</li>
+<li><strong>増援：</strong>味方兵士がパラシュート降下して戦闘を援護。同時に最大5人。チャージ6秒。着地後、オブジェクトの爆発や敵戦車の砲撃爆風を受けると吹き飛ばされ、5秒間気絶します。気絶中は移動と射撃を停止し、頭上の星が目印になります。</li>
 <li><strong>突貫：</strong>正面にドリルを展開。持続5秒、終了後は6秒チャージ。遮蔽物の破壊に利用できます。</li>
 <li><strong>建築：</strong>前方にコンクリート防護壁を設置。最大5枚、チャージ1.5秒。</li>
 <li><strong>火炎：</strong>前方約20mまで火炎を伸ばし、長押しで連続放射。最大3秒分を蓄積し、消費分が徐々に回復します。</li>
@@ -518,7 +518,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.10.151',FILE_CREATED_AT='2026/10/10 23:18',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.10.152',FILE_CREATED_AT='2026/10/10 23:27',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -1004,7 +1004,7 @@ function explodeObject(o,fxOn=true){
   const fromRadio=radioStrikeKillContext>0||!!o.radioStrikeOrigin;
   if(fromRadio)radioStrikeKillContext++;
   try{
-   playerCannonGroundImpact(cx,cy,newCombatAction(fromRadio?'radioBomb':'cannon'));
+   playerCannonGroundImpact(cx,cy,newCombatAction(fromRadio?'radioBomb':'cannon'),28,5);
    // オブジェクト爆発は周囲100px以内の別オブジェクトを炎上させ、連鎖爆発のきっかけにする。
    damageObjectsInRadius(cx,cy,100,'objectBlast');
   }finally{if(fromRadio)radioStrikeKillContext--;}
@@ -3273,23 +3273,23 @@ function updateBlastFlight(o,dt){
 }
 function blastLift(o){if(!o||!(o.blastAirT>0))return 0;const d=o.blastAirDur||.42,t=Math.max(0,Math.min(1,1-o.blastAirT/d));return Math.sin(Math.PI*t)*18;}
 function drawBlastShadow(o){const z=blastLift(o);if(z<=.2)return;g.save();g.globalAlpha=.18*(1-z/30);g.fillStyle='#000';g.beginPath();g.ellipse(o.x,o.y+7,9+z*.12,4+z*.04,0,0,6.28);g.fill();g.restore();}
-function cannonBlastPush(x,y,from){
+function cannonBlastPush(x,y,from,allyStun=from==='e'?5:0){
  // 爆風は約0.4秒の滞空を挟んでふわっと吹き飛ぶ。プレイヤー主砲の敵兵吹き飛ばしは1.5倍を維持。
  const rad=263,baseForce=82,humanForce=from==='p'?baseForce*1.5:baseForce;
  for(const h of humans||[])if(h.alive)beginBlastFlight(h,x,y,rad,humanForce,8,5);
- for(const a of allies||[])if(a.alive&&!(a.chute>0))beginBlastFlight(a,x,y,rad,baseForce,8,0);
+ for(const a of allies||[])if(a.alive&&!(a.chute>0))beginBlastFlight(a,x,y,rad,baseForce,8,allyStun);
  // 敵戦車砲を含め、歩兵状態のプレイヤーも爆風で吹き飛ぶ。
  if(p&&!p.tank&&!(p.dig>0))beginBlastFlight(p,x,y,rad,baseForce,8,0);
 }
 function fire(x,y,a,from,k,spd,rng,dmg){if(from==='p'&&scoreStats&&!scoreStats.finalized){scoreStats.shots++;if(k==='s')scoreStats.sniperShots++;else if(k==='c')scoreStats.cannonShots++;else scoreStats.mgShots++;}if(from==='p')sfx(k==='c'?'cannon':k==='s'?'sniper':'mg');else if(from==='ally')sfx('mg');else if(from==='e')sfx(k==='c'?'enemyCannon':'enemyGun');const actionId=(from==='p'&&(k==='c'||k==='s'))?newCombatAction(k==='s'?'sniper':'cannon'):0;if(from==='p'&&k==='c')suspectTanksNear(x,y,520);bullets.push({x,y,sx:x,sy:y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,from,k,dmg:dmg||0,life:rng/spd,actionId});}
 function enemyCannonSpeed(){return p&&p.tank&&p.tank.kind==='tank'?(p.tank.t.cspd||630):630;}
 function cannonImpactFx(x,y){fb(x,y,125);burst(x,y,165,'#ff7a28',560);burst(x,y,78,'#fff2a6',720);burst(x,y,30,'#ffffff',820);shake=Math.max(shake,18);flash=Math.max(flash,.62);}
-function cannonImpact(x,y,from){cannonImpactFx(x,y);cannonBlastPush(x,y,from);stunHoundAtBlast(x,y,95);damageObjectsInRadius(x,y,60,'cannonBlast');if(from==='p')suspectHumansNear(x,y,500);else suspectTanksNear(x,y,450);}
-function playerCannonGroundImpact(x,y,actionId=0,humanKillRadius=28){
+function cannonImpact(x,y,from,allyStun=from==='e'?5:0){cannonImpactFx(x,y);cannonBlastPush(x,y,from,allyStun);stunHoundAtBlast(x,y,95);damageObjectsInRadius(x,y,60,'cannonBlast');if(from==='p')suspectHumansNear(x,y,500);else suspectTanksNear(x,y,450);}
+function playerCannonGroundImpact(x,y,actionId=0,humanKillRadius=28,allyStun=0){
  // プレイヤー戦車の主砲が地形・遮蔽物へ着弾した時の標準処理。
  // 壁への直撃だけ敵歩兵の撃破範囲を設置爆弾相当(95px)へ拡張する。
  // オブジェクトの連鎖爆発などは従来の範囲(28px)を維持する。
- cannonImpact(x,y,'p');
+ cannonImpact(x,y,'p',allyStun);
  explode(x,y,28,false,'p',actionId,humanKillRadius);
  carve(x,y,60,true,'cannonBlast');
  burst(x,y,22,'#a89a74',260);
@@ -3317,11 +3317,19 @@ function summonAlly(){
  const startY=Math.max(45,landY-320);allies.push({id:++allySeq,x:ax,y:startY,startY,landY,alive:true,chute:3,chuteTotal:3,shotCd:.2,burstLeft:3,face:p.body,slot});setSkillCooldown(6);sfx('ally');say('増援を要請! '+(active+1)+'/5');
 }
 let allyTargetRefreshAt=0;
+function drawAllyStun(ally){
+ if(!(ally.stun>0))return;
+ const t=performance.now()*.004;
+ for(let i=0;i<3;i++){const a=t+i*Math.PI*2/3;lab('★',ally.x+Math.cos(a)*12,ally.y-18+Math.sin(a)*4,'bold 11px system-ui','#ffd85a');}
+}
 function updateAlly(dt){
  const active=(allies||[]).filter(a=>a.alive),ready=[];
  for(const ally of active){
   if(ally.chute>0){ally.chute=Math.max(0,ally.chute-dt);const total=ally.chuteTotal||3,t=1-ally.chute/total,e=t*t*(3-2*t);ally.y=(ally.startY??ally.y)+(ally.landY-(ally.startY??ally.y))*e;if(ally.chute<=0){ally.y=ally.landY;ally.chute=0;sfx('ally');say('増援が到着!');}continue;}
-  if(updateBlastFlight(ally,dt))continue;if(!ally.frontline&&D(ally,p)>900){ally.alive=false;continue;}ally.shotCd-=dt;ready.push(ally);
+  if(updateBlastFlight(ally,dt))continue;
+  if((ally.stun||0)>0){ally.stun=Math.max(0,ally.stun-dt);ally._combatTarget=null;ally.burstLeft=3;continue;}
+  if((ally.stunRecover||0)>0){ally.stunRecover=Math.max(0,ally.stunRecover-dt);continue;}
+  if(!ally.frontline&&D(ally,p)>900){ally.alive=false;continue;}ally.shotCd-=dt;ready.push(ally);
  }
  const range=264,now=performance.now(),refresh=now>=allyTargetRefreshAt;
  if(refresh){
@@ -5421,22 +5429,17 @@ function drawHudBomb(x,y,planted){
 }
 function drawStealthHudIcon(x,y,col){
  const waiting=col==='#ffd27a';
- g.save();g.translate(x,y);
- // 草の陰にいる人と状態記号を、画像読み込みに依存せず描画する。
- g.lineWidth=2.5;g.lineJoin='round';g.lineCap='round';
- g.strokeStyle='#182014';g.fillStyle='#eee9d3';
- g.beginPath();g.arc(-2,-8,5,0,Math.PI*2);g.fill();g.stroke();
- g.beginPath();g.moveTo(-9,6);g.lineTo(-8,-1);g.quadraticCurveTo(-2,-6,4,-1);g.lineTo(5,6);g.closePath();g.fill();g.stroke();
- g.fillStyle=waiting?'#c49336':'#659b3f';g.strokeStyle='#182014';
- g.beginPath();g.moveTo(-16,13);g.lineTo(-16,1);g.lineTo(-9,7);g.lineTo(-10,-1);g.lineTo(-2,7);g.lineTo(3,0);g.lineTo(5,8);g.lineTo(13,2);g.lineTo(14,13);g.closePath();g.fill();g.stroke();
- g.fillStyle=col;g.beginPath();g.arc(11,-10,7,0,Math.PI*2);g.fill();g.stroke();
- g.strokeStyle='#182014';g.lineWidth=2;
- if(waiting){g.beginPath();g.moveTo(11,-14);g.lineTo(11,-10);g.lineTo(14,-8);g.stroke();}
- else{g.beginPath();g.moveTo(7.5,-10);g.lineTo(10,-7.5);g.lineTo(14.5,-12);g.stroke();}
+ g.save();g.translate(x,y);g.lineJoin='round';g.lineCap='round';
+ // 現在のアイコン枠に収めた太い目の輪郭と斜線。暗い縁取りで背景から分離する。
+ const eye=()=>{g.beginPath();g.moveTo(-14,0);g.bezierCurveTo(-7,-11,7,-11,14,0);g.bezierCurveTo(7,11,-7,11,-14,0);g.closePath();};
+ eye();g.fillStyle='rgba(12,18,9,.88)';g.fill();g.strokeStyle='#11180d';g.lineWidth=6;g.stroke();
+ eye();g.strokeStyle=col;g.lineWidth=3;g.stroke();
+ g.beginPath();g.arc(0,0,4,0,Math.PI*2);g.fillStyle=col;g.fill();
+ g.beginPath();g.moveTo(-12,11);g.lineTo(12,-11);g.strokeStyle='#11180d';g.lineWidth=7;g.stroke();
+ g.strokeStyle='#f4f5df';g.lineWidth=3.5;g.stroke();
  g.textAlign='left';g.textBaseline='middle';g.font='bold 12px system-ui';g.lineWidth=3.5;
  const label=waiting?'解除待ち':'隠密';
- g.strokeStyle='rgba(8,12,6,.95)';g.strokeText(label,22,1);g.fillStyle=col;g.fillText(label,22,1);
- g.restore();
+ g.strokeStyle='rgba(8,12,6,.95)';g.strokeText(label,22,1);g.fillStyle=col;g.fillText(label,22,1);g.restore();
 }
 function drawInfantryBottomHud(){
  if(p.tank)return;
@@ -5624,7 +5627,7 @@ function draw(near){
   else{g.fillStyle=b.from==='p'?'#ffd84a':b.from==='ally'?'#8fd7ff':'#ff8a5a';g.fillRect(-10,-1.5,13,3);g.fillStyle='#fff';g.fillRect(-2,-1,5,2);}
   g.restore();}
  if(decoy){g.globalAlpha=.7;soldier(decoy.x,decoy.y,decoy.face,true,false,false);g.globalAlpha=1;g.strokeStyle='rgba(255,230,120,.8)';g.lineWidth=2;g.beginPath();g.arc(decoy.x,decoy.y,16,0,6.28*decoy.t/5);g.stroke();const pulse=(performance.now()/750)%1;g.globalAlpha=1-pulse;g.beginPath();g.arc(decoy.x,decoy.y,18+pulse*34,0,6.28);g.stroke();g.globalAlpha=1;}
- for(const ally of (allies||[]))if(ally.alive&&!(ally.chute>0)){drawBlastShadow(ally);soldier(ally.x,ally.y-blastLift(ally),ally.face,true,false,false);}
+ for(const ally of (allies||[]))if(ally.alive&&!(ally.chute>0)){drawBlastShadow(ally);soldier(ally.x,ally.y-blastLift(ally),ally.face,true,false,false);drawAllyStun(ally);}
  drawHound();
  for(const ab of airbombs){const mt=ab.maxT||.48,k=Math.max(0,Math.min(1,1-ab.t/mt));g.fillStyle=ab.fighter?'#252b31':'#171717';g.beginPath();g.ellipse(ab.x,ab.y,ab.fighter?7:5,ab.fighter?13:10,0,0,6.28);g.fill();g.strokeStyle=ab.fighter?'rgba(180,220,255,.65)':'rgba(255,190,80,.55)';g.beginPath();g.arc(ab.x,ab.y,(ab.fighter?20:14)*k,0,6.28);g.stroke();}
  if(airstrike){g.save();g.translate(airstrike.x,airstrike.y);g.rotate(-Math.PI/2);g.scale(2,2);g.fillStyle='#303741';g.beginPath();g.moveTo(34,0);g.lineTo(8,-8);g.lineTo(-4,-34);g.lineTo(-13,-34);g.lineTo(-8,-7);g.lineTo(-34,-5);g.lineTo(-34,5);g.lineTo(-8,7);g.lineTo(-13,34);g.lineTo(-4,34);g.lineTo(8,8);g.closePath();g.fill();g.fillStyle='#9aa8b5';g.fillRect(-3,-3,24,6);g.restore();}
@@ -6380,11 +6383,11 @@ function loop(n){
 }
 let gameErrorCount=0;
 function reportGameError(error){
- gameErrorCount++;console.error('Tank game v151',error);
+ gameErrorCount++;console.error('Tank game v152',error);
  let panel=document.getElementById('runtimeError');
  if(!panel){panel=document.createElement('div');panel.id='runtimeError';panel.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;background:#422018;color:#fff2dc;padding:12px;border:1px solid #f7b083;border-radius:8px;font:12px system-ui;white-space:pre-wrap;max-height:35vh;overflow:auto';document.body.appendChild(panel);}
  const stack=String(error&&error.stack||error).split('\n').slice(0,4).join('\n');
- panel.textContent='v151 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
+ panel.textContent='v152 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 requestAnimationFrame(loop);
 </script>
