@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.11.164</title>
+<title>戦車ゲーム 2026.10.11.165</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -518,7 +518,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.11.164',FILE_CREATED_AT='2026/10/11 08:16',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.11.165',FILE_CREATED_AT='2026/10/11 08:45',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -3622,7 +3622,7 @@ function drawHound(){
  if(stunned){const tt=now*.006;g.fillStyle='#ffd85a';for(let q=0;q<3;q++){const aa=tt+q*2.094,x=hound.x+Math.cos(aa)*13,y=hound.y-15+Math.sin(aa)*4;g.beginPath();g.arc(x,y,2.5,0,6.28);g.fill();}}
 }
 function startAirstrike(){
- if(!radio||radio.got===false)return;airstrike={x:Math.max(100,Math.min(WW-100,p.x)),y:Math.min(WH+120,p.y+H*.55),endY:Math.max(-260,p.y-H*1.15),drop:.05,drops:0,maxDrops:22};sfx('radio');say('無線取得! 爆撃支援開始!');
+ if(!radio||radio.got===false)return;airstrike={x:Math.max(100,Math.min(WW-100,p.x)),y:Math.min(WH+120,p.y+H*.55),endY:Math.max(-420,p.y-H*1.15-160),drop:.05,drops:0,maxDrops:25};sfx('radio');say('無線取得! 爆撃支援開始!');
 }
 function airBombBlast(x,y,kind='radio'){
  stunHoundAtBlast(x,y,95);
@@ -6565,11 +6565,11 @@ function loop(n){
 }
 let gameErrorCount=0;
 function reportGameError(error){
- gameErrorCount++;console.error('Tank game v164',error);
+ gameErrorCount++;console.error('Tank game v165',error);
  let panel=document.getElementById('runtimeError');
  if(!panel){panel=document.createElement('div');panel.id='runtimeError';panel.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;background:#422018;color:#fff2dc;padding:12px;border:1px solid #f7b083;border-radius:8px;font:12px system-ui;white-space:pre-wrap;max-height:35vh;overflow:auto';document.body.appendChild(panel);}
  const stack=String(error&&error.stack||error).split('\n').slice(0,4).join('\n');
- panel.textContent='v164 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
+ panel.textContent='v165 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 requestAnimationFrame(loop);
 </script>
