@@ -444,10 +444,10 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <li><a href="#spec-save">スキル解放・保存・デバッグ</a></li>
 </ol></nav>
 <section class="spec-section" id="spec-goal"><h2>1. 目的とクリア条件</h2>
-<p>歩兵として敵陣へ侵入し、敵の監視や障害物を突破して、最終エリアの<strong>敵司令本部を破壊</strong>するとクリアです。敵に倒されると任務失敗となり、結果画面へ移行します。</p>
+<p>出撃前に3種類の作戦から選択します。<strong>拠点破壊</strong>は最終エリアの敵司令本部を破壊、<strong>最前線</strong>は3戦線を順番に各12秒制圧、<strong>潜入</strong>は徒歩・未発見状態で3端末を各4秒解析し、同じ条件で開始地点へ帰還するとクリアです。敵に倒されると任務失敗となり、結果画面へ移行します。</p>
 <p>歩兵の潜入に加え、戦車などの乗り物を利用した戦闘や、出撃前に選ぶスキルによる攻略ができます。</p><a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-map"><h2>2. ステージ構成とランダム生成</h2>
-<p>ステージは全7エリア。<strong>最初は草原、最後は敵司令本部</strong>で、その間の5エリアは候補から毎回ランダムに選ばれます。</p>
+<p>ステージは全7エリア。<strong>最初は草原、最後は敵司令本部</strong>で、その間の5エリアは候補から毎回重複なしでランダムに選ばれます。中間エリアにも草原が選ばれることがあります。</p>
 <p>中間エリア候補：草原／森林／村／丘陵／敵前線基地／街／敵迷路基地／湿地。</p>
 <ul><li>エリアごとに地形や建物、木、岩、草むら、障害物などの配置が異なります。</li><li>左右端の危険度は<strong>左重点・右重点・両側重点</strong>から毎回抽選され、巡回兵の配置や遮蔽物が変化します。</li><li>迷路基地と敵司令本部には、それぞれ固有の構造があります。</li><li>マップ・敵・障害物の配置は出撃ごとに再生成されます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
@@ -467,27 +467,27 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <ul><li><strong>戦車：</strong>主砲（D）とMG（S）で攻撃します。車種により性能が異なり、砲弾・MG弾数・燃料・耐久の管理が必要です。</li><li><strong>トラック：</strong>武器による攻撃はできませんが、走行時の接触で敵を倒せます。破壊されることもあります。</li><li><strong>戦闘機：</strong>地上の障害物を越えて飛行し、爆撃できます。</li><li>近づいてEで乗車し、再度Eで降車します。降車地点には十分な空きスペースが必要です。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-combat"><h2>7. 武器・爆発・破壊</h2>
-<ul><li><strong>歩兵の設置爆弾：</strong>Dで設置し、再度Dで起爆。爆風で敵・オブジェクトを攻撃できます。</li><li><strong>戦車主砲：</strong>壁や建物などに当たると炸裂。プレイヤーの主砲が壁に着弾したときは、着弾点から約95px以内の敵歩兵を撃破できます。</li><li><strong>MG・ライフル：</strong>弾の種類に応じた射程・被弾処理があります。狙撃弾は敵兵を貫通できます。</li><li><strong>破壊可能オブジェクト：</strong>木箱やドラム缶などは被弾・炎上・爆発に反応し、状況によって連鎖爆発も発生します。</li><li>爆風によって敵やプレイヤーが押し飛ばされ、気絶する場合があります。</li></ul>
+<ul><li><strong>歩兵の設置爆弾：</strong>Dで設置し、再度Dで起爆。爆風で敵・オブジェクトを攻撃できます。</li><li><strong>戦車主砲：</strong>壁や建物などに当たると炸裂。プレイヤーの主砲が壁に着弾したときは、着弾点から約9.5m以内の敵歩兵を撃破できます。</li><li><strong>MG・ライフル：</strong>弾の種類に応じた射程・被弾処理があります。狙撃弾は敵兵を貫通できます。</li><li><strong>破壊可能オブジェクト：</strong>木箱やドラム缶などは被弾・炎上・爆発に反応し、状況によって連鎖爆発も発生します。</li><li>爆風によって敵やプレイヤーが押し飛ばされ、気絶する場合があります。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-skills"><h2>8. 9種類のスキル</h2>
-<p><strong>作戦：</strong>拠点破壊は従来の司令本部破壊。最前線は3戦線を順番に12秒確保すると勝利。潜入は徒歩で3端末を各4秒解析し、開始地点へ未発見状態で帰還すると勝利。最前線には自動増援・制圧補給があり、潜入は警戒度65%以上で追跡増援が発生します。</p><p>通常プレイでは出撃前に<strong>解放済みスキルから1種類</strong>を選択します。スキルごとに使用方法・持続時間・チャージが異なります。</p>
+<p><strong>作戦：</strong>拠点破壊は従来の司令本部破壊。最前線は3戦線を順番に12秒確保すると勝利。潜入は徒歩で3端末を各4秒解析し、開始地点へ未発見状態で帰還すると勝利。最前線は範囲内の敵を排除し、プレイヤーまたは前線の味方が範囲内にいると制圧が進みます。自動増援・制圧時の歩兵ライフと車両弾薬・燃料の補給があり、潜入は警戒度65%以上で追跡増援が発生します。</p><p>通常プレイでは出撃前に<strong>解放済みスキルから1種類</strong>を選択します。スキルごとに使用方法・持続時間・チャージが異なります。</p>
 <ul>
-<li><strong>投擲：</strong>進行方向へ最大110pxの距離で爆弾を投げます。5秒で再使用可能。</li>
-<li><strong>潜伏：</strong>0.5秒静止して潜伏準備後、最大5秒間潜伏。解除後は5秒チャージ。水中では水しぶきの演出に変わります。</li>
+<li><strong>投擲：</strong>進行方向へ最大11mの距離で爆弾を投げます。5秒で再使用可能。</li>
+<li><strong>潜伏：</strong>0.5秒静止して潜伏準備後、最大5秒間潜伏。解除後は5秒チャージ。水中は移動速度60%、泥では潜伏を解除します。潜伏開始1秒後に敵表示が隠れます。</li>
 <li><strong>偽装：</strong>5秒間残る身代わりを設置して敵の注意をそらします。チャージ8秒。</li>
 <li><strong>増援：</strong>味方兵士がパラシュート降下して戦闘を援護。同時に最大5人。チャージ6秒。</li>
-<li><strong>突貫：</strong>正面にドリルを展開。持続5秒、遮蔽物の破壊に利用できます。</li>
+<li><strong>突貫：</strong>正面にドリルを展開。持続5秒、終了後は6秒チャージ。遮蔽物の破壊に利用できます。</li>
 <li><strong>建築：</strong>前方にコンクリート防護壁を設置。最大5枚、チャージ1.5秒。</li>
-<li><strong>火炎：</strong>前方約200pxまで火炎を伸ばし、長押しで連続放射。最大3秒分を蓄積し、消費分が徐々に回復します。</li>
+<li><strong>火炎：</strong>前方約20mまで火炎を伸ばし、長押しで連続放射。最大3秒分を蓄積し、消費分が徐々に回復します。</li>
 <li><strong>猟犬：</strong>犬がプレイヤーに追従。Sで前方へ走らせ、近くの敵兵に突撃して気絶させます。</li>
-<li><strong>狙撃：</strong>ライフルを構えてスコープで遠距離を狙います。倍率は3段階。射撃後の再装填は3秒。</li>
+<li><strong>狙撃：</strong>ライフルを展開し、1秒静止後にスコープで遠距離を狙います。倍率は1.5／2.5／3.5倍。射撃後の再装填は3秒。敵歩兵は貫通して一撃で倒せますが、地形・オブジェクト・戦車で弾が止まります。</li>
 </ul><p>スキルによっては搭乗中や特殊状態では使用できません。細かな制約は出撃時のスキル説明に従います。</p>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-weather"><h2>9. 天候と環境</h2>
 <ul><li>天候は晴れと雨が切り替わることがあります。</li><li>雨天では敵の索敵距離が短くなり、狙撃スコープの有効な見通し距離も短くなります。</li><li>雨天では自然物への延焼が抑えられます。</li><li>川の流れや泥などは、歩兵・車両の移動に影響します。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-score"><h2>10. 評価・スコア・称号</h2>
-<ul><li>クリアまたは失敗後の評価画面に、総合スコアと<strong>F〜Sの7段階ランク</strong>を表示します。</li><li>スコアは潜入・戦闘・任務達成・クリア時間などをもとに計算します。</li><li>プレイスタイルを<strong>潜入／索敵／射撃／戦闘／爆破／機動／戦術／生存</strong>の8軸（Lv0〜5）で評価します。</li><li><strong>マルチキル：</strong>短時間に続けて敵を撃破すること。<strong>ワンショットキル：</strong>同一攻撃で複数の敵を撃破すること。</li><li>条件を満たすと称号・勲章を獲得。タイトル画面の「称号」からコレクションと累計戦績を確認できます。</li></ul>
+<ul><li>クリアまたは失敗後の評価画面に、総合スコアと<strong>F〜Sの7段階ランク</strong>を表示します。</li><li>スコアは潜入・戦闘・任務達成・クリア時間などをもとに計算します。到達距離は出撃開始地点からの最大前進距離です。距離表示はすべてm単位です。</li><li>プレイスタイルを<strong>潜入／索敵／射撃／戦闘／爆破／機動／戦術／生存</strong>の8軸（Lv0〜5）で評価します。索敵は未発見での前進距離、射撃は発射数あたりの撃破効率などを指標にします。</li><li><strong>マルチキル：</strong>撃破間隔4秒以内で続けて敵を撃破すること。<strong>ワンショットキル：</strong>同一攻撃で複数の敵を撃破すること。無線支援爆撃とその連鎖爆発は、マルチキル・ワンショットキルの対象外です。</li><li>条件を満たすと称号・勲章を獲得。タイトル画面の「称号」からコレクションと累計戦績を確認できます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-save"><h2>11. スキル解放・保存・デバッグ</h2>
 <ul><li>初期解放スキルは<strong>投擲</strong>。通常プレイでクリアするたびに、新しいスキルが順番に1種類ずつ解放されます。</li><li>スキル解放・称号・勲章・ハイスコア・戦績などは、このブラウザ内に保存されます。</li><li>称号画面の「戦績」から保存データを初期化できます。初期化は取り消せません。</li><li>デバッグでは無敵モードや全スキル表示などを使用可能。デバッグプレイの実績は通常の称号・勲章・戦績やスキル解放の対象外です。</li></ul>
@@ -519,6 +519,8 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
 const GAME_VERSION='2026.10.10.147',FILE_CREATED_AT='2026/10/10 12:35',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+// 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
+const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
 function ensureAudio(){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(_){}}
 function tone(f=440,d=.08,v=.035,type='square',f2=null){if(!audioCtx)return;const t=audioCtx.currentTime,o=audioCtx.createOscillator(),a=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t+d);a.gain.setValueAtTime(v,t);a.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(a);a.connect(audioCtx.destination);o.start(t);o.stop(t+d+.02);}
@@ -1271,14 +1273,14 @@ function setupZones(){
 }
 const zoneAt=y=>ZONES.find(z=>y<=z.y0&&y>z.y1)||ZONES[ZONES.length-1];
 const SK=[
- {id:'throw',n:'投擲',d:'進行方向へ爆弾を投げて設置\n(最大110px)\nDで起爆'},
+ {id:'throw',n:'投擲',d:'進行方向へ爆弾を投げて設置\n(最大11m)\nDで起爆'},
  {id:'dig',n:'潜伏',d:'0.5秒の潜行準備の後、最大5秒間潜伏\n潜行1秒後に敵表示・草むら内の敵輪郭を非表示\n川では泳いで潜伏（移動60%）／泥で強制解除／解除後CT5秒'},
  {id:'decoy',n:'偽装',d:'身代わりを設置して\n敵の注意を5秒間そらす'},
  {id:'buddy',n:'増援',d:'味方兵士がパラシュート降下\n最大5人まで同時に援護\n移動速度は歩兵の90%'},
  {id:'drill',n:'突貫',d:'正面にドリルを展開\n0.5秒で遮蔽物を破壊\n持続5秒'},
  {id:'build',n:'建築',d:'正面にコンクリート防護壁を設置\n最大5枚／チャージ1.5秒\n画面外へ流れると消滅'},
- {id:'flame',n:'火炎',d:'正面200pxへ火炎放射（先端到達1秒）\n最大3秒・使用分×4秒で全回復\n回復中も再使用可能'},
- {id:'hound',n:'猟犬',d:'猟犬が斜め後ろを追従\nSで正面へ30px自動ダッシュ（長押しで延長）→周囲100pxの敵兵へ突撃\n敵がいなければ帰還／3秒噛みついて気絶\n帰還中に障害物へ当たるとS字で迷子→前方120°・500px＋全周150pxで再発見'},
+ {id:'flame',n:'火炎',d:'正面20mへ火炎放射（先端到達1秒）\n最大3秒・使用分×4秒で全回復\n回復中も再使用可能'},
+ {id:'hound',n:'猟犬',d:'猟犬が斜め後ろを追従\nSで正面へ3m自動ダッシュ（長押しで延長）→周囲10mの敵兵へ突撃\n敵がいなければ帰還／3秒噛みついて気絶\n帰還中に障害物へ当たるとS字で迷子→前方120°・50m＋全周15mで再発見'},
  {id:'sniper',n:'狙撃',d:'伏せてライフル展開→1秒静止後にスコープへ\n←→で視点移動／↑↓で1.5倍・2.5倍・3.5倍のレンズ切替\nSで狙撃／Eで解除。敵兵・エリートは1発撃破'}
 ];
 const TOUCH=matchMedia('(pointer:coarse)').matches;
@@ -1623,7 +1625,7 @@ function setupAreaDebugStage(){
  const areaH=1350,bottom=WH-100;
  ZONES=AREA_DEBUG_ORDER.map((n,i)=>{const y0=bottom-i*areaH,y1=y0-areaH;return{n,y0,y1,g:ZONE_STYLE[n].g,p:ZONE_STYLE[n].p.slice(),pat:null,areaDebug:1};});
  areaDebugLabels=[];covers=[];objects=[];bushes=[];mud=[];water=[];bridges=[];cars=[];etanks=[];humans=[];bullets=[];parts=[];bombs=[];items=[];waves=[];fx=[];allies=[];builtWalls=[];tankWrecks=[];decoy=null;radio=null;airstrike=null;airbombs=[];weather='clear';weatherT=0;weatherNext=99999;baseSpawnT=99999;
- p.tank=null;p.hp=2;p.x=WW/2;p.y=ZONES[0].y0-220;p.body=-Math.PI/2;p.ang=-Math.PI/2;p.dig=0;p.digPrep=0;p.drill=0;p.scd=0;p.bushHide=0;p.grappleT=0;
+ p.tank=null;p.hp=2;p.x=WW/2;p.y=ZONES[0].y0-220;scoreStats.startY=p.y;p.body=-Math.PI/2;p.ang=-Math.PI/2;p.dig=0;p.digPrep=0;p.drill=0;p.scd=0;p.bushHide=0;p.grappleT=0;
  const hq=ZONES[ZONES.length-1];base={x:WW/2-COMMAND_BASE_W/2,y:hq.y1+115,w:COMMAND_BASE_W,h:COMMAND_BASE_H,hp:30,maxHp:30,deadAt:0};
  cars.push({x:WW/2-92,y:p.y-36,t:TRUCK_TYPE,kind:'truck',hp:5,c:0,v:0,f:TRUCK_TYPE.fmax,mgHits:0,body:-1.57,areaDebug:1});
  cars.push({x:WW/2+92,y:p.y-36,t:TYPES[0],kind:'tank',hp:TYPES[0].hp,c:TYPES[0].cmax,v:TYPES[0].vmax,f:TYPES[0].fmax,ch:0,mgHits:0,body:-1.57,areaDebug:1});
@@ -2331,7 +2333,7 @@ function reset(rerollSkills=true){
  }
  // マップ生成は旧座標系(高さ3200)で行い、配置だけ縦4倍に拡張する。
  const sy=o=>{if(o&&Number.isFinite(o.y))o.y*=MAP_SCALE;};
- sy(p);sy(base);sy(radio);water.forEach(sy);bridges.forEach(sy);mud.forEach(sy);bushes.forEach(sy);covers.forEach(sy);objects.forEach(sy);cars.forEach(sy);items.forEach(sy);
+ sy(p);scoreStats.startY=p.y;sy(base);sy(radio);water.forEach(sy);bridges.forEach(sy);mud.forEach(sy);bushes.forEach(sy);covers.forEach(sy);objects.forEach(sy);cars.forEach(sy);items.forEach(sy);
  // 建物の足元跡は拡大後の最終座標で固定し、建物本体が破片化・消滅しても残す。
  captureBuildingGroundMarks();
  // 縦4倍化は配列要素をin-placeで動かすため、旧座標で作られた空間グリッドをここで必ず再構築する。
@@ -2650,7 +2652,7 @@ function saveHighScore(score,rank){
  return true;
 }
 function newScoreStats(){return{
- time:0,unseenDist:0,forwardDist:0,lastY:null,coverDestroyed:0,
+ time:0,unseenDist:0,forwardDist:0,startY:null,lastY:null,coverDestroyed:0,
  unseenForwardStreak:0,maxUnseenForwardStreak:0,
  detections:0,foundEntries:0,suspicionEntries:0,stuns:0,
  humanKills:0,eliteKills:0,tankKills:0, shots:0, sniperShots:0, cannonShots:0, mgShots:0, skillUses:0, bombBlasts:0, vehicleTime:0, vehicleKinds:{}, vehicleBoards:0, damageHits:0, totalTravel:0, detectedTime:0, maxProgress:0, sniperKills:0, mgKills:0, cannonKills:0, rangedKills:0, bombKills:0, explosiveKills:0, tankVehicleKills:0, actionKinds:{}, debugUsed:!!(areaDebugEnabled||skillDebugAll),
@@ -2702,7 +2704,7 @@ function trackEnemyDeaths(){
 function updateScoreTracking(dt,moved=0){
  if(!scoreStats||scoreStats.finalized)return;
  chainToastT=Math.max(0,chainToastT-dt);oneShotToastT=Math.max(0,oneShotToastT-dt);
- scoreStats.time+=dt;scoreStats.totalTravel+=Math.max(0,moved);scoreStats.maxProgress=Math.max(scoreStats.maxProgress,Math.max(0,3100-p.y));if(p.tank){scoreStats.vehicleTime+=dt;scoreStats.vehicleKinds[p.tank.kind]=true;}
+ scoreStats.time+=dt;scoreStats.totalTravel+=Math.max(0,moved);scoreStats.maxProgress=Math.max(scoreStats.maxProgress,Math.max(0,scoreStats.startY-p.y));if(p.tank){scoreStats.vehicleTime+=dt;scoreStats.vehicleKinds[p.tank.kind]=true;}
  let forwardStep=0;
  if(scoreStats.lastY==null)scoreStats.lastY=p.y;
  else{forwardStep=Math.max(0,scoreStats.lastY-p.y);scoreStats.forwardDist+=forwardStep;scoreStats.lastY=p.y;}
@@ -3926,7 +3928,7 @@ function drawSniperScopedHuman(it,pr,viewRange,cy,R){
  // エリートはヘルメット前面に控えめな銀の徽章を付ける。
  if(elite){g.fillStyle='#576670';g.beginPath();g.arc(pr.x,headY-headR*.35,Math.max(1.2,ww*.055),0,Math.PI*2);g.fill();}
  g.restore();
- const distM=Math.max(1,Math.round(pr.d/10));
+ const distM=Math.max(1,distanceMeters(pr.d));
  g.textAlign='center';g.font='bold '+Math.max(10,Math.min(13,hh*.16))+'px system-ui';g.fillStyle='#eef3e8';
  g.fillText(distM+'m',pr.x,Math.min(cy+R-10,top+hh+15));
  if(!falling)drawSniperStatusIcon(pr.x,Math.max(cy-R+15,top-14),o);
@@ -5435,7 +5437,7 @@ function draw(near){
  }
  drawLabels(cx,cy);drawVehicleMarkers(cx,cy);
  // 右上のナビ情報は従来どおり。スマホでは状態HUDを左上へ集約する。
- g.fillStyle='#e6e9d8';g.font='bold 14px system-ui';g.textAlign='right';g.fillText('司令部まで '+Math.max(0,Math.round((p.y-150)/10))+'m',W-12,22);
+ g.fillStyle='#e6e9d8';g.font='bold 14px system-ui';g.textAlign='right';g.fillText('司令部まで '+distanceMeters(p.y-150)+'m',W-12,22);
  g.fillStyle=areaDebugEnabled?'#ffd27a':'#b9c19a';g.font='12px system-ui';g.fillText((areaDebugEnabled?'AREA DEBUG / ':'エリア: ')+zoneAt(p.y).n,W-12,40);
  // 歩兵HUDはHP・爆弾・索敵解除をアイコン化。スマホは左上、PCは左下に表示する。
  drawInfantryBottomHud();drawSkillBottomHud();drawVehicleBottomHud();
@@ -5478,7 +5480,7 @@ function draw(near){
  }
  else if(state==='skill'){
   g.fillStyle='rgba(10,12,8,.92)';g.fillRect(0,0,W,H);g.fillStyle='#e6e9d8';g.textAlign='center';g.font='bold 27px system-ui';g.fillText('スキルを選べ',W/2,56);
-  g.font='11px system-ui';g.fillStyle='#b9c19a';g.fillText((skillDebugAll?'全スキル表示中':'今回の候補はランダムで3つ')+(areaDebugEnabled?' ／ エリアデバッグ ON':''),W/2,80);
+  g.font='11px system-ui';g.fillStyle='#b9c19a';g.fillText((skillDebugAll?'全スキル表示中':'解放済みスキルから選択')+(areaDebugEnabled?' ／ エリアデバッグ ON':''),W/2,80);
   const L=skillMenuLayout(),list=skillMenuList();
   list.forEach((k,i)=>{
    const y=L.sy0+i*L.ch,hv=mx>=35&&mx<=W-35&&my>=y&&my<y+L.h;
@@ -5492,7 +5494,7 @@ function draw(near){
   const dh=hitRect(mx,my,DL),ah=hitRect(mx,my,DR);
   g.fillStyle=dh?'rgba(255,210,122,.17)':'rgba(255,255,255,.05)';g.fillRect(DL.x,DL.y,DL.w,DL.h);g.strokeStyle=dh?'#ffd27a':'#59604d';g.lineWidth=1.5;g.strokeRect(DL.x+.5,DL.y+.5,DL.w-1,DL.h-1);
   g.fillStyle=ah?'rgba(255,210,122,.17)':areaDebugEnabled?'rgba(83,128,66,.26)':'rgba(255,255,255,.05)';g.fillRect(DR.x,DR.y,DR.w,DR.h);g.strokeStyle=ah?'#ffd27a':areaDebugEnabled?'#9bd477':'#59604d';g.strokeRect(DR.x+.5,DR.y+.5,DR.w-1,DR.h-1);
-  g.textAlign='center';g.font='bold 11px system-ui';g.fillStyle=dh?'#ffd27a':'#b9c19a';g.fillText(skillDebugAll?'ランダム3候補':'全スキル表示',DL.x+DL.w/2,DL.y+DL.h/2+4);
+  g.textAlign='center';g.font='bold 11px system-ui';g.fillStyle=dh?'#ffd27a':'#b9c19a';g.fillText(skillDebugAll?'解放済みに戻す':'全スキル表示',DL.x+DL.w/2,DL.y+DL.h/2+4);
   g.fillStyle=ah?'#ffd27a':areaDebugEnabled?'#bfe6a8':'#b9c19a';g.fillText('エリアデバッグ '+(areaDebugEnabled?'ON':'OFF'),DR.x+DR.w/2,DR.y+DR.h/2+4);
  }
  else if(state==='preparing'){
@@ -5529,7 +5531,7 @@ function draw(near){
    g.textAlign='center';g.fillStyle='#ffd27a';g.font='bold 15px system-ui';g.fillText(playStyleLabel(r.stealth,r.combat),mx,sy+74);
    g.restore();
 
-   drawResultStatCard(x,246,cardW,122,'潜入分析',r.stealthRank,[['未発見距離',Math.round(scoreStats.unseenDist/10)+'m'],['発見回数',scoreStats.detections],['気絶',scoreStats.stuns]],'#d6e4c2',aCards);
+   drawResultStatCard(x,246,cardW,122,'潜入分析',r.stealthRank,[['未発見距離',distanceMeters(scoreStats.unseenDist)+'m'],['発見回数',scoreStats.detections],['気絶',scoreStats.stuns]],'#d6e4c2',aCards);
    drawResultStatCard(x+cardW+cardGap,246,cardW,122,'戦闘分析',r.combatRank,[['歩兵撃破',scoreStats.humanKills],['エリート',scoreStats.eliteKills],['戦車',scoreStats.tankKills]],'#ffca9d',aCards);
 
    drawSimplePanel(x,384+(1-aHint)*12,w,78,aHint);
@@ -5570,7 +5572,7 @@ function resultMetrics(s,r){
  const mobility=(s.totalTravel>=30||s.vehicleTime>0)?resClamp(Math.min(35,s.totalTravel/170)+Math.min(35,s.vehicleTime/5)+unique*9):0;
  const tactics=(s.skillUses>0||s.stuns>0||s.bombBlasts>0||unique>0)?resClamp(Math.min(40,s.skillUses*5)+Math.min(30,s.stuns*8)+Math.min(30,unique*7+s.bombBlasts*3)):0;
  const progress=Math.max(0,s.maxProgress||0);
- // maxProgress は開始地点(3100)からの実前進距離。初期値で加点されない。
+ // maxProgress は各出撃の開始地点からの最大前進距離（内部座標）。初期値で加点されない。
  const survival=progress>=150?resClamp(10+55*Math.min(1,progress/3000)+(r.cleared?35:0)-s.damageHits*15-Math.min(20,s.detections*2)):0;
  return [stealth,recon,shooting,combat,blast,mobility,tactics,survival];
 }
@@ -5584,8 +5586,8 @@ const TITLE_BASE=[
 // 複合称号は2軸Lv4以上 + うち1軸Lv5、さらに実行動の実績を要求する。
 const TITLE_COMBOS=[
  {id:'ghost_sniper',name:'ゴーストスナイパー',axes:[0,2],note:'狙撃撃破2体以上・長距離の隠密前進',valid:s=>s.sniperKills>=2&&s.maxUnseenForwardStreak>=800},
- {id:'shadow_scout',name:'影の斥候',axes:[0,1],note:'未発見移動1500以上・発見2回以内',valid:s=>s.unseenDist>=1500&&s.detections<=2},
- {id:'silent_saboteur',name:'静かなる破壊者',axes:[0,4],note:'爆弾爆発2回以上・隠密前進800以上',valid:s=>s.bombBlasts>=2&&s.maxUnseenForwardStreak>=800},
+ {id:'shadow_scout',name:'影の斥候',axes:[0,1],note:'未発見移動150m以上・発見2回以内',valid:s=>s.unseenDist>=1500&&s.detections<=2},
+ {id:'silent_saboteur',name:'静かなる破壊者',axes:[0,4],note:'爆弾爆発2回以上・隠密前進80m以上',valid:s=>s.bombBlasts>=2&&s.maxUnseenForwardStreak>=800},
  {id:'first_strike',name:'先制狙撃手',axes:[1,2],note:'狙撃による撃破2体以上',valid:s=>s.sniperKills>=2},
  {id:'battle_schemer',name:'戦場の策士',axes:[1,6],note:'スキル使用4回以上・発見4回以内',valid:s=>s.skillUses>=4&&s.detections<=4},
  {id:'demolition_expert',name:'破壊工作員',axes:[3,4],note:'爆発による撃破3体以上',valid:s=>s.explosiveKills>=3},
@@ -5616,14 +5618,14 @@ const MEDAL_CATALOG=[
 ];
 // Lvだけでは獲得不可。実際の行動実績を併せて検証する。
 const TITLE_AXIS_REQUIREMENTS=[
- {normal:s=>s.maxUnseenForwardStreak>=600,elite:s=>s.maxUnseenForwardStreak>=2300,normalNote:'未発見の連続前進600以上',eliteNote:'未発見の連続前進2300以上'},
- {normal:s=>s.maxUnseenForwardStreak>=800,elite:s=>s.maxUnseenForwardStreak>=2600,normalNote:'未発見の連続前進800以上',eliteNote:'未発見の連続前進2600以上'},
+ {normal:s=>s.maxUnseenForwardStreak>=600,elite:s=>s.maxUnseenForwardStreak>=2300,normalNote:'未発見の連続前進60m以上',eliteNote:'未発見の連続前進230m以上'},
+ {normal:s=>s.maxUnseenForwardStreak>=800,elite:s=>s.maxUnseenForwardStreak>=2600,normalNote:'未発見の連続前進80m以上',eliteNote:'未発見の連続前進260m以上'},
  {normal:s=>(s.rangedKills||0)>=3,elite:s=>(s.rangedKills||0)>=8,normalNote:'射撃で3体以上撃破',eliteNote:'射撃で8体以上撃破'},
  {normal:s=>s.humanKills+s.eliteKills+s.tankKills>=4,elite:s=>s.humanKills+s.eliteKills+s.tankKills>=10,normalNote:'敵4体以上撃破',eliteNote:'敵10体以上撃破'},
  {normal:s=>s.explosiveKills>=1,elite:s=>s.explosiveKills>=4,normalNote:'爆発による撃破1体以上',eliteNote:'爆発による撃破4体以上'},
- {normal:s=>s.totalTravel>=1200&&s.vehicleTime>=20,elite:s=>s.totalTravel>=3000&&s.vehicleTime>=90,normalNote:'移動1200以上・乗り物20秒以上',eliteNote:'移動3000以上・乗り物90秒以上'},
+ {normal:s=>s.totalTravel>=1200&&s.vehicleTime>=20,elite:s=>s.totalTravel>=3000&&s.vehicleTime>=90,normalNote:'移動120m以上・乗り物20秒以上',eliteNote:'移動300m以上・乗り物90秒以上'},
  {normal:s=>s.skillUses>=3,elite:s=>s.skillUses>=8&&(s.stuns>=2||Object.keys(s.vehicleKinds||{}).length>=2||s.bombBlasts>=4),normalNote:'スキル3回以上',eliteNote:'スキル8回以上＋複数の戦術実績'},
- {normal:s=>s.maxProgress>=800,elite:(s,r)=>!!r.cleared&&s.damageHits<=1,normalNote:'開始地点から800以上前進',eliteNote:'クリア・被弾1回以内'}
+ {normal:s=>s.maxProgress>=800,elite:(s,r)=>!!r.cleared&&s.damageHits<=1,normalNote:'開始地点から80m以上前進',eliteNote:'クリア・被弾1回以内'}
 ];
 const TITLE_CATALOG=[
  ...TITLE_BASE.flatMap(([axis,normal,elite],i)=>[
@@ -5806,7 +5808,7 @@ function recordRunHistory(s){
  if(!s?.final||s.historyRecorded||s.debugUsed||areaDebugEnabled)return;
  s.historyRecorded=true;
  const data=readRunHistory(),d=data.summary,r=s.final;
- const v={at:new Date().toISOString(),cleared:!!r.cleared,score:Math.round(r.total),rank:r.rank,skill,seconds:Math.round(s.time),distance:Math.round(s.maxProgress/10),humanKills:s.humanKills,eliteKills:s.eliteKills,tankKills:s.tankKills,stuns:s.stuns,detections:s.detections,maxChain:s.maxKillChain,maxOneShot:s.maxOneShotKills||0};
+ const v={at:new Date().toISOString(),cleared:!!r.cleared,score:Math.round(r.total),rank:r.rank,skill,seconds:Math.round(s.time),distance:distanceMeters(s.maxProgress),humanKills:s.humanKills,eliteKills:s.eliteKills,tankKills:s.tankKills,stuns:s.stuns,detections:s.detections,maxChain:s.maxKillChain,maxOneShot:s.maxOneShotKills||0};
  data.recent.unshift(v);data.recent.length=Math.min(50,data.recent.length);
  d.plays++;d.clears+=Number(r.cleared);d.scoreTotal+=v.score;d.totalTime+=s.time;d.totalDistance+=s.totalTravel;d.humanKills+=s.humanKills;d.eliteKills+=s.eliteKills;d.tankKills+=s.tankKills;d.stuns+=s.stuns;d.detections+=s.detections;d.damageHits+=s.damageHits;d.maxChain=Math.max(d.maxChain,s.maxKillChain);d.maxOneShot=Math.max(d.maxOneShot,s.maxOneShotKills||0);d.oneShotEvents+=s.oneShotEvents||0;
  try{localStorage.setItem(RUN_HISTORY_KEY,JSON.stringify(data));}catch(_){s.historySaveFailed=true;}
@@ -5816,7 +5818,7 @@ function renderTrophyStats(){
  document.getElementById('trophyOverview').innerHTML='<span>ハイスコア <strong>'+Math.round(high.score||0).toLocaleString('ja-JP')+'</strong>　'+high.rank+'</span><span>クリア <strong>'+(a.clears||0)+'</strong> 回</span><span>解放スキル <strong>'+progress.unlocked.length+'</strong> / '+SK.length+'</span>';
  document.getElementById('trophyCount').textContent='累計プレイ記録 '+(a.plays||0)+'回（この更新版以降の記録）';
  document.getElementById('trophyTabTitles').classList.remove('active');document.getElementById('trophyTabMedals').classList.remove('active');
- const overview=[['ハイスコア',Math.round(high.score||0).toLocaleString('ja-JP')+' / '+high.rank],['プレイ回数',a.plays||0],['クリア回数',a.clears||0],['累計プレイ時間',formatRunTime(a.totalTime||0)],['累計移動距離',Math.round((a.totalDistance||0)/10)+'m'],['累計撃破数',(a.humanKills||0)+(a.eliteKills||0)+(a.tankKills||0)],['歩兵撃破',a.humanKills||0],['エリート撃破',a.eliteKills||0],['戦車撃破',a.tankKills||0],['気絶',a.stuns||0],['発見',a.detections||0],['被弾',a.damageHits||0],['最大マルチキル',a.maxChain||0],['最大ワンショットキル',a.maxOneShot||0],['ワンショットキルの回数',a.oneShotEvents||0],['スキル解放',progress.unlocked.length+' / '+SK.length]];
+ const overview=[['ハイスコア',Math.round(high.score||0).toLocaleString('ja-JP')+' / '+high.rank],['プレイ回数',a.plays||0],['クリア回数',a.clears||0],['累計プレイ時間',formatRunTime(a.totalTime||0)],['累計移動距離',distanceMeters(a.totalDistance||0)+'m'],['累計撃破数',(a.humanKills||0)+(a.eliteKills||0)+(a.tankKills||0)],['歩兵撃破',a.humanKills||0],['エリート撃破',a.eliteKills||0],['戦車撃破',a.tankKills||0],['気絶',a.stuns||0],['発見',a.detections||0],['被弾',a.damageHits||0],['最大マルチキル',a.maxChain||0],['最大ワンショットキル',a.maxOneShot||0],['ワンショットキルの回数',a.oneShotEvents||0],['スキル解放',progress.unlocked.length+' / '+SK.length]];
  const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const recent=data.recent.map(v=>'<div class="trophy-run"><div><strong>'+(v.cleared?'CLEAR':'FAILED')+' / '+esc(v.rank)+'</strong><span>'+esc(new Date(v.at).toLocaleString('ja-JP'))+'</span></div><div>'+esc(SK.find(k=>k.id===v.skill)?.n||v.skill)+' ・ '+esc(v.score.toLocaleString('ja-JP'))+'点 ・ '+esc(v.distance)+'m ・ 撃破'+((v.humanKills||0)+(v.eliteKills||0)+(v.tankKills||0))+' ・ マルチキル'+esc(v.maxChain||0)+' ・ ワンショットキル'+esc(v.maxOneShot||0)+'</div></div>').join('');
  document.getElementById('trophyStats').innerHTML='<h2>累計戦績</h2><div class="trophy-stats-grid">'+overview.map(([k,v])=>'<div class="trophy-stat"><small>'+esc(k)+'</small><strong>'+esc(v)+'</strong></div>').join('')+'</div><h2>最近の戦績（最大50件）</h2>'+(recent||'<p class="trophy-empty">まだプレイ記録はありません。</p>')+'<div class="trophy-reset-box"><h2>保存データの初期化</h2><p>称号・勲章・ハイスコア・戦績・スキル解放をすべて初期状態に戻します。この操作は取り消せません。</p><button id="trophyReset" type="button">すべてのデータをリセット</button></div>';
@@ -5854,9 +5856,9 @@ function renderResultScreen(){const s=scoreStats,r=s&&s.final;if(!r)return;
  el('resRadar').innerHTML=resultRadar(levels);
  el('resAxes').innerHTML=RES_AXES.map((name,i)=>`<div class="res-axis"><span>${name}</span><span class="res-stars" aria-label="レベル${levels[i]}">${'★'.repeat(levels[i])}<span style="color:#65705d">${'☆'.repeat(5-levels[i])}</span></span></div>`).join('');
  el('resTitle').textContent=sty[0];el('resTitleFlavor').textContent=TITLE_FLAVOR[s.awards?.primary]||'';el('resTitleNote').textContent=sty[1];renderAwardResult(s);
- const quick=[['プレイ時間',formatRunTime(s.time)],['到達距離',Math.round(s.maxProgress/10)+'m'],['総撃破数',kills],['発見回数',s.detections],['被弾回数',s.damageHits],['気絶数',s.stuns]];
+ const quick=[['プレイ時間',formatRunTime(s.time)],['到達距離',distanceMeters(s.maxProgress)+'m'],['総撃破数',kills],['発見回数',s.detections],['被弾回数',s.damageHits],['気絶数',s.stuns]];
  el('resQuick').innerHTML=quick.map(([n,v])=>`<div class="res-stat"><label>${n}</label><strong>${v}</strong></div>`).join('');
- const entries=[['歩兵撃破',s.humanKills],['エリート撃破',s.eliteKills],['戦車撃破',s.tankKills],['最大マルチキル',s.maxKillChain],['最大ワンショットキル',s.maxOneShotKills||0],['ワンショットキル発生数',s.oneShotEvents||0],['未発見移動距離',Math.round(s.unseenDist/10)+'m'],['累計移動距離',Math.round(s.totalTravel/10)+'m'],['発見状態の累計時間',formatRunTime(s.detectedTime)],['疑惑状態の発生',s.suspicionEntries],['遮蔽物破壊面積',Math.round(s.coverDestroyed)],['射撃数（記録対象）',s.shots],['狙撃発射数',s.sniperShots],['狙撃撃破数',s.sniperKills],['爆弾撃破数',s.bombKills],['爆発による撃破',s.explosiveKills],['主砲発射数',s.cannonShots],['MG等発射数',s.mgShots],['爆弾爆発数',s.bombBlasts],['スキル発動数（記録対象）',s.skillUses],['乗り物搭乗回数',s.vehicleBoards],['乗り物利用時間',formatRunTime(s.vehicleTime)],['乗り物の種類数',Object.keys(s.vehicleKinds).length],['潜入スコア',r.stealth],['戦闘スコア',r.combat],['マルチキルボーナス',r.chainBonus],['ワンショットキルボーナス',r.multiKillBonus],['任務達成・タイムボーナス',r.bonus]];
+ const entries=[['歩兵撃破',s.humanKills],['エリート撃破',s.eliteKills],['戦車撃破',s.tankKills],['最大マルチキル',s.maxKillChain],['最大ワンショットキル',s.maxOneShotKills||0],['ワンショットキル発生数',s.oneShotEvents||0],['未発見移動距離',distanceMeters(s.unseenDist)+'m'],['累計移動距離',distanceMeters(s.totalTravel)+'m'],['発見状態の累計時間',formatRunTime(s.detectedTime)],['疑惑状態の発生',s.suspicionEntries],['遮蔽物破壊面積',Math.round(s.coverDestroyed)],['射撃数（記録対象）',s.shots],['狙撃発射数',s.sniperShots],['狙撃撃破数',s.sniperKills],['爆弾撃破数',s.bombKills],['爆発による撃破',s.explosiveKills],['主砲発射数',s.cannonShots],['MG等発射数',s.mgShots],['爆弾爆発数',s.bombBlasts],['スキル発動数（記録対象）',s.skillUses],['乗り物搭乗回数',s.vehicleBoards],['乗り物利用時間',formatRunTime(s.vehicleTime)],['乗り物の種類数',Object.keys(s.vehicleKinds).length],['潜入スコア',r.stealth],['戦闘スコア',r.combat],['マルチキルボーナス',r.chainBonus],['ワンショットキルボーナス',r.multiKillBonus],['任務達成・タイムボーナス',r.bonus]];
  el('resDetail').innerHTML=entries.map(([n,v])=>`<div class="res-detail-row"><span>${n}</span><strong>${v}</strong></div>`).join('');
 }
 let resultScoreAnimId=0;
@@ -6103,7 +6105,7 @@ let missionHudNextAt=0,missionHudText="";
 function drawMission(){
  const el=document.getElementById('missionHud');el.style.display=state==='play'&&mission?'block':'none';if(state!=='play'||!mission)return;
  const m=mission,q=stageMode==='front'?m.points[m.index]:m.index===3?m.exit:m.points.filter(q=>!q.done).sort((a,b)=>D(a,p)-D(b,p))[0];
- const dist=q?Math.round(D(p,q)):0;
+ const dist=q?distanceMeters(D(p,q)):0;
  if(performance.now()>=missionHudNextAt){missionHudNextAt=performance.now()+100;
  const hudText=stageMode==='front'?'<b>最前線　戦線 '+m.index+'/3 制圧</b><progress max="12" value="'+m.progress+'"></progress><small>'+q.name+'まで '+dist+'m ／ 円内の敵を排除・12秒確保</small>':'<b>潜入　機密情報 '+m.index+'/3　警戒 '+Math.round(m.alarm)+'%</b><progress max="4" value="'+m.progress+'"></progress><small>'+(m.detected?'発見中：隠れて追跡を振り切れ':m.index===3?'脱出地点へ帰還（徒歩）':q.name+'まで '+dist+'m ／ 徒歩で4秒解析')+'</small>';
  if(hudText!==missionHudText){el.innerHTML=hudText;missionHudText=hudText;}
