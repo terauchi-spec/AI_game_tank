@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.10.155</title>
+<title>戦車ゲーム 2026.10.11.156</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -449,7 +449,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <section class="spec-section" id="spec-map"><h2>2. ステージ構成とランダム生成</h2>
 <p>ステージは全7エリア。<strong>最初は草原、最後は敵司令本部</strong>で、その間の5エリアは候補から毎回重複なしでランダムに選ばれます。中間エリアにも草原が選ばれることがあります。</p>
 <p>中間エリア候補：草原／森林／村／丘陵／敵前線基地／街／敵迷路基地／湿地。</p>
-<ul><li>エリアごとに地形や建物、木、岩、草むら、障害物などの配置が異なります。</li><li>左右端の危険度は<strong>左重点・右重点・両側重点</strong>から毎回抽選され、巡回兵の配置や遮蔽物が変化します。</li><li>迷路基地と敵司令本部には、それぞれ固有の構造があります。</li><li>マップ・敵・障害物の配置は出撃ごとに再生成されます。</li></ul>
+<ul><li>エリアごとに地形や建物、木、岩、草むら、障害物などの配置が異なります。</li><li>左右端の危険度は<strong>左重点・右重点・両側重点</strong>から毎回抽選され、巡回兵の配置や遮蔽物が変化します。</li><li>迷路基地には広い会議室と幅の広い廊下、空きスペースの木箱があります。青の通常兵はつながった通路を広く探索します。迷路壁は戦車の接触で壊しやすく、木箱等の爆風でも破壊できます。敵司令本部にも固有の構造があります。</li><li>マップ・敵・障害物の配置は出撃ごとに再生成されます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-controls"><h2>3. 基本操作</h2>
 <ul><li><strong>PC：</strong>矢印キーで移動。D＝爆弾・乗り物の主攻撃、S＝スキル・戦車MG、A＝乗降・近接アクション。</li><li><strong>スマホ：</strong>左スティックで移動。画面のB・S・Aボタンを使用。</li><li><strong>戦車（スマホ）：</strong>Bをドラッグして砲塔を照準、離すと主砲発射。Sを押し続けてMGを撃ち、ドラッグで照準を動かせます。</li><li><strong>狙撃中：</strong>左右で視点移動、上下で1.5倍／2.5倍／3.5倍レンズを変更。Sで狙撃、Aで解除します。</li></ul>
@@ -518,7 +518,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.10.155',FILE_CREATED_AT='2026/10/10 23:44',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.11.156',FILE_CREATED_AT='2026/10/10 23:59',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -1007,6 +1007,7 @@ function explodeObject(o,fxOn=true){
    playerCannonGroundImpact(cx,cy,newCombatAction(fromRadio?'radioBomb':'cannon'),28,5);
    // オブジェクト爆発は周囲100px以内の別オブジェクトを炎上させ、連鎖爆発のきっかけにする。
    damageObjectsInRadius(cx,cy,100,'objectBlast');
+   carveMazeWalls(cx,cy,100);
   }finally{if(fromRadio)radioStrikeKillContext--;}
  }
  return true;
@@ -1536,6 +1537,20 @@ function genCovers(edgeCoverReservations=[]){covers=[];
    // 少量だけ壁を抜き、一本道ではないが読み解きが必要な迷路にする。
    for(let i=1;i<C;i++)for(let j=0;j<Rr;j++)if(V[i][j]&&R()<.07)V[i][j]=0;
    for(let i=0;i<C;i++)for(let j=1;j<Rr;j++)if(Hh[i][j]&&R()<.07)Hh[i][j]=0;
+   // 会議室と幅2セルの廊下。既存の通路を広げるため、迷路全体の接続は維持される。
+   const mazeOpenSpaces=[];ZONES.find(q=>q.n===z.n).mazeOpenSpaces=mazeOpenSpaces;
+   const openRect=(x,y,w,h)=>{
+    if(h>=3)mazeOpenSpaces.push({x:mx0+x*csx,y:my0+y*csy,w:w*csx,h:h*csy*MAP_SCALE});
+    for(let i=x+1;i<x+w;i++)for(let j=y;j<y+h;j++)V[i][j]=0;
+    for(let i=x;i<x+w;i++)for(let j=y+1;j<y+h;j++)Hh[i][j]=0;
+   };
+   for(let k=0;k<3;k++){
+    const w=k===1?5:4,h=k===1?3:4,x=1+(R()*(C-w-2)|0);
+    const y=Math.max(1,Math.min(Rr-h-1,Math.floor((k+.5)*Rr/3)-Math.floor(h/2)));
+    openRect(x,y,w,h);
+   }
+   openRect(2,Math.max(1,Math.min(Rr-3,Math.floor(Rr*.34))),C-4,2);
+   openRect(3,Math.max(1,Math.min(Rr-3,Math.floor(Rr*.70))),C-6,2);
    const entry=1+(R()*(C-2)|0),exit=1+(R()*(C-2)|0),left=1+(R()*Math.max(1,Rr-2)|0),right=1+(R()*Math.max(1,Rr-2)|0);
    Hh[entry][Rr]=0;Hh[exit][0]=0;V[0][left]=0;V[C][right]=0;
    const mazeWall=(x,y,w,h)=>{
@@ -1614,7 +1629,13 @@ function genObjects(){
   else if(z.n==='村'){for(let k=0;k<6;k++)tryObject('crate',34+R()*850,ry(),CRATE_W,CRATE_H,8);for(let k=0;k<8;k++)tryObject('barrel',40+R()*840,ry(),BARREL_SIZE,BARREL_SIZE,7);}
   else if(z.n==='街'){for(let k=0;k<6;k++)tryObject('barrel',36+R()*850,ry(),BARREL_SIZE,BARREL_SIZE,7);for(let k=0;k<6;k++)tryObject('crate',40+R()*840,ry(),CRATE_W,CRATE_H,9);}
   else if(z.n==='敵前線基地'){for(let k=0;k<7;k++)tryObject('crate',40+R()*840,ry(),CRATE_W,CRATE_H,9);for(let k=0;k<6;k++)tryObject('barrel',36+R()*850,ry(),BARREL_SIZE,BARREL_SIZE,7);}
-  else if(z.n==='敵迷路基地'){for(let k=0;k<5;k++)tryObject('crate',40+R()*840,ry(),CRATE_W,CRATE_H,9);}
+  else if(z.n==='敵迷路基地'){
+   for(const room of ZONES.find(q=>q.n===z.n)?.mazeOpenSpaces||[]){
+    for(const dx of [26,room.w-CRATE_W-26])for(const dy of [26,room.h-CRATE_H-26])
+     tryObject('crate',room.x+dx,room.y+dy/MAP_SCALE,CRATE_W,CRATE_H,9,4);
+   }
+   for(let k=0;k<12;k++)tryObject('crate',40+R()*840,ry(),CRATE_W,CRATE_H,9);
+  }
   else if(z.n==='敵司令本部'){for(let k=0;k<10;k++)tryObject('crate',40+R()*840,ry(),CRATE_W,CRATE_H,10);for(let k=0;k<10;k++)tryObject('barrel',40+R()*840,ry(),BARREL_SIZE,BARREL_SIZE,8);}
  }
 }
@@ -2440,6 +2461,9 @@ function reset(rerollSkills=true){
   for(let i=mazeHumans.length-1;i>0;i--){const j=R()*(i+1)|0;[mazeHumans[i],mazeHumans[j]]=[mazeHumans[j],mazeHumans[i]];}
   const eliteN=Math.min(4,mazeHumans.length);
   for(let i=0;i<eliteN;i++)mazeHumans[i].elite=true;
+  for(const h of mazeHumans)if(!h.elite){
+   h.path=buildMazeExplorePath(h,cells);h.loop=true;h.wi=1;h.dir=1;h.mazeExplorer=true;h.patrolMode='maze';
+  }
   humans.push(...mazeHumans);
  }
  // スタート地点の周囲260pxには草むらを置かない。
@@ -3695,7 +3719,7 @@ function playerMove(dx,dy,r,dt,slowOverride=null){
   if(hitObject){damageObject(hitObject,'vehicle');sfx('drillBreak');shake=Math.max(shake,4);alertEnemiesNear(hitObject.x+hitObject.w/2,hitObject.y+hitObject.h/2,100);}
   if(p.tank.kind==='tank'){
    const hitCover=nearbyCovers(nx,ny,moveR+8).find(c=>circleHitsCover(nx,ny,moveR,c));
-   if(hitCover){p.tank.ramT=(p.tank.ramT||0)+dt;const ux=dx/len,uy=dy/len,fxp=p.x+ux*(moveR+9),fyp=p.y+uy*(moveR+9),rr=Math.min(30,7+p.tank.ramT*15);carve(fxp,fyp,rr,true);if((p.tank.ramSfx||0)<=0){sfx('drillBreak');p.tank.ramSfx=.28;}if((p.tank.ramAlert||0)<=0){alertEnemiesNear(hitCover.x+hitCover.w/2,hitCover.y+hitCover.h/2,100);p.tank.ramAlert=.45;}shake=Math.max(shake,2.5);}
+   if(hitCover){p.tank.ramT=(p.tank.ramT||0)+dt;const ux=dx/len,uy=dy/len,fxp=p.x+ux*(moveR+9),fyp=p.y+uy*(moveR+9),rr=hitCover.mazeWall?Math.min(46,25+p.tank.ramT*35):Math.min(30,7+p.tank.ramT*15);carve(fxp,fyp,rr,true);if((p.tank.ramSfx||0)<=0){sfx('drillBreak');p.tank.ramSfx=.28;}if((p.tank.ramAlert||0)<=0){alertEnemiesNear(hitCover.x+hitCover.w/2,hitCover.y+hitCover.h/2,100);p.tank.ramAlert=.45;}shake=Math.max(shake,2.5);}
    else p.tank.ramT=Math.max(0,(p.tank.ramT||0)-dt*2);
    p.tank.ramSfx=Math.max(0,(p.tank.ramSfx||0)-dt);p.tank.ramAlert=Math.max(0,(p.tank.ramAlert||0)-dt);
   }
@@ -4605,6 +4629,27 @@ function skillIcon(id,x,y){
  else if(id==='sniper'){soldier(x+18,y+66,-.2,true,false,false);g.strokeStyle='#d9e1d2';g.lineWidth=4;g.beginPath();g.moveTo(x+31,y+52);g.lineTo(x+76,y+42);g.stroke();g.lineWidth=2;g.strokeStyle='#181b18';g.beginPath();g.arc(x+53,y+47,7,0,6.28);g.stroke();g.strokeStyle='#ffd27a';g.lineWidth=1.5;g.beginPath();g.arc(x+70,y+22,12,0,6.28);g.moveTo(x+52,y+22);g.lineTo(x+88,y+22);g.moveTo(x+70,y+4);g.lineTo(x+70,y+40);g.stroke();}
  else{soldier(x+24,y+55,0,true,false,false);g.save();g.translate(x+54,y+55);g.rotate(-.08);g.fillStyle='#30343a';g.beginPath();g.moveTo(-5,-13);g.lineTo(24,0);g.lineTo(-5,13);g.closePath();g.fill();g.strokeStyle='#d0d5db';g.lineWidth=2;for(let q=0;q<3;q++){g.beginPath();g.moveTo(1+q*7,-9+q*2);g.lineTo(1+q*7,9-q*2);g.stroke();}g.restore();g.fillStyle='#ffd27a';g.font='bold 13px system-ui';g.textAlign='center';g.fillText('0.5s',x+68,y+22);g.fillText('5s',x+68,y+82);}
  g.restore();g.strokeStyle='#0c0c0c';g.lineWidth=2;g.strokeRect(x,y,90,90);}
+function carveMazeWalls(x,y,r){
+ // 他の建物の破壊範囲は変えず、木箱等の爆風で迷路壁だけを追加破壊する。
+ const walls=[],other=[];
+ for(const c of covers)(c.mazeWall?walls:other).push(c);
+ if(!walls.length)return;
+ covers=walls;
+ try{carve(x,y,r,true,null);}finally{covers=other.concat(covers);rebuildSpatialGrid();}
+}
+function buildMazeExplorePath(start,cells){
+ const key=c=>c.x+','+c.y,byKey=new Map(cells.map(c=>[key(c),c])),visited=new Set(),path=[],stack=[];
+ const enter=c=>{visited.add(key(c));path.push({x:c.x,y:c.y});const next=c.neighbors.filter(n=>byKey.has(key(n))).slice();for(let i=next.length-1;i>0;i--){const j=R()*(i+1)|0;[next[i],next[j]]=[next[j],next[i]];}stack.push({cell:c,next});};
+ const first=byKey.get(key(start));if(!first)return start.path;
+ enter(first);
+ while(stack.length){
+  const frame=stack[stack.length-1],next=frame.next.find(n=>!visited.has(key(n)));
+  if(next){enter(byKey.get(key(next)));continue;}
+  stack.pop();if(stack.length){const c=stack[stack.length-1].cell;path.push({x:c.x,y:c.y});}
+ }
+ if(path.length>1&&key(path[path.length-1])===key(path[0]))path.pop();
+ return path.length>1?path:start.path;
+}
 function carve(x,y,r,credit=false,objectDamageSource='impact'){
  if(objectDamageSource)damageObjectsInRadius(x,y,r,objectDamageSource);
  const out=[];let removedArea=0,cannonDebris=[];
@@ -4633,7 +4678,7 @@ function carve(x,y,r,credit=false,objectDamageSource='impact'){
    keptArea+=w*h;
    const rx=(a-ox)/Math.max(1,ow),ry=(b-oy)/Math.max(1,oh),idx=((a/tile|0)+(b/tile|0))%pal.length;
    const edge=dist<=r+tile*1.1;
-   const f={fr:1,kd:c.kd,x:a,y:b,w,h,col:pal[idx],rx,ry,ow,oh,ox0:c.x,oy0:c.y,ow0:c.w,oh0:c.h,pb:c.playerBuilt?1:0,edge:edge?1:0};
+   const f={fr:1,kd:c.kd,x:a,y:b,w,h,col:pal[idx],rx,ry,ow,oh,ox0:c.x,oy0:c.y,ow0:c.w,oh0:c.h,pb:c.playerBuilt?1:0,mazeWall:c.mazeWall?1:0,edge:edge?1:0};
 
    if(srcEllipse){
     const dx=(mx-srcEllipse.x)/srcEllipse.rx,dy=(my-srcEllipse.y)/srcEllipse.ry,dn=Math.hypot(dx,dy);
@@ -6412,11 +6457,11 @@ function loop(n){
 }
 let gameErrorCount=0;
 function reportGameError(error){
- gameErrorCount++;console.error('Tank game v155',error);
+ gameErrorCount++;console.error('Tank game v156',error);
  let panel=document.getElementById('runtimeError');
  if(!panel){panel=document.createElement('div');panel.id='runtimeError';panel.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;background:#422018;color:#fff2dc;padding:12px;border:1px solid #f7b083;border-radius:8px;font:12px system-ui;white-space:pre-wrap;max-height:35vh;overflow:auto';document.body.appendChild(panel);}
  const stack=String(error&&error.stack||error).split('\n').slice(0,4).join('\n');
- panel.textContent='v155 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
+ panel.textContent='v156 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 requestAnimationFrame(loop);
 </script>
