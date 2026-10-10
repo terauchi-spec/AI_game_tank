@@ -518,7 +518,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.10.147',FILE_CREATED_AT='2026/10/10 16:34',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.10.147',FILE_CREATED_AT='2026/10/10 16:38',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -2121,6 +2121,49 @@ function drawPatrolChatBubble(h){
  // About 12% smaller than the previous map balloon.
  drawPatrolChatBubbleAt(centerX,centerY-25,.88,bob);
 }
+let patrolRoutePlanAt=0;
+function patrolLineClear(a,b,r){
+ const d=Math.hypot(b.x-a.x,b.y-a.y),steps=Math.max(1,Math.ceil(d/8));
+ for(let i=1;i<=steps;i++){const x=a.x+(b.x-a.x)*i/steps,y=a.y+(b.y-a.y)*i/steps;if(x<=r||x>=WW-r||y<=r||y>=WH-r||hitsC(x,y,r+2))return false;}
+ return true;
+}
+function findPatrolReturnPath(start,goal,r){
+ if(hitsC(goal.x,goal.y,r+2))return null;
+ const cell=20,heap=[],seen=new Map(),closed=new Set();
+ const push=n=>{heap.push(n);let i=heap.length-1;while(i>0){const p=(i-1)>>1;if(heap[p].f<=n.f)break;heap[i]=heap[p];i=p;}heap[i]=n;};
+ const pop=()=>{const top=heap[0],tail=heap.pop();if(heap.length){let i=0;while(i*2+1<heap.length){let j=i*2+1;if(j+1<heap.length&&heap[j+1].f<heap[j].f)j++;if(heap[j].f>=tail.f)break;heap[i]=heap[j];i=j;}heap[i]=tail;}return top;};
+ const first={ix:0,iy:0,x:start.x,y:start.y,g:0,f:Math.hypot(goal.x-start.x,goal.y-start.y),prev:null};push(first);seen.set('0,0',first);
+ for(let count=0;heap.length&&count<3500;count++){
+  const n=pop(),key=n.ix+','+n.iy;if(closed.has(key))continue;closed.add(key);
+  if(Math.hypot(goal.x-n.x,goal.y-n.y)<cell*1.5&&patrolLineClear(n,goal,r)){
+   const path=[{x:goal.x,y:goal.y}];for(let q=n;q.prev;q=q.prev)path.push({x:q.x,y:q.y});path.reverse();return path;
+  }
+  for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]){
+   const ix=n.ix+dx,iy=n.iy+dy,k=ix+','+iy;if(closed.has(k))continue;
+   const next={ix,iy,x:start.x+ix*cell,y:start.y+iy*cell};if(!patrolLineClear(n,next,r))continue;
+   const cost=n.g+Math.hypot(dx,dy)*cell,old=seen.get(k);if(old&&old.g<=cost)continue;
+   next.g=cost;next.f=cost+Math.hypot(goal.x-next.x,goal.y-next.y);next.prev=n;seen.set(k,next);push(next);
+  }
+ }
+ return null;
+}
+function movePatrolReturn(o,target,dt,sp,r){
+ const now=performance.now();
+ if(o.returnRoute&&o.returnRouteGoal!==o.wi){o.returnRoute=null;}
+ if(!o.returnRoute&&o.stk>.25&&now>=(o.returnRetryAt||0)&&now>=patrolRoutePlanAt){
+  patrolRoutePlanAt=now+100;o.returnRetryAt=now+1500;
+  let route=findPatrolReturnPath(o,target,r);
+  if(!route){const candidates=o.path.map((q,i)=>({q,i,d:Math.hypot(q.x-o.x,q.y-o.y)})).filter(v=>v.i!==o.wi).sort((a,b)=>a.d-b.d);const v=candidates.find(v=>patrolLineClear(o,v.q,r));if(v){o.wi=v.i;route=[{x:v.q.x,y:v.q.y}];}}
+  if(route){o.returnRoute=route;o.returnRouteGoal=o.wi;o.stk=0;o.turnPause=0;}
+ }
+ let dest=target;
+ if(o.returnRoute){while(o.returnRoute.length&&Math.hypot(o.returnRoute[0].x-o.x,o.returnRoute[0].y-o.y)<5)o.returnRoute.shift();if(o.returnRoute.length)dest=o.returnRoute[0];else o.returnRoute=null;}
+ const a=Math.atan2(dest.y-o.y,dest.x-o.x),d=Math.hypot(dest.x-o.x,dest.y-o.y),step=Math.min(sp*dt,d),ox=o.x,oy=o.y;
+ mv(o,Math.cos(a)*step,Math.sin(a)*step,r);
+ const moved=Math.hypot(o.x-ox,o.y-oy);o.stk=moved<step*.1?o.stk+dt:0;
+ if(o.returnRoute&&o.stk>.4){o.returnRoute=null;}
+ return a;
+}
 function patrol(o,dt,sp,r){
  // Stationary guards have one waypoint. Do not run the two-endpoint reversal.
  if(!Array.isArray(o.path)||o.path.length<2){o.wi=0;o.turnPause=0;o.stk=0;return Number.isFinite(o.face)?o.face:Number.isFinite(o.ang)?o.ang:0;}
@@ -2128,8 +2171,8 @@ function patrol(o,dt,sp,r){
  const t=o.path[o.wi],a=Math.atan2(t.y-o.y,t.x-o.x);
  // 巡回ルートの曲がり角・折り返し地点では、方向転換する前に2秒停止する。
  if(o.turnPause>0){o.turnPause-=dt;if(o.turnPause<=0){o.turnPause=0;if(o.loop)o.wi=(o.wi+(o.dir||1)+o.path.length)%o.path.length;else{o.wi+=o.dir;if(o.wi<0||o.wi>=o.path.length){o.dir*=-1;o.wi+=2*o.dir;}}}return o.pauseFace??a;}
- if(Math.hypot(t.x-o.x,t.y-o.y)<5||o.stk>.8){o.stk=0;o.turnPause=2;o.pauseFace=a;return a;}
- const ox=o.x,oy=o.y;mv(o,Math.cos(a)*sp*dt,Math.sin(a)*sp*dt,r);o.stk=(o.x===ox&&o.y===oy)?o.stk+dt:0;return a;}
+ if(Math.hypot(t.x-o.x,t.y-o.y)<5){o.stk=0;o.turnPause=2;o.pauseFace=a;return a;}
+ return movePatrolReturn(o,t,dt,sp,r);}
 function distributeFlankPatrols(){
  const targetsByZone=[];
  for(const z of ZONES){
@@ -2746,7 +2789,7 @@ function finalizeScore(cleared){
 function humanMemory(h){return DETECT_MEMORY*(h&&h.elite?1.5:1);}
 function foundModePause(){return .5+R()*.5;}
 function pauseAfterEnemyDetection(o){
- o.lastAiMode=o.sus>0?'suspicious':'patrol';o.modePause=.5+R()*.5;o.modeFrozen=true;o.walking=false;
+ o.returnRoute=null;o.returnRetryAt=0;o.stk=0;o.lastAiMode=o.sus>0?'suspicious':'patrol';o.modePause=.5+R()*.5;o.modeFrozen=true;o.walking=false;
 }
 function holdEnemyModePosition(o){
  if(o.modeFrozen&&o.alive&&!(o.blastAirT>0)&&!(o.stun>0)&&!o.houndPinned&&Number.isFinite(o.modeStartX)&&Number.isFinite(o.modeStartY)){o.x=o.modeStartX;o.y=o.modeStartY;o.walking=false;}
@@ -2767,6 +2810,7 @@ function enterHumanFound(h,key,pause=null){
  if(fresh){
   h.foundPause=Math.max(h.foundPause||0,foundModePause());
   enemyModePaused(h);
+  h.returnRoute=null;
   h.ct=0;
   if(!h.elite&&!h.bu)h.bombAt=.8+R()*3.7;
   if(key==='p'&&scoreStats&&!scoreStats.finalized)scoreStats.foundEntries++;
