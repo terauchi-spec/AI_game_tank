@@ -518,7 +518,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.10.147',FILE_CREATED_AT='2026/10/10 16:30',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.10.147',FILE_CREATED_AT='2026/10/10 16:34',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -2543,7 +2543,7 @@ function mv(o,dx,dy,r,slowOverride=null){const slow=Number.isFinite(slowOverride
 let lastEnemySeparationAt=-1e9;
 function separateEnemyUnits(force=false){
  const now=performance.now();if(!force&&now-lastEnemySeparationAt<100)return;lastEnemySeparationAt=now;
- const u=[];for(const h of humans||[])if(h.alive)u.push({o:h,r:8,static:!!h.areaDebugStatic});for(const e of etanks||[])if(e.alive)u.push({o:e,r:TANK_HIT,static:!!(e.static||e.areaDebugStatic)});
+ const u=[];for(const h of humans||[])if(h.alive)u.push({o:h,r:8,static:!!(h.areaDebugStatic||h.modeFrozen)});for(const e of etanks||[])if(e.alive)u.push({o:e,r:TANK_HIT,static:!!(e.static||e.areaDebugStatic||e.modeFrozen)});
  for(let pass=0;pass<3;pass++)for(let i=0;i<u.length;i++)for(let j=i+1;j<u.length;j++){
   const a=u[i],b=u[j],dx=b.o.x-a.o.x,dy=b.o.y-a.o.y,d=Math.hypot(dx,dy),bothHuman=a.r===8&&b.r===8,min=a.r+b.r+(bothHuman?12:8);if(d>=min)continue;
   const ang=d>.001?Math.atan2(dy,dx):((i*2.17+j*1.31)%6.28318),ux=Math.cos(ang),uy=Math.sin(ang),need=min-Math.max(.001,d)+.2;
@@ -2745,12 +2745,18 @@ function finalizeScore(cleared){
 }
 function humanMemory(h){return DETECT_MEMORY*(h&&h.elite?1.5:1);}
 function foundModePause(){return .5+R()*.5;}
+function pauseAfterEnemyDetection(o){
+ o.lastAiMode=o.sus>0?'suspicious':'patrol';o.modePause=.5+R()*.5;o.modeFrozen=true;o.walking=false;
+}
+function holdEnemyModePosition(o){
+ if(o.modeFrozen&&o.alive&&!(o.blastAirT>0)&&!(o.stun>0)&&!o.houndPinned&&Number.isFinite(o.modeStartX)&&Number.isFinite(o.modeStartY)){o.x=o.modeStartX;o.y=o.modeStartY;o.walking=false;}
+}
 function enemyModePaused(o,dt=0){
  const mode=o.st?'found':o.sus>0?'suspicious':'patrol';
  if(o.lastAiMode===undefined)o.lastAiMode=mode;
  if(o.lastAiMode!==mode){o.lastAiMode=mode;o.modePause=Math.max(o.foundPause||0,o.susPause||0,.5+R()*.5);}
  const paused=(o.modePause||0)>0;
- if(paused){o.modePause=Math.max(0,o.modePause-dt);o.foundPause=Math.max(0,(o.foundPause||0)-dt);o.susPause=Math.max(0,(o.susPause||0)-dt);o.sharePause=Math.max(0,(o.sharePause||0)-dt);o.firePause=Math.max(0,(o.firePause||0)-dt);}
+ if(paused){o.modeFrozen=true;o.walking=false;o.modePause=Math.max(0,o.modePause-dt);o.foundPause=Math.max(0,(o.foundPause||0)-dt);o.susPause=Math.max(0,(o.susPause||0)-dt);o.sharePause=Math.max(0,(o.sharePause||0)-dt);o.firePause=Math.max(0,(o.firePause||0)-dt);}
  return paused;
 }
 function enterHumanFound(h,key,pause=null){
@@ -4129,6 +4135,7 @@ function drawSniperScope(){
  }
 
 function update(dt){
+ for(const o of [...humans,...etanks]){o.modeStartX=o.x;o.modeStartY=o.y;o.modeFrozen=false;}
  for(const h of humans){h.walkStartX=h.x;h.walkStartY=h.y;}
  updateWeather(dt);updateHQSpawn(dt);updateDrill(dt);
  const sniperLocked=updateSniperState(dt);
@@ -4187,7 +4194,7 @@ function update(dt){
  if(radio&&!radio.got&&D(radio,p)<30){radio.got=true;startAirstrike();}
  updateHound(dt);
  const stealthCover=(!p.tank&&inBush(p))||(weather==='rain'&&inWaterAt(p.x,p.y,0))||(p.dig>0);
- if(stealthCover){const wasFound=humans.some(h=>h.alive&&h.st&&h.target==='p')||etanks.some(e=>e.alive&&e.st&&e.target==='p');p.bushHide=(p.bushHide||0)+dt;if(!wasFound||p.bushHide>=1){for(const h of humans)if(h.alive&&h.target==='p'&&!(h.sniperForcedFoundT>0)){h.st=0;h.target=null;h.lost=0;h.foundPause=0;}for(const e of etanks)if(e.alive&&e.target==='p'&&!(e.sniperForcedFoundT>0)){e.st=0;e.target=null;e.lost=0;e.foundPause=0;}}}else p.bushHide=0;
+ if(stealthCover){const wasFound=humans.some(h=>h.alive&&h.st&&h.target==='p')||etanks.some(e=>e.alive&&e.st&&e.target==='p');p.bushHide=(p.bushHide||0)+dt;if(!wasFound||p.bushHide>=1){for(const h of humans)if(h.alive&&h.target==='p'&&!(h.sniperForcedFoundT>0)){h.st=0;h.target=null;h.lost=0;h.foundPause=0;pauseAfterEnemyDetection(h);}for(const e of etanks)if(e.alive&&e.target==='p'&&!(e.sniperForcedFoundT>0)){e.st=0;e.target=null;e.lost=0;e.foundPause=0;pauseAfterEnemyDetection(e);}}}else p.bushHide=0;
  // 敵人間：プレイヤー・相棒・偽装を個別に索敵。遮蔽物があれば発見しない。
  for(const h of humans){if(!h.alive)continue;
   h.burnSuspicionHold=Math.max(0,(h.burnSuspicionHold||0)-dt);
@@ -4223,9 +4230,9 @@ function update(dt){
   }
   const detected=findDetectedTarget(h,h.face);if(detected){const fresh=!h.st;enterHumanFound(h,detected.key,.5);if(fresh)h.sharePause=0;}
   if(!h.st){const shared=alertedHumanInSearch(h);if(shared)inheritAlertFromHuman(h,shared);}
-  let tg=targetObj(h.target);if(h.st&&!tg){h.st=0;h.target=null;h.foundPause=0;h.sharePause=0;}tg=targetObj(h.target);
+  let tg=targetObj(h.target);if(h.st&&!tg){h.st=0;h.target=null;h.foundPause=0;h.sharePause=0;pauseAfterEnemyDetection(h);}tg=targetObj(h.target);
   if(h.st&&tg){const d=D(h,tg),toT=Math.atan2(tg.y-h.y,tg.x-h.x),vis=cachedLos(h,tg),moveSp=95*(h.elite?1.2:1);
-   if(!detected&&!h.hq){h.lost-=dt;if(h.lost<=0||d>detectDropRange(h.target)*(h.elite?1.2:1)){h.st=0;h.target=null;h.sharePause=0;h.foundPause=0;}}
+   if(!detected&&!h.hq){h.lost-=dt;if(h.lost<=0||d>detectDropRange(h.target)*(h.elite?1.2:1)){h.st=0;h.target=null;h.sharePause=0;h.foundPause=0;pauseAfterEnemyDetection(h);}}
    if(h.st){h.cd-=dt;h.ct=(h.ct||0)+dt;const sharedPause=(h.sharePause||0)>0,foundPause=(h.foundPause||0)>0;if(sharedPause)h.sharePause=Math.max(0,h.sharePause-dt);if(foundPause)h.foundPause=Math.max(0,h.foundPause-dt);const movePause=sharedPause||foundPause||(h.chatResumeT||0)>0;h.face=(foundPause&&p)?Math.atan2(p.y-h.y,p.x-h.x):toT;
     // 通常兵だけが設置爆弾を使う。発見モード突入時に設置タイミングを個体ごとにランダム決定。
     if(!h.elite&&!h.bu&&!h.plantT&&h.ct>(h.bombAt??1.5)&&!movePause){h.bu=true;h.plantT=.35+R()*.4;h.plantA=toT;}
@@ -4243,9 +4250,9 @@ function update(dt){
   if(enemyModePaused(e,dt))continue;
   const silentDrill=!!(p.drill>0&&p.drillSilentTank===e&&p.drillTankTarget===e&&!e.st&&!e.static);
   const detected=silentDrill?null:findDetectedTarget(e,e.ang);if(detected)enterTankFound(e,detected.key,.5);
-  let tg=targetObj(e.target);if(e.st&&!tg){e.st=0;e.target=null;e.foundPause=0;}tg=targetObj(e.target);
+  let tg=targetObj(e.target);if(e.st&&!tg){e.st=0;e.target=null;e.foundPause=0;pauseAfterEnemyDetection(e);}tg=targetObj(e.target);
   if(e.st&&tg){const d=D(e,tg),toT=Math.atan2(tg.y-e.y,tg.x-e.x),vis=cachedLos(e,tg);
-   if(!detected){e.lost-=dt;if(e.lost<=0||d>detectDropRange(e.target)){e.st=0;e.target=null;e.foundPause=0;}}
+   if(!detected){e.lost-=dt;if(e.lost<=0||d>detectDropRange(e.target)){e.st=0;e.target=null;e.foundPause=0;pauseAfterEnemyDetection(e);}}
    if(e.st){e.cc-=dt;e.vc-=dt;e.firePause=Math.max(0,(e.firePause||0)-dt);const foundPause=(e.foundPause||0)>0;if(foundPause)e.foundPause=Math.max(0,e.foundPause-dt);e.ang=(foundPause&&p)?Math.atan2(p.y-e.y,p.x-e.x):toT;if(!foundPause&&!e.static&&d>190){mv(e,Math.cos(toT)*55*dt,Math.sin(toT)*55*dt,TANK_HIT);e.body=toT;}else if(!foundPause&&!e.static&&d<120){mv(e,-Math.cos(toT)*40*dt,-Math.sin(toT)*40*dt,TANK_HIT);}
     const canFire=(e.firePause||0)<=0;
     if(canFire&&!vis&&e.cc<=0){const block=firstBlockingCover(e,tg,300);if(block){const bx=block.x+block.w/2,by=block.y+block.h/2,ba=Math.atan2(by-e.y,bx-e.x);e.cc=2.8;fire(e.x+Math.cos(ba)*38,e.y+Math.sin(ba)*38,ba+(R()-.5)*.035,'e','c',enemyCannonSpeed(),340);}}
@@ -4333,6 +4340,7 @@ function update(dt){
  updateAlly(dt);updateAirstrike(dt);
  // 水面アニメーションと同じ向きの流れを地上ユニットへ反映する。
  applyRiverCurrents(dt);
+ for(const o of [...humans,...etanks])holdEnemyModePosition(o);
  for(const f of fx)f.l-=dt;fx=fx.filter(f=>f.l>0);
  updateParts(dt);updateWaterRipples(dt);
  shake=Math.max(0,shake-35*dt);flash=Math.max(0,flash-dt*2.5);msgT-=dt;vehicleNameT=Math.max(0,vehicleNameT-dt);updateScoreTracking(dt,frameMove);if(state==='play')updateMission(dt);return near;
