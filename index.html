@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.11.165</title>
+<title>戦車ゲーム 2026.10.11.166</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -429,7 +429,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 </div></div>
 <div id="specScreen" role="region" aria-label="ゲーム仕様" aria-hidden="true"><div class="spec-wrap">
 <header class="spec-head"><h1>ゲーム仕様</h1><button type="button" id="specHome" class="spec-back">タイトルへ</button></header>
-<p class="spec-intro">「戦車大戦」のゲームルール・マップ・敵AI・乗り物・スキル・評価の仕様をまとめています。操作方法をすぐに確認したい場合は、タイトルの「操作説明」をご利用ください。</p>
+<p class="spec-intro">このゲームのルール・マップ・敵AI・乗り物・スキル・評価の仕様をまとめています。操作方法をすぐに確認したい場合は、タイトルの「操作説明」をご利用ください。</p>
 <nav id="spec-toc" class="spec-toc" aria-label="ゲーム仕様の目次"><h2>目次</h2><ol>
 <li><a href="#spec-goal">目的とクリア条件</a></li>
 <li><a href="#spec-map">ステージ構成とランダム生成</a></li>
@@ -445,32 +445,34 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 </ol></nav>
 <section class="spec-section" id="spec-goal"><h2>1. 目的とクリア条件</h2>
 <p>出撃前に3種類の作戦から選択します。<strong>拠点破壊</strong>は最終エリアの敵司令本部を破壊、<strong>最前線</strong>は3戦線を順番に各12秒制圧、<strong>潜入</strong>は徒歩・未発見状態で3端末を各4秒解析し、同じ条件で開始地点へ帰還するとクリアです。敵に倒されると任務失敗となり、結果画面へ移行します。</p>
+<p><strong>最前線：</strong>目標中心から180px以内にプレイヤーまたは前線の味方がいて、210px以内に活動中の敵兵・敵戦車がいないと制圧が進みます。敵が入ると進捗が徐々に減少します。自動増援があり、制圧時に歩兵ライフと搭乗車両の弾薬・燃料を補給します。<strong>潜入：</strong>徒歩・未発見状態で端末から65px以内に4秒留まると解析できます。条件を外れると解析途中の進捗はリセットされます。全情報の回収後、開始地点から95px以内へ徒歩・未発見状態で戻るとクリア。警戒度65%以上で追跡増援が発生します。</p>
 <p>歩兵の潜入に加え、戦車などの乗り物を利用した戦闘や、出撃前に選ぶスキルによる攻略ができます。</p><a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-map"><h2>2. ステージ構成とランダム生成</h2>
 <p>ステージは全7エリア。<strong>最初は草原、最後は敵司令本部</strong>で、その間の5エリアは候補から毎回重複なしでランダムに選ばれます。中間エリアにも草原が選ばれることがあります。</p>
 <p>中間エリア候補：草原／森林／村／丘陵／敵前線基地／街／敵迷路基地／湿地。</p>
-<ul><li>エリアごとに地形や建物、木、岩、草むら、障害物などの配置が異なります。作戦1回の通常車両は合計3〜5台で、トラック・装甲車・戦車からランダムに選ばれ、戦車が最低1台出現します。戦闘機は通常配置の対象外です。橋幅は64〜256px、川ごとの流速は6〜30px/秒です。</li><li>左右端の危険度は<strong>左重点・右重点・両側重点</strong>から毎回抽選され、巡回兵の配置や遮蔽物が変化します。</li><li>迷路基地には広い会議室と幅の広い廊下、空きスペースの木箱があります。青の通常兵はつながった通路を広く探索します。迷路壁は戦車の接触で壊しやすく、木箱等の爆風でも破壊できます。敵司令本部にも固有の構造があります。</li><li>マップ・敵・障害物の配置は出撃ごとに再生成されます。</li></ul>
+<ul><li>エリアごとに地形や建物、木、岩、草むら、障害物などの配置が異なります。作戦1回の通常車両は合計3〜5台で、トラック・装甲車・戦車からランダムに選ばれ、戦車が最低1台出現します。戦闘機は通常配置の対象外です。橋幅は64〜256px、川ごとの流速は6〜30px/秒です。</li><li>左右端の危険度は<strong>左重点・右重点・両側重点</strong>から毎回抽選され、巡回兵の配置や遮蔽物が変化します。</li><li>迷路基地には広い会議室と幅の広い廊下、空きスペースの木箱があります。青の通常兵はつながった通路を広く探索します。迷路壁は戦車の接触で壊しやすく、トラック・装甲車の接触では破壊できません。木箱等の爆風では破壊できます。敵司令本部にも固有の構造があります。</li><li>マップ・敵・障害物の配置は出撃ごとに再生成されます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-controls"><h2>3. 基本操作</h2>
 <ul><li><strong>PC：</strong>矢印キーで移動。D＝爆弾・乗り物の主攻撃、S＝スキル・戦車MG、A＝乗降・近接アクション。</li><li><strong>スマホ：</strong>左スティックで移動。画面のB・S・Aボタンを使用。</li><li><strong>戦車（スマホ）：</strong>Bをドラッグして砲塔を照準、離すと主砲発射。Sを押し続けてMGを撃ち、ドラッグで照準を動かせます。</li><li><strong>狙撃中：</strong>左右で視点移動、上下で1.5倍／2.5倍／3.5倍レンズを変更。Sで狙撃、Aで解除します。</li></ul>
 <p>詳しいキー配置と各スキルの操作はタイトル画面の「操作説明」、またはスキル選択画面のⓘでも確認できます。</p>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-player"><h2>4. 歩兵・潜入・地形</h2>
-<ul><li>歩兵のライフはハート3個。敵戦車の砲弾が直撃するとライフが3減少します。徒歩では敵戦車の車体を通り抜けられません。乗り物に搭乗していないときは爆弾やスキルを使用できます。</li><li>近くの敵兵にAで組み付くと、敵を気絶させられます。</li><li>草むらは敵の視線を避けるための隠蔽場所です。白い目に赤い斜線のアイコンが隠れた状態の目印です。発見解除前は黄色の「解除待ち」を表示します。雨天時は水中にいることも発見を避ける条件になります。</li><li>停止中は敵の索敵距離が短くなります。見つかった後も、条件を満たして隠れ続けると発見状態を解除できます。</li><li>建物・岩・木・防護壁などは、種類に応じて通行や射線を遮ります。川や泥は移動にも影響します。</li></ul>
+<ul><li>歩兵のライフはハート3個。敵戦車の砲弾が直撃するとライフが3減少します。徒歩では敵戦車の車体を通り抜けられません。乗り物に搭乗していないときは爆弾やスキルを使用できます。</li><li>近くの敵兵にAで組み付くと、敵を60秒間気絶させられます。</li><li>草むらは敵の視線を避けるための隠蔽場所です。白い目に赤い斜線のアイコンが隠れた状態の目印です。発見解除前は黄色の「解除待ち」を表示します。雨天時は水中にいることも発見を避ける条件になります。</li><li>停止中は敵の索敵距離が短くなります。見つかった後も、条件を満たして隠れ続けると発見状態を解除できます。</li><li>建物・岩・木・防護壁などは、種類に応じて通行や射線を遮ります。川や泥は移動にも影響します。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-enemies"><h2>5. 敵兵と敵戦車のAI</h2>
-<h3>敵歩兵</h3><p>巡回・疑惑・発見の状態を持ちます。通常の巡回に加え、建物の周囲を回る巡回ルートもあります。音や爆発を警戒し、プレイヤーを発見すると短い反応時間を挟んで追跡・射撃します。エリート兵は通常兵と性能・挙動が異なります。</p>
+<h3>敵歩兵</h3><p>巡回・疑惑・発見の状態を持ちます。通常の巡回に加え、建物の周囲を回る巡回ルートもあります。音や爆発を警戒し、プレイヤーを発見すると短い反応時間を挟んで追跡・射撃します。状態の切り替えには0.5〜1秒の静止時間を挟みます。巡回中は前面の銃を隠し、発見中に銃を構えると腕を振らずに移動します。エリート兵は通常兵と性能・挙動が異なります。</p>
 <h3>指揮官（各2体）</h3><p>敵歩兵は青の通常兵・青の指揮官・白の通常エリート・白の指揮官の4種類です。指揮官はヘルメット横の黄色い丸で識別できます。青兵指揮官は発見時に笛を吹き、1秒後に1000px以内の兵士へ発見を伝達。0.5秒間停止して構えた時点の方向へバズーカを撃ちます。射撃後は約1.2秒移動します。戦車砲の半分の被弾威力で、爆破範囲は110pxです（設置爆弾は95px）。白兵指揮官は上部からマップの左右端を大きく蛇行しながら南下し、左右を見て索敵。発見後は距離を保ち、7秒ごとに先回りと尾行を切り替えます。移動速度は通常青兵の1.5倍（巡回45px/秒・交戦142.5px/秒）。移動中は武器を隠し、射撃時のみ武器を表示します。0.3秒停止して予測照準し、射程480pxの単発ライフルで攻撃します。司令本部の増援は巡回モードで出現し、10%の確率で青兵指揮官になります。通常兵と通常エリートの基本行動は従来どおりです。</p><h3>敵戦車</h3><p>巡回・疑惑・発見の状態を持ちます。爆発音や狙撃音などを察知すると、車体を止めて音の方向へ砲塔を旋回させる疑惑モードに入ります。実際に標的を見つけた場合は、反応時間を挟んで主砲やMGで攻撃します。</p>
 <p>敵は障害物や視線の遮り、草むら、周囲から伝わる警戒情報などの影響を受けます。</p>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-vehicles"><h2>6. 乗り物</h2>
-<ul><li><strong>戦車：</strong>主砲（D）とMG（S）で攻撃します。車種により性能が異なり、砲弾・MG弾数・燃料・耐久の管理が必要です。</li><li><strong>装甲車：</strong>速度130.5px/秒で戦車より速く、ジープ相当のトラックより遅い車両です。D（スマホ：B）またはSでサブマシンガンを撃ちます。弾数120、燃料95。敵戦車砲の直撃1発で大破し、敵SMGへの耐久はトラックの1.5倍（7.5発分、実際には8発で大破）です。迷路壁は接触で破壊できません。大破時は爆発のみで残骸は残りません。主砲はありません。下車後はトラックと同様に慣性で前進し、敵戦車との体当たりでは両車両が爆発します。</li><li><strong>トラック：</strong>武器による攻撃はできませんが、走行時の接触で敵を倒せます。破壊されることもあります。</li><li><strong>戦闘機：</strong>地上の障害物を越えて飛行し、爆撃できます。</li><li>近づいてAで乗車し、再度Aで降車します。降車地点には十分な空きスペースが必要です。</li></ul>
+<ul><li><strong>戦車：</strong>主砲（D）とMG（S）で攻撃します。車種により性能が異なり、砲弾・MG弾数・燃料・耐久の管理が必要です。</li><li><strong>装甲車：</strong>速度130.5px/秒で戦車より速く、ジープ相当のトラックより遅い車両です。D（スマホ：B）またはSでサブマシンガンを撃ちます。弾数120、燃料95。敵戦車砲の直撃1発で大破し、敵SMGへの耐久はトラックの1.5倍（7.5発分、実際には8発で大破）です。迷路壁は接触で破壊できません。大破時は爆発のみで残骸は残りません。主砲はありません。下車後はトラックと同様に慣性で前進し、敵戦車との体当たりでは両車両が爆発します。</li><li><strong>トラック：</strong>武器による攻撃はできませんが、走行時の接触で敵を倒せます。下車後は慣性で前進し、敵戦車への体当たりでは両車両が爆発します。迷路壁は接触で破壊できません。敵SMGは5発で大破し、大破時に残骸は残りません。</li><li><strong>戦闘機（デバッグ用）：</strong>通常のランダム車両配置には出現しません。デバッグで搭乗すると地上の障害物を越えて飛行し、爆撃できます。無線で呼ぶ支援爆撃機とは別の機体です。</li><li>近づいてAで乗車し、再度Aで降車します。降車地点には十分な空きスペースが必要です。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-combat"><h2>7. 武器・爆発・破壊</h2>
 <ul><li><strong>歩兵の設置爆弾：</strong>D（スマホ：B）で設置し、再度D（スマホ：B）で起爆。爆風で敵・オブジェクトを攻撃できます。</li><li><strong>戦車主砲：</strong>壁や建物などに当たると炸裂。プレイヤーの主砲が壁に着弾したときは、着弾点から約9.5m以内の敵歩兵を撃破できます。</li><li><strong>MG・ライフル：</strong>弾の種類に応じた射程・被弾処理があります。狙撃弾は敵兵を貫通できます。</li><li><strong>破壊可能オブジェクト：</strong>木箱やドラム缶などは被弾・炎上・爆発に反応し、状況によって連鎖爆発も発生します。</li><li>爆風によって敵やプレイヤーが押し飛ばされ、気絶する場合があります。</li></ul>
+<h3>アイテムと支援爆撃</h3><ul><li><strong>ガソリン：</strong>赤い携行缶。通常マップに5個配置され、乗車中のみ表示・取得できます。取得すると搭乗車両の燃料が満タンになります。</li><li><strong>無線：</strong>通常マップに1個配置。徒歩・乗車どちらでも取得でき、支援爆撃を自動で要請します。</li><li><strong>支援爆撃機：</strong>大きな主翼と細い胴体を持つ六発機。画面上方向へ飛び、3列に計25発の爆弾を投下します。直近の変更で進行方向の爆撃範囲を約160〜170px延長しました。投下間隔は約0.14秒で、爆弾は約0.48秒後に炸裂します。乗り物より上に描画されます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-skills"><h2>8. 9種類のスキル</h2>
-<p><strong>作戦：</strong>拠点破壊は従来の司令本部破壊。最前線は3戦線を順番に12秒確保すると勝利。潜入は徒歩で3端末を各4秒解析し、開始地点へ未発見状態で帰還すると勝利。最前線は範囲内の敵を排除し、プレイヤーまたは前線の味方が範囲内にいると制圧が進みます。自動増援・制圧時の歩兵ライフと車両弾薬・燃料の補給があり、潜入は警戒度65%以上で追跡増援が発生します。</p><p>通常プレイでは出撃前に<strong>解放済みスキルから1種類</strong>を選択します。スキルごとに使用方法・持続時間・チャージが異なります。</p>
+<p>通常プレイでは出撃前に<strong>解放済みスキルから1種類</strong>を選択します。スキルごとに使用方法・持続時間・チャージが異なります。</p>
 <ul>
 <li><strong>投擲：</strong>進行方向へ最大11mの距離で爆弾を投げます。5秒で再使用可能。</li>
 <li><strong>潜伏：</strong>0.5秒静止して潜伏準備後、最大5秒間潜伏。解除後は5秒チャージ。水中は移動速度60%、泥では潜伏を解除します。潜伏開始1秒後に敵表示が隠れます。</li>
@@ -484,13 +486,13 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 </ul><p>スキルによっては搭乗中や特殊状態では使用できません。細かな制約は出撃時のスキル説明に従います。</p>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-weather"><h2>9. 天候と環境</h2>
-<ul><li>天候は晴れと雨が切り替わることがあります。</li><li>雨天では敵の索敵距離が短くなり、狙撃スコープの有効な見通し距離も短くなります。</li><li>雨天では自然物への延焼が抑えられます。</li><li>川の流れや泥などは、歩兵・車両の移動に影響します。</li></ul>
+<ul><li>天候は晴れと雨が切り替わります。雨は30秒間で、降り始めの約5秒は小雨から徐々に強まり、最後の約6秒は徐々に弱まります。画面の暗さ・雨粒・水しぶきも雨量に合わせて変化します。雨天のゲーム効果は雨の開始から終了まで適用されます。</li><li>雨天では敵の索敵距離が通常の75%、狙撃スコープの見通し距離が70%になります。</li><li>雨天では自然物への延焼が抑えられます。</li><li>川の流れや泥などは、歩兵・車両の移動に影響します。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-score"><h2>10. 評価・スコア・称号</h2>
 <ul><li>クリアまたは失敗後の評価画面に、総合スコアと<strong>F〜Sの7段階ランク</strong>を表示します。</li><li>スコアは潜入・戦闘・任務達成・クリア時間などをもとに計算します。到達距離は出撃開始地点からの最大前進距離です。距離表示はすべてm単位です。</li><li>プレイスタイルを<strong>潜入／索敵／射撃／戦闘／爆破／機動／戦術／生存</strong>の8軸（Lv0〜5）で評価します。索敵は未発見での前進距離、射撃は発射数あたりの撃破効率などを指標にします。</li><li><strong>マルチキル：</strong>撃破間隔4秒以内で続けて敵を撃破すること。<strong>ワンショットキル：</strong>同一攻撃で複数の敵を撃破すること。無線支援爆撃とその連鎖爆発は、マルチキル・ワンショットキルの対象外です。</li><li>条件を満たすと称号・勲章を獲得。タイトル画面の「称号」からコレクションと累計戦績を確認できます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-save"><h2>11. スキル解放・保存・デバッグ</h2>
-<ul><li>初期解放スキルは<strong>投擲</strong>。通常プレイでクリアするたびに、新しいスキルが順番に1種類ずつ解放されます。</li><li>スキル解放・称号・勲章・ハイスコア・戦績などは、このブラウザ内に保存されます。</li><li>称号画面の「戦績」から保存データを初期化できます。初期化は取り消せません。</li><li>デバッグでは無敵モードや全スキル表示などを使用可能。デバッグプレイの実績は通常の称号・勲章・戦績やスキル解放の対象外です。</li></ul>
+<ul><li>初期解放スキルは<strong>投擲</strong>。通常プレイでクリアするたびに、新しいスキルが順番に1種類ずつ解放されます。</li><li>スキル解放・称号・勲章・ハイスコア・戦績などは、このブラウザ内に保存されます。</li><li>称号画面の「戦績」から保存データを初期化できます。初期化は取り消せません。</li><li>デバッグではPキー（スマホは上部アイコン）で「無敵→無敵＋索敵解除→無敵＋戦闘機（燃料無限）→通常」を切り替え、Oキーで前方に戦車を出現、Lキーで巡回ルート表示を切り替えられます。スキル選択画面には全スキル表示とエリアデバッグがあります。エリアデバッグでは全エリアの遮蔽物・静止した敵のサンプルを確認でき、出発地点付近にガソリンと無線を配置しています。デバッグ用ガソリンは徒歩でも表示され、取得には乗車が必要です。デバッグプレイの実績は通常の称号・勲章・戦績やスキル解放の対象外です。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <p class="spec-foot">仕様は Ver.<span id="specVersion"></span> 時点の内容です。ゲームの更新に伴い変更される場合があります。</p>
 </div></div>
@@ -518,7 +520,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.11.165',FILE_CREATED_AT='2026/10/11 08:45',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.11.166',FILE_CREATED_AT='2026/10/11 08:46',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -6565,11 +6567,11 @@ function loop(n){
 }
 let gameErrorCount=0;
 function reportGameError(error){
- gameErrorCount++;console.error('Tank game v165',error);
+ gameErrorCount++;console.error('Tank game v166',error);
  let panel=document.getElementById('runtimeError');
  if(!panel){panel=document.createElement('div');panel.id='runtimeError';panel.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;background:#422018;color:#fff2dc;padding:12px;border:1px solid #f7b083;border-radius:8px;font:12px system-ui;white-space:pre-wrap;max-height:35vh;overflow:auto';document.body.appendChild(panel);}
  const stack=String(error&&error.stack||error).split('\n').slice(0,4).join('\n');
- panel.textContent='v165 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
+ panel.textContent='v166 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 requestAnimationFrame(loop);
 </script>
