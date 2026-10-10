@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.10.148</title>
+<title>戦車ゲーム 2026.10.10.149</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -460,7 +460,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-enemies"><h2>5. 敵兵と敵戦車のAI</h2>
 <h3>敵歩兵</h3><p>巡回・疑惑・発見の状態を持ちます。通常の巡回に加え、建物の周囲を回る巡回ルートもあります。音や爆発を警戒し、プレイヤーを発見すると短い反応時間を挟んで追跡・射撃します。エリート兵は通常兵と性能・挙動が異なります。</p>
-<h3>指揮官（各2体）</h3><p>敵歩兵は青の通常兵・青の指揮官・白の通常エリート・白の指揮官の4種類です。指揮官はヘルメット横の黄色い丸で識別できます。青兵指揮官は発見時に笛を吹き、1000px以内の兵士へ発見を伝達。1.5秒間停止して構えた時点の方向へバズーカを撃ちます。戦車砲と同じ被弾威力で、爆破範囲は110pxです（設置爆弾は95px）。白兵指揮官は上部から蛇行しながら南下し、左右を見て索敵。発見後は距離を保ち、7秒ごとに先回りと尾行を切り替えます。移動速度は徒歩プレイヤーと同じ150px/秒。0.8秒停止して予測照準し、射程480pxの単発ライフルで攻撃します。通常兵と通常エリートの基本行動は従来どおりです。</p><h3>敵戦車</h3><p>巡回・疑惑・発見の状態を持ちます。爆発音や狙撃音などを察知すると、車体を止めて音の方向へ砲塔を旋回させる疑惑モードに入ります。実際に標的を見つけた場合は、反応時間を挟んで主砲やMGで攻撃します。</p>
+<h3>指揮官（各2体）</h3><p>敵歩兵は青の通常兵・青の指揮官・白の通常エリート・白の指揮官の4種類です。指揮官はヘルメット横の黄色い丸で識別できます。青兵指揮官は発見時に笛を吹き、1秒後に1000px以内の兵士へ発見を伝達。0.5秒間停止して構えた時点の方向へバズーカを撃ちます。戦車砲と同じ被弾威力で、爆破範囲は110pxです（設置爆弾は95px）。白兵指揮官は上部からマップの左右端を大きく蛇行しながら南下し、左右を見て索敵。発見後は距離を保ち、7秒ごとに先回りと尾行を切り替えます。移動速度は通常青兵の1.5倍（巡回45px/秒・交戦142.5px/秒）。移動中は武器を隠し、射撃時のみ武器を表示します。0.2秒停止して予測照準し、射程480pxの単発ライフルで攻撃します。通常兵と通常エリートの基本行動は従来どおりです。</p><h3>敵戦車</h3><p>巡回・疑惑・発見の状態を持ちます。爆発音や狙撃音などを察知すると、車体を止めて音の方向へ砲塔を旋回させる疑惑モードに入ります。実際に標的を見つけた場合は、反応時間を挟んで主砲やMGで攻撃します。</p>
 <p>敵は障害物や視線の遮り、草むら、周囲から伝わる警戒情報などの影響を受けます。</p>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-vehicles"><h2>6. 乗り物</h2>
@@ -518,7 +518,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.10.148',FILE_CREATED_AT='2026/10/10 18:41',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.10.149',FILE_CREATED_AT='2026/10/10 18:59',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -2790,19 +2790,19 @@ function humanMemory(h){return DETECT_MEMORY*(h&&h.elite?1.5:1);}
 function foundModePause(){return .5+R()*.5;}
 
 const COMMANDER_BLUE_RANGE=480,COMMANDER_WHITE_RANGE=480,COMMANDER_BLAST_RADIUS=110;
-let commanderRallying=false,commanderPrevX=null,commanderPrevY=null,commanderVelocity={x:0,y:0};
+let commanderSignals=[],commanderRallying=false,commanderPrevX=null,commanderPrevY=null,commanderVelocity={x:0,y:0};
 function updateCommanderMotion(dt){
  if(commanderPrevX!==null){const vx=(p.x-commanderPrevX)/Math.max(.001,dt),vy=(p.y-commanderPrevY)/Math.max(.001,dt),speed=Math.hypot(vx,vy),scale=speed>300?300/speed:1;commanderVelocity={x:vx*scale,y:vy*scale};}
  commanderPrevX=p.x;commanderPrevY=p.y;
 }
 function spawnCommanderClasses(){
- commanderPrevX=p.x;commanderPrevY=p.y;commanderVelocity={x:0,y:0};commanderRallying=false;
+ commanderPrevX=p.x;commanderPrevY=p.y;commanderVelocity={x:0,y:0};commanderRallying=false;commanderSignals=[];
  if(areaDebugEnabled)return;
  for(const type of ['blue','white'])for(let i=0;i<2;i++){
   const spot=missionSpot(type==='blue'?(i?720:240):(i?740:220),type==='blue'?(i?5400:9400):(i?1900:700),18);
   let path=[{...spot}];
   if(type==='white'){
-   for(let y=spot.y+600,k=0;y<WH-500;y+=650,k++)path.push(missionSpot(k%2?WW-90:90,y,18));
+   for(let y=spot.y+400,k=0;y<WH-500;y+=450,k++)path.push(missionSpot(k%2?WW-40:40,y,18));
   }else{
    for(const length of [150,80,40]){for(const a of [0,Math.PI/2,Math.PI,Math.PI*1.5]){const q={x:spot.x+Math.cos(a)*length,y:spot.y+Math.sin(a)*length};if(patrolLineClear(spot,q,8)){path.push(q);break;}}if(path.length>1)break;}
   }
@@ -2811,10 +2811,19 @@ function spawnCommanderClasses(){
 }
 function commanderWhistle(h,key){
  if(commanderRallying||h.commander!=='blue'||key!=='p'||(h.whistleCooldown||0)>0)return;
- h.whistleT=1.2;h.whistleCooldown=8;commanderRallying=true;
- try{for(const other of humans)if(other!==h&&other.alive&&!(other.stun>0)&&!(other.stunRecover>0)&&!other.houndPinned&&D(other,h)<=1000)enterHumanFound(other,'p');}
- finally{commanderRallying=false;}
+ h.whistleT=1.2;h.whistleCooldown=8;h.whistleSignalT=1;
+ commanderSignals.push({source:h,x:h.x,y:h.y,remaining:1});
  tone(1450,.16,.035,'sine',1850);setTimeout(()=>tone(1800,.16,.03,'sine',1450),170);
+}
+function updateCommanderSignals(dt){
+ for(const signal of commanderSignals){
+  signal.remaining-=dt;signal.source.whistleSignalT=Math.max(0,signal.remaining);
+  if(signal.remaining>1e-9)continue;
+  commanderRallying=true;
+  try{for(const other of humans)if(other!==signal.source&&other.alive&&!(other.stun>0)&&!(other.stunRecover>0)&&!other.houndPinned&&D(other,signal)<=1000)enterHumanFound(other,'p');}
+  finally{commanderRallying=false;}
+ }
+ commanderSignals=commanderSignals.filter(signal=>signal.remaining>1e-9);
 }
 function commanderMove(h,target,dt,sp=150){
  if(h.commanderRoute&&Math.hypot(target.x-h.commanderGoal.x,target.y-h.commanderGoal.y)>90)h.commanderRoute=null;
@@ -2826,12 +2835,13 @@ function commanderMove(h,target,dt,sp=150){
  const to=Math.atan2(dest.y-h.y,dest.x-h.x),step=Math.min(sp*dt,D(h,dest)),ox=h.x,oy=h.y;mv(h,Math.cos(to)*step,Math.sin(to)*step,8);
  if(Math.hypot(h.x-ox,h.y-oy)<step*.1){h.commanderStuck=(h.commanderStuck||0)+dt;if(h.commanderStuck>.4){h.commanderRoute=null;h.commanderStuck=0;}}else h.commanderStuck=0;
 }
-function cancelCommanderAttack(h){h.commanderCharge=0;h.commanderAim=null;h.commanderRoute=null;}
+function cancelCommanderAttack(h){h.commanderShotT=0;h.commanderCharge=0;h.commanderAim=null;h.commanderRoute=null;}
 function updateCommanderAI(h,dt){
  if(!h.commander)return false;
  h.whistleT=Math.max(0,(h.whistleT||0)-dt);h.whistleCooldown=Math.max(0,(h.whistleCooldown||0)-dt);
  h.commanderCooldown=Math.max(0,(h.commanderCooldown||0)-dt);
  h.commanderScan=(h.commanderScan||0)+dt;
+ h.commanderShotT=Math.max(0,(h.commanderShotT||0)-dt);
  const detected=findDetectedTarget(h,h.face);if(detected)enterHumanFound(h,detected.key);
  let target=targetObj(h.target);
  if(h.st&&(!target||(!detected&&(h.lost-=dt)<=0)||target&&D(h,target)>detectDropRange(h.target)*1.6)){
@@ -2841,27 +2851,28 @@ function updateCommanderAI(h,dt){
   cancelCommanderAttack(h);
   if(h.sus>0)return false;
   if(enemyModePaused(h))return true;
-  const facing=patrol(h,dt,h.commander==='white'?150:30,8);
+  const facing=patrol(h,dt,h.commander==='white'?45:30,8);
   h.face=facing+(h.commander==='white'?Math.sin(h.commanderScan*2.2)*.8:0);
   return true;
  }
  if(enemyModePaused(h))return true;
  target=targetObj(h.target);if(!target)return true;
  const distance=D(h,target),to=Math.atan2(target.y-h.y,target.x-h.x),visible=los(h,target);
+ if(h.commander==='white'&&h.commanderShotT>0){h.modeFrozen=true;h.walking=false;return true;}
  if(h.commanderCharge>0){
   h.modeFrozen=true;h.walking=false;h.face=h.commanderAim;h.commanderCharge=Math.max(0,h.commanderCharge-dt);
   if(h.commanderCharge<=0){
    const angle=h.commanderAim,blue=h.commander==='blue';
    fire(h.x+Math.cos(angle)*22,h.y+Math.sin(angle)*22,angle,'e',blue?'c':'r',blue?enemyCannonSpeed():520,blue?COMMANDER_BLUE_RANGE:COMMANDER_WHITE_RANGE);
    const bullet=bullets[bullets.length-1];bullet.commanderRocket=blue;bullet.commanderRifle=!blue;bullet.commanderShooter=h;
-   h.commanderCooldown=blue?4:3.2;h.commanderAim=null;
+   h.commanderCooldown=blue?4:3.2;h.commanderShotT=blue?0:.06;h.commanderAim=null;
   }
   return true;
  }
  h.face=to;
  if(h.commander==='blue'){
   if(distance>340)commanderMove(h,target,dt,95);
-  if(distance<=COMMANDER_BLUE_RANGE&&distance>120&&visible&&h.commanderCooldown<=0){h.commanderAim=to;h.commanderCharge=1.5;h.modeFrozen=true;}
+  if(distance<=COMMANDER_BLUE_RANGE&&distance>120&&visible&&h.commanderCooldown<=0){h.commanderAim=to;h.commanderCharge=.5;h.modeFrozen=true;}
  }else{
   h.commanderTactics+=dt;if(h.commanderTactics>=7){h.commanderTactics=0;h.commanderMode=h.commanderMode==='intercept'?'tail':'intercept';h.commanderRoute=null;}
   const speed=Math.hypot(commanderVelocity.x,commanderVelocity.y),dx=speed>12?commanderVelocity.x/speed:Math.cos(p.body),dy=speed>12?commanderVelocity.y/speed:Math.sin(p.body);
@@ -2869,10 +2880,10 @@ function updateCommanderAI(h,dt){
   let destination={x:target.x+dx*offset-dy*side*100,y:target.y+dy*offset+dx*side*100};
   if(distance<200)destination={x:h.x-Math.cos(to)*180,y:h.y-Math.sin(to)*180};
   destination.x=Math.max(30,Math.min(WW-30,destination.x));destination.y=Math.max(30,Math.min(WH-30,destination.y));
-  if(D(h,destination)>35)commanderMove(h,destination,dt,150);
+  if(D(h,destination)>35)commanderMove(h,destination,dt,142.5);
   if(distance>=170&&distance<=COMMANDER_WHITE_RANGE&&visible&&h.commanderCooldown<=0){
-   const lead=distance/520+.8,v=h.target==='p'?commanderVelocity:{x:0,y:0};
-   h.commanderAim=Math.atan2(target.y+v.y*lead-h.y,target.x+v.x*lead-h.x);h.commanderCharge=.8;h.modeFrozen=true;
+   const lead=distance/520+.2,v=h.target==='p'?commanderVelocity:{x:0,y:0};
+   h.commanderAim=Math.atan2(target.y+v.y*lead-h.y,target.x+v.x*lead-h.x);h.commanderCharge=.2;h.modeFrozen=true;
   }
  }
  return true;
@@ -2907,7 +2918,7 @@ function drawCommanderOverlay(h){
  if(!h.commander)return;
  g.save();g.translate(h.x,h.y);g.rotate(h.face);g.fillStyle='#ffd56a';g.strokeStyle='#3a2a10';g.lineWidth=1;g.beginPath();g.arc(-1,-10,3.5,0,Math.PI*2);g.fill();g.stroke();g.restore();
  if(h.whistleT>0){g.save();g.strokeStyle='rgba(255,219,95,'+Math.min(1,h.whistleT)+')';g.lineWidth=2;g.beginPath();g.arc(h.x,h.y,20+(1.2-h.whistleT)*65,0,Math.PI*2);g.stroke();g.font='bold 18px system-ui';g.textAlign='center';g.fillStyle='#ffe17a';g.fillText('♪',h.x,h.y-28);g.restore();}
- if(h.commanderCharge>0){const total=h.commander==='blue'?1.5:.8;g.save();g.strokeStyle=h.commander==='blue'?'#ffb879':'#ffe3a0';g.lineWidth=2;g.beginPath();g.arc(h.x,h.y,20,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-h.commanderCharge/total));g.stroke();g.restore();}
+ if(h.commanderCharge>0){const total=h.commander==='blue'?.5:.2;g.save();g.strokeStyle=h.commander==='blue'?'#ffb879':'#ffe3a0';g.lineWidth=2;g.beginPath();g.arc(h.x,h.y,20,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-h.commanderCharge/total));g.stroke();g.restore();}
 }
 
 function pauseAfterEnemyDetection(o){
@@ -2992,7 +3003,7 @@ function setSuspicion(h,dur=2){
 }
 function suspectHumansNear(x,y,r=500){if(debugMode>=2)return;for(const h of (humans||[]))if(h.alive&&!(h.stun>0)&&Math.hypot(h.x-x,h.y-y)<=r)setSuspicion(h,2);suspectTanksNear(x,y,r);}
 function alertedHumanInSearch(h){
- for(const b of (humans||[])){if(b===h||!b.alive||!b.st||b.stun>0||!b.target)continue;if(canDetect(h,b,h.face,'human'))return b;}
+ for(const b of (humans||[])){if(b===h||!b.alive||!b.st||b.stun>0||!b.target||(b.whistleSignalT||0)>0)continue;if(canDetect(h,b,h.face,'human'))return b;}
  return null;
 }
 function inheritAlertFromHuman(h,b){if(!b)return false;const tg=targetObj(b.target);if(!tg)return false;enterHumanFound(h,b.target);h.sharePause=0;h.face=Math.atan2(tg.y-h.y,tg.x-h.x);return true;}
@@ -4363,7 +4374,7 @@ function update(dt){
  updateHound(dt);
  const stealthCover=(!p.tank&&inBush(p))||(weather==='rain'&&inWaterAt(p.x,p.y,0))||(p.dig>0);
  if(stealthCover){const wasFound=humans.some(h=>h.alive&&h.st&&h.target==='p')||etanks.some(e=>e.alive&&e.st&&e.target==='p');p.bushHide=(p.bushHide||0)+dt;if(!wasFound||p.bushHide>=1){for(const h of humans)if(h.alive&&h.target==='p'&&!(h.sniperForcedFoundT>0)){h.st=0;h.target=null;h.lost=0;h.foundPause=0;pauseAfterEnemyDetection(h);}for(const e of etanks)if(e.alive&&e.target==='p'&&!(e.sniperForcedFoundT>0)){e.st=0;e.target=null;e.lost=0;e.foundPause=0;pauseAfterEnemyDetection(e);}}}else p.bushHide=0;
- updateCommanderMotion(dt);
+ updateCommanderSignals(dt);updateCommanderMotion(dt);
  // 敵人間：プレイヤー・相棒・偽装を個別に索敵。遮蔽物があれば発見しない。
  for(const h of humans){if(!h.alive)continue;
   h.burnSuspicionHold=Math.max(0,(h.burnSuspicionHold||0)-dt);
@@ -5033,8 +5044,8 @@ function fighterShape(x,y,body,sz=34){
 }
 function drawVehicle(v,x,y,body,ang,layer='both'){if(v&&v.kind==='truck'){if(layer==='both')truckShape(x,y,body,28);}else if(v&&v.kind==='fighter'){if(layer==='both')fighterShape(x,y,body,36);}else if(v)tankShape(x,y,body,ang,v.t,TANK_DRAW,layer);}
 function enemyIsWalking(h){return !!(h.alive&&!(h.stun>0)&&!(h.stunRecover>0)&&!h.houndPinned&&!(h.blastAirT>0)&&Math.hypot(h.x-h.walkStartX,h.y-h.walkStartY)>.02);}
-function soldier(x,y,face,isP,alert,moving,elite=false,commander=''){
- const sw=moving?Math.sin(performance.now()/110)*3:0,armSw=!isP&&alert?0:sw;
+function soldier(x,y,face,isP,alert,moving,elite=false,commander='',weaponVisible=alert){
+ const sw=moving?Math.sin(performance.now()/110)*3:0,armSw=!isP&&weaponVisible?0:sw;
  const uni=isP?'#6f8a55':elite?'#f2f1e9':alert?'#a8463c':'#56628a',dk=isP?'#4a6038':elite?'#b9bab5':alert?'#6e2a24':'#3c4566',hel=isP?'#587044':elite?'#dedfd9':alert?'#7a2e28':'#444f70';
  g.save();g.translate(x,y);
  g.fillStyle='rgba(0,0,0,.28)';g.beginPath();g.ellipse(1,2,8,10,0,0,6.28);g.fill();
@@ -5044,7 +5055,7 @@ function soldier(x,y,face,isP,alert,moving,elite=false,commander=''){
  g.fillStyle='#0c0c0c';g.fillRect(-10,-5.5,6,11);g.fillStyle=dk;g.fillRect(-9,-4.5,4,9);
  g.fillStyle='#0c0c0c';g.beginPath();g.ellipse(0,0,6.5,9.5,0,0,6.28);g.fill();g.fillStyle=uni;g.beginPath();g.ellipse(0,0,5.3,8.3,0,0,6.28);g.fill();
  if(!isP){
-  if(alert){if(commander==='blue'){g.fillStyle='#0c0c0c';g.fillRect(-4,-4,31,8);g.fillStyle='#6f7853';g.fillRect(-3,-3,29,6);g.fillStyle='#1c2419';g.fillRect(22,-4,5,8);g.fillStyle='#d2c79e';g.fillRect(1,-3,4,6);}else{g.fillStyle='#0c0c0c';g.fillRect(2,-2.5,commander==='white'?32:18,5);g.fillStyle='#3a3a42';g.fillRect(4,-1.5,commander==='white'?29:15,3);g.fillStyle='#7a5a3a';g.fillRect(2,-2,6,4);if(commander==='white'){g.fillStyle='#b5bcbd';g.fillRect(11,-4.5,6,2);}}}
+  if(weaponVisible){if(commander==='blue'){g.fillStyle='#0c0c0c';g.fillRect(-4,-4,31,8);g.fillStyle='#6f7853';g.fillRect(-3,-3,29,6);g.fillStyle='#1c2419';g.fillRect(22,-4,5,8);g.fillStyle='#d2c79e';g.fillRect(1,-3,4,6);}else{g.fillStyle='#0c0c0c';g.fillRect(2,-2.5,commander==='white'?32:18,5);g.fillStyle='#3a3a42';g.fillRect(4,-1.5,commander==='white'?29:15,3);g.fillStyle='#7a5a3a';g.fillRect(2,-2,6,4);if(commander==='white'){g.fillStyle='#b5bcbd';g.fillRect(11,-4.5,6,2);}}}
   g.fillStyle='#0c0c0c';g.fillRect(-2+armSw,-9,11,4.5);g.fillRect(-2-armSw,4.5,9,4.5);g.fillStyle=uni;g.fillRect(-1+armSw,-8,9,2.5);g.fillRect(-1-armSw,5.5,7,2.5);
   g.fillStyle='#e0b890';g.fillRect(7+armSw,-3.5,3,2);g.fillRect(5-armSw,3,3,2);
  }else{
@@ -5562,7 +5573,7 @@ function draw(near){
  for(const w of waves){const k=1-w.r/w.max;g.strokeStyle='rgba(255,170,60,'+k+')';g.lineWidth=6;g.beginPath();g.arc(w.x,w.y,w.r,0,6.28);g.stroke();g.fillStyle='rgba(255,200,100,'+.35*k+')';g.fill();}
  for(const c of cars){const foregroundVehicle=c.kind==='truck'||(c.kind==='tank'&&inBush(c));if(!foregroundVehicle)drawVehicle(c,c.x,c.y,c.body??-1.57,c.body??-1.57);const iy=c.y-(c.kind==='fighter'?66:c.kind==='truck'?42:50);markVehicle(c.x,iy,c.f<=0?'fuel':'ride');if(near===c)lab(c.t.n,c.x,iy-24,c.kind==='tank'?'bold 17px system-ui':'bold 14px system-ui','#fff');}
  const enemyAlpha=digEnemyAlpha();if(enemyAlpha>.001)for(const e of etanks){if(!enemyInView(e,cx,cy,140))continue;g.save();g.globalAlpha*=enemyAlpha;if(e.alive){if(!e.st){g.fillStyle='rgba(255,80,80,.035)';g.beginPath();g.moveTo(e.x,e.y);g.arc(e.x,e.y,detectOuterRange('p'),e.ang-DETECT_OUTER_HALF,e.ang+DETECT_OUTER_HALF);g.closePath();g.fill();g.fillStyle='rgba(255,80,80,.055)';g.beginPath();g.moveTo(e.x,e.y);g.arc(e.x,e.y,detectRange('p'),e.ang-DETECT_CENTER_HALF,e.ang+DETECT_CENTER_HALF);g.closePath();g.fill();}if(!inBush(e))tankShape(e.x,e.y,e.body,e.ang,{id:'enemy',col:'#4b5f9e'},TANK_DRAW);}else if(!e.wreckSpawned){g.fillStyle='#1c1a18';g.beginPath();g.arc(e.x,e.y,14,0,6.28);g.fill();}g.restore();if(e.alive&&enemyAlpha>.18){if(e.st)lab('!',e.x,e.y-38,'bold 18px system-ui','#ff5a5a');else if(e.sus>0)lab('?',e.x,e.y-38,'bold 18px system-ui','#ffd27a');}}
- for(const h of humans){const sniperFalling=!h.alive&&h.sniperFallT>0;if((!h.alive&&!sniperFalling)||!enemyInView(h,cx,cy,100))continue;const lift=sniperFalling?0:blastLift(h);if(!sniperFalling)drawBlastShadow(h);g.save();g.translate(0,-lift);g.globalAlpha*=enemyAlpha;if(sniperFalling){const fk=Math.max(0,Math.min(1,1-h.sniperFallT/Math.max(.01,h.sniperFallMax||.72))),side=(h.sniperFallA&&Math.sin(h.sniperFallA)<0?-1:1);g.translate(h.x,h.y);g.rotate(side*fk*1.18);g.translate(-h.x,-h.y);g.globalAlpha*=Math.max(.35,1-fk*.38);}soldier(h.x,h.y,h.face,false,sniperFalling?false:h.st,!sniperFalling&&!!h.walking,!!h.elite,h.commander||'');drawCommanderOverlay(h);
+ for(const h of humans){const sniperFalling=!h.alive&&h.sniperFallT>0;if((!h.alive&&!sniperFalling)||!enemyInView(h,cx,cy,100))continue;const lift=sniperFalling?0:blastLift(h);if(!sniperFalling)drawBlastShadow(h);g.save();g.translate(0,-lift);g.globalAlpha*=enemyAlpha;if(sniperFalling){const fk=Math.max(0,Math.min(1,1-h.sniperFallT/Math.max(.01,h.sniperFallMax||.72))),side=(h.sniperFallA&&Math.sin(h.sniperFallA)<0?-1:1);g.translate(h.x,h.y);g.rotate(side*fk*1.18);g.translate(-h.x,-h.y);g.globalAlpha*=Math.max(.35,1-fk*.38);}soldier(h.x,h.y,h.face,false,sniperFalling?false:h.st,!sniperFalling&&!!h.walking,!!h.elite,h.commander||'',!sniperFalling&&(h.commander==='white'?h.commanderCharge>0||h.commanderShotT>0:!!h.st));drawCommanderOverlay(h);
  if(!sniperFalling&&h.humanBurnT>0){const tt=performance.now()*.018;g.save();g.globalCompositeOperation='lighter';flameBlob(h.x-4+Math.sin(tt)*2,h.y+2,7+Math.sin(tt*1.3)*1.5,tt,.42);flameBlob(h.x+4+Math.cos(tt*.8)*2,h.y-5,9+Math.sin(tt*.9+1)*2,tt+1.7,.7);flameBlob(h.x+Math.sin(tt*.65)*3,h.y-12,6+Math.sin(tt*1.6+2)*1.5,tt+3.1,.9);g.restore();}
  if(!sniperFalling&&h.stun>0){const tt=performance.now()*.006;g.fillStyle='#ffd85a';for(let q=0;q<3;q++){const a=tt+q*2.094,x=h.x+Math.cos(a)*13,y=h.y-18+Math.sin(a)*5;g.save();g.translate(x,y);g.rotate(a);g.beginPath();g.moveTo(0,-4);g.lineTo(2,-1);g.lineTo(5,0);g.lineTo(2,1);g.lineTo(0,4);g.lineTo(-2,1);g.lineTo(-5,0);g.lineTo(-2,-1);g.closePath();g.fill();g.restore();}if(h.grapple>0){g.strokeStyle='rgba(230,233,216,.85)';g.lineWidth=2;g.beginPath();g.arc(h.x,h.y,13,-2.5,.7);g.stroke();}}g.restore();if(!sniperFalling&&enemyAlpha>.18){if(h.st)lab('!',h.x,h.y-lift-18,'bold 16px system-ui','#ff5a5a');else if(h.sus>0)lab('?',h.x,h.y-lift-18,'bold 16px system-ui','#ffd27a');}}
  for(const b of bullets){g.save();g.translate(b.x,b.y);g.rotate(Math.atan2(b.vy,b.vx));g.globalCompositeOperation='lighter';
@@ -6334,11 +6345,11 @@ function loop(n){
 }
 let gameErrorCount=0;
 function reportGameError(error){
- gameErrorCount++;console.error('Tank game v148',error);
+ gameErrorCount++;console.error('Tank game v149',error);
  let panel=document.getElementById('runtimeError');
  if(!panel){panel=document.createElement('div');panel.id='runtimeError';panel.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;background:#422018;color:#fff2dc;padding:12px;border:1px solid #f7b083;border-radius:8px;font:12px system-ui;white-space:pre-wrap;max-height:35vh;overflow:auto';document.body.appendChild(panel);}
  const stack=String(error&&error.stack||error).split('\n').slice(0,4).join('\n');
- panel.textContent='v148 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
+ panel.textContent='v149 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 requestAnimationFrame(loop);
 </script>
