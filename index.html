@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.11.166</title>
+<title>戦車ゲーム 2026.10.11.167</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -486,7 +486,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 </ul><p>スキルによっては搭乗中や特殊状態では使用できません。細かな制約は出撃時のスキル説明に従います。</p>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-weather"><h2>9. 天候と環境</h2>
-<ul><li>天候は晴れと雨が切り替わります。雨は30秒間で、降り始めの約5秒は小雨から徐々に強まり、最後の約6秒は徐々に弱まります。画面の暗さ・雨粒・水しぶきも雨量に合わせて変化します。雨天のゲーム効果は雨の開始から終了まで適用されます。</li><li>雨天では敵の索敵距離が通常の75%、狙撃スコープの見通し距離が70%になります。</li><li>雨天では自然物への延焼が抑えられます。</li><li>川の流れや泥などは、歩兵・車両の移動に影響します。</li></ul>
+<ul><li>天候は晴れと雨が切り替わります。雨は30秒間で、降り始めの約5秒は小雨から徐々に強まり、最後の約6秒は徐々に弱まります。画面の暗さ・雨粒・水しぶきも雨量に合わせて変化します。雨天のゲーム効果は雨の開始から終了まで適用されます。</li><li>雨天では敵の索敵距離が通常の75%、狙撃スコープの見通し距離が70%になります。</li><li>雨天では自然物への延焼が抑えられます。</li><li>川の流れや泥などは、歩兵・車両の移動に影響します。泥は湿った土の濃淡、不規則な縁、小さな水たまりで表示されます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-score"><h2>10. 評価・スコア・称号</h2>
 <ul><li>クリアまたは失敗後の評価画面に、総合スコアと<strong>F〜Sの7段階ランク</strong>を表示します。</li><li>スコアは潜入・戦闘・任務達成・クリア時間などをもとに計算します。到達距離は出撃開始地点からの最大前進距離です。距離表示はすべてm単位です。</li><li>プレイスタイルを<strong>潜入／索敵／射撃／戦闘／爆破／機動／戦術／生存</strong>の8軸（Lv0〜5）で評価します。索敵は未発見での前進距離、射撃は発射数あたりの撃破効率などを指標にします。</li><li><strong>マルチキル：</strong>撃破間隔4秒以内で続けて敵を撃破すること。<strong>ワンショットキル：</strong>同一攻撃で複数の敵を撃破すること。無線支援爆撃とその連鎖爆発は、マルチキル・ワンショットキルの対象外です。</li><li>条件を満たすと称号・勲章を獲得。タイトル画面の「称号」からコレクションと累計戦績を確認できます。</li></ul>
@@ -520,7 +520,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.11.166',FILE_CREATED_AT='2026/10/11 08:46',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.11.167',FILE_CREATED_AT='2026/10/11 08:55',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -5170,6 +5170,44 @@ function fighterShape(x,y,body,sz=34){
  g.save();g.translate(x,y);g.rotate(body+1.5708);g.fillStyle='#24303a';g.beginPath();g.moveTo(0,-sz*1.35);g.lineTo(sz*.24,-sz*.58);g.lineTo(sz*1.18,-sz*.08);g.lineTo(sz*1.12,sz*.16);g.lineTo(sz*.28,sz*.02);g.lineTo(sz*.22,sz*.92);g.lineTo(-sz*.22,sz*.92);g.lineTo(-sz*.28,sz*.02);g.lineTo(-sz*1.12,sz*.16);g.lineTo(-sz*1.18,-sz*.08);g.lineTo(-sz*.24,-sz*.58);g.closePath();g.fill();g.strokeStyle='#9fb5c8';g.lineWidth=2;g.stroke();
  g.fillStyle='#657d92';g.beginPath();g.moveTo(0,-sz*1.18);g.lineTo(sz*.14,-sz*.48);g.lineTo(sz*.62,-sz*.18);g.lineTo(-sz*.62,-sz*.18);g.lineTo(-sz*.14,-sz*.48);g.closePath();g.fill();g.fillStyle='#b9d8e8';g.beginPath();g.ellipse(0,-sz*.46,sz*.13,sz*.25,0,0,6.28);g.fill();g.fillStyle='#d96b4c';g.fillRect(-sz*.1,sz*.55,sz*.2,sz*.22);g.restore();
 }
+function mudVisualCache(m){
+ if(m.visualCache&&m.visualCache.w===m.w&&m.visualCache.h===m.h)return m.visualCache;
+ const pad=10,c=document.createElement('canvas'),scale=.75;
+ c.width=Math.ceil((m.w+pad*2)*scale);c.height=Math.ceil((m.h+pad*2)*scale);
+ const ctx=c.getContext('2d');ctx.scale(scale,scale);ctx.translate(pad,pad);
+ let seed=((m.x*31+m.y*17+m.w*13+m.h*7)|0)>>>0;
+ const rand=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
+ const cx=m.w/2,cy=m.h/2,pts=[];
+ for(let i=0;i<36;i++){const a=i*Math.PI*2/36,r=.91+rand()*.09;pts.push({x:cx+Math.cos(a)*cx*r,y:cy+Math.sin(a)*cy*r});}
+ const outline=()=>{ctx.beginPath();const last=pts[pts.length-1];ctx.moveTo((last.x+pts[0].x)/2,(last.y+pts[0].y)/2);for(let i=0;i<pts.length;i++){const p=pts[i],n=pts[(i+1)%pts.length];ctx.quadraticCurveTo(p.x,p.y,(p.x+n.x)/2,(p.y+n.y)/2);}ctx.closePath();};
+ // 輪郭は実際の減速範囲に沿わせ、乾いた縁から湿った中心へ濃淡をつける。
+ outline();ctx.strokeStyle='rgba(43,38,25,.18)';ctx.lineWidth=10;ctx.stroke();
+ const soil=ctx.createRadialGradient(cx*.85,cy*.75,2,cx,cy,Math.max(cx,cy));
+ soil.addColorStop(0,'#383b2d');soil.addColorStop(.5,'#514633');soil.addColorStop(1,'#807052');ctx.fillStyle=soil;outline();ctx.fill();
+ ctx.save();outline();ctx.clip();
+ for(let i=0;i<70;i++){
+  const x=rand()*m.w,y=rand()*m.h,r=1+rand()*5;
+  ctx.fillStyle=i%3===0?'rgba(167,140,94,.23)':'rgba(30,28,21,.20)';
+  ctx.beginPath();ctx.ellipse(x,y,r*1.7,r*.6,rand()*.5,0,Math.PI*2);ctx.fill();
+ }
+ // 浅い水たまりは土色を残し、薄い空の反射と泥の筋で湿りを表現。
+ for(let i=0;i<7;i++){
+  const a=rand()*Math.PI*2,r=rand()*.58,x=cx+Math.cos(a)*cx*r,y=cy+Math.sin(a)*cy*r;
+  const rw=Math.max(5,m.w*(.055+rand()*.07)),rh=Math.max(2,m.h*(.035+rand()*.05));
+  const wet=ctx.createLinearGradient(0,y-rh,0,y+rh);wet.addColorStop(0,'rgba(39,44,36,.70)');wet.addColorStop(.55,'rgba(111,123,112,.43)');wet.addColorStop(1,'rgba(48,48,34,.64)');
+  ctx.fillStyle=wet;ctx.beginPath();ctx.ellipse(x,y,rw,rh,-.08,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='rgba(179,188,164,.25)';ctx.lineWidth=.9;ctx.beginPath();ctx.moveTo(x-rw*.55,y-rh*.2);ctx.quadraticCurveTo(x,y-rh*.35,x+rw*.5,y-rh*.15);ctx.stroke();
+ }
+ for(let i=0;i<16;i++){
+  const x=rand()*m.w,y=rand()*m.h;
+  ctx.strokeStyle='rgba(23,27,20,.18)';ctx.lineWidth=1+rand()*2;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+7,y+2,x+12+rand()*12,y-1+rand()*4);ctx.stroke();
+ }
+ ctx.restore();outline();ctx.strokeStyle='rgba(123,108,76,.34)';ctx.lineWidth=1.5;ctx.stroke();
+ return m.visualCache={c,w:m.w,h:m.h,pad};
+}
+function drawMudPatch(m){
+ const v=mudVisualCache(m);g.drawImage(v.c,m.x-v.pad,m.y-v.pad,m.w+v.pad*2,m.h+v.pad*2);
+}
 function drawFuelPickup(x,y){
  g.save();g.translate(x,y);g.lineJoin='round';g.lineWidth=2;
  g.fillStyle='rgba(0,0,0,.28)';g.beginPath();g.ellipse(1,13,15,5,0,0,Math.PI*2);g.fill();
@@ -5724,7 +5762,7 @@ function draw(near){
  }
  for(let i=0;i<ZONES.length-1;i++)drawZoneTransition(ZONES[i],ZONES[i+1],cy,cy+H);
  if(areaDebugEnabled)for(const l of areaDebugLabels)lab(l.t,l.x,l.y,l.f,l.c);
- for(const m of (mud||[])){const cxm=m.x+m.w/2,cym=m.y+m.h/2;g.fillStyle='#5b4935';g.beginPath();g.ellipse(cxm,cym,m.w/2,m.h/2,0,0,6.28);g.fill();g.strokeStyle='rgba(118,94,62,.65)';g.lineWidth=3;g.beginPath();g.ellipse(cxm,cym,Math.max(4,m.w/2-4),Math.max(4,m.h/2-4),0,0,6.28);g.stroke();g.fillStyle='rgba(79,64,47,.55)';for(let q=0;q<6;q++){const a=(q*2.17+(m.x*.013))%6.28,rr=.18+.1*(q%3);g.beginPath();g.ellipse(cxm+Math.cos(a)*m.w*rr,cym+Math.sin(a)*m.h*rr,8+q%3*4,3,0,0,6.28);g.fill();}}
+ for(const m of (mud||[]))if(m.x+m.w>=cx-12&&m.x<=cx+W+12&&m.y+m.h>=cy-12&&m.y<=cy+H+12)drawMudPatch(m);
  for(const w of water){
   const pad=RIVER_BANK_PAD;
   if(w.x+w.w<cx-pad||w.x>cx+W+pad||w.y+w.h<cy-pad||w.y>cy+H+pad)continue;
@@ -6567,11 +6605,11 @@ function loop(n){
 }
 let gameErrorCount=0;
 function reportGameError(error){
- gameErrorCount++;console.error('Tank game v166',error);
+ gameErrorCount++;console.error('Tank game v167',error);
  let panel=document.getElementById('runtimeError');
  if(!panel){panel=document.createElement('div');panel.id='runtimeError';panel.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;background:#422018;color:#fff2dc;padding:12px;border:1px solid #f7b083;border-radius:8px;font:12px system-ui;white-space:pre-wrap;max-height:35vh;overflow:auto';document.body.appendChild(panel);}
  const stack=String(error&&error.stack||error).split('\n').slice(0,4).join('\n');
- panel.textContent='v166 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
+ panel.textContent='v167 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 requestAnimationFrame(loop);
 </script>
