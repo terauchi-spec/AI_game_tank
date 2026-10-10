@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.11.163</title>
+<title>戦車ゲーム 2026.10.11.164</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -518,7 +518,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.11.163',FILE_CREATED_AT='2026/10/11 08:13',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.11.164',FILE_CREATED_AT='2026/10/11 08:16',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -5193,13 +5193,14 @@ function drawSupportBomber(x,y){
  const outline='#252b26',dark='#333d31',baseCol='#596650',light='#8c9583';
  // 富嶽をイメージした、長い胴体・幅広い主翼・六発エンジンの大型機。
  g.fillStyle='rgba(0,0,0,.20)';g.beginPath();g.ellipse(-2,3,42,12,0,0,Math.PI*2);g.fill();
+ // 主翼の前後幅を20%圧縮（翼幅は維持）。
+ g.save();g.scale(.8,1);
  g.strokeStyle=outline;g.fillStyle=dark;
  g.beginPath();g.moveTo(13,-5);g.lineTo(-2,-50);g.lineTo(-11,-52);g.lineTo(-17,-48);g.lineTo(-13,-5);g.lineTo(-13,5);g.lineTo(-17,48);g.lineTo(-11,52);g.lineTo(-2,50);g.lineTo(13,5);g.closePath();g.fill();g.stroke();
  g.fillStyle=baseCol;g.beginPath();g.moveTo(10,-5);g.lineTo(-3,-49);g.lineTo(-11,-50);g.lineTo(-10,-5);g.lineTo(-10,5);g.lineTo(-11,50);g.lineTo(-3,49);g.lineTo(10,5);g.closePath();g.fill();
  for(const side of [-1,1]){
   g.strokeStyle='#8f9b85';g.lineWidth=.7;g.beginPath();g.moveTo(8,side*8);g.lineTo(-4,side*47);g.stroke();
   g.strokeStyle='#323b31';g.beginPath();g.moveTo(-9,side*9);g.lineTo(-13,side*45);g.stroke();
-  g.fillStyle='#efe9d1';g.beginPath();g.arc(-6,side*43,4,0,Math.PI*2);g.fill();g.fillStyle='#b3372e';g.beginPath();g.arc(-6,side*43,3.2,0,Math.PI*2);g.fill();
   for(const yy of [15,27,38]){
    const ey=side*yy;g.fillStyle=outline;g.beginPath();g.roundRect(-10,ey-3.5,22,7,2.5);g.fill();
    g.fillStyle='#64725d';g.beginPath();g.roundRect(-8.5,ey-2.7,19,5.4,2);g.fill();g.fillStyle=light;g.fillRect(-4,ey-2,8,1);
@@ -5207,9 +5208,12 @@ function drawSupportBomber(x,y){
    const blade=Math.sin(performance.now()*.06+yy)*5;g.beginPath();g.moveTo(13,ey-blade);g.lineTo(13,ey+blade);g.stroke();
   }
  }
+ g.restore();
  g.fillStyle=dark;g.strokeStyle=outline;g.lineWidth=1.1;
  g.beginPath();g.moveTo(-28,-3);g.lineTo(-35,-19);g.lineTo(-42,-19);g.lineTo(-39,0);g.lineTo(-42,19);g.lineTo(-35,19);g.lineTo(-28,3);g.closePath();g.fill();g.stroke();
  g.fillStyle='#697760';g.fillRect(-38,-15,3,30);
+ // 胴体と窓・パネルをまとめて細くする。
+ g.save();g.scale(1,.8);
  g.fillStyle='#465443';g.beginPath();g.moveTo(45,0);g.quadraticCurveTo(42,-6,29,-6);g.lineTo(-31,-3.5);g.lineTo(-41,0);g.lineTo(-31,3.5);g.lineTo(29,6);g.quadraticCurveTo(42,6,45,0);g.fill();g.stroke();
  g.fillStyle='#697760';g.beginPath();g.moveTo(39,-2.5);g.lineTo(16,-4);g.lineTo(-31,-1.5);g.lineTo(-37,0);g.lineTo(16,.5);g.lineTo(39,1.5);g.closePath();g.fill();
  g.fillStyle='#333d31';g.fillRect(-16,-2.5,23,5);g.strokeStyle='#8f9b85';g.lineWidth=.7;g.strokeRect(-16,-2.5,23,5);
@@ -5217,6 +5221,7 @@ function drawSupportBomber(x,y){
  g.fillStyle='#9fb9b6';g.beginPath();g.moveTo(36,-3.3);g.lineTo(27,-4.5);g.lineTo(26,4.5);g.lineTo(36,3.3);g.closePath();g.fill();g.strokeStyle=outline;g.lineWidth=1;
  g.beginPath();g.moveTo(31,-4);g.lineTo(31,4);g.moveTo(26,0);g.lineTo(36,0);g.stroke();
  g.fillStyle='#333d31';g.beginPath();g.moveTo(-26,-1);g.lineTo(-35,-2);g.lineTo(-40,0);g.lineTo(-26,1);g.closePath();g.fill();
+ g.restore();
  g.fillStyle='#db6860';g.beginPath();g.arc(-11,-51,.9,0,Math.PI*2);g.fill();g.fillStyle='#9bc58a';g.beginPath();g.arc(-11,51,.9,0,Math.PI*2);g.fill();
  g.restore();
 }
@@ -6560,11 +6565,11 @@ function loop(n){
 }
 let gameErrorCount=0;
 function reportGameError(error){
- gameErrorCount++;console.error('Tank game v163',error);
+ gameErrorCount++;console.error('Tank game v164',error);
  let panel=document.getElementById('runtimeError');
  if(!panel){panel=document.createElement('div');panel.id='runtimeError';panel.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;background:#422018;color:#fff2dc;padding:12px;border:1px solid #f7b083;border-radius:8px;font:12px system-ui;white-space:pre-wrap;max-height:35vh;overflow:auto';document.body.appendChild(panel);}
  const stack=String(error&&error.stack||error).split('\n').slice(0,4).join('\n');
- panel.textContent='v163 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
+ panel.textContent='v164 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 requestAnimationFrame(loop);
 </script>
