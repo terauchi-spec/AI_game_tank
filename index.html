@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.11.156</title>
+<title>戦車ゲーム 2026.10.11.157</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -464,7 +464,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <p>敵は障害物や視線の遮り、草むら、周囲から伝わる警戒情報などの影響を受けます。</p>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-vehicles"><h2>6. 乗り物</h2>
-<ul><li><strong>戦車：</strong>主砲（D）とMG（S）で攻撃します。車種により性能が異なり、砲弾・MG弾数・燃料・耐久の管理が必要です。</li><li><strong>トラック：</strong>武器による攻撃はできませんが、走行時の接触で敵を倒せます。破壊されることもあります。</li><li><strong>戦闘機：</strong>地上の障害物を越えて飛行し、爆撃できます。</li><li>近づいてAで乗車し、再度Aで降車します。降車地点には十分な空きスペースが必要です。</li></ul>
+<ul><li><strong>戦車：</strong>主砲（D）とMG（S）で攻撃します。車種により性能が異なり、砲弾・MG弾数・燃料・耐久の管理が必要です。</li><li><strong>装甲車：</strong>通常配置は2台。速度165px/秒で戦車より速く、ジープ相当のトラックより遅い車両です。D（スマホ：B）またはSでサブマシンガンを撃ちます。弾数120、耐久1.4、燃料95。主砲はありません。</li><li><strong>トラック：</strong>武器による攻撃はできませんが、走行時の接触で敵を倒せます。破壊されることもあります。</li><li><strong>戦闘機：</strong>地上の障害物を越えて飛行し、爆撃できます。</li><li>近づいてAで乗車し、再度Aで降車します。降車地点には十分な空きスペースが必要です。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-combat"><h2>7. 武器・爆発・破壊</h2>
 <ul><li><strong>歩兵の設置爆弾：</strong>D（スマホ：B）で設置し、再度D（スマホ：B）で起爆。爆風で敵・オブジェクトを攻撃できます。</li><li><strong>戦車主砲：</strong>壁や建物などに当たると炸裂。プレイヤーの主砲が壁に着弾したときは、着弾点から約9.5m以内の敵歩兵を撃破できます。</li><li><strong>MG・ライフル：</strong>弾の種類に応じた射程・被弾処理があります。狙撃弾は敵兵を貫通できます。</li><li><strong>破壊可能オブジェクト：</strong>木箱やドラム缶などは被弾・炎上・爆発に反応し、状況によって連鎖爆発も発生します。</li><li>爆風によって敵やプレイヤーが押し飛ばされ、気絶する場合があります。</li></ul>
@@ -518,7 +518,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.11.156',FILE_CREATED_AT='2026/10/10 23:59',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.11.157',FILE_CREATED_AT='2026/10/11 00:03',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -601,6 +601,7 @@ const TYPES=[
  {id:'tiger',n:'Tiger I(独)',hp:16,armor:2.0,cmax:9,vmax:54,fmax:72*PLAYER_TANK_FUEL_SCALE,sp:72,cdmg:5.4,ccd:3.08,cspd:648,crng:684,vcd:.22,col:'#8f8666'},
  {id:'type10',n:'10式(日)',hp:12,armor:1.55,cmax:14,vmax:90,fmax:117*PLAYER_TANK_FUEL_SCALE,sp:126,cdmg:3.6,ccd:1.65,cspd:630,crng:630,vcd:.121,col:'#4e6350'},
  {id:'m1',n:'M1 エイブラムス(米)',hp:15,armor:1.8,cmax:13,vmax:108,fmax:126*PLAYER_TANK_FUEL_SCALE,sp:113,cdmg:4.5,ccd:1.87,cspd:720,crng:738,vcd:.11,col:'#a78957'}];
+const ARMORED_TYPE={id:'armored',n:'装甲車',hp:8,armor:1.4,cmax:0,vmax:120,fmax:95,sp:165,cdmg:0,ccd:1,cspd:0,crng:0,vcd:.12,col:'#73806a'};
 const TRUCK_TYPE={id:'truck',n:'トラック',hp:5,fmax:100,sp:217.5,cdmg:0,ccd:1,cspd:0,crng:0,vcd:1,col:'#65705a'};
 const FIGHTER_TYPE={id:'fighter',n:'戦闘機',hp:8,fmax:100,sp:260,cdmg:0,ccd:2.2,cspd:0,crng:0,vcd:1,col:'#64788f'};
 const ZONE_STYLE={
@@ -2322,6 +2323,7 @@ function reset(rerollSkills=true){
  genCovers(edgeCoverReservations);genObjects();
  cars=[[1900,[0,2]],[950,[1,3]]].map(([y,o])=>{const t=TYPES[o[Math.floor(R()*2)]],sp=freeSpot(100+R()*760,y,22,80);return{x:sp.x,y:sp.y,t,kind:'tank',hp:t.hp,c:t.cmax,v:t.vmax,f:t.fmax,ch:0,mgHits:0,body:-1.57};});
  for(let i=0;i<2;i++){const y=650+R()*1650,sp=freeSpot(80+R()*800,y,24,100);cars.push({x:sp.x,y:sp.y,t:TRUCK_TYPE,kind:'truck',hp:5,c:0,v:0,f:TRUCK_TYPE.fmax,mgHits:0,body:-1.57});}
+ for(const y of [1700,800]){const sp=freeSpot(100+R()*760,y,28,100),t=ARMORED_TYPE;cars.push({...sp,t,kind:'tank',hp:t.hp,c:0,v:t.vmax,f:t.fmax,ch:0,mgHits:0,body:-1.57});}
  // 戦闘機はスタート地点に固定配置。地上障害物を無視して飛行できる。
  cars.push({x:WW/2+55,y:3085,t:FIGHTER_TYPE,kind:'fighter',hp:FIGHTER_TYPE.hp,c:0,v:0,f:FIGHTER_TYPE.fmax,mgHits:0,body:-1.57,bombsDropped:0});
  for(const y of [1850,1450,1050,700,420]){const sp=freeSpot(60+R()*840,y,16,80);items.push({x:sp.x,y:sp.y,got:false});}
@@ -3269,7 +3271,7 @@ function wreck(){
   if(p.tank.kind==='fighter')p.tank.hp=FIGHTER_TYPE.hp;
   shake=Math.max(shake,4);flash=Math.max(flash,.14);return;
  }
- const veh=p.tank,kind=veh&&veh.kind,wasTruck=kind==='truck',wasFighter=kind==='fighter';if(kind==='tank')spawnTankWreck(p.x,p.y,p.body,p.ang,veh.t);sfx('explosion');fb(p.x,p.y,50);burst(p.x,p.y,50,wasTruck?'#d48a52':wasFighter?'#9fc8e8':'#ff7b3a',330);p.tank=null;p.hp=3;p.cc=0;p.vc=0;shake=16;flash=.5;say(wasTruck?'トラック大破! 歩兵として脱出':wasFighter?'戦闘機撃墜! 歩兵として脱出':'戦車大破!歩兵として脱出');
+ const veh=p.tank,kind=veh&&veh.kind,wasTruck=kind==='truck',wasFighter=kind==='fighter';if(kind==='tank')spawnTankWreck(p.x,p.y,p.body,p.ang,veh.t);sfx('explosion');fb(p.x,p.y,50);burst(p.x,p.y,50,wasTruck?'#d48a52':wasFighter?'#9fc8e8':'#ff7b3a',330);p.tank=null;p.hp=3;p.cc=0;p.vc=0;shake=16;flash=.5;say(veh&&veh.t.id==='armored'?'装甲車大破! 歩兵として脱出':wasTruck?'トラック大破! 歩兵として脱出':wasFighter?'戦闘機撃墜! 歩兵として脱出':'戦車大破!歩兵として脱出');
 }
 function truckTankCrashFx(x,y,e,actionId=0){
  if(e&&e.alive){destroyEnemyTank(e,x,y);if(actionId)recordPlayerKill(actionId);burst(e.x,e.y,46,'#ff6a2a',380);}
@@ -4445,13 +4447,13 @@ function update(dt){
    cars.push(veh);p.tank=null;touchTurretAngle=null;p.x=spot.x;p.y=spot.y;onHoundPlayerDismount();sfx('enter');say('降車');
   }}
   else if(nearHuman){if(stunHuman(nearHuman)){p.grappleT=.3;p.grappleTarget=nearHuman;p.body=Math.atan2(nearHuman.y-p.y,nearHuman.x-p.x);}}
-  else if(near&&!(p.dig>0)&&!(p.drill>0)){cars=cars.filter(c=>c!==near);p.tank=near;if(scoreStats){scoreStats.vehicleBoards++;scoreStats.vehicleKinds[near.kind]=true;}p.body=near.body??p.body;p.ang=p.body;touchTurretAngle=null;sfx('enter');vehicleNameT=1.8;say(near.t.n+' に搭乗!');}else if(near&&p.drill>0)say('突貫中は搭乗できない');}
+  else if(near&&!(p.dig>0)&&!(p.drill>0)){cars=cars.filter(c=>c!==near);p.tank=near;if(scoreStats){scoreStats.vehicleBoards++;scoreStats.vehicleKinds[near.t.id==='armored'?'armored':near.kind]=true;}p.body=near.body??p.body;p.ang=p.body;touchTurretAngle=null;sfx('enter');vehicleNameT=1.8;say(near.t.n+' に搭乗!');}else if(near&&p.drill>0)say('突貫中は搭乗できない');}
  updateCoastingTrucks(dt);
  const dAttack=!!(keys.KeyD||mdown||cannonReq);cannonReq=false;
  if(p.tank&&p.tank.kind==='fighter'){if(dAttack&&p.cc<=0)fighterBomb();}
  else if(p.tank&&p.tank.kind==='tank'){const t=p.tank.t;
-  if(dAttack&&p.cc<=0&&p.tank.c>0){p.cc=t.ccd;if(!areaDebugInfiniteAmmo)p.tank.c--;fire(p.x+Math.cos(p.ang)*44,p.y+Math.sin(p.ang)*44,p.ang,'p','c',t.cspd,t.crng,t.cdmg);shake=6;burst(p.x+Math.cos(p.ang)*47,p.y+Math.sin(p.ang)*47,8,'#ffd27a',140);}
-  if(keys.KeyS&&p.vc<=0&&p.tank.v>0){p.vc=t.vcd;if(!areaDebugInfiniteAmmo)p.tank.v--;fire(p.x+Math.cos(p.ang)*36,p.y+Math.sin(p.ang)*36,p.ang+(R()-.5)*.1,'p','v',468,306);}}
+  if(t.id!=='armored'&&dAttack&&p.cc<=0&&p.tank.c>0){p.cc=t.ccd;if(!areaDebugInfiniteAmmo)p.tank.c--;fire(p.x+Math.cos(p.ang)*44,p.y+Math.sin(p.ang)*44,p.ang,'p','c',t.cspd,t.crng,t.cdmg);shake=6;burst(p.x+Math.cos(p.ang)*47,p.y+Math.sin(p.ang)*47,8,'#ffd27a',140);}
+  if((keys.KeyS||(t.id==='armored'&&dAttack))&&p.vc<=0&&p.tank.v>0){p.vc=t.vcd;if(!areaDebugInfiniteAmmo)p.tank.v--;fire(p.x+Math.cos(p.ang)*36,p.y+Math.sin(p.ang)*36,p.ang+(R()-.5)*.1,'p','v',468,306);}}
  for(const it of items)if(p.tank&&!it.got&&D(it,p)<38){it.got=true;const fm=p.tank.t.fmax||100;p.tank.f=fm;sfx('pickup');say('ガソリン満タン!');}
  if(radio&&!radio.got&&D(radio,p)<30){radio.got=true;startAirstrike();}
  updateHound(dt);
@@ -5149,7 +5151,16 @@ function fighterShape(x,y,body,sz=34){
  g.save();g.translate(x,y);g.rotate(body+1.5708);g.fillStyle='#24303a';g.beginPath();g.moveTo(0,-sz*1.35);g.lineTo(sz*.24,-sz*.58);g.lineTo(sz*1.18,-sz*.08);g.lineTo(sz*1.12,sz*.16);g.lineTo(sz*.28,sz*.02);g.lineTo(sz*.22,sz*.92);g.lineTo(-sz*.22,sz*.92);g.lineTo(-sz*.28,sz*.02);g.lineTo(-sz*1.12,sz*.16);g.lineTo(-sz*1.18,-sz*.08);g.lineTo(-sz*.24,-sz*.58);g.closePath();g.fill();g.strokeStyle='#9fb5c8';g.lineWidth=2;g.stroke();
  g.fillStyle='#657d92';g.beginPath();g.moveTo(0,-sz*1.18);g.lineTo(sz*.14,-sz*.48);g.lineTo(sz*.62,-sz*.18);g.lineTo(-sz*.62,-sz*.18);g.lineTo(-sz*.14,-sz*.48);g.closePath();g.fill();g.fillStyle='#b9d8e8';g.beginPath();g.ellipse(0,-sz*.46,sz*.13,sz*.25,0,0,6.28);g.fill();g.fillStyle='#d96b4c';g.fillRect(-sz*.1,sz*.55,sz*.2,sz*.22);g.restore();
 }
-function drawVehicle(v,x,y,body,ang,layer='both'){if(v&&v.kind==='truck'){if(layer==='both')truckShape(x,y,body,28);}else if(v&&v.kind==='fighter'){if(layer==='both')fighterShape(x,y,body,36);}else if(v)tankShape(x,y,body,ang,v.t,TANK_DRAW,layer);}
+function armoredShape(x,y,body,ang){
+ g.save();g.translate(x,y);g.rotate(body);
+ g.fillStyle='rgba(0,0,0,.32)';g.fillRect(-25,-20,53,43);
+ for(const yy of [-18,12])for(const xx of [-20,-3,14]){g.fillStyle='#101310';g.fillRect(xx,yy,10,7);g.fillStyle='#515750';g.fillRect(xx+2,yy+2,6,3);}
+ g.beginPath();g.moveTo(-24,-14);g.lineTo(16,-14);g.lineTo(27,-8);g.lineTo(27,8);g.lineTo(16,14);g.lineTo(-24,14);g.closePath();g.fillStyle='#73806a';g.fill();g.strokeStyle='#101610';g.lineWidth=2;g.stroke();
+ g.fillStyle='#92a087';g.fillRect(-19,-10,23,20);g.fillStyle='#293a39';g.fillRect(16,-8,6,16);g.fillStyle='#c1caba';g.fillRect(23,-7,2,4);g.fillRect(23,3,2,4);
+ g.rotate(ang-body);g.fillStyle='#1b231c';g.fillRect(1,-2,30,4);g.fillStyle='#929c88';g.beginPath();g.arc(0,0,8,0,Math.PI*2);g.fill();g.strokeStyle='#172117';g.stroke();
+ g.restore();
+}
+function drawVehicle(v,x,y,body,ang,layer='both'){if(v&&v.t.id==='armored'){if(layer==='both')armoredShape(x,y,body,ang);}else if(v&&v.kind==='truck'){if(layer==='both')truckShape(x,y,body,28);}else if(v&&v.kind==='fighter'){if(layer==='both')fighterShape(x,y,body,36);}else if(v)tankShape(x,y,body,ang,v.t,TANK_DRAW,layer);}
 function enemyIsWalking(h){return !!(h.alive&&!(h.stun>0)&&!(h.stunRecover>0)&&!h.houndPinned&&!(h.blastAirT>0)&&Math.hypot(h.x-h.walkStartX,h.y-h.walkStartY)>.02);}
 function soldier(x,y,face,isP,alert,moving,elite=false,commander='',weaponVisible=alert){
  const sw=moving?Math.sin(performance.now()/110)*3:0,armSw=!isP&&weaponVisible?0:sw;
@@ -5559,6 +5570,14 @@ function drawSkillBottomHud(){
 function drawVehicleBottomHud(){
  if(!p.tank)return;const v=p.tank;
  g.save();g.textAlign='left';
+ if(v.t.id==='armored'){
+  const x=8,y=TOUCH?70:H-82,w=TOUCH?218:236,h=74;
+  g.fillStyle='rgba(8,10,7,.80)';g.fillRect(x,y,w,h);g.strokeStyle='rgba(230,233,216,.28)';g.strokeRect(x+.5,y+.5,w-1,h-1);
+  g.fillStyle='#e6e9d8';g.font='bold 11px system-ui';g.fillText('装甲車  耐久 '+Math.max(0,v.t.armor-(v.ch||0)).toFixed(2)+'/'+v.t.armor,x+8,y+16);
+  g.fillStyle='#d8e7ff';g.fillText('D / S  SMG '+((areaDebugEnabled||v.debugInfinite)?'∞':v.v+'/'+v.t.vmax),x+8,y+33);
+  g.fillStyle='#34392d';g.fillRect(x+8,y+42,w-16,7);g.fillStyle=v.f>v.t.fmax*.25?'#dce7b8':'#ffd27a';g.fillRect(x+8,y+42,(w-16)*Math.max(0,v.f)/v.t.fmax,7);
+  g.fillStyle='#e6e9d8';g.font='10px system-ui';g.fillText('燃料 '+Math.ceil(v.f)+' / '+v.t.fmax,x+8,y+66);g.restore();return;
+ }
  if(TOUCH){
   const x=8,y=70,w=218;
   if(v.kind==='fighter'){
@@ -6457,11 +6476,11 @@ function loop(n){
 }
 let gameErrorCount=0;
 function reportGameError(error){
- gameErrorCount++;console.error('Tank game v156',error);
+ gameErrorCount++;console.error('Tank game v157',error);
  let panel=document.getElementById('runtimeError');
  if(!panel){panel=document.createElement('div');panel.id='runtimeError';panel.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;background:#422018;color:#fff2dc;padding:12px;border:1px solid #f7b083;border-radius:8px;font:12px system-ui;white-space:pre-wrap;max-height:35vh;overflow:auto';document.body.appendChild(panel);}
  const stack=String(error&&error.stack||error).split('\n').slice(0,4).join('\n');
- panel.textContent='v156 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
+ panel.textContent='v157 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 requestAnimationFrame(loop);
 </script>
@@ -6511,13 +6530,14 @@ let actionKey=null,lastActionMode='',lastActionUiFrame=0,lastActionLabel='',last
 const paintRing=(el,rem,max,color='#ffd27a')=>{const ratio=Math.max(0,Math.min(1,rem/Math.max(.01,max))),deg=ratio*360;el.style.background='conic-gradient('+color+' '+deg+'deg, rgba(255,255,255,.13) '+deg+'deg)';el.classList.toggle('on',rem>.02);};
 const syncActionButton=()=>{
  const now=performance.now();if(now-lastActionUiFrame<45)return;lastActionUiFrame=now;
- const truckMode=!!(p&&p.tank&&p.tank.kind==='truck'),fighterMode=!!(p&&p.tank&&p.tank.kind==='fighter'),tankMode=!!(p&&p.tank&&p.tank.kind==='tank'),sniperMode=!!(p&&p.sniperMode),planted=!!(p&&!p.tank&&bombs&&bombs.some(b=>b.own==='p'&&!(b.fly>0))),mode=sniperMode?'sniper':truckMode?'truck':fighterMode?'fighter':tankMode?'tank':planted?'detonate':'human';
- if(mode!==lastActionMode){lastActionMode=mode;actionGlyph.textContent=truckMode||sniperMode?'×':'B';actionBtn.setAttribute('aria-label',sniperMode?'狙撃中は使用不可':truckMode?'攻撃不可':fighterMode?'爆撃':tankMode?'主砲':planted?'起爆':'爆弾');}
+ const armoredMode=!!(p&&p.tank&&p.tank.t.id==='armored');
+ const truckMode=!!(p&&p.tank&&p.tank.kind==='truck'),fighterMode=!!(p&&p.tank&&p.tank.kind==='fighter'),tankMode=!!(p&&p.tank&&p.tank.kind==='tank'),sniperMode=!!(p&&p.sniperMode),planted=!!(p&&!p.tank&&bombs&&bombs.some(b=>b.own==='p'&&!(b.fly>0))),mode=armoredMode?'armored':sniperMode?'sniper':truckMode?'truck':fighterMode?'fighter':tankMode?'tank':planted?'detonate':'human';
+ if(mode!==lastActionMode){lastActionMode=mode;actionGlyph.textContent=truckMode||sniperMode?'×':'B';actionBtn.setAttribute('aria-label',sniperMode?'狙撃中は使用不可':truckMode?'攻撃不可':fighterMode?'爆撃':armoredMode?'SMG':tankMode?'主砲':planted?'起爆':'爆弾');}
  const specialSkillGauge=!p?.tank?skillGaugeStatus():null;
- const nextActionLabel=sniperMode?'使用不可':truckMode?'攻撃不可':fighterMode?'爆撃':tankMode?'主砲':planted?'起爆':'爆弾',nextSkillLabel=sniperMode&&p?.sniperExitT>0?'収納中':tankMode?'MG':fighterMode||truckMode?'—':specialSkillGauge?specialSkillGauge.touch:(p&&p.drill>0?'突貫':SKN[skill]);
+ const nextActionLabel=sniperMode?'使用不可':truckMode?'攻撃不可':fighterMode?'爆撃':armoredMode?'SMG':tankMode?'主砲':planted?'起爆':'爆弾',nextSkillLabel=sniperMode&&p?.sniperExitT>0?'収納中':armoredMode?'SMG':tankMode?'MG':fighterMode||truckMode?'—':specialSkillGauge?specialSkillGauge.touch:(p&&p.drill>0?'突貫':SKN[skill]);
  if(nextActionLabel!==lastActionLabel){lastActionLabel=nextActionLabel;actionLabel.textContent=nextActionLabel;}
  if(nextSkillLabel!==lastSkillLabel){lastSkillLabel=nextSkillLabel;skillLabel.textContent=nextSkillLabel;}
- if((tankMode||fighterMode)&&p&&p.tank)paintRing(actionCooldown,Math.max(0,p.cc),p.tank.t.ccd);else paintRing(actionCooldown,0,1);
+ if(armoredMode)paintRing(actionCooldown,Math.max(0,p.vc),p.tank.t.vcd);else if((tankMode||fighterMode)&&p&&p.tank)paintRing(actionCooldown,Math.max(0,p.cc),p.tank.t.ccd);else paintRing(actionCooldown,0,1);
  if(tankMode&&p&&p.tank)paintRing(skillCooldown,Math.max(0,p.vc),Math.max(.01,p.tank.t.vcd));
  else if(specialSkillGauge)paintRing(skillCooldown,specialSkillGauge.rem,specialSkillGauge.max,specialSkillGauge.color);
  else if(!p?.tank){if(skill==='flame')paintRing(skillCooldown,Math.max(0,3-(p?.flameFuel||0)),3);else paintRing(skillCooldown,Math.max(0,p?.scd||0),Math.max(.01,p?.scdMax||1));}
