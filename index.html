@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.10.149</title>
+<title>戦車ゲーム 2026.10.10.150</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -456,11 +456,11 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <p>詳しいキー配置と各スキルの操作はタイトル画面の「操作説明」、またはスキル選択画面のⓘでも確認できます。</p>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-player"><h2>4. 歩兵・潜入・地形</h2>
-<ul><li>歩兵のライフはハート2個。乗り物に搭乗していないときは爆弾やスキルを使用できます。</li><li>近くの敵兵にAで組み付くと、敵を気絶させられます。</li><li>草むらは敵の視線を避けるための隠蔽場所です。雨天時は水中にいることも発見を避ける条件になります。</li><li>停止中は敵の索敵距離が短くなります。見つかった後も、条件を満たして隠れ続けると発見状態を解除できます。</li><li>建物・岩・木・防護壁などは、種類に応じて通行や射線を遮ります。川や泥は移動にも影響します。</li></ul>
+<ul><li>歩兵のライフはハート3個。乗り物に搭乗していないときは爆弾やスキルを使用できます。</li><li>近くの敵兵にAで組み付くと、敵を気絶させられます。</li><li>草むらは敵の視線を避けるための隠蔽場所です。雨天時は水中にいることも発見を避ける条件になります。</li><li>停止中は敵の索敵距離が短くなります。見つかった後も、条件を満たして隠れ続けると発見状態を解除できます。</li><li>建物・岩・木・防護壁などは、種類に応じて通行や射線を遮ります。川や泥は移動にも影響します。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-enemies"><h2>5. 敵兵と敵戦車のAI</h2>
 <h3>敵歩兵</h3><p>巡回・疑惑・発見の状態を持ちます。通常の巡回に加え、建物の周囲を回る巡回ルートもあります。音や爆発を警戒し、プレイヤーを発見すると短い反応時間を挟んで追跡・射撃します。エリート兵は通常兵と性能・挙動が異なります。</p>
-<h3>指揮官（各2体）</h3><p>敵歩兵は青の通常兵・青の指揮官・白の通常エリート・白の指揮官の4種類です。指揮官はヘルメット横の黄色い丸で識別できます。青兵指揮官は発見時に笛を吹き、1秒後に1000px以内の兵士へ発見を伝達。0.5秒間停止して構えた時点の方向へバズーカを撃ちます。戦車砲と同じ被弾威力で、爆破範囲は110pxです（設置爆弾は95px）。白兵指揮官は上部からマップの左右端を大きく蛇行しながら南下し、左右を見て索敵。発見後は距離を保ち、7秒ごとに先回りと尾行を切り替えます。移動速度は通常青兵の1.5倍（巡回45px/秒・交戦142.5px/秒）。移動中は武器を隠し、射撃時のみ武器を表示します。0.2秒停止して予測照準し、射程480pxの単発ライフルで攻撃します。通常兵と通常エリートの基本行動は従来どおりです。</p><h3>敵戦車</h3><p>巡回・疑惑・発見の状態を持ちます。爆発音や狙撃音などを察知すると、車体を止めて音の方向へ砲塔を旋回させる疑惑モードに入ります。実際に標的を見つけた場合は、反応時間を挟んで主砲やMGで攻撃します。</p>
+<h3>指揮官（各2体）</h3><p>敵歩兵は青の通常兵・青の指揮官・白の通常エリート・白の指揮官の4種類です。指揮官はヘルメット横の黄色い丸で識別できます。青兵指揮官は発見時に笛を吹き、1秒後に1000px以内の兵士へ発見を伝達。0.5秒間停止して構えた時点の方向へバズーカを撃ちます。射撃後は約1.2秒移動します。戦車砲の半分の被弾威力で、爆破範囲は110pxです（設置爆弾は95px）。白兵指揮官は上部からマップの左右端を大きく蛇行しながら南下し、左右を見て索敵。発見後は距離を保ち、7秒ごとに先回りと尾行を切り替えます。移動速度は通常青兵の1.5倍（巡回45px/秒・交戦142.5px/秒）。移動中は武器を隠し、射撃時のみ武器を表示します。0.3秒停止して予測照準し、射程480pxの単発ライフルで攻撃します。司令本部の増援は巡回モードで出現し、10%の確率で青兵指揮官になります。通常兵と通常エリートの基本行動は従来どおりです。</p><h3>敵戦車</h3><p>巡回・疑惑・発見の状態を持ちます。爆発音や狙撃音などを察知すると、車体を止めて音の方向へ砲塔を旋回させる疑惑モードに入ります。実際に標的を見つけた場合は、反応時間を挟んで主砲やMGで攻撃します。</p>
 <p>敵は障害物や視線の遮り、草むら、周囲から伝わる警戒情報などの影響を受けます。</p>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-vehicles"><h2>6. 乗り物</h2>
@@ -518,7 +518,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.10.149',FILE_CREATED_AT='2026/10/10 18:59',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.10.150',FILE_CREATED_AT='2026/10/10 23:17',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -1625,7 +1625,7 @@ function setupAreaDebugStage(){
  const areaH=1350,bottom=WH-100;
  ZONES=AREA_DEBUG_ORDER.map((n,i)=>{const y0=bottom-i*areaH,y1=y0-areaH;return{n,y0,y1,g:ZONE_STYLE[n].g,p:ZONE_STYLE[n].p.slice(),pat:null,areaDebug:1};});
  areaDebugLabels=[];covers=[];objects=[];bushes=[];mud=[];water=[];bridges=[];cars=[];etanks=[];humans=[];bullets=[];parts=[];bombs=[];items=[];waves=[];fx=[];allies=[];builtWalls=[];tankWrecks=[];decoy=null;radio=null;airstrike=null;airbombs=[];weather='clear';weatherT=0;weatherNext=99999;baseSpawnT=99999;
- p.tank=null;p.hp=2;p.x=WW/2;p.y=ZONES[0].y0-220;scoreStats.startY=p.y;p.body=-Math.PI/2;p.ang=-Math.PI/2;p.dig=0;p.digPrep=0;p.drill=0;p.scd=0;p.bushHide=0;p.grappleT=0;
+ p.tank=null;p.hp=3;p.x=WW/2;p.y=ZONES[0].y0-220;scoreStats.startY=p.y;p.body=-Math.PI/2;p.ang=-Math.PI/2;p.dig=0;p.digPrep=0;p.drill=0;p.scd=0;p.bushHide=0;p.grappleT=0;
  const hq=ZONES[ZONES.length-1];base={x:WW/2-COMMAND_BASE_W/2,y:hq.y1+115,w:COMMAND_BASE_W,h:COMMAND_BASE_H,hp:30,maxHp:30,deadAt:0};
  cars.push({x:WW/2-92,y:p.y-36,t:TRUCK_TYPE,kind:'truck',hp:5,c:0,v:0,f:TRUCK_TYPE.fmax,mgHits:0,body:-1.57,areaDebug:1});
  cars.push({x:WW/2+92,y:p.y-36,t:TYPES[0],kind:'tank',hp:TYPES[0].hp,c:TYPES[0].cmax,v:TYPES[0].vmax,f:TYPES[0].fmax,ch:0,mgHits:0,body:-1.57,areaDebug:1});
@@ -2242,7 +2242,7 @@ function reset(rerollSkills=true){
  state='play';shake=0;flash=0;msg='';msgT=0;chainToastT=0;oneShotToastT=0;chainToast='';oneShotToast='';interact=false;bombReq=false;skillReq=false;decoy=null;allies=[];hound=null;houndTrail=[];allySeq=0;builtWalls=[];tankWrecks=[];radio=null;airstrike=null;airbombs=[];weather='clear';weatherT=0;weatherNext=15+R()*35;baseSpawnT=5;deathT=0;cam=0;camX=0;scoreStats=newScoreStats();
  setupZones();if(rerollSkills)rollSkillChoices();
  waterRipples=[];
- p={x:WW/2,y:3100,hp:2,tank:null,cc:0,vc:0,ang:-1.57,body:-1.57,dig:0,digPrep:0,digElapsed:0,digExitAnim:0,digExitX:0,digExitY:0,scd:0,scdMax:0,drill:0,drillHit:0,drillTarget:null,drillSfx:0,bushHide:0,grappleT:0,grappleTarget:null,flameFuel:3,flameActive:false,flameLockA:null,flamePath:[],flameSfx:0,flameReach:0,fireExposure:0,sniperMode:false,sniperLockA:null,sniperAimN:0,sniperZoom:1.5,sniperLensChangeT:0,sniperEnterT:0,sniperReadyT:0,sniperExitT:0,sniperFlash:0,sniperHitT:0,sniperHitX:0,sniperHitY:0,sniperFireCd:0,sniperNoiseEvents:[]};touchTurretAngle=null;
+ p={x:WW/2,y:3100,hp:3,tank:null,cc:0,vc:0,ang:-1.57,body:-1.57,dig:0,digPrep:0,digElapsed:0,digExitAnim:0,digExitX:0,digExitY:0,scd:0,scdMax:0,drill:0,drillHit:0,drillTarget:null,drillSfx:0,bushHide:0,grappleT:0,grappleTarget:null,flameFuel:3,flameActive:false,flameLockA:null,flamePath:[],flameSfx:0,flameReach:0,fireExposure:0,sniperMode:false,sniperLockA:null,sniperAimN:0,sniperZoom:1.5,sniperLensChangeT:0,sniperEnterT:0,sniperReadyT:0,sniperExitT:0,sniperFlash:0,sniperHitT:0,sniperHitX:0,sniperHitY:0,sniperFireCd:0,sniperNoiseEvents:[]};touchTurretAngle=null;
  base={x:WW/2-COMMAND_BASE_W/2,y:60,w:COMMAND_BASE_W,h:COMMAND_BASE_H,hp:30,maxHp:30,deadAt:0};bullets=[];parts=[];bombs=[];waves=[];fx=[];items=[];bushes=[];
  water=[];bridges=[];mud=[];
  for(const ry of [2675,1325]){
@@ -2835,7 +2835,7 @@ function commanderMove(h,target,dt,sp=150){
  const to=Math.atan2(dest.y-h.y,dest.x-h.x),step=Math.min(sp*dt,D(h,dest)),ox=h.x,oy=h.y;mv(h,Math.cos(to)*step,Math.sin(to)*step,8);
  if(Math.hypot(h.x-ox,h.y-oy)<step*.1){h.commanderStuck=(h.commanderStuck||0)+dt;if(h.commanderStuck>.4){h.commanderRoute=null;h.commanderStuck=0;}}else h.commanderStuck=0;
 }
-function cancelCommanderAttack(h){h.commanderShotT=0;h.commanderCharge=0;h.commanderAim=null;h.commanderRoute=null;}
+function cancelCommanderAttack(h){h.commanderRelocateT=0;h.commanderRelocateGoal=null;h.commanderShotT=0;h.commanderCharge=0;h.commanderAim=null;h.commanderRoute=null;}
 function updateCommanderAI(h,dt){
  if(!h.commander)return false;
  h.whistleT=Math.max(0,(h.whistleT||0)-dt);h.whistleCooldown=Math.max(0,(h.whistleCooldown||0)-dt);
@@ -2866,11 +2866,20 @@ function updateCommanderAI(h,dt){
    fire(h.x+Math.cos(angle)*22,h.y+Math.sin(angle)*22,angle,'e',blue?'c':'r',blue?enemyCannonSpeed():520,blue?COMMANDER_BLUE_RANGE:COMMANDER_WHITE_RANGE);
    const bullet=bullets[bullets.length-1];bullet.commanderRocket=blue;bullet.commanderRifle=!blue;bullet.commanderShooter=h;
    h.commanderCooldown=blue?4:3.2;h.commanderShotT=blue?0:.06;h.commanderAim=null;
+   if(blue){h.commanderRelocateT=1.2;h.commanderRoute=null;
+    const side=(h.commanderStrafeSide||1)*-1;h.commanderStrafeSide=side;
+    const a=angle+side*Math.PI/2;
+    h.commanderRelocateGoal={x:Math.max(30,Math.min(WW-30,h.x+Math.cos(a)*115)),y:Math.max(30,Math.min(WH-30,h.y+Math.sin(a)*115))};
+   }
   }
   return true;
  }
  h.face=to;
  if(h.commander==='blue'){
+  if((h.commanderRelocateT||0)>0){
+   h.commanderRelocateT=Math.max(0,h.commanderRelocateT-dt);
+   commanderMove(h,h.commanderRelocateGoal,dt,95);return true;
+  }
   if(distance>340)commanderMove(h,target,dt,95);
   if(distance<=COMMANDER_BLUE_RANGE&&distance>120&&visible&&h.commanderCooldown<=0){h.commanderAim=to;h.commanderCharge=.5;h.modeFrozen=true;}
  }else{
@@ -2882,8 +2891,8 @@ function updateCommanderAI(h,dt){
   destination.x=Math.max(30,Math.min(WW-30,destination.x));destination.y=Math.max(30,Math.min(WH-30,destination.y));
   if(D(h,destination)>35)commanderMove(h,destination,dt,142.5);
   if(distance>=170&&distance<=COMMANDER_WHITE_RANGE&&visible&&h.commanderCooldown<=0){
-   const lead=distance/520+.2,v=h.target==='p'?commanderVelocity:{x:0,y:0};
-   h.commanderAim=Math.atan2(target.y+v.y*lead-h.y,target.x+v.x*lead-h.x);h.commanderCharge=.2;h.modeFrozen=true;
+   const lead=distance/520+.3,v=h.target==='p'?commanderVelocity:{x:0,y:0};
+   h.commanderAim=Math.atan2(target.y+v.y*lead-h.y,target.x+v.x*lead-h.x);h.commanderCharge=.3;h.modeFrozen=true;
   }
  }
  return true;
@@ -2897,11 +2906,11 @@ function commanderRocketBlast(x,y){
  if(state!=='play'||p.dig>0||Math.hypot(p.x-x,p.y-y)>=COMMANDER_BLAST_RADIUS)return;
  if(p.tank){
   if(p.tank.kind==='truck'){wreck();return;}
-  if(p.tank.kind==='fighter'){p.tank.hp-=3;if(p.tank.hp<=0)wreck();return;}
-  p.tank.ch=(p.tank.ch||0)+1.1;if(p.tank.ch>=(p.tank.t.armor||3))wreck();
+  if(p.tank.kind==='fighter'){p.tank.hp-=1.5;sfx('vehicleHit');shake=Math.max(shake,7);if(p.tank.hp<=0)wreck();return;}
+  p.tank.ch=(p.tank.ch||0)+.55;sfx('vehicleHit');shake=Math.max(shake,7);if(p.tank.ch>=(p.tank.t.armor||3))wreck();
  }else{
   if(debugInvincible){shake=Math.max(shake,3);return;}
-  if(scoreStats)scoreStats.damageHits++;p.hp-=2;beginBlastFlight(p,x,y,COMMANDER_BLAST_RADIUS,82,8,0);if(p.hp<=0)triggerPlayerDeath();
+  if(scoreStats)scoreStats.damageHits++;p.hp-=1;beginBlastFlight(p,x,y,COMMANDER_BLAST_RADIUS,82,8,0);if(p.hp<=0)triggerPlayerDeath();
  }
 }
 function updateCommanderRocket(b,ox,oy,expired){
@@ -2918,7 +2927,7 @@ function drawCommanderOverlay(h){
  if(!h.commander)return;
  g.save();g.translate(h.x,h.y);g.rotate(h.face);g.fillStyle='#ffd56a';g.strokeStyle='#3a2a10';g.lineWidth=1;g.beginPath();g.arc(-1,-10,3.5,0,Math.PI*2);g.fill();g.stroke();g.restore();
  if(h.whistleT>0){g.save();g.strokeStyle='rgba(255,219,95,'+Math.min(1,h.whistleT)+')';g.lineWidth=2;g.beginPath();g.arc(h.x,h.y,20+(1.2-h.whistleT)*65,0,Math.PI*2);g.stroke();g.font='bold 18px system-ui';g.textAlign='center';g.fillStyle='#ffe17a';g.fillText('♪',h.x,h.y-28);g.restore();}
- if(h.commanderCharge>0){const total=h.commander==='blue'?.5:.2;g.save();g.strokeStyle=h.commander==='blue'?'#ffb879':'#ffe3a0';g.lineWidth=2;g.beginPath();g.arc(h.x,h.y,20,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-h.commanderCharge/total));g.stroke();g.restore();}
+ if(h.commanderCharge>0){const total=h.commander==='blue'?.5:.3;g.save();g.strokeStyle=h.commander==='blue'?'#ffb879':'#ffe3a0';g.lineWidth=2;g.beginPath();g.arc(h.x,h.y,20,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-h.commanderCharge/total));g.stroke();g.restore();}
 }
 
 function pauseAfterEnemyDetection(o){
@@ -3078,7 +3087,7 @@ function exitDebugFighterToHuman(){
  if(!p)return;
  if(p.tank&&p.tank.kind==='fighter'){
   p.body=p.tank.body??p.body;p.ang=p.body;
-  p.tank=null;p.cc=0;p.vc=0;p.hp=Math.max(2,p.hp||0);vehicleNameT=0;
+  p.tank=null;p.cc=0;p.vc=0;p.hp=Math.max(3,p.hp||0);vehicleNameT=0;
   onHoundPlayerDismount();
   burst(p.x,p.y,12,'#d9efff',120);
  }
@@ -3092,7 +3101,7 @@ function toggleDebugInvincible(){
  debugMode=(debugMode+1)%4;debugInvincible=debugMode>0;if(scoreStats&&!scoreStats.finalized)scoreStats.debugUsed=true;
  if(debugMode===0)exitDebugFighterToHuman();
  if(debugInvincible&&p){
-  p.hp=Math.max(2,p.hp||0);
+  p.hp=Math.max(3,p.hp||0);
   if(p.tank){p.tank.ch=0;p.tank.mgHits=0;if(p.tank.kind==='fighter')p.tank.hp=Math.max(FIGHTER_TYPE.hp,p.tank.hp||0);}
  }
  if(debugMode>=2)clearPlayerDetection();
@@ -3102,7 +3111,7 @@ function toggleDebugInvincible(){
 }
 function triggerPlayerDeath(){
  if(state!=='play')return;
- if(debugInvincible){p.hp=Math.max(2,p.hp||0);shake=Math.max(shake,3);flash=Math.max(flash,.12);return;}
+ if(debugInvincible){p.hp=Math.max(3,p.hp||0);shake=Math.max(shake,3);flash=Math.max(flash,.12);return;}
  p.hp=0;state='dying';deathT=1.35;p.drill=0;p.dig=0;p.digPrep=0;shake=Math.max(shake,16);flash=.65;sfx('deathHit');fb(p.x,p.y,38);burst(p.x,p.y,34,'#ff8a4a',260);burst(p.x,p.y,14,'#fff0a0',330);
 }
 function damagePlayerByOwnBomb(){
@@ -3209,7 +3218,7 @@ function wreck(){
   if(p.tank.kind==='fighter')p.tank.hp=FIGHTER_TYPE.hp;
   shake=Math.max(shake,4);flash=Math.max(flash,.14);return;
  }
- const veh=p.tank,kind=veh&&veh.kind,wasTruck=kind==='truck',wasFighter=kind==='fighter';if(kind==='tank')spawnTankWreck(p.x,p.y,p.body,p.ang,veh.t);sfx('explosion');fb(p.x,p.y,50);burst(p.x,p.y,50,wasTruck?'#d48a52':wasFighter?'#9fc8e8':'#ff7b3a',330);p.tank=null;p.hp=2;p.cc=0;p.vc=0;shake=16;flash=.5;say(wasTruck?'トラック大破! 歩兵として脱出':wasFighter?'戦闘機撃墜! 歩兵として脱出':'戦車大破!歩兵として脱出');
+ const veh=p.tank,kind=veh&&veh.kind,wasTruck=kind==='truck',wasFighter=kind==='fighter';if(kind==='tank')spawnTankWreck(p.x,p.y,p.body,p.ang,veh.t);sfx('explosion');fb(p.x,p.y,50);burst(p.x,p.y,50,wasTruck?'#d48a52':wasFighter?'#9fc8e8':'#ff7b3a',330);p.tank=null;p.hp=3;p.cc=0;p.vc=0;shake=16;flash=.5;say(wasTruck?'トラック大破! 歩兵として脱出':wasFighter?'戦闘機撃墜! 歩兵として脱出':'戦車大破!歩兵として脱出');
 }
 function truckTankCrashFx(x,y,e,actionId=0){
  if(e&&e.alive){destroyEnemyTank(e,x,y);if(actionId)recordPlayerKill(actionId);burst(e.x,e.y,46,'#ff6a2a',380);}
@@ -3565,9 +3574,24 @@ function spawnHQEnemy(){
  if(!base||base.hp<=0)return;const sy=base.y+base.h+55;let sp=null;
  for(let k=0;k<160;k++){const q=freeSpot(base.x+base.w/2+(R()-.5)*230,sy+(R()-.5)*90,8,20);if((humans||[]).some(h=>h.alive&&D(h,q)<80))continue;if((etanks||[]).some(e=>e.alive&&D(e,q)<TANK_HIT+35))continue;sp=q;break;}
  if(!sp)return;const x2=Math.max(18,Math.min(WW-18,sp.x+(R()<.5?-1:1)*(80+R()*120)));
- const h={x:sp.x,y:sp.y,path:[{x:sp.x,y:sp.y},{x:x2,y:sp.y}],loop:false,wi:1,dir:1,stk:0,alive:true,st:1,lost:DETECT_MEMORY,cd:.7,face:Math.atan2(p.y-sp.y,p.x-sp.x),target:'p',foundPause:foundModePause(),patrolMode:'axis',hq:true,elite:R()<1/3};h.lost=humanMemory(h);humans.push(h);
+ const h={x:sp.x,y:sp.y,path:[{x:sp.x,y:sp.y},{x:x2,y:sp.y}],loop:false,wi:1,dir:1,stk:0,alive:true,st:0,sus:0,lost:0,cd:.7,face:Math.atan2(0,x2-sp.x),target:null,foundPause:0,patrolMode:'axis',hq:true,elite:false};
+ if(R()<.1){h.commander='blue';h.commanderCooldown=2;h.commanderTactics=0;h.commanderCharge=0;h.whistleCooldown=0;h.whistleT=0;}else h.elite=R()<1/3;
+ humans.push(h);
 }
 function updateHQSpawn(dt){if(stageMode!=='base'||areaDebugEnabled){baseSpawnT=99999;return;}if(!base||base.hp<=0||zoneAt(p.y).n!=='敵司令本部'){baseSpawnT=5;return;}baseSpawnT-=dt;if(baseSpawnT<=0){baseSpawnT+=5;const activeHQ=(humans||[]).filter(h=>h.alive&&h.hq).length;if(activeHQ<8)spawnHQEnemy();}}
+function enemyPlayerBulletImpact(b,ox,oy){
+ if(b.from!=='e'||b.commanderRocket||p.dig>0)return null;
+ const dx=b.x-ox,dy=b.y-oy,rx=ox-p.x,ry=oy-p.y,r=p.tank?TANK_HIT:9;
+ const c=rx*rx+ry*ry-r*r,a=dx*dx+dy*dy;
+ if(c<=0)return{x:ox,y:oy};
+ if(a<=0)return null;
+ const dot=rx*dx+ry*dy,disc=dot*dot-a*c;
+ if(disc<0)return null;
+ const t=(-dot-Math.sqrt(disc))/a;
+ if(t<0||t>1)return null;
+ const inside=Math.min(1,t+1e-6);
+ return{x:ox+dx*inside,y:oy+dy*inside};
+}
 function pointSegDist(px,py,a,b){const dx=b.x-a.x,dy=b.y-a.y,l2=dx*dx+dy*dy;if(!l2)return Math.hypot(px-a.x,py-a.y);const t=Math.max(0,Math.min(1,((px-a.x)*dx+(py-a.y)*dy)/l2));return Math.hypot(px-(a.x+t*dx),py-(a.y+t*dy));}
 function drillGeom(){const a=p.body;return{a:{x:p.x+Math.cos(a)*9,y:p.y+Math.sin(a)*9},b:{x:p.x+Math.cos(a)*51,y:p.y+Math.sin(a)*51},r:11};}
 function updateDrill(dt){
@@ -4481,7 +4505,9 @@ function update(dt){
    for(const e of etanks)if(e.alive&&Math.hypot(e.x-b.x,e.y-b.y)<TANK_HIT){destroyEnemyTank(e,b.x,b.y);recordPlayerKill(actionId);burst(e.x,e.y,40,'#ff6a2a',350);}
    bombBlast(b.x,b.y,actionId,stepped&&!p.tank);if(stepped){if(p.tank)wreck();else damagePlayerByOwnBomb();}}}
  // 弾
- for(let i=bullets.length-1;i>=0;i--){const b=bullets[i],ox=b.x,oy=b.y;b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;let dead=b.life<=0;if(dead&&b.k==='c'&&!b.commanderRocket)cannonImpact(b.x,b.y,b.from);
+ for(let i=bullets.length-1;i>=0;i--){const b=bullets[i],ox=b.x,oy=b.y,travelDt=Math.min(dt,Math.max(0,b.life));b.x+=b.vx*travelDt;b.y+=b.vy*travelDt;b.life-=dt;let dead=b.life<=0;
+  const playerBulletHit=enemyPlayerBulletImpact(b,ox,oy);
+  if(playerBulletHit){b.x=playerBulletHit.x;b.y=playerBulletHit.y;dead=false;}if(dead&&b.k==='c'&&!b.commanderRocket)cannonImpact(b.x,b.y,b.from);
   if(b.commanderRocket){if(updateCommanderRocket(b,ox,oy,dead))bullets.splice(i,1);continue;}
   if(b.from==='p'&&b.k==='s'){if(updateSniperPiercingBullet(b,ox,oy)||dead)bullets.splice(i,1);continue;}
   if(!dead){const bp=segmentBaseImpact({x:ox,y:oy},{x:b.x,y:b.y},b.k==='c'?2:1);if(bp){dead=true;b.x=bp.x;b.y=bp.y;if(b.k==='c'){cannonImpact(b.x,b.y,b.from);let removedBaseTiles=0;if(b.from==='p'||b.from==='ally'){const hqDmg=b.from==='p'?b.dmg*1.5:b.dmg;removedBaseTiles=damageBase(hqDmg,b.x,b.y,24,1);}if(b.from==='p'&&removedBaseTiles>0)cannonCoverDebris(b.x,b.y,'#666865',Math.max(2,Math.min(6,Math.ceil(removedBaseTiles*.8))));explode(b.x,b.y,20,true,b.from,b.from==='p'?b.actionId:0,b.from==='p'?95:20);}else burst(b.x,b.y,3,b.from==='e'?'#ffb08a':'#ffe28a',90);}}
@@ -4512,8 +4538,8 @@ function update(dt){
    if(!dead&&hound&&D(b,hound)<10){dead=true;if(b.k==='c')cannonImpact(b.x,b.y,b.from);stunHound(5);burst(hound.x,hound.y,8,'#d7cf9a',90);say('猟犬が気絶した!');}
    if(!dead){const hitAlly=(allies||[]).find(a=>a.alive&&D(b,a)<10);if(hitAlly){dead=true;if(b.k==='c')cannonImpact(b.x,b.y,b.from);hitAlly.alive=false;burst(hitAlly.x,hitAlly.y,18,'#8fd7ff',180);say('増援がやられた!');}}
    if(!dead&&decoy&&D(b,decoy)<10){dead=true;if(b.k==='c')cannonImpact(b.x,b.y,b.from);burst(b.x,b.y,8,'#ff5a5a',150);}
-   if(!dead&&!(p.dig>0)&&D(b,p)<(p.tank?TANK_HIT:9)){dead=true;if(b.k==='c')cannonImpact(b.x,b.y,b.from);burst(b.x,b.y,8,'#ff5a5a',150);
-    if(p.tank){if(p.tank.kind==='truck'){if(b.k==='c'){wreck();}else{p.tank.mgHits=(p.tank.mgHits||0)+1;sfx('vehicleHit');shake=Math.max(shake,3);if(p.tank&&p.tank.mgHits>=5)wreck();}}else if(p.tank.kind==='fighter'){if(b.k==='c')p.tank.hp-=3;else p.tank.hp-=1;sfx('vehicleHit');shake=Math.max(shake,b.k==='c'?9:3);if(p.tank&&p.tank.hp<=0)wreck();}else{const armor=p.tank.t.armor||3;if(b.k==='c')p.tank.ch=(p.tank.ch||0)+1.1;else if(b.k==='v')p.tank.ch=(p.tank.ch||0)+.066;shake=Math.max(shake,b.k==='c'?10:2);if((p.tank.ch||0)>=armor)wreck();}}
+   if(!dead&&playerBulletHit){dead=true;if(b.k==='c')cannonImpact(b.x,b.y,b.from);burst(b.x,b.y,8,'#ff5a5a',150);
+    if(p.tank){if(p.tank.kind==='truck'){if(b.k==='c'){wreck();}else{p.tank.mgHits=(p.tank.mgHits||0)+1;sfx('vehicleHit');shake=Math.max(shake,3);if(p.tank&&p.tank.mgHits>=5)wreck();}}else if(p.tank.kind==='fighter'){if(b.k==='c')p.tank.hp-=3;else p.tank.hp-=1;sfx('vehicleHit');shake=Math.max(shake,b.k==='c'?9:3);if(p.tank&&p.tank.hp<=0)wreck();}else{const armor=p.tank.t.armor||3;if(b.k==='c')sfx('vehicleHit');if(b.k==='c')p.tank.ch=(p.tank.ch||0)+1.1;else if(b.k==='v')p.tank.ch=(p.tank.ch||0)+.066;shake=Math.max(shake,b.k==='c'?10:2);if((p.tank.ch||0)>=armor)wreck();}}
     else{if(scoreStats)scoreStats.damageHits++;p.hp-=({c:2,v:.5,r:1})[b.k];shake=6;if(p.hp<=0)triggerPlayerDeath();}}
   }
   if(dead)bullets.splice(i,1);}
@@ -5409,8 +5435,8 @@ function drawInfantryBottomHud(){
  const detected=stealth&&(humans.some(h=>h.alive&&h.st&&h.target==='p')||etanks.some(e=>e.alive&&e.st&&e.target==='p'));
  // UIアイコンはゲーム背景上に直接表示し、背後の黒い板・枠線を描画しない。
  g.save();
- drawHudHeart(x+14,cy,Math.min(1,p.hp));drawHudHeart(x+43,cy,Math.max(0,Math.min(1,p.hp-1)));drawHudBomb(x+80,cy,!!bombs.some(b=>b.own==='p'));
- if(stealth)drawStealthHudIcon(x+119,cy,detected?'#ffd27a':'#9be07a');g.restore();
+ drawHudHeart(x+14,cy,Math.min(1,p.hp));drawHudHeart(x+43,cy,Math.max(0,Math.min(1,p.hp-1)));drawHudHeart(x+72,cy,Math.max(0,Math.min(1,p.hp-2)));drawHudBomb(x+109,cy,!!bombs.some(b=>b.own==='p'));
+ if(stealth)drawStealthHudIcon(x+148,cy,detected?'#ffd27a':'#9be07a');g.restore();
 }
 function skillGaugeStatus(){
  if(!p||p.tank)return null;
@@ -5458,7 +5484,7 @@ function drawVehicleBottomHud(){
    g.fillStyle='#e6e9d8';g.font='bold 10px system-ui';g.fillText('トラック  耐久 '+Math.max(0,5-(v.mgHits||0))+'/5',x+8,y+14);g.fillStyle='#34392d';g.fillRect(x+8,y+22,w-16,7);g.fillStyle=fr>.25?'#dce7b8':v.f>0?'#ffd27a':'#ff7666';g.fillRect(x+8,y+22,(w-16)*fr,7);g.fillStyle='#e6e9d8';g.font='9px system-ui';g.fillText((areaDebugEnabled||v.debugInfinite)?'燃料 ∞':'燃料 '+Math.ceil(v.f)+' / '+Math.ceil(fmax),x+8,y+43);
   }else{
    const h=64,armorMax=v.t.armor||3,fmax=v.t.fmax||100,cmax=v.t.cmax||10,vmax=v.t.vmax||60,fr=Math.max(0,v.f)/fmax;g.fillStyle='rgba(8,10,7,.80)';g.fillRect(x,y,w,h);g.strokeStyle='rgba(230,233,216,.28)';g.strokeRect(x+.5,y+.5,w-1,h-1);
-   g.fillStyle='#e6e9d8';g.font='bold 10px system-ui';g.fillText(v.t.n+'  耐久 '+Math.max(0,Math.ceil(armorMax-(v.ch||0)))+'/'+armorMax,x+8,y+14);
+   g.fillStyle='#e6e9d8';g.font='bold 10px system-ui';g.fillText(v.t.n+'  耐久 '+Math.max(0,armorMax-(v.ch||0)).toFixed(2)+'/'+armorMax,x+8,y+14);
    g.fillStyle='#ffd27a';g.fillText((areaDebugEnabled||v.debugInfinite)?'D 砲弾 ∞':'D '+String(v.c).padStart(2,'0')+'/'+cmax,x+8,y+29);g.fillStyle='#d8e7ff';g.fillText((areaDebugEnabled||v.debugInfinite)?'S MG ∞':'S '+String(v.v).padStart(3,'0')+'/'+vmax,x+108,y+29);
    g.fillStyle='#34392d';g.fillRect(x+8,y+36,w-16,7);g.fillStyle=fr>.25?'#dce7b8':v.f>0?'#ffd27a':'#ff7666';g.fillRect(x+8,y+36,(w-16)*fr,7);g.fillStyle='#e6e9d8';g.font='9px system-ui';g.fillText((areaDebugEnabled||v.debugInfinite)?'燃料 ∞':'燃料 '+Math.ceil(v.f)+' / '+Math.ceil(fmax),x+8,y+58);g.fillStyle='#34392d';g.fillRect(x+124,y+52,84,4);g.fillStyle=p.cc<=0?'#ffd27a':'#8f8159';g.fillRect(x+124,y+52,84*(1-Math.max(0,p.cc)/v.t.ccd),4);
   }
@@ -5477,7 +5503,7 @@ function drawVehicleBottomHud(){
  }else{
   const h=78,y=baseBottom-h,armorMax=v.t.armor||3,fmax=v.t.fmax||100,cmax=v.t.cmax||10,vmax=v.t.vmax||60,fr=Math.max(0,v.f)/fmax;
   g.fillStyle='rgba(8,10,7,.78)';g.fillRect(8,y,w,h);g.strokeStyle='rgba(230,233,216,.28)';g.strokeRect(8.5,y+.5,w-1,h-1);
-  g.fillStyle='#e6e9d8';g.font='bold 11px system-ui';g.fillText(v.t.n+'  耐久 '+Math.max(0,Math.ceil(armorMax-(v.ch||0)))+'/'+armorMax,16,y+15);
+  g.fillStyle='#e6e9d8';g.font='bold 11px system-ui';g.fillText(v.t.n+'  耐久 '+Math.max(0,armorMax-(v.ch||0)).toFixed(2)+'/'+armorMax,16,y+15);
   g.font='bold 12px system-ui';g.fillStyle='#ffd27a';g.fillText((areaDebugEnabled||v.debugInfinite)?'D 砲弾 ∞':'D 砲弾 '+String(v.c).padStart(2,'0')+'/'+cmax,16,y+34);g.fillStyle='#d8e7ff';g.fillText((areaDebugEnabled||v.debugInfinite)?'S MG ∞':'S MG '+String(v.v).padStart(3,'0')+'/'+vmax,125,y+34);
   g.fillStyle='#34392d';g.fillRect(16,y+43,212,9);g.fillStyle=fr>.25?'#dce7b8':v.f>0?'#ffd27a':'#ff7666';g.fillRect(16,y+43,212*fr,9);g.strokeStyle='rgba(255,255,255,.28)';g.strokeRect(16.5,y+43.5,211,8);
   g.fillStyle='#e6e9d8';g.font='bold 10px system-ui';g.fillText((areaDebugEnabled||v.debugInfinite)?'燃料 ∞':'燃料 '+Math.ceil(v.f)+' / '+Math.ceil(fmax),16,y+67);g.fillStyle='#34392d';g.fillRect(132,y+61,96,5);g.fillStyle=p.cc<=0?'#ffd27a':'#8f8159';g.fillRect(132,y+61,96*(1-Math.max(0,p.cc)/v.t.ccd),5);
@@ -6296,7 +6322,7 @@ function updateMission(dt){
   m.waveT-=dt;m.reinforceT-=dt;
   if(m.waveT<=0&&D(p,q)<1000){m.waveT=24;if(humans.filter(h=>h.alive&&D(h,q)<800).length<16)for(let i=0;i<3;i++)missionEnemy(q.x+(i-1)*100,q.y-380,true);}
   if(m.reinforceT<=0){m.reinforceT=18;if(allies.filter(a=>a.alive&&a.frontline).length<4)missionAllies(Math.max(q.y+250,Math.min(p.y+120,WH-200)));}
-  if(m.progress>=12){q.done=true;m.index++;m.progress=0;p.hp=2;if(p.tank){p.tank.c=p.tank.t.cmax;p.tank.v=p.tank.t.vmax;p.tank.f=p.tank.t.fmax;}say(q.name+' 制圧！ 補給・増援到着');if(m.index===3){completeMission();return;}missionAllies(q.y);}
+  if(m.progress>=12){q.done=true;m.index++;m.progress=0;p.hp=3;if(p.tank){p.tank.c=p.tank.t.cmax;p.tank.v=p.tank.t.vmax;p.tank.f=p.tank.t.fmax;}say(q.name+' 制圧！ 補給・増援到着');if(m.index===3){completeMission();return;}missionAllies(q.y);}
  }else{
   m.alarm=Math.max(0,Math.min(100,m.alarm+dt*(detected?12:-5)));m.waveT-=dt;
   if(m.alarm>=65&&m.waveT<=0){m.waveT=24;m.alertCount++;if(humans.filter(h=>h.alive&&D(h,p)<650).length<12)for(let i=0;i<3;i++)missionEnemy(p.x+(i-1)*110,p.y-340,true);say('警戒部隊が接近！ 草むらや遮蔽物へ');}
@@ -6345,11 +6371,11 @@ function loop(n){
 }
 let gameErrorCount=0;
 function reportGameError(error){
- gameErrorCount++;console.error('Tank game v149',error);
+ gameErrorCount++;console.error('Tank game v150',error);
  let panel=document.getElementById('runtimeError');
  if(!panel){panel=document.createElement('div');panel.id='runtimeError';panel.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;background:#422018;color:#fff2dc;padding:12px;border:1px solid #f7b083;border-radius:8px;font:12px system-ui;white-space:pre-wrap;max-height:35vh;overflow:auto';document.body.appendChild(panel);}
  const stack=String(error&&error.stack||error).split('\n').slice(0,4).join('\n');
- panel.textContent='v149 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
+ panel.textContent='v150 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 requestAnimationFrame(loop);
 </script>
