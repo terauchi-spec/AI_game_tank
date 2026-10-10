@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.11.159</title>
+<title>戦車ゲーム 2026.10.11.160</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -518,7 +518,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.11.159',FILE_CREATED_AT='2026/10/11 00:22',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.11.160',FILE_CREATED_AT='2026/10/11 00:25',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -5178,17 +5178,36 @@ function drawRadioPickup(x,y){
  g.fillStyle='#b2bd9e';g.fillRect(7,3,3,7);g.strokeStyle='#a9e9b1';g.beginPath();g.arc(10,-26,5,-.8,.8);g.stroke();g.beginPath();g.arc(10,-26,9,-.8,.8);g.stroke();g.restore();
 }
 function drawSupportBomber(x,y){
- g.save();g.translate(x,y);g.rotate(-Math.PI/2);g.scale(2,2);g.lineJoin='round';g.lineWidth=1.4;g.strokeStyle='#18222b';
- g.fillStyle='rgba(0,0,0,.22)';g.fillRect(-28,-4,59,9);
- g.fillStyle='#818f98';g.beginPath();g.moveTo(8,-5);g.lineTo(-7,-34);g.lineTo(-18,-34);g.lineTo(-8,-4);g.lineTo(-8,4);g.lineTo(-18,34);g.lineTo(-7,34);g.lineTo(8,5);g.closePath();g.fill();g.stroke();
- for(const yy of [-25,-14,14,25]){
-  g.fillStyle='#485964';g.fillRect(-7,yy-2.5,14,5);g.strokeRect(-7,yy-2.5,14,5);
-  g.strokeStyle='#d3dedf';g.lineWidth=1;g.beginPath();g.moveTo(8,yy-5);g.lineTo(8,yy+5);g.stroke();g.strokeStyle='#18222b';
+ g.save();g.translate(x,y);g.rotate(-Math.PI/2);g.scale(2.5,2.5);g.lineJoin='round';g.lineCap='round';g.lineWidth=1.2;
+ const outline='#252b26',dark='#333d31',baseCol='#596650',light='#7f8879';
+ // トラックと共通の軍用グリーン。大型の四発機を、翼・胴体・尾翼の陰影で描く。
+ g.save();g.translate(-2,3);g.fillStyle='rgba(0,0,0,.20)';g.beginPath();g.ellipse(0,0,35,10,0,0,Math.PI*2);g.fill();g.restore();
+ g.strokeStyle=outline;g.fillStyle=dark;
+ g.beginPath();g.moveTo(10,-5);g.lineTo(-5,-34);g.lineTo(-13,-36);g.lineTo(-18,-33);g.lineTo(-10,-5);g.lineTo(-10,5);g.lineTo(-18,33);g.lineTo(-13,36);g.lineTo(-5,34);g.lineTo(10,5);g.closePath();g.fill();g.stroke();
+ g.fillStyle=baseCol;g.beginPath();g.moveTo(7,-5);g.lineTo(-6,-33);g.lineTo(-12,-34);g.lineTo(-8,-5);g.lineTo(-8,5);g.lineTo(-12,34);g.lineTo(-6,33);g.lineTo(7,5);g.closePath();g.fill();
+ g.strokeStyle='#8f9b85';g.lineWidth=.7;
+ for(const side of [-1,1]){
+  g.beginPath();g.moveTo(4,side*8);g.lineTo(-6,side*31);g.stroke();
+  g.strokeStyle='#323b31';g.beginPath();g.moveTo(-6,side*9);g.lineTo(-12,side*29);g.stroke();g.strokeStyle='#8f9b85';
+  for(const yy of [14,25]){
+   const y=side*yy;g.fillStyle=outline;g.beginPath();g.roundRect(-8,y-3.3,17,6.6,2.5);g.fill();
+   g.fillStyle='#64725d';g.beginPath();g.roundRect(-6.5,y-2.5,14,5,2);g.fill();g.fillStyle=light;g.fillRect(-3,y-2,6,1);
+   g.fillStyle='#30362f';g.fillRect(7,y-3,2,6);g.strokeStyle='rgba(210,222,195,.62)';g.lineWidth=1;
+   const blade=Math.sin(performance.now()*.06+yy)*5;g.beginPath();g.moveTo(10,y-blade);g.lineTo(10,y+blade);g.stroke();g.strokeStyle='#8f9b85';g.lineWidth=.7;
+  }
  }
- g.fillStyle='#7b8994';g.beginPath();g.moveTo(-23,-3);g.lineTo(-31,-13);g.lineTo(-35,-13);g.lineTo(-30,0);g.lineTo(-35,13);g.lineTo(-31,13);g.lineTo(-23,3);g.closePath();g.fill();g.stroke();
- g.fillStyle='#afbbc1';g.beginPath();g.moveTo(35,0);g.quadraticCurveTo(32,-5,22,-5);g.lineTo(-27,-3);g.lineTo(-33,0);g.lineTo(-27,3);g.lineTo(22,5);g.quadraticCurveTo(32,5,35,0);g.fill();g.stroke();
- g.fillStyle='#234653';g.fillRect(20,-3,7,6);g.fillStyle='#d9e7e5';g.fillRect(21,-2,2,4);
- g.fillStyle='#405663';g.fillRect(-13,-2,20,4);g.strokeStyle='#d4dcda';g.lineWidth=.7;g.beginPath();g.moveTo(-13,0);g.lineTo(7,0);g.stroke();g.restore();
+ g.fillStyle=dark;g.strokeStyle=outline;g.lineWidth=1.1;
+ g.beginPath();g.moveTo(-22,-3);g.lineTo(-29,-15);g.lineTo(-35,-15);g.lineTo(-31,0);g.lineTo(-35,15);g.lineTo(-29,15);g.lineTo(-22,3);g.closePath();g.fill();g.stroke();
+ g.fillStyle='#697760';g.fillRect(-31,-11,3,22);
+ g.fillStyle='#465443';g.beginPath();g.moveTo(37,0);g.quadraticCurveTo(34,-5.5,23,-5.5);g.lineTo(-25,-3.5);g.lineTo(-34,0);g.lineTo(-25,3.5);g.lineTo(23,5.5);g.quadraticCurveTo(34,5.5,37,0);g.fill();g.stroke();
+ g.fillStyle='#697760';g.beginPath();g.moveTo(32,-2.5);g.lineTo(12,-3.5);g.lineTo(-25,-1.5);g.lineTo(-30,0);g.lineTo(12,.5);g.lineTo(32,1.5);g.closePath();g.fill();
+ g.fillStyle='#333d31';g.fillRect(-13,-2.5,18,5);g.strokeStyle='#8f9b85';g.lineWidth=.7;g.strokeRect(-13,-2.5,18,5);
+ for(const xx of [-9,-4,1]){g.beginPath();g.moveTo(xx,-2.5);g.lineTo(xx,2.5);g.stroke();}
+ g.fillStyle='#9fb9b6';g.beginPath();g.moveTo(28,-3);g.lineTo(21,-3.8);g.lineTo(20,3.8);g.lineTo(28,3);g.closePath();g.fill();g.strokeStyle=outline;g.lineWidth=1;
+ g.beginPath();g.moveTo(24,-3.5);g.lineTo(24,3.5);g.moveTo(20,0);g.lineTo(28,0);g.stroke();
+ g.fillStyle='#d6dfc7';g.fillRect(-19,-1,3,2);
+ g.fillStyle='#db6860';g.beginPath();g.arc(-12,-35,.9,0,Math.PI*2);g.fill();g.fillStyle='#9bc58a';g.beginPath();g.arc(-12,35,.9,0,Math.PI*2);g.fill();
+ g.restore();
 }
 function armoredShape(x,y,body,ang){
  const sz=29;
@@ -6529,11 +6548,11 @@ function loop(n){
 }
 let gameErrorCount=0;
 function reportGameError(error){
- gameErrorCount++;console.error('Tank game v159',error);
+ gameErrorCount++;console.error('Tank game v160',error);
  let panel=document.getElementById('runtimeError');
  if(!panel){panel=document.createElement('div');panel.id='runtimeError';panel.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;background:#422018;color:#fff2dc;padding:12px;border:1px solid #f7b083;border-radius:8px;font:12px system-ui;white-space:pre-wrap;max-height:35vh;overflow:auto';document.body.appendChild(panel);}
  const stack=String(error&&error.stack||error).split('\n').slice(0,4).join('\n');
- panel.textContent='v159 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
+ panel.textContent='v160 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 requestAnimationFrame(loop);
 </script>
