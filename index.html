@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.11.160</title>
+<title>戦車ゲーム 2026.10.11.161</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -464,7 +464,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <p>敵は障害物や視線の遮り、草むら、周囲から伝わる警戒情報などの影響を受けます。</p>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-vehicles"><h2>6. 乗り物</h2>
-<ul><li><strong>戦車：</strong>主砲（D）とMG（S）で攻撃します。車種により性能が異なり、砲弾・MG弾数・燃料・耐久の管理が必要です。</li><li><strong>装甲車：</strong>速度145px/秒で戦車より速く、ジープ相当のトラックより遅い車両です。D（スマホ：B）またはSでサブマシンガンを撃ちます。弾数120、耐久1.4、燃料95。主砲はありません。下車後はトラックと同様に慣性で前進し、敵戦車との体当たりでは両車両が爆発します。</li><li><strong>トラック：</strong>武器による攻撃はできませんが、走行時の接触で敵を倒せます。破壊されることもあります。</li><li><strong>戦闘機：</strong>地上の障害物を越えて飛行し、爆撃できます。</li><li>近づいてAで乗車し、再度Aで降車します。降車地点には十分な空きスペースが必要です。</li></ul>
+<ul><li><strong>戦車：</strong>主砲（D）とMG（S）で攻撃します。車種により性能が異なり、砲弾・MG弾数・燃料・耐久の管理が必要です。</li><li><strong>装甲車：</strong>速度130.5px/秒で戦車より速く、ジープ相当のトラックより遅い車両です。D（スマホ：B）またはSでサブマシンガンを撃ちます。弾数120、燃料95。敵戦車砲の直撃1発で大破し、敵SMGへの耐久はトラックの1.5倍（7.5発分、実際には8発で大破）です。迷路壁は接触で破壊できません。大破時は爆発のみで残骸は残りません。主砲はありません。下車後はトラックと同様に慣性で前進し、敵戦車との体当たりでは両車両が爆発します。</li><li><strong>トラック：</strong>武器による攻撃はできませんが、走行時の接触で敵を倒せます。破壊されることもあります。</li><li><strong>戦闘機：</strong>地上の障害物を越えて飛行し、爆撃できます。</li><li>近づいてAで乗車し、再度Aで降車します。降車地点には十分な空きスペースが必要です。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-combat"><h2>7. 武器・爆発・破壊</h2>
 <ul><li><strong>歩兵の設置爆弾：</strong>D（スマホ：B）で設置し、再度D（スマホ：B）で起爆。爆風で敵・オブジェクトを攻撃できます。</li><li><strong>戦車主砲：</strong>壁や建物などに当たると炸裂。プレイヤーの主砲が壁に着弾したときは、着弾点から約9.5m以内の敵歩兵を撃破できます。</li><li><strong>MG・ライフル：</strong>弾の種類に応じた射程・被弾処理があります。狙撃弾は敵兵を貫通できます。</li><li><strong>破壊可能オブジェクト：</strong>木箱やドラム缶などは被弾・炎上・爆発に反応し、状況によって連鎖爆発も発生します。</li><li>爆風によって敵やプレイヤーが押し飛ばされ、気絶する場合があります。</li></ul>
@@ -518,7 +518,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.11.160',FILE_CREATED_AT='2026/10/11 00:25',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.11.161',FILE_CREATED_AT='2026/10/11 00:34',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -601,7 +601,7 @@ const TYPES=[
  {id:'tiger',n:'Tiger I(独)',hp:16,armor:2.0,cmax:9,vmax:54,fmax:72*PLAYER_TANK_FUEL_SCALE,sp:72,cdmg:5.4,ccd:3.08,cspd:648,crng:684,vcd:.22,col:'#8f8666'},
  {id:'type10',n:'10式(日)',hp:12,armor:1.55,cmax:14,vmax:90,fmax:117*PLAYER_TANK_FUEL_SCALE,sp:126,cdmg:3.6,ccd:1.65,cspd:630,crng:630,vcd:.121,col:'#4e6350'},
  {id:'m1',n:'M1 エイブラムス(米)',hp:15,armor:1.8,cmax:13,vmax:108,fmax:126*PLAYER_TANK_FUEL_SCALE,sp:113,cdmg:4.5,ccd:1.87,cspd:720,crng:738,vcd:.11,col:'#a78957'}];
-const ARMORED_TYPE={id:'armored',n:'装甲車',hp:8,armor:1.4,cmax:0,vmax:120,fmax:95,sp:145,cdmg:0,ccd:1,cspd:0,crng:0,vcd:.12,col:'#73806a'};
+const ARMORED_TYPE={id:'armored',n:'装甲車',hp:7.5,armor:1.1,cmax:0,vmax:120,fmax:95,sp:130.5,cdmg:0,ccd:1,cspd:0,crng:0,vcd:.12,col:'#73806a'};
 const TRUCK_TYPE={id:'truck',n:'トラック',hp:5,fmax:100,sp:217.5,cdmg:0,ccd:1,cspd:0,crng:0,vcd:1,col:'#65705a'};
 const FIGHTER_TYPE={id:'fighter',n:'戦闘機',hp:8,fmax:100,sp:260,cdmg:0,ccd:2.2,cspd:0,crng:0,vcd:1,col:'#64788f'};
 const ZONE_STYLE={
@@ -3278,7 +3278,7 @@ function wreck(){
   if(p.tank.kind==='fighter')p.tank.hp=FIGHTER_TYPE.hp;
   shake=Math.max(shake,4);flash=Math.max(flash,.14);return;
  }
- const veh=p.tank,kind=veh&&veh.kind,wasTruck=kind==='truck',wasFighter=kind==='fighter';if(kind==='tank')spawnTankWreck(p.x,p.y,p.body,p.ang,veh.t);sfx('explosion');fb(p.x,p.y,50);burst(p.x,p.y,50,wasTruck?'#d48a52':wasFighter?'#9fc8e8':'#ff7b3a',330);p.tank=null;p.hp=3;p.cc=0;p.vc=0;shake=16;flash=.5;say(veh&&veh.t.id==='armored'?'装甲車大破! 歩兵として脱出':wasTruck?'トラック大破! 歩兵として脱出':wasFighter?'戦闘機撃墜! 歩兵として脱出':'戦車大破!歩兵として脱出');
+ const veh=p.tank,kind=veh&&veh.kind,wasTruck=kind==='truck',wasFighter=kind==='fighter';if(kind==='tank'&&veh.t.id!=='armored')spawnTankWreck(p.x,p.y,p.body,p.ang,veh.t);sfx('explosion');fb(p.x,p.y,50);burst(p.x,p.y,50,wasTruck?'#d48a52':wasFighter?'#9fc8e8':'#ff7b3a',330);p.tank=null;p.hp=3;p.cc=0;p.vc=0;shake=16;flash=.5;say(veh&&veh.t.id==='armored'?'装甲車大破! 歩兵として脱出':wasTruck?'トラック大破! 歩兵として脱出':wasFighter?'戦闘機撃墜! 歩兵として脱出':'戦車大破!歩兵として脱出');
 }
 function truckTankCrashFx(x,y,e,actionId=0){
  if(e&&e.alive){destroyEnemyTank(e,x,y);if(actionId)recordPlayerKill(actionId);burst(e.x,e.y,46,'#ff6a2a',380);}
@@ -3294,7 +3294,7 @@ function checkDrivenTruckCrash(){
 function updateCoastingTrucks(dt){
  for(let i=cars.length-1;i>=0;i--){const v=cars[i];if(!truckLikeVehicle(v)||!(v.coastT>0))continue;
   const max=v.coastMax||1.2,ratio=Math.max(0,v.coastT/max),sp=(v.coastSp||v.t.sp*.55)*(.30+.70*ratio),ox=v.x,oy=v.y;
-  mv(v,Math.cos(v.body)*sp*dt,Math.sin(v.body)*sp*dt,20);v.coastT=Math.max(0,v.coastT-dt);
+  mv(v,Math.cos(v.body)*sp*dt,Math.sin(v.body)*sp*dt,v.t.id==='armored'?TANK_HIT:20);v.coastT=Math.max(0,v.coastT-dt);
   if(Math.hypot(v.x-ox,v.y-oy)<.08){v.coastT=0;continue;}
   let crushed=false;
   for(const h of (humans||[]))if(h.alive&&Math.hypot(h.x-v.x,h.y-v.y)<29){h.alive=false;recordPlayerKill(v.coastActionId||0);burst(h.x,h.y,14,'#c05a3a',200);crushed=true;}
@@ -3727,9 +3727,9 @@ function playerMove(dx,dy,r,dt,slowOverride=null){
  if(p.tank&&p.tank.kind!=='fighter'){
   const len=Math.hypot(dx,dy)||1,nx=p.x+dx,ny=p.y+dy,hitObject=nearbyObjects(nx,ny,moveR+10).find(o=>circleHitsObject(nx,ny,moveR,o));
   if(hitObject){damageObject(hitObject,'vehicle');sfx('drillBreak');shake=Math.max(shake,4);alertEnemiesNear(hitObject.x+hitObject.w/2,hitObject.y+hitObject.h/2,100);}
-  if(p.tank.kind==='tank'){
+  if(p.tank.kind==='tank'&&!truckLikeVehicle(p.tank)){
    const hitCover=nearbyCovers(nx,ny,moveR+8).find(c=>circleHitsCover(nx,ny,moveR,c));
-   if(hitCover){p.tank.ramT=(p.tank.ramT||0)+dt;const ux=dx/len,uy=dy/len,fxp=p.x+ux*(moveR+9),fyp=p.y+uy*(moveR+9),rr=hitCover.mazeWall?Math.min(46,25+p.tank.ramT*35):Math.min(30,7+p.tank.ramT*15);carve(fxp,fyp,rr,true);if((p.tank.ramSfx||0)<=0){sfx('drillBreak');p.tank.ramSfx=.28;}if((p.tank.ramAlert||0)<=0){alertEnemiesNear(hitCover.x+hitCover.w/2,hitCover.y+hitCover.h/2,100);p.tank.ramAlert=.45;}shake=Math.max(shake,2.5);}
+   if(hitCover&&!(hitCover.mazeWall&&truckLikeVehicle(p.tank))){p.tank.ramT=(p.tank.ramT||0)+dt;const ux=dx/len,uy=dy/len,fxp=p.x+ux*(moveR+9),fyp=p.y+uy*(moveR+9),rr=hitCover.mazeWall?Math.min(46,25+p.tank.ramT*35):Math.min(30,7+p.tank.ramT*15);carve(fxp,fyp,rr,true);if((p.tank.ramSfx||0)<=0){sfx('drillBreak');p.tank.ramSfx=.28;}if((p.tank.ramAlert||0)<=0){alertEnemiesNear(hitCover.x+hitCover.w/2,hitCover.y+hitCover.h/2,100);p.tank.ramAlert=.45;}shake=Math.max(shake,2.5);}
    else p.tank.ramT=Math.max(0,(p.tank.ramT||0)-dt*2);
    p.tank.ramSfx=Math.max(0,(p.tank.ramSfx||0)-dt);p.tank.ramAlert=Math.max(0,(p.tank.ramAlert||0)-dt);
   }
@@ -4609,7 +4609,7 @@ function update(dt){
    if(!dead){const hitAlly=(allies||[]).find(a=>a.alive&&D(b,a)<10);if(hitAlly){dead=true;if(b.k==='c')cannonImpact(b.x,b.y,b.from);hitAlly.alive=false;burst(hitAlly.x,hitAlly.y,18,'#8fd7ff',180);say('増援がやられた!');}}
    if(!dead&&decoy&&D(b,decoy)<10){dead=true;if(b.k==='c')cannonImpact(b.x,b.y,b.from);burst(b.x,b.y,8,'#ff5a5a',150);}
    if(!dead&&playerBulletHit){dead=true;if(b.k==='c')cannonImpact(b.x,b.y,b.from);burst(b.x,b.y,8,'#ff5a5a',150);
-    if(p.tank){if(p.tank.kind==='truck'){if(b.k==='c'){wreck();}else{p.tank.mgHits=(p.tank.mgHits||0)+1;sfx('vehicleHit');shake=Math.max(shake,3);if(p.tank&&p.tank.mgHits>=5)wreck();}}else if(p.tank.kind==='fighter'){if(b.k==='c')p.tank.hp-=3;else p.tank.hp-=1;sfx('vehicleHit');shake=Math.max(shake,b.k==='c'?9:3);if(p.tank&&p.tank.hp<=0)wreck();}else{const armor=p.tank.t.armor||3;if(b.k==='c')sfx('vehicleHit');if(b.k==='c')p.tank.ch=(p.tank.ch||0)+1.1;else if(b.k==='v')p.tank.ch=(p.tank.ch||0)+.066;shake=Math.max(shake,b.k==='c'?10:2);if((p.tank.ch||0)>=armor)wreck();}}
+    if(p.tank){if(p.tank.kind==='truck'){if(b.k==='c'){wreck();}else{p.tank.mgHits=(p.tank.mgHits||0)+1;sfx('vehicleHit');shake=Math.max(shake,3);if(p.tank&&p.tank.mgHits>=5)wreck();}}else if(p.tank.kind==='fighter'){if(b.k==='c')p.tank.hp-=3;else p.tank.hp-=1;sfx('vehicleHit');shake=Math.max(shake,b.k==='c'?9:3);if(p.tank&&p.tank.hp<=0)wreck();}else{const armor=p.tank.t.armor||3;if(b.k==='c')sfx('vehicleHit');if(b.k==='c')p.tank.ch=(p.tank.ch||0)+1.1;else if(b.k==='v'||p.tank.t.id==='armored')p.tank.ch=(p.tank.ch||0)+(p.tank.t.id==='armored'?armor/7.5:.066);shake=Math.max(shake,b.k==='c'?10:2);if((p.tank.ch||0)>=armor-1e-9)wreck();}}
     else{if(scoreStats)scoreStats.damageHits++;p.hp-=({c:3,v:.5,r:1})[b.k];shake=6;if(p.hp<=0)triggerPlayerDeath();}}
   }
   if(dead)bullets.splice(i,1);}
@@ -5796,7 +5796,6 @@ function draw(near){
  for(const ally of (allies||[]))if(ally.alive&&!(ally.chute>0)){drawBlastShadow(ally);soldier(ally.x,ally.y-blastLift(ally),ally.face,true,false,false,false,'',false,false);drawAllyStun(ally);}
  drawHound();
  for(const ab of airbombs){const mt=ab.maxT||.48,k=Math.max(0,Math.min(1,1-ab.t/mt));g.fillStyle=ab.fighter?'#252b31':'#171717';g.beginPath();g.ellipse(ab.x,ab.y,ab.fighter?7:5,ab.fighter?13:10,0,0,6.28);g.fill();g.strokeStyle=ab.fighter?'rgba(180,220,255,.65)':'rgba(255,190,80,.55)';g.beginPath();g.arc(ab.x,ab.y,(ab.fighter?20:14)*k,0,6.28);g.stroke();}
- if(airstrike)drawSupportBomber(airstrike.x,airstrike.y);
  if(!p.tank&&p.grappleT>0&&p.grappleTarget&&p.grappleTarget.alive){const h=p.grappleTarget,a=Math.atan2(h.y-p.y,h.x-p.x),k=1-p.grappleT/.3;g.save();g.strokeStyle='rgba(255,230,170,'+(1-k*.25)+')';g.lineWidth=3;g.beginPath();g.moveTo(p.x+Math.cos(a+.55)*8,p.y+Math.sin(a+.55)*8);g.lineTo(h.x-Math.cos(a)*5,h.y-Math.sin(a)*5);g.moveTo(p.x+Math.cos(a-.55)*8,p.y+Math.sin(a-.55)*8);g.lineTo(h.x-Math.cos(a)*5,h.y-Math.sin(a)*5);g.stroke();g.strokeStyle='rgba(255,255,255,'+(0.7-k*.4)+')';g.lineWidth=2;for(let q=0;q<3;q++){const off=(q-1)*7;g.beginPath();g.moveTo(p.x-Math.cos(a)*10+Math.cos(a+1.57)*off,p.y-Math.sin(a)*10+Math.sin(a+1.57)*off);g.lineTo(p.x-Math.cos(a)*20+Math.cos(a+1.57)*off,p.y-Math.sin(a)*20+Math.sin(a+1.57)*off);g.stroke();}g.restore();}
  if(p.tank){if(!(p.tank.kind==='tank'&&inBush(p)))drawVehicle(p.tank,p.x,p.y,p.body,p.ang);if(p.tank.f<=0)markVehicle(p.x,p.y-(p.tank.kind==='fighter'?66:p.tank.kind==='truck'?42:50),'fuel');}
  else if(p.sniperEnterT>0||p.sniperReadyT>0){drawSniperSetupPlayer();}
@@ -5820,6 +5819,8 @@ function draw(near){
  if(enemyAlpha>.001){g.save();g.globalAlpha*=enemyAlpha;for(const e of etanks)if(e.alive&&inBush(e))tankShape(e.x,e.y,e.body,e.ang,{id:'enemy',col:'#4b5f9e'},TANK_DRAW);g.restore();}
  if(p.tank&&p.tank.kind==='tank'&&inBush(p))drawVehicle(p.tank,p.x,p.y,p.body,p.ang);
  drawAllWaterCrossings(cx,cy);
+ // 航空支援は草むら内を含む全車両より上に描画する。
+ if(airstrike)drawSupportBomber(airstrike.x,airstrike.y);
  for(const q of parts){const psz=q.sz||4,dy=q.y-(q.z||0);if(q.x+psz<cx-30||q.x-psz>cx+W+30||dy+psz<cy-30||dy-psz>cy+H+30)continue;g.globalAlpha=Math.min(1,q.life*2);g.fillStyle=q.col;if(q.arcFrag){g.save();g.translate(q.x,dy);g.rotate(q.rot||0);g.fillRect(-psz/2,-psz/2,psz,Math.max(2,psz*.65));g.restore();}else if(q.waterRipple){const k=1-q.life/(q.ttl||.5);g.save();g.strokeStyle=q.col;g.globalAlpha=Math.max(0,(1-k)*.72);g.lineWidth=1.7;g.beginPath();g.ellipse(q.x,dy,psz*(.45+k*.78),psz*(.20+k*.30),0,0,6.28);g.stroke();g.restore();}else g.fillRect(q.x-psz/2,dy-psz/2,psz,psz);}g.globalAlpha=1;
  g.save();g.globalCompositeOperation='lighter';for(const f of fx){if(f.x+f.max<cx-40||f.x-f.max>cx+W+40||f.y+f.max<cy-40||f.y-f.max>cy+H+40)continue;const t=1-f.l/.45,r=f.max*(.35+.65*t),gr=g.createRadialGradient(f.x,f.y,0,f.x,f.y,r);gr.addColorStop(0,'rgba(255,250,200,'+(1-t)+')');gr.addColorStop(.45,'rgba(255,140,30,'+.8*(1-t)+')');gr.addColorStop(1,'rgba(160,30,0,0)');g.fillStyle=gr;g.beginPath();g.arc(f.x,f.y,r,0,6.28);g.fill();}g.restore();
  g.restore();
@@ -6548,11 +6549,11 @@ function loop(n){
 }
 let gameErrorCount=0;
 function reportGameError(error){
- gameErrorCount++;console.error('Tank game v160',error);
+ gameErrorCount++;console.error('Tank game v161',error);
  let panel=document.getElementById('runtimeError');
  if(!panel){panel=document.createElement('div');panel.id='runtimeError';panel.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;background:#422018;color:#fff2dc;padding:12px;border:1px solid #f7b083;border-radius:8px;font:12px system-ui;white-space:pre-wrap;max-height:35vh;overflow:auto';document.body.appendChild(panel);}
  const stack=String(error&&error.stack||error).split('\n').slice(0,4).join('\n');
- panel.textContent='v160 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
+ panel.textContent='v161 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 requestAnimationFrame(loop);
 </script>
