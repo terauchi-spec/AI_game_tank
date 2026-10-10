@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車大戦 更新 2026/10/10 08:11 v139</title>
+<title>戦車大戦 更新 2026/10/10 11:01 v143</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -153,7 +153,7 @@ body.skill-open #skillScreen,body.skill-open #skillScreen .sk-scroll,body.skill-
 @media(max-width:365px){.sk-media{height:147px}.sk-desc{font-size:11px}}
 
 /* 2026-10-08: permanent title archive and separated achievement medals. */
-.title-secondaries #titleAwards{grid-column:1/-1;border-color:#ae9669;background:linear-gradient(120deg,#3d422e,#283723);color:#ffe3aa}
+/* 称号と操作説明は同じデザインを適用する */
 #trophyScreen{display:none;position:fixed;inset:0;z-index:76;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;box-sizing:border-box;padding:max(18px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(32px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));background:radial-gradient(ellipse at top,#33412d,#0e1510 78%);color:#edf1e4}
 body.trophy-open #trophyScreen{display:block}
 body.trophy-open #pad,body.trophy-open #resetBtn{display:none!important}
@@ -238,7 +238,9 @@ body.trophy-open #pad,body.trophy-open #resetBtn{display:none!important}
 #titleScreen .title-actions{display:flex;flex-direction:column;gap:9px;margin:0 0 18px}
 #titleScreen .title-actions .title-cta{order:0;margin:0}
 #titleScreen .title-actions .title-secondaries{order:1;display:grid;grid-template-columns:1fr;gap:9px;margin:0}
-#titleScreen .title-actions #titleAwards,#titleScreen .title-actions #titleHelp{grid-column:1;min-height:51px;font-size:15px;font-weight:850}
+#titleScreen .title-actions .title-secondary{grid-column:1;width:100%;box-sizing:border-box;min-height:51px;border:1px solid #788b6b;border-radius:10px;background:linear-gradient(120deg,#30412e,#243425);color:#eff2df;font:850 15px system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;box-shadow:0 3px 12px #0003;cursor:pointer;touch-action:manipulation}
+#titleScreen .title-actions .title-secondary:active{background:#41543b;border-color:#b6c9a0}
+#titleScreen .title-actions .title-secondary:focus-visible{outline:2px solid #ffe1a0;outline-offset:3px}
 #titleScreen .title-identity{margin:0 0 22px;padding:12px 0 6px;border:0;border-radius:0;background:none;box-shadow:none;text-align:center}
 #titleScreen .title-identity .title-update{border-top:0;padding-top:2px}
 #titleScreen .title-identity .title-update-version{display:none}
@@ -411,11 +413,11 @@ body.result-open #resultScreen .res-unlock:not([hidden]){animation:resPop .7s .3
 <section class="res-card"><h2 class="res-section">今回の獲得称号・勲章</h2><div id="resMedals" class="res-award-list"></div><div id="resMedalNote" class="res-award-notice"></div></section>
 <section class="res-card"><h2 class="res-section">戦績サマリー</h2><div id="resQuick" class="res-stats"></div></section>
 <section class="res-card"><h2 class="res-section">詳細戦績</h2><div id="resDetail" class="res-detail"></div></section>
-<div class="res-actions"><button class="res-btn primary" id="resRetry" type="button">もう一度</button><button class="res-btn" id="resHome" type="button">タイトルへ</button></div>
+<div class="res-actions"><button class="res-btn primary" id="resRetry" type="button">再出撃</button><button class="res-btn" id="resHome" type="button">称号</button></div>
 </div></div>
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.10.139',FILE_CREATED_AT='2026/10/10 08:11',DRILL_ACTIVE=5,DRILL_RECHARGE=6;
+const GAME_VERSION='2026.10.10.143',FILE_CREATED_AT='2026/10/10 11:01',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 let audioCtx=null;
 function ensureAudio(){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(_){}}
 function tone(f=440,d=.08,v=.035,type='square',f2=null){if(!audioCtx)return;const t=audioCtx.currentTime,o=audioCtx.createOscillator(),a=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t+d);a.gain.setValueAtTime(v,t);a.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(a);a.connect(audioCtx.destination);o.start(t);o.stop(t+d+.02);}
@@ -1247,7 +1249,7 @@ function resultButtonRects(){return{retry:{x:W/2-168,y:488,w:152,h:44},title:{x:
 function handleResultPointer(px,py){
  const r=resultButtonRects();
  if(hitRect(px,py,r.retry)){rollSkillChoices();state='skill';bombReq=false;cannonReq=false;interact=false;skillReq=false;mdown=false;sfx('skill');return true;}
- if(hitRect(px,py,r.title)){state='title';bombReq=false;cannonReq=false;interact=false;skillReq=false;mdown=false;sfx('skill');return true;}
+ if(hitRect(px,py,r.title)){state='title';bombReq=false;cannonReq=false;interact=false;skillReq=false;mdown=false;openTrophyArchive();sfx('skill');return true;}
  return false;
 }
 function handleHelpPointer(px,py){
@@ -2975,11 +2977,12 @@ function fire(x,y,a,from,k,spd,rng,dmg){if(from==='p'&&scoreStats&&!scoreStats.f
 function enemyCannonSpeed(){return p&&p.tank&&p.tank.kind==='tank'?(p.tank.t.cspd||630):630;}
 function cannonImpactFx(x,y){fb(x,y,125);burst(x,y,165,'#ff7a28',560);burst(x,y,78,'#fff2a6',720);burst(x,y,30,'#ffffff',820);shake=Math.max(shake,18);flash=Math.max(flash,.62);}
 function cannonImpact(x,y,from){cannonImpactFx(x,y);cannonBlastPush(x,y,from);stunHoundAtBlast(x,y,95);damageObjectsInRadius(x,y,60,'cannonBlast');if(from==='p')suspectHumansNear(x,y,500);else suspectTanksNear(x,y,450);}
-function playerCannonGroundImpact(x,y,actionId=0){
+function playerCannonGroundImpact(x,y,actionId=0,humanKillRadius=28){
  // プレイヤー戦車の主砲が地形・遮蔽物へ着弾した時の標準処理。
- // オブジェクト爆発もこの関数を再利用し、エフェクトとゲーム効果を完全に揃える。
+ // 壁への直撃だけ敵歩兵の撃破範囲を設置爆弾相当(95px)へ拡張する。
+ // オブジェクトの連鎖爆発などは従来の範囲(28px)を維持する。
  cannonImpact(x,y,'p');
- explode(x,y,28,false,'p',actionId);
+ explode(x,y,28,false,'p',actionId,humanKillRadius);
  carve(x,y,60,true,'cannonBlast');
  burst(x,y,22,'#a89a74',260);
  shake=Math.max(shake,8);
@@ -2991,9 +2994,9 @@ function finishDig(msg,withBurst=true){
  if(withBurst)digSoilBurst(p.x,p.y,1.12);
  sfx('skill');if(msg)say(msg);return true;
 }
-function explode(x,y,rad,big,source='',actionId=0){if(big)sfx(source==='air'?'airExplosion':'explosion');fb(x,y,big?46:22);
+function explode(x,y,rad,big,source='',actionId=0,humanKillRadius=rad){if(big)sfx(source==='air'?'airExplosion':'explosion');fb(x,y,big?46:22);
  burst(x,y,big?60:20,'#ff8a3a',big?400:200);burst(x,y,big?25:6,'#fff3b0',big?500:200);if(big){shake=18;flash=.7;}
- for(const h of humans)if(h.alive&&Math.hypot(h.x-x,h.y-y)<rad){h.alive=false;if(actionId)recordPlayerKill(actionId);burst(h.x,h.y,10,'#c05a3a',160);}
+ for(const h of humans)if(h.alive&&Math.hypot(h.x-x,h.y-y)<humanKillRadius){h.alive=false;if(actionId)recordPlayerKill(actionId);burst(h.x,h.y,10,'#c05a3a',160);}
  if(source!=='e'){
   // 爆芯の外側でも爆風を受けた敵戦車はプレイヤーを発見する。
   const alertR=Math.max(rad+70,big?140:95);suspectTanksNear(x,y,alertR);
@@ -4023,7 +4026,24 @@ function update(dt){
  const areaDebugInfiniteAmmo=!!(p.tank&&p.tank.kind==='tank'&&(areaDebugEnabled||p.tank.debugInfinite));
  cleanBuiltWalls(cy,cx);updateFlame(dt);if(debugMode>=2)clearPlayerDetection();if(areaDebugInfiniteFuel)p.tank.f=p.tank.t.fmax||100;if(areaDebugInfiniteAmmo){p.tank.c=p.tank.t.cmax;p.tank.v=p.tank.t.vmax;}if(debugMode===3&&p.tank&&p.tank.kind==='fighter'){p.tank.f=FIGHTER_TYPE.fmax;p.tank.hp=FIGHTER_TYPE.hp;}
  if((ix||iy)&&!sniperLocked&&!(p.grappleT>0)&&!prepDig&&!playerAir){if(!p.tank||p.tank.f>0){const digSwimSlow=(p.dig>0&&inWaterAt(p.x,p.y,r))?.6:null;frameMove=playerMove(ix/il*sp*dt,iy/il*sp*dt,r,dt,digSwimSlow);if(p.tank){if(areaDebugInfiniteFuel)p.tank.f=p.tank.t.fmax||100;else if(!(debugMode===3&&isFighter))p.tank.f=Math.max(0,p.tank.f-frameMove*.04);else p.tank.f=FIGHTER_TYPE.fmax;if(isTruck&&frameMove>0){p.tank.lastDriveSpeed=frameMove/Math.max(.001,dt);p.tank.lastDriveAt=performance.now();}}if(!p.flameActive)p.body=Math.atan2(iy,ix);else if(Number.isFinite(p.flameLockA))p.body=p.flameLockA;if(isTruck||isFighter)p.ang=p.body;if(isTruck&&frameMove>0)checkDrivenTruckCrash();}else if(msgT<=0)say('ガソリン切れ!Eで降車');}
- // 潜伏はS押下時に即時開始。準備時間は設けず、5秒の潜伏タイマーだけを減らす。
+ // 潜伏前の0.5秒は静止して潜行アニメーションを再生。潜伏5秒は準備完了後に開始する。
+ if(p.digPrep>0){
+  p.digPrep=Math.max(0,p.digPrep-dt);
+  if(R()<.75){
+   const wet=digUsesWaterFx(p.x,p.y),a=R()*Math.PI*2,rad=7+R()*14;
+   trimParts(1);parts.push({x:p.x+Math.cos(a)*rad,y:p.y+Math.sin(a)*rad*.55,
+    vx:Math.cos(a)*(24+R()*34),vy:Math.sin(a)*(18+R()*25)- (wet?13:0),life:.24+R()*.22,
+    col:wet?(R()<.5?'#bce9f7':'#6db5d5'):(R()<.5?'#9a744b':'#795738'),sz:wet?2+R()*2:3+R()*3});
+  }
+  if(p.digPrep<=0){
+   if(inMudAt(p.x,p.y,5)){p.digPrep=0;setSkillCooldown(5);say('泥では潜伏できない');}
+   else{
+    p.dig=5;p.digElapsed=0;
+    if(digUsesWaterFx(p.x,p.y)){digWaterBurst(p.x,p.y,1.08);say('潜伏! 水中を泳いで潜行');}
+    else{digSoilBurst(p.x,p.y,1.08);say('潜伏! 地中に潜行');}
+   }
+  }
+ }
  if(p.dig>0&&inMudAt(p.x,p.y,5)){finishDig('泥では潜伏を継続できない',false);burst(p.x,p.y,14,'#705238',120);}
  if(T&&!isTruck&&!isFighter){if(TOUCH&&Number.isFinite(touchTurretAngle))p.ang=touchTurretAngle;else p.ang=(performance.now()-lastMouse<1500)?Math.atan2(wy-p.y,wx-p.x):p.body;}
  p.cc=Math.max(0,p.cc-dt);p.vc=Math.max(0,p.vc-dt);p.scd=Math.max(0,p.scd-dt);p.digExitAnim=Math.max(0,(p.digExitAnim||0)-dt);p.grappleT=Math.max(0,(p.grappleT||0)-dt);if(p.grappleT<=0)p.grappleTarget=null;if(p.scd<=0)p.scdMax=0;if(decoy){decoy.t-=dt;decoy.sound=(decoy.sound||0)-dt;if(decoy.sound<=0){decoy.sound=.75;sfx('decoy');burst(decoy.x,decoy.y,3,'#ffd27a',35);}if(decoy.t<=0)decoy=null;}
@@ -4156,13 +4176,13 @@ function update(dt){
  // 弾
  for(let i=bullets.length-1;i>=0;i--){const b=bullets[i],ox=b.x,oy=b.y;b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;let dead=b.life<=0;if(dead&&b.k==='c')cannonImpact(b.x,b.y,b.from);
   if(b.from==='p'&&b.k==='s'){if(updateSniperPiercingBullet(b,ox,oy)||dead)bullets.splice(i,1);continue;}
-  if(!dead){const bp=segmentBaseImpact({x:ox,y:oy},{x:b.x,y:b.y},b.k==='c'?2:1);if(bp){dead=true;b.x=bp.x;b.y=bp.y;if(b.k==='c'){cannonImpact(b.x,b.y,b.from);let removedBaseTiles=0;if(b.from==='p'||b.from==='ally'){const hqDmg=b.from==='p'?b.dmg*1.5:b.dmg;removedBaseTiles=damageBase(hqDmg,b.x,b.y,24,1);}if(b.from==='p'&&removedBaseTiles>0)cannonCoverDebris(b.x,b.y,'#666865',Math.max(2,Math.min(6,Math.ceil(removedBaseTiles*.8))));explode(b.x,b.y,20,true,b.from,b.from==='p'?b.actionId:0);}else burst(b.x,b.y,3,b.from==='e'?'#ffb08a':'#ffe28a',90);}}
+  if(!dead){const bp=segmentBaseImpact({x:ox,y:oy},{x:b.x,y:b.y},b.k==='c'?2:1);if(bp){dead=true;b.x=bp.x;b.y=bp.y;if(b.k==='c'){cannonImpact(b.x,b.y,b.from);let removedBaseTiles=0;if(b.from==='p'||b.from==='ally'){const hqDmg=b.from==='p'?b.dmg*1.5:b.dmg;removedBaseTiles=damageBase(hqDmg,b.x,b.y,24,1);}if(b.from==='p'&&removedBaseTiles>0)cannonCoverDebris(b.x,b.y,'#666865',Math.max(2,Math.min(6,Math.ceil(removedBaseTiles*.8))));explode(b.x,b.y,20,true,b.from,b.from==='p'?b.actionId:0,b.from==='p'?95:20);}else burst(b.x,b.y,3,b.from==='e'?'#ffb08a':'#ffe28a',90);}}
   // 最適化後も砲弾が薄い遮蔽物をすり抜けないよう、前フレーム位置→現在位置の線分で判定する。
   if(!dead){const minX=Math.min(ox,b.x)-4,maxX=Math.max(ox,b.x)+4,minY=Math.min(oy,b.y)-4,maxY=Math.max(oy,b.y)+4,segA={x:ox,y:oy},segB={x:b.x,y:b.y};
    const hitObject=objectsInBox(minX,minY,maxX,maxY).find(o=>segmentHitsObject(segA,segB,o,b.k==='c'?2:0));
    if(hitObject){dead=true;if(b.k==='c'){damageObject(hitObject,'cannonDirect');}else if(b.k==='s'){damageObject(hitObject,'sniper');fb(b.x,b.y,10);burst(b.x,b.y,8,'#ffb86c',170);burst(b.x,b.y,6,'#e7e2c9',135);shake=Math.max(shake,2.2);}else{damageObject(hitObject,'mg');burst(b.x,b.y,4,'#b9b39a',90);}}
    if(!dead){const hitCover=coversInBox(minX,minY,maxX,maxY).find(c=>segmentHitsCover(segA,segB,c,b.k==='c'?2:0));
-    if(hitCover){dead=true;if(b.k==='c'){if(b.from==='p')playerCannonGroundImpact(b.x,b.y,b.actionId);else{cannonImpact(b.x,b.y,b.from);explode(b.x,b.y,28,false,b.from,0);carve(b.x,b.y,48,false,'cannonBlast');burst(b.x,b.y,22,'#a89a74',260);shake=Math.max(shake,8);}}else burst(b.x,b.y,4,'#b9b39a',90);}
+    if(hitCover){dead=true;if(b.k==='c'){if(b.from==='p')playerCannonGroundImpact(b.x,b.y,b.actionId,95);else{cannonImpact(b.x,b.y,b.from);explode(b.x,b.y,28,false,b.from,0);carve(b.x,b.y,48,false,'cannonBlast');burst(b.x,b.y,22,'#a89a74',260);shake=Math.max(shake,8);}}else burst(b.x,b.y,4,'#b9b39a',90);}
    }
   }
   if(!dead&&(b.from==='p'||b.from==='ally')){
@@ -4274,8 +4294,13 @@ function carve(x,y,r,credit=false,objectDamageSource='impact'){
 function useSkill(wx,wy){if(scoreStats&&!scoreStats.finalized)scoreStats.skillUses++;
  if(skill==='throw'){if(bombs.some(b=>b.own==='p')){say('爆弾は1つまで');return;}const a=p.body;let d=0;for(let k=4;k<=110;k+=2){if(hitsM(p.x+Math.cos(a)*k,p.y+Math.sin(a)*k,4))break;d=k;}
   bombs.push({x:p.x,y:p.y,own:'p',armed:false,fly:.35,sx:p.x,sy:p.y,tx:p.x+Math.cos(a)*d,ty:p.y+Math.sin(a)*d});setSkillCooldown(5);sfx('skill');say('爆弾を投擲（Dで起爆）');}
- else if(skill==='dig'){p.digPrep=0;p.dig=5;p.digElapsed=0;sfx('skill');if(digUsesWaterFx(p.x,p.y)){say('潜伏! 水中を泳いで潜行');digWaterBurst(p.x,p.y,1.08);}else{say('潜伏! 地中に潜行');digSoilBurst(p.x,p.y,1.08);}}
- else if(skill==='decoy'){decoy={x:p.x,y:p.y,t:5,face:p.body,sound:.05};setSkillCooldown(12);sfx('skill');say('偽装!敵の注意をそらせ');}
+ else if(skill==='dig'){
+  // Sを押したら0.5秒その場で静止し、地面／水面に潜るモーションを再生してから潜伏する。
+  p.digPrep=DIG_PREP_DURATION;p.dig=0;p.digElapsed=0;p.digExitAnim=0;
+  sfx('skill');say(digUsesWaterFx(p.x,p.y)?'潜伏準備中：水中へ潜る':'潜伏準備中：地中へ潜る');
+  if(digUsesWaterFx(p.x,p.y))digWaterBurst(p.x,p.y,.55);else digSoilBurst(p.x,p.y,.55);
+ }
+ else if(skill==='decoy'){decoy={x:p.x,y:p.y,t:5,face:p.body,sound:.05};setSkillCooldown(8);sfx('skill');say('偽装!敵の注意をそらせ');}
  else if(skill==='buddy')summonAlly();
  else if(skill==='drill'){p.drill=DRILL_ACTIVE;p.drillHit=0;p.drillTarget=null;p.drillTankHit=0;p.drillTankTarget=null;p.drillSilentTank=null;p.drillTankFx=0;p.drillSfx=0;p.drillActionId=newCombatAction('drill');sfx('skill');say('突貫! ドリル展開');}
  else if(skill==='build'){if(placeBuildWall())setSkillCooldown(1.5);}
@@ -4869,6 +4894,26 @@ const enemyInView=(o,cx,cy,m=120)=>o&&o.x>=cx-m&&o.x<=cx+W+m&&o.y>=cy-m&&o.y<=cy
 const vehicleMarkers=[];
 function markVehicle(x,y,mode='ride'){vehicleMarkers.push({x,y,mode});}
 function drawVehicleMarkers(cx,cy){gm.save();gm.textAlign='center';for(const m of vehicleMarkers){const x=m.x-cx,y=m.y-cy,fuel=m.mode==='fuel';gm.fillStyle=fuel?'rgba(138,47,36,.9)':'rgba(35,78,45,.9)';gm.strokeStyle=fuel?'#ff9c7d':'#bff0a5';gm.lineWidth=2;gm.beginPath();gm.arc(x,y,13,0,6.28);gm.fill();gm.stroke();gm.fillStyle='#fff';gm.font='bold 14px system-ui';gm.fillText('E',x,y+5);if(fuel){gm.strokeStyle='#ffd0b8';gm.lineWidth=2;gm.strokeRect(x-20,y+17,40,5);gm.beginPath();gm.moveTo(x-18,y+19.5);gm.lineTo(x+18,y+19.5);gm.stroke();}}gm.restore();}
+function drawDigPreparation(){
+ if(!p||!(p.digPrep>0))return;
+ const k=Math.max(0,Math.min(1,1-p.digPrep/DIG_PREP_DURATION)),wet=digUsesWaterFx(p.x,p.y);
+ g.save();
+ // 見下ろし視点に合わせて、兵士が地面または水面へ徐々に沈む表現。
+ g.translate(p.x,p.y);g.scale(1-.72*k,1-.72*k);g.globalAlpha=1-.52*k;
+ soldier(0,0,p.body,true,false,false);g.restore();
+ g.save();g.translate(p.x,p.y);
+ const pulse=.7+.3*Math.sin(performance.now()/85),ring=11+16*k;
+ g.strokeStyle=wet?'rgba(180,232,248,'+(.78*(1-k*.3))+')':'rgba(214,175,105,'+(.78*(1-k*.3))+')';
+ g.lineWidth=2.3;g.beginPath();g.ellipse(0,3,ring,ring*.52,0,0,Math.PI*2);g.stroke();
+ g.strokeStyle=wet?'rgba(92,164,198,'+(.65*pulse)+')':'rgba(111,79,47,'+(.65*pulse)+')';
+ g.lineWidth=3;g.beginPath();g.ellipse(0,3,Math.max(4,ring-6),Math.max(3,(ring-6)*.5),0,0,Math.PI*2);g.stroke();
+ g.fillStyle=wet?'rgba(153,219,240,.58)':'rgba(133,94,56,.58)';
+ for(let q=0;q<8;q++){
+  const a=q*Math.PI/4+performance.now()/500,r=9+18*k+(q%3)*2;
+  g.beginPath();g.arc(Math.cos(a)*r,3+Math.sin(a)*r*.45,(wet?2:3)*(1-k*.35),0,Math.PI*2);g.fill();
+ }
+ g.restore();
+}
 function digEnemyAlpha(){if(!(p&&p.dig>0))return 1;const t=p.digElapsed||0;return Math.max(0,1-Math.min(1,t));}
 function styleRankLevel(rank){return rank==='A'?3:rank==='B'?2:1;}
 function drawStyleIcon(cx,cy,kind){
@@ -5031,11 +5076,11 @@ function hudHeartPath(x,y,s=1){
 function drawHudHeart(x,y,fillRatio){
  const r=Math.max(0,Math.min(1,fillRatio));
  const im=r>=.99?HUD_ICONS.heartFull:r>.01&&r<.99?HUD_ICONS.heartHalf:HUD_ICONS.heartEmpty;
- if(im&&im.complete&&im.naturalWidth>0)g.drawImage(im,x-12,y-12,24,24);
+ if(im&&im.complete&&im.naturalWidth>0)g.drawImage(im,x-14.5,y-14.5,29,29);
 }
 function drawHudBomb(x,y,planted){
  const im=planted?HUD_ICONS.bombOn:HUD_ICONS.bombOff;
- if(im&&im.complete&&im.naturalWidth>0)g.drawImage(im,x-11,y-11,22,22);
+ if(im&&im.complete&&im.naturalWidth>0)g.drawImage(im,x-13.5,y-13.5,27,27);
 }
 function drawStealthHudIcon(x,y,col){
  const im=HUD_ICONS.stealth;
@@ -5043,7 +5088,7 @@ function drawStealthHudIcon(x,y,col){
   g.save();
   if(col==='#ffd27a'){g.shadowColor='rgba(255,210,122,.55)';g.shadowBlur=8;}
   else if(col==='#9be07a'){g.shadowColor='rgba(155,224,122,.35)';g.shadowBlur=6;}
-  g.drawImage(im,x-12,y-10,24,20);
+  g.drawImage(im,x-14.5,y-12,29,24);
   g.restore();
  }
 }
@@ -5053,11 +5098,12 @@ function drawInfantryBottomHud(){
  const detected=stealth&&(humans.some(h=>h.alive&&h.st&&h.target==='p')||etanks.some(e=>e.alive&&e.st&&e.target==='p'));
  // UIアイコンはゲーム背景上に直接表示し、背後の黒い板・枠線を描画しない。
  g.save();
- drawHudHeart(x+12,cy,Math.min(1,p.hp));drawHudHeart(x+31,cy,Math.max(0,Math.min(1,p.hp-1)));drawHudBomb(x+64,cy,!!bombs.some(b=>b.own==='p'));
- if(stealth)drawStealthHudIcon(x+99,cy,detected?'#ffd27a':'#9be07a');g.restore();
+ drawHudHeart(x+14,cy,Math.min(1,p.hp));drawHudHeart(x+43,cy,Math.max(0,Math.min(1,p.hp-1)));drawHudBomb(x+80,cy,!!bombs.some(b=>b.own==='p'));
+ if(stealth)drawStealthHudIcon(x+119,cy,detected?'#ffd27a':'#9be07a');g.restore();
 }
 function skillGaugeStatus(){
  if(!p||p.tank)return null;
+ if(skill==='dig'&&p.digPrep>0)return{rem:p.digPrep,max:DIG_PREP_DURATION,label:'潜伏準備 '+p.digPrep.toFixed(1)+'s',touch:'潜伏準備',color:'#d2bc8d'};
  // 潜伏は自動解除までの残り時間を示す（ゲージは5秒で満タン→空）。
  if(skill==='dig'&&p.dig>0)return{rem:p.dig,max:5,label:'潜伏 残り '+p.dig.toFixed(1)+'s',touch:'潜伏 '+p.dig.toFixed(1)+'s',color:'#8ddda2'};
  // スコープ展開中はSボタンのゲージを狙撃の再装填タイマーに切り替える。
@@ -5214,8 +5260,8 @@ function draw(near){
  drawTankWrecks(cx,cy);
  for(const b of bombs){const own=b.own==='p',rr=own?7.5:5.5;g.fillStyle=own?'#181818':'#111';g.beginPath();g.arc(b.x,b.y,rr,0,6.28);g.fill();if(own){g.strokeStyle='rgba(255,95,75,.8)';g.lineWidth=1.5;g.beginPath();g.arc(b.x,b.y,rr+2+(Math.sin(performance.now()/130)+1)*1.2,0,6.28);g.stroke();}if(Math.floor(performance.now()/(own?240:400))%2){g.fillStyle=own?'#ff4f45':'#ff9a2a';g.fillRect(b.x-(own?2:1.5),b.y-(own?2:1.5),own?4:3,own?4:3);}}
  for(const w of waves){const k=1-w.r/w.max;g.strokeStyle='rgba(255,170,60,'+k+')';g.lineWidth=6;g.beginPath();g.arc(w.x,w.y,w.r,0,6.28);g.stroke();g.fillStyle='rgba(255,200,100,'+.35*k+')';g.fill();}
- for(const c of cars){const bushTank=c.kind==='tank'&&inBush(c);drawVehicle(c,c.x,c.y,c.body??-1.57,c.body??-1.57,bushTank?'hull':'both');const iy=c.y-(c.kind==='fighter'?66:c.kind==='truck'?42:50);markVehicle(c.x,iy,c.f<=0?'fuel':'ride');if(near===c)lab(c.t.n,c.x,iy-24,c.kind==='tank'?'bold 17px system-ui':'bold 14px system-ui','#fff');}
- const enemyAlpha=digEnemyAlpha();if(enemyAlpha>.001)for(const e of etanks){if(!enemyInView(e,cx,cy,140))continue;g.save();g.globalAlpha*=enemyAlpha;if(e.alive){if(!e.st){g.fillStyle='rgba(255,80,80,.035)';g.beginPath();g.moveTo(e.x,e.y);g.arc(e.x,e.y,detectOuterRange('p'),e.ang-DETECT_OUTER_HALF,e.ang+DETECT_OUTER_HALF);g.closePath();g.fill();g.fillStyle='rgba(255,80,80,.055)';g.beginPath();g.moveTo(e.x,e.y);g.arc(e.x,e.y,detectRange('p'),e.ang-DETECT_CENTER_HALF,e.ang+DETECT_CENTER_HALF);g.closePath();g.fill();}tankShape(e.x,e.y,e.body,e.ang,{id:'enemy',col:'#4b5f9e'},TANK_DRAW,inBush(e)?'hull':'both');}else if(!e.wreckSpawned){g.fillStyle='#1c1a18';g.beginPath();g.arc(e.x,e.y,14,0,6.28);g.fill();}g.restore();if(e.alive&&enemyAlpha>.18){if(e.st)lab('!',e.x,e.y-38,'bold 18px system-ui','#ff5a5a');else if(e.sus>0)lab('?',e.x,e.y-38,'bold 18px system-ui','#ffd27a');}}
+ for(const c of cars){const bushTank=c.kind==='tank'&&inBush(c);if(!bushTank)drawVehicle(c,c.x,c.y,c.body??-1.57,c.body??-1.57);const iy=c.y-(c.kind==='fighter'?66:c.kind==='truck'?42:50);markVehicle(c.x,iy,c.f<=0?'fuel':'ride');if(near===c)lab(c.t.n,c.x,iy-24,c.kind==='tank'?'bold 17px system-ui':'bold 14px system-ui','#fff');}
+ const enemyAlpha=digEnemyAlpha();if(enemyAlpha>.001)for(const e of etanks){if(!enemyInView(e,cx,cy,140))continue;g.save();g.globalAlpha*=enemyAlpha;if(e.alive){if(!e.st){g.fillStyle='rgba(255,80,80,.035)';g.beginPath();g.moveTo(e.x,e.y);g.arc(e.x,e.y,detectOuterRange('p'),e.ang-DETECT_OUTER_HALF,e.ang+DETECT_OUTER_HALF);g.closePath();g.fill();g.fillStyle='rgba(255,80,80,.055)';g.beginPath();g.moveTo(e.x,e.y);g.arc(e.x,e.y,detectRange('p'),e.ang-DETECT_CENTER_HALF,e.ang+DETECT_CENTER_HALF);g.closePath();g.fill();}if(!inBush(e))tankShape(e.x,e.y,e.body,e.ang,{id:'enemy',col:'#4b5f9e'},TANK_DRAW);}else if(!e.wreckSpawned){g.fillStyle='#1c1a18';g.beginPath();g.arc(e.x,e.y,14,0,6.28);g.fill();}g.restore();if(e.alive&&enemyAlpha>.18){if(e.st)lab('!',e.x,e.y-38,'bold 18px system-ui','#ff5a5a');else if(e.sus>0)lab('?',e.x,e.y-38,'bold 18px system-ui','#ffd27a');}}
  for(const h of humans){const sniperFalling=!h.alive&&h.sniperFallT>0;if((!h.alive&&!sniperFalling)||!enemyInView(h,cx,cy,100))continue;const lift=sniperFalling?0:blastLift(h);if(!sniperFalling)drawBlastShadow(h);g.save();g.translate(0,-lift);g.globalAlpha*=enemyAlpha;if(sniperFalling){const fk=Math.max(0,Math.min(1,1-h.sniperFallT/Math.max(.01,h.sniperFallMax||.72))),side=(h.sniperFallA&&Math.sin(h.sniperFallA)<0?-1:1);g.translate(h.x,h.y);g.rotate(side*fk*1.18);g.translate(-h.x,-h.y);g.globalAlpha*=Math.max(.35,1-fk*.38);}soldier(h.x,h.y,h.face,false,sniperFalling?false:h.st,true,!!h.elite);if(h.elite){g.save();g.translate(h.x,h.y-12);g.fillStyle='#ffd56a';g.strokeStyle='#3a2a10';g.lineWidth=1;g.beginPath();g.moveTo(0,-5);g.lineTo(5,0);g.lineTo(0,5);g.lineTo(-5,0);g.closePath();g.fill();g.stroke();g.restore();}
  if(!sniperFalling&&h.humanBurnT>0){const tt=performance.now()*.018;g.save();g.globalCompositeOperation='lighter';flameBlob(h.x-4+Math.sin(tt)*2,h.y+2,7+Math.sin(tt*1.3)*1.5,tt,.42);flameBlob(h.x+4+Math.cos(tt*.8)*2,h.y-5,9+Math.sin(tt*.9+1)*2,tt+1.7,.7);flameBlob(h.x+Math.sin(tt*.65)*3,h.y-12,6+Math.sin(tt*1.6+2)*1.5,tt+3.1,.9);g.restore();}
  if(!sniperFalling&&h.stun>0){const tt=performance.now()*.006;g.fillStyle='#ffd85a';for(let q=0;q<3;q++){const a=tt+q*2.094,x=h.x+Math.cos(a)*13,y=h.y-18+Math.sin(a)*5;g.save();g.translate(x,y);g.rotate(a);g.beginPath();g.moveTo(0,-4);g.lineTo(2,-1);g.lineTo(5,0);g.lineTo(2,1);g.lineTo(0,4);g.lineTo(-2,1);g.lineTo(-5,0);g.lineTo(-2,-1);g.closePath();g.fill();g.restore();}if(h.grapple>0){g.strokeStyle='rgba(230,233,216,.85)';g.lineWidth=2;g.beginPath();g.arc(h.x,h.y,13,-2.5,.7);g.stroke();}}g.restore();if(!sniperFalling&&enemyAlpha>.18){if(h.st)lab('!',h.x,h.y-lift-18,'bold 16px system-ui','#ff5a5a');else if(h.sus>0)lab('?',h.x,h.y-lift-18,'bold 16px system-ui','#ffd27a');}}
@@ -5237,19 +5283,16 @@ function draw(near){
  for(const ab of airbombs){const mt=ab.maxT||.48,k=Math.max(0,Math.min(1,1-ab.t/mt));g.fillStyle=ab.fighter?'#252b31':'#171717';g.beginPath();g.ellipse(ab.x,ab.y,ab.fighter?7:5,ab.fighter?13:10,0,0,6.28);g.fill();g.strokeStyle=ab.fighter?'rgba(180,220,255,.65)':'rgba(255,190,80,.55)';g.beginPath();g.arc(ab.x,ab.y,(ab.fighter?20:14)*k,0,6.28);g.stroke();}
  if(airstrike){g.save();g.translate(airstrike.x,airstrike.y);g.rotate(-Math.PI/2);g.scale(2,2);g.fillStyle='#303741';g.beginPath();g.moveTo(34,0);g.lineTo(8,-8);g.lineTo(-4,-34);g.lineTo(-13,-34);g.lineTo(-8,-7);g.lineTo(-34,-5);g.lineTo(-34,5);g.lineTo(-8,7);g.lineTo(-13,34);g.lineTo(-4,34);g.lineTo(8,8);g.closePath();g.fill();g.fillStyle='#9aa8b5';g.fillRect(-3,-3,24,6);g.restore();}
  if(!p.tank&&p.grappleT>0&&p.grappleTarget&&p.grappleTarget.alive){const h=p.grappleTarget,a=Math.atan2(h.y-p.y,h.x-p.x),k=1-p.grappleT/.3;g.save();g.strokeStyle='rgba(255,230,170,'+(1-k*.25)+')';g.lineWidth=3;g.beginPath();g.moveTo(p.x+Math.cos(a+.55)*8,p.y+Math.sin(a+.55)*8);g.lineTo(h.x-Math.cos(a)*5,h.y-Math.sin(a)*5);g.moveTo(p.x+Math.cos(a-.55)*8,p.y+Math.sin(a-.55)*8);g.lineTo(h.x-Math.cos(a)*5,h.y-Math.sin(a)*5);g.stroke();g.strokeStyle='rgba(255,255,255,'+(0.7-k*.4)+')';g.lineWidth=2;for(let q=0;q<3;q++){const off=(q-1)*7;g.beginPath();g.moveTo(p.x-Math.cos(a)*10+Math.cos(a+1.57)*off,p.y-Math.sin(a)*10+Math.sin(a+1.57)*off);g.lineTo(p.x-Math.cos(a)*20+Math.cos(a+1.57)*off,p.y-Math.sin(a)*20+Math.sin(a+1.57)*off);g.stroke();}g.restore();}
- if(p.tank){drawVehicle(p.tank,p.x,p.y,p.body,p.ang,(p.tank.kind==='tank'&&inBush(p))?'hull':'both');if(p.tank.f<=0)markVehicle(p.x,p.y-(p.tank.kind==='fighter'?66:p.tank.kind==='truck'?42:50),'fuel');}
+ if(p.tank){if(!(p.tank.kind==='tank'&&inBush(p)))drawVehicle(p.tank,p.x,p.y,p.body,p.ang);if(p.tank.f<=0)markVehicle(p.x,p.y-(p.tank.kind==='fighter'?66:p.tank.kind==='truck'?42:50),'fuel');}
  else if(p.sniperEnterT>0||p.sniperReadyT>0){drawSniperSetupPlayer();}
  else if(p.dig>0){if(digUsesWaterFx(p.x,p.y)){g.save();g.translate(p.x,p.y);g.rotate(p.body+1.5708);g.fillStyle='rgba(38,54,45,.92)';g.beginPath();g.ellipse(0,-2,7,9,0,0,6.28);g.fill();g.fillStyle='#66735f';g.beginPath();g.arc(0,-5,6,Math.PI,0);g.fill();g.strokeStyle='rgba(220,240,245,.65)';g.lineWidth=1.5;g.beginPath();g.moveTo(-10,4);g.quadraticCurveTo(0,8,10,4);g.stroke();g.restore();}else{g.fillStyle='#3a2a18';g.beginPath();g.ellipse(p.x,p.y+2,11,8,0,0,6.28);g.fill();g.fillStyle='#6b4e30';g.beginPath();g.ellipse(p.x,p.y,8,6,0,0,6.28);g.fill();}}
- else if(p.digPrep>0){soldier(p.x,p.y,p.body,true,false,false);const k=1-p.digPrep/1;g.save();g.translate(p.x,p.y+4);g.strokeStyle='rgba(205,175,110,'+(0.45+.35*Math.sin(performance.now()/110))+')';g.lineWidth=2;g.beginPath();g.arc(0,0,10+k*14,0,6.28);g.stroke();g.strokeStyle='rgba(122,90,56,.65)';g.beginPath();g.arc(0,0,18+k*10,0,6.28);g.stroke();g.fillStyle='rgba(122,90,56,.55)';for(let q=0;q<5;q++){const a=performance.now()/300+q*1.26,r=12+k*10+(q%2)*4;g.beginPath();g.arc(Math.cos(a)*r*.45,4+Math.sin(a*1.3)*2,2.4,0,6.28);g.fill();}g.restore();}
+ else if(p.digPrep>0)drawDigPreparation();
  else{drawBlastShadow(p);soldier(p.x,p.y-blastLift(p),p.body,true,false,!!(keys.ArrowUp||keys.ArrowDown||keys.ArrowLeft||keys.ArrowRight));}
  if(!p.tank&&p.drill>0){const a=p.body,t=performance.now()/90;g.save();g.translate(p.x,p.y);g.rotate(a);g.fillStyle='#30343a';g.beginPath();g.moveTo(10,-10);g.lineTo(48,0);g.lineTo(10,10);g.closePath();g.fill();g.strokeStyle='#d6d9dd';g.lineWidth=2;for(let q=0;q<4;q++){const xx=14+q*8,yy=Math.sin(t+q*1.7)*6;g.beginPath();g.moveTo(xx,-8+yy*.25);g.lineTo(xx+6,8-yy*.25);g.stroke();}g.fillStyle='#ffd27a';g.beginPath();g.arc(49,0,3+Math.sin(t)*1.2,0,6.28);g.fill();g.restore();if(p.drillTarget){g.fillStyle='rgba(0,0,0,.58)';g.fillRect(p.x-22,p.y-31,44,5);g.fillStyle='#ffd27a';g.fillRect(p.x-22,p.y-31,44*Math.min(1,p.drillHit/.5),5);}}
  drawGrassBushChunks(cx,cy);
  for(const b of nearbyBushes(cx+W/2,cy+H/2,Math.max(W,H)*.8+100)){if(isGrassBush(b)||b.x+b.w<cx-40||b.x>cx+W+40||b.y+b.h<cy-40||b.y>cy+H+40)continue;drawBushCached(b);}
- // 草むら内では本体を再描画せず、歩兵の輪郭だけを草の上に表示する。
- // プレイヤー・相棒・敵人間で同じ処理を使う。
- if(!p.tank&&!(p.dig>0)&&!(p.blastAirT>0)&&!(p.sniperEnterT>0)&&!(p.sniperReadyT>0)&&inBush(p))soldierBushOutline(p.x,p.y,p.body,true,false,false);
- for(const ally of (allies||[]))if(ally.alive&&!(ally.chute>0)&&!(ally.blastAirT>0)&&inBush(ally))soldierBushOutline(ally.x,ally.y,ally.face,true,false,false);
- if(enemyAlpha>.001){g.save();g.globalAlpha*=enemyAlpha;for(const h of humans)if(h.alive&&!(h.blastAirT>0)&&enemyInView(h,cx,cy,100)&&inBush(h))soldierBushOutline(h.x,h.y,h.face,false,!!h.st,!!h.elite);g.restore();}
+ // 草むらに隠れた歩兵（プレイヤー・味方・敵兵）の輪郭強調は行わない。
+ // 草むら自体は前面レイヤーに残し、遮蔽・索敵の判定にも変更を加えない。
  // 会話フキダシは草むらより前面に描画する。
  if(enemyAlpha>.18)for(const h of humans)if(h.alive&&enemyInView(h,cx,cy,100)&&h.chatT>0&&h.chatLead)drawPatrolChatBubble(h);
  // 草むら内の設置爆弾は草の上から50%透過で再描画し、位置を判別しやすくする。
@@ -5257,8 +5300,10 @@ function draw(near){
  // 降下中の相棒は草むらより上のレイヤーに表示する。
  for(const ally of (allies||[]))if(ally.alive&&ally.chute>0)drawAllyParachute(ally);
  drawBurningNature(cx,cy);drawFlame();
- if(enemyAlpha>.001){g.save();g.globalAlpha*=enemyAlpha;for(const e of etanks)if(e.alive&&inBush(e))tankShape(e.x,e.y,e.body,e.ang,{id:'enemy',col:'#4b5f9e'},TANK_DRAW,'turret');g.restore();}
- if(p.tank&&p.tank.kind==='tank'&&inBush(p))drawVehicle(p.tank,p.x,p.y,p.body,p.ang,'turret');
+ // 草むらにいる戦車は車体も砲塔もここで一度だけ描画し、すべての草より手前に表示する。
+ for(const c of cars)if(c.kind==='tank'&&inBush(c))drawVehicle(c,c.x,c.y,c.body??-1.57,c.body??-1.57);
+ if(enemyAlpha>.001){g.save();g.globalAlpha*=enemyAlpha;for(const e of etanks)if(e.alive&&inBush(e))tankShape(e.x,e.y,e.body,e.ang,{id:'enemy',col:'#4b5f9e'},TANK_DRAW);g.restore();}
+ if(p.tank&&p.tank.kind==='tank'&&inBush(p))drawVehicle(p.tank,p.x,p.y,p.body,p.ang);
  drawAllWaterCrossings(cx,cy);
  for(const q of parts){const psz=q.sz||4,dy=q.y-(q.z||0);if(q.x+psz<cx-30||q.x-psz>cx+W+30||dy+psz<cy-30||dy-psz>cy+H+30)continue;g.globalAlpha=Math.min(1,q.life*2);g.fillStyle=q.col;if(q.arcFrag){g.save();g.translate(q.x,dy);g.rotate(q.rot||0);g.fillRect(-psz/2,-psz/2,psz,Math.max(2,psz*.65));g.restore();}else if(q.waterRipple){const k=1-q.life/(q.ttl||.5);g.save();g.strokeStyle=q.col;g.globalAlpha=Math.max(0,(1-k)*.72);g.lineWidth=1.7;g.beginPath();g.ellipse(q.x,dy,psz*(.45+k*.78),psz*(.20+k*.30),0,0,6.28);g.stroke();g.restore();}else g.fillRect(q.x-psz/2,dy-psz/2,psz,psz);}g.globalAlpha=1;
  g.save();g.globalCompositeOperation='lighter';for(const f of fx){if(f.x+f.max<cx-40||f.x-f.max>cx+W+40||f.y+f.max<cy-40||f.y-f.max>cy+H+40)continue;const t=1-f.l/.45,r=f.max*(.35+.65*t),gr=g.createRadialGradient(f.x,f.y,0,f.x,f.y,r);gr.addColorStop(0,'rgba(255,250,200,'+(1-t)+')');gr.addColorStop(.45,'rgba(255,140,30,'+.8*(1-t)+')');gr.addColorStop(1,'rgba(160,30,0,0)');g.fillStyle=gr;g.beginPath();g.arc(f.x,f.y,r,0,6.28);g.fill();}g.restore();
@@ -5387,8 +5432,8 @@ function draw(near){
    g.fillStyle='#ffd27a';g.font='bold 24px system-ui';g.fillText(resultHint(),x+16,440+(1-aHint)*12);g.restore();
 
    const RB=resultButtonRects();
-   drawResultButton(RB.retry.x,RB.retry.y,RB.retry.w,RB.retry.h,'もう一度',true,aFoot);
-   drawResultButton(RB.title.x,RB.title.y,RB.title.w,RB.title.h,'タイトルへ',false,aFoot);
+   drawResultButton(RB.retry.x,RB.retry.y,RB.retry.w,RB.retry.h,'再出撃',true,aFoot);
+   drawResultButton(RB.title.x,RB.title.y,RB.title.w,RB.title.h,'称号',false,aFoot);
    g.save();g.globalAlpha*=aFoot;g.textAlign='center';g.fillStyle='#8f987b';g.font='bold 12px system-ui';g.fillText(TOUCH?'タップで再挑戦':'Enterで再挑戦',W/2,556);g.restore();
   }
  }
@@ -5731,7 +5776,7 @@ function syncResultScreen(){
  else if(!show&&open){resultScoreAnimId++;document.body.classList.remove('result-open');}
 }
 document.getElementById('resRetry').addEventListener('click',()=>{rollSkillChoices();state='skill';bombReq=false;cannonReq=false;interact=false;skillReq=false;syncResultScreen();sfx('skill');});
-document.getElementById('resHome').addEventListener('click',()=>{state='title';bombReq=false;cannonReq=false;interact=false;skillReq=false;syncResultScreen();sfx('skill');});
+document.getElementById('resHome').addEventListener('click',()=>{state='title';bombReq=false;cannonReq=false;interact=false;skillReq=false;syncResultScreen();openTrophyArchive();sfx('skill');});
 highScoreData=loadHighScore();
 // 初回起動ではマップ生成を行わない。タイトル描画に必要な最小状態だけ用意する。
 
