@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車大戦 更新 2026/10/10 11:12 v144</title>
+<title>戦車ゲーム 2026.10.10.147</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -420,9 +420,9 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
     <div class="help-row"><span class="help-key">狙撃</span><span class="help-text"><span class="help-highlight">Sで構え、狙撃中はSで発射</span>。←→で視点を動かし、↑↓でレンズを<span class="help-highlight">1.5 / 2.5 / 3.5倍</span>に切替。Eで解除。</span></div>
   </div></section>
   <section class="help-block"><h2>出撃からクリアまで</h2>
-    <div class="help-step"><strong>1</strong><span><b>スキル選択</b>：初回は「投擲」のみ。出撃するスキルを選んで開始。</span></div>
+    <div class="help-step"><strong>1</strong><span><b>スキル・ステージ選択</b>：初回は「投擲」のみ。スキルを選び、3種類の作戦から出撃。</span></div>
     <div class="help-step"><strong>2</strong><span><b>潜入・戦闘</b>：敵の警戒と地形を見ながら進軍。マルチキルやワンショットキルも評価の対象。</span></div>
-    <div class="help-step"><strong>3</strong><span><b>任務完了</b>：敵司令本部を破壊してクリア。通常プレイでクリアするたびにスキルが1つ解放される。</span></div>
+    <div class="help-step"><strong>3</strong><span><b>任務完了</b>：選んだ作戦の目標を達成してクリア。通常プレイでクリアするたびにスキルが1つ解放される。</span></div>
     <div class="help-step"><strong>4</strong><span><b>評価・戦績</b>：スコア、8軸のプレイスタイル、称号・勲章を確認。タイトルの「称号」では獲得履歴と戦績も見られる。</span></div>
   </section>
   <div class="help-footer">※ スキルごとの詳細な操作は、スキル選択画面のⓘから確認できます。</div>
@@ -470,7 +470,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <ul><li><strong>歩兵の設置爆弾：</strong>Dで設置し、再度Dで起爆。爆風で敵・オブジェクトを攻撃できます。</li><li><strong>戦車主砲：</strong>壁や建物などに当たると炸裂。プレイヤーの主砲が壁に着弾したときは、着弾点から約95px以内の敵歩兵を撃破できます。</li><li><strong>MG・ライフル：</strong>弾の種類に応じた射程・被弾処理があります。狙撃弾は敵兵を貫通できます。</li><li><strong>破壊可能オブジェクト：</strong>木箱やドラム缶などは被弾・炎上・爆発に反応し、状況によって連鎖爆発も発生します。</li><li>爆風によって敵やプレイヤーが押し飛ばされ、気絶する場合があります。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-skills"><h2>8. 9種類のスキル</h2>
-<p>通常プレイでは出撃前に<strong>解放済みスキルから1種類</strong>を選択します。スキルごとに使用方法・持続時間・チャージが異なります。</p>
+<p><strong>作戦：</strong>拠点破壊は従来の司令本部破壊。最前線は3戦線を順番に12秒確保すると勝利。潜入は徒歩で3端末を各4秒解析し、開始地点へ未発見状態で帰還すると勝利。最前線には自動増援・制圧補給があり、潜入は警戒度65%以上で追跡増援が発生します。</p><p>通常プレイでは出撃前に<strong>解放済みスキルから1種類</strong>を選択します。スキルごとに使用方法・持続時間・チャージが異なります。</p>
 <ul>
 <li><strong>投擲：</strong>進行方向へ最大110pxの距離で爆弾を投げます。5秒で再使用可能。</li>
 <li><strong>潜伏：</strong>0.5秒静止して潜伏準備後、最大5秒間潜伏。解除後は5秒チャージ。水中では水しぶきの演出に変わります。</li>
@@ -511,9 +511,14 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <section class="res-card"><h2 class="res-section">詳細戦績</h2><div id="resDetail" class="res-detail"></div></section>
 <div class="res-actions"><button class="res-btn primary" id="resRetry" type="button">再出撃</button><button class="res-btn" id="resHome" type="button">称号</button></div>
 </div></div>
+<style>
+#stageScreen{display:none;position:fixed;inset:0;z-index:70;background:rgba(10,18,14,.98);color:#e6e9d6;overflow:auto;padding:24px 18px;box-sizing:border-box;font-family:system-ui}body.stage-open #stageScreen{display:block}.stage-shell{max-width:760px;margin:auto}.stage-shell h1{font-size:28px;margin:10px 0}.stage-shell p{line-height:1.7;color:#bac9b5}.stage-card{display:block;width:100%;text-align:left;color:inherit;background:#23332a;border:2px solid #526549;border-radius:12px;padding:20px;margin:14px 0;cursor:pointer;font:inherit}.stage-card:hover,.stage-card:focus-visible{background:#314738;border-color:#e2c07c}.stage-card strong{font-size:23px;color:#eed5a1}.stage-card span{display:block;margin-top:8px;line-height:1.7}.stage-card small{display:block;color:#a9c8b7;margin-top:8px}.stage-back{padding:12px 20px;background:#344536;color:white;border:1px solid #829474;border-radius:8px;cursor:pointer}#missionHud{display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:12;max-width:90vw;width:480px;box-sizing:border-box;border:1px solid #829474;background:rgba(14,26,19,.9);color:#eef1df;padding:8px 12px;border-radius:8px;font:13px system-ui;pointer-events:none}#missionHud progress{width:100%;height:9px;accent-color:#9dcaa9}#missionHud small{display:block;color:#cee0bc;margin-top:4px}
+</style>
+<div id="stageScreen" role="region" aria-label="ステージ選択"><div class="stage-shell"><div style="color:#9cbb9b;font-size:12px">CHOOSE YOUR MISSION</div><h1>ステージ選択</h1><p id="stageSkill"></p><button class="stage-card" data-stage="base"><strong>01　拠点破壊</strong><span>敵地を突破し、敵司令本部を破壊せよ。潜入・戦闘・乗り物を組み合わせる従来の作戦。</span><small>バランス型 ／ 目標：司令本部の破壊</small></button><button class="stage-card" data-stage="front"><strong>02　最前線</strong><span>味方部隊と進撃し、3か所の戦線を順番に制圧せよ。円内の敵を排除し、味方と陣地を確保。制圧すると補給と前進増援が到着する。</span><small>戦闘中心 ／ 円内で12秒確保・敵がいると制圧停止</small></button><button class="stage-card" data-stage="stealth"><strong>03　潜入</strong><span>3か所の機密情報を回収し、開始地点の脱出地点へ帰還せよ。徒歩で端末の近くに留まり解析。発見中は解析できず、警戒度が高まると追跡部隊が出現する。</span><small>スニーク中心 ／ 端末で4秒解析・全情報回収後に帰還</small></button><button class="stage-back" id="stageBack">← スキル選択へ</button></div></div><div id="missionHud" role="status"></div>
+
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.10.144',FILE_CREATED_AT='2026/10/10 11:12',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.10.147',FILE_CREATED_AT='2026/10/10 12:35',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 let audioCtx=null;
 function ensureAudio(){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(_){}}
 function tone(f=440,d=.08,v=.035,type='square',f2=null){if(!audioCtx)return;const t=audioCtx.currentTime,o=audioCtx.createOscillator(),a=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t+d);a.gain.setValueAtTime(v,t);a.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(a);a.connect(audioCtx.destination);o.start(t);o.stop(t+d+.02);}
@@ -1302,9 +1307,9 @@ function unlockSkillOnClear(s){
 function skillSelectable(id){return (skillDebugAll||areaDebugEnabled||readSkillProgress().unlocked.includes(id))&&SK.some(k=>k.id===id);}
 function skillMenuLayout(){return skillDebugAll?{sy0:88,ch:56,h:52,debugY:602,debugH:34}:{sy0:126,ch:116,h:102,debugY:494,debugH:40};}
 let gameBuildQueued=false,gameBuildGeneration=0;
-function selectSkillIndex(i){
+function selectSkillIndex(i,deploy=false){
  const list=skillMenuList();if(i<0||i>=list.length||gameBuildQueued)return false;
- const selected=list[i].id;if(!skillSelectable(selected))return false;const buildGen=++gameBuildGeneration;skill=selected;closeSkillHelp();
+ const selected=list[i].id;if(!skillSelectable(selected))return false;if(!deploy){skill=selected;selectedSkillId=selected;closeSkillHelp();state='stage';return true;}const buildGen=++gameBuildGeneration;skill=selected;closeSkillHelp();
  state='preparing';bombReq=false;cannonReq=false;interact=false;skillReq=false;mdown=false;gameBuildQueued=true;sfx('skill');
  // 先に「準備中」を1フレーム描画してから重いステージ生成を行う。
  // その間にタイトルへ戻った場合は世代番号で予約済み生成を無効化する。
@@ -2115,6 +2120,9 @@ function drawPatrolChatBubble(h){
  drawPatrolChatBubbleAt(centerX,centerY-25,.88,bob);
 }
 function patrol(o,dt,sp,r){
+ // Stationary guards have one waypoint. Do not run the two-endpoint reversal.
+ if(!Array.isArray(o.path)||o.path.length<2){o.wi=0;o.turnPause=0;o.stk=0;return Number.isFinite(o.face)?o.face:Number.isFinite(o.ang)?o.ang:0;}
+ if(!Number.isInteger(o.wi)||o.wi<0||o.wi>=o.path.length)o.wi=0;
  const t=o.path[o.wi],a=Math.atan2(t.y-o.y,t.x-o.x);
  // 巡回ルートの曲がり角・折り返し地点では、方向転換する前に2秒停止する。
  if(o.turnPause>0){o.turnPause-=dt;if(o.turnPause<=0){o.turnPause=0;if(o.loop)o.wi=(o.wi+(o.dir||1)+o.path.length)%o.path.length;else{o.wi+=o.dir;if(o.wi<0||o.wi>=o.path.length){o.dir*=-1;o.wi+=2*o.dir;}}}return o.pauseFace??a;}
@@ -2395,7 +2403,7 @@ function reset(rerollSkills=true){
  humans=humans.filter(h=>D(h,p)>520);etanks=etanks.filter(e=>D(e,p)>700);assignBuildingPatrols();reconcileBushBuildingPlacement();captureBuildingGroundMarks();separateEnemyUnits(true);
  // Only distribute flank patrols AFTER the final building-patrol reservations.
  // This prevents late-added patrol buildings from obstructing new guard routes.
- distributeFlankPatrols();patrolRoutesVisible=!!(skillDebugAll||areaDebugEnabled);if(skill==='hound')spawnHound();
+ distributeFlankPatrols();patrolRoutesVisible=!!(skillDebugAll||areaDebugEnabled);if(skill==='hound')spawnHound();setupMission();
 }
 // 敵司令本部のコリジョンは command_building_1.webp の実描画領域に合わせる。
 // 元画像256x221のうち、主要な不透明領域はおよそ x=4..248 / y=6..213。
@@ -3100,8 +3108,8 @@ function explode(x,y,rad,big,source='',actionId=0,humanKillRadius=rad){if(big)sf
  }
 }
 function summonAlly(){
- const active=(allies||[]).filter(a=>a.alive).length;if(active>=5){say('増援は最大5人まで');return;}
- const used=new Set((allies||[]).filter(a=>a.alive).map(a=>a.slot)),slot=[0,1,2,3,4].find(n=>!used.has(n))??0,rank=slot-2,ax=Math.max(40,Math.min(WW-40,p.x+rank*38+(R()-.5)*34)),landY=Math.max(45,Math.min(WH-45,p.y-48-Math.abs(rank)*14));
+ const active=(allies||[]).filter(a=>a.alive&&!a.frontline).length;if(active>=5){say('増援は最大5人まで');return;}
+ const used=new Set((allies||[]).filter(a=>a.alive&&!a.frontline).map(a=>a.slot)),slot=[0,1,2,3,4].find(n=>!used.has(n))??0,rank=slot-2,ax=Math.max(40,Math.min(WW-40,p.x+rank*38+(R()-.5)*34)),landY=Math.max(45,Math.min(WH-45,p.y-48-Math.abs(rank)*14));
  const startY=Math.max(45,landY-320);allies.push({id:++allySeq,x:ax,y:startY,startY,landY,alive:true,chute:3,chuteTotal:3,shotCd:.2,burstLeft:3,face:p.body,slot});setSkillCooldown(6);sfx('ally');say('増援を要請! '+(active+1)+'/5');
 }
 let allyTargetRefreshAt=0;
@@ -3109,7 +3117,7 @@ function updateAlly(dt){
  const active=(allies||[]).filter(a=>a.alive),ready=[];
  for(const ally of active){
   if(ally.chute>0){ally.chute=Math.max(0,ally.chute-dt);const total=ally.chuteTotal||3,t=1-ally.chute/total,e=t*t*(3-2*t);ally.y=(ally.startY??ally.y)+(ally.landY-(ally.startY??ally.y))*e;if(ally.chute<=0){ally.y=ally.landY;ally.chute=0;sfx('ally');say('増援が到着!');}continue;}
-  if(updateBlastFlight(ally,dt))continue;if(D(ally,p)>900){ally.alive=false;continue;}ally.shotCd-=dt;ready.push(ally);
+  if(updateBlastFlight(ally,dt))continue;if(!ally.frontline&&D(ally,p)>900){ally.alive=false;continue;}ally.shotCd-=dt;ready.push(ally);
  }
  const range=264,now=performance.now(),refresh=now>=allyTargetRefreshAt;
  if(refresh){
@@ -3120,7 +3128,7 @@ function updateAlly(dt){
  }
  for(const ally of ready){let target=ally._combatTarget;if(target&&!target.alive){target=null;ally._combatTarget=null;}const bd=target?D(ally,target):1e9;
   if(target&&bd<range+40){ally.face=Math.atan2(target.y-ally.y,target.x-ally.x);if(bd>176)moveAllySmart(ally,target,135,dt);else if(ally.shotCd<=0){fire(ally.x+Math.cos(ally.face)*12,ally.y+Math.sin(ally.face)*12,ally.face+(R()-.5)*.08,'ally','v',480,205);ally.burstLeft--;if(ally.burstLeft<=0){ally.burstLeft=3;ally.shotCd=3;}else ally.shotCd=.16;}}
-  else{ally._combatTarget=null;const rank=(ally.slot||0)-2,followX=p.x+rank*30,followY=p.y+36+Math.abs(rank)*14,d=Math.hypot(followX-ally.x,followY-ally.y);if(d>62)moveAllySmart(ally,{x:followX,y:followY},135,dt);}
+  else{ally._combatTarget=null;const rank=(ally.slot||0)-2,followX=ally.frontline&&mission?mission.points[mission.index]?.x??p.x:p.x+rank*30,followY=ally.frontline&&mission?mission.points[mission.index]?.y??p.y:p.y+36+Math.abs(rank)*14,d=Math.hypot(followX-ally.x,followY-ally.y);if(d>62)moveAllySmart(ally,{x:followX,y:followY},135,dt);}
  }
  allies=allies.filter(a=>a.alive);
 }
@@ -3364,7 +3372,7 @@ function spawnHQEnemy(){
  if(!sp)return;const x2=Math.max(18,Math.min(WW-18,sp.x+(R()<.5?-1:1)*(80+R()*120)));
  const h={x:sp.x,y:sp.y,path:[{x:sp.x,y:sp.y},{x:x2,y:sp.y}],loop:false,wi:1,dir:1,stk:0,alive:true,st:1,lost:DETECT_MEMORY,cd:.7,face:Math.atan2(p.y-sp.y,p.x-sp.x),target:'p',foundPause:foundModePause(),patrolMode:'axis',hq:true,elite:R()<1/3};h.lost=humanMemory(h);humans.push(h);
 }
-function updateHQSpawn(dt){if(areaDebugEnabled){baseSpawnT=99999;return;}if(!base||base.hp<=0||zoneAt(p.y).n!=='敵司令本部'){baseSpawnT=5;return;}baseSpawnT-=dt;if(baseSpawnT<=0){baseSpawnT+=5;const activeHQ=(humans||[]).filter(h=>h.alive&&h.hq).length;if(activeHQ<8)spawnHQEnemy();}}
+function updateHQSpawn(dt){if(stageMode!=='base'||areaDebugEnabled){baseSpawnT=99999;return;}if(!base||base.hp<=0||zoneAt(p.y).n!=='敵司令本部'){baseSpawnT=5;return;}baseSpawnT-=dt;if(baseSpawnT<=0){baseSpawnT+=5;const activeHQ=(humans||[]).filter(h=>h.alive&&h.hq).length;if(activeHQ<8)spawnHQEnemy();}}
 function pointSegDist(px,py,a,b){const dx=b.x-a.x,dy=b.y-a.y,l2=dx*dx+dy*dy;if(!l2)return Math.hypot(px-a.x,py-a.y);const t=Math.max(0,Math.min(1,((px-a.x)*dx+(py-a.y)*dy)/l2));return Math.hypot(px-(a.x+t*dx),py-(a.y+t*dy));}
 function drillGeom(){const a=p.body;return{a:{x:p.x+Math.cos(a)*9,y:p.y+Math.sin(a)*9},b:{x:p.x+Math.cos(a)*51,y:p.y+Math.sin(a)*51},r:11};}
 function updateDrill(dt){
@@ -4312,7 +4320,7 @@ function update(dt){
  applyRiverCurrents(dt);
  for(const f of fx)f.l-=dt;fx=fx.filter(f=>f.l>0);
  updateParts(dt);updateWaterRipples(dt);
- shake=Math.max(0,shake-35*dt);flash=Math.max(0,flash-dt*2.5);msgT-=dt;vehicleNameT=Math.max(0,vehicleNameT-dt);updateScoreTracking(dt,frameMove);return near;
+ shake=Math.max(0,shake-35*dt);flash=Math.max(0,flash-dt*2.5);msgT-=dt;vehicleNameT=Math.max(0,vehicleNameT-dt);updateScoreTracking(dt,frameMove);if(state==='play')updateMission(dt);return near;
 }
 function skillIcon(id,x,y){
  g.save();g.beginPath();g.rect(x,y,90,90);g.clip();
@@ -4403,7 +4411,7 @@ function useSkill(wx,wy){if(scoreStats&&!scoreStats.finalized)scoreStats.skillUs
  else if(skill==='flame'){/* S長押しで連続使用 */}
  else if(skill==='sniper')enterSniperMode();
  else if(skill==='hound')beginHoundAttack();}
-function winSeq(){if(areaDebugEnabled){base.hp=30;say('エリアデバッグ中：司令部破壊判定を無効化');return;}state='blast';blastT=2.4;bq=0;p.dig=0;p.digPrep=0;p.drill=0;sfx('win');}
+function winSeq(){if(stageMode!=='base'){base.hp=30;say('作戦目標を達成しよう');return;}if(areaDebugEnabled){base.hp=30;say('エリアデバッグ中：司令部破壊判定を無効化');return;}state='blast';blastT=2.4;bq=0;p.dig=0;p.digPrep=0;p.drill=0;sfx('win');}
 function blastUpdate(dt){blastT-=dt;bq-=dt;if(bq<=0){bq=.1;const x=base.x+R()*base.w,y=base.y+R()*base.h;fb(x,y,28+R()*34);burst(x,y,25,'#ff8a3a',380);shake=14;if(R()<.3)flash=.5;}
  for(const f of fx)f.l-=dt;fx=fx.filter(f=>f.l>0);updateParts(dt);
  flash=Math.max(0,flash-dt*2.5);if(blastT<=0){state='win';shake=0;finalizeScore(true);}}
@@ -5068,7 +5076,7 @@ function revealProgress(t,start,dur=.22){return easeOutCubic((t-start)/dur);}
 function resultHint(){
  if(!scoreStats||!scoreStats.final)return'もう一度挑戦しよう';
  const r=scoreStats.final;
- if(!r.cleared)return scoreStats.detections>=4?'潜伏を増やして前進':'司令部破壊を狙おう';
+ if(!r.cleared)return scoreStats.detections>=4?'潜伏を増やして前進':stageMode==='front'?'円内の敵を排除して戦線を確保':stageMode==='stealth'?'情報を回収して開始地点へ帰還':'司令部破壊を狙おう';
  if(r.stealthRank==='A'&&r.combatRank!=='A')return'エリート撃破を狙おう';
  if(r.combatRank==='A'&&r.stealthRank!=='A')return'未発見移動を増やそう';
  if(scoreStats.detections>=4)return'草むら潜伏を使おう';
@@ -5096,7 +5104,7 @@ function drawResultButton(x,y,w,h,label,primary,a=1){
  g.restore();
 }
 function drawMenuOnlyState(){
- if(state==='spec'){g=gm;gm.setTransform(1,0,0,1,0,0);g.fillStyle='#151d17';g.fillRect(0,0,W,H);return true;}
+ if(state==='spec'||state==='stage'){g=gm;gm.setTransform(1,0,0,1,0,0);g.fillStyle='#151d17';g.fillRect(0,0,W,H);return true;}
  if(state!=='title'&&state!=='help'&&state!=='skill'&&state!=='preparing')return false;
  g=gm;gm.setTransform(1,0,0,1,0,0);gm.imageSmoothingEnabled=false;
  g.fillStyle='#12140f';g.fillRect(0,0,W,H);
@@ -5273,7 +5281,7 @@ function drawVehicleBottomHud(){
 function draw(near){
  if(drawMenuOnlyState())return;
  g=og;og.setTransform(.5,0,0,.5,0,0);og.imageSmoothingEnabled=false;labels.length=0;vehicleMarkers.length=0;
- const bl=state==='blast'||state==='win';
+ const bl=state==='blast'||(state==='win'&&stageMode==='base');
  if(bl){cam+=(0-cam)*.07;camX+=(Math.max(0,Math.min(WW-W,base.x+base.w/2-W/2))-camX)*.07;}else{cam=Math.max(0,Math.min(WH-H,p.y-H*.6));camX=Math.max(0,Math.min(WW-W,p.x-W/2));}
  const cy=Math.round(cam/2)*2,cx=Math.round(camX/2)*2;
  g.save();if(shake>0)g.translate((R()-.5)*shake,(R()-.5)*shake);
@@ -5595,7 +5603,7 @@ const TITLE_SPECIAL=[
  {id:'one_shot_master',name:'ワンショットキルの達人',note:'一度の攻撃で4体以上撃破',priority:470,valid:(lv,s,r)=>(s.maxOneShotKills||0)>=4}
 ];
 const MEDAL_CATALOG=[
- {id:'mission_clear',name:'初任務完了',icon:'★',note:'敵司令本部を破壊してクリアする',valid:(s,r)=>!!r.cleared},
+ {id:'mission_clear',name:'初任務完了',icon:'★',note:'作戦目標を達成してクリアする',valid:(s,r)=>!!r.cleared},
  {id:'untouched',name:'無傷の英雄',icon:'◆',note:'被弾せずにゲームをクリアする',valid:(s,r)=>!!r.cleared&&s.damageHits===0},
  {id:'undetected',name:'完全潜入',icon:'◈',note:'一度も敵に発見されずクリアする',valid:(s,r)=>!!r.cleared&&s.detections===0&&s.unseenDist>=300},
  {id:'tank_hunter',name:'戦車キラー',icon:'✦',note:'1回のプレイで敵戦車を3台以上撃破する',valid:s=>s.tankKills>=3},
@@ -5603,7 +5611,7 @@ const MEDAL_CATALOG=[
  {id:'sniper_three',name:'一発必中の狩人',icon:'◎',note:'狙撃スキルで敵を3体以上撃破する',valid:s=>s.sniperKills>=3},
  {id:'bomb_three',name:'爆破の名手',icon:'✹',note:'設置・投擲爆弾で敵を3体以上撃破する',valid:s=>s.bombKills>=3},
  {id:'three_vehicles',name:'乗り物の達人',icon:'➤',note:'1回のプレイで3種類以上の乗り物を利用する',valid:s=>Object.keys(s.vehicleKinds||{}).length>=3},
- {id:'infantry_hero',name:'歩兵の英雄',icon:'♜',note:'一度も搭乗せずに司令本部を破壊する',valid:(s,r)=>!!r.cleared&&s.vehicleBoards===0},
+ {id:'infantry_hero',name:'歩兵の英雄',icon:'♜',note:'一度も搭乗せずに作戦をクリアする',valid:(s,r)=>!!r.cleared&&s.vehicleBoards===0},
  {id:'one_shot_three',name:'ワンショットキル',icon:'✹',note:'一度の攻撃で敵3体以上を撃破する',valid:s=>(s.maxOneShotKills||0)>=3}
 ];
 // Lvだけでは獲得不可。実際の行動実績を併せて検証する。
@@ -5836,7 +5844,7 @@ function renderResultScreen(){const s=scoreStats,r=s&&s.final;if(!r)return;
  const metrics=resultMetrics(s,r),levels=metrics.map(resLevel),sty=resultStyle(levels,s);
  el('resStatus').textContent=r.cleared?'MISSION COMPLETE':'MISSION FAILED';el('resStatus').style.color=r.cleared?'#dff3b0':'#ffb0a0';
  const zone=(ZONES||[]).find(z=>p&&p.y>=z.y0&&p.y<=z.y1);
- el('resArea').textContent='到達エリア：'+(zone?zone.name||zone.n||zone.label||'—':'—');
+ el('resArea').textContent='作戦：'+STAGE_NAMES[stageMode]+' ／ '+(mission?(stageMode==='front'?'戦線制圧 '+mission.index+'/3':'情報回収 '+mission.index+'/3'+(r.cleared?'・帰還完了':'')):'到達エリア：'+zoneAt(p.y).n);
  el('resScore').textContent=Math.round(r.total).toLocaleString('ja-JP');el('resHigh').textContent=s.newHigh?'★ NEW HIGH SCORE':'HIGH SCORE  '+(highScoreData?highScoreData.score.toLocaleString('ja-JP'):'—');
  const unlock=el('resUnlock');
  unlock.hidden=!s.unlockedSkill;el('resUnlockName').textContent=s.unlockedSkill?'「'+(SK.find(k=>k.id===s.unlockedSkill)?.n||'')+'」':'';
@@ -5929,7 +5937,7 @@ function setSelectedSkill(id){
  for(const card of skScroll.children){const yes=card.dataset.skill===id;card.classList.toggle('selected',yes);card.setAttribute('aria-pressed',String(yes));}
  const chosen=list.find(k=>k.id===id&&skillSelectable(k.id)),deploy=document.getElementById('skDeploy');
  deploy.disabled=!chosen||gameBuildQueued;
- deploy.textContent=chosen?'「'+chosen.n+'」で出撃':'スキルを選択してください';
+ deploy.textContent=chosen?'「'+chosen.n+'」でステージ選択へ':'スキルを選択してください';
 }
 // Selection cards intentionally use lightweight square placeholder pictograms.
 // The original detailed artwork is kept for the skill-help lightbox.
@@ -6029,9 +6037,90 @@ document.getElementById('titleVersion').textContent=GAME_VERSION;
 document.getElementById('titleUpdated').textContent=FILE_CREATED_AT;
 document.getElementById('specVersion').textContent=GAME_VERSION;
 
+
+let stageMode='base',mission=null;
+const STAGE_NAMES={base:'拠点破壊',front:'最前線',stealth:'潜入'};
+document.querySelectorAll('[data-stage]').forEach(b=>b.addEventListener('click',()=>{stageMode=b.dataset.stage;document.body.classList.remove('stage-open');selectSkillIndex(skillMenuList().findIndex(k=>k.id===selectedSkillId),true);}));
+document.getElementById('stageBack').onclick=()=>{state='skill';};
+function syncStageScreen(){document.body.classList.toggle('stage-open',state==='stage');if(state==='stage')document.getElementById('stageSkill').textContent='選択スキル：'+(SKN[skill]||skill)+'　／　作戦を選んで出撃';}
+function missionSpot(x,y,r=22){
+ // Prefer a verified dry, open location. Never silently place an objective inside cover.
+ for(let ring=0;ring<20;ring++)for(let n=0;n<20;n++){const a=n*Math.PI/10,xx=Math.max(40,Math.min(WW-40,x+Math.cos(a)*ring*25)),yy=Math.max(60,Math.min(WH-80,y+Math.sin(a)*ring*25));if(!hitsM(xx,yy,r)&&!inWaterAt(xx,yy,r)&&!inBase(xx,yy))return{x:xx,y:yy};}
+ return {x:p.x,y:p.y};
+}
+function missionEnemy(x,y,alert=false){
+ const q=missionSpot(x,y,14);if(D(q,p)<100)return;
+ const path=[{...q}];
+ // Build a short, collision-checked patrol in final world coordinates.
+ for(let i=0;i<8;i++){
+  const a=i*Math.PI/4,end={x:q.x+Math.cos(a)*80,y:q.y+Math.sin(a)*80};
+  if(end.x<24||end.x>WW-24||end.y<24||end.y>WH-24)continue;
+  let clear=true;for(let k=1;k<=8;k++){const xx=q.x+(end.x-q.x)*k/8,yy=q.y+(end.y-q.y)*k/8;if(hitsM(xx,yy,14)||inWaterAt(xx,yy,14)||inBase(xx,yy)){clear=false;break;}}
+  if(clear){path.push(end);break;}
+ }
+ humans.push({...q,path,loop:path.length===1,wi:path.length>1?1:0,dir:1,stk:0,alive:true,st:alert?1:0,lost:0,cd:1,burstLeft:0,face:Math.atan2(p.y-q.y,p.x-q.x),target:alert?'p':null,patrolMode:'axis'});
+}
+function missionAllies(y){const count=Math.min(6,10-allies.filter(a=>a.alive&&a.frontline).length);for(let i=0;i<count;i++){const q=missionSpot(150+i*125,y+100,14);allies.push({...q,id:++allySeq,alive:true,chute:0,shotCd:.2+i*.1,burstLeft:3,face:-Math.PI/2,slot:i,frontline:true});}}
+function setupMission(){
+ mission=null;if(areaDebugEnabled||stageMode==='base')return;
+ mission={index:0,progress:0,alarm:0,waveT:15,reinforceT:20,detected:false,points:[],exit:{x:p.x,y:p.y},alertCount:0};
+ if(stageMode==='front'){
+  mission.points=[10000,6500,3000].map((y,i)=>({...missionSpot(WW/2,y,30),name:['南部戦線','中央戦線','北部戦線'][i],done:false}));
+  const q=missionSpot(p.x+70,p.y-60,28),t=TYPES[0];cars.push({...q,t,kind:'tank',hp:t.hp,c:t.cmax,v:t.vmax,f:t.fmax,ch:0,mgHits:0,body:-1.57});
+  missionAllies(p.y-100);for(const q of mission.points)for(let i=0;i<6;i++)missionEnemy(q.x+(i-2.5)*65,q.y-100-i*35);
+  say('最前線：味方と戦線を押し上げろ！');
+ }else{
+  mission.points=[8500,4300,1100].map((y,i)=>({...missionSpot(i%2?740:220,y,25),name:'機密端末 '+(i+1),done:false}));
+  // Reduce armored pressure, retain the existing patrol and detection rules.
+  etanks=etanks.filter((e,i)=>i%3===0);cars=cars.filter(c=>c.kind!=='fighter');
+  for(const q of mission.points){for(let i=0;i<3;i++)missionEnemy(q.x+(i-1)*100,q.y-110);}
+  say('潜入：機密情報を3つ回収して帰還せよ');
+ }
+}
+function completeMission(){if(state!=='play')return;state='win';shake=0;finalizeScore(true);sfx('win');}
+function updateMission(dt){
+ if(!mission||areaDebugEnabled)return;
+ const m=mission,detected=humans.some(h=>h.alive&&h.st&&h.target==='p'&&!(h.stun>0))||etanks.some(e=>e.alive&&e.st&&e.target==='p');
+ m.detected=detected;
+ if(stageMode==='front'){
+  const q=m.points[m.index];if(!q)return;
+  const foes=humans.filter(h=>h.alive&&!(h.stun>0)&&D(h,q)<210).length+etanks.filter(e=>e.alive&&D(e,q)<210).length;
+  const friendly=D(p,q)<180||allies.some(a=>a.alive&&a.frontline&&D(a,q)<180);
+  if(friendly&&!foes)m.progress=Math.min(12,m.progress+dt);else if(foes)m.progress=Math.max(0,m.progress-dt*.35);
+  m.waveT-=dt;m.reinforceT-=dt;
+  if(m.waveT<=0&&D(p,q)<1000){m.waveT=24;if(humans.filter(h=>h.alive&&D(h,q)<800).length<16)for(let i=0;i<3;i++)missionEnemy(q.x+(i-1)*100,q.y-380,true);}
+  if(m.reinforceT<=0){m.reinforceT=18;if(allies.filter(a=>a.alive&&a.frontline).length<4)missionAllies(Math.max(q.y+250,Math.min(p.y+120,WH-200)));}
+  if(m.progress>=12){q.done=true;m.index++;m.progress=0;p.hp=2;if(p.tank){p.tank.c=p.tank.t.cmax;p.tank.v=p.tank.t.vmax;p.tank.f=p.tank.t.fmax;}say(q.name+' 制圧！ 補給・増援到着');if(m.index===3){completeMission();return;}missionAllies(q.y);}
+ }else{
+  m.alarm=Math.max(0,Math.min(100,m.alarm+dt*(detected?12:-5)));m.waveT-=dt;
+  if(m.alarm>=65&&m.waveT<=0){m.waveT=24;m.alertCount++;if(humans.filter(h=>h.alive&&D(h,p)<650).length<12)for(let i=0;i<3;i++)missionEnemy(p.x+(i-1)*110,p.y-340,true);say('警戒部隊が接近！ 草むらや遮蔽物へ');}
+  const q=m.points.find(q=>!q.done&&D(p,q)<65);
+  if(q&&!p.tank&&!detected){if(m.active!==q){m.active=q;m.progress=0;}m.progress+=dt;if(m.progress>=4){q.done=true;m.index++;m.progress=0;m.active=null;say('機密情報を回収 '+m.index+'/3'+(m.index===3?'：開始地点へ帰還せよ':''));}}else{m.progress=0;m.active=null;}
+  if(m.index===3&&!p.tank&&D(p,m.exit)<95&&!detected)completeMission();
+ }
+}
+let missionHudNextAt=0,missionHudText="";
+function drawMission(){
+ const el=document.getElementById('missionHud');el.style.display=state==='play'&&mission?'block':'none';if(state!=='play'||!mission)return;
+ const m=mission,q=stageMode==='front'?m.points[m.index]:m.index===3?m.exit:m.points.filter(q=>!q.done).sort((a,b)=>D(a,p)-D(b,p))[0];
+ const dist=q?Math.round(D(p,q)):0;
+ if(performance.now()>=missionHudNextAt){missionHudNextAt=performance.now()+100;
+ const hudText=stageMode==='front'?'<b>最前線　戦線 '+m.index+'/3 制圧</b><progress max="12" value="'+m.progress+'"></progress><small>'+q.name+'まで '+dist+'m ／ 円内の敵を排除・12秒確保</small>':'<b>潜入　機密情報 '+m.index+'/3　警戒 '+Math.round(m.alarm)+'%</b><progress max="4" value="'+m.progress+'"></progress><small>'+(m.detected?'発見中：隠れて追跡を振り切れ':m.index===3?'脱出地点へ帰還（徒歩）':q.name+'まで '+dist+'m ／ 徒歩で4秒解析')+'</small>';
+ if(hudText!==missionHudText){el.innerHTML=hudText;missionHudText=hudText;}
+ }
+ gm.save();gm.setTransform(1,0,0,1,0,0);
+ for(const point of [...m.points,...(stageMode==='stealth'&&m.index===3?[{...m.exit,name:'脱出地点',done:false}]:[])]){
+  const x=point.x-camX,y=point.y-cam;if(y < -200||y>H+200)continue;
+  gm.strokeStyle=point.done?'#9de7ae':stageMode==='front'?'#8dd3ff':'#efd28b';gm.fillStyle=point.done?'rgba(75,170,100,.15)':'rgba(95,185,210,.13)';gm.lineWidth=3;gm.beginPath();gm.arc(x,y,stageMode==='front'?180:55,0,Math.PI*2);gm.fill();gm.stroke();gm.font='bold 15px system-ui';gm.textAlign='center';gm.fillStyle='#fff3ce';gm.fillText(point.name+(point.done?' ✓':''),x,y-62);
+ }
+ if(q){const a=Math.atan2(q.y-p.y,q.x-p.x),x=W/2+Math.cos(a)*44,y=H*.6+Math.sin(a)*44;gm.translate(x,y);gm.rotate(a);gm.fillStyle='#ffe1a0';gm.beginPath();gm.moveTo(14,0);gm.lineTo(-7,-7);gm.lineTo(-7,7);gm.closePath();gm.fill();}
+ gm.restore();
+}
+
 state='title';rollSkillChoices();
 let firstMenuFrame=true,last=performance.now(),prevState=state;
 function loop(n){
+ try{
  const elapsed=Math.max(0,Math.min(.099,(n-last)/1000));last=n;let remain=elapsed,near=null;
  // 低FPSでもタイマーや移動速度が実時間に近づくよう、最大33msずつ複数回更新する。
  // タブ復帰直後などの巨大な時間差は99msで打ち切り、1描画あたり最大3回までに抑える。
@@ -6044,9 +6133,17 @@ function loop(n){
   prevState=state;
  }while(remain>.000001);
  document.body.classList.toggle('gameplay-active',state==='play');
- draw(near);syncResultScreen();syncSkillScreen();syncTitleScreen();syncHelpScreen();syncSpecScreen();
+ draw(near);drawMission();syncStageScreen();syncResultScreen();syncSkillScreen();syncTitleScreen();syncHelpScreen();syncSpecScreen();
  if(firstMenuFrame){firstMenuFrame=false;setTimeout(startAssetLoading,0);}
- requestAnimationFrame(loop);
+ }catch(error){reportGameError(error);}finally{requestAnimationFrame(loop);}
+}
+let gameErrorCount=0;
+function reportGameError(error){
+ gameErrorCount++;console.error('Tank game v147',error);
+ let panel=document.getElementById('runtimeError');
+ if(!panel){panel=document.createElement('div');panel.id='runtimeError';panel.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;background:#422018;color:#fff2dc;padding:12px;border:1px solid #f7b083;border-radius:8px;font:12px system-ui;white-space:pre-wrap;max-height:35vh;overflow:auto';document.body.appendChild(panel);}
+ const stack=String(error&&error.stack||error).split('\n').slice(0,4).join('\n');
+ panel.textContent='v147 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 requestAnimationFrame(loop);
 </script>
