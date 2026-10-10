@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.10.154</title>
+<title>戦車ゲーム 2026.10.10.155</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -456,7 +456,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <p>詳しいキー配置と各スキルの操作はタイトル画面の「操作説明」、またはスキル選択画面のⓘでも確認できます。</p>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-player"><h2>4. 歩兵・潜入・地形</h2>
-<ul><li>歩兵のライフはハート3個。乗り物に搭乗していないときは爆弾やスキルを使用できます。</li><li>近くの敵兵にAで組み付くと、敵を気絶させられます。</li><li>草むらは敵の視線を避けるための隠蔽場所です。白い目に赤い斜線のアイコンが隠れた状態の目印です。発見解除前は黄色の「解除待ち」を表示します。雨天時は水中にいることも発見を避ける条件になります。</li><li>停止中は敵の索敵距離が短くなります。見つかった後も、条件を満たして隠れ続けると発見状態を解除できます。</li><li>建物・岩・木・防護壁などは、種類に応じて通行や射線を遮ります。川や泥は移動にも影響します。</li></ul>
+<ul><li>歩兵のライフはハート3個。敵戦車の砲弾が直撃するとライフが3減少します。徒歩では敵戦車の車体を通り抜けられません。乗り物に搭乗していないときは爆弾やスキルを使用できます。</li><li>近くの敵兵にAで組み付くと、敵を気絶させられます。</li><li>草むらは敵の視線を避けるための隠蔽場所です。白い目に赤い斜線のアイコンが隠れた状態の目印です。発見解除前は黄色の「解除待ち」を表示します。雨天時は水中にいることも発見を避ける条件になります。</li><li>停止中は敵の索敵距離が短くなります。見つかった後も、条件を満たして隠れ続けると発見状態を解除できます。</li><li>建物・岩・木・防護壁などは、種類に応じて通行や射線を遮ります。川や泥は移動にも影響します。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-enemies"><h2>5. 敵兵と敵戦車のAI</h2>
 <h3>敵歩兵</h3><p>巡回・疑惑・発見の状態を持ちます。通常の巡回に加え、建物の周囲を回る巡回ルートもあります。音や爆発を警戒し、プレイヤーを発見すると短い反応時間を挟んで追跡・射撃します。エリート兵は通常兵と性能・挙動が異なります。</p>
@@ -518,7 +518,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.10.154',FILE_CREATED_AT='2026/10/10 23:32',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.10.155',FILE_CREATED_AT='2026/10/10 23:44',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -2563,6 +2563,18 @@ const inMudAt=(x,y,r=0)=>(mud||[]).some(m=>{const rx=m.w/2+r,ry=m.h/2+r;if(rx<=0
 const inSlowTerrainAt=(x,y,r=0)=>inWaterAt(x,y,r)||inMudAt(x,y,r);
 const hitsM=(x,y,r)=>hitsC(x,y,r)||inWaterAt(x,y,r);
 function tankBlocked(self,x,y,r){
+ const foot=p&&!p.tank&&!(p.dig>0);
+ if(foot&&self===p){
+  for(const e of etanks||[])if(e.alive){
+   const min=r+TANK_HIT+4;
+   if(Math.hypot(e.x-x,e.y-y)<min)return true;
+   if(D(self,e)>=min&&pointSegDist(e.x,e.y,self,{x,y})<min)return true;
+  }
+ }else if(foot&&(etanks||[]).includes(self)){
+  const min=TANK_HIT+8+4;
+  if(Math.hypot(p.x-x,p.y-y)<min)return true;
+  if(D(self,p)>=min&&pointSegDist(p.x,p.y,self,{x,y})<min)return true;
+ }
  const playerTank=self===p&&p.tank&&p.tank.kind==='tank';
  if(playerTank){for(const e of etanks||[])if(e.alive&&Math.hypot(e.x-x,e.y-y)<r+TANK_HIT+5)return true;}
  else if((etanks||[]).includes(self)&&p&&p.tank&&p.tank.kind==='tank'&&Math.hypot(p.x-x,p.y-y)<r+TANK_HIT+5)return true;
@@ -2596,6 +2608,21 @@ function separateEnemyUnits(force=false){
   if(!am&&!a.static&&bm&&ma)trySet(a,a.o.x-ux*need,a.o.y-uy*need);
   if(!bm&&!b.static&&am&&mb)trySet(b,b.o.x+ux*need,b.o.y+uy*need);
   if(!am&&!bm&&!a.static&&!b.static){for(const da of [1.5708,-1.5708,3.14159]){const vx=Math.cos(ang+da),vy=Math.sin(ang+da);if(trySet(a,a.o.x-vx*need*.55,a.o.y-vy*need*.55)){trySet(b,b.o.x+vx*need*.55,b.o.y+vy*need*.55);break;}}}
+ }
+}
+function separateFootPlayerEnemyTanks(){
+ if(!p||p.tank||p.dig>0)return;
+ const r=8,min=TANK_HIT+r+4;
+ for(const e of etanks||[]){
+  if(!e.alive||D(p,e)>=min)continue;
+  const angle=D(p,e)>.001?Math.atan2(p.y-e.y,p.x-e.x):p.body||0;
+  for(let k=0;k<24;k++){
+   const a=angle+(k===0?0:(k%2?1:-1)*Math.ceil(k/2)*Math.PI/12);
+   const x=e.x+Math.cos(a)*(min+.2),y=e.y+Math.sin(a)*(min+.2);
+   if(x<=r||x>=WW-r||y<=r||y>=WH-r||hitsC(x,y,r))continue;
+   if((etanks||[]).some(t=>t.alive&&Math.hypot(t.x-x,t.y-y)<min))continue;
+   p.x=x;p.y=y;break;
+  }
  }
 }
 function separatePlayerEnemyTanks(){
@@ -4548,7 +4575,7 @@ function update(dt){
    if(!dead&&decoy&&D(b,decoy)<10){dead=true;if(b.k==='c')cannonImpact(b.x,b.y,b.from);burst(b.x,b.y,8,'#ff5a5a',150);}
    if(!dead&&playerBulletHit){dead=true;if(b.k==='c')cannonImpact(b.x,b.y,b.from);burst(b.x,b.y,8,'#ff5a5a',150);
     if(p.tank){if(p.tank.kind==='truck'){if(b.k==='c'){wreck();}else{p.tank.mgHits=(p.tank.mgHits||0)+1;sfx('vehicleHit');shake=Math.max(shake,3);if(p.tank&&p.tank.mgHits>=5)wreck();}}else if(p.tank.kind==='fighter'){if(b.k==='c')p.tank.hp-=3;else p.tank.hp-=1;sfx('vehicleHit');shake=Math.max(shake,b.k==='c'?9:3);if(p.tank&&p.tank.hp<=0)wreck();}else{const armor=p.tank.t.armor||3;if(b.k==='c')sfx('vehicleHit');if(b.k==='c')p.tank.ch=(p.tank.ch||0)+1.1;else if(b.k==='v')p.tank.ch=(p.tank.ch||0)+.066;shake=Math.max(shake,b.k==='c'?10:2);if((p.tank.ch||0)>=armor)wreck();}}
-    else{if(scoreStats)scoreStats.damageHits++;p.hp-=({c:2,v:.5,r:1})[b.k];shake=6;if(p.hp<=0)triggerPlayerDeath();}}
+    else{if(scoreStats)scoreStats.damageHits++;p.hp-=({c:3,v:.5,r:1})[b.k];shake=6;if(p.hp<=0)triggerPlayerDeath();}}
   }
   if(dead)bullets.splice(i,1);}
  for(const w of waves){w.r+=260*dt;if(!w.houndHit&&hound&&D(w,hound)<w.r){w.houndHit=true;stunHound(5);}if(!w.bh){const br=baseHitRect(),nx=Math.max(br.x,Math.min(br.x+br.w,w.x)),ny=Math.max(br.y,Math.min(br.y+br.h,w.y));if(Math.hypot(nx-w.x,ny-w.y)<w.r){w.bh=true;damageBase(6,nx,ny,30,1);fb(nx,ny,34);burst(nx,ny,30,'#ffb347',300);shake=Math.max(shake,10);}}for(const h of humans)if(h.alive&&Math.hypot(h.x-w.x,h.y-w.y)<w.r){h.alive=false;recordPlayerKill(w.actionId||0);burst(h.x,h.y,12,'#c05a3a',180);}
@@ -4557,6 +4584,7 @@ function update(dt){
  // 水面アニメーションと同じ向きの流れを地上ユニットへ反映する。
  applyRiverCurrents(dt);
  for(const o of [...humans,...etanks])holdEnemyModePosition(o);
+ separateFootPlayerEnemyTanks();
  for(const f of fx)f.l-=dt;fx=fx.filter(f=>f.l>0);
  updateParts(dt);updateWaterRipples(dt);
  shake=Math.max(0,shake-35*dt);flash=Math.max(0,flash-dt*2.5);msgT-=dt;vehicleNameT=Math.max(0,vehicleNameT-dt);updateScoreTracking(dt,frameMove);if(state==='play')updateMission(dt);return near;
@@ -6384,11 +6412,11 @@ function loop(n){
 }
 let gameErrorCount=0;
 function reportGameError(error){
- gameErrorCount++;console.error('Tank game v154',error);
+ gameErrorCount++;console.error('Tank game v155',error);
  let panel=document.getElementById('runtimeError');
  if(!panel){panel=document.createElement('div');panel.id='runtimeError';panel.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;background:#422018;color:#fff2dc;padding:12px;border:1px solid #f7b083;border-radius:8px;font:12px system-ui;white-space:pre-wrap;max-height:35vh;overflow:auto';document.body.appendChild(panel);}
  const stack=String(error&&error.stack||error).split('\n').slice(0,4).join('\n');
- panel.textContent='v154 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
+ panel.textContent='v155 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 requestAnimationFrame(loop);
 </script>
