@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.12.212</title>
+<title>戦車ゲーム 2026.10.12.213</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -444,7 +444,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <li><a href="#spec-enemies">敵兵と敵戦車のAI</a></li>
 <li><a href="#spec-vehicles">乗り物</a></li>
 <li><a href="#spec-combat">武器・爆発・破壊</a></li>
-<li><a href="#spec-skills">9種類のスキル</a></li>
+<li><a href="#spec-skills">10種類のスキル</a></li>
 <li><a href="#spec-weather">天候と環境</a></li>
 <li><a href="#spec-score">評価・スコア・称号</a></li>
 <li><a href="#spec-save">スキル解放・保存・デバッグ</a></li>
@@ -510,12 +510,13 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <ul><li><strong>歩兵の設置爆弾：</strong>D（スマホ：B）で設置し、再度D（スマホ：B）で起爆。爆風で敵・オブジェクトを攻撃できます。川の中では水流の向きに流速の3倍で流れ、陸に出ると止まります。</li><li><strong>戦車主砲：</strong>壁や建物などに当たると炸裂。プレイヤーの主砲が壁に着弾したときは、着弾点から約9.5m以内の敵歩兵を撃破できます。</li><li><strong>MG・ライフル：</strong>弾の種類に応じた射程・被弾処理があります。狙撃弾は敵兵を貫通できます。</li><li>木と岩石の画像は各2種類。配置位置に応じて約半々で固定選択し、サイズ・当たり判定・破壊処理は共通です。</li><li>建物・岩石・司令本部の足元には背景の上に薄い影を描画し、破壊後も地面の暗い跡として残します。</li><li><strong>一般車両：</strong>乗車できない駐車車両です。現在は出現を一時停止しています。赤・青・白・黄の4色で、当たり判定・炎上・爆発は既存オブジェクトと同様です。</li><li><strong>破壊可能オブジェクト：</strong>木箱やドラム缶などは被弾・炎上・爆発に反応し、状況によって連鎖爆発も発生します。</li><li>爆風によって敵やプレイヤーが押し飛ばされ、気絶する場合があります。</li></ul>
 <h3>アイテムと支援爆撃</h3><ul><li><strong>ガソリン：</strong>赤い携行缶。通常マップに5個配置され、乗車中のみ表示・取得できます。取得すると搭乗車両の燃料が満タンになります。</li><li><strong>無線：</strong>通常マップに1個配置。徒歩・乗車どちらでも取得でき、支援爆撃を自動で要請します。</li><li><strong>支援爆撃機：</strong>大きな主翼と細い胴体を持つ六発機。画面上方向へ飛び、3列に計25発の爆弾を投下します。直近の変更で進行方向の爆撃範囲を約160〜170px延長しました。投下間隔は約0.14秒で、爆弾は約0.48秒後に炸裂します。乗り物より上に描画されます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
-<section class="spec-section" id="spec-skills"><h2>8. 9種類のスキル</h2>
+<section class="spec-section" id="spec-skills"><h2>8. 10種類のスキル</h2>
 <p>通常プレイでは出撃前に<strong>解放済みスキルから1種類</strong>を選択します。スキルごとに使用方法・持続時間・チャージが異なります。</p>
 <ul>
 <li><strong>投擲：</strong>進行方向へ最大11mの距離で爆弾を投げます。5秒で再使用可能。</li>
 <li><strong>潜伏：</strong>0.5秒静止して潜伏準備後、最大5秒間潜伏。解除後は5秒チャージ。水中は移動速度60%、泥では潜伏を解除します。潜伏開始1秒後に敵表示が隠れます。</li>
 <li><strong>偽装：</strong>5秒間残る身代わりを設置して敵の注意をそらします。赤い電波が約1.25秒間隔で半径300pxまで滑らかに広がります。見やすいように少し濃い単色の赤いリングで描いています。身代わり周囲の残り時間の円形ゲージは表示せず、終了時は赤い粒が短く散って消えます。電波の表示範囲と敵を誘導する範囲は別です。チャージ8秒。</li>
+<li><strong>相棒：</strong>青いヘルメットラインの味方が同行し、走行や草むら・遮蔽物に沿って追従します。HP3で、倒れたら徒歩で触れると回復します。画面外10秒で画面下から復帰します。</li>
 <li><strong>増援：</strong>味方兵士がパラシュート降下して戦闘を援護。同時に最大5人。チャージ6秒。着地後、オブジェクトの爆発や敵戦車の砲撃爆風を受けると吹き飛ばされ、5秒間気絶します。気絶中は移動と射撃を停止し、頭上の星が目印になります。</li>
 <li><strong>突貫：</strong>正面にドリルを展開。持続5秒、終了後は6秒チャージ。遮蔽物の破壊に利用できます。</li>
 <li><strong>建築：</strong>前方にコンクリート防護壁を設置。最大5枚、チャージ1.5秒。</li>
@@ -567,7 +568,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.12.212',FILE_CREATED_AT='2026/10/12 00:44',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.12.213',FILE_CREATED_AT='2026/10/12 01:00',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -1408,6 +1409,7 @@ const SK=[
  {id:'dig',n:'潜伏',d:'0.5秒の潜行準備の後、最大5秒間潜伏\n潜行1秒後に敵表示・草むら内の敵輪郭を非表示\n川では泳いで潜伏（移動60%）／泥で強制解除／解除後CT5秒'},
  {id:'decoy',n:'偽装',d:'身代わりを設置して\n敵の注意を5秒間そらす'},
  {id:'buddy',n:'増援',d:'味方兵士がパラシュート降下\n最大5人まで同時に援護\n移動速度は歩兵の90%'},
+ {id:'partner',n:'相棒',d:'青いラインの相棒が同行\nHP3・接触で救助\n画面外10秒で復帰'},
  {id:'drill',n:'突貫',d:'正面にドリルを展開\n0.5秒で遮蔽物を破壊\n持続5秒'},
  {id:'build',n:'建築',d:'正面にコンクリート防護壁を設置\n最大5枚／チャージ1.5秒\n画面外へ流れると消滅'},
  {id:'flame',n:'火炎',d:'正面20mへ火炎放射（先端到達1秒）\n最大3秒・使用分×4秒で全回復\n回復中も再使用可能'},
@@ -1415,7 +1417,7 @@ const SK=[
  {id:'sniper',n:'狙撃',d:'伏せてライフル展開→1秒静止後にスコープへ\n←→で視点移動／↑↓で1.5倍・2.5倍・3.5倍のレンズ切替\nSで狙撃／Aで解除。敵兵・エリートは1発撃破'}
 ];
 const TOUCH=matchMedia('(pointer:coarse)').matches;
-const SKN={throw:'投擲',dig:'潜伏',decoy:'偽装',buddy:'増援',drill:'突貫',build:'建築',flame:'火炎',hound:'猟犬',sniper:'狙撃'};
+const SKN={throw:'投擲',dig:'潜伏',decoy:'偽装',buddy:'増援',partner:'相棒',drill:'突貫',build:'建築',flame:'火炎',hound:'猟犬',sniper:'狙撃'};
 let skill='throw',skillChoices=[],skillDebugAll=false,areaDebugEnabled=false,areaDebugLabels=[];
 const SKILL_PROGRESS_KEY='tankGameSkillProgressV1';
 function readSkillProgress(){
@@ -2424,7 +2426,7 @@ function distributeFlankPatrols(){
 function reset(rerollSkills=true){
  clearStaticRasterCache();clearFragmentRenderCache();
  radioStrikeKillContext=0;burningNatureSet.clear();lastEnemySeparationAt=-1e9;patrolChatScanT=0;allyTargetRefreshAt=0;
- state='play';shake=0;flash=0;msg='';msgT=0;chainToastT=0;oneShotToastT=0;chainToast='';oneShotToast='';interact=false;bombReq=false;skillReq=false;decoy=null;allies=[];hound=null;houndTrail=[];allySeq=0;builtWalls=[];tankWrecks=[];radio=null;airstrike=null;airbombs=[];weather='clear';weatherT=0;rainIntensity=0;weatherNext=15+R()*35;baseSpawnT=5;deathT=0;cam=0;camX=0;scoreStats=newScoreStats();
+ state='play';shake=0;flash=0;msg='';msgT=0;chainToastT=0;oneShotToastT=0;chainToast='';oneShotToast='';interact=false;bombReq=false;skillReq=false;decoy=null;allies=[];partner=null;hound=null;houndTrail=[];allySeq=0;builtWalls=[];tankWrecks=[];radio=null;airstrike=null;airbombs=[];weather='clear';weatherT=0;rainIntensity=0;weatherNext=15+R()*35;baseSpawnT=5;deathT=0;cam=0;camX=0;scoreStats=newScoreStats();
  setupZones();if(rerollSkills)rollSkillChoices();
  waterRipples=[];
  p={x:WW/2,y:3100,hp:3,tank:null,cc:0,vc:0,ang:-1.57,body:-1.57,dig:0,digPrep:0,digElapsed:0,digExitAnim:0,digExitX:0,digExitY:0,scd:0,scdMax:0,drill:0,drillHit:0,drillTarget:null,drillSfx:0,bushHide:0,grappleT:0,grappleTarget:null,flameFuel:3,flameActive:false,flameLockA:null,flamePath:[],flameSfx:0,flameReach:0,fireExposure:0,sniperMode:false,sniperLockA:null,sniperAimN:0,sniperZoom:1.5,sniperLensChangeT:0,sniperEnterT:0,sniperReadyT:0,sniperExitT:0,sniperFlash:0,sniperHitT:0,sniperHitX:0,sniperHitY:0,sniperFireCd:0,sniperNoiseEvents:[]};touchTurretAngle=null;
@@ -3589,6 +3591,42 @@ function summonAlly(){
  const active=(allies||[]).filter(a=>a.alive&&!a.frontline).length;if(active>=5){say('増援は最大5人まで');return;}
  const used=new Set((allies||[]).filter(a=>a.alive&&!a.frontline).map(a=>a.slot)),slot=[0,1,2,3,4].find(n=>!used.has(n))??0,rank=slot-2,ax=Math.max(40,Math.min(WW-40,p.x+rank*38+(R()-.5)*34)),landY=Math.max(45,Math.min(WH-45,p.y-48-Math.abs(rank)*14));
  const startY=Math.max(45,landY-320);allies.push({id:++allySeq,x:ax,y:startY,startY,landY,alive:true,chute:3,chuteTotal:3,shotCd:.2,burstLeft:3,face:p.body,slot});setSkillCooldown(6);sfx('ally');say('増援を要請! '+(active+1)+'/5');
+}
+let partner=null;
+function updatePartner(dt){
+ if(skill!=='partner'||!p)return;
+ if(!partner)partner={x:p.x+24,y:p.y+32,face:p.body,hp:3,down:false,off:0,trail:[],moving:false};
+ const q=partner;
+ if(q.down){if(!p.tank&&Math.hypot(p.x-q.x,p.y-q.y)<22){q.down=false;q.hp=3;burst(q.x,q.y,10,'#8ad9ff',75);say('相棒を救助！');}return;}
+ const cx=Math.max(0,Math.min(WW-W,p.x-W/2)),cy=Math.max(0,Math.min(WH-H,p.y-H*.6));
+ const outside=q.x<cx||q.x>cx+W||q.y<cy||q.y>cy+H;
+ q.off=outside?q.off+dt:0;
+ if(q.off>=10){
+  const rx=Math.max(20,Math.min(WW-20,p.x+25)),ry=Math.max(20,Math.min(WH-20,cy+H-30));
+  for(let i=0;i<16;i++){const x=Math.max(20,Math.min(WW-20,rx+(i%4-1.5)*25)),y=Math.max(20,Math.min(WH-20,ry-Math.floor(i/4)*25));if(!hitsC(x,y,9)){q.x=x;q.y=y;break;}}
+  q.off=0;q.trail=[];say('相棒が復帰！');
+ }
+ const prev=q.trail[q.trail.length-1];
+ if(!prev||Math.hypot(prev.x-p.x,prev.y-p.y)>12)q.trail.push({x:p.x,y:p.y});
+ if(q.trail.length>80)q.trail.shift();
+ const target=q.trail.length>3?q.trail[q.trail.length-4]:p;
+ const d=Math.hypot(target.x-q.x,target.y-q.y),v=Math.hypot(p.x-(q.px??p.x),p.y-(q.py??p.y))/Math.max(dt,.001);
+ q.px=p.x;q.py=p.y;
+ q.moving=d>19;
+ if(q.moving)moveAllySmart(q,target,v>160?Math.max(210,v*1.12):v<60?95:155,dt);
+ if(q.trail.length>4&&Math.hypot(q.x-q.trail[0].x,q.y-q.trail[0].y)<28)q.trail.shift();
+ q.face=q.moving?Math.atan2(target.y-q.y,target.x-q.x):p.body;
+}
+function drawPartner(){
+ if(!partner||skill!=='partner')return;const q=partner;
+ if(q.down){
+  g.save();g.translate(q.x,q.y);g.rotate(q.face+.8);
+  g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.ellipse(0,0,15,11,0,0,6.28);g.fill();
+  g.fillStyle='#54745c';g.fillRect(-14,-5,28,10);g.fillStyle='#344b3c';g.fillRect(-17,-3,11,6);g.fillStyle='#399bff';g.fillRect(-8,-6,12,2);g.restore();
+  lab('✚',q.x,q.y-25,'bold 21px system-ui','#ff6666');return;
+ }
+ soldier(q.x,q.y,q.face,true,false,q.moving,false,'',true,'blue');
+ g.fillStyle='rgba(0,0,0,.55)';g.fillRect(q.x-13,q.y-23,26,4);g.fillStyle='#79bbff';g.fillRect(q.x-13,q.y-23,26*q.hp/3,4);
 }
 let allyTargetRefreshAt=0;
 function drawAllyStun(ally){
@@ -4831,6 +4869,7 @@ function update(dt){
     if(fh){fh.alive=false;burst(fh.x,fh.y,14,'#c05a3a',180);}
     if(!dead){const ft=etanks.find(e=>e.alive&&Math.hypot(b.x-e.x,b.y-e.y)<TANK_HIT);if(ft){dead=true;cannonImpact(ft.x,ft.y,b.from);destroyEnemyTank(ft,ox,oy);burst(ft.x,ft.y,45,'#ff6a2a',360);shake=Math.max(shake,10);}}
    }
+   if(!dead&&partner&&!partner.down&&D(b,partner)<12){dead=true;if(b.k==='c')cannonImpact(b.x,b.y,b.from);partner.hp=Math.max(0,partner.hp-1);burst(partner.x,partner.y,7,'#8ad9ff',75);if(!partner.hp){partner.down=true;say('相棒が倒れた！触れて救助しよう');}}
    if(!dead&&hound&&D(b,hound)<10){dead=true;if(b.k==='c')cannonImpact(b.x,b.y,b.from);stunHound(5);burst(hound.x,hound.y,8,'#d7cf9a',90);say('猟犬が気絶した!');}
    if(!dead){const hitAlly=(allies||[]).find(a=>a.alive&&D(b,a)<10);if(hitAlly){dead=true;if(b.k==='c')cannonImpact(b.x,b.y,b.from);hitAlly.alive=false;burst(hitAlly.x,hitAlly.y,18,'#8fd7ff',180);say('増援がやられた!');}}
    if(!dead&&decoy&&D(b,decoy)<10){dead=true;if(b.k==='c')cannonImpact(b.x,b.y,b.from);burst(b.x,b.y,8,'#ff5a5a',150);}
@@ -4841,7 +4880,7 @@ function update(dt){
   if(dead)bullets.splice(i,1);}
  for(const w of waves){w.r+=260*dt;if(!w.houndHit&&hound&&D(w,hound)<w.r){w.houndHit=true;stunHound(5);}if(!w.bh){const br=baseHitRect(),nx=Math.max(br.x,Math.min(br.x+br.w,w.x)),ny=Math.max(br.y,Math.min(br.y+br.h,w.y));if(Math.hypot(nx-w.x,ny-w.y)<w.r){w.bh=true;damageBase(6,nx,ny,30,1);fb(nx,ny,34);burst(nx,ny,30,'#ffb347',300);shake=Math.max(shake,10);}}for(const h of humans)if(h.alive&&Math.hypot(h.x-w.x,h.y-w.y)<w.r){h.alive=false;recordPlayerKill(w.actionId||0);burst(h.x,h.y,12,'#c05a3a',180);}
   if(!w.hit&&!p.tank&&!(p.dig>0)&&D(w,p)<w.r){w.hit=true;damagePlayerByOwnBomb();}}waves=waves.filter(w=>w.r<w.max);
- updateAlly(dt);updateAirstrike(dt);
+ updateAlly(dt);updatePartner(dt);updateAirstrike(dt);
  // 水面アニメーションと同じ向きの流れを地上ユニットへ反映する。
  applyRiverCurrents(dt);
  for(const o of [...humans,...etanks])holdEnemyModePosition(o);
@@ -5745,7 +5784,7 @@ function soldier(x,y,face,isP,alert,moving,elite=false,commander='',weaponVisibl
   g.fillStyle='#4a241f';g.fillRect(-5,-2.4,10,4.8);
   g.fillStyle='#ac4937';g.fillRect(-5,-1.7,10,3.4);g.restore();
  }
- if(isP&&playerStripe){g.fillStyle='#d94a3a';g.fillRect(-4.6,-1,9.4,2);}
+ if(isP&&playerStripe){g.fillStyle=playerStripe==='blue'?'#399bff':'#d94a3a';g.fillRect(-4.6,-1,9.4,2);}
  g.restore();}
 function soldierBushOutline(x,y,face,isP,alert=false,elite=false){
  // 草むらの世界観を壊さない低コントラスト輪郭。敵兵だけ少し視認性を上げる。
@@ -6286,6 +6325,7 @@ function draw(near){
   else{g.fillStyle=b.from==='p'?'#ffd84a':b.from==='ally'?'#8fd7ff':'#ff8a5a';g.fillRect(-10,-1.5,13,3);g.fillStyle='#fff';g.fillRect(-2,-1,5,2);}
   g.restore();}
  if(decoy){g.globalAlpha=.7;soldier(decoy.x,decoy.y,decoy.face,true,false,false);g.globalAlpha=1;drawDecoySignalPulse(decoy.x,decoy.y,(5-decoy.t));}
+ drawPartner();
  for(const ally of (allies||[]))if(ally.alive&&!(ally.chute>0)){drawBlastShadow(ally);soldier(ally.x,ally.y-blastLift(ally),ally.face,true,false,false,false,'',false,false);drawAllyStun(ally);}
  drawHound();
  for(const ab of airbombs){const mt=ab.maxT||.48,k=Math.max(0,Math.min(1,1-ab.t/mt));g.fillStyle=ab.fighter?'#252b31':'#171717';g.beginPath();g.ellipse(ab.x,ab.y,ab.fighter?7:5,ab.fighter?13:10,0,0,6.28);g.fill();g.strokeStyle=ab.fighter?'rgba(180,220,255,.65)':'rgba(255,190,80,.55)';g.beginPath();g.arc(ab.x,ab.y,(ab.fighter?20:14)*k,0,6.28);g.stroke();}
@@ -6869,6 +6909,7 @@ const SK_CARD_SUMMARY={
  dig:'地面に潜伏して敵の発見を避ける',
  decoy:'自分の身代わりを置き、敵の注意をそらす',
  buddy:'味方兵士を呼び、敵への攻撃を援護させる',
+ partner:'移動を真似して同行し、倒れたら接触で救助',
  drill:'ドリルで敵や遮蔽物を突き破る',
  build:'進行方向に防護壁を設置して身を守る',
  flame:'火炎を放射して敵や遮蔽物を燃やす',
@@ -6880,6 +6921,7 @@ const SK_CARD_CONTROLS={
  dig:'S：潜伏開始／解除',
  decoy:'S：偽装を設置',
  buddy:'S：仲間を呼ぶ',
+ partner:'出撃時から同行・触れて救助',
  drill:'S：突貫',
  build:'S：防護壁を設置',
  flame:'S：長押しで火炎放射',
