@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.12.210</title>
+<title>戦車ゲーム 2026.10.12.211</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -487,8 +487,8 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <li>疑惑中は約2秒間プレイヤーの方向へ接近した後、約2秒間周囲を確認します。巡回・発見時の銃表示と歩行アニメーションは青の通常兵と同じルールです。</li></ul>
 <h3>青兵指揮官：無線機とアンテナ</h3>
 <ul><li>通常の出撃では2体配置され、青の通常兵と同様に定期ルートを巡回します。背面の無線機と長いアンテナが目印です。</li>
-<li>プレイヤーを新たに発見すると笛を吹き、偽装スキルと同じ単色の赤い電波リングを半径300pxまで2回（各1.25秒）広げます。2回の電波が終わるまでその場で停止します。1秒後、1000px以内の活動可能な敵歩兵を発見モードへ移行させます。笛の再使用には8秒の間隔があります。</li>
-<li>武器は射程480pxのバズーカ。標的が120pxより遠く、射線が通ると、0.5秒間停止して構えた時点の方向へ発射します。発射まで標的の動きに追従して照準を変えることはありません。</li>
+<li>プレイヤーを新たに発見すると笛を吹き、偽装スキルと同じ単色の赤い電波リングを半径300pxまで2回（各1.25秒）広げます。2回の電波が終わるまで武器をしまってその場で停止します。1秒後、1000px以内の活動可能な敵歩兵を発見モードへ移行させます。笛の再使用には8秒の間隔があります。</li>
+<li>武器は射程480pxのバズーカ。標的が120pxより遠く、射線が通ると、0.5秒間停止して構えた時点の方向へ発射します。発射まで標的の動きに追従して照準を変えることはありません。発射準備は頭上の直線型チャージバーで表示します。</li>
 <li>被弾威力は戦車砲の約半分、爆破範囲は110px（設置爆弾は95px）。射撃後は約1.2秒、横方向へ移動し、次の射撃までの待ち時間は4秒です。</li></ul>
 <h3>白兵指揮官：ヘルメットの太い帯</h3>
 <ul><li>通常の出撃では2体配置され、ヘルメットの赤茶色の太い帯が目印です。マップ上部から左右端を大きく蛇行しながら南下し、顔を左右に振って索敵します。</li>
@@ -567,7 +567,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.12.210',FILE_CREATED_AT='2026/10/12 00:31',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.12.211',FILE_CREATED_AT='2026/10/12 00:38',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -3168,7 +3168,7 @@ function drawDecoySignalPulse(x,y,elapsed){
 function drawCommanderOverlay(h){
  if(!h.commander)return;
  if(h.commander==='blue'&&h.whistleT>0)drawDecoySignalPulse(h.x,h.y,2.5-h.whistleT);
- if(h.commanderCharge>0){const total=h.commander==='blue'?.5:.7;g.save();g.strokeStyle=h.commander==='blue'?'#ffb879':'#ffe3a0';g.lineWidth=2;g.beginPath();g.arc(h.x,h.y,20,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-h.commanderCharge/total));g.stroke();g.restore();}
+ if(h.commanderCharge>0){const total=h.commander==='blue'?.5:.7,progress=Math.max(0,Math.min(1,1-h.commanderCharge/total));g.save();g.fillStyle='rgba(0,0,0,.58)';g.fillRect(h.x-22,h.y-31,44,5);g.fillStyle=h.commander==='blue'?'#ffb879':'#ffe3a0';g.fillRect(h.x-22,h.y-31,44*progress,5);g.restore();}
 }
 
 function pauseAfterEnemyDetection(o){
@@ -6262,7 +6262,7 @@ function draw(near){
  for(const w of waves){const k=1-w.r/w.max;g.strokeStyle='rgba(255,170,60,'+k+')';g.lineWidth=6;g.beginPath();g.arc(w.x,w.y,w.r,0,6.28);g.stroke();g.fillStyle='rgba(255,200,100,'+.35*k+')';g.fill();}
  for(const c of cars){if(!drawPointInView(c.x,c.y,cx,cy,160))continue;const foregroundVehicle=c.kind==='truck'||(c.kind==='tank'&&inBush(c));if(!foregroundVehicle)drawVehicle(c,c.x,c.y,c.body??-1.57,c.body??-1.57);const iy=c.y-(c.kind==='fighter'?66:c.kind==='truck'?42:50);markVehicle(c.x,iy,c.f<=0?'fuel':'ride');if(near===c)lab(c.t.n,c.x,iy-24,c.kind==='tank'?'bold 17px system-ui':'bold 14px system-ui','#fff');}
  const enemyAlpha=digEnemyAlpha();if(enemyAlpha>.001)for(const e of etanks){if(!enemyInView(e,cx,cy,140))continue;g.save();g.globalAlpha*=enemyAlpha;if(e.alive){if(!e.st){g.fillStyle='rgba(255,80,80,.035)';g.beginPath();g.moveTo(e.x,e.y);g.arc(e.x,e.y,detectOuterRange('p'),e.ang-DETECT_OUTER_HALF,e.ang+DETECT_OUTER_HALF);g.closePath();g.fill();g.fillStyle='rgba(255,80,80,.055)';g.beginPath();g.moveTo(e.x,e.y);g.arc(e.x,e.y,detectRange('p'),e.ang-DETECT_CENTER_HALF,e.ang+DETECT_CENTER_HALF);g.closePath();g.fill();}if(!inBush(e))tankShape(e.x,e.y,e.body,e.ang,{id:'enemy',col:'#4b5f9e'},TANK_DRAW);}else if(!e.wreckSpawned){g.fillStyle='#1c1a18';g.beginPath();g.arc(e.x,e.y,14,0,6.28);g.fill();}g.restore();if(e.alive&&enemyAlpha>.18){if(e.st)lab('!',e.x,e.y-38,'bold 18px system-ui','#ff5a5a');else if(e.sus>0)lab('?',e.x,e.y-38,'bold 18px system-ui','#ffd27a');}}
- for(const h of humans){const sniperFalling=!h.alive&&h.sniperFallT>0;if((!h.alive&&!sniperFalling)||!enemyInView(h,cx,cy,100))continue;const lift=sniperFalling?0:blastLift(h);if(!sniperFalling)drawBlastShadow(h);g.save();g.translate(0,-lift);g.globalAlpha*=enemyAlpha;if(sniperFalling){const fk=Math.max(0,Math.min(1,1-h.sniperFallT/Math.max(.01,h.sniperFallMax||.72))),side=(h.sniperFallA&&Math.sin(h.sniperFallA)<0?-1:1);g.translate(h.x,h.y);g.rotate(side*fk*1.18);g.translate(-h.x,-h.y);g.globalAlpha*=Math.max(.35,1-fk*.38);}soldier(h.x,h.y,h.face,false,sniperFalling?false:h.st,!sniperFalling&&!!h.walking,!!h.elite,h.commander||'',!sniperFalling&&(h.commander==='white'?h.commanderCharge>0||h.commanderShotT>0:!!h.st));drawCommanderOverlay(h);
+ for(const h of humans){const sniperFalling=!h.alive&&h.sniperFallT>0;if((!h.alive&&!sniperFalling)||!enemyInView(h,cx,cy,100))continue;const lift=sniperFalling?0:blastLift(h);if(!sniperFalling)drawBlastShadow(h);g.save();g.translate(0,-lift);g.globalAlpha*=enemyAlpha;if(sniperFalling){const fk=Math.max(0,Math.min(1,1-h.sniperFallT/Math.max(.01,h.sniperFallMax||.72))),side=(h.sniperFallA&&Math.sin(h.sniperFallA)<0?-1:1);g.translate(h.x,h.y);g.rotate(side*fk*1.18);g.translate(-h.x,-h.y);g.globalAlpha*=Math.max(.35,1-fk*.38);}soldier(h.x,h.y,h.face,false,sniperFalling?false:h.st,!sniperFalling&&!!h.walking,!!h.elite,h.commander||'',!sniperFalling&&!(h.commander==='blue'&&h.whistleT>0)&&(h.commander==='white'?h.commanderCharge>0||h.commanderShotT>0:!!h.st));drawCommanderOverlay(h);
  if(!sniperFalling&&h.humanBurnT>0){const tt=performance.now()*.018;g.save();g.globalCompositeOperation='lighter';flameBlob(h.x-4+Math.sin(tt)*2,h.y+2,7+Math.sin(tt*1.3)*1.5,tt,.42);flameBlob(h.x+4+Math.cos(tt*.8)*2,h.y-5,9+Math.sin(tt*.9+1)*2,tt+1.7,.7);flameBlob(h.x+Math.sin(tt*.65)*3,h.y-12,6+Math.sin(tt*1.6+2)*1.5,tt+3.1,.9);g.restore();}
  if(!sniperFalling&&h.stun>0){const tt=performance.now()*.006;g.fillStyle='#ffd85a';for(let q=0;q<3;q++){const a=tt+q*2.094,x=h.x+Math.cos(a)*13,y=h.y-18+Math.sin(a)*5;g.save();g.translate(x,y);g.rotate(a);g.beginPath();g.moveTo(0,-4);g.lineTo(2,-1);g.lineTo(5,0);g.lineTo(2,1);g.lineTo(0,4);g.lineTo(-2,1);g.lineTo(-5,0);g.lineTo(-2,-1);g.closePath();g.fill();g.restore();}if(h.grapple>0){g.strokeStyle='rgba(230,233,216,.85)';g.lineWidth=2;g.beginPath();g.arc(h.x,h.y,13,-2.5,.7);g.stroke();}}g.restore();if(!sniperFalling&&enemyAlpha>.18){if(h.st)lab('!',h.x,h.y-lift-18,'bold 16px system-ui','#ff5a5a');else if(h.sus>0)lab('?',h.x,h.y-lift-18,'bold 16px system-ui','#ffd27a');}}
  for(const b of bullets){g.save();g.translate(b.x,b.y);g.rotate(Math.atan2(b.vy,b.vx));g.globalCompositeOperation='lighter';
