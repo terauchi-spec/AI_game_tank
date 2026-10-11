@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.11.180</title>
+<title>戦車ゲーム 2026.10.11.181</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -461,7 +461,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-enemies"><h2>5. 敵兵と敵戦車のAI</h2>
 <h3>敵歩兵</h3><p>巡回・疑惑・発見の状態を持ちます。通常の巡回に加え、建物の周囲を回る巡回ルートもあります。音や爆発を警戒し、プレイヤーを発見すると短い反応時間を挟んで追跡・射撃します。状態の切り替えには0.5〜1秒の静止時間を挟みます。巡回中は前面の銃を隠し、発見中に銃を構えると腕を振らずに移動します。エリート兵は通常兵と性能・挙動が異なります。</p>
-<h3>指揮官（各2体）</h3><p>敵歩兵は青の通常兵・青の指揮官・白の通常エリート・白の指揮官の4種類です。指揮官はヘルメット横の黄色い丸で識別できます。青兵指揮官は発見時に笛を吹き、1秒後に1000px以内の兵士へ発見を伝達。0.5秒間停止して構えた時点の方向へバズーカを撃ちます。射撃後は約1.2秒移動します。戦車砲の半分の被弾威力で、爆破範囲は110pxです（設置爆弾は95px）。白兵指揮官は上部からマップの左右端を大きく蛇行しながら南下し、左右を見て索敵。発見後は距離を保ち、7秒ごとに先回りと尾行を切り替えます。移動速度は通常青兵の1.5倍（巡回45px/秒・交戦142.5px/秒）。移動中は武器を隠し、射撃時のみ武器を表示します。0.3秒停止して予測照準し、射程480pxの単発ライフルで攻撃します。司令本部の増援は巡回モードで出現し、10%の確率で青兵指揮官になります。通常兵と通常エリートの基本行動は従来どおりです。</p><h3>敵戦車</h3><p>巡回・疑惑・発見の状態を持ちます。爆発音や狙撃音などを察知すると、車体を止めて音の方向へ砲塔を旋回させる疑惑モードに入ります。実際に標的を見つけた場合は、反応時間を挟んで主砲やMGで攻撃します。</p>
+<h3>指揮官（各2体）</h3><p>敵歩兵は青の通常兵・青の指揮官・白の通常エリート・白の指揮官の4種類です。指揮官はヘルメット横の黄色い丸で識別できます。青兵指揮官は発見時に笛を吹き、偽装と同じ電波リングを表示。1秒後に1000px以内の兵士へ発見を伝達。0.5秒間停止して構えた時点の方向へバズーカを撃ちます。射撃後は約1.2秒移動します。戦車砲の半分の被弾威力で、爆破範囲は110pxです（設置爆弾は95px）。白兵指揮官は上部からマップの左右端を大きく蛇行しながら南下し、左右を見て索敵。発見後は距離を保ち、7秒ごとに先回りと尾行を切り替えます。移動速度は通常青兵の1.5倍（巡回45px/秒・交戦142.5px/秒）。移動中は武器を隠し、射撃時のみ武器を表示します。0.7秒停止して予測照準し、射程480pxの単発ライフルで攻撃します。司令本部の増援は巡回モードで出現し、10%の確率で青兵指揮官になります。通常兵と通常エリートの基本行動は従来どおりです。</p><h3>敵戦車</h3><p>巡回・疑惑・発見の状態を持ちます。爆発音や狙撃音などを察知すると、車体を止めて音の方向へ砲塔を旋回させる疑惑モードに入ります。実際に標的を見つけた場合は、反応時間を挟んで主砲やMGで攻撃します。</p>
 <p>敵は障害物や視線の遮り、草むら、周囲から伝わる警戒情報などの影響を受けます。</p>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-vehicles"><h2>6. 乗り物</h2>
@@ -520,7 +520,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.11.180',FILE_CREATED_AT='2026/10/11 17:38',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.11.181',FILE_CREATED_AT='2026/10/11 17:55',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -2986,8 +2986,8 @@ function updateCommanderAI(h,dt){
   destination.x=Math.max(30,Math.min(WW-30,destination.x));destination.y=Math.max(30,Math.min(WH-30,destination.y));
   if(D(h,destination)>35)commanderMove(h,destination,dt,142.5);
   if(distance>=170&&distance<=COMMANDER_WHITE_RANGE&&visible&&h.commanderCooldown<=0){
-   const lead=distance/520+.3,v=h.target==='p'?commanderVelocity:{x:0,y:0};
-   h.commanderAim=Math.atan2(target.y+v.y*lead-h.y,target.x+v.x*lead-h.x);h.commanderCharge=.3;h.modeFrozen=true;
+   const lead=distance/520+.7,v=h.target==='p'?commanderVelocity:{x:0,y:0};
+   h.commanderAim=Math.atan2(target.y+v.y*lead-h.y,target.x+v.x*lead-h.x);h.commanderCharge=.7;h.modeFrozen=true;
   }
  }
  return true;
@@ -3018,11 +3018,16 @@ function updateCommanderRocket(b,ox,oy,expired){
  if(expired){commanderRocketBlast(b.x,b.y);return true;}
  return false;
 }
+// 偽装と指揮官の笛で共通の電波リングを描く（半径・色・速度を統一）。
+function drawSignalPulse(x,y,pulse){
+ g.save();g.strokeStyle='rgba(255,230,120,.8)';g.lineWidth=2;g.globalAlpha*=1-pulse;
+ g.beginPath();g.arc(x,y,18+pulse*34,0,6.28);g.stroke();g.restore();
+}
 function drawCommanderOverlay(h){
  if(!h.commander)return;
  g.save();g.translate(h.x,h.y);g.rotate(h.face);g.fillStyle='#ffd56a';g.strokeStyle='#3a2a10';g.lineWidth=1;g.beginPath();g.arc(-1,-10,3.5,0,Math.PI*2);g.fill();g.stroke();g.restore();
- if(h.whistleT>0){g.save();g.strokeStyle='rgba(255,219,95,'+Math.min(1,h.whistleT)+')';g.lineWidth=2;g.beginPath();g.arc(h.x,h.y,20+(1.2-h.whistleT)*65,0,Math.PI*2);g.stroke();g.font='bold 18px system-ui';g.textAlign='center';g.fillStyle='#ffe17a';g.fillText('♪',h.x,h.y-28);g.restore();}
- if(h.commanderCharge>0){const total=h.commander==='blue'?.5:.3;g.save();g.strokeStyle=h.commander==='blue'?'#ffb879':'#ffe3a0';g.lineWidth=2;g.beginPath();g.arc(h.x,h.y,20,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-h.commanderCharge/total));g.stroke();g.restore();}
+ if(h.whistleT>0)drawSignalPulse(h.x,h.y,((1.2-h.whistleT)/.75)%1);
+ if(h.commanderCharge>0){const total=h.commander==='blue'?.5:.7;g.save();g.strokeStyle=h.commander==='blue'?'#ffb879':'#ffe3a0';g.lineWidth=2;g.beginPath();g.arc(h.x,h.y,20,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-h.commanderCharge/total));g.stroke();g.restore();}
 }
 
 function pauseAfterEnemyDetection(o){
@@ -6043,7 +6048,7 @@ function draw(near){
   else if(b.k==='s'){g.fillStyle='#fff4c8';g.fillRect(-15,-1,19,2);g.fillStyle='rgba(255,255,255,.65)';g.fillRect(-23,-.5,10,1);}
   else{g.fillStyle=b.from==='p'?'#ffd84a':b.from==='ally'?'#8fd7ff':'#ff8a5a';g.fillRect(-10,-1.5,13,3);g.fillStyle='#fff';g.fillRect(-2,-1,5,2);}
   g.restore();}
- if(decoy){g.globalAlpha=.7;soldier(decoy.x,decoy.y,decoy.face,true,false,false);g.globalAlpha=1;g.strokeStyle='rgba(255,230,120,.8)';g.lineWidth=2;g.beginPath();g.arc(decoy.x,decoy.y,16,0,6.28*decoy.t/5);g.stroke();const pulse=(performance.now()/750)%1;g.globalAlpha=1-pulse;g.beginPath();g.arc(decoy.x,decoy.y,18+pulse*34,0,6.28);g.stroke();g.globalAlpha=1;}
+ if(decoy){g.globalAlpha=.7;soldier(decoy.x,decoy.y,decoy.face,true,false,false);g.globalAlpha=1;g.strokeStyle='rgba(255,230,120,.8)';g.lineWidth=2;g.beginPath();g.arc(decoy.x,decoy.y,16,0,6.28*decoy.t/5);g.stroke();drawSignalPulse(decoy.x,decoy.y,(performance.now()/750)%1);}
  for(const ally of (allies||[]))if(ally.alive&&!(ally.chute>0)){drawBlastShadow(ally);soldier(ally.x,ally.y-blastLift(ally),ally.face,true,false,false,false,'',false,false);drawAllyStun(ally);}
  drawHound();
  for(const ab of airbombs){const mt=ab.maxT||.48,k=Math.max(0,Math.min(1,1-ab.t/mt));g.fillStyle=ab.fighter?'#252b31':'#171717';g.beginPath();g.ellipse(ab.x,ab.y,ab.fighter?7:5,ab.fighter?13:10,0,0,6.28);g.fill();g.strokeStyle=ab.fighter?'rgba(180,220,255,.65)':'rgba(255,190,80,.55)';g.beginPath();g.arc(ab.x,ab.y,(ab.fighter?20:14)*k,0,6.28);g.stroke();}
@@ -6800,11 +6805,11 @@ function loop(n){
 }
 let gameErrorCount=0;
 function reportGameError(error){
- gameErrorCount++;console.error('Tank game v180',error);
+ gameErrorCount++;console.error('Tank game v181',error);
  let panel=document.getElementById('runtimeError');
  if(!panel){panel=document.createElement('div');panel.id='runtimeError';panel.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;background:#422018;color:#fff2dc;padding:12px;border:1px solid #f7b083;border-radius:8px;font:12px system-ui;white-space:pre-wrap;max-height:35vh;overflow:auto';document.body.appendChild(panel);}
  const stack=String(error&&error.stack||error).split('\n').slice(0,4).join('\n');
- panel.textContent='v180 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
+ panel.textContent='v181 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 requestAnimationFrame(loop);
 </script>
