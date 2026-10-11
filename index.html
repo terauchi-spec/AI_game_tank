@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.12.218</title>
+<title>戦車ゲーム 2026.10.12.219</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -516,7 +516,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <li><strong>投擲：</strong>進行方向へ最大11mの距離で爆弾を投げます。5秒で再使用可能。</li>
 <li><strong>潜伏：</strong>0.5秒静止して潜伏準備後、最大5秒間潜伏。解除後は5秒チャージ。水中は移動速度60%、泥では潜伏を解除します。潜伏開始1秒後に敵表示が隠れます。</li>
 <li><strong>偽装：</strong>5秒間残る身代わりを設置して敵の注意をそらします。赤い電波が約1.25秒間隔で半径300pxまで滑らかに広がります。見やすいように少し濃い単色の赤いリングで描いています。身代わり周囲の残り時間の円形ゲージは表示せず、終了時は赤い粒が短く散って消えます。電波の表示範囲と敵を誘導する範囲は別です。チャージ8秒。</li>
-<li><strong>相棒：</strong>青いヘルメットラインの味方が敵司令本部を目指しつつプレイヤーの歩調を模倣します。プレイヤーの行動から潜入・慎重移動・通常前進・突破・戦闘・退避を判断し、約0.35秒ごとに移動先を選びます。草むらや遮蔽物を活用し、速度と距離を調整しながら同行します。交戦時は敵に援護射撃します。画面内にとどまり、敵の攻撃対象にもなります。HP3で、倒れると赤十字の救急箱アイコンが表示され、徒歩で触れると回復します。画面外10秒で画面下から復帰します。</li>
+<li><strong>相棒：</strong>青いヘルメットラインの味方が敵司令本部を目指しつつプレイヤーの歩調を模倣します。プレイヤーの行動から潜入・慎重移動・通常前進・突破・戦闘・退避を判断し、約0.35秒ごとに移動先を選びます。草むらや遮蔽物を活用し、速度と距離を調整しながら同行します。交戦時は敵に援護射撃します。画面内にとどまり、敵の攻撃対象にもなります。HP3で、倒れると赤十字の救急箱アイコンが表示され、徒歩で触れると回復します。プレイヤーの設置爆弾の爆風で5秒間気絶し、接触すると早期復帰します。巡回モードの敵兵に接触すると気絶させます。S短押しでプレイヤーへ戻るバックアップモード、長押しで両者の無線アイコンを表示して移動キーでルートを描き、離して1秒後にルート移動を始めます。ルート入力中はプレイヤーが移動できません。画面外10秒で画面下から復帰します。</li>
 <li><strong>増援：</strong>味方兵士がパラシュート降下して戦闘を援護。同時に最大5人。チャージ6秒。着地後、オブジェクトの爆発や敵戦車の砲撃爆風を受けると吹き飛ばされ、5秒間気絶します。気絶中は移動と射撃を停止し、頭上の星が目印になります。</li>
 <li><strong>突貫：</strong>正面にドリルを展開。持続5秒、終了後は6秒チャージ。遮蔽物の破壊に利用できます。</li>
 <li><strong>建築：</strong>前方にコンクリート防護壁を設置。最大5枚、チャージ1.5秒。</li>
@@ -568,7 +568,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.12.218',FILE_CREATED_AT='2026/10/12 01:22',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.12.219',FILE_CREATED_AT='2026/10/12 01:35',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -602,7 +602,7 @@ addEventListener('keydown',e=>{
  if(first&&state==='play'&&(code==='ArrowUp'||code==='ArrowDown'))shiftSniperLens(code==='ArrowUp'?1:-1);
  if(code==='KeyD'&&!e.repeat)queueDAction();
  if(code==='KeyA'&&first&&!e.repeat)interact=true;
- if(code==='KeyS'&&!(p&&p.tank)&&first&&!e.repeat)skillReq=true;
+ if(code==='KeyS'&&!(p&&p.tank)&&first&&!e.repeat){if(skill==='partner'&&state==='play')startPartnerOrder();else skillReq=true;}
  if(code==='KeyP'&&state==='play'&&first&&!e.repeat)toggleDebugInvincible();
  if(code==='KeyO'&&state==='play'&&first&&!e.repeat)spawnAreaDebugTankAhead();
  if(code==='KeyL'&&state==='play'&&first&&!e.repeat){patrolRoutesVisible=!patrolRoutesVisible;if(patrolRoutesVisible&&scoreStats)scoreStats.debugUsed=true;say('巡回ルート表示：'+(patrolRoutesVisible?'ON（青＝建物周回）':'OFF'));}
@@ -631,6 +631,7 @@ addEventListener('keyup',e=>{
   if(!dPressHandled)queueDAction();
   dPressHandled=false;
  }
+ if(code==='KeyS'&&skill==='partner')finishPartnerOrder(true);
  keys[code]=false;
 },true);
 cv.addEventListener('mousemove',e=>{lastMouse=performance.now();const r=cv.getBoundingClientRect();mx=(e.clientX-r.left)*W/r.width;my=(e.clientY-r.top)*H/r.height;});
@@ -2426,6 +2427,7 @@ function distributeFlankPatrols(){
 function reset(rerollSkills=true){
  clearStaticRasterCache();clearFragmentRenderCache();
  radioStrikeKillContext=0;burningNatureSet.clear();lastEnemySeparationAt=-1e9;patrolChatScanT=0;allyTargetRefreshAt=0;
+ partnerOrder.pressed=false;partnerOrder.drawing=false;partnerOrder.path=[];partnerOrder.cursor=null;
  state='play';shake=0;flash=0;msg='';msgT=0;chainToastT=0;oneShotToastT=0;chainToast='';oneShotToast='';interact=false;bombReq=false;skillReq=false;decoy=null;allies=[];partner=null;hound=null;houndTrail=[];allySeq=0;builtWalls=[];tankWrecks=[];radio=null;airstrike=null;airbombs=[];weather='clear';weatherT=0;rainIntensity=0;weatherNext=15+R()*35;baseSpawnT=5;deathT=0;cam=0;camX=0;scoreStats=newScoreStats();
  setupZones();if(rerollSkills)rollSkillChoices();
  waterRipples=[];
@@ -3427,7 +3429,7 @@ function damageBridgeByBomb(x,y,r=42){
  if(damaged){bridges=next;shake=Math.max(shake,10);}
  return damaged;
 }
-function bombBlast(x,y,actionId=0,selfHit=false){if(scoreStats&&!scoreStats.finalized)scoreStats.bombBlasts++;if(!actionId)actionId=newCombatAction('bomb');sfx('explosion');stunHoundAtBlast(x,y,95);suspectHumansNear(x,y,500);/* 自分の設置爆弾は、歩兵プレイヤーと相棒を短時間だけ押し流す。相棒にはダメージを与えない。 */if(p&&!p.tank&&!(p.dig>0))beginBlastFlight(p,x,y,95,58,8,0);for(const a of (allies||[]))if(a.alive&&!(a.chute>0))beginBlastFlight(a,x,y,95,42,8,0);damageBridgeByBomb(x,y,42);/* 外側の爆風は炎上、近距離の爆芯は即爆発。 */damageObjectsInRadius(x,y,95,'bombBlast');damageObjectsInRadius(x,y,28,'bombDirect');carve(x,y,28,true,null);fb(x,y,52);burst(x,y,70,'#ff8a3a',420);burst(x,y,25,'#fff3b0',520);shake=18;flash=.7;waves.push({x,y,r:0,max:95,hit:!!selfHit,actionId});return actionId;}
+function bombBlast(x,y,actionId=0,selfHit=false){if(scoreStats&&!scoreStats.finalized)scoreStats.bombBlasts++;if(!actionId)actionId=newCombatAction('bomb');sfx('explosion');stunHoundAtBlast(x,y,95);stunPartnerByOwnBlast(x,y);suspectHumansNear(x,y,500);/* 設置爆弾の爆風で相棒は気絶（HPは減らない）。 */if(p&&!p.tank&&!(p.dig>0))beginBlastFlight(p,x,y,95,58,8,0);for(const a of (allies||[]))if(a.alive&&!(a.chute>0))beginBlastFlight(a,x,y,95,42,8,0);damageBridgeByBomb(x,y,42);/* 外側の爆風は炎上、近距離の爆芯は即爆発。 */damageObjectsInRadius(x,y,95,'bombBlast');damageObjectsInRadius(x,y,28,'bombDirect');carve(x,y,28,true,null);fb(x,y,52);burst(x,y,70,'#ff8a3a',420);burst(x,y,25,'#fff3b0',520);shake=18;flash=.7;waves.push({x,y,r:0,max:95,hit:!!selfHit,actionId});return actionId;}
 function tankWreckId(t){return (t&&t.id)||'enemy';}
 function spawnTankWreck(x,y,body,ang,tank,impactX=null,impactY=null){
  if(!tankWrecks)tankWrecks=[];
@@ -3606,6 +3608,53 @@ function summonAlly(){
  const startY=Math.max(45,landY-320);allies.push({id:++allySeq,x:ax,y:startY,startY,landY,alive:true,chute:3,chuteTotal:3,shotCd:.2,burstLeft:3,face:p.body,slot});setSkillCooldown(6);sfx('ally');say('増援を要請! '+(active+1)+'/5');
 }
 let partner=null;
+// S short press: call the partner back. Long press: freeze player and draw a route using movement keys.
+const partnerOrder={pressed:false,held:0,drawing:false,cursor:null,path:[]};
+function startPartnerOrder(){
+ if(skill!=='partner'||state!=='play'||!p||p.tank)return;
+ partnerOrder.pressed=true;partnerOrder.held=0;partnerOrder.drawing=false;partnerOrder.cursor=null;partnerOrder.path=[];
+}
+function finishPartnerOrder(confirm=true){
+ if(!partnerOrder.pressed)return;
+ if(confirm&&partner&&!partner.down&&!(partner.stunT>0)){
+  if(partnerOrder.drawing){
+   if(partnerOrder.path.length>1){
+    partner.route=partnerOrder.path.slice(1).map(v=>({x:v.x,y:v.y}));
+    partner.routeIndex=0;partner.routeWait=1;partner.routePointT=0;partner.backup=false;
+    partner.wallFollow=null;partner.sideStep=null;say('相棒にルートを送信！1秒後に出発');
+   }else say('方向キーでルートを描いてください');
+  }else{
+   partner.backup=true;partner.route=null;partner.routeWait=0;partner.planT=0;
+   partner.wallFollow=null;partner.sideStep=null;say('相棒：バックアップ！');
+  }
+ }
+ partnerOrder.pressed=false;partnerOrder.held=0;partnerOrder.drawing=false;partnerOrder.cursor=null;partnerOrder.path=[];
+}
+function updatePartnerOrder(dt){
+ if(!partnerOrder.pressed||skill!=='partner'||state!=='play'||!p||p.tank)return;
+ partnerOrder.held+=dt;
+ if(partnerOrder.held>=.45&&!partnerOrder.drawing&&partner&&!partner.down&&!(partner.stunT>0)){
+  partnerOrder.drawing=true;partnerOrder.cursor={x:partner.x,y:partner.y};
+  partnerOrder.path=[{x:partner.x,y:partner.y}];say('無線指示中：方向キーでルートを描く');
+ }
+ if(!partnerOrder.drawing)return;
+ let dx=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0),dy=(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0);
+ const d=Math.hypot(dx,dy);if(!d)return;dx/=d;dy/=d;
+ const c=partnerOrder.cursor,step=170*dt;
+ const cx=Math.max(0,Math.min(WW-W,p.x-W/2)),cy=Math.max(0,Math.min(WH-H,p.y-H*.6));
+ const nx=Math.max(15,Math.min(WW-15,Math.max(cx+15,Math.min(cx+W-15,c.x+dx*step))));
+ const ny=Math.max(15,Math.min(WH-15,Math.max(cy+15,Math.min(cy+H-15,c.y+dy*step))));
+ if(hitsC(nx,ny,7))return;
+ c.x=nx;c.y=ny;
+ const prev=partnerOrder.path[partnerOrder.path.length-1];
+ if(Math.hypot(c.x-prev.x,c.y-prev.y)>11&&partnerOrder.path.length<145)partnerOrder.path.push({x:c.x,y:c.y});
+}
+function stunPartnerByOwnBlast(x,y){
+ if(!partner||partner.down||Math.hypot(partner.x-x,partner.y-y)>95)return;
+ partner.stunT=5;partner.backup=false;partner.route=null;partner.routeWait=0;
+ partner.wallFollow=null;partner.sideStep=null;partner.moving=false;
+ say('相棒が爆風で気絶！触れるか5秒で復帰');
+}
 // Utility-style companion AI. Decision making is throttled; movement remains frame-based.
 function partnerDangerAt(x,y){
  let risk=0,point={x,y};
@@ -3615,12 +3664,13 @@ function partnerDangerAt(x,y){
 }
 function updatePartner(dt){
  if(skill!=='partner'||!p)return;
- if(!partner)partner={x:p.x+24,y:p.y+32,face:p.body,hp:3,down:false,off:0,moving:false,mode:'advance',modeT:0,planT:0,shotCd:0};
+ if(!partner)partner={x:p.x+24,y:p.y+32,face:p.body,hp:3,down:false,off:0,moving:false,mode:'advance',modeT:0,planT:0,shotCd:0,stunT:0,backup:false,route:null};
  const q=partner;
  if(q.down){
   if(!p.tank&&Math.hypot(p.x-q.x,p.y-q.y)<22){q.down=false;q.hp=3;q.modeT=0;q.planT=0;burst(q.x,q.y,10,'#8ad9ff',75);say('相棒を救助！');}
   return;
  }
+ if(q.stunT>0){q.stunT=Math.max(0,q.stunT-dt);q.moving=false;if(!p.tank&&D(q,p)<22)q.stunT=0;if(q.stunT<=0){q.planT=0;burst(q.x,q.y,8,'#8ad9ff',70);say('相棒が気絶から復帰！');}return;}
  const cx=Math.max(0,Math.min(WW-W,p.x-W/2)),cy=Math.max(0,Math.min(WH-H,p.y-H*.6));
  const outside=q.x<cx||q.x>cx+W||q.y<cy||q.y>cy+H;
  q.off=outside?q.off+dt:0;
@@ -3629,7 +3679,28 @@ function updatePartner(dt){
   for(let i=0;i<16;i++){const x=Math.max(20,Math.min(WW-20,rx+(i%4-1.5)*25)),y=Math.max(20,Math.min(WH-20,ry-Math.floor(i/4)*25));if(!hitsC(x,y,9)){q.x=x;q.y=y;break;}}
   q.off=0;q.planT=0;q.wallFollow=null;q.sideStep=null;say('相棒が復帰！');
  }
- const vx=(p.x-(q.prevPX??p.x))/Math.max(dt,.001),vy=(p.y-(q.prevPY??p.y))/Math.max(dt,.001);
+ // 命令は通常の自律判断より優先。ただしルート入力中はその場で待機する。
+ if(partnerOrder.drawing){q.moving=false;return;}
+ if(q.routeWait>0){q.routeWait=Math.max(0,q.routeWait-dt);q.moving=false;return;}
+ if(q.route&&q.routeIndex<q.route.length){
+  const destination=q.route[q.routeIndex],oldX=q.x,oldY=q.y;
+  q.routePointT=(q.routePointT||0)+dt;
+  if(D(q,destination)<16||q.routePointT>4){q.routeIndex++;q.routePointT=0;q.wallFollow=null;}
+  else moveAllySmart(q,destination,155,dt);
+  q.moving=Math.hypot(q.x-oldX,q.y-oldY)>.1;
+  if(q.moving)q.face=Math.atan2(q.y-oldY,q.x-oldX);
+  if(q.routeIndex>=q.route.length){q.route=null;q.planT=0;say('相棒が指定ルートを完了！');}
+  return;
+ }
+ if(q.backup){
+  const oldX=q.x,oldY=q.y,d=D(q,p);
+  if(d<49){q.backup=false;q.planT=0;q.moving=false;}
+  else moveAllySmart(q,{x:p.x+Math.cos(p.body+Math.PI)*23,y:p.y+Math.sin(p.body+Math.PI)*23},195,dt);
+  q.moving=Math.hypot(q.x-oldX,q.y-oldY)>.1;
+  if(q.moving)q.face=Math.atan2(q.y-oldY,q.x-oldX);
+  return;
+ }
+  const vx=(p.x-(q.prevPX??p.x))/Math.max(dt,.001),vy=(p.y-(q.prevPY??p.y))/Math.max(dt,.001);
  q.prevPX=p.x;q.prevPY=p.y;
  // Low-pass speed, to avoid mode switching on every frame.
  q.playerSpeed=(q.playerSpeed||0)*.86+Math.hypot(vx,vy)*.14;
@@ -3686,6 +3757,11 @@ function updatePartner(dt){
  if(oldX>=left&&oldX<=right&&oldY>=top&&oldY<=bottom){q.x=clamp(q.x,left,right);q.y=clamp(q.y,top,bottom);}
  q.moving=Math.hypot(q.x-oldX,q.y-oldY)>.12;
  if(q.moving)q.face=Math.atan2(q.y-oldY,q.x-oldX);
+ // 巡回状態で接触した敵歩兵は相棒が制圧する。発見・気絶中の敵は対象外。
+ q.touchCd=Math.max(0,(q.touchCd||0)-dt);
+ if(q.touchCd<=0)for(const h of humans)if(h.alive&&!h.st&&!(h.stun>0)&&D(q,h)<18){
+  if(stunHuman(h)){q.touchCd=.65;break;}
+ }
  // Only engage after the team is in combat; don't break stealth with an unsolicited shot.
  if(q.mode==='combat'&&!partnerHidden&&q.shotCd<=0){
   let enemy=null,best=225;
@@ -3699,6 +3775,13 @@ function updatePartner(dt){
 }
 function drawPartner(){
  if(!partner||skill!=='partner')return;const q=partner;
+ if(partnerOrder.drawing){
+  g.save();g.strokeStyle='#76d5ff';g.lineWidth=3;g.setLineDash([8,5]);g.beginPath();
+  partnerOrder.path.forEach((pt,i)=>{if(!i)g.moveTo(pt.x,pt.y);else g.lineTo(pt.x,pt.y);});
+  if(partnerOrder.cursor)g.lineTo(partnerOrder.cursor.x,partnerOrder.cursor.y);
+  g.stroke();g.setLineDash([]);g.font='20px system-ui';g.textAlign='center';g.fillText('📻',p.x,p.y-31);g.fillText('📻',q.x,q.y-34);g.restore();
+ }
+ if(q.route&&q.routeIndex<q.route.length){g.save();g.strokeStyle='rgba(118,213,255,.6)';g.lineWidth=2;g.setLineDash([5,7]);g.beginPath();g.moveTo(q.x,q.y);for(let i=q.routeIndex;i<q.route.length;i++)g.lineTo(q.route[i].x,q.route[i].y);g.stroke();g.restore();}
  if(q.down){
   g.save();g.translate(q.x,q.y);g.rotate(q.face+.8);
   g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.ellipse(0,0,15,11,0,0,6.28);g.fill();
@@ -3706,7 +3789,7 @@ function drawPartner(){
   g.save();g.translate(q.x,q.y-26);g.fillStyle='#f3f3f3';g.strokeStyle='#a83232';g.lineWidth=1.5;g.beginPath();g.roundRect(-11,-8,22,17,3);g.fill();g.stroke();g.fillStyle='#d52b31';g.fillRect(-2,-6,4,13);g.fillRect(-7,-1,14,4);g.strokeStyle='#a83232';g.beginPath();g.moveTo(-4,-8);g.lineTo(-4,-11);g.lineTo(4,-11);g.lineTo(4,-8);g.stroke();g.restore();return;
  }
  soldier(q.x,q.y,q.face,true,false,q.moving,false,'',true,'blue');
-
+ if(q.stunT>0){const t=performance.now()*.006;for(let i=0;i<3;i++){const a=t+i*2.094;lab('★',q.x+Math.cos(a)*12,q.y-20+Math.sin(a)*5,'bold 13px system-ui','#ffd85a');}}
 }
 let allyTargetRefreshAt=0;
 function drawAllyStun(ally){
@@ -4744,14 +4827,14 @@ function update(dt){
  patrolSearchBudgetMs=2;
  for(const o of [...humans,...etanks]){o.modeStartX=o.x;o.modeStartY=o.y;o.modeFrozen=false;}
  for(const h of humans){h.walkStartX=h.x;h.walkStartY=h.y;}
- updateWeather(dt);updateHQSpawn(dt);updateDrill(dt);
+ updateWeather(dt);updateHQSpawn(dt);updateDrill(dt);updatePartnerOrder(dt);
  const sniperLocked=updateSniperState(dt);
  const playerAir=updateBlastFlight(p,dt);
  if(interact&&p.sniperMode){interact=false;beginSniperExit();}else if(interact&&(p.sniperEnterT>0||p.sniperReadyT>0)){interact=false;}
  if(sniperLocked){bombReq=false;cannonReq=false;}
  const cy=Math.max(0,Math.min(WH-H,p.y-H*.6)),cx=Math.max(0,Math.min(WW-W,p.x-W/2)),wx=mx+cx,wy=my+cy;
  const autoFlight=debugMode===4;
- const ix=autoFlight?0:(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0),iy=autoFlight?-1:(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0),il=Math.hypot(ix,iy)||1,V=p.tank,T=V&&V.t,isTruck=!!(V&&V.kind==='truck'),isWheeled=truckLikeVehicle(V),isFighter=!!(V&&V.kind==='fighter');
+ const ix=partnerOrder.drawing?0:autoFlight?0:(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0),iy=partnerOrder.drawing?0:autoFlight?-1:(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0),il=Math.hypot(ix,iy)||1,V=p.tank,T=V&&V.t,isTruck=!!(V&&V.kind==='truck'),isWheeled=truckLikeVehicle(V),isFighter=!!(V&&V.kind==='fighter');
  const prepDig=p.digPrep>0,sp=T?(debugMode>=3&&isFighter?T.sp*2:T.sp):150,r=T?(isFighter?24:isTruck?20:TANK_HIT):8;let frameMove=0;
  const areaDebugInfiniteFuel=!!(p.tank&&(p.tank.kind==='tank'||p.tank.kind==='truck')&&(areaDebugEnabled||p.tank.debugInfinite));
  const areaDebugInfiniteAmmo=!!(p.tank&&p.tank.kind==='tank'&&(areaDebugEnabled||p.tank.debugInfinite));
@@ -6993,7 +7076,7 @@ const SK_CARD_CONTROLS={
  dig:'S：潜伏開始／解除',
  decoy:'S：偽装を設置',
  buddy:'S：仲間を呼ぶ',
- partner:'出撃時から同行・触れて救助',
+ partner:'S短押し：バックアップ／長押し＋方向キー：ルートを描き、離すと1秒後に移動',
  drill:'S：突貫',
  build:'S：防護壁を設置',
  flame:'S：長押しで火炎放射',
@@ -7240,9 +7323,9 @@ const press=(c)=>{
  if(c==='ArrowUp'||c==='ArrowDown')shiftSniperLens(c==='ArrowUp'?1:-1);
  if(c==='KeyD'){if(p&&p.tank)cannonReq=true;else bombReq=true;}
  if(c==='KeyA')interact=true;
- if(c==='KeyS'&&!(p&&p.tank))skillReq=true;
+ if(c==='KeyS'&&!(p&&p.tank)){if(skill==='partner'&&state==='play')startPartnerOrder();else skillReq=true;}
 };
-const release=(c)=>{keys[c]=false;};
+const release=(c)=>{if(c==='KeyS'&&skill==='partner')finishPartnerOrder(true);keys[c]=false;};
 const cap=(el,e)=>{try{el.setPointerCapture(e.pointerId);}catch(_){}};
 const debugToggleBtn=document.getElementById('debugToggleBtn');
 const debugModeLabel=()=>debugMode===1?'無敵モード':debugMode===2?'無敵＋索敵解除':debugMode===3?'無敵＋戦闘機∞燃料':debugMode===4?'描画診断（30秒）':'無敵モード OFF';
