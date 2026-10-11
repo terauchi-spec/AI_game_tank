@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.12.230</title>
+<title>戦車ゲーム 2026.10.12.231</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -568,7 +568,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.12.230',FILE_CREATED_AT='2026/10/12 08:29',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.12.231',FILE_CREATED_AT='2026/10/12 08:40',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -3642,6 +3642,23 @@ function partnerBoardVehicle(q,car){
  q.wallFollow=null;q.sideStep=null;q.moving=false;
  sfx('enter');say('相棒が'+car.t.n+'に搭乗！');return true;
 }
+function partnerExitVehicle(q){
+ if(!q||!q.vehicle)return false;
+ const v=q.vehicle,ang=q.face||0;
+ const options=[ang+Math.PI/2,ang-Math.PI/2,ang+Math.PI,ang,0,Math.PI];
+ let spot=null;
+ for(const a of options)for(const d of [47,62,78]){
+  const x=q.x+Math.cos(a)*d,y=q.y+Math.sin(a)*d;
+  if(x>12&&x<WW-12&&y>12&&y<WH-12&&!hitsC(x,y,9)&&!inWaterAt(x,y,8)){spot={x,y};break;}
+  if(spot)break;
+ }
+ if(!spot){say('降車できる場所がない');return false;}
+ v.x=q.x;v.y=q.y;v.body=q.face;cars.push(v);
+ q.vehicle=null;q.x=spot.x;q.y=spot.y;q.vehicleAim=null;
+ q.route=null;q.routeWait=0;q.routeStart=null;q.boardTarget=null;q.backup=false;
+ q.planT=0;q.moving=false;q.wallFollow=null;q.sideStep=null;
+ sfx('enter');say('相棒が乗り物から降りた');return true;
+}
 function partnerVehicleDestroyed(q){
  if(!q||!q.vehicle)return;
  const v=q.vehicle;q.vehicle=null;q.boardTarget=null;q.route=null;q.routeStart=null;
@@ -3697,7 +3714,7 @@ function partnerVehicleAttack(q,dt){
    q.vehicleCannonT=v.t.ccd||2.2;airbombs.push({x:q.x,y:q.y,t:.52,maxT:.52,fighter:true});sfx('bombdrop');
   }
  }else if(v.kind==='tank'){
-  if(v.t.id!=='armored'&&closestTank&&v.c>0&&q.vehicleCannonT<=0){
+  if(v.t.id!=='armored'&&target&&v.c>0&&q.vehicleCannonT<=0){
    q.vehicleCannonT=v.t.ccd||2.5;v.c--;
    fire(q.x+Math.cos(a)*44,q.y+Math.sin(a)*44,a,'ally','c',v.t.cspd||558,v.t.crng||504,v.t.cdmg||3);
   }
@@ -3725,7 +3742,8 @@ function startPartnerOrder(){
 function finishPartnerOrder(confirm=true){
  if(!partnerOrder.pressed)return;
  if(confirm&&partner&&!partner.down&&!(partner.stunT>0)){
-  if(partnerOrder.drawing){
+  if(partner.vehicle&&!partnerOrder.drawing){partnerExitVehicle(partner);}
+  else if(partnerOrder.drawing){
    if(partnerOrder.path.length>1){
     partner.route=partnerOrder.path.slice(1).map(v=>({x:v.x,y:v.y}));
     partner.routeIndex=0;partner.routeWait=1;partner.routePointT=0;partner.routeStuckT=0;partner.routeStart={x:partner.x,y:partner.y};partner.backup=false;
@@ -3812,16 +3830,19 @@ function recallSeparatedPartner(q,dt){
  if(q.off<10&&q.farT<1.5)return false;
  const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
  let pos=null;
- for(const dy of [70,40,90,18,-35,-60]){
+ // 画面の下端から再入場。すぐ近くに瞬間出現させない。
+ const entryY=Math.max(16,Math.min(WH-16,cy+H-15));
+ for(const dy of [0,-15,-30,-50,-80,-110]){
   if(pos)break;
   for(const dx of [28,-28,52,-52,0,85,-85]){
    const x=clamp(p.x+dx,Math.max(12,cx+16),Math.min(WW-12,cx+W-16));
-   const y=clamp(p.y+dy,Math.max(12,cy+16),Math.min(WH-12,cy+H-16));
+   const y=clamp(entryY+dy,Math.max(12,cy+16),Math.min(WH-12,cy+H-16));
    if(!hitsC(x,y,9)){pos={x,y};break;}
   }
  }
  if(!pos)pos={x:clamp(p.x+20,15,WW-15),y:clamp(p.y+30,15,WH-15)};
  q.x=pos.x;q.y=pos.y;q.off=0;q.farT=0;q.moving=false;
+ q.reentryT=q.down?0:1.5;q.reentryGoalY=Math.max(cy+34,Math.min(cy+H-95,pos.y-110));
  q.wallFollow=null;q.sideStep=null;q.route=null;q.routeWait=0;q.routeIndex=0;q.routeStart=null;
  q.backup=false;q.boardTarget=null;q.modeT=0;q.planT=0;q.grappleT=0;q.grappleTarget=null;
  if(partnerOrder.drawing)finishPartnerOrder(false);
@@ -3850,6 +3871,15 @@ function updatePartner(dt){
  const q=partner;
  q.grappleT=Math.max(0,(q.grappleT||0)-dt);
  recallSeparatedPartner(q,dt);
+ if(q.reentryT>0){
+  q.reentryT=Math.max(0,q.reentryT-dt);
+  const ox=q.x,oy=q.y,goal={x:q.x,y:q.reentryGoalY};
+  partnerCompanionMove(q,goal,q.vehicle?110:105,dt);
+  q.moving=Math.hypot(q.x-ox,q.y-oy)>.1;
+  if(q.moving)q.face=Math.atan2(q.y-oy,q.x-ox);
+  if(Math.abs(q.y-q.reentryGoalY)<6)q.reentryT=0;
+  if(!q.down)return;
+ }
  if(q.down){
   if(!p.tank&&Math.hypot(p.x-q.x,p.y-q.y)<22){q.down=false;q.hp=3;q.modeT=0;q.planT=0;burst(q.x,q.y,10,'#8ad9ff',75);say('相棒を救助！');}
   return;
