@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.11.186</title>
+<title>戦車ゲーム 2026.10.11.187</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -525,7 +525,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.11.186',FILE_CREATED_AT='2026/10/11 18:33',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.11.187',FILE_CREATED_AT='2026/10/11 18:40',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -6836,7 +6836,15 @@ function recordGameFrameTiming(interval,started,updateEnd,drawEnd,ended){
  if(debugMode>0&&ended-gameFramePerf.lastBadgeAt>=250){gameFramePerf.lastBadgeAt=ended;updateDebugBadge();}
 }
 let firstMenuFrame=true,last=performance.now(),prevState=state;
+// 実機でrAFだけが約330ms途切れるため、タッチ端末のプレイ中はタイマーで駆動する。
+// 処理時間を差し引いて約60Hzを目標にし、次回予約は必ず1件だけ行う。
+function queueNextGameFrame(started){
+ if(MOBILE_VIEW&&state==='play'&&document.visibilityState!=='hidden'){
+  setTimeout(()=>loop(performance.now()),Math.max(4,1000/60-(performance.now()-started)));
+ }else requestAnimationFrame(loop);
+}
 function loop(n){
+ const loopStarted=performance.now();
  try{
  const frameStarted=performance.now(),frameInterval=Math.max(0,n-last);
  const elapsed=Math.max(0,Math.min(.099,frameInterval/1000));last=n;let remain=elapsed,near=null;
@@ -6855,15 +6863,15 @@ function loop(n){
  draw(near);drawMission();const frameDrawEnd=performance.now();syncStageScreen();syncResultScreen();syncSkillScreen();syncTitleScreen();syncHelpScreen();syncSpecScreen();
  recordGameFrameTiming(frameInterval,frameStarted,frameUpdateEnd,frameDrawEnd,performance.now());
  if(firstMenuFrame){firstMenuFrame=false;setTimeout(startAssetLoading,0);}
- }catch(error){reportGameError(error);}finally{requestAnimationFrame(loop);}
+ }catch(error){reportGameError(error);}finally{queueNextGameFrame(loopStarted);}
 }
 let gameErrorCount=0;
 function reportGameError(error){
- gameErrorCount++;console.error('Tank game v186',error);
+ gameErrorCount++;console.error('Tank game v187',error);
  let panel=document.getElementById('runtimeError');
  if(!panel){panel=document.createElement('div');panel.id='runtimeError';panel.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;background:#422018;color:#fff2dc;padding:12px;border:1px solid #f7b083;border-radius:8px;font:12px system-ui;white-space:pre-wrap;max-height:35vh;overflow:auto';document.body.appendChild(panel);}
  const stack=String(error&&error.stack||error).split('\n').slice(0,4).join('\n');
- panel.textContent='v186 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
+ panel.textContent='v187 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 requestAnimationFrame(loop);
 </script>
