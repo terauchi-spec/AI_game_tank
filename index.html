@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.11.190</title>
+<title>戦車ゲーム 2026.10.11.191</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -380,6 +380,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 @media (pointer:coarse){
  body.gameplay-active #stick,body.gameplay-active .b,body.gameplay-active #resetBtn,body.gameplay-active #debugToggleBtn,body.gameplay-active #debugBadge{backdrop-filter:none;-webkit-backdrop-filter:none}
  body.gameplay-active .coolRing{filter:none}
+ body.gameplay-active #c{transform:translateZ(0);will-change:transform;contain:paint}
 }
 </style>
 </head>
@@ -525,7 +526,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d',{alpha:false}),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.11.190',FILE_CREATED_AT='2026/10/11 18:56',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.11.191',FILE_CREATED_AT='2026/10/11 19:00',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -3214,11 +3215,12 @@ function exitDebugFighterToHuman(){
 }
 function updateDebugBadge(){
  const badge=document.getElementById('debugBadge');if(!badge)return;
- badge.hidden=debugMode===0;
- badge.textContent=debugMode===1?'無敵モード':debugMode===2?'無敵＋索敵解除':debugMode===3?'無敵＋戦闘機 ∞燃料':'無敵モード';
- const perf=gameFramePerf.last;badge.style.whiteSpace='pre-line';
- if(debugMode>0&&perf&&performance.now()-perf.at<15000)badge.textContent+='\n停止'+perf.gap+'ms 更新'+perf.update+' 描画'+perf.draw+' UI'+perf.ui+' 待ち'+perf.wait+'\n入力'+Math.round(gameFramePerf.inputMax)+'ms 心拍'+(performance.now()-gameFramePerf.timerStallAt<15000?gameFramePerf.timerGap:50)+'ms';
- if(debugMode>0&&MOBILE_VIEW&&gameFramePerf.rafGap&&performance.now()-gameFramePerf.rafStallAt<15000)badge.textContent+='\n描画機会の間隔 '+gameFramePerf.rafGap+'ms';
+ const hidden=debugMode===0;if(badge.hidden!==hidden)badge.hidden=hidden;
+ let text=debugMode===1?'無敵モード':debugMode===2?'無敵＋索敵解除':debugMode===3?'無敵＋戦闘機 ∞燃料':'無敵モード';
+ const perf=gameFramePerf.last;if(badge.style.whiteSpace!=='pre-line')badge.style.whiteSpace='pre-line';
+ if(debugMode>0&&perf&&performance.now()-perf.at<15000)text+='\n停止'+perf.gap+'ms 更新'+perf.update+' 描画'+perf.draw+' UI'+perf.ui+' 待ち'+perf.wait+'\n入力'+Math.round(gameFramePerf.inputMax)+'ms 心拍'+(performance.now()-gameFramePerf.timerStallAt<15000?gameFramePerf.timerGap:50)+'ms';
+ if(debugMode>0&&MOBILE_VIEW&&gameFramePerf.rafGap&&performance.now()-gameFramePerf.rafStallAt<15000)text+='\n描画機会の間隔 '+gameFramePerf.rafGap+'ms';
+ if(badge.textContent!==text)badge.textContent=text;
 }
 function toggleDebugInvincible(){
  debugMode=(debugMode+1)%4;debugInvincible=debugMode>0;if(scoreStats&&!scoreStats.finalized)scoreStats.debugUsed=true;
@@ -6534,7 +6536,7 @@ function renderTrophyStats(){
  });
 }
 function openTrophyArchive(){trophyTab='title';renderTrophyArchive();document.body.classList.add('trophy-open');document.getElementById('trophyScreen').scrollTop=0;}
-function closeTrophyArchive(){document.body.classList.remove('trophy-open');}
+function closeTrophyArchive(){if(document.body.classList.contains('trophy-open'))document.body.classList.remove('trophy-open');}
 function resultRadar(levels){
  const cx=180,cy=167,R=111,pt=(i,lv)=>{const a=-Math.PI/2+i*Math.PI/4;return [cx+Math.cos(a)*R*lv/5,cy+Math.sin(a)*R*lv/5];};
  const poly=(lv)=>Array.from({length:8},(_,i)=>pt(i,lv).map(v=>v.toFixed(1)).join(',')).join(' ');
@@ -6748,7 +6750,10 @@ let stageMode='base',mission=null;
 const STAGE_NAMES={base:'拠点破壊',front:'最前線',stealth:'潜入'};
 document.querySelectorAll('[data-stage]').forEach(b=>b.addEventListener('click',()=>{stageMode=b.dataset.stage;document.body.classList.remove('stage-open');selectSkillIndex(skillMenuList().findIndex(k=>k.id===selectedSkillId),true);}));
 document.getElementById('stageBack').onclick=()=>{state='skill';};
-function syncStageScreen(){document.body.classList.toggle('stage-open',state==='stage');if(state==='stage')document.getElementById('stageSkill').textContent='選択スキル：'+(SKN[skill]||skill)+'　／　作戦を選んで出撃';}
+function syncStageScreen(){
+ const active=state==='stage';if(document.body.classList.contains('stage-open')!==active)document.body.classList.toggle('stage-open',active);
+ if(active){const el=document.getElementById('stageSkill'),text='選択スキル：'+(SKN[skill]||skill)+'　／　作戦を選んで出撃';if(el.textContent!==text)el.textContent=text;}
+}
 function missionSpot(x,y,r=22){
  // Prefer a verified dry, open location. Never silently place an objective inside cover.
  for(let ring=0;ring<20;ring++)for(let n=0;n<20;n++){const a=n*Math.PI/10,xx=Math.max(40,Math.min(WW-40,x+Math.cos(a)*ring*25)),yy=Math.max(60,Math.min(WH-80,y+Math.sin(a)*ring*25));if(!hitsM(xx,yy,r)&&!inWaterAt(xx,yy,r)&&!inBase(xx,yy))return{x:xx,y:yy};}
@@ -6806,7 +6811,7 @@ function updateMission(dt){
 }
 let missionHudNextAt=0,missionHudText="";
 function drawMission(){
- const el=document.getElementById('missionHud');el.style.display=state==='play'&&mission?'block':'none';if(state!=='play'||!mission)return;
+ const el=document.getElementById('missionHud'),display=state==='play'&&mission?'block':'none';if(el.style.display!==display)el.style.display=display;if(state!=='play'||!mission)return;
  const m=mission,q=stageMode==='front'?m.points[m.index]:m.index===3?m.exit:m.points.filter(q=>!q.done).sort((a,b)=>D(a,p)-D(b,p))[0];
  const dist=q?distanceMeters(D(p,q)):0;
  if(performance.now()>=missionHudNextAt){missionHudNextAt=performance.now()+100;
@@ -6880,7 +6885,7 @@ function loop(n){
   prevState=state;
  }while(remain>.000001);
  const frameUpdateEnd=performance.now();
- document.body.classList.toggle('gameplay-active',state==='play');
+ const gameplayActive=state==='play';if(document.body.classList.contains('gameplay-active')!==gameplayActive)document.body.classList.toggle('gameplay-active',gameplayActive);
  if(shouldDrawGameFrame(n)){draw(near);drawMission();}const frameDrawEnd=performance.now();syncStageScreen();syncResultScreen();syncSkillScreen();syncTitleScreen();syncHelpScreen();syncSpecScreen();
  recordGameFrameTiming(frameInterval,frameStarted,frameUpdateEnd,frameDrawEnd,performance.now());
  if(firstMenuFrame){firstMenuFrame=false;setTimeout(startAssetLoading,0);}
@@ -6888,11 +6893,11 @@ function loop(n){
 }
 let gameErrorCount=0;
 function reportGameError(error){
- gameErrorCount++;console.error('Tank game v190',error);
+ gameErrorCount++;console.error('Tank game v191',error);
  let panel=document.getElementById('runtimeError');
  if(!panel){panel=document.createElement('div');panel.id='runtimeError';panel.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;background:#422018;color:#fff2dc;padding:12px;border:1px solid #f7b083;border-radius:8px;font:12px system-ui;white-space:pre-wrap;max-height:35vh;overflow:auto';document.body.appendChild(panel);}
  const stack=String(error&&error.stack||error).split('\n').slice(0,4).join('\n');
- panel.textContent='v190 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
+ panel.textContent='v191 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 requestAnimationFrame(loop);
 </script>
