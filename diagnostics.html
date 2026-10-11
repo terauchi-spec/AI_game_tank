@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>戦車ゲーム 表示診断 v192</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#151d17;color:#eff2df;font:15px/1.5 system-ui,-apple-system,sans-serif;padding:calc(14px + env(safe-area-inset-top)) 16px calc(18px + env(safe-area-inset-bottom));max-width:650px;margin:auto}h1{font-size:23px;margin:0 0 5px}p{margin:8px 0}small{color:#b6c5b0}.row{margin:14px 0}h2{font-size:15px;margin:0 0 5px}.track{height:62px;background:#26332c;border:1px solid #566853;overflow:hidden}.css-bar{width:32px;height:60px;background:#ffd27a;will-change:transform}.running .css-bar{animation:slide 2s linear infinite alternate}@keyframes slide{from{transform:translateX(0)}to{transform:translateX(250px)}}canvas{display:block;width:100%;height:62px;background:#26332c;border:1px solid #566853;touch-action:none}#metrics{font:13px/1.6 ui-monospace,monospace;white-space:pre-line;background:#0c120e;border:1px solid #435740;padding:10px;min-height:104px}#status{min-height:24px;color:#ffd27a}button,a{display:inline-block;border:1px solid #829773;border-radius:8px;background:#30412e;color:#eff2df;padding:10px 14px;text-decoration:none;font:700 14px system-ui;touch-action:manipulation;margin:5px 5px 0 0}button:disabled{opacity:.5}.hint{font-size:13px;color:#c7d2c0}
+</style>
+</head>
+<body>
+<h1>表示診断</h1>
+<small>v192・2026/10/11 19:06（日本時間）</small>
+<p>ゲームの画像・AI・効果音を使わず、3本の棒を動かします。</p>
+<p class="hint">「測定開始」を押した後、15秒間は画面に触れずに見てください。どの棒が一瞬止まるかを確認します。</p>
+<div id="tracks">
+<section class="row"><h2>① CSSアニメーション</h2><div class="track"><div class="css-bar"></div></div></section>
+<section class="row"><h2>② 描画コールバック（rAF）</h2><canvas id="raf" width="320" height="60"></canvas></section>
+<section class="row"><h2>③ タイマー（約60回／秒）</h2><canvas id="timer" width="320" height="60"></canvas></section>
+</div>
+<p id="status" role="status">測定開始を押してください</p>
+<div id="metrics">描画コールバック：未測定
+タイマー：未測定</div>
+<button id="start" type="button">測定開始</button><a href="./">タイトルへ</a>
+<p class="hint">最大間隔は処理が呼ばれる間隔です。画面に表示されるまでの遅延そのものではありません。</p>
+<script>
+'use strict';
+const el=id=>document.getElementById(id),tracks=el('tracks'),status=el('status'),metrics=el('metrics'),start=el('start');
+const rafCtx=el('raf').getContext('2d',{alpha:false}),timerCtx=el('timer').getContext('2d',{alpha:false});
+let generation=0,rafId=null,timerId=null,reportId=null,running=false,started=0;
+let stats;
+function bar(ctx,elapsed,color,frames){
+ const phase=(elapsed%4000)/2000,x=(phase<=1?phase:2-phase)*250;
+ ctx.fillStyle='#26332c';ctx.fillRect(0,0,320,60);ctx.fillStyle=color;ctx.fillRect(x,0,32,60);
+ ctx.fillStyle='#fff';ctx.font='12px monospace';ctx.fillText(String(frames),275,48);
+}
+function record(which,now){
+ const s=stats[which];if(s.last!==null){const gap=Math.max(0,now-s.last);s.max=Math.max(s.max,gap);if(gap>=120)s.stalls++;}s.last=now;s.frames++;
+}
+function show(){
+ metrics.textContent='描画コールバック：最大 '+Math.round(stats.raf.max)+'ms ／ 120ms以上 '+stats.raf.stalls+'回\nタイマー：最大 '+Math.round(stats.timer.max)+'ms ／ 120ms以上 '+stats.timer.stalls+'回\n呼出回数：rAF '+stats.raf.frames+' ／ タイマー '+stats.timer.frames;
+}
+function stop(message){
+ running=false;generation++;if(rafId!==null)cancelAnimationFrame(rafId);if(timerId!==null)clearTimeout(timerId);if(reportId!==null)clearTimeout(reportId);
+ rafId=timerId=reportId=null;tracks.classList.remove('running');start.disabled=false;status.textContent=message;if(stats)show();
+}
+function begin(){
+ stop('');stats={raf:{last:null,max:0,stalls:0,frames:0},timer:{last:null,max:0,stalls:0,frames:0}};
+ running=true;const token=generation;started=performance.now();tracks.classList.add('running');start.disabled=true;status.textContent='測定中：画面に触れずに見てください';
+ function rafFrame(){if(!running||token!==generation)return;const now=performance.now();record('raf',now);bar(rafCtx,now-started,'#7bc7ff',stats.raf.frames);rafId=requestAnimationFrame(rafFrame);}
+ function timerFrame(){if(!running||token!==generation)return;const now=performance.now();if(now-started>=15000){stop('15秒の測定が終了しました');return;}record('timer',now);bar(timerCtx,now-started,'#9cda8b',stats.timer.frames);timerId=setTimeout(timerFrame,Math.max(4,1000/60-(performance.now()-now)));}
+ function report(){if(!running||token!==generation)return;show();reportId=setTimeout(report,500);}
+ rafId=requestAnimationFrame(rafFrame);timerFrame();report();
+}
+start.addEventListener('click',begin);
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&running)stop('画面が非表示になったため中断しました。再測定してください');});
+bar(rafCtx,0,'#7bc7ff',0);bar(timerCtx,0,'#9cda8b',0);
+</script>
+</body>
+</html>
