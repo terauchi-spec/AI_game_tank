@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.11.185</title>
+<title>戦車ゲーム 2026.10.11.186</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -525,7 +525,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.11.185',FILE_CREATED_AT='2026/10/11 18:26',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.11.186',FILE_CREATED_AT='2026/10/11 18:33',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -3217,7 +3217,7 @@ function updateDebugBadge(){
  badge.hidden=debugMode===0;
  badge.textContent=debugMode===1?'無敵モード':debugMode===2?'無敵＋索敵解除':debugMode===3?'無敵＋戦闘機 ∞燃料':'無敵モード';
  const perf=gameFramePerf.last;badge.style.whiteSpace='pre-line';
- if(debugMode>0&&perf&&performance.now()-perf.at<15000)badge.textContent+='\n停止'+perf.gap+'ms 更新'+perf.update+' 描画'+perf.draw+' UI'+perf.ui+' 待ち'+perf.wait;
+ if(debugMode>0&&perf&&performance.now()-perf.at<15000)badge.textContent+='\n停止'+perf.gap+'ms 更新'+perf.update+' 描画'+perf.draw+' UI'+perf.ui+' 待ち'+perf.wait+'\n入力'+Math.round(gameFramePerf.inputMax)+'ms 心拍'+(performance.now()-gameFramePerf.timerStallAt<15000?gameFramePerf.timerGap:50)+'ms';
 }
 function toggleDebugInvincible(){
  debugMode=(debugMode+1)%4;debugInvincible=debugMode>0;if(scoreStats&&!scoreStats.finalized)scoreStats.debugUsed=true;
@@ -6822,8 +6822,9 @@ function drawMission(){
 
 state='title';rollSkillChoices();
 // 実機の長い停止だけ記録。更新・描画・メニュー処理とフレーム間の待ちを分離する。
-const gameFramePerf={last:null,previous:null,stalls:[],lastBadgeAt:0};
+const gameFramePerf={last:null,previous:null,stalls:[],lastBadgeAt:0,timerAt:performance.now(),timerGap:50,timerStallAt:0,inputMax:0};
 window.tankFrameDiagnostics=gameFramePerf;
+setInterval(()=>{const now=performance.now(),gap=now-gameFramePerf.timerAt;gameFramePerf.timerAt=now;if(state==='play'&&document.visibilityState!=='hidden'&&gap>=120&&gap<2000){gameFramePerf.timerGap=Math.round(gap);gameFramePerf.timerStallAt=now;}},50);
 function recordGameFrameTiming(interval,started,updateEnd,drawEnd,ended){
  const current={update:updateEnd-started,draw:drawEnd-updateEnd,ui:ended-drawEnd,total:ended-started};
  const prev=gameFramePerf.previous;
@@ -6858,11 +6859,11 @@ function loop(n){
 }
 let gameErrorCount=0;
 function reportGameError(error){
- gameErrorCount++;console.error('Tank game v185',error);
+ gameErrorCount++;console.error('Tank game v186',error);
  let panel=document.getElementById('runtimeError');
  if(!panel){panel=document.createElement('div');panel.id='runtimeError';panel.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;background:#422018;color:#fff2dc;padding:12px;border:1px solid #f7b083;border-radius:8px;font:12px system-ui;white-space:pre-wrap;max-height:35vh;overflow:auto';document.body.appendChild(panel);}
  const stack=String(error&&error.stack||error).split('\n').slice(0,4).join('\n');
- panel.textContent='v185 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
+ panel.textContent='v186 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 requestAnimationFrame(loop);
 </script>
@@ -6964,8 +6965,18 @@ syncActionButton();setInterval(syncActionButton,50);
 
 const pad=document.getElementById('stick'),knob=document.getElementById('knob'),st={ArrowUp:0,ArrowDown:0,ArrowLeft:0,ArrowRight:0};let act=null;
 function setDir(x,y){const m=.3,n={ArrowLeft:x<-m,ArrowRight:x>m,ArrowUp:y<-m,ArrowDown:y>m};for(const k in n)if(!!st[k]!==n[k]){st[k]=n[k]?1:0;n[k]?press(k):release(k);}}
-function mvp(e){const r=pad.getBoundingClientRect();let dx=(e.clientX-r.left-r.width/2)/(r.width/2),dy=(e.clientY-r.top-r.height/2)/(r.height/2);const l=Math.hypot(dx,dy);if(l>1){dx/=l;dy/=l;}knob.style.transform='translate('+dx*(pad.clientWidth*.3)+'px,'+dy*(pad.clientHeight*.3)+'px)';setDir(dx,dy);}
-pad.addEventListener('pointerdown',e=>{e.preventDefault();cap(pad,e);act=e.pointerId;mvp(e);},{passive:false});
+// 指を動かすたびのレイアウト読み戻しを避け、押下時の幾何情報を再利用する。
+let stickGeometry=null;
+function refreshStickGeometry(){const r=pad.getBoundingClientRect();stickGeometry={left:r.left,top:r.top,width:r.width,height:r.height,travel:pad.clientWidth*.3};}
+function mvp(e){
+ const began=performance.now();if(!stickGeometry)refreshStickGeometry();const r=stickGeometry;
+ let dx=(e.clientX-r.left-r.width/2)/(r.width/2),dy=(e.clientY-r.top-r.height/2)/(r.height/2);const l=Math.hypot(dx,dy);if(l>1){dx/=l;dy/=l;}
+ knob.style.transform='translate('+dx*r.travel+'px,'+dy*r.travel+'px)';setDir(dx,dy);
+ gameFramePerf.inputMax=Math.max(gameFramePerf.inputMax,performance.now()-began);
+}
+addEventListener('resize',()=>{stickGeometry=null;});
+if(window.visualViewport){visualViewport.addEventListener('resize',()=>{stickGeometry=null;});visualViewport.addEventListener('scroll',()=>{stickGeometry=null;});}
+pad.addEventListener('pointerdown',e=>{e.preventDefault();cap(pad,e);act=e.pointerId;refreshStickGeometry();mvp(e);},{passive:false});
 pad.addEventListener('pointermove',e=>{if(act===e.pointerId){e.preventDefault();mvp(e);}},{passive:false});
 const end=e=>{if(e)e.preventDefault();act=null;knob.style.transform='';setDir(0,0);};
 pad.addEventListener('pointerup',end,{passive:false});pad.addEventListener('pointercancel',end,{passive:false});pad.addEventListener('lostpointercapture',end,{passive:false});
