@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.12.221</title>
+<title>戦車ゲーム 2026.10.12.222</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -516,7 +516,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <li><strong>投擲：</strong>進行方向へ最大11mの距離で爆弾を投げます。5秒で再使用可能。</li>
 <li><strong>潜伏：</strong>0.5秒静止して潜伏準備後、最大5秒間潜伏。解除後は5秒チャージ。水中は移動速度60%、泥では潜伏を解除します。潜伏開始1秒後に敵表示が隠れます。</li>
 <li><strong>偽装：</strong>5秒間残る身代わりを設置して敵の注意をそらします。赤い電波が約1.25秒間隔で半径300pxまで滑らかに広がります。見やすいように少し濃い単色の赤いリングで描いています。身代わり周囲の残り時間の円形ゲージは表示せず、終了時は赤い粒が短く散って消えます。電波の表示範囲と敵を誘導する範囲は別です。チャージ8秒。</li>
-<li><strong>相棒：</strong>青いヘルメットラインの味方が敵司令本部を目指しつつプレイヤーの歩調を模倣します。プレイヤーの行動から潜入・慎重移動・通常前進・突破・戦闘・退避を判断し、約0.35秒ごとに移動先を選びます。草むらや遮蔽物を活用し、速度と距離を調整しながら同行します。交戦時は敵に援護射撃します。画面内にとどまり、敵の攻撃対象にもなります。HP3で、倒れると赤十字の救急箱アイコンが表示され、徒歩で触れると回復します。プレイヤーの設置爆弾の爆風で5秒間気絶し、接触すると早期復帰します。巡回モードの敵兵に接触すると気絶させます。S短押しでプレイヤーへ戻るバックアップモード、長押しで両者の無線アイコンを表示して移動キーでルートを描き、離して1秒後にルート移動を始めます。ルート入力中はプレイヤーが移動できません。画面外10秒で画面下から復帰します。</li>
+<li><strong>相棒：</strong>青いヘルメットラインの味方が敵司令本部を目指しつつプレイヤーの歩調を模倣します。プレイヤーの行動から潜入・慎重移動・通常前進・突破・戦闘・退避を判断し、約0.35秒ごとに移動先を選びます。草むらや遮蔽物を活用し、速度と距離を調整しながら同行します。交戦時は敵に援護射撃します。画面内にとどまり、敵の攻撃対象にもなります。HP3で、倒れると赤十字の救急箱アイコンが表示され、徒歩で触れると回復します。プレイヤーの設置爆弾の爆風で5秒間気絶し、接触すると早期復帰します。行動モードを問わず100px以内の敵兵に近づき、50px以内で羽交い絞めにして気絶させます。相棒が気絶中は敵兵と同じ星のアイコンが回転します。S短押しでプレイヤーへ戻るバックアップモード、長押しで両者の無線アイコンを表示して移動キーでルートを描き、離して1秒後にルート移動を始めます。ルート入力中はプレイヤーが移動できません。ルート作成中に壁に触れた場合は描き始めへ戻し、移動中に立ち往生した場合も開始地点へ戻ります。ルート確定後は指示線を表示しません。救助待ちや気絶中でも、画面外10秒またはプレイヤーから長時間離れると画面内の救助可能な場所へ復帰します。</li>
 <li><strong>増援：</strong>味方兵士がパラシュート降下して戦闘を援護。同時に最大5人。チャージ6秒。着地後、オブジェクトの爆発や敵戦車の砲撃爆風を受けると吹き飛ばされ、5秒間気絶します。気絶中は移動と射撃を停止し、頭上の星が目印になります。</li>
 <li><strong>突貫：</strong>正面にドリルを展開。持続5秒、終了後は6秒チャージ。遮蔽物の破壊に利用できます。</li>
 <li><strong>建築：</strong>前方にコンクリート防護壁を設置。最大5枚、チャージ1.5秒。</li>
@@ -568,7 +568,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.12.221',FILE_CREATED_AT='2026/10/12 01:52',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.12.222',FILE_CREATED_AT='2026/10/12 02:02',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -3622,7 +3622,7 @@ function finishPartnerOrder(confirm=true){
   if(partnerOrder.drawing){
    if(partnerOrder.path.length>1){
     partner.route=partnerOrder.path.slice(1).map(v=>({x:v.x,y:v.y}));
-    partner.routeIndex=0;partner.routeWait=1;partner.routePointT=0;partner.backup=false;
+    partner.routeIndex=0;partner.routeWait=1;partner.routePointT=0;partner.routeStuckT=0;partner.routeStart={x:partner.x,y:partner.y};partner.backup=false;
     partner.wallFollow=null;partner.sideStep=null;say('相棒にルートを送信！1秒後に出発');
    }else say('方向キーでルートを描いてください');
   }else{
@@ -3637,7 +3637,7 @@ function updatePartnerOrder(dt){
  partnerOrder.held+=dt;
  if(partnerOrder.held>=.45&&!partnerOrder.drawing&&partner&&!partner.down&&!(partner.stunT>0)){
   partnerOrder.drawing=true;partnerOrder.cursor={x:partner.x,y:partner.y};
-  partnerOrder.path=[{x:partner.x,y:partner.y}];say('無線指示中：方向キーでルートを描く');
+  partnerOrder.path=[{x:partner.x,y:partner.y}];partnerOrder.blocked=false;say('無線指示中：方向キーでルートを描く');
  }
  if(!partnerOrder.drawing)return;
  let dx=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0),dy=(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0);
@@ -3646,8 +3646,13 @@ function updatePartnerOrder(dt){
  const cx=Math.max(0,Math.min(WW-W,p.x-W/2)),cy=Math.max(0,Math.min(WH-H,p.y-H*.6));
  const nx=Math.max(15,Math.min(WW-15,Math.max(cx+15,Math.min(cx+W-15,c.x+dx*step))));
  const ny=Math.max(15,Math.min(WH-15,Math.max(cy+15,Math.min(cy+H-15,c.y+dy*step))));
- if(hitsC(nx,ny,7))return;
- c.x=nx;c.y=ny;
+ if(hitsC(nx,ny,7)){
+  const first=partnerOrder.path[0];
+  if(first){c.x=first.x;c.y=first.y;partnerOrder.path=[{x:first.x,y:first.y}];}
+  if(!partnerOrder.blocked)say('障害物に接触：指示ルートを開始地点へ戻した');
+  partnerOrder.blocked=true;return;
+ }
+ partnerOrder.blocked=false;c.x=nx;c.y=ny;
  const prev=partnerOrder.path[partnerOrder.path.length-1];
  if(Math.hypot(c.x-prev.x,c.y-prev.y)>11&&partnerOrder.path.length<145)partnerOrder.path.push({x:c.x,y:c.y});
 }
@@ -3659,12 +3664,67 @@ function stunPartnerByOwnBlast(x,y){
 }
 // Contact knockout applies during autonomous travel, backup and instructed routes.
 function partnerKnockoutPatrol(dt){
- const q=partner;if(!q||q.down||q.stunT>0)return;
+ const q=partner;if(!q||q.down||q.stunT>0)return false;
  q.touchCd=Math.max(0,(q.touchCd||0)-dt);
- if(q.touchCd>0)return;
- for(const h of humans)if(h.alive&&!h.st&&!(h.stun>0)&&D(q,h)<18){
-  if(stunHuman(h)){q.touchCd=.65;break;}
+ if(q.grappleT>0)return true;
+ // Every active tactical mode: close to any eligible soldier within 100px.
+ let target=null,near=100;
+ for(const h of humans)if(h.alive&&!(h.stun>0)){
+  const d=D(q,h);
+  if(d<near&&los(q,h)){near=d;target=h;}
  }
+ if(!target)return false;
+ if(near<=50){
+  if(q.touchCd<=0&&stunHuman(target)){
+   q.grappleT=.45;q.grappleTarget=target;q.touchCd=1;
+   q.face=Math.atan2(target.y-q.y,target.x-q.x);q.moving=false;
+  }
+  return q.grappleT>0;
+ }
+ // While drawing radio directions the partner should remain at the drawn route's start.
+ // Otherwise pursuit interrupts autonomous/backup/routed walking.
+ if(partnerOrder.drawing)return false;
+ const ox=q.x,oy=q.y;
+ moveAllySmart(q,target,180,dt);
+ q.moving=Math.hypot(q.x-ox,q.y-oy)>.1;
+ if(q.moving)q.face=Math.atan2(q.y-oy,q.x-ox);
+ return true;
+}
+// Revival/reposition must execute even when the companion is incapacitated.
+function recallSeparatedPartner(q,dt){
+ if(!q||!p)return false;
+ const cx=Math.max(0,Math.min(WW-W,p.x-W/2)),cy=Math.max(0,Math.min(WH-H,p.y-H*.6));
+ const separated=q.x<cx-12||q.x>cx+W+12||q.y<cy-12||q.y>cy+H+12;
+ const tooFar=D(q,p)>Math.max(300,Math.max(W,H)*.8);
+ q.off=separated?(q.off||0)+dt:0;
+ q.farT=tooFar?(q.farT||0)+dt:0;
+ if(q.off<10&&q.farT<1.5)return false;
+ const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+ let pos=null;
+ for(const dy of [70,40,90,18,-35,-60]){
+  if(pos)break;
+  for(const dx of [28,-28,52,-52,0,85,-85]){
+   const x=clamp(p.x+dx,Math.max(12,cx+16),Math.min(WW-12,cx+W-16));
+   const y=clamp(p.y+dy,Math.max(12,cy+16),Math.min(WH-12,cy+H-16));
+   if(!hitsC(x,y,9)){pos={x,y};break;}
+  }
+ }
+ if(!pos)pos={x:clamp(p.x+20,15,WW-15),y:clamp(p.y+30,15,WH-15)};
+ q.x=pos.x;q.y=pos.y;q.off=0;q.farT=0;q.moving=false;
+ q.wallFollow=null;q.sideStep=null;q.route=null;q.routeWait=0;q.routeIndex=0;q.routeStart=null;
+ q.backup=false;q.modeT=0;q.planT=0;q.grappleT=0;q.grappleTarget=null;
+ if(partnerOrder.drawing)finishPartnerOrder(false);
+ say(q.down?'相棒が救助できる場所に戻った！':'相棒が合流した！');
+ return true;
+}
+function rollbackPartnerRoute(q){
+ if(!q)return;
+ const start=q.routeStart;
+ if(start&&!hitsC(start.x,start.y,9)){q.x=start.x;q.y=start.y;}
+ q.route=null;q.routeWait=0;q.routeIndex=0;q.routeStart=null;
+ q.routeStuckT=0;q.routePointT=0;q.backup=false;q.planT=0;
+ q.wallFollow=null;q.sideStep=null;q.moving=false;
+ burst(q.x,q.y,5,'#8ad9ff',65);say('ルートが行き止まり：開始地点に戻った');
 }
 // Utility-style companion AI. Decision making is throttled; movement remains frame-based.
 function partnerDangerAt(x,y){
@@ -3677,31 +3737,31 @@ function updatePartner(dt){
  if(skill!=='partner'||!p)return;
  if(!partner)partner={x:p.x+24,y:p.y+32,face:p.body,hp:3,down:false,off:0,moving:false,mode:'advance',modeT:0,planT:0,shotCd:0,stunT:0,backup:false,route:null};
  const q=partner;
+ q.grappleT=Math.max(0,(q.grappleT||0)-dt);
+ recallSeparatedPartner(q,dt);
  if(q.down){
   if(!p.tank&&Math.hypot(p.x-q.x,p.y-q.y)<22){q.down=false;q.hp=3;q.modeT=0;q.planT=0;burst(q.x,q.y,10,'#8ad9ff',75);say('相棒を救助！');}
   return;
  }
  if(q.stunT>0){q.stunT=Math.max(0,q.stunT-dt);q.stunContactDelay=Math.max(0,(q.stunContactDelay||0)-dt);q.moving=false;if(q.stunContactDelay<=0&&!p.tank&&D(q,p)<22)q.stunT=0;if(q.stunT<=0){q.planT=0;burst(q.x,q.y,8,'#8ad9ff',70);say('相棒が気絶から復帰！');}return;}
- const cx=Math.max(0,Math.min(WW-W,p.x-W/2)),cy=Math.max(0,Math.min(WH-H,p.y-H*.6));
- const outside=q.x<cx||q.x>cx+W||q.y<cy||q.y>cy+H;
- q.off=outside?q.off+dt:0;
- if(q.off>=10){
-  const rx=Math.max(20,Math.min(WW-20,p.x+25)),ry=Math.max(20,Math.min(WH-20,cy+H-30));
-  for(let i=0;i<16;i++){const x=Math.max(20,Math.min(WW-20,rx+(i%4-1.5)*25)),y=Math.max(20,Math.min(WH-20,ry-Math.floor(i/4)*25));if(!hitsC(x,y,9)){q.x=x;q.y=y;break;}}
-  q.off=0;q.planT=0;q.wallFollow=null;q.sideStep=null;say('相棒が復帰！');
- }
- partnerKnockoutPatrol(dt);
+ if(partnerKnockoutPatrol(dt))return;
  // 命令は通常の自律判断より優先。ただしルート入力中はその場で待機する。
  if(partnerOrder.drawing){q.moving=false;return;}
  if(q.routeWait>0){q.routeWait=Math.max(0,q.routeWait-dt);q.moving=false;return;}
  if(q.route&&q.routeIndex<q.route.length){
-  const destination=q.route[q.routeIndex],oldX=q.x,oldY=q.y;
+  const destination=q.route[q.routeIndex],oldX=q.x,oldY=q.y,before=D(q,destination);
   q.routePointT=(q.routePointT||0)+dt;
-  if(D(q,destination)<16||q.routePointT>4){q.routeIndex++;q.routePointT=0;q.wallFollow=null;}
-  else moveAllySmart(q,destination,155,dt);
+  if(before<16){q.routeIndex++;q.routePointT=0;q.routeStuckT=0;q.wallFollow=null;}
+  else{
+   moveAllySmart(q,destination,155,dt);
+   const after=D(q,destination),moved=Math.hypot(q.x-oldX,q.y-oldY);
+   q.routeStuckT=(moved<.12||after>before+.3)?(q.routeStuckT||0)+dt:Math.max(0,(q.routeStuckT||0)-dt);
+   if(q.routeStuckT>1.1||q.routePointT>5.5){rollbackPartnerRoute(q);return;}
+   if(after<16){q.routeIndex++;q.routePointT=0;q.routeStuckT=0;q.wallFollow=null;}
+  }
   q.moving=Math.hypot(q.x-oldX,q.y-oldY)>.1;
   if(q.moving)q.face=Math.atan2(q.y-oldY,q.x-oldX);
-  if(q.routeIndex>=q.route.length){q.route=null;q.planT=0;say('相棒が指定ルートを完了！');}
+  if(q.routeIndex>=q.route.length){q.route=null;q.routeStart=null;q.planT=0;say('相棒が指定ルートを完了！');}
   return;
  }
  if(q.backup){
@@ -3788,7 +3848,7 @@ function drawPartner(){
   if(partnerOrder.cursor)g.lineTo(partnerOrder.cursor.x,partnerOrder.cursor.y);
   g.stroke();g.setLineDash([]);g.font='20px system-ui';g.textAlign='center';g.fillText('📻',p.x,p.y-31);g.fillText('📻',q.x,q.y-34);g.restore();
  }
- if(q.route&&q.routeIndex<q.route.length){g.save();g.strokeStyle='rgba(118,213,255,.6)';g.lineWidth=2;g.setLineDash([5,7]);g.beginPath();g.moveTo(q.x,q.y);for(let i=q.routeIndex;i<q.route.length;i++)g.lineTo(q.route[i].x,q.route[i].y);g.stroke();g.restore();}
+
  if(q.down){
   g.save();g.translate(q.x,q.y);g.rotate(q.face+.8);
   g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.ellipse(0,0,15,11,0,0,6.28);g.fill();
@@ -3796,7 +3856,24 @@ function drawPartner(){
   g.save();g.translate(q.x,q.y-26);g.fillStyle='#f3f3f3';g.strokeStyle='#a83232';g.lineWidth=1.5;g.beginPath();g.roundRect(-11,-8,22,17,3);g.fill();g.stroke();g.fillStyle='#d52b31';g.fillRect(-2,-6,4,13);g.fillRect(-7,-1,14,4);g.strokeStyle='#a83232';g.beginPath();g.moveTo(-4,-8);g.lineTo(-4,-11);g.lineTo(4,-11);g.lineTo(4,-8);g.stroke();g.restore();return;
  }
  soldier(q.x,q.y,q.face,true,false,q.moving,false,'',true,'blue');
- if(q.stunT>0){const t=performance.now()*.006;for(let i=0;i<3;i++){const a=t+i*2.094;lab('★',q.x+Math.cos(a)*12,q.y-20+Math.sin(a)*5,'bold 13px system-ui','#ffd85a');}}
+ if(q.grappleT>0&&q.grappleTarget&&q.grappleTarget.alive){
+  const h=q.grappleTarget,a=Math.atan2(h.y-q.y,h.x-q.x),k=1-q.grappleT/.45;
+  g.save();g.strokeStyle='rgba(255,230,170,'+(1-k*.25)+')';g.lineWidth=3;g.beginPath();
+  g.moveTo(q.x+Math.cos(a+.55)*8,q.y+Math.sin(a+.55)*8);g.lineTo(h.x-Math.cos(a)*5,h.y-Math.sin(a)*5);
+  g.moveTo(q.x+Math.cos(a-.55)*8,q.y+Math.sin(a-.55)*8);g.lineTo(h.x-Math.cos(a)*5,h.y-Math.sin(a)*5);
+  g.stroke();g.strokeStyle='rgba(255,255,255,.65)';g.lineWidth=2;
+  for(let i=-1;i<=1;i++){const off=i*7;g.beginPath();g.moveTo(q.x-Math.cos(a)*10+Math.cos(a+1.57)*off,q.y-Math.sin(a)*10+Math.sin(a+1.57)*off);
+   g.lineTo(q.x-Math.cos(a)*20+Math.cos(a+1.57)*off,q.y-Math.sin(a)*20+Math.sin(a+1.57)*off);g.stroke();}
+  g.restore();
+ }
+ if(q.stunT>0){
+  // Exactly the enemy soldier's rotating three-star stun graphic.
+  const tt=performance.now()*.006;g.fillStyle='#ffd85a';
+  for(let i=0;i<3;i++){const a=tt+i*2.094,x=q.x+Math.cos(a)*13,y=q.y-18+Math.sin(a)*5;
+   g.save();g.translate(x,y);g.rotate(a);g.beginPath();g.moveTo(0,-4);g.lineTo(2,-1);g.lineTo(5,0);
+   g.lineTo(2,1);g.lineTo(0,4);g.lineTo(-2,1);g.lineTo(-5,0);g.lineTo(-2,-1);g.closePath();g.fill();g.restore();
+  }
+ }
 }
 let allyTargetRefreshAt=0;
 function drawAllyStun(ally){
