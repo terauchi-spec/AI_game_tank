@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.12.217</title>
+<title>戦車ゲーム 2026.10.12.218</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -516,7 +516,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <li><strong>投擲：</strong>進行方向へ最大11mの距離で爆弾を投げます。5秒で再使用可能。</li>
 <li><strong>潜伏：</strong>0.5秒静止して潜伏準備後、最大5秒間潜伏。解除後は5秒チャージ。水中は移動速度60%、泥では潜伏を解除します。潜伏開始1秒後に敵表示が隠れます。</li>
 <li><strong>偽装：</strong>5秒間残る身代わりを設置して敵の注意をそらします。赤い電波が約1.25秒間隔で半径300pxまで滑らかに広がります。見やすいように少し濃い単色の赤いリングで描いています。身代わり周囲の残り時間の円形ゲージは表示せず、終了時は赤い粒が短く散って消えます。電波の表示範囲と敵を誘導する範囲は別です。チャージ8秒。</li>
-<li><strong>相棒：</strong>青いヘルメットラインの味方が敵司令本部を目指しつつプレイヤーの歩調を模倣します。プレイヤーが草むらに隠れれば同じ草むらへ向かい、慎重な歩行では敵の視界と遮蔽物を考慮し、走行時は加速します。画面内にとどまり、敵の攻撃対象にもなります。HP3で、倒れると赤十字の救急箱アイコンが表示され、徒歩で触れると回復します。画面外10秒で画面下から復帰します。</li>
+<li><strong>相棒：</strong>青いヘルメットラインの味方が敵司令本部を目指しつつプレイヤーの歩調を模倣します。プレイヤーの行動から潜入・慎重移動・通常前進・突破・戦闘・退避を判断し、約0.35秒ごとに移動先を選びます。草むらや遮蔽物を活用し、速度と距離を調整しながら同行します。交戦時は敵に援護射撃します。画面内にとどまり、敵の攻撃対象にもなります。HP3で、倒れると赤十字の救急箱アイコンが表示され、徒歩で触れると回復します。画面外10秒で画面下から復帰します。</li>
 <li><strong>増援：</strong>味方兵士がパラシュート降下して戦闘を援護。同時に最大5人。チャージ6秒。着地後、オブジェクトの爆発や敵戦車の砲撃爆風を受けると吹き飛ばされ、5秒間気絶します。気絶中は移動と射撃を停止し、頭上の星が目印になります。</li>
 <li><strong>突貫：</strong>正面にドリルを展開。持続5秒、終了後は6秒チャージ。遮蔽物の破壊に利用できます。</li>
 <li><strong>建築：</strong>前方にコンクリート防護壁を設置。最大5枚、チャージ1.5秒。</li>
@@ -568,7 +568,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.12.217',FILE_CREATED_AT='2026/10/12 01:08',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.12.218',FILE_CREATED_AT='2026/10/12 01:22',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -3606,54 +3606,96 @@ function summonAlly(){
  const startY=Math.max(45,landY-320);allies.push({id:++allySeq,x:ax,y:startY,startY,landY,alive:true,chute:3,chuteTotal:3,shotCd:.2,burstLeft:3,face:p.body,slot});setSkillCooldown(6);sfx('ally');say('増援を要請! '+(active+1)+'/5');
 }
 let partner=null;
+// Utility-style companion AI. Decision making is throttled; movement remains frame-based.
+function partnerDangerAt(x,y){
+ let risk=0,point={x,y};
+ for(const h of humans){if(!h.alive||h.stun>0)continue;const d=Math.hypot(h.x-x,h.y-y);if(d<270&&los(h,point))risk+=(h.st?65:120)*(1-d/400);}
+ for(const e of etanks){if(!e.alive)continue;const d=Math.hypot(e.x-x,e.y-y);if(d<340&&los(e,point))risk+=(e.st?90:145)*(1-d/460);}
+ return risk;
+}
 function updatePartner(dt){
  if(skill!=='partner'||!p)return;
- if(!partner)partner={x:p.x+24,y:p.y+32,face:p.body,hp:3,down:false,off:0,trail:[],moving:false};
+ if(!partner)partner={x:p.x+24,y:p.y+32,face:p.body,hp:3,down:false,off:0,moving:false,mode:'advance',modeT:0,planT:0,shotCd:0};
  const q=partner;
- if(q.down){if(!p.tank&&Math.hypot(p.x-q.x,p.y-q.y)<22){q.down=false;q.hp=3;burst(q.x,q.y,10,'#8ad9ff',75);say('相棒を救助！');}return;}
+ if(q.down){
+  if(!p.tank&&Math.hypot(p.x-q.x,p.y-q.y)<22){q.down=false;q.hp=3;q.modeT=0;q.planT=0;burst(q.x,q.y,10,'#8ad9ff',75);say('相棒を救助！');}
+  return;
+ }
  const cx=Math.max(0,Math.min(WW-W,p.x-W/2)),cy=Math.max(0,Math.min(WH-H,p.y-H*.6));
  const outside=q.x<cx||q.x>cx+W||q.y<cy||q.y>cy+H;
  q.off=outside?q.off+dt:0;
  if(q.off>=10){
   const rx=Math.max(20,Math.min(WW-20,p.x+25)),ry=Math.max(20,Math.min(WH-20,cy+H-30));
   for(let i=0;i<16;i++){const x=Math.max(20,Math.min(WW-20,rx+(i%4-1.5)*25)),y=Math.max(20,Math.min(WH-20,ry-Math.floor(i/4)*25));if(!hitsC(x,y,9)){q.x=x;q.y=y;break;}}
-  q.off=0;q.trail=[];say('相棒が復帰！');
+  q.off=0;q.planT=0;q.wallFollow=null;q.sideStep=null;say('相棒が復帰！');
  }
- // プレイヤーの歩調と進行方向を参考にしながら、司令本部方向へ自律的に進む。
- const margin=28,left=cx+margin,right=cx+W-margin,top=cy+margin,bottom=cy+H-margin;
  const vx=(p.x-(q.prevPX??p.x))/Math.max(dt,.001),vy=(p.y-(q.prevPY??p.y))/Math.max(dt,.001);
  q.prevPX=p.x;q.prevPY=p.y;
- const playerSpeed=Math.hypot(vx,vy),playerHidden=!p.tank&&inBush(p),slow=playerSpeed<80;
- // プレイヤーが草むらに入れば同じ草むら、慎重な移動なら周囲の遮蔽を優先する。
- let goal={x:Math.max(left,Math.min(right,p.x+22)),y:Math.max(top,Math.min(bottom,p.y-50))};
- if(playerHidden){
-  goal={x:Math.max(left,Math.min(right,p.x+(q.x<p.x?-14:14))),y:Math.max(top,Math.min(bottom,p.y+12))};
- }else if(slow){
-  const candidates=[...nearbyBushes(q.x,q.y,140).map(b=>({x:b.x+b.w/2,y:b.y+b.h/2})),{x:p.x+25,y:p.y-35},{x:p.x-25,y:p.y-35}];
-  // 発見されていない敵の視界・射線に入りにくい安全な進路を選ぶ。
-  let best=Infinity;
-  for(const c of candidates){
-   if(c.x<left||c.x>right||c.y<top||c.y>bottom||hitsC(c.x,c.y,9))continue;
-   let risk=Math.hypot(c.x-q.x,c.y-q.y)*.25+Math.abs(c.y-(p.y-35))*.12;
-   for(const e of humans)if(e.alive&&!e.st&&Math.hypot(e.x-c.x,e.y-c.y)<260&&los(e,c))risk+=180;
-   for(const e of etanks)if(e.alive&&!e.st&&Math.hypot(e.x-c.x,e.y-c.y)<280&&los(e,c))risk+=180;
-   if(inBush(c))risk-=90;
-   if(risk<best){best=risk;goal={x:c.x,y:c.y};}
+ // Low-pass speed, to avoid mode switching on every frame.
+ q.playerSpeed=(q.playerSpeed||0)*.86+Math.hypot(vx,vy)*.14;
+ const playerHidden=!p.tank&&inBush(p),partnerHidden=inBush(q);
+ const playerThreat=humans.some(h=>h.alive&&h.st&&h.target==='p')||etanks.some(e=>e.alive&&e.st&&e.target==='p');
+ const partnerThreat=humans.some(h=>h.alive&&h.st&&h.target==='partner')||etanks.some(e=>e.alive&&e.st&&e.target==='partner');
+ q.shotCd=Math.max(0,(q.shotCd||0)-dt);
+ q.modeT=Math.max(0,(q.modeT||0)-dt);
+ q.planT=Math.max(0,(q.planT||0)-dt);
+ // Combat is event-driven; slower intents are committed for about one second.
+ let desired=playerHidden?'stealth':q.playerSpeed>175?'breakthrough':q.playerSpeed<18?'hold':q.playerSpeed<92?'cautious':'advance';
+ if(playerThreat||partnerThreat)desired=q.playerSpeed>145?'retreat':'combat';
+ if(q.modeT<=0||desired==='combat'||desired==='retreat'){
+  if(q.mode!==desired){q.mode=desired;q.planT=0;}
+  q.modeT=desired==='combat'||desired==='retreat'?.6:1.0;
+ }
+ const left=cx+25,right=cx+W-25,top=cy+25,bottom=cy+H-25;
+ const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+ const far=Math.hypot(q.x-p.x,q.y-p.y);
+ if(q.planT<=0){
+  q.planT=.35;
+  const preferredY=clamp(p.y-(q.mode==='advance'?95:q.mode==='breakthrough'?75:35),top,bottom);
+  let options=[{x:p.x-65,y:preferredY},{x:p.x+65,y:preferredY},{x:q.x,y:preferredY},{x:p.x,y:p.y+25}];
+  if(playerHidden)options=[{x:p.x-15,y:p.y+10},{x:p.x+15,y:p.y+10},...nearbyBushes(p.x,p.y,130).slice(0,8).map(b=>({x:b.x+b.w/2,y:b.y+b.h/2}))];
+  else if(q.mode==='stealth'||q.mode==='cautious'||q.mode==='hold'||q.mode==='retreat'){
+   options.push(...nearbyBushes(q.x,q.y,175).slice(0,8).map(b=>({x:b.x+b.w/2,y:b.y+b.h/2})));
+   for(const c of coversInBox(q.x-170,q.y-170,q.x+170,q.y+170).slice(0,9)){
+    options.push({x:c.x-17,y:c.y+c.h/2},{x:c.x+c.w+17,y:c.y+c.h/2});
+   }
   }
- }else{
-  // プレイヤーが駆け抜けたときは自分も加速するが、画面上端で待ち続けない。
-  goal={x:Math.max(left,Math.min(right,p.x+(q.x<p.x?-30:30))),y:Math.max(top,Math.min(bottom,Math.min(p.y-60,q.y-70)))};
+  if(q.mode==='combat'){
+   for(const h of humans)if(h.alive&&h.st&&D(h,q)<220){options.push({x:h.x-110,y:h.y+30},{x:h.x+110,y:h.y+30});break;}
+  }
+  let best=null,bestScore=Infinity;
+  for(const c of options){
+   if(c.x<left||c.x>right||c.y<top||c.y>bottom||hitsC(c.x,c.y,9))continue;
+   const d=Math.hypot(c.x-q.x,c.y-q.y),dp=Math.hypot(c.x-p.x,c.y-p.y);
+   const risk=partnerDangerAt(c.x,c.y),hide=inBush(c);
+   let score=d*.25+Math.max(0,dp-135)*1.2+Math.max(0,55-dp)*.8+(c.y-p.y)*.14;
+   if(q.mode==='stealth'||q.mode==='cautious'||q.mode==='hold')score+=risk*2.4-(hide?110:0);
+   else if(q.mode==='retreat')score+=risk*2.8-(hide?80:0);
+   else if(q.mode==='combat')score+=risk*.9;
+   else score+=risk*.38;
+   if(q.mode==='hold')score+=d*.7;
+   if(score<bestScore){bestScore=score;best={x:c.x,y:c.y};}
+  }
+  q.goal=best||{x:clamp(p.x+30,left,right),y:clamp(p.y-25,top,bottom)};
  }
- // プレイヤーとの距離が開いたら、先行をやめて歩調を合わせる。
- if(q.y<p.y-H*.38)goal.y=Math.max(top,Math.min(bottom,p.y-48));
- const oldX=q.x,oldY=q.y;
- const speed=playerHidden?Math.max(70,playerSpeed*.9):slow?Math.max(50,playerSpeed*.9):Math.min(270,Math.max(115,playerSpeed*1.12));
- if(Math.hypot(goal.x-q.x,goal.y-q.y)>12)moveAllySmart(q,goal,speed,dt);
- if(oldX>=left&&oldX<=right&&oldY>=top&&oldY<=bottom){
-  q.x=Math.max(left,Math.min(right,q.x));q.y=Math.max(top,Math.min(bottom,q.y));
- }
+ // Close formation while waiting; sprint to catch up, but do not imitate each step.
+ if(far>240)q.goal={x:clamp(p.x+25,left,right),y:clamp(p.y+20,top,bottom)};
+ const oldX=q.x,oldY=q.y,goal=q.goal;
+ const speed=q.mode==='breakthrough'?245:q.mode==='advance'?140:q.mode==='combat'?125:q.mode==='retreat'?180:q.mode==='hold'?55:q.mode==='stealth'?75:90;
+ if(goal&&Math.hypot(goal.x-q.x,goal.y-q.y)>14)moveAllySmart(q,goal,far>240?235:speed,dt);
+ if(oldX>=left&&oldX<=right&&oldY>=top&&oldY<=bottom){q.x=clamp(q.x,left,right);q.y=clamp(q.y,top,bottom);}
  q.moving=Math.hypot(q.x-oldX,q.y-oldY)>.12;
  if(q.moving)q.face=Math.atan2(q.y-oldY,q.x-oldX);
+ // Only engage after the team is in combat; don't break stealth with an unsolicited shot.
+ if(q.mode==='combat'&&!partnerHidden&&q.shotCd<=0){
+  let enemy=null,best=225;
+  for(const h of humans)if(h.alive&&D(h,q)<best&&los(q,h)){enemy=h;best=D(h,q);}
+  if(enemy){
+   const angle=Math.atan2(enemy.y-q.y,enemy.x-q.x);q.face=angle;
+   fire(q.x+Math.cos(angle)*13,q.y+Math.sin(angle)*13,angle+(R()-.5)*.07,'ally','v',480,205);
+   q.shotCd=.75;
+  }
+ }
 }
 function drawPartner(){
  if(!partner||skill!=='partner')return;const q=partner;
