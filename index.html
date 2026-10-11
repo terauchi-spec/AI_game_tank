@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.11.175</title>
+<title>戦車ゲーム 2026.10.11.176</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -450,7 +450,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <section class="spec-section" id="spec-map"><h2>2. ステージ構成とランダム生成</h2>
 <p>ステージは全7エリア。<strong>最初は草原、最後は敵司令本部</strong>で、その間の5エリアは候補から毎回重複なしでランダムに選ばれます。中間エリアにも草原が選ばれることがあります。</p>
 <p>中間エリア候補：草原／森林／村／丘陵／敵前線基地／街／敵迷路基地／湿地。</p>
-<ul><li>エリアごとに地形や建物、木、岩、草むら、障害物などの配置が異なります。作戦1回の通常車両は合計2〜5台で、トラック・装甲車・戦車からランダムに選ばれ、戦車が最低1台出現します。戦闘機は通常配置の対象外です。橋幅は64〜256px、川ごとの流速は6〜30px/秒です。</li><li>左右端の危険度は<strong>左重点・右重点・両側重点</strong>から毎回抽選され、巡回兵の配置や遮蔽物が変化します。</li><li>迷路基地には広い会議室と幅の広い廊下、空きスペースの木箱があります。青の通常兵はつながった通路を広く探索します。迷路壁はプレイヤー戦車の接触で破壊できます。接触による破壊範囲は少し抑えており、押し込み続けると広がります。トラック・装甲車の接触では破壊できません。木箱等の爆風では破壊できます。敵司令本部にも固有の構造があります。</li><li>道路は2か所の候補それぞれで50%の確率で出現します。アスファルト舗装・乾いた締め固め土を各50%、1車線・対面2車線・対面4車線を各約33%で選択し、幅は96・176・320pxです。川・橋、迷路基地、司令本部を避けて配置するため、場所が確保できない場合は出現しません。舗装道路の対面車線の中央は白い実線です。路面には汚れ・補修跡・ひび、白線には摩耗を表現します。道路の描画は初回にキャッシュし、画面内だけ表示します。土の道路は横筋を抑えた専用タイルを使用し、不規則な路肩が周囲の地面になじみます。中央付近にはまばらな雑草があります。道路上には建物・木・岩・塀・木箱・ドラム缶・草むら・泥を配置しません。土の道路は明るさと彩度を抑えて周囲になじませます。道路自体による速度変更はありません。マップ・敵・障害物の配置は出撃ごとに再生成されます。</li></ul>
+<ul><li>エリアごとに地形や建物、木、岩、草むら、障害物などの配置が異なります。作戦1回の通常車両は合計2〜5台で、トラック・装甲車・戦車からランダムに選ばれ、戦車が最低1台出現します。戦闘機は通常配置の対象外です。橋幅は64〜256px、川ごとの流速は6〜30px/秒です。</li><li>左右端の危険度は<strong>左重点・右重点・両側重点</strong>から毎回抽選され、巡回兵の配置や遮蔽物が変化します。</li><li>迷路基地には広い会議室と幅の広い廊下、空きスペースの木箱があります。青の通常兵はつながった通路を広く探索します。迷路壁はプレイヤー戦車の接触で破壊できます。接触による破壊範囲は少し抑えており、押し込み続けると広がります。トラック・装甲車の接触では破壊できません。木箱等の爆風では破壊できます。敵司令本部にも固有の構造があります。</li><li>道路は川と同様に2か所の候補それぞれで独立して75%の出現抽選を行います。アスファルト舗装・乾いた締め固め土を各50%、1車線・対面2車線・対面4車線を各約33%で選択し、幅は96・176・320pxです。川・橋、迷路基地、司令本部を避けて配置するため、場所が確保できない場合は出現しません。舗装道路の1車線には白線を表示しません。対面車線の中央は白い実線です。路面には汚れ・補修跡・ひび、白線には摩耗を表現します。道路の描画は初回にキャッシュし、画面内だけ表示します。土の道路は横筋を抑えた専用タイルを使用し、不規則な路肩が周囲の地面になじみます。中央付近にはまばらな雑草があります。道路上には建物・木・岩・塀・木箱・ドラム缶・草むら・泥を配置しません。土の道路は明るさと彩度を抑えて周囲になじませます。道路自体による速度変更はありません。マップ・敵・障害物の配置は出撃ごとに再生成されます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-controls"><h2>3. 基本操作</h2>
 <ul><li><strong>PC：</strong>矢印キーで移動。D＝爆弾・乗り物の主攻撃、S＝スキル・戦車MG、A＝乗降・近接アクション。</li><li><strong>スマホ：</strong>左スティックで移動。画面のB・S・Aボタンを使用。</li><li><strong>戦車（スマホ）：</strong>Bをドラッグして砲塔を照準、離すと主砲発射。Sを押し続けてMGを撃ち、ドラッグで照準を動かせます。</li><li><strong>狙撃中：</strong>左右で視点移動、上下で1.5倍／2.5倍／3.5倍レンズを変更。Sで狙撃、Aで解除します。</li></ul>
@@ -520,7 +520,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.11.175',FILE_CREATED_AT='2026/10/11 16:57',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.11.176',FILE_CREATED_AT='2026/10/11 17:02',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -5199,7 +5199,7 @@ function clearRoadScenery(){
 function generateRoadBands(){
  roadBands=[];
  for(const candidateY of [8800,4000]){
-  if(R()>=.5)continue;
+  if(R()>=.75)continue;
   const lanes=[1,2,4][R()*3|0],h={1:96,2:176,4:320}[lanes],kind=R()<.5?'asphalt':'dirt';
   let y=null;
   for(const offset of [0,360,-360,720,-720,1080,-1080]){
@@ -5238,7 +5238,8 @@ function roadVisualCache(r){
   ctx.save();ctx.beginPath();ctx.rect(0,0,r.w,r.h);ctx.clip();
   // 半解像度描画でも線が消えないよう4px幅にし、中央は白い実線にする。
   const paint='rgba(219,216,198,.64)';
-  ctx.strokeStyle=paint;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(0,8);ctx.lineTo(r.w,8);ctx.moveTo(0,r.h-8);ctx.lineTo(r.w,r.h-8);ctx.stroke();
+  ctx.strokeStyle=paint;ctx.lineWidth=4;
+  if(r.lanes>=2){ctx.beginPath();ctx.moveTo(0,8);ctx.lineTo(r.w,8);ctx.moveTo(0,r.h-8);ctx.lineTo(r.w,r.h-8);ctx.stroke();}
   if(r.lanes>=2){ctx.setLineDash([]);ctx.beginPath();ctx.moveTo(0,r.h/2);ctx.lineTo(r.w,r.h/2);ctx.stroke();}
   if(r.lanes===4){ctx.setLineDash([20,16]);ctx.beginPath();ctx.moveTo(0,r.h/4);ctx.lineTo(r.w,r.h/4);ctx.moveTo(0,r.h*3/4);ctx.lineTo(r.w,r.h*3/4);ctx.stroke();}
   ctx.setLineDash([]);
@@ -5254,7 +5255,7 @@ function roadVisualCache(r){
    let x=rand()*r.w,y=rand()*r.h;ctx.strokeStyle='rgba(22,25,23,.28)';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x,y);
    for(let j=0;j<4;j++){x+=4+rand()*9;y+=(rand()-.5)*13;ctx.lineTo(x,y);}ctx.stroke();
   }
-  const lines=[8,r.h-8];if(r.lanes>=2)lines.push(r.h/2);if(r.lanes===4)lines.push(r.h/4,r.h*3/4);
+  const lines=r.lanes>=2?[8,r.h-8,r.h/2]:[];if(r.lanes===4)lines.push(r.h/4,r.h*3/4);
   for(const y of lines)for(let x=rand()*15;x<r.w;x+=14+rand()*28){
    // 小さな欠けに留め、スクロール中の視認性を維持する。
    ctx.fillStyle='rgba(65,67,58,.30)';ctx.fillRect(x,y-2+rand()*2,2+rand()*5,1+rand());
@@ -6728,11 +6729,11 @@ function loop(n){
 }
 let gameErrorCount=0;
 function reportGameError(error){
- gameErrorCount++;console.error('Tank game v175',error);
+ gameErrorCount++;console.error('Tank game v176',error);
  let panel=document.getElementById('runtimeError');
  if(!panel){panel=document.createElement('div');panel.id='runtimeError';panel.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;background:#422018;color:#fff2dc;padding:12px;border:1px solid #f7b083;border-radius:8px;font:12px system-ui;white-space:pre-wrap;max-height:35vh;overflow:auto';document.body.appendChild(panel);}
  const stack=String(error&&error.stack||error).split('\n').slice(0,4).join('\n');
- panel.textContent='v175 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
+ panel.textContent='v176 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 requestAnimationFrame(loop);
 </script>
