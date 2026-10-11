@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.12.228</title>
+<title>戦車ゲーム 2026.10.12.229</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -568,7 +568,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.12.228',FILE_CREATED_AT='2026/10/12 08:09',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.12.229',FILE_CREATED_AT='2026/10/12 08:13',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -3862,11 +3862,12 @@ function updatePartner(dt){
  if(q.routeWait>0){q.routeWait=Math.max(0,q.routeWait-dt);q.moving=false;return;}
  if(q.route&&q.routeIndex<q.route.length){
   if(q.boardTarget&&(!cars.includes(q.boardTarget)||q.boardTarget.f<=0)){q.boardTarget=null;q.boardAt=null;}
-  const goingToBoard=q.boardTarget&&!q.vehicle&&q.routeIndex>=q.boardAt;
+  // 搭乗成功後は当フレームから車両としてルートの次区間へ進む。
+  let goingToBoard=!!(q.boardTarget&&!q.vehicle&&q.routeIndex>=q.boardAt);
   if(goingToBoard&&D(q,q.boardTarget)<=50){
-   partnerBoardVehicle(q,q.boardTarget);
+   if(partnerBoardVehicle(q,q.boardTarget))goingToBoard=false;
   }
-  const destination=goingToBoard&&q.boardTarget?q.boardTarget:q.route[q.routeIndex],
+  const destination=goingToBoard?q.boardTarget:q.route[q.routeIndex],
         oldX=q.x,oldY=q.y,before=D(q,destination);
   q.routePointT=(q.routePointT||0)+dt;
   if(before<16){if(!goingToBoard){q.routeIndex++;q.routePointT=0;q.routeStuckT=0;q.wallFollow=null;}}
@@ -3874,7 +3875,9 @@ function updatePartner(dt){
    partnerCompanionMove(q,destination,q.vehicle?Math.min(q.vehicle.t.sp||155,155):155,dt);
    const after=D(q,destination),moved=Math.hypot(q.x-oldX,q.y-oldY);
    q.routeStuckT=(moved<.12||after>before+.3)?(q.routeStuckT||0)+dt:Math.max(0,(q.routeStuckT||0)-dt);
-   if(q.routeStuckT>1.1||q.routePointT>5.5){rollbackPartnerRoute(q);return;}
+   // 遠方の乗り物へ向かう間は通常のルートより長く猶予を設ける。
+   const timeout=goingToBoard?Math.max(5.5,Math.min(20,before/110+5.5)):5.5;
+   if(q.routeStuckT>1.1||q.routePointT>timeout){rollbackPartnerRoute(q);return;}
    if(after<16&&!goingToBoard){q.routeIndex++;q.routePointT=0;q.routeStuckT=0;q.wallFollow=null;}
   }
   q.moving=Math.hypot(q.x-oldX,q.y-oldY)>.1;
