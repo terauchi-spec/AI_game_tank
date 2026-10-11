@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.11.168</title>
+<title>戦車ゲーム 2026.10.11.169</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -486,7 +486,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 </ul><p>スキルによっては搭乗中や特殊状態では使用できません。細かな制約は出撃時のスキル説明に従います。</p>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-weather"><h2>9. 天候と環境</h2>
-<ul><li>天候は晴れと雨が切り替わります。雨は30秒間で、降り始めの約5秒は小雨から徐々に強まり、最後の約6秒は徐々に弱まります。画面の暗さ・雨粒・水しぶきも雨量に合わせて変化します。雨天のゲーム効果は雨の開始から終了まで適用されます。</li><li>雨天では敵の索敵距離が通常の75%、狙撃スコープの見通し距離が70%になります。</li><li>雨天では自然物への延焼が抑えられます。</li><li>川の流れや泥などは、歩兵・車両の移動に影響します。泥は湿った土の濃淡、不規則な縁、小さな水たまりで表示されます。</li></ul>
+<ul><li>天候は晴れと雨が切り替わります。雨は30秒間で、降り始めの約5秒は小雨から徐々に強まり、最後の約6秒は徐々に弱まります。画面の暗さ・雨粒・水しぶきも雨量に合わせて変化します。雨天のゲーム効果は雨の開始から終了まで適用されます。</li><li>雨天では敵の索敵距離が通常の75%、狙撃スコープの見通し距離が70%になります。</li><li>雨天では自然物への延焼が抑えられます。</li><li>川の流れや泥などは、歩兵・車両の移動に影響します。泥は湿った土の濃淡、不規則な縁、小さな水たまりで表示されます。泥での移動速度は徒歩・兵士・猟犬が通常の30%、地上の乗り物（敵戦車・下車後の慣性走行を含む）が60%です。川では従来どおり30%です。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-score"><h2>10. 評価・スコア・称号</h2>
 <ul><li>クリアまたは失敗後の評価画面に、総合スコアと<strong>F〜Sの7段階ランク</strong>を表示します。</li><li>スコアは潜入・戦闘・任務達成・クリア時間などをもとに計算します。到達距離は出撃開始地点からの最大前進距離です。距離表示はすべてm単位です。</li><li>プレイスタイルを<strong>潜入／索敵／射撃／戦闘／爆破／機動／戦術／生存</strong>の8軸（Lv0〜5）で評価します。索敵は未発見での前進距離、射撃は発射数あたりの撃破効率などを指標にします。</li><li><strong>マルチキル：</strong>撃破間隔4秒以内で続けて敵を撃破すること。<strong>ワンショットキル：</strong>同一攻撃で複数の敵を撃破すること。無線支援爆撃とその連鎖爆発は、マルチキル・ワンショットキルの対象外です。</li><li>条件を満たすと称号・勲章を獲得。タイトル画面の「称号」からコレクションと累計戦績を確認できます。</li></ul>
@@ -520,7 +520,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.11.168',FILE_CREATED_AT='2026/10/11 15:37',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.11.169',FILE_CREATED_AT='2026/10/11 15:46',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -2634,7 +2634,16 @@ function enemyTankObjectBlocked(self,x,y){
  if(!(etanks||[]).includes(self))return false;
  return nearbyObjects(x,y,TANK_HIT+8).some(o=>circleHitsObject(x,y,TANK_HIT,o));
 }
-function mv(o,dx,dy,r,slowOverride=null){const slow=Number.isFinite(slowOverride)?slowOverride:((inSlowTerrainAt(o.x,o.y,r)||inSlowTerrainAt(o.x+dx,o.y+dy,r))?.3:1);dx*=slow;dy*=slow;const nx=o.x+dx;if(nx>r&&nx<WW-r&&!hitsC(nx,o.y,r)&&!enemyTankObjectBlocked(o,nx,o.y)&&!tankBlocked(o,nx,o.y,r)&&!enemyUnitBlocked(o,nx,o.y,r))o.x=nx;const ny=o.y+dy;if(ny>r&&ny<WH-r&&!hitsC(o.x,ny,r)&&!enemyTankObjectBlocked(o,o.x,ny)&&!tankBlocked(o,o.x,ny,r)&&!enemyUnitBlocked(o,o.x,ny,r))o.y=ny;}
+function terrainMoveScale(o,dx,dy,r){
+ // 川は従来の30%。泥だけ、地上の乗り物を60%にする。
+ if(inWaterAt(o.x,o.y,r)||inWaterAt(o.x+dx,o.y+dy,r))return .3;
+ if(inMudAt(o.x,o.y,r)||inMudAt(o.x+dx,o.y+dy,r)){
+  const vehicle=(o===p&&p.tank)||o.kind==='tank'||o.kind==='truck'||(etanks||[]).includes(o);
+  return vehicle?.6:.3;
+ }
+ return 1;
+}
+function mv(o,dx,dy,r,slowOverride=null){const slow=Number.isFinite(slowOverride)?slowOverride:terrainMoveScale(o,dx,dy,r);dx*=slow;dy*=slow;const nx=o.x+dx;if(nx>r&&nx<WW-r&&!hitsC(nx,o.y,r)&&!enemyTankObjectBlocked(o,nx,o.y)&&!tankBlocked(o,nx,o.y,r)&&!enemyUnitBlocked(o,nx,o.y,r))o.x=nx;const ny=o.y+dy;if(ny>r&&ny<WH-r&&!hitsC(o.x,ny,r)&&!enemyTankObjectBlocked(o,o.x,ny)&&!tankBlocked(o,o.x,ny,r)&&!enemyUnitBlocked(o,o.x,ny,r))o.y=ny;}
 let lastEnemySeparationAt=-1e9;
 function separateEnemyUnits(force=false){
  const now=performance.now();if(!force&&now-lastEnemySeparationAt<100)return;lastEnemySeparationAt=now;
@@ -6605,11 +6614,11 @@ function loop(n){
 }
 let gameErrorCount=0;
 function reportGameError(error){
- gameErrorCount++;console.error('Tank game v168',error);
+ gameErrorCount++;console.error('Tank game v169',error);
  let panel=document.getElementById('runtimeError');
  if(!panel){panel=document.createElement('div');panel.id='runtimeError';panel.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;background:#422018;color:#fff2dc;padding:12px;border:1px solid #f7b083;border-radius:8px;font:12px system-ui;white-space:pre-wrap;max-height:35vh;overflow:auto';document.body.appendChild(panel);}
  const stack=String(error&&error.stack||error).split('\n').slice(0,4).join('\n');
- panel.textContent='v168 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
+ panel.textContent='v169 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 requestAnimationFrame(loop);
 </script>
