@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.12.223</title>
+<title>戦車ゲーム 2026.10.12.224</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -568,7 +568,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.12.223',FILE_CREATED_AT='2026/10/12 02:04',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.12.224',FILE_CREATED_AT='2026/10/12 02:05',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -3671,10 +3671,10 @@ function partnerKnockoutPatrol(dt){
  let target=null,near=100;
  for(const h of humans)if(h.alive&&!(h.stun>0)){
   const d=D(q,h);
-  if(d<near&&los(q,h)){near=d;target=h;}
+  if(d<near){near=d;target=h;}
  }
  if(!target)return false;
- if(near<=50){
+ if(near<=50&&los(q,target)){
   if(q.touchCd<=0&&stunHuman(target)){
    q.grappleT=.45;q.grappleTarget=target;q.touchCd=1;
    q.face=Math.atan2(target.y-q.y,target.x-q.x);q.moving=false;
@@ -3683,7 +3683,6 @@ function partnerKnockoutPatrol(dt){
  }
  // While drawing radio directions the partner should remain at the drawn route's start.
  // Otherwise pursuit interrupts autonomous/backup/routed walking.
- if(partnerOrder.drawing)return false;
  const ox=q.x,oy=q.y;
  moveAllySmart(q,target,180,dt);
  q.moving=Math.hypot(q.x-ox,q.y-oy)>.1;
