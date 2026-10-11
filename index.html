@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.12.215</title>
+<title>戦車ゲーム 2026.10.12.216</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -568,7 +568,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.12.215',FILE_CREATED_AT='2026/10/12 01:05',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.12.216',FILE_CREATED_AT='2026/10/12 01:07',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -2735,6 +2735,18 @@ function pushByRiverCurrent(o,dt,r=8,weight=1){
 }
 function applyRiverCurrents(dt){
  if(!water||!water.length)return;
+ // 設置爆弾も水流と同じ共通更新で移動させる。障害物判定で水流を止めず、岸・画面端で停止。
+ for(const b of bombs||[]){
+  if(b.own!=='p'||b.fly>0)continue;
+  const river=waterAt(b.x,b.y);
+  if(!river)continue;
+  const direction=riverFlowDir(river);
+  const distance=direction*riverFlowSpeed(river)*3*dt;
+  const nextX=Math.max(8,Math.min(WW-8,b.x+distance));
+  // 水面区間内では確実に流れ、陸地や障害物に到達したらそこで停止。
+  if(waterAt(nextX,b.y)&&!hitsC(nextX,b.y,3))b.x=nextX;
+ }
+
  // プレイヤー：歩兵は流されやすく、戦車・トラックは重量分だけ弱くする。戦闘機は対象外。
  if(p&&state==='play'&&!(p.tank&&p.tank.kind==='fighter')){
   const pr=p.tank?(p.tank.kind==='truck'?20:15):8,wt=p.tank?(p.tank.kind==='truck'?.55:.35):1;
@@ -4836,14 +4848,6 @@ function update(dt){
  // 爆弾
  for(let i=bombs.length-1;i>=0;i--){const b=bombs[i];
   if(b.fly>0){b.fly-=dt;const k=1-Math.max(0,b.fly)/.35;b.x=b.sx+(b.tx-b.sx)*k;b.y=b.sy+(b.ty-b.sy)*k;if(b.fly>0)continue;b.x=b.tx;b.y=b.ty;}
-  // 水中の設置爆弾は川の向きへ流速の3倍で流れる。陸へ出たら静止。
-  if(b.own==='p'){
-   const river=waterAt(b.x,b.y);
-   if(river){
-    const nx=Math.max(8,Math.min(WW-8,b.x+riverFlowDir(river)*riverFlowSpeed(river)*3*dt));
-    if(!hitsC(nx,b.y,5))b.x=nx;
-   }
-  }
   if(b.own==='e'){b.t-=dt;
    const houndStep=hound&&hound.stun<=0&&D(hound,b)<14;if(houndStep){stunHound(5);sfx('explosion');fb(b.x,b.y,28);burst(b.x,b.y,34,'#ff8a3a',300);shake=Math.max(shake,10);bombs.splice(i,1);continue;}
    const allyStep=(allies||[]).find(a=>a.alive&&!(a.chute>0)&&D(a,b)<14);if(allyStep){for(const a of (allies||[]))if(a.alive&&!(a.chute>0)&&D(a,b)<34){a.alive=false;burst(a.x,a.y,18,'#8fd7ff',180);}sfx('explosion');fb(b.x,b.y,28);burst(b.x,b.y,34,'#ff8a3a',300);shake=Math.max(shake,10);bombs.splice(i,1);say('増援が地雷でやられた!');continue;}
