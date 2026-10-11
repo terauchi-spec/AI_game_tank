@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.11.173</title>
+<title>戦車ゲーム 2026.10.11.174</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -457,7 +457,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <p>詳しいキー配置と各スキルの操作はタイトル画面の「操作説明」、またはスキル選択画面のⓘでも確認できます。</p>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-player"><h2>4. 歩兵・潜入・地形</h2>
-<ul><li>歩兵のライフはハート3個。敵戦車の砲弾が直撃するとライフが3減少します。徒歩では敵戦車の車体を通り抜けられません。乗り物に搭乗していないときは爆弾やスキルを使用できます。</li><li>近くの敵兵にAで組み付くと、敵を60秒間気絶させられます。</li><li>草むらは敵の視線を避けるための隠蔽場所です。白い目に赤い斜線のアイコンが隠れた状態の目印です。発見解除前は黄色の「解除待ち」を表示します。雨天時は水中にいることも発見を避ける条件になります。</li><li>停止中は敵の索敵距離が短くなります。見つかった後も、条件を満たして隠れ続けると発見状態を解除できます。</li><li>建物・岩・木・防護壁などは、種類に応じて通行や射線を遮ります。川や泥は移動にも影響します。</li></ul>
+<ul><li>歩兵のライフはハート3個。敵戦車の砲弾が直撃するとライフが3減少します。徒歩では敵戦車の車体を通り抜けられません。乗り物に搭乗していないときは爆弾やスキルを使用できます。</li><li>近くの敵兵にAで組み付くと、敵を60秒間気絶させられます。</li><li>草むらは敵の視線を避けるための隠蔽場所です。白い目に赤い斜線のアイコンが隠れた状態の目印です。発見解除前は黄色の「解除待ち」を表示します。雨天時は水中にいることも発見を避ける条件になります。</li><li>停止中は敵の索敵距離が短くなります。見つかった後も、条件を満たして隠れ続けると発見状態を解除できます。</li><li>建物・岩・木・防護壁などは、種類に応じて通行や射線を遮ります。独立したブロック塀は128×32pxの固定サイズです（縦向きは32×128px）。迷路の構造壁は別のサイズです。川や泥は移動にも影響します。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-enemies"><h2>5. 敵兵と敵戦車のAI</h2>
 <h3>敵歩兵</h3><p>巡回・疑惑・発見の状態を持ちます。通常の巡回に加え、建物の周囲を回る巡回ルートもあります。音や爆発を警戒し、プレイヤーを発見すると短い反応時間を挟んで追跡・射撃します。状態の切り替えには0.5〜1秒の静止時間を挟みます。巡回中は前面の銃を隠し、発見中に銃を構えると腕を振らずに移動します。エリート兵は通常兵と性能・挙動が異なります。</p>
@@ -520,7 +520,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.11.173',FILE_CREATED_AT='2026/10/11 16:40',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.11.174',FILE_CREATED_AT='2026/10/11 16:52',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -1449,11 +1449,13 @@ const detectRange=(key='p')=>DETECT_RANGE_BASE*((key==='p'&&p&&p.tank)?2:1)*((ke
 const D=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),R=Math.random;
 const angD=(a,b)=>((a-b+9.42477)%6.28318)-3.14159;
 const nearBridge=(c,m=60)=>bridges&&bridges.some(b=>ov2({x:b.x-m,y:b.y-m,w:(b.w||100)+m*2,h:(b.h||100)+m*2},c,0));
+const BLOCK_WALL_LONG=128,BLOCK_WALL_SHORT=32;
 function genCovers(edgeCoverReservations=[]){covers=[];
  const ovF=(a,b,m=0)=>a.x<b.x+b.w+m&&a.x+a.w+m>b.x&&(a.y*MAP_SCALE)<(b.y*MAP_SCALE+b.h+m)&&(a.y*MAP_SCALE+a.h+m)>(b.y*MAP_SCALE);
  const add=(kd,x,y,w,h,m=10)=>{
   const fixBox=(nw,nh)=>{const cx=x+w*.5,cy=y*MAP_SCALE+h*.5;x=cx-nw*.5;y=(cy-nh*.5)/MAP_SCALE;w=nw;h=nh;};
   if(kd===0){const vertical=h>w;fixBox(vertical?LOG_SHORT:LOG_LONG,vertical?LOG_LONG:LOG_SHORT);}
+  else if(kd===1){const vertical=h>w;fixBox(vertical?BLOCK_WALL_SHORT:BLOCK_WALL_LONG,vertical?BLOCK_WALL_LONG:BLOCK_WALL_SHORT);}
   else if(kd===2)fixBox(CRATE_W,CRATE_H);
   else if(kd===3||kd===4||kd===9||kd===10){
    // 建物は種類ごとの固定サイズ。従来の配置中心は維持する。
@@ -1702,7 +1704,7 @@ function setupAreaDebugStage(){
    placeRow(z,[{kd:6,w:TREE_BOX,h:TREE_BOX,label:'木 最小：100%'},{kd:6,w:TREE_BOX*1.25,h:TREE_BOX*1.25,label:'木 中央：125%'},{kd:6,w:TREE_BOX*1.5,h:TREE_BOX*1.5,label:'木 最大：150%'}],620);
   }else if(z.n==='敵前線基地'){
    placeRow(z,[{kd:3,w:CONCRETE_W,h:CONCRETE_H,label:'コンクリート建物'},{kd:9,w:CONCRETE_MINI_W,h:CONCRETE_MINI_H,label:'小さなコンクリートの建物'},{kd:7,w:BARRIER_LONG,h:BARRIER_SHORT,label:'防護壁'}],160);
-   placeRow(z,[{kd:1,w:72,h:16,label:'壁 最小'},{kd:1,w:93,h:16,label:'壁 中央'},{kd:1,w:114,h:16,label:'壁 最大'}],500);
+   placeRow(z,[{kd:1,w:BLOCK_WALL_LONG,h:BLOCK_WALL_SHORT,label:'ブロック塀：固定128×32px'}],500);
    addObjectSample('crate',WW/2-150,z.y1+780,CRATE_W,CRATE_H,'オブジェクト：木箱');addObjectSample('barrel',WW/2+100,z.y1+795,BARREL_SIZE,BARREL_SIZE,'オブジェクト：ドラム缶');
   }else if(z.n==='街'){
    placeRow(z,[{kd:3,w:CONCRETE_W,h:CONCRETE_H,label:'コンクリート建物'},{kd:4,w:WOOD_W,h:WOOD_H,label:'木造建物'},{kd:9,w:MINI_CONCRETE_W,h:MINI_CONCRETE_H,label:'小さなコンクリート建物'},{kd:10,w:MINI_WOOD_W,h:MINI_WOOD_H,label:'小さな木造建物'}],180);
@@ -1715,7 +1717,7 @@ function setupAreaDebugStage(){
    addObjectSample('crate',WW/2-CRATE_W/2,z.y1+180,CRATE_W,CRATE_H,'オブジェクト：木箱');addObjectSample('barrel',WW/2+120,z.y1+200,BARREL_SIZE,BARREL_SIZE,'オブジェクト：ドラム缶');
    addMudSample(z,105,48,95,z.y1+470,'泥 最小');addMudSample(z,183,77,388,z.y1+455,'泥 中央');addMudSample(z,260,106,665,z.y1+440,'泥 最大');
   }else if(z.n==='敵司令本部'){
-   placeRow(z,[{kd:1,w:68,h:16,label:'壁 最小'},{kd:1,w:82,h:16,label:'壁 中央'},{kd:1,w:96,h:16,label:'壁 最大'}],430);
+   placeRow(z,[{kd:1,w:BLOCK_WALL_LONG,h:BLOCK_WALL_SHORT,label:'ブロック塀：固定128×32px'}],430);
    placeRow(z,[{kd:7,w:BARRIER_LONG,h:BARRIER_SHORT,label:'防護壁'}],680);
    addObjectSample('crate',WW/2-150,z.y1+900,CRATE_W,CRATE_H,'オブジェクト：木箱');addObjectSample('barrel',WW/2+100,z.y1+920,BARREL_SIZE,BARREL_SIZE,'オブジェクト：ドラム缶');
    addLabel('敵司令本部',base.x+base.w/2,base.y+base.h+26,'#ffcf9a','bold 14px system-ui');
@@ -6711,11 +6713,11 @@ function loop(n){
 }
 let gameErrorCount=0;
 function reportGameError(error){
- gameErrorCount++;console.error('Tank game v173',error);
+ gameErrorCount++;console.error('Tank game v174',error);
  let panel=document.getElementById('runtimeError');
  if(!panel){panel=document.createElement('div');panel.id='runtimeError';panel.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;background:#422018;color:#fff2dc;padding:12px;border:1px solid #f7b083;border-radius:8px;font:12px system-ui;white-space:pre-wrap;max-height:35vh;overflow:auto';document.body.appendChild(panel);}
  const stack=String(error&&error.stack||error).split('\n').slice(0,4).join('\n');
- panel.textContent='v173 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
+ panel.textContent='v174 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 requestAnimationFrame(loop);
 </script>
