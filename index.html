@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.11.205</title>
+<title>戦車ゲーム 2026.10.12.206</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -515,7 +515,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <ul>
 <li><strong>投擲：</strong>進行方向へ最大11mの距離で爆弾を投げます。5秒で再使用可能。</li>
 <li><strong>潜伏：</strong>0.5秒静止して潜伏準備後、最大5秒間潜伏。解除後は5秒チャージ。水中は移動速度60%、泥では潜伏を解除します。潜伏開始1秒後に敵表示が隠れます。</li>
-<li><strong>偽装：</strong>5秒間残る身代わりを設置して敵の注意をそらします。赤い電波リングが身代わりを中心に半径300pxまで広がります。身代わり周囲の残り時間の円形ゲージは表示せず、終了時は赤い粒が短く散って消えます。電波の表示範囲と敵を誘導する範囲は別です。チャージ8秒。</li>
+<li><strong>偽装：</strong>5秒間残る身代わりを設置して敵の注意をそらします。赤い電波リングが身代わりを中心に約1.25秒間隔で滑らかに半径300pxまで広がります。身代わり周囲の残り時間の円形ゲージは表示せず、終了時は赤い粒が短く散って消えます。電波の表示範囲と敵を誘導する範囲は別です。チャージ8秒。</li>
 <li><strong>増援：</strong>味方兵士がパラシュート降下して戦闘を援護。同時に最大5人。チャージ6秒。着地後、オブジェクトの爆発や敵戦車の砲撃爆風を受けると吹き飛ばされ、5秒間気絶します。気絶中は移動と射撃を停止し、頭上の星が目印になります。</li>
 <li><strong>突貫：</strong>正面にドリルを展開。持続5秒、終了後は6秒チャージ。遮蔽物の破壊に利用できます。</li>
 <li><strong>建築：</strong>前方にコンクリート防護壁を設置。最大5枚、チャージ1.5秒。</li>
@@ -567,7 +567,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.11.205',FILE_CREATED_AT='2026/10/11 23:52',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.12.206',FILE_CREATED_AT='2026/10/12 00:07',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -3150,6 +3150,14 @@ function updateCommanderRocket(b,ox,oy,expired){
 function drawSignalPulse(x,y,pulse,maxRadius=52,color='rgba(255,230,120,.8)'){
  g.save();g.strokeStyle=color;g.lineWidth=2;g.globalAlpha*=1-pulse;
  g.beginPath();g.arc(x,y,18+pulse*(maxRadius-18),0,6.28);g.stroke();g.restore();
+}
+// 偽装専用：1.25秒ごとに赤いリングを滑らかに半径300pxまで広げる。
+function drawDecoySignalPulse(x,y,elapsed){
+ const phase=((Math.max(0,elapsed)%1.25)/1.25);
+ const radius=18+282*phase;
+ const alpha=Math.min(1,phase*7)*Math.pow(1-phase,1.2)*.82;
+ g.save();g.strokeStyle='rgba(255,70,70,1)';g.lineWidth=2.2;g.globalAlpha*=alpha;
+ g.beginPath();g.arc(x,y,radius,0,Math.PI*2);g.stroke();g.restore();
 }
 function drawCommanderOverlay(h){
  if(!h.commander)return;
@@ -6263,7 +6271,7 @@ function draw(near){
   else if(b.k==='s'){g.fillStyle='#fff4c8';g.fillRect(-15,-1,19,2);g.fillStyle='rgba(255,255,255,.65)';g.fillRect(-23,-.5,10,1);}
   else{g.fillStyle=b.from==='p'?'#ffd84a':b.from==='ally'?'#8fd7ff':'#ff8a5a';g.fillRect(-10,-1.5,13,3);g.fillStyle='#fff';g.fillRect(-2,-1,5,2);}
   g.restore();}
- if(decoy){g.globalAlpha=.7;soldier(decoy.x,decoy.y,decoy.face,true,false,false);g.globalAlpha=1;drawSignalPulse(decoy.x,decoy.y,(performance.now()/750)%1,300,'rgba(255,70,70,.8)');}
+ if(decoy){g.globalAlpha=.7;soldier(decoy.x,decoy.y,decoy.face,true,false,false);g.globalAlpha=1;drawDecoySignalPulse(decoy.x,decoy.y,(5-decoy.t));}
  for(const ally of (allies||[]))if(ally.alive&&!(ally.chute>0)){drawBlastShadow(ally);soldier(ally.x,ally.y-blastLift(ally),ally.face,true,false,false,false,'',false,false);drawAllyStun(ally);}
  drawHound();
  for(const ab of airbombs){const mt=ab.maxT||.48,k=Math.max(0,Math.min(1,1-ab.t/mt));g.fillStyle=ab.fighter?'#252b31':'#171717';g.beginPath();g.ellipse(ab.x,ab.y,ab.fighter?7:5,ab.fighter?13:10,0,0,6.28);g.fill();g.strokeStyle=ab.fighter?'rgba(180,220,255,.65)':'rgba(255,190,80,.55)';g.beginPath();g.arc(ab.x,ab.y,(ab.fighter?20:14)*k,0,6.28);g.stroke();}
