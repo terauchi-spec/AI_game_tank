@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.12.216</title>
+<title>戦車ゲーム 2026.10.12.217</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -507,7 +507,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <ul><li><strong>戦車：</strong>主砲（D）とMG（S）で攻撃します。車種により性能が異なり、砲弾・MG弾数・燃料・耐久の管理が必要です。</li><li><strong>装甲車：</strong>速度130.5px/秒で戦車より速く、ジープ相当のトラックより遅い車両です。D（スマホ：B）またはSでサブマシンガンを撃ちます。弾数120、燃料95。敵戦車砲の直撃1発で大破し、敵SMGへの耐久はトラックの1.5倍（7.5発分、実際には8発で大破）です。迷路壁は接触で破壊できません。大破時は爆発のみで残骸は残りません。主砲はありません。下車後はトラックと同様に慣性で前進し、敵戦車との体当たりでは両車両が爆発します。</li><li><strong>トラック：</strong>武器による攻撃はできませんが、走行時の接触で敵を倒せます。下車後は慣性で前進し、敵戦車への体当たりでは両車両が爆発します。迷路壁は接触で破壊できません。敵SMGは5発で大破し、大破時に残骸は残りません。</li><li><strong>戦闘機（デバッグ用）：</strong>通常のランダム車両配置には出現しません。デバッグで搭乗すると地上の障害物を越えて飛行し、爆撃できます。無線で呼ぶ支援爆撃機とは別の機体です。</li><li>近づいてAで乗車し、再度Aで降車します。降車地点には十分な空きスペースが必要です。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-combat"><h2>7. 武器・爆発・破壊</h2>
-<ul><li><strong>歩兵の設置爆弾：</strong>D（スマホ：B）で設置し、再度D（スマホ：B）で起爆。爆風で敵・オブジェクトを攻撃できます。川の中では水流の向きに流速の3倍で流れ、陸に出ると止まります。</li><li><strong>戦車主砲：</strong>壁や建物などに当たると炸裂。プレイヤーの主砲が壁に着弾したときは、着弾点から約9.5m以内の敵歩兵を撃破できます。</li><li><strong>MG・ライフル：</strong>弾の種類に応じた射程・被弾処理があります。狙撃弾は敵兵を貫通できます。</li><li>木と岩石の画像は各2種類。配置位置に応じて約半々で固定選択し、サイズ・当たり判定・破壊処理は共通です。</li><li>建物・岩石・司令本部の足元には背景の上に薄い影を描画し、破壊後も地面の暗い跡として残します。</li><li><strong>一般車両：</strong>乗車できない駐車車両です。現在は出現を一時停止しています。赤・青・白・黄の4色で、当たり判定・炎上・爆発は既存オブジェクトと同様です。</li><li><strong>破壊可能オブジェクト：</strong>木箱やドラム缶などは被弾・炎上・爆発に反応し、状況によって連鎖爆発も発生します。</li><li>爆風によって敵やプレイヤーが押し飛ばされ、気絶する場合があります。</li></ul>
+<ul><li><strong>歩兵の設置爆弾：</strong>D（スマホ：B）で設置し、再度D（スマホ：B）で起爆。爆風で敵・オブジェクトを攻撃できます。川の中では水流の向きに流速の2倍で流れ、陸に出ると止まります。</li><li><strong>戦車主砲：</strong>壁や建物などに当たると炸裂。プレイヤーの主砲が壁に着弾したときは、着弾点から約9.5m以内の敵歩兵を撃破できます。</li><li><strong>MG・ライフル：</strong>弾の種類に応じた射程・被弾処理があります。狙撃弾は敵兵を貫通できます。</li><li>木と岩石の画像は各2種類。配置位置に応じて約半々で固定選択し、サイズ・当たり判定・破壊処理は共通です。</li><li>建物・岩石・司令本部の足元には背景の上に薄い影を描画し、破壊後も地面の暗い跡として残します。</li><li><strong>一般車両：</strong>乗車できない駐車車両です。現在は出現を一時停止しています。赤・青・白・黄の4色で、当たり判定・炎上・爆発は既存オブジェクトと同様です。</li><li><strong>破壊可能オブジェクト：</strong>木箱やドラム缶などは被弾・炎上・爆発に反応し、状況によって連鎖爆発も発生します。</li><li>爆風によって敵やプレイヤーが押し飛ばされ、気絶する場合があります。</li></ul>
 <h3>アイテムと支援爆撃</h3><ul><li><strong>ガソリン：</strong>赤い携行缶。通常マップに5個配置され、乗車中のみ表示・取得できます。取得すると搭乗車両の燃料が満タンになります。</li><li><strong>無線：</strong>通常マップに1個配置。徒歩・乗車どちらでも取得でき、支援爆撃を自動で要請します。</li><li><strong>支援爆撃機：</strong>大きな主翼と細い胴体を持つ六発機。画面上方向へ飛び、3列に計25発の爆弾を投下します。直近の変更で進行方向の爆撃範囲を約160〜170px延長しました。投下間隔は約0.14秒で、爆弾は約0.48秒後に炸裂します。乗り物より上に描画されます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-skills"><h2>8. 10種類のスキル</h2>
@@ -516,7 +516,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <li><strong>投擲：</strong>進行方向へ最大11mの距離で爆弾を投げます。5秒で再使用可能。</li>
 <li><strong>潜伏：</strong>0.5秒静止して潜伏準備後、最大5秒間潜伏。解除後は5秒チャージ。水中は移動速度60%、泥では潜伏を解除します。潜伏開始1秒後に敵表示が隠れます。</li>
 <li><strong>偽装：</strong>5秒間残る身代わりを設置して敵の注意をそらします。赤い電波が約1.25秒間隔で半径300pxまで滑らかに広がります。見やすいように少し濃い単色の赤いリングで描いています。身代わり周囲の残り時間の円形ゲージは表示せず、終了時は赤い粒が短く散って消えます。電波の表示範囲と敵を誘導する範囲は別です。チャージ8秒。</li>
-<li><strong>相棒：</strong>青いヘルメットラインの味方が自律的に敵司令本部へ進み、プレイヤーの画面内にとどまるよう行動します。HP3で、倒れると赤十字の救急箱アイコンが表示され、徒歩で触れると回復します。画面外10秒で画面下から復帰します。</li>
+<li><strong>相棒：</strong>青いヘルメットラインの味方が敵司令本部を目指しつつプレイヤーの歩調を模倣します。プレイヤーが草むらに隠れれば同じ草むらへ向かい、慎重な歩行では敵の視界と遮蔽物を考慮し、走行時は加速します。画面内にとどまり、敵の攻撃対象にもなります。HP3で、倒れると赤十字の救急箱アイコンが表示され、徒歩で触れると回復します。画面外10秒で画面下から復帰します。</li>
 <li><strong>増援：</strong>味方兵士がパラシュート降下して戦闘を援護。同時に最大5人。チャージ6秒。着地後、オブジェクトの爆発や敵戦車の砲撃爆風を受けると吹き飛ばされ、5秒間気絶します。気絶中は移動と射撃を停止し、頭上の星が目印になります。</li>
 <li><strong>突貫：</strong>正面にドリルを展開。持続5秒、終了後は6秒チャージ。遮蔽物の破壊に利用できます。</li>
 <li><strong>建築：</strong>前方にコンクリート防護壁を設置。最大5枚、チャージ1.5秒。</li>
@@ -568,7 +568,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.12.216',FILE_CREATED_AT='2026/10/12 01:07',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.12.217',FILE_CREATED_AT='2026/10/12 01:08',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -2741,7 +2741,7 @@ function applyRiverCurrents(dt){
   const river=waterAt(b.x,b.y);
   if(!river)continue;
   const direction=riverFlowDir(river);
-  const distance=direction*riverFlowSpeed(river)*3*dt;
+  const distance=direction*riverFlowSpeed(river)*2*dt;
   const nextX=Math.max(8,Math.min(WW-8,b.x+distance));
   // 水面区間内では確実に流れ、陸地や障害物に到達したらそこで停止。
   if(waterAt(nextX,b.y)&&!hitsC(nextX,b.y,3))b.x=nextX;
@@ -2870,11 +2870,11 @@ function los(a,b){
 function cachedLos(o,target,ms=90){
  const now=performance.now();if(o&&o._visTarget===target&&o._nextVisAt>now)return !!o._visCache;const v=los(o,target);if(o){o._visTarget=target;o._visCache=v;o._nextVisAt=now+ms;}return v;
 }
-function targetObj(key){if(key&&key.startsWith('ally:')){const id=+key.slice(5);return (allies||[]).find(a=>a.alive&&a.id===id)||null;}if(key==='decoy')return decoy;return key==='p'?p:null;}
+function targetObj(key){if(key==='partner')return partner&&!partner.down?partner:null;if(key&&key.startsWith('ally:')){const id=+key.slice(5);return (allies||[]).find(a=>a.alive&&a.id===id)||null;}if(key==='decoy')return decoy;return key==='p'?p:null;}
 function canDetect(o,target,face,key){
  if(!target)return false;const d=D(o,target),known=o.st&&o.target===key,searchBoost=(o&&o.sus>0&&!o.st)?1.5:1,eliteRange=o&&o.commander==='white'?1.6:o&&o.elite?1.2:1,eliteFov=o&&o.commander==='white'?1.3:o&&o.elite?1.2:1,humanFov=(humans||[]).includes(o)?1.2:1,fovBoost=eliteFov*humanFov;
  const chatSight=(o&&o.chatT>0)?.5:1;
- const hiddenPlayer=key==='p'&&(debugMode>=2||p.dig>0||(!p.tank&&inBush(p))||(weather==='rain'&&inWaterAt(p.x,p.y,0)));if(hiddenPlayer)return false;
+ const hiddenPlayer=(key==='partner'&&(partner?.down||inBush(partner)))||(key==='p'&&(debugMode>=2||p.dig>0||(!p.tank&&inBush(p))||(weather==='rain'&&inWaterAt(p.x,p.y,0))));if(hiddenPlayer)return false;
  if(known){if(d>=detectDropRange(key)*eliteRange)return false;return los(o,target);}
  const da=Math.abs(angD(Math.atan2(target.y-o.y,target.x-o.x),face));
  const inCenter=da<=DETECT_CENTER_HALF*fovBoost&&d<detectRange(key)*searchBoost*eliteRange*chatSight;
@@ -2889,6 +2889,7 @@ function findDetectedTarget(o,face){
  // 偽装は音で注意を引くため、遮蔽物越しでも一定範囲の敵を誘導する。
  if(decoy){const dd=D(o,decoy);if(dd<500*((o&&o.chatT>0)?.5:1))best={key:'decoy',obj:decoy,d:dd};else if(canDetect(o,decoy,face,'decoy'))best={key:'decoy',obj:decoy,d:dd};}
  if(!best&&canDetect(o,p,face,'p'))best={key:'p',obj:p,d:D(o,p)};
+ if(partner&&!partner.down&&canDetect(o,partner,face,'partner')){const d=D(o,partner);if(!best||d<best.d)best={key:'partner',obj:partner,d};}
  for(const a of (allies||[]))if(a.alive&&canDetect(o,a,face,'ally:'+a.id)){const d=D(o,a);if(!best||d<best.d)best={key:'ally:'+a.id,obj:a,d};}
  if(o){o._detectCache=best;o._nextDetectAt=now+90+((o.x+o.y)|0)%21;}
  return best;
@@ -3618,30 +3619,36 @@ function updatePartner(dt){
   for(let i=0;i<16;i++){const x=Math.max(20,Math.min(WW-20,rx+(i%4-1.5)*25)),y=Math.max(20,Math.min(WH-20,ry-Math.floor(i/4)*25));if(!hitsC(x,y,9)){q.x=x;q.y=y;break;}}
   q.off=0;q.trail=[];say('相棒が復帰！');
  }
- // 画面内の移動可能範囲を目的地にし、自分で司令本部（上方向）を目指す。
- // プレイヤーの歩いた経路は参照せず、移動可能な左右の経路を探索する。
- const margin=38;
- const left=cx+margin,right=cx+W-margin,top=cy+margin,bottom=cy+H-margin;
- const targetX=Math.max(left,Math.min(right,q.goalX??p.x));
- const targetY=Math.max(top,Math.min(bottom,q.y-105));
- // 進路が塞がれていれば左右に迂回し、再び前進する。
- if(!q.goalX||q.goalT<=0||Math.abs(targetX-q.x)<15){
-  q.goalT=1.2;
-  const preferred=[q.x,q.x-85,q.x+85,p.x-70,p.x+70];
-  q.goalX=preferred.find(x=>x>=left&&x<=right&&!hitsC(x,Math.max(top,q.y-30),9))??p.x;
+ // プレイヤーの歩調と進行方向を参考にしながら、司令本部方向へ自律的に進む。
+ const margin=28,left=cx+margin,right=cx+W-margin,top=cy+margin,bottom=cy+H-margin;
+ const vx=(p.x-(q.prevPX??p.x))/Math.max(dt,.001),vy=(p.y-(q.prevPY??p.y))/Math.max(dt,.001);
+ q.prevPX=p.x;q.prevPY=p.y;
+ const playerSpeed=Math.hypot(vx,vy),playerHidden=!p.tank&&inBush(p),slow=playerSpeed<80;
+ // プレイヤーが草むらに入れば同じ草むら、慎重な移動なら周囲の遮蔽を優先する。
+ let goal={x:Math.max(left,Math.min(right,p.x+22)),y:Math.max(top,Math.min(bottom,p.y-50))};
+ if(playerHidden){
+  goal={x:Math.max(left,Math.min(right,p.x+(q.x<p.x?-14:14))),y:Math.max(top,Math.min(bottom,p.y+12))};
+ }else if(slow){
+  const candidates=[...nearbyBushes(q.x,q.y,140).map(b=>({x:b.x+b.w/2,y:b.y+b.h/2})),{x:p.x+25,y:p.y-35},{x:p.x-25,y:p.y-35}];
+  // 発見されていない敵の視界・射線に入りにくい安全な進路を選ぶ。
+  let best=Infinity;
+  for(const c of candidates){
+   if(c.x<left||c.x>right||c.y<top||c.y>bottom||hitsC(c.x,c.y,9))continue;
+   let risk=Math.hypot(c.x-q.x,c.y-q.y)*.25+Math.abs(c.y-(p.y-35))*.12;
+   for(const e of humans)if(e.alive&&!e.st&&Math.hypot(e.x-c.x,e.y-c.y)<260&&los(e,c))risk+=180;
+   for(const e of etanks)if(e.alive&&!e.st&&Math.hypot(e.x-c.x,e.y-c.y)<280&&los(e,c))risk+=180;
+   if(inBush(c))risk-=90;
+   if(risk<best){best=risk;goal={x:c.x,y:c.y};}
+  }
+ }else{
+  // プレイヤーが駆け抜けたときは自分も加速するが、画面上端で待ち続けない。
+  goal={x:Math.max(left,Math.min(right,p.x+(q.x<p.x?-30:30))),y:Math.max(top,Math.min(bottom,Math.min(p.y-60,q.y-70)))};
  }
- q.goalT=Math.max(0,(q.goalT||0)-dt);
- // 画面外へ自ら出ないよう、境界手前で目的地を制限する。
- const goal={x:Math.max(left,Math.min(right,q.goalX)),y:Math.max(top,Math.min(bottom,q.y-90))};
+ // プレイヤーとの距離が開いたら、先行をやめて歩調を合わせる。
+ if(q.y<p.y-H*.38)goal.y=Math.max(top,Math.min(bottom,p.y-48));
  const oldX=q.x,oldY=q.y;
- if(q.x<left||q.x>right||q.y<top||q.y>bottom){
-  // プレイヤーが移動した場合は画面内へ帰還を優先。
-  const home={x:Math.max(left,Math.min(right,q.x)),y:Math.max(top,Math.min(bottom,q.y))};
-  moveAllySmart(q,home,185,dt);
- }else if(Math.hypot(goal.x-q.x,goal.y-q.y)>6){
-  moveAllySmart(q,goal,115,dt);
- }
- // 他の移動処理に押し出されても描画画面の端を越えない。
+ const speed=playerHidden?Math.max(70,playerSpeed*.9):slow?Math.max(50,playerSpeed*.9):Math.min(270,Math.max(115,playerSpeed*1.12));
+ if(Math.hypot(goal.x-q.x,goal.y-q.y)>12)moveAllySmart(q,goal,speed,dt);
  if(oldX>=left&&oldX<=right&&oldY>=top&&oldY<=bottom){
   q.x=Math.max(left,Math.min(right,q.x));q.y=Math.max(top,Math.min(bottom,q.y));
  }
