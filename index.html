@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.12.214</title>
+<title>戦車ゲーム 2026.10.12.215</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -516,7 +516,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <li><strong>投擲：</strong>進行方向へ最大11mの距離で爆弾を投げます。5秒で再使用可能。</li>
 <li><strong>潜伏：</strong>0.5秒静止して潜伏準備後、最大5秒間潜伏。解除後は5秒チャージ。水中は移動速度60%、泥では潜伏を解除します。潜伏開始1秒後に敵表示が隠れます。</li>
 <li><strong>偽装：</strong>5秒間残る身代わりを設置して敵の注意をそらします。赤い電波が約1.25秒間隔で半径300pxまで滑らかに広がります。見やすいように少し濃い単色の赤いリングで描いています。身代わり周囲の残り時間の円形ゲージは表示せず、終了時は赤い粒が短く散って消えます。電波の表示範囲と敵を誘導する範囲は別です。チャージ8秒。</li>
-<li><strong>相棒：</strong>青いヘルメットラインの味方が同行し、走行や草むら・遮蔽物に沿って追従します。HP3で、倒れたら徒歩で触れると回復します。画面外10秒で画面下から復帰します。</li>
+<li><strong>相棒：</strong>青いヘルメットラインの味方が自律的に敵司令本部へ進み、プレイヤーの画面内にとどまるよう行動します。HP3で、倒れると赤十字の救急箱アイコンが表示され、徒歩で触れると回復します。画面外10秒で画面下から復帰します。</li>
 <li><strong>増援：</strong>味方兵士がパラシュート降下して戦闘を援護。同時に最大5人。チャージ6秒。着地後、オブジェクトの爆発や敵戦車の砲撃爆風を受けると吹き飛ばされ、5秒間気絶します。気絶中は移動と射撃を停止し、頭上の星が目印になります。</li>
 <li><strong>突貫：</strong>正面にドリルを展開。持続5秒、終了後は6秒チャージ。遮蔽物の破壊に利用できます。</li>
 <li><strong>建築：</strong>前方にコンクリート防護壁を設置。最大5枚、チャージ1.5秒。</li>
@@ -568,7 +568,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.12.214',FILE_CREATED_AT='2026/10/12 01:00',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.12.215',FILE_CREATED_AT='2026/10/12 01:05',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -1409,12 +1409,12 @@ const SK=[
  {id:'dig',n:'潜伏',d:'0.5秒の潜行準備の後、最大5秒間潜伏\n潜行1秒後に敵表示・草むら内の敵輪郭を非表示\n川では泳いで潜伏（移動60%）／泥で強制解除／解除後CT5秒'},
  {id:'decoy',n:'偽装',d:'身代わりを設置して\n敵の注意を5秒間そらす'},
  {id:'buddy',n:'増援',d:'味方兵士がパラシュート降下\n最大5人まで同時に援護\n移動速度は歩兵の90%'},
- {id:'partner',n:'相棒',d:'青いラインの相棒が同行\nHP3・接触で救助\n画面外10秒で復帰'},
  {id:'drill',n:'突貫',d:'正面にドリルを展開\n0.5秒で遮蔽物を破壊\n持続5秒'},
  {id:'build',n:'建築',d:'正面にコンクリート防護壁を設置\n最大5枚／チャージ1.5秒\n画面外へ流れると消滅'},
  {id:'flame',n:'火炎',d:'正面20mへ火炎放射（先端到達1秒）\n最大3秒・使用分×4秒で全回復\n回復中も再使用可能'},
  {id:'hound',n:'猟犬',d:'猟犬が斜め後ろを追従\nSで正面へ3m自動ダッシュ（長押しで延長）→周囲10mの敵兵へ突撃\n敵がいなければ帰還／3秒噛みついて気絶\n帰還中に障害物へ当たるとS字で迷子→前方120°・50m＋全周15mで再発見'},
- {id:'sniper',n:'狙撃',d:'伏せてライフル展開→1秒静止後にスコープへ\n←→で視点移動／↑↓で1.5倍・2.5倍・3.5倍のレンズ切替\nSで狙撃／Aで解除。敵兵・エリートは1発撃破'}
+ {id:'sniper',n:'狙撃',d:'伏せてライフル展開→1秒静止後にスコープへ\n←→で視点移動／↑↓で1.5倍・2.5倍・3.5倍のレンズ切替\nSで狙撃／Aで解除。敵兵・エリートは1発撃破'},
+ {id:'partner',n:'相棒',d:'自律的に司令本部へ進む味方\nプレイヤーの画面内で行動\nHP3・接触救助・画面外10秒で復帰'}
 ];
 const TOUCH=matchMedia('(pointer:coarse)').matches;
 const SKN={throw:'投擲',dig:'潜伏',decoy:'偽装',buddy:'増援',partner:'相棒',drill:'突貫',build:'建築',flame:'火炎',hound:'猟犬',sniper:'狙撃'};
@@ -3606,16 +3606,35 @@ function updatePartner(dt){
   for(let i=0;i<16;i++){const x=Math.max(20,Math.min(WW-20,rx+(i%4-1.5)*25)),y=Math.max(20,Math.min(WH-20,ry-Math.floor(i/4)*25));if(!hitsC(x,y,9)){q.x=x;q.y=y;break;}}
   q.off=0;q.trail=[];say('相棒が復帰！');
  }
- const prev=q.trail[q.trail.length-1];
- if(!prev||Math.hypot(prev.x-p.x,prev.y-p.y)>12)q.trail.push({x:p.x,y:p.y});
- if(q.trail.length>80)q.trail.shift();
- const target=q.trail.length>3?q.trail[q.trail.length-4]:p;
- const d=Math.hypot(target.x-q.x,target.y-q.y),v=Math.hypot(p.x-(q.px??p.x),p.y-(q.py??p.y))/Math.max(dt,.001);
- q.px=p.x;q.py=p.y;
- q.moving=d>19;
- if(q.moving)moveAllySmart(q,target,v>160?Math.max(210,v*1.12):v<60?95:155,dt);
- if(q.trail.length>4&&Math.hypot(q.x-q.trail[0].x,q.y-q.trail[0].y)<28)q.trail.shift();
- q.face=q.moving?Math.atan2(target.y-q.y,target.x-q.x):p.body;
+ // 画面内の移動可能範囲を目的地にし、自分で司令本部（上方向）を目指す。
+ // プレイヤーの歩いた経路は参照せず、移動可能な左右の経路を探索する。
+ const margin=38;
+ const left=cx+margin,right=cx+W-margin,top=cy+margin,bottom=cy+H-margin;
+ const targetX=Math.max(left,Math.min(right,q.goalX??p.x));
+ const targetY=Math.max(top,Math.min(bottom,q.y-105));
+ // 進路が塞がれていれば左右に迂回し、再び前進する。
+ if(!q.goalX||q.goalT<=0||Math.abs(targetX-q.x)<15){
+  q.goalT=1.2;
+  const preferred=[q.x,q.x-85,q.x+85,p.x-70,p.x+70];
+  q.goalX=preferred.find(x=>x>=left&&x<=right&&!hitsC(x,Math.max(top,q.y-30),9))??p.x;
+ }
+ q.goalT=Math.max(0,(q.goalT||0)-dt);
+ // 画面外へ自ら出ないよう、境界手前で目的地を制限する。
+ const goal={x:Math.max(left,Math.min(right,q.goalX)),y:Math.max(top,Math.min(bottom,q.y-90))};
+ const oldX=q.x,oldY=q.y;
+ if(q.x<left||q.x>right||q.y<top||q.y>bottom){
+  // プレイヤーが移動した場合は画面内へ帰還を優先。
+  const home={x:Math.max(left,Math.min(right,q.x)),y:Math.max(top,Math.min(bottom,q.y))};
+  moveAllySmart(q,home,185,dt);
+ }else if(Math.hypot(goal.x-q.x,goal.y-q.y)>6){
+  moveAllySmart(q,goal,115,dt);
+ }
+ // 他の移動処理に押し出されても描画画面の端を越えない。
+ if(oldX>=left&&oldX<=right&&oldY>=top&&oldY<=bottom){
+  q.x=Math.max(left,Math.min(right,q.x));q.y=Math.max(top,Math.min(bottom,q.y));
+ }
+ q.moving=Math.hypot(q.x-oldX,q.y-oldY)>.12;
+ if(q.moving)q.face=Math.atan2(q.y-oldY,q.x-oldX);
 }
 function drawPartner(){
  if(!partner||skill!=='partner')return;const q=partner;
@@ -3623,10 +3642,10 @@ function drawPartner(){
   g.save();g.translate(q.x,q.y);g.rotate(q.face+.8);
   g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.ellipse(0,0,15,11,0,0,6.28);g.fill();
   g.fillStyle='#54745c';g.fillRect(-14,-5,28,10);g.fillStyle='#344b3c';g.fillRect(-17,-3,11,6);g.fillStyle='#399bff';g.fillRect(-8,-6,12,2);g.restore();
-  lab('✚',q.x,q.y-25,'bold 21px system-ui','#ff6666');return;
+  g.save();g.translate(q.x,q.y-26);g.fillStyle='#f3f3f3';g.strokeStyle='#a83232';g.lineWidth=1.5;g.beginPath();g.roundRect(-11,-8,22,17,3);g.fill();g.stroke();g.fillStyle='#d52b31';g.fillRect(-2,-6,4,13);g.fillRect(-7,-1,14,4);g.strokeStyle='#a83232';g.beginPath();g.moveTo(-4,-8);g.lineTo(-4,-11);g.lineTo(4,-11);g.lineTo(4,-8);g.stroke();g.restore();return;
  }
  soldier(q.x,q.y,q.face,true,false,q.moving,false,'',true,'blue');
- g.fillStyle='rgba(0,0,0,.55)';g.fillRect(q.x-13,q.y-23,26,4);g.fillStyle='#79bbff';g.fillRect(q.x-13,q.y-23,26*q.hp/3,4);
+
 }
 let allyTargetRefreshAt=0;
 function drawAllyStun(ally){
