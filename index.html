@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.11.174</title>
+<title>戦車ゲーム 2026.10.11.175</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -450,7 +450,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <section class="spec-section" id="spec-map"><h2>2. ステージ構成とランダム生成</h2>
 <p>ステージは全7エリア。<strong>最初は草原、最後は敵司令本部</strong>で、その間の5エリアは候補から毎回重複なしでランダムに選ばれます。中間エリアにも草原が選ばれることがあります。</p>
 <p>中間エリア候補：草原／森林／村／丘陵／敵前線基地／街／敵迷路基地／湿地。</p>
-<ul><li>エリアごとに地形や建物、木、岩、草むら、障害物などの配置が異なります。作戦1回の通常車両は合計2〜5台で、トラック・装甲車・戦車からランダムに選ばれ、戦車が最低1台出現します。戦闘機は通常配置の対象外です。橋幅は64〜256px、川ごとの流速は6〜30px/秒です。</li><li>左右端の危険度は<strong>左重点・右重点・両側重点</strong>から毎回抽選され、巡回兵の配置や遮蔽物が変化します。</li><li>迷路基地には広い会議室と幅の広い廊下、空きスペースの木箱があります。青の通常兵はつながった通路を広く探索します。迷路壁はプレイヤー戦車の接触で破壊できます。接触による破壊範囲は少し抑えており、押し込み続けると広がります。トラック・装甲車の接触では破壊できません。木箱等の爆風では破壊できます。敵司令本部にも固有の構造があります。</li><li>道路は2か所の候補それぞれで50%の確率で出現します。アスファルト舗装・乾いた締め固め土を各50%、1車線・対面2車線・対面4車線を各約33%で選択し、幅は96・176・320pxです。川・橋、迷路基地、司令本部を避けて配置するため、場所が確保できない場合は出現しません。舗装道路の対面車線の中央は白い実線です。路面には汚れ・補修跡・ひび、白線には摩耗を表現します。道路の描画は初回にキャッシュし、画面内だけ表示します。土の道路は横筋を抑えた専用タイルを使用し、不規則な路肩が周囲の地面になじみます。中央付近にはまばらな雑草があります。道路自体による速度変更はありません。マップ・敵・障害物の配置は出撃ごとに再生成されます。</li></ul>
+<ul><li>エリアごとに地形や建物、木、岩、草むら、障害物などの配置が異なります。作戦1回の通常車両は合計2〜5台で、トラック・装甲車・戦車からランダムに選ばれ、戦車が最低1台出現します。戦闘機は通常配置の対象外です。橋幅は64〜256px、川ごとの流速は6〜30px/秒です。</li><li>左右端の危険度は<strong>左重点・右重点・両側重点</strong>から毎回抽選され、巡回兵の配置や遮蔽物が変化します。</li><li>迷路基地には広い会議室と幅の広い廊下、空きスペースの木箱があります。青の通常兵はつながった通路を広く探索します。迷路壁はプレイヤー戦車の接触で破壊できます。接触による破壊範囲は少し抑えており、押し込み続けると広がります。トラック・装甲車の接触では破壊できません。木箱等の爆風では破壊できます。敵司令本部にも固有の構造があります。</li><li>道路は2か所の候補それぞれで50%の確率で出現します。アスファルト舗装・乾いた締め固め土を各50%、1車線・対面2車線・対面4車線を各約33%で選択し、幅は96・176・320pxです。川・橋、迷路基地、司令本部を避けて配置するため、場所が確保できない場合は出現しません。舗装道路の対面車線の中央は白い実線です。路面には汚れ・補修跡・ひび、白線には摩耗を表現します。道路の描画は初回にキャッシュし、画面内だけ表示します。土の道路は横筋を抑えた専用タイルを使用し、不規則な路肩が周囲の地面になじみます。中央付近にはまばらな雑草があります。道路上には建物・木・岩・塀・木箱・ドラム缶・草むら・泥を配置しません。土の道路は明るさと彩度を抑えて周囲になじませます。道路自体による速度変更はありません。マップ・敵・障害物の配置は出撃ごとに再生成されます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-controls"><h2>3. 基本操作</h2>
 <ul><li><strong>PC：</strong>矢印キーで移動。D＝爆弾・乗り物の主攻撃、S＝スキル・戦車MG、A＝乗降・近接アクション。</li><li><strong>スマホ：</strong>左スティックで移動。画面のB・S・Aボタンを使用。</li><li><strong>戦車（スマホ）：</strong>Bをドラッグして砲塔を照準、離すと主砲発射。Sを押し続けてMGを撃ち、ドラッグで照準を動かせます。</li><li><strong>狙撃中：</strong>左右で視点移動、上下で1.5倍／2.5倍／3.5倍レンズを変更。Sで狙撃、Aで解除します。</li></ul>
@@ -520,7 +520,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.11.174',FILE_CREATED_AT='2026/10/11 16:52',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.11.175',FILE_CREATED_AT='2026/10/11 16:57',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -1953,6 +1953,7 @@ function ensurePatrolBuildingSite(name,preferredY=null,allowAxisReroute=false){
   for(const spot of candidates.slice(0,18)){
    const oldC=covers,oldO=objects,rmC=new Set(spot.soft),rmO=new Set(spot.objects);
    const c={kd,x:spot.x,y:spot.y,w,h,patrolReserved:true};
+   if(overlapsRoad(coverSpriteRect(c)||c))continue;
    covers=covers.filter(q=>!rmC.has(q));covers.push(c);
    objects=objects.filter(q=>!rmO.has(q));rebuildSpatialGrid();
    if(buildBuildingPatrol(c,8))return c;
@@ -2039,7 +2040,7 @@ function reconcileBushBuildingPlacement(){
   if(bottom>top&&WW>b.w+38){
    for(let attempt=0;attempt<500;attempt++){
     const candidate={x:19+R()*(WW-b.w-38),y:top+R()*(bottom-top),w:b.w,h:b.h};
-    if(hitsBuilding(candidate))continue;
+    if(hitsBuilding(candidate)||overlapsRoad(candidate))continue;
     // 草むら同士・ほかのオブジェクト・泥・水域との重複を避ける。
     if((bushes||[]).some(o=>o!==b&&ov2(candidate,o,8)))continue;
     if(covers.some(c=>ov2(candidate,coverSpriteRect(c)||c,8)))continue;
@@ -2489,7 +2490,7 @@ function reset(rerollSkills=true){
  // スタート地点の周囲260pxには草むらを置かない。
  bushes=bushes.filter(b=>{const nx=Math.max(b.x,Math.min(b.x+b.w,p.x)),ny=Math.max(b.y,Math.min(b.y+b.h,p.y));return Math.hypot(nx-p.x,ny-p.y)>260;});
  // 開始地点の周囲は安全地帯にする。開始直後には敵と接触しない。
- humans=humans.filter(h=>D(h,p)>520);etanks=etanks.filter(e=>D(e,p)>700);assignBuildingPatrols();reconcileBushBuildingPlacement();captureBuildingGroundMarks();separateEnemyUnits(true);
+ humans=humans.filter(h=>D(h,p)>520);etanks=etanks.filter(e=>D(e,p)>700);assignBuildingPatrols();reconcileBushBuildingPlacement();clearRoadScenery();rebuildSpatialGrid();captureBuildingGroundMarks();separateEnemyUnits(true);
  // Only distribute flank patrols AFTER the final building-patrol reservations.
  // This prevents late-added patrol buildings from obstructing new guard routes.
  distributeFlankPatrols();patrolRoutesVisible=!!(skillDebugAll||areaDebugEnabled);if(skill==='hound')spawnHound();setupMission();spawnCommanderClasses();
@@ -5185,6 +5186,16 @@ function fighterShape(x,y,body,sz=34){
 }
 const ROAD_TEXTURE_SRC={asphalt:'assets/terrain/road_asphalt.webp',dirt:'assets/terrain/road_dirt_v2.webp'};
 const ROAD_TEXTURE_IMG={asphalt:makeAssetImage(ROAD_TEXTURE_SRC.asphalt),dirt:makeAssetImage(ROAD_TEXTURE_SRC.dirt)};
+function overlapsRoad(rect,pad=16){
+ return (roadBands||[]).some(r=>rect.x+rect.w>r.x-pad&&rect.x<r.x+r.w+pad&&rect.y+rect.h>r.y-pad&&rect.y<r.y+r.h+pad);
+}
+function clearRoadScenery(){
+ if(!roadBands.length)return;
+ covers=covers.filter(c=>!overlapsRoad(coverSpriteRect(c)||c));
+ objects=objects.filter(o=>!overlapsRoad(objectAABB(o)));
+ bushes=bushes.filter(b=>!overlapsRoad(b));
+ mud=mud.filter(m=>!overlapsRoad(m));
+}
 function generateRoadBands(){
  roadBands=[];
  for(const candidateY of [8800,4000]){
@@ -5200,8 +5211,7 @@ function generateRoadBands(){
   if(y===null)continue;
   const road={x:0,y,w:WW,h,kind,lanes};roadBands.push(road);
   // 確保した道幅の建物や樹木を取り除く。迷路・司令本部の構造には手を加えない。
-  const overlaps=o=>o.y+o.h>y-8&&o.y<y+h+8;
-  covers=covers.filter(o=>!overlaps(o));bushes=bushes.filter(o=>!overlaps(o));mud=mud.filter(o=>!overlaps(o));
+  clearRoadScenery();
  }
 }
 function roadVisualCache(r){
@@ -5213,6 +5223,11 @@ function roadVisualCache(r){
  for(let yy=0;yy<r.h;yy+=tile)for(let xx=0;xx<r.w;xx+=tile){
   const dw=Math.min(tile,r.w-xx),dh=Math.min(tile,r.h-yy);
   ctx.drawImage(im,0,0,im.width*dw/tile,im.height*dh/tile,xx,yy,dw,dh);
+ }
+ // 土は一度だけ減彩・暗色の薄い層を重ね、エリアの地面へなじませる。
+ if(r.kind==='dirt'){
+  ctx.save();ctx.globalCompositeOperation='saturation';ctx.fillStyle='#777';ctx.globalAlpha=.25;ctx.fillRect(0,0,r.w,r.h);ctx.restore();
+  ctx.fillStyle='rgba(40,47,31,.27)';ctx.fillRect(0,0,r.w,r.h);
  }
  for(const side of [-1,1]){
   const yy=side<0?0:r.h,gr=ctx.createLinearGradient(0,yy-10,0,yy+10);
@@ -6713,11 +6728,11 @@ function loop(n){
 }
 let gameErrorCount=0;
 function reportGameError(error){
- gameErrorCount++;console.error('Tank game v174',error);
+ gameErrorCount++;console.error('Tank game v175',error);
  let panel=document.getElementById('runtimeError');
  if(!panel){panel=document.createElement('div');panel.id='runtimeError';panel.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;background:#422018;color:#fff2dc;padding:12px;border:1px solid #f7b083;border-radius:8px;font:12px system-ui;white-space:pre-wrap;max-height:35vh;overflow:auto';document.body.appendChild(panel);}
  const stack=String(error&&error.stack||error).split('\n').slice(0,4).join('\n');
- panel.textContent='v174 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
+ panel.textContent='v175 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 requestAnimationFrame(loop);
 </script>
