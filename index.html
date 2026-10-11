@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.11.188</title>
+<title>戦車ゲーム 2026.10.11.189</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -524,8 +524,8 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <div id="stageScreen" role="region" aria-label="ステージ選択"><div class="stage-shell"><div style="color:#9cbb9b;font-size:12px">CHOOSE YOUR MISSION</div><h1>ステージ選択</h1><p id="stageSkill"></p><button class="stage-card" data-stage="base"><strong>01　拠点破壊</strong><span>敵地を突破し、敵司令本部を破壊せよ。潜入・戦闘・乗り物を組み合わせる従来の作戦。</span><small>バランス型 ／ 目標：司令本部の破壊</small></button><button class="stage-card" data-stage="front"><strong>02　最前線</strong><span>味方部隊と進撃し、3か所の戦線を順番に制圧せよ。円内の敵を排除し、味方と陣地を確保。制圧すると補給と前進増援が到着する。</span><small>戦闘中心 ／ 円内で12秒確保・敵がいると制圧停止</small></button><button class="stage-card" data-stage="stealth"><strong>03　潜入</strong><span>3か所の機密情報を回収し、開始地点の脱出地点へ帰還せよ。徒歩で端末の近くに留まり解析。発見中は解析できず、警戒度が高まると追跡部隊が出現する。</span><small>スニーク中心 ／ 端末で4秒解析・全情報回収後に帰還</small></button><button class="stage-back" id="stageBack">← スキル選択へ</button></div></div><div id="missionHud" role="status"></div>
 
 <script>
-const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.11.188',FILE_CREATED_AT='2026/10/11 18:44',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const cv=document.getElementById('c'),gm=cv.getContext('2d',{alpha:false}),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
+const GAME_VERSION='2026.10.11.189',FILE_CREATED_AT='2026/10/11 18:52',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -3218,6 +3218,7 @@ function updateDebugBadge(){
  badge.textContent=debugMode===1?'無敵モード':debugMode===2?'無敵＋索敵解除':debugMode===3?'無敵＋戦闘機 ∞燃料':'無敵モード';
  const perf=gameFramePerf.last;badge.style.whiteSpace='pre-line';
  if(debugMode>0&&perf&&performance.now()-perf.at<15000)badge.textContent+='\n停止'+perf.gap+'ms 更新'+perf.update+' 描画'+perf.draw+' UI'+perf.ui+' 待ち'+perf.wait+'\n入力'+Math.round(gameFramePerf.inputMax)+'ms 心拍'+(performance.now()-gameFramePerf.timerStallAt<15000?gameFramePerf.timerGap:50)+'ms';
+ if(debugMode>0&&MOBILE_VIEW&&gameFramePerf.rafGap&&performance.now()-gameFramePerf.rafStallAt<15000)badge.textContent+='\n描画機会の間隔 '+gameFramePerf.rafGap+'ms';
 }
 function toggleDebugInvincible(){
  debugMode=(debugMode+1)%4;debugInvincible=debugMode>0;if(scoreStats&&!scoreStats.finalized)scoreStats.debugUsed=true;
@@ -6823,9 +6824,28 @@ function drawMission(){
 
 state='title';rollSkillChoices();
 // 実機の長い停止だけ記録。更新・描画・メニュー処理とフレーム間の待ちを分離する。
-const gameFramePerf={last:null,previous:null,stalls:[],lastBadgeAt:0,timerAt:performance.now(),timerGap:50,timerStallAt:0,inputMax:0};
+const gameFramePerf={last:null,previous:null,stalls:[],lastBadgeAt:0,timerAt:performance.now(),timerGap:50,timerStallAt:0,inputMax:0,rafAt:null,rafPlay:false,rafGap:0,rafStallAt:0};
 window.tankFrameDiagnostics=gameFramePerf;
 setInterval(()=>{const now=performance.now(),gap=now-gameFramePerf.timerAt;gameFramePerf.timerAt=now;if(state==='play'&&document.visibilityState!=='hidden'&&gap>=120&&gap<2000){gameFramePerf.timerGap=Math.round(gap);gameFramePerf.timerStallAt=now;}},50);
+// ゲーム更新用タイマーとは独立して、ブラウザが描画機会を渡す間隔を計測する。
+function monitorPresentationFrame(n){
+ const active=state==='play'&&document.visibilityState!=='hidden';
+ if(active&&gameFramePerf.rafPlay&&gameFramePerf.rafAt!==null){
+  const gap=n-gameFramePerf.rafAt;
+  if(gap>=120&&gap<2000){gameFramePerf.rafGap=Math.round(gap);gameFramePerf.rafStallAt=performance.now();}
+ }
+ gameFramePerf.rafAt=n;gameFramePerf.rafPlay=active;requestAnimationFrame(monitorPresentationFrame);
+}
+if(MOBILE_VIEW)requestAnimationFrame(monitorPresentationFrame);
+const MOBILE_DRAW_INTERVAL=1000/30;
+let lastGameDrawAt=null;
+function shouldDrawGameFrame(now){
+ if(!MOBILE_VIEW||state!=='play'){lastGameDrawAt=null;return true;}
+ if(lastGameDrawAt===null){lastGameDrawAt=now;return true;}
+ const elapsed=now-lastGameDrawAt;
+ if(elapsed+0.5<MOBILE_DRAW_INTERVAL)return false;
+ lastGameDrawAt+=Math.max(1,Math.floor((elapsed+0.5)/MOBILE_DRAW_INTERVAL))*MOBILE_DRAW_INTERVAL;return true;
+}
 function recordGameFrameTiming(interval,started,updateEnd,drawEnd,ended){
  const current={update:updateEnd-started,draw:drawEnd-updateEnd,ui:ended-drawEnd,total:ended-started};
  const prev=gameFramePerf.previous;
@@ -6861,18 +6881,18 @@ function loop(n){
  }while(remain>.000001);
  const frameUpdateEnd=performance.now();
  document.body.classList.toggle('gameplay-active',state==='play');
- draw(near);drawMission();const frameDrawEnd=performance.now();syncStageScreen();syncResultScreen();syncSkillScreen();syncTitleScreen();syncHelpScreen();syncSpecScreen();
+ if(shouldDrawGameFrame(n)){draw(near);drawMission();}const frameDrawEnd=performance.now();syncStageScreen();syncResultScreen();syncSkillScreen();syncTitleScreen();syncHelpScreen();syncSpecScreen();
  recordGameFrameTiming(frameInterval,frameStarted,frameUpdateEnd,frameDrawEnd,performance.now());
  if(firstMenuFrame){firstMenuFrame=false;setTimeout(startAssetLoading,0);}
  }catch(error){reportGameError(error);}finally{queueNextGameFrame(loopStarted);}
 }
 let gameErrorCount=0;
 function reportGameError(error){
- gameErrorCount++;console.error('Tank game v188',error);
+ gameErrorCount++;console.error('Tank game v189',error);
  let panel=document.getElementById('runtimeError');
  if(!panel){panel=document.createElement('div');panel.id='runtimeError';panel.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;background:#422018;color:#fff2dc;padding:12px;border:1px solid #f7b083;border-radius:8px;font:12px system-ui;white-space:pre-wrap;max-height:35vh;overflow:auto';document.body.appendChild(panel);}
  const stack=String(error&&error.stack||error).split('\n').slice(0,4).join('\n');
- panel.textContent='v188 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
+ panel.textContent='v189 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 requestAnimationFrame(loop);
 </script>
