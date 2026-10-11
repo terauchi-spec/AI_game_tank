@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.11.196</title>
+<title>戦車ゲーム 2026.10.11.197</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -498,7 +498,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <ul><li>クリアまたは失敗後の評価画面に、総合スコアと<strong>F〜Sの7段階ランク</strong>を表示します。</li><li>スコアは潜入・戦闘・任務達成・クリア時間などをもとに計算します。到達距離は出撃開始地点からの最大前進距離です。距離表示はすべてm単位です。</li><li>プレイスタイルを<strong>潜入／索敵／射撃／戦闘／爆破／機動／戦術／生存</strong>の8軸（Lv0〜5）で評価します。索敵は未発見での前進距離、射撃は発射数あたりの撃破効率などを指標にします。</li><li><strong>マルチキル：</strong>撃破間隔4秒以内で続けて敵を撃破すること。<strong>ワンショットキル：</strong>同一攻撃で複数の敵を撃破すること。無線支援爆撃とその連鎖爆発は、マルチキル・ワンショットキルの対象外です。</li><li>条件を満たすと称号・勲章を獲得。タイトル画面の「称号」からコレクションと累計戦績を確認できます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-save"><h2>11. スキル解放・保存・デバッグ</h2>
-<ul><li>初期解放スキルは<strong>投擲</strong>。通常プレイでクリアするたびに、新しいスキルが順番に1種類ずつ解放されます。</li><li>スキル解放・称号・勲章・ハイスコア・戦績などは、このブラウザ内に保存されます。</li><li>称号画面の「戦績」から保存データを初期化できます。初期化は取り消せません。</li><li>デバッグではPキー（スマホは上部アイコン）で「無敵→無敵＋索敵解除→無敵＋戦闘機（燃料無限）→自動飛行診断（15秒）→通常」を切り替え、自動飛行診断では操作入力なしでゲーム画面を15秒間移動させ、終了後は無敵＋戦闘機に戻ります。Oキーで前方に戦車を出現、Lキーで巡回ルート表示を切り替えられます。スキル選択画面には全スキル表示とエリアデバッグがあります。エリアデバッグでは全エリアの遮蔽物・静止した敵のサンプルを確認でき、出発地点付近にガソリンと無線を配置しています。デバッグ用ガソリンは徒歩でも表示され、取得には乗車が必要です。デバッグプレイの実績は通常の称号・勲章・戦績やスキル解放の対象外です。</li></ul>
+<ul><li>初期解放スキルは<strong>投擲</strong>。通常プレイでクリアするたびに、新しいスキルが順番に1種類ずつ解放されます。</li><li>スキル解放・称号・勲章・ハイスコア・戦績などは、このブラウザ内に保存されます。</li><li>称号画面の「戦績」から保存データを初期化できます。初期化は取り消せません。</li><li>デバッグではPキー（スマホは上部アイコン）で「無敵→無敵＋索敵解除→無敵＋戦闘機（燃料無限）→描画診断（30秒）→通常」を切り替え、描画診断ではAI・衝突等の更新を止め、最初の15秒はゲーム画面全体、次の15秒は背景だけを、同じ経路で自動スクロールします。終了後は無敵＋戦闘機に戻ります。Oキーで前方に戦車を出現、Lキーで巡回ルート表示を切り替えられます。スキル選択画面には全スキル表示とエリアデバッグがあります。エリアデバッグでは全エリアの遮蔽物・静止した敵のサンプルを確認でき、出発地点付近にガソリンと無線を配置しています。デバッグ用ガソリンは徒歩でも表示され、取得には乗車が必要です。デバッグプレイの実績は通常の称号・勲章・戦績やスキル解放の対象外です。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <p class="spec-foot">仕様は Ver.<span id="specVersion"></span> 時点の内容です。ゲームの更新に伴い変更される場合があります。</p>
 </div></div>
@@ -526,7 +526,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d',{alpha:false}),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.11.193',FILE_CREATED_AT='2026/10/11 19:46',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.11.193',FILE_CREATED_AT='2026/10/11 19:57',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -3216,25 +3216,47 @@ function exitDebugFighterToHuman(){
 function updateDebugBadge(){
  const badge=document.getElementById('debugBadge');if(!badge)return;
  const hidden=debugMode===0;if(badge.hidden!==hidden)badge.hidden=hidden;
- let text=debugMode===1?'無敵モード':debugMode===2?'無敵＋索敵解除':debugMode===3?'無敵＋戦闘機 ∞燃料':debugMode===4?'自動飛行診断：操作せず見てください':'無敵モード';
+ let text=debugMode===1?'無敵モード':debugMode===2?'無敵＋索敵解除':debugMode===3?'無敵＋戦闘機 ∞燃料':debugMode===4?(debugRenderDiagnostic?.phase==='terrain'?'背景のみ：AI停止／操作不要':'全体描画：AI停止／操作不要'):'無敵モード';
  const perf=gameFramePerf.last;if(badge.style.whiteSpace!=='pre-line')badge.style.whiteSpace='pre-line';
  if(debugMode>0&&perf&&performance.now()-perf.at<15000)text+='\n停止'+perf.gap+'ms 更新'+perf.update+' 描画'+perf.draw+' UI'+perf.ui+' 待ち'+perf.wait+'\n入力'+Math.round(gameFramePerf.inputMax)+'ms 心拍'+(performance.now()-gameFramePerf.timerStallAt<15000?gameFramePerf.timerGap:50)+'ms';
  if(debugMode>0&&MOBILE_VIEW&&gameFramePerf.rafGap&&performance.now()-gameFramePerf.rafStallAt<15000)text+='\n描画機会の間隔 '+gameFramePerf.rafGap+'ms';
+ if(debugMode>=3&&debugRenderDiagnostic){
+  const d=debugRenderDiagnostic;
+  if(MOBILE_VIEW)text+='\n全体：最大 '+Math.round(d.stats.world.max)+'ms／停止 '+d.stats.world.stalls+'回\n背景：最大 '+Math.round(d.stats.terrain.max)+'ms／停止 '+d.stats.terrain.stalls+'回';
+ }
  if(badge.textContent!==text)badge.textContent=text;
 }
-let debugAutoFlightUntil=0;
+let debugRenderDiagnostic=null;
+function beginDebugRenderDiagnostic(){
+ debugRenderDiagnostic={active:true,started:performance.now(),startY:p.y,phase:'world',stats:{world:{max:0,stalls:0},terrain:{max:0,stalls:0}}};
+ gameFramePerf.rafAt=null;gameFramePerf.rafGap=0;gameFramePerf.rafStallAt=0;
+}
+function updateDebugRenderDiagnostic(dt){
+ const d=debugRenderDiagnostic;if(!d||!d.active)return null;
+ const elapsed=performance.now()-d.started;
+ if(elapsed>=30000){
+  d.active=false;debugMode=3;updateDebugBadge();say('描画診断が終了しました。右上に結果を表示しています');return null;
+ }
+ const phase=elapsed<15000?'world':'terrain';
+ if(d.phase!==phase){d.phase=phase;gameFramePerf.rafAt=null;gameFramePerf.rafGap=0;gameFramePerf.rafStallAt=0;updateDebugBadge();}
+ // AI・衝突・天候等の更新を呼ばず、同じ経路を実時間に合わせて2回移動する。
+ p.y=Math.max(80,d.startY-(elapsed%15000)/1000*FIGHTER_TYPE.sp*2);
+ if(p.tank){p.tank.x=p.x;p.tank.y=p.y;p.tank.f=FIGHTER_TYPE.fmax;p.tank.hp=FIGHTER_TYPE.hp;}
+ p.body=p.ang=-Math.PI/2;msgT=Math.max(0,msgT-dt);vehicleNameT=Math.max(0,vehicleNameT-dt);
+ return null;
+}
 function toggleDebugInvincible(){
  debugMode=(debugMode+1)%5;debugInvincible=debugMode>0;if(scoreStats&&!scoreStats.finalized)scoreStats.debugUsed=true;
- if(debugMode===0)exitDebugFighterToHuman();
+ if(debugMode===0){debugRenderDiagnostic=null;exitDebugFighterToHuman();}
  if(debugInvincible&&p){
   p.hp=Math.max(3,p.hp||0);
   if(p.tank){p.tank.ch=0;p.tank.mgHits=0;if(p.tank.kind==='fighter')p.tank.hp=Math.max(FIGHTER_TYPE.hp,p.tank.hp||0);}
  }
  if(debugMode>=2)clearPlayerDetection();
  if(debugMode>=3){enterDebugFighter();clearPlayerDetection();}
- if(debugMode===4){debugAutoFlightUntil=performance.now()+15000;gameFramePerf.rafGap=0;gameFramePerf.rafStallAt=0;}
+ if(debugMode===4)beginDebugRenderDiagnostic();else if(debugRenderDiagnostic)debugRenderDiagnostic.active=false;
  updateDebugBadge();sfx('skill');
- say(debugMode===1?'DEBUG 無敵モード':debugMode===2?'DEBUG 無敵＋索敵解除':debugMode===3?'DEBUG 無敵＋戦闘機／燃料∞':debugMode===4?'自動飛行診断：15秒間、画面に触れず見てください':'DEBUG OFF／歩兵モード');
+ say(debugMode===1?'DEBUG 無敵モード':debugMode===2?'DEBUG 無敵＋索敵解除':debugMode===3?'DEBUG 無敵＋戦闘機／燃料∞':debugMode===4?'描画診断：30秒間、画面に触れず見てください':'DEBUG OFF／歩兵モード');
 }
 function triggerPlayerDeath(){
  if(state!=='play')return;
@@ -4477,7 +4499,6 @@ function drawSniperScope(){
  }
 
 function update(dt){
- if(debugMode===4&&performance.now()>=debugAutoFlightUntil){debugMode=3;updateDebugBadge();say('自動飛行診断が終了しました');}
  patrolSearchBudgetMs=2;
  for(const o of [...humans,...etanks]){o.modeStartX=o.x;o.modeStartY=o.y;o.modeFrozen=false;}
  for(const h of humans){h.walkStartX=h.x;h.walkStartY=h.y;}
@@ -6032,6 +6053,9 @@ function draw(near){
   if(z.y0<cy-160||z.y1>cy+H+160)continue;
   drawTerrainSurface(z,cx,cy);
  }
+ if(debugMode===4&&debugRenderDiagnostic?.active&&debugRenderDiagnostic.phase==='terrain'){
+  g.restore();g=gm;gm.imageSmoothingEnabled=false;if(!MOBILE_VIEW)gm.drawImage(oc,0,0,W,H);return;
+ }
  for(let i=0;i<ZONES.length-1;i++)drawZoneTransition(ZONES[i],ZONES[i+1],cy,cy+H);
  for(const r of roadBands)if(r.y+r.h+24>=cy&&r.y-24<=cy+H)drawRoadBand(r);
  if(areaDebugEnabled)for(const l of areaDebugLabels)lab(l.t,l.x,l.y,l.f,l.c);
@@ -6870,6 +6894,9 @@ function monitorPresentationFrame(n){
  const active=state==='play'&&document.visibilityState!=='hidden';
  if(active&&gameFramePerf.rafPlay&&gameFramePerf.rafAt!==null){
   const gap=n-gameFramePerf.rafAt;
+  if(debugMode===4&&debugRenderDiagnostic?.active&&gap>0&&gap<2000){
+   const sample=debugRenderDiagnostic.stats[debugRenderDiagnostic.phase];sample.max=Math.max(sample.max,gap);if(gap>=120)sample.stalls++;
+  }
   if(gap>=120&&gap<2000){gameFramePerf.rafGap=Math.round(gap);gameFramePerf.rafStallAt=performance.now();}
  }
  gameFramePerf.rafAt=n;gameFramePerf.rafPlay=active;requestAnimationFrame(monitorPresentationFrame);
@@ -6913,7 +6940,7 @@ function loop(n){
   const dt=Math.min(.033,remain||.000001);remain=Math.max(0,remain-dt);
   if(state!==prevState)resultAnimT=0;else if(state==='win'||state==='lose')resultAnimT+=dt;else resultAnimT=0;
   if(!assetsLoading()){
-   if(state==='play')near=update(dt);else if(state==='blast')blastUpdate(dt);else if(state==='dying')dyingUpdate(dt);
+   if(state==='play')near=debugMode===4&&debugRenderDiagnostic?.active?updateDebugRenderDiagnostic(dt):update(dt);else if(state==='blast')blastUpdate(dt);else if(state==='dying')dyingUpdate(dt);
   }
   prevState=state;
  }while(remain>.000001);
@@ -6926,11 +6953,11 @@ function loop(n){
 }
 let gameErrorCount=0;
 function reportGameError(error){
- gameErrorCount++;console.error('Tank game v196',error);
+ gameErrorCount++;console.error('Tank game v197',error);
  let panel=document.getElementById('runtimeError');
  if(!panel){panel=document.createElement('div');panel.id='runtimeError';panel.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;background:#422018;color:#fff2dc;padding:12px;border:1px solid #f7b083;border-radius:8px;font:12px system-ui;white-space:pre-wrap;max-height:35vh;overflow:auto';document.body.appendChild(panel);}
  const stack=String(error&&error.stack||error).split('\n').slice(0,4).join('\n');
- panel.textContent='v196 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
+ panel.textContent='v197 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 requestAnimationFrame(loop);
 </script>
@@ -6948,7 +6975,7 @@ const press=(c)=>{
 const release=(c)=>{keys[c]=false;};
 const cap=(el,e)=>{try{el.setPointerCapture(e.pointerId);}catch(_){}};
 const debugToggleBtn=document.getElementById('debugToggleBtn');
-const debugModeLabel=()=>debugMode===1?'無敵モード':debugMode===2?'無敵＋索敵解除':debugMode===3?'無敵＋戦闘機∞燃料':debugMode===4?'自動飛行診断（15秒）':'無敵モード OFF';
+const debugModeLabel=()=>debugMode===1?'無敵モード':debugMode===2?'無敵＋索敵解除':debugMode===3?'無敵＋戦闘機∞燃料':debugMode===4?'描画診断（30秒）':'無敵モード OFF';
 if(debugToggleBtn){
  let lastDebugButtonState='';
  const syncDebugToggleButton=()=>{
