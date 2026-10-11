@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.12.220</title>
+<title>戦車ゲーム 2026.10.12.221</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -463,7 +463,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <p>詳しいキー配置と各スキルの操作はタイトル画面の「操作説明」、またはスキル選択画面のⓘでも確認できます。</p>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-player"><h2>4. 歩兵・潜入・地形</h2>
-<ul><li>歩兵のライフはハート3個。敵戦車の砲弾が直撃するとライフが3減少します。徒歩では敵戦車の車体を通り抜けられません。乗り物に搭乗していないときは爆弾やスキルを使用できます。</li><li>近くの敵兵にAで組み付くと、敵を60秒間気絶させられます。</li><li>草むらは敵の視線を避けるための隠蔽場所です。白い目に赤い斜線のアイコンが隠れた状態の目印です。発見解除前は黄色の「解除待ち」を表示します。雨天時は水中にいることも発見を避ける条件になります。</li><li>停止中は敵の索敵距離が短くなります。見つかった後も、条件を満たして隠れ続けると発見状態を解除できます。</li><li>建物・岩・木・防護壁などは、種類に応じて通行や射線を遮ります。独立したブロック塀は128×32pxの固定サイズです（縦向きは32×128px）。迷路の構造壁は別のサイズです。川や泥は移動にも影響します。</li></ul>
+<ul><li>歩兵のライフはハート3個。敵戦車の砲弾が直撃するとライフが3減少します。徒歩では敵戦車の車体を通り抜けられません。乗り物に搭乗していないときは爆弾やスキルを使用できます。</li><li>近くの敵兵にAで組み付くと、敵を60秒間気絶させられます。</li><li>草むらは敵の視線を避けるための隠蔽場所です。白い目に赤い斜線のアイコンが隠れた状態の目印です。発見解除前は黄色の「解除待ち」を表示します。雨天時は水中にいることも発見を避ける条件になります。</li><li>停止中は敵の索敵距離が短くなります。見つかった後も、条件を満たして隠れ続けると発見状態を解除できます。</li><li>建物・岩・木・防護壁などは、種類に応じて通行や射線を遮ります。独立したブロック塀は128×32pxの固定サイズです（縦向きは32×128px）。横向きは既存の画像、縦向きは上面と陰影を縦配置専用に描いた画像を使い、横画像を回転しません。迷路の構造壁は別のサイズです。川や泥は移動にも影響します。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-enemies"><h2>5. 敵兵と敵戦車のAI</h2>
 <p>敵歩兵は<strong>青の通常兵・青の指揮官・白の通常エリート・白の指揮官</strong>の4種類です。敵歩兵と敵戦車は、巡回・疑惑・発見の3状態を切り替えて行動します。</p>
@@ -568,7 +568,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.12.220',FILE_CREATED_AT='2026/10/12 01:37',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.12.221',FILE_CREATED_AT='2026/10/12 01:52',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -695,6 +695,7 @@ const COVER_ASSET_SRC={
  "rock":ASSET_DIR+'cover/rock.webp',
  "rock_v2":ASSET_DIR+'cover/rock_v2.webp',
  "maze_wall":ASSET_DIR+'cover/maze_wall.webp',
+ "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.svg',
  "barrel":ASSET_DIR+'cover/barrel.webp',
  "command_building_1":ASSET_DIR+'cover/command_building_1.webp',
  "wood_bridge":ASSET_DIR+'terrain/wood_bridge.webp'
@@ -1195,9 +1196,10 @@ function drawCoverAsset(c){
   return ok;
  }
  if(c.kd===1){
-  const im=COVER_IMG.maze_wall,ang=hor?0:Math.PI/2;
   const long=hor?c.w:c.h,short=Math.max(hor?c.h:c.w,14);
-  return drawAssetSprite(im,cx,cy,long*1.03,short*1.18,ang,.98);
+  // 縦壁は専用の上面・陰影を描いた画像。横壁画像の90度回転は使わない。
+  if(!hor)return drawAssetSprite(COVER_IMG.maze_wall_vertical,cx,cy,short*1.18,long*1.03,0,.98);
+  return drawAssetSprite(COVER_IMG.maze_wall,cx,cy,long*1.03,short*1.18,0,.98);
  }
  if(c.kd===2){
   const im=COVER_IMG.crate;
