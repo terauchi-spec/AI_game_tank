@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.11.176</title>
+<title>戦車ゲーム 2026.10.11.177</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -450,7 +450,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <section class="spec-section" id="spec-map"><h2>2. ステージ構成とランダム生成</h2>
 <p>ステージは全7エリア。<strong>最初は草原、最後は敵司令本部</strong>で、その間の5エリアは候補から毎回重複なしでランダムに選ばれます。中間エリアにも草原が選ばれることがあります。</p>
 <p>中間エリア候補：草原／森林／村／丘陵／敵前線基地／街／敵迷路基地／湿地。</p>
-<ul><li>エリアごとに地形や建物、木、岩、草むら、障害物などの配置が異なります。作戦1回の通常車両は合計2〜5台で、トラック・装甲車・戦車からランダムに選ばれ、戦車が最低1台出現します。戦闘機は通常配置の対象外です。橋幅は64〜256px、川ごとの流速は6〜30px/秒です。</li><li>左右端の危険度は<strong>左重点・右重点・両側重点</strong>から毎回抽選され、巡回兵の配置や遮蔽物が変化します。</li><li>迷路基地には広い会議室と幅の広い廊下、空きスペースの木箱があります。青の通常兵はつながった通路を広く探索します。迷路壁はプレイヤー戦車の接触で破壊できます。接触による破壊範囲は少し抑えており、押し込み続けると広がります。トラック・装甲車の接触では破壊できません。木箱等の爆風では破壊できます。敵司令本部にも固有の構造があります。</li><li>道路は川と同様に2か所の候補それぞれで独立して75%の出現抽選を行います。アスファルト舗装・乾いた締め固め土を各50%、1車線・対面2車線・対面4車線を各約33%で選択し、幅は96・176・320pxです。川・橋、迷路基地、司令本部を避けて配置するため、場所が確保できない場合は出現しません。舗装道路の1車線には白線を表示しません。対面車線の中央は白い実線です。路面には汚れ・補修跡・ひび、白線には摩耗を表現します。道路の描画は初回にキャッシュし、画面内だけ表示します。土の道路は横筋を抑えた専用タイルを使用し、不規則な路肩が周囲の地面になじみます。中央付近にはまばらな雑草があります。道路上には建物・木・岩・塀・木箱・ドラム缶・草むら・泥を配置しません。土の道路は明るさと彩度を抑えて周囲になじませます。道路自体による速度変更はありません。マップ・敵・障害物の配置は出撃ごとに再生成されます。</li></ul>
+<ul><li>エリアごとに地形や建物、木、岩、草むら、障害物などの配置が異なります。作戦1回の通常車両は合計2〜5台で、トラック・装甲車・戦車からランダムに選ばれ、戦車が最低1台出現します。戦闘機は通常配置の対象外です。橋幅は64〜256px、川ごとの流速は6〜30px/秒です。</li><li>左右端の危険度は<strong>左重点・右重点・両側重点</strong>から毎回抽選され、巡回兵の配置や遮蔽物が変化します。</li><li>迷路基地には広い会議室と幅の広い廊下、空きスペースの木箱があります。青の通常兵はつながった通路を広く探索します。迷路壁はプレイヤー戦車の接触で破壊できます。接触による破壊範囲は少し抑えており、押し込み続けると広がります。トラック・装甲車の接触では破壊できません。木箱等の爆風では破壊できます。敵司令本部にも固有の構造があります。</li><li>道路は川と同様に2か所の候補それぞれで独立して75%の出現抽選を行います。アスファルト舗装・乾いた締め固め土を各50%、1車線・対面2車線・対面4車線を各約33%で選択し、幅は96・176・320pxです。川・橋と司令本部を避けて配置し、土の道路は迷路基地も避けます。舗装道路は迷路基地にも出現し、道幅の壁を除去します。場所が確保できない場合は出現しません。舗装道路の1車線には白線を表示しません。対面車線の中央は白い実線です。路面には汚れ・補修跡・ひび、白線には摩耗を表現します。道路の描画は初回にキャッシュし、画面内だけ表示します。土の道路は横筋を抑えた専用タイルを使用し、不規則な路肩が周囲の地面になじみます。中央付近にはまばらな雑草があります。道路上には建物・木・岩・塀・草むら・泥を配置しません。舗装道路と重なる木箱・ドラム缶は路肩の安全な空き場所へ移動し、空き場所がなければ除去します。土の道路は明るさと彩度を抑えて周囲になじませます。道路自体による速度変更はありません。マップ・敵・障害物の配置は出撃ごとに再生成されます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-controls"><h2>3. 基本操作</h2>
 <ul><li><strong>PC：</strong>矢印キーで移動。D＝爆弾・乗り物の主攻撃、S＝スキル・戦車MG、A＝乗降・近接アクション。</li><li><strong>スマホ：</strong>左スティックで移動。画面のB・S・Aボタンを使用。</li><li><strong>戦車（スマホ）：</strong>Bをドラッグして砲塔を照準、離すと主砲発射。Sを押し続けてMGを撃ち、ドラッグで照準を動かせます。</li><li><strong>狙撃中：</strong>左右で視点移動、上下で1.5倍／2.5倍／3.5倍レンズを変更。Sで狙撃、Aで解除します。</li></ul>
@@ -468,7 +468,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <ul><li><strong>戦車：</strong>主砲（D）とMG（S）で攻撃します。車種により性能が異なり、砲弾・MG弾数・燃料・耐久の管理が必要です。</li><li><strong>装甲車：</strong>速度130.5px/秒で戦車より速く、ジープ相当のトラックより遅い車両です。D（スマホ：B）またはSでサブマシンガンを撃ちます。弾数120、燃料95。敵戦車砲の直撃1発で大破し、敵SMGへの耐久はトラックの1.5倍（7.5発分、実際には8発で大破）です。迷路壁は接触で破壊できません。大破時は爆発のみで残骸は残りません。主砲はありません。下車後はトラックと同様に慣性で前進し、敵戦車との体当たりでは両車両が爆発します。</li><li><strong>トラック：</strong>武器による攻撃はできませんが、走行時の接触で敵を倒せます。下車後は慣性で前進し、敵戦車への体当たりでは両車両が爆発します。迷路壁は接触で破壊できません。敵SMGは5発で大破し、大破時に残骸は残りません。</li><li><strong>戦闘機（デバッグ用）：</strong>通常のランダム車両配置には出現しません。デバッグで搭乗すると地上の障害物を越えて飛行し、爆撃できます。無線で呼ぶ支援爆撃機とは別の機体です。</li><li>近づいてAで乗車し、再度Aで降車します。降車地点には十分な空きスペースが必要です。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-combat"><h2>7. 武器・爆発・破壊</h2>
-<ul><li><strong>歩兵の設置爆弾：</strong>D（スマホ：B）で設置し、再度D（スマホ：B）で起爆。爆風で敵・オブジェクトを攻撃できます。</li><li><strong>戦車主砲：</strong>壁や建物などに当たると炸裂。プレイヤーの主砲が壁に着弾したときは、着弾点から約9.5m以内の敵歩兵を撃破できます。</li><li><strong>MG・ライフル：</strong>弾の種類に応じた射程・被弾処理があります。狙撃弾は敵兵を貫通できます。</li><li><strong>破壊可能オブジェクト：</strong>木箱やドラム缶などは被弾・炎上・爆発に反応し、状況によって連鎖爆発も発生します。</li><li>爆風によって敵やプレイヤーが押し飛ばされ、気絶する場合があります。</li></ul>
+<ul><li><strong>歩兵の設置爆弾：</strong>D（スマホ：B）で設置し、再度D（スマホ：B）で起爆。爆風で敵・オブジェクトを攻撃できます。</li><li><strong>戦車主砲：</strong>壁や建物などに当たると炸裂。プレイヤーの主砲が壁に着弾したときは、着弾点から約9.5m以内の敵歩兵を撃破できます。</li><li><strong>MG・ライフル：</strong>弾の種類に応じた射程・被弾処理があります。狙撃弾は敵兵を貫通できます。</li><li><strong>一般車両：</strong>乗車できない駐車車両です。街に最大6台、道路の両路肩に各最大2台を空き場所に配置。赤・青・白・黄の4色で、当たり判定・炎上・爆発は既存オブジェクトと同様です。</li><li><strong>破壊可能オブジェクト：</strong>木箱やドラム缶などは被弾・炎上・爆発に反応し、状況によって連鎖爆発も発生します。</li><li>爆風によって敵やプレイヤーが押し飛ばされ、気絶する場合があります。</li></ul>
 <h3>アイテムと支援爆撃</h3><ul><li><strong>ガソリン：</strong>赤い携行缶。通常マップに5個配置され、乗車中のみ表示・取得できます。取得すると搭乗車両の燃料が満タンになります。</li><li><strong>無線：</strong>通常マップに1個配置。徒歩・乗車どちらでも取得でき、支援爆撃を自動で要請します。</li><li><strong>支援爆撃機：</strong>大きな主翼と細い胴体を持つ六発機。画面上方向へ飛び、3列に計25発の爆弾を投下します。直近の変更で進行方向の爆撃範囲を約160〜170px延長しました。投下間隔は約0.14秒で、爆弾は約0.48秒後に炸裂します。乗り物より上に描画されます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-skills"><h2>8. 9種類のスキル</h2>
@@ -520,7 +520,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.11.176',FILE_CREATED_AT='2026/10/11 17:02',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.11.177',FILE_CREATED_AT='2026/10/11 17:11',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -1051,6 +1051,7 @@ function updateBurningObjects(dt){
 }
 function drawObject(o){
  const cx=o.x+o.w/2,cy=o.y+o.h/2;
+ if(o.kind==='civilCar'){g.save();g.translate(cx,cy);if(o.h>o.w)g.rotate(Math.PI/2);g.drawImage(civilCarSprite(o.color||0),-41,-22,82,44);g.restore();return;}
  if(o.kind==='crate'){/* 木箱は敵前線基地で使用していた素材・向きに統一 */const im=COVER_IMG.crate;if(drawAssetSprite(im,cx,cy,o.w*1.02,o.h*1.02,0,1))return;g.fillStyle='#7a5f3a';g.fillRect(o.x,o.y,o.w,o.h);g.strokeStyle='#4e3c24';g.lineWidth=3;g.strokeRect(o.x+2,o.y+2,o.w-4,o.h-4);return;}
  if(o.kind==='barrel'){
   const im=COVER_IMG.barrel;
@@ -2490,7 +2491,7 @@ function reset(rerollSkills=true){
  // スタート地点の周囲260pxには草むらを置かない。
  bushes=bushes.filter(b=>{const nx=Math.max(b.x,Math.min(b.x+b.w,p.x)),ny=Math.max(b.y,Math.min(b.y+b.h,p.y));return Math.hypot(nx-p.x,ny-p.y)>260;});
  // 開始地点の周囲は安全地帯にする。開始直後には敵と接触しない。
- humans=humans.filter(h=>D(h,p)>520);etanks=etanks.filter(e=>D(e,p)>700);assignBuildingPatrols();reconcileBushBuildingPlacement();clearRoadScenery();rebuildSpatialGrid();captureBuildingGroundMarks();separateEnemyUnits(true);
+ humans=humans.filter(h=>D(h,p)>520);etanks=etanks.filter(e=>D(e,p)>700);assignBuildingPatrols();reconcileBushBuildingPlacement();clearRoadScenery();spawnCivilianCars();rebuildSpatialGrid();captureBuildingGroundMarks();separateEnemyUnits(true);
  // Only distribute flank patrols AFTER the final building-patrol reservations.
  // This prevents late-added patrol buildings from obstructing new guard routes.
  distributeFlankPatrols();patrolRoutesVisible=!!(skillDebugAll||areaDebugEnabled);if(skill==='hound')spawnHound();setupMission();spawnCommanderClasses();
@@ -5186,13 +5187,69 @@ function fighterShape(x,y,body,sz=34){
 }
 const ROAD_TEXTURE_SRC={asphalt:'assets/terrain/road_asphalt.webp',dirt:'assets/terrain/road_dirt_v2.webp'};
 const ROAD_TEXTURE_IMG={asphalt:makeAssetImage(ROAD_TEXTURE_SRC.asphalt),dirt:makeAssetImage(ROAD_TEXTURE_SRC.dirt)};
+const CIVIL_CAR_COLORS=['#a65345','#4b6d8b','#c1c2b6','#bfa455'],civilCarSpriteCache={};
+function overlapsRoadFor(r,rect,pad=16){
+ return rect.x+rect.w>r.x-pad&&rect.x<r.x+r.w+pad&&rect.y+rect.h>r.y-pad&&rect.y<r.y+r.h+pad;
+}
+function roadsideObjectSpot(o,x,y){
+ const vr=o.kind==='barrel'?barrelVisualRect({...o,x,y}):{x,y,w:o.w,h:o.h};
+ if(vr.x<18||vr.x+vr.w>WW-18||vr.y<18||vr.y+vr.h>WH-18||overlapsRoad(vr))return false;
+ if(covers.some(c=>ov2(vr,coverSpriteRect(c)||c,10))||objects.some(q=>q!==o&&ov2(vr,q.kind==='barrel'?barrelVisualRect(q):q,12)))return false;
+ if(water.some(w=>ov2(vr,w,18))||bridges.some(w=>ov2(vr,w,18))||bushes.some(b=>ov2(vr,b,8))||mud.some(m=>ov2(vr,m,8))||(base&&ov2(vr,base,25)))return false;
+ if(p&&Math.hypot(x+o.w/2-p.x,y+o.h/2-p.y)<100)return false;
+ if((cars||[]).some(v=>circleHitsRect(v.x,v.y,42,vr)))return false;
+ return true;
+}
+function moveObjectToRoadShoulder(o,r){
+ const sides=o.y+o.h/2<r.y+r.h/2?[-1,1]:[1,-1];
+ for(const side of sides)for(const dx of [0,80,-80,160,-160,240,-240,320,-320,400,-400]){
+  const x=Math.max(20,Math.min(WW-o.w-20,o.x+dx)),y=side<0?r.y-o.h-34:r.y+r.h+34;
+  if(roadsideObjectSpot(o,x,y)){o.x=x;o.y=y;o.roadside=true;return true;}
+ }
+ return false;
+}
+function spawnCivilianCars(){
+ const add=(x,y,horizontal)=>{
+  const o={kind:'civilCar',x,y,w:horizontal?76:36,h:horizontal?36:76,color:R()*4|0};
+  if(!roadsideObjectSpot(o,x,y))return false;objects.push(o);return true;
+ };
+ for(const z of ZONES)if(z.n==='街'){
+  let made=0;for(let k=0;k<240&&made<6;k++){const horizontal=R()<.5,w=horizontal?76:36,h=horizontal?36:76;
+   if(add(24+R()*(WW-w-48),z.y1+60+R()*Math.max(1,z.y0-z.y1-h-120),horizontal))made++;}
+ }
+ for(const r of roadBands)for(const side of [-1,1]){
+  let made=0;for(let k=0;k<60&&made<2;k++){
+   const y=side<0?r.y-36-34:r.y+r.h+34;
+   if(add(30+R()*(WW-136),y,true))made++;
+  }
+ }
+}
+function civilCarSprite(color){
+ if(civilCarSpriteCache[color])return civilCarSpriteCache[color];
+ const c=document.createElement('canvas');c.width=82;c.height=44;const q=c.getContext('2d');
+ q.fillStyle='rgba(0,0,0,.28)';q.beginPath();q.roundRect(5,6,74,35,6);q.fill();
+ q.fillStyle='#181b1a';for(const x of [16,58]){q.fillRect(x,1,10,7);q.fillRect(x,34,10,7);}
+ q.fillStyle='#252d29';q.beginPath();q.roundRect(3,4,76,36,6);q.fill();
+ q.fillStyle=CIVIL_CAR_COLORS[color];q.beginPath();q.roundRect(5,6,72,32,5);q.fill();
+ q.fillStyle='#293b3c';q.beginPath();q.moveTo(25,9);q.lineTo(54,9);q.lineTo(61,14);q.lineTo(61,30);q.lineTo(54,35);q.lineTo(25,35);q.lineTo(20,29);q.lineTo(20,15);q.closePath();q.fill();
+ q.fillStyle=CIVIL_CAR_COLORS[color];q.fillRect(30,11,20,22);
+ q.strokeStyle='rgba(225,232,210,.25)';q.lineWidth=1;q.strokeRect(30,11,20,22);q.beginPath();q.moveTo(13,10);q.lineTo(13,34);q.moveTo(66,10);q.lineTo(66,34);q.stroke();
+ q.fillStyle='#b8c9be';q.fillRect(22,13,4,17);q.fillRect(54,13,4,17);
+ q.fillStyle='#d2d3bb';q.fillRect(73,9,3,6);q.fillRect(73,29,3,6);q.fillStyle='#a84c3a';q.fillRect(6,9,3,6);q.fillRect(6,29,3,6);
+ q.fillStyle='rgba(43,39,29,.18)';q.fillRect(9,32,62,4);
+ return civilCarSpriteCache[color]=c;
+}
 function overlapsRoad(rect,pad=16){
  return (roadBands||[]).some(r=>rect.x+rect.w>r.x-pad&&rect.x<r.x+r.w+pad&&rect.y+rect.h>r.y-pad&&rect.y<r.y+r.h+pad);
 }
 function clearRoadScenery(){
  if(!roadBands.length)return;
  covers=covers.filter(c=>!overlapsRoad(coverSpriteRect(c)||c));
- objects=objects.filter(o=>!overlapsRoad(objectAABB(o)));
+ objects=objects.filter(o=>{
+  const road=roadBands.find(r=>overlapsRoadFor(r,o.kind==='barrel'?barrelVisualRect(o):objectAABB(o)));
+  if(!road)return true;
+  return road.kind==='asphalt'&&moveObjectToRoadShoulder(o,road);
+ });
  bushes=bushes.filter(b=>!overlapsRoad(b));
  mud=mud.filter(m=>!overlapsRoad(m));
 }
@@ -5204,13 +5261,13 @@ function generateRoadBands(){
   let y=null;
   for(const offset of [0,360,-360,720,-720,1080,-1080]){
    const center=candidateY+offset,z=zoneAt(center);
-   if(z.n==='敵迷路基地'||z.n==='敵司令本部'||center-h/2<z.y1+50||center+h/2>z.y0-50)continue;
+   if((z.n==='敵迷路基地'&&kind!=='asphalt')||z.n==='敵司令本部'||center-h/2<z.y1+50||center+h/2>z.y0-50)continue;
    if(water.some(w=>center+h/2+28>w.y&&center-h/2-28<w.y+w.h)||roadBands.some(r=>Math.abs(center-(r.y+r.h/2))<(h+r.h)/2+150))continue;
    y=center-h/2;break;
   }
   if(y===null)continue;
   const road={x:0,y,w:WW,h,kind,lanes};roadBands.push(road);
-  // 確保した道幅の建物や樹木を取り除く。迷路・司令本部の構造には手を加えない。
+  // 道幅の遮蔽物を除去。舗装道路なら迷路壁も開き、オブジェクトは路肩へ移す。
   clearRoadScenery();
  }
 }
@@ -6729,11 +6786,11 @@ function loop(n){
 }
 let gameErrorCount=0;
 function reportGameError(error){
- gameErrorCount++;console.error('Tank game v176',error);
+ gameErrorCount++;console.error('Tank game v177',error);
  let panel=document.getElementById('runtimeError');
  if(!panel){panel=document.createElement('div');panel.id='runtimeError';panel.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;background:#422018;color:#fff2dc;padding:12px;border:1px solid #f7b083;border-radius:8px;font:12px system-ui;white-space:pre-wrap;max-height:35vh;overflow:auto';document.body.appendChild(panel);}
  const stack=String(error&&error.stack||error).split('\n').slice(0,4).join('\n');
- panel.textContent='v176 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
+ panel.textContent='v177 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 requestAnimationFrame(loop);
 </script>
