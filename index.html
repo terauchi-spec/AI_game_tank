@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.12.227</title>
+<title>戦車ゲーム 2026.10.12.228</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -568,7 +568,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.12.227',FILE_CREATED_AT='2026/10/12 02:35',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.12.228',FILE_CREATED_AT='2026/10/12 08:09',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -3613,25 +3613,32 @@ let partner=null;
 // Route-bound vehicle boarding is computed on confirmation, not each frame.
 function partnerRouteVehicle(points){
  if(!points||points.length<2||!cars)return null;
- let best=null,bestScore=Infinity;
- for(const car of cars){
-  if(!car||!car.t||car.f<=0||!['tank','truck','fighter'].includes(car.kind))continue;
-  for(let i=1;i<points.length;i++){
-   const distance=pointSegDist(car.x,car.y,points[i-1],points[i]);
+ // Scan the entire drawn polyline; the earliest drivable vehicle within 50px wins.
+ // Arc length (rather than waypoint index) keeps detection correct for uneven spacing.
+ let best=null,progress=0,bestProgress=Infinity;
+ for(let i=1;i<points.length;i++){
+  const a=points[i-1],b=points[i],dx=b.x-a.x,dy=b.y-a.y,len2=dx*dx+dy*dy,len=Math.sqrt(len2);
+  if(len<.001)continue;
+  for(const car of cars){
+   if(!car||!car.t||car.f<=0||!['tank','truck','fighter'].includes(car.kind))continue;
+   const t=Math.max(0,Math.min(1,((car.x-a.x)*dx+(car.y-a.y)*dy)/len2));
+   const x=a.x+dx*t,y=a.y+dy*t,distance=Math.hypot(car.x-x,car.y-y);
    if(distance>50)continue;
-   const score=(i-1)*100+distance;
-   if(score<bestScore){bestScore=score;best={car,index:i-1};}
-   break;
+   const at=progress+len*t;
+   if(at<bestProgress){bestProgress=at;best={car,index:i-1,distance};}
   }
+  progress+=len;
  }
  return best;
 }
 function partnerBoardVehicle(q,car){
- if(!q||!car||q.vehicle||car.f<=0)return false;
+ if(!q||!car||q.vehicle||car.f<=0||D(q,car)>50)return false;
  const index=cars.indexOf(car);if(index<0)return false;
  cars.splice(index,1);q.vehicle=car;q.boardTarget=null;
  q.x=car.x;q.y=car.y;q.face=car.body??q.face;q.vehicleAim=q.face;
  q.vehicleCannonT=0;q.vehicleGunT=0;q.routePointT=0;q.routeStuckT=0;
+ // After boarding, continue forward from the point where the vehicle was encountered.
+ if(q.route&&q.route.length)q.routeIndex=Math.max(q.routeIndex||0,Math.min(q.route.length-1,(q.boardAt||0)+1));
  q.wallFollow=null;q.sideStep=null;q.moving=false;
  sfx('enter');say('相棒が'+car.t.n+'に搭乗！');return true;
 }
@@ -3649,15 +3656,19 @@ function partnerVehicleMove(q,goal,speed,dt){
  const a=Math.atan2(goal.y-q.y,goal.x-q.x),d=Math.hypot(goal.x-q.x,goal.y-q.y);
  const step=Math.min(d,Math.min(speed,v.t.sp||speed)*dt),radius=v.kind==='fighter'?23:v.t.id==='armored'?27:v.kind==='truck'?20:27;
  const oldX=q.x,oldY=q.y;
- mv(q,Math.cos(a)*step,Math.sin(a)*step,radius,v.kind==='fighter'?1:null);
- if(Math.hypot(q.x-oldX,q.y-oldY)<.08){
+ if(v.kind==='fighter'){
+  // Aircraft ignore ground obstacles, as the player aircraft does.
+  q.x=Math.max(radius,Math.min(WW-radius,q.x+Math.cos(a)*step));
+  q.y=Math.max(radius,Math.min(WH-radius,q.y+Math.sin(a)*step));
+ }else mv(q,Math.cos(a)*step,Math.sin(a)*step,radius);
+ if(v.kind!=='fighter'&&Math.hypot(q.x-oldX,q.y-oldY)<.08){
   // Alternate a wider side-step without allowing the tank to pass through walls.
   const side=(q.vehicleSide||1),aa=a+side*Math.PI*.5;
   mv(q,Math.cos(aa)*step,Math.sin(aa)*step,radius,v.kind==='fighter'?1:null);
   if(Math.hypot(q.x-oldX,q.y-oldY)<.08)q.vehicleSide=-side;
  }
  const moved=Math.hypot(q.x-oldX,q.y-oldY);
- if(moved>.05){q.face=Math.atan2(q.y-oldY,q.x-oldX);v.f=Math.max(0,v.f-moved*.04);}
+ if(moved>.05){q.face=Math.atan2(q.y-oldY,q.x-oldX);if(!v.debugInfinite&&!v.areaDebug&&!areaDebugEnabled)v.f=Math.max(0,v.f-moved*.04);}
  v.x=q.x;v.y=q.y;v.body=q.face;
 }
 function partnerCompanionMove(q,goal,speed,dt){
@@ -3850,9 +3861,9 @@ function updatePartner(dt){
  if(partnerOrder.drawing){q.moving=false;return;}
  if(q.routeWait>0){q.routeWait=Math.max(0,q.routeWait-dt);q.moving=false;return;}
  if(q.route&&q.routeIndex<q.route.length){
-  if(q.boardTarget&&(!cars.includes(q.boardTarget)||q.boardTarget.f<=0))q.boardTarget=null;
+  if(q.boardTarget&&(!cars.includes(q.boardTarget)||q.boardTarget.f<=0)){q.boardTarget=null;q.boardAt=null;}
   const goingToBoard=q.boardTarget&&!q.vehicle&&q.routeIndex>=q.boardAt;
-  if(goingToBoard&&D(q,q.boardTarget)<(q.boardTarget.kind==='fighter'?64:48)){
+  if(goingToBoard&&D(q,q.boardTarget)<=50){
    partnerBoardVehicle(q,q.boardTarget);
   }
   const destination=goingToBoard&&q.boardTarget?q.boardTarget:q.route[q.routeIndex],
