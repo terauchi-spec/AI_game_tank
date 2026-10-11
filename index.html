@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.12.211</title>
+<title>戦車ゲーム 2026.10.12.212</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -507,7 +507,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <ul><li><strong>戦車：</strong>主砲（D）とMG（S）で攻撃します。車種により性能が異なり、砲弾・MG弾数・燃料・耐久の管理が必要です。</li><li><strong>装甲車：</strong>速度130.5px/秒で戦車より速く、ジープ相当のトラックより遅い車両です。D（スマホ：B）またはSでサブマシンガンを撃ちます。弾数120、燃料95。敵戦車砲の直撃1発で大破し、敵SMGへの耐久はトラックの1.5倍（7.5発分、実際には8発で大破）です。迷路壁は接触で破壊できません。大破時は爆発のみで残骸は残りません。主砲はありません。下車後はトラックと同様に慣性で前進し、敵戦車との体当たりでは両車両が爆発します。</li><li><strong>トラック：</strong>武器による攻撃はできませんが、走行時の接触で敵を倒せます。下車後は慣性で前進し、敵戦車への体当たりでは両車両が爆発します。迷路壁は接触で破壊できません。敵SMGは5発で大破し、大破時に残骸は残りません。</li><li><strong>戦闘機（デバッグ用）：</strong>通常のランダム車両配置には出現しません。デバッグで搭乗すると地上の障害物を越えて飛行し、爆撃できます。無線で呼ぶ支援爆撃機とは別の機体です。</li><li>近づいてAで乗車し、再度Aで降車します。降車地点には十分な空きスペースが必要です。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-combat"><h2>7. 武器・爆発・破壊</h2>
-<ul><li><strong>歩兵の設置爆弾：</strong>D（スマホ：B）で設置し、再度D（スマホ：B）で起爆。爆風で敵・オブジェクトを攻撃できます。</li><li><strong>戦車主砲：</strong>壁や建物などに当たると炸裂。プレイヤーの主砲が壁に着弾したときは、着弾点から約9.5m以内の敵歩兵を撃破できます。</li><li><strong>MG・ライフル：</strong>弾の種類に応じた射程・被弾処理があります。狙撃弾は敵兵を貫通できます。</li><li>木と岩石の画像は各2種類。配置位置に応じて約半々で固定選択し、サイズ・当たり判定・破壊処理は共通です。</li><li>建物・岩石・司令本部の足元には背景の上に薄い影を描画し、破壊後も地面の暗い跡として残します。</li><li><strong>一般車両：</strong>乗車できない駐車車両です。現在は出現を一時停止しています。赤・青・白・黄の4色で、当たり判定・炎上・爆発は既存オブジェクトと同様です。</li><li><strong>破壊可能オブジェクト：</strong>木箱やドラム缶などは被弾・炎上・爆発に反応し、状況によって連鎖爆発も発生します。</li><li>爆風によって敵やプレイヤーが押し飛ばされ、気絶する場合があります。</li></ul>
+<ul><li><strong>歩兵の設置爆弾：</strong>D（スマホ：B）で設置し、再度D（スマホ：B）で起爆。爆風で敵・オブジェクトを攻撃できます。川の中では水流の向きに流速の3倍で流れ、陸に出ると止まります。</li><li><strong>戦車主砲：</strong>壁や建物などに当たると炸裂。プレイヤーの主砲が壁に着弾したときは、着弾点から約9.5m以内の敵歩兵を撃破できます。</li><li><strong>MG・ライフル：</strong>弾の種類に応じた射程・被弾処理があります。狙撃弾は敵兵を貫通できます。</li><li>木と岩石の画像は各2種類。配置位置に応じて約半々で固定選択し、サイズ・当たり判定・破壊処理は共通です。</li><li>建物・岩石・司令本部の足元には背景の上に薄い影を描画し、破壊後も地面の暗い跡として残します。</li><li><strong>一般車両：</strong>乗車できない駐車車両です。現在は出現を一時停止しています。赤・青・白・黄の4色で、当たり判定・炎上・爆発は既存オブジェクトと同様です。</li><li><strong>破壊可能オブジェクト：</strong>木箱やドラム缶などは被弾・炎上・爆発に反応し、状況によって連鎖爆発も発生します。</li><li>爆風によって敵やプレイヤーが押し飛ばされ、気絶する場合があります。</li></ul>
 <h3>アイテムと支援爆撃</h3><ul><li><strong>ガソリン：</strong>赤い携行缶。通常マップに5個配置され、乗車中のみ表示・取得できます。取得すると搭乗車両の燃料が満タンになります。</li><li><strong>無線：</strong>通常マップに1個配置。徒歩・乗車どちらでも取得でき、支援爆撃を自動で要請します。</li><li><strong>支援爆撃機：</strong>大きな主翼と細い胴体を持つ六発機。画面上方向へ飛び、3列に計25発の爆弾を投下します。直近の変更で進行方向の爆撃範囲を約160〜170px延長しました。投下間隔は約0.14秒で、爆弾は約0.48秒後に炸裂します。乗り物より上に描画されます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-skills"><h2>8. 9種類のスキル</h2>
@@ -567,7 +567,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.12.211',FILE_CREATED_AT='2026/10/12 00:38',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.12.212',FILE_CREATED_AT='2026/10/12 00:44',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -4779,6 +4779,14 @@ function update(dt){
  // 爆弾
  for(let i=bombs.length-1;i>=0;i--){const b=bombs[i];
   if(b.fly>0){b.fly-=dt;const k=1-Math.max(0,b.fly)/.35;b.x=b.sx+(b.tx-b.sx)*k;b.y=b.sy+(b.ty-b.sy)*k;if(b.fly>0)continue;b.x=b.tx;b.y=b.ty;}
+  // 水中の設置爆弾は川の向きへ流速の3倍で流れる。陸へ出たら静止。
+  if(b.own==='p'){
+   const river=waterAt(b.x,b.y);
+   if(river){
+    const nx=Math.max(8,Math.min(WW-8,b.x+riverFlowDir(river)*riverFlowSpeed(river)*3*dt));
+    if(!hitsM(nx,b.y,5))b.x=nx;
+   }
+  }
   if(b.own==='e'){b.t-=dt;
    const houndStep=hound&&hound.stun<=0&&D(hound,b)<14;if(houndStep){stunHound(5);sfx('explosion');fb(b.x,b.y,28);burst(b.x,b.y,34,'#ff8a3a',300);shake=Math.max(shake,10);bombs.splice(i,1);continue;}
    const allyStep=(allies||[]).find(a=>a.alive&&!(a.chute>0)&&D(a,b)<14);if(allyStep){for(const a of (allies||[]))if(a.alive&&!(a.chute>0)&&D(a,b)<34){a.alive=false;burst(a.x,a.y,18,'#8fd7ff',180);}sfx('explosion');fb(b.x,b.y,28);burst(b.x,b.y,34,'#ff8a3a',300);shake=Math.max(shake,10);bombs.splice(i,1);say('増援が地雷でやられた!');continue;}
