@@ -1,25 +1,31 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="48" height="160" viewBox="0 0 48 160">
+<svg xmlns="http://www.w3.org/2000/svg" width="44" height="160" viewBox="0 0 44 160">
 <defs>
- <linearGradient id="side" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#27292b"/><stop offset=".45" stop-color="#414247"/><stop offset="1" stop-color="#505156"/></linearGradient>
- <linearGradient id="top" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#686a6d"/><stop offset=".28" stop-color="#858487"/><stop offset=".72" stop-color="#9a9897"/><stop offset="1" stop-color="#727476"/></linearGradient>
- <linearGradient id="edge" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#49494b"/><stop offset="1" stop-color="#27292b"/></linearGradient>
- <filter id="dust"><feTurbulence type="fractalNoise" baseFrequency=".23" numOctaves="2" seed="9" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope=".085"/></feComponentTransfer></filter>
+ <linearGradient id="face" x1="0" y1="0" x2="1" y2="0">
+  <stop offset="0" stop-color="#292a2d"/><stop offset=".35" stop-color="#333336"/>
+  <stop offset=".79" stop-color="#39393b"/><stop offset="1" stop-color="#29292b"/>
+ </linearGradient>
+ <linearGradient id="top" x1="0" y1="0" x2="1" y2="0">
+  <stop offset="0" stop-color="#737374"/><stop offset=".42" stop-color="#949393"/>
+  <stop offset=".8" stop-color="#aaa8a3"/><stop offset="1" stop-color="#777778"/>
+ </linearGradient>
 </defs>
-<!-- Dedicated vertical overhead concrete barrier: top surface remains upright, never rotate the horizontal illustration. -->
-<rect x="6" y="10" width="40" height="148" rx="1" fill="#101113" opacity=".18"/>
-<path d="M5 7 L18 4 L20 151 L5 155Z" fill="url(#side)"/>
-<path d="M17 5 L39 5 L39 151 L17 152Z" fill="url(#top)"/>
-<path d="M38 5 L42 9 L42 155 L38 151Z" fill="url(#edge)"/>
-<path d="M5 7 L17 5 L17 152 L5 155Z" fill="#282a2d" opacity=".22"/>
-<path d="M17 7 L20 8 L20 149 L17 151Z" fill="#dbd9d0" opacity=".16"/>
-<rect x="5" y="6" width="34" height="7" fill="#747576"/>
-<path d="M6 7 L17 5 L39 5 L39 11 L17 13 L5 13Z" fill="#9d9b97" opacity=".6"/>
-<rect x="17" y="146" width="22" height="6" fill="#717171" opacity=".86"/>
-<path d="M5 149 L17 146 L39 146 L42 152 L5 155Z" fill="#515253" opacity=".60"/>
-<!-- Concrete joins are horizontal across the vertical wall; subtle, not rotated lighting. -->
-<path d="M7 53 L17 52 L39 52 M7 104 L17 103 L39 103" fill="none" stroke="#242729" stroke-width="1.2" opacity=".27"/>
-<path d="M18 54 L37 54 M18 105 L37 105" stroke="#c5c4bb" stroke-width=".8" opacity=".25"/>
-<path d="M9 25 L15 24 M8 84 L15 83 M10 130 L15 129" stroke="#1d2124" stroke-width="1" opacity=".26"/>
-<path d="M24 34 L26 32 M32 72 L34 70 M23 116 L26 119 M30 137 L32 137" stroke="#444648" opacity=".23" fill="none"/>
-<rect x="17" y="5" width="22" height="147" filter="url(#dust)" opacity=".4"/>
+<!-- A dedicated upright sprite: dark long concrete facade and narrow top rim. -->
+<path d="M4 6H41V154H4Z" fill="#161618" opacity=".35"/>
+<path d="M4 6 L33 6 L33 154 L4 154Z" fill="url(#face)"/>
+<path d="M31 7H40V153H31Z" fill="url(#top)"/>
+<path d="M32 8H34V152H32Z" fill="#d1cfca" opacity=".19"/>
+<path d="M39 6H42V154H39Z" fill="#454648" opacity=".75"/>
+<!-- Solid end caps, like the horizontal asset, remain at the two short ends. -->
+<path d="M3 5H42V15H3Z" fill="#303034"/>
+<path d="M4 8H31V14H4Z" fill="#4d4c4e"/>
+<path d="M31 8H39V15H31Z" fill="#777779"/>
+<path d="M3 145H42V155H3Z" fill="#2d2e31"/>
+<path d="M4 145H31V153H4Z" fill="#464649"/>
+<path d="M32 145H39V152H32Z" fill="#727273"/>
+<!-- Subtle concrete joints and weathering on the uninterrupted face. -->
+<path d="M5 54H32 M5 105H32" fill="none" stroke="#161719" stroke-width="1" opacity=".35"/>
+<path d="M5 55H31 M5 106H31" fill="none" stroke="#a0a0a0" stroke-width=".7" opacity=".12"/>
+<path d="M10 21H18V24H10Z M22 39H29V42H22Z M8 77H14V81H8Z M19 96H27V99H19Z M8 117H16V121H8Z M22 131H29V135H22Z" fill="#1f2023" opacity=".16"/>
+<path d="M7 33H12V35H7Z M15 68H23V71H15Z M18 87H26V89H18Z M6 138H11V141H6Z" fill="#969597" opacity=".09"/>
+<path d="M36 24V41 M36 74V88 M35 113V132" stroke="#6b6b6c" stroke-width=".8" opacity=".25"/>
 </svg>
