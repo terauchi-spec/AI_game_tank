@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.11.193</title>
+<title>戦車ゲーム 2026.10.11.194</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -526,7 +526,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d',{alpha:false}),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.11.193',FILE_CREATED_AT='2026/10/11 19:23',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.11.193',FILE_CREATED_AT='2026/10/11 19:32',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -4860,6 +4860,38 @@ function mkPat(z){
  }
  const pt=proceduralTerrain(32,'basic');if(pt&&pt.setTransform&&typeof DOMMatrix!=='undefined'){try{pt.setTransform(new DOMMatrix().scale(2));}catch(_){}}return pt;
 }
+// 地色・テクスチャ・色調補正を一度だけ合成し、スクロール時の重ね描きを減らす。
+const terrainSurfaceCache=new Map();
+function terrainSurfacePattern(z){
+ const im=TERRAIN_IMG[z.n];if(!assetOK(im))return null;
+ const width=im.naturalWidth||im.width,height=im.naturalHeight||im.height;
+ if(!width||!height)return null;
+ const old=terrainSurfaceCache.get(z.n);
+ if(old&&old.image===im&&old.width===width&&old.height===height&&old.color===z.g)return old.pattern;
+ const tile=document.createElement('canvas');tile.width=width;tile.height=height;
+ const ctx=tile.getContext('2d',{alpha:false});ctx.imageSmoothingEnabled=false;
+ ctx.fillStyle=z.g;ctx.fillRect(0,0,width,height);
+ ctx.globalAlpha=.44;ctx.drawImage(im,0,0,width,height);ctx.globalAlpha=1;
+ ctx.fillStyle='rgba(18,23,17,.045)';ctx.fillRect(0,0,width,height);
+ const pattern=gm.createPattern(tile,'repeat');
+ if(!pattern)return null;
+ if(pattern.setTransform&&typeof DOMMatrix!=='undefined'){try{pattern.setTransform(new DOMMatrix().scale(1.45));}catch(_){}}
+ terrainSurfaceCache.set(z.n,{image:im,width,height,color:z.g,pattern});
+ return pattern;
+}
+function drawTerrainSurface(z,cx,cy){
+ // 世界座標のまま範囲を絞るので、スクロールしても模様の位置は変わらない。
+ const x=Math.max(0,cx-24),y=Math.max(z.y1,cy-24);
+ const right=Math.min(WW,cx+W+24),bottom=Math.min(z.y0,cy+H+24);
+ if(right<=x||bottom<=y)return;
+ const pattern=terrainSurfacePattern(z);
+ if(pattern){g.fillStyle=pattern;g.fillRect(x,y,right-x,bottom-y);return;}
+ // 画像読込前の代替地面も従来と同じ色・模様で描画する。
+ g.fillStyle=z.g;g.fillRect(x,y,right-x,bottom-y);
+ if(!z.pat)z.pat=mkPat(z);
+ if(z.pat){g.save();g.globalAlpha=assetOK(TERRAIN_IMG[z.n])?.44:1;g.fillStyle=z.pat;g.fillRect(x,y,right-x,bottom-y);g.restore();}
+ g.fillStyle='rgba(18,23,17,.045)';g.fillRect(x,y,right-x,bottom-y);
+}
 const zoneTransitionCache=new Map();
 function transitionPattern(ctx,z){
  const im=TERRAIN_IMG[z.n];if(!assetOK(im))return null;const pt=ctx.createPattern(im,'repeat');
@@ -5994,11 +6026,7 @@ function draw(near){
  g.fillStyle='#2b3322';g.fillRect(-20,-20,W+40,H+40);g.translate(-cx,-cy);
  for(const z of ZONES){
   if(z.y0<cy-160||z.y1>cy+H+160)continue;
-  g.fillStyle=z.g;g.fillRect(0,z.y1,WW,z.y0-z.y1);
-  if(!z.pat)z.pat=mkPat(z);
-  if(z.pat){g.save();g.globalAlpha=assetOK(TERRAIN_IMG[z.n])?.44:1;g.fillStyle=z.pat;g.fillRect(0,z.y1,WW,z.y0-z.y1);g.restore();}
-  // テクスチャの模様が障害物に見えすぎないよう、地面側は控えめに馴染ませる。
-  g.fillStyle='rgba(18,23,17,.045)';g.fillRect(0,z.y1,WW,z.y0-z.y1);
+  drawTerrainSurface(z,cx,cy);
  }
  for(let i=0;i<ZONES.length-1;i++)drawZoneTransition(ZONES[i],ZONES[i+1],cy,cy+H);
  for(const r of roadBands)if(r.y+r.h+24>=cy&&r.y-24<=cy+H)drawRoadBand(r);
@@ -6894,11 +6922,11 @@ function loop(n){
 }
 let gameErrorCount=0;
 function reportGameError(error){
- gameErrorCount++;console.error('Tank game v193',error);
+ gameErrorCount++;console.error('Tank game v194',error);
  let panel=document.getElementById('runtimeError');
  if(!panel){panel=document.createElement('div');panel.id='runtimeError';panel.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;background:#422018;color:#fff2dc;padding:12px;border:1px solid #f7b083;border-radius:8px;font:12px system-ui;white-space:pre-wrap;max-height:35vh;overflow:auto';document.body.appendChild(panel);}
  const stack=String(error&&error.stack||error).split('\n').slice(0,4).join('\n');
- panel.textContent='v193 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
+ panel.textContent='v194 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 requestAnimationFrame(loop);
 </script>
