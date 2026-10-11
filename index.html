@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.11.183</title>
+<title>戦車ゲーム 2026.10.11.184</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -520,7 +520,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.11.183',FILE_CREATED_AT='2026/10/11 18:15',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.11.184',FILE_CREATED_AT='2026/10/11 18:22',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -3211,6 +3211,8 @@ function updateDebugBadge(){
  const badge=document.getElementById('debugBadge');if(!badge)return;
  badge.hidden=debugMode===0;
  badge.textContent=debugMode===1?'無敵モード':debugMode===2?'無敵＋索敵解除':debugMode===3?'無敵＋戦闘機 ∞燃料':'無敵モード';
+ const perf=gameFramePerf.last;badge.style.whiteSpace='pre-line';
+ if(debugMode>0&&perf&&performance.now()-perf.at<15000)badge.textContent+='\n停止'+perf.gap+'ms 更新'+perf.update+' 描画'+perf.draw+' UI'+perf.ui+' 待ち'+perf.wait;
 }
 function toggleDebugInvincible(){
  debugMode=(debugMode+1)%4;debugInvincible=debugMode>0;if(scoreStats&&!scoreStats.finalized)scoreStats.debugUsed=true;
@@ -6814,10 +6816,24 @@ function drawMission(){
 }
 
 state='title';rollSkillChoices();
+// 実機の長い停止だけ記録。更新・描画・メニュー処理とフレーム間の待ちを分離する。
+const gameFramePerf={last:null,previous:null,stalls:[],lastBadgeAt:0};
+window.tankFrameDiagnostics=gameFramePerf;
+function recordGameFrameTiming(interval,started,updateEnd,drawEnd,ended){
+ const current={update:updateEnd-started,draw:drawEnd-updateEnd,ui:ended-drawEnd,total:ended-started};
+ const prev=gameFramePerf.previous;
+ if(state==='play'&&document.visibilityState!=='hidden'&&interval>=120&&interval<2000&&prev){
+  const item={at:ended,version:GAME_VERSION,gap:Math.round(interval),update:Math.round(prev.update),draw:Math.round(prev.draw),ui:Math.round(prev.ui),wait:Math.round(Math.max(0,interval-prev.total)),zone:zoneAt(p.y).n,x:Math.round(p.x),y:Math.round(p.y)};
+  gameFramePerf.stalls.push(item);if(gameFramePerf.stalls.length>30)gameFramePerf.stalls.shift();gameFramePerf.last=item;
+ }
+ gameFramePerf.previous=current;
+ if(debugMode>0&&ended-gameFramePerf.lastBadgeAt>=250){gameFramePerf.lastBadgeAt=ended;updateDebugBadge();}
+}
 let firstMenuFrame=true,last=performance.now(),prevState=state;
 function loop(n){
  try{
- const elapsed=Math.max(0,Math.min(.099,(n-last)/1000));last=n;let remain=elapsed,near=null;
+ const frameStarted=performance.now(),frameInterval=Math.max(0,n-last);
+ const elapsed=Math.max(0,Math.min(.099,frameInterval/1000));last=n;let remain=elapsed,near=null;
  // 低FPSでもタイマーや移動速度が実時間に近づくよう、最大33msずつ複数回更新する。
  // タブ復帰直後などの巨大な時間差は99msで打ち切り、1描画あたり最大3回までに抑える。
  do{
@@ -6828,18 +6844,20 @@ function loop(n){
   }
   prevState=state;
  }while(remain>.000001);
+ const frameUpdateEnd=performance.now();
  document.body.classList.toggle('gameplay-active',state==='play');
- draw(near);drawMission();syncStageScreen();syncResultScreen();syncSkillScreen();syncTitleScreen();syncHelpScreen();syncSpecScreen();
+ draw(near);drawMission();const frameDrawEnd=performance.now();syncStageScreen();syncResultScreen();syncSkillScreen();syncTitleScreen();syncHelpScreen();syncSpecScreen();
+ recordGameFrameTiming(frameInterval,frameStarted,frameUpdateEnd,frameDrawEnd,performance.now());
  if(firstMenuFrame){firstMenuFrame=false;setTimeout(startAssetLoading,0);}
  }catch(error){reportGameError(error);}finally{requestAnimationFrame(loop);}
 }
 let gameErrorCount=0;
 function reportGameError(error){
- gameErrorCount++;console.error('Tank game v183',error);
+ gameErrorCount++;console.error('Tank game v184',error);
  let panel=document.getElementById('runtimeError');
  if(!panel){panel=document.createElement('div');panel.id='runtimeError';panel.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;background:#422018;color:#fff2dc;padding:12px;border:1px solid #f7b083;border-radius:8px;font:12px system-ui;white-space:pre-wrap;max-height:35vh;overflow:auto';document.body.appendChild(panel);}
  const stack=String(error&&error.stack||error).split('\n').slice(0,4).join('\n');
- panel.textContent='v183 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
+ panel.textContent='v184 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 requestAnimationFrame(loop);
 </script>
