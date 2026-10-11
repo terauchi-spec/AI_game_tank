@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.12.209</title>
+<title>戦車ゲーム 2026.10.12.210</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -487,7 +487,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <li>疑惑中は約2秒間プレイヤーの方向へ接近した後、約2秒間周囲を確認します。巡回・発見時の銃表示と歩行アニメーションは青の通常兵と同じルールです。</li></ul>
 <h3>青兵指揮官：無線機とアンテナ</h3>
 <ul><li>通常の出撃では2体配置され、青の通常兵と同様に定期ルートを巡回します。背面の無線機と長いアンテナが目印です。</li>
-<li>プレイヤーを新たに発見すると笛を吹き、黄色の電波リングを表示します。1秒後、1000px以内の活動可能な敵歩兵を発見モードへ移行させます。笛の再使用には8秒の間隔があります。</li>
+<li>プレイヤーを新たに発見すると笛を吹き、偽装スキルと同じ単色の赤い電波リングを半径300pxまで2回（各1.25秒）広げます。2回の電波が終わるまでその場で停止します。1秒後、1000px以内の活動可能な敵歩兵を発見モードへ移行させます。笛の再使用には8秒の間隔があります。</li>
 <li>武器は射程480pxのバズーカ。標的が120pxより遠く、射線が通ると、0.5秒間停止して構えた時点の方向へ発射します。発射まで標的の動きに追従して照準を変えることはありません。</li>
 <li>被弾威力は戦車砲の約半分、爆破範囲は110px（設置爆弾は95px）。射撃後は約1.2秒、横方向へ移動し、次の射撃までの待ち時間は4秒です。</li></ul>
 <h3>白兵指揮官：ヘルメットの太い帯</h3>
@@ -567,7 +567,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.12.209',FILE_CREATED_AT='2026/10/12 00:28',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.12.210',FILE_CREATED_AT='2026/10/12 00:31',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -3033,7 +3033,7 @@ function spawnCommanderClasses(){
 }
 function commanderWhistle(h,key){
  if(commanderRallying||h.commander!=='blue'||key!=='p'||(h.whistleCooldown||0)>0)return;
- h.whistleT=1.2;h.whistleCooldown=8;h.whistleSignalT=1;
+ h.whistleT=2.5;h.whistleCooldown=8;h.whistleSignalT=1;
  commanderSignals.push({source:h,x:h.x,y:h.y,remaining:1});
  tone(1450,.16,.035,'sine',1850);setTimeout(()=>tone(1800,.16,.03,'sine',1450),170);
 }
@@ -3065,6 +3065,8 @@ function updateCommanderAI(h,dt){
  h.commanderCooldown=Math.max(0,(h.commanderCooldown||0)-dt);
  h.commanderScan=(h.commanderScan||0)+dt;
  h.commanderShotT=Math.max(0,(h.commanderShotT||0)-dt);
+ // 青兵指揮官は2回の笛電波が消えるまで移動・射撃せず停止する。
+ if(h.commander==='blue'&&h.whistleT>0){h.modeFrozen=true;h.walking=false;return true;}
  const detected=findDetectedTarget(h,h.face);if(detected)enterHumanFound(h,detected.key);
  let target=targetObj(h.target);
  if(h.st&&(!target||(!detected&&(h.lost-=dt)<=0)||target&&D(h,target)>detectDropRange(h.target)*1.6)){
@@ -3165,7 +3167,7 @@ function drawDecoySignalPulse(x,y,elapsed){
 }
 function drawCommanderOverlay(h){
  if(!h.commander)return;
- if(h.whistleT>0)drawSignalPulse(h.x,h.y,((1.2-h.whistleT)/.75)%1);
+ if(h.commander==='blue'&&h.whistleT>0)drawDecoySignalPulse(h.x,h.y,2.5-h.whistleT);
  if(h.commanderCharge>0){const total=h.commander==='blue'?.5:.7;g.save();g.strokeStyle=h.commander==='blue'?'#ffb879':'#ffe3a0';g.lineWidth=2;g.beginPath();g.arc(h.x,h.y,20,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-h.commanderCharge/total));g.stroke();g.restore();}
 }
 
