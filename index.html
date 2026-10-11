@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.11.195</title>
+<title>戦車ゲーム 2026.10.11.196</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -498,7 +498,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <ul><li>クリアまたは失敗後の評価画面に、総合スコアと<strong>F〜Sの7段階ランク</strong>を表示します。</li><li>スコアは潜入・戦闘・任務達成・クリア時間などをもとに計算します。到達距離は出撃開始地点からの最大前進距離です。距離表示はすべてm単位です。</li><li>プレイスタイルを<strong>潜入／索敵／射撃／戦闘／爆破／機動／戦術／生存</strong>の8軸（Lv0〜5）で評価します。索敵は未発見での前進距離、射撃は発射数あたりの撃破効率などを指標にします。</li><li><strong>マルチキル：</strong>撃破間隔4秒以内で続けて敵を撃破すること。<strong>ワンショットキル：</strong>同一攻撃で複数の敵を撃破すること。無線支援爆撃とその連鎖爆発は、マルチキル・ワンショットキルの対象外です。</li><li>条件を満たすと称号・勲章を獲得。タイトル画面の「称号」からコレクションと累計戦績を確認できます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-save"><h2>11. スキル解放・保存・デバッグ</h2>
-<ul><li>初期解放スキルは<strong>投擲</strong>。通常プレイでクリアするたびに、新しいスキルが順番に1種類ずつ解放されます。</li><li>スキル解放・称号・勲章・ハイスコア・戦績などは、このブラウザ内に保存されます。</li><li>称号画面の「戦績」から保存データを初期化できます。初期化は取り消せません。</li><li>デバッグではPキー（スマホは上部アイコン）で「無敵→無敵＋索敵解除→無敵＋戦闘機（燃料無限）→通常」を切り替え、Oキーで前方に戦車を出現、Lキーで巡回ルート表示を切り替えられます。スキル選択画面には全スキル表示とエリアデバッグがあります。エリアデバッグでは全エリアの遮蔽物・静止した敵のサンプルを確認でき、出発地点付近にガソリンと無線を配置しています。デバッグ用ガソリンは徒歩でも表示され、取得には乗車が必要です。デバッグプレイの実績は通常の称号・勲章・戦績やスキル解放の対象外です。</li></ul>
+<ul><li>初期解放スキルは<strong>投擲</strong>。通常プレイでクリアするたびに、新しいスキルが順番に1種類ずつ解放されます。</li><li>スキル解放・称号・勲章・ハイスコア・戦績などは、このブラウザ内に保存されます。</li><li>称号画面の「戦績」から保存データを初期化できます。初期化は取り消せません。</li><li>デバッグではPキー（スマホは上部アイコン）で「無敵→無敵＋索敵解除→無敵＋戦闘機（燃料無限）→自動飛行診断（15秒）→通常」を切り替え、自動飛行診断では操作入力なしでゲーム画面を15秒間移動させ、終了後は無敵＋戦闘機に戻ります。Oキーで前方に戦車を出現、Lキーで巡回ルート表示を切り替えられます。スキル選択画面には全スキル表示とエリアデバッグがあります。エリアデバッグでは全エリアの遮蔽物・静止した敵のサンプルを確認でき、出発地点付近にガソリンと無線を配置しています。デバッグ用ガソリンは徒歩でも表示され、取得には乗車が必要です。デバッグプレイの実績は通常の称号・勲章・戦績やスキル解放の対象外です。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <p class="spec-foot">仕様は Ver.<span id="specVersion"></span> 時点の内容です。ゲームの更新に伴い変更される場合があります。</p>
 </div></div>
@@ -526,7 +526,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d',{alpha:false}),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.11.193',FILE_CREATED_AT='2026/10/11 19:38',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.11.193',FILE_CREATED_AT='2026/10/11 19:46',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -3216,23 +3216,25 @@ function exitDebugFighterToHuman(){
 function updateDebugBadge(){
  const badge=document.getElementById('debugBadge');if(!badge)return;
  const hidden=debugMode===0;if(badge.hidden!==hidden)badge.hidden=hidden;
- let text=debugMode===1?'無敵モード':debugMode===2?'無敵＋索敵解除':debugMode===3?'無敵＋戦闘機 ∞燃料':'無敵モード';
+ let text=debugMode===1?'無敵モード':debugMode===2?'無敵＋索敵解除':debugMode===3?'無敵＋戦闘機 ∞燃料':debugMode===4?'自動飛行診断：操作せず見てください':'無敵モード';
  const perf=gameFramePerf.last;if(badge.style.whiteSpace!=='pre-line')badge.style.whiteSpace='pre-line';
  if(debugMode>0&&perf&&performance.now()-perf.at<15000)text+='\n停止'+perf.gap+'ms 更新'+perf.update+' 描画'+perf.draw+' UI'+perf.ui+' 待ち'+perf.wait+'\n入力'+Math.round(gameFramePerf.inputMax)+'ms 心拍'+(performance.now()-gameFramePerf.timerStallAt<15000?gameFramePerf.timerGap:50)+'ms';
  if(debugMode>0&&MOBILE_VIEW&&gameFramePerf.rafGap&&performance.now()-gameFramePerf.rafStallAt<15000)text+='\n描画機会の間隔 '+gameFramePerf.rafGap+'ms';
  if(badge.textContent!==text)badge.textContent=text;
 }
+let debugAutoFlightUntil=0;
 function toggleDebugInvincible(){
- debugMode=(debugMode+1)%4;debugInvincible=debugMode>0;if(scoreStats&&!scoreStats.finalized)scoreStats.debugUsed=true;
+ debugMode=(debugMode+1)%5;debugInvincible=debugMode>0;if(scoreStats&&!scoreStats.finalized)scoreStats.debugUsed=true;
  if(debugMode===0)exitDebugFighterToHuman();
  if(debugInvincible&&p){
   p.hp=Math.max(3,p.hp||0);
   if(p.tank){p.tank.ch=0;p.tank.mgHits=0;if(p.tank.kind==='fighter')p.tank.hp=Math.max(FIGHTER_TYPE.hp,p.tank.hp||0);}
  }
  if(debugMode>=2)clearPlayerDetection();
- if(debugMode===3){enterDebugFighter();clearPlayerDetection();}
+ if(debugMode>=3){enterDebugFighter();clearPlayerDetection();}
+ if(debugMode===4){debugAutoFlightUntil=performance.now()+15000;gameFramePerf.rafGap=0;gameFramePerf.rafStallAt=0;}
  updateDebugBadge();sfx('skill');
- say(debugMode===1?'DEBUG 無敵モード':debugMode===2?'DEBUG 無敵＋索敵解除':debugMode===3?'DEBUG 無敵＋戦闘機／燃料∞':'DEBUG OFF／歩兵モード');
+ say(debugMode===1?'DEBUG 無敵モード':debugMode===2?'DEBUG 無敵＋索敵解除':debugMode===3?'DEBUG 無敵＋戦闘機／燃料∞':debugMode===4?'自動飛行診断：15秒間、画面に触れず見てください':'DEBUG OFF／歩兵モード');
 }
 function triggerPlayerDeath(){
  if(state!=='play')return;
@@ -4475,6 +4477,7 @@ function drawSniperScope(){
  }
 
 function update(dt){
+ if(debugMode===4&&performance.now()>=debugAutoFlightUntil){debugMode=3;updateDebugBadge();say('自動飛行診断が終了しました');}
  patrolSearchBudgetMs=2;
  for(const o of [...humans,...etanks]){o.modeStartX=o.x;o.modeStartY=o.y;o.modeFrozen=false;}
  for(const h of humans){h.walkStartX=h.x;h.walkStartY=h.y;}
@@ -4484,12 +4487,13 @@ function update(dt){
  if(interact&&p.sniperMode){interact=false;beginSniperExit();}else if(interact&&(p.sniperEnterT>0||p.sniperReadyT>0)){interact=false;}
  if(sniperLocked){bombReq=false;cannonReq=false;}
  const cy=Math.max(0,Math.min(WH-H,p.y-H*.6)),cx=Math.max(0,Math.min(WW-W,p.x-W/2)),wx=mx+cx,wy=my+cy;
- const ix=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0),iy=(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0),il=Math.hypot(ix,iy)||1,V=p.tank,T=V&&V.t,isTruck=!!(V&&V.kind==='truck'),isWheeled=truckLikeVehicle(V),isFighter=!!(V&&V.kind==='fighter');
- const prepDig=p.digPrep>0,sp=T?(debugMode===3&&isFighter?T.sp*2:T.sp):150,r=T?(isFighter?24:isTruck?20:TANK_HIT):8;let frameMove=0;
+ const autoFlight=debugMode===4;
+ const ix=autoFlight?0:(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0),iy=autoFlight?-1:(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0),il=Math.hypot(ix,iy)||1,V=p.tank,T=V&&V.t,isTruck=!!(V&&V.kind==='truck'),isWheeled=truckLikeVehicle(V),isFighter=!!(V&&V.kind==='fighter');
+ const prepDig=p.digPrep>0,sp=T?(debugMode>=3&&isFighter?T.sp*2:T.sp):150,r=T?(isFighter?24:isTruck?20:TANK_HIT):8;let frameMove=0;
  const areaDebugInfiniteFuel=!!(p.tank&&(p.tank.kind==='tank'||p.tank.kind==='truck')&&(areaDebugEnabled||p.tank.debugInfinite));
  const areaDebugInfiniteAmmo=!!(p.tank&&p.tank.kind==='tank'&&(areaDebugEnabled||p.tank.debugInfinite));
- cleanBuiltWalls(cy,cx);updateFlame(dt);if(debugMode>=2)clearPlayerDetection();if(areaDebugInfiniteFuel)p.tank.f=p.tank.t.fmax||100;if(areaDebugInfiniteAmmo){p.tank.c=p.tank.t.cmax;p.tank.v=p.tank.t.vmax;}if(debugMode===3&&p.tank&&p.tank.kind==='fighter'){p.tank.f=FIGHTER_TYPE.fmax;p.tank.hp=FIGHTER_TYPE.hp;}
- if((ix||iy)&&!sniperLocked&&!(p.grappleT>0)&&!prepDig&&!playerAir){if(!p.tank||p.tank.f>0){const digSwimSlow=(p.dig>0&&inWaterAt(p.x,p.y,r))?.6:null;frameMove=playerMove(ix/il*sp*dt,iy/il*sp*dt,r,dt,digSwimSlow);if(p.tank){if(areaDebugInfiniteFuel)p.tank.f=p.tank.t.fmax||100;else if(!(debugMode===3&&isFighter))p.tank.f=Math.max(0,p.tank.f-frameMove*.04);else p.tank.f=FIGHTER_TYPE.fmax;if(isWheeled&&frameMove>0){p.tank.lastDriveSpeed=frameMove/Math.max(.001,dt);p.tank.lastDriveAt=performance.now();}}if(!p.flameActive)p.body=Math.atan2(iy,ix);else if(Number.isFinite(p.flameLockA))p.body=p.flameLockA;if(isTruck||isFighter)p.ang=p.body;if(isWheeled&&frameMove>0)checkDrivenTruckCrash();}else if(msgT<=0)say('ガソリン切れ!Aで降車');}
+ cleanBuiltWalls(cy,cx);updateFlame(dt);if(debugMode>=2)clearPlayerDetection();if(areaDebugInfiniteFuel)p.tank.f=p.tank.t.fmax||100;if(areaDebugInfiniteAmmo){p.tank.c=p.tank.t.cmax;p.tank.v=p.tank.t.vmax;}if(debugMode>=3&&p.tank&&p.tank.kind==='fighter'){p.tank.f=FIGHTER_TYPE.fmax;p.tank.hp=FIGHTER_TYPE.hp;}
+ if((ix||iy)&&!sniperLocked&&!(p.grappleT>0)&&!prepDig&&!playerAir){if(!p.tank||p.tank.f>0){const digSwimSlow=(p.dig>0&&inWaterAt(p.x,p.y,r))?.6:null;frameMove=playerMove(ix/il*sp*dt,iy/il*sp*dt,r,dt,digSwimSlow);if(p.tank){if(areaDebugInfiniteFuel)p.tank.f=p.tank.t.fmax||100;else if(!(debugMode>=3&&isFighter))p.tank.f=Math.max(0,p.tank.f-frameMove*.04);else p.tank.f=FIGHTER_TYPE.fmax;if(isWheeled&&frameMove>0){p.tank.lastDriveSpeed=frameMove/Math.max(.001,dt);p.tank.lastDriveAt=performance.now();}}if(!p.flameActive)p.body=Math.atan2(iy,ix);else if(Number.isFinite(p.flameLockA))p.body=p.flameLockA;if(isTruck||isFighter)p.ang=p.body;if(isWheeled&&frameMove>0)checkDrivenTruckCrash();}else if(msgT<=0)say('ガソリン切れ!Aで降車');}
  // 潜伏前の0.5秒は静止して潜行アニメーションを再生。潜伏5秒は準備完了後に開始する。
  if(p.digPrep>0){
   p.digPrep=Math.max(0,p.digPrep-dt);
@@ -5983,7 +5987,7 @@ function drawVehicleBottomHud(){
   if(v.kind==='fighter'){
    const h=58,fmax=v.t.fmax||100,fr=Math.max(0,v.f)/fmax;g.fillStyle='rgba(8,10,7,.80)';g.fillRect(x,y,w,h);g.strokeStyle='rgba(230,233,216,.28)';g.strokeRect(x+.5,y+.5,w-1,h-1);
    g.fillStyle='#d9efff';g.font='bold 10px system-ui';g.fillText('戦闘機  機体 '+Math.max(0,Math.ceil(v.hp))+'/'+FIGHTER_TYPE.hp,x+8,y+14);g.fillStyle=p.cc<=0?'#ffd27a':'#9aa7b2';g.fillText('D '+(p.cc<=0?'爆撃 READY':'爆撃 CHARGE'),x+8,y+29);
-   g.fillStyle='#34392d';g.fillRect(x+8,y+36,w-16,7);g.fillStyle=fr>.25?'#dce7b8':v.f>0?'#ffd27a':'#ff7666';g.fillRect(x+8,y+36,(w-16)*fr,7);g.fillStyle='#e6e9d8';g.font='9px system-ui';g.fillText(debugMode===3?'燃料 ∞':'燃料 '+Math.ceil(v.f)+' / '+Math.ceil(fmax),x+8,y+54);
+   g.fillStyle='#34392d';g.fillRect(x+8,y+36,w-16,7);g.fillStyle=fr>.25?'#dce7b8':v.f>0?'#ffd27a':'#ff7666';g.fillRect(x+8,y+36,(w-16)*fr,7);g.fillStyle='#e6e9d8';g.font='9px system-ui';g.fillText(debugMode>=3?'燃料 ∞':'燃料 '+Math.ceil(v.f)+' / '+Math.ceil(fmax),x+8,y+54);
   }else if(v.kind==='truck'){
    const h=48,fmax=v.t.fmax||100,fr=Math.max(0,v.f)/fmax;g.fillStyle='rgba(8,10,7,.80)';g.fillRect(x,y,w,h);g.strokeStyle='rgba(230,233,216,.28)';g.strokeRect(x+.5,y+.5,w-1,h-1);
    g.fillStyle='#e6e9d8';g.font='bold 10px system-ui';g.fillText('トラック  耐久 '+Math.max(0,5-(v.mgHits||0))+'/5',x+8,y+14);g.fillStyle='#34392d';g.fillRect(x+8,y+22,w-16,7);g.fillStyle=fr>.25?'#dce7b8':v.f>0?'#ffd27a':'#ff7666';g.fillRect(x+8,y+22,(w-16)*fr,7);g.fillStyle='#e6e9d8';g.font='9px system-ui';g.fillText((areaDebugEnabled||v.debugInfinite)?'燃料 ∞':'燃料 '+Math.ceil(v.f)+' / '+Math.ceil(fmax),x+8,y+43);
@@ -6001,7 +6005,7 @@ function drawVehicleBottomHud(){
   g.fillStyle='#d9efff';g.font='bold 12px system-ui';g.fillText('戦闘機  機体 '+Math.max(0,Math.ceil(v.hp))+'/'+FIGHTER_TYPE.hp,16,y+16);
   g.fillStyle=p.cc<=0?'#ffd27a':'#9aa7b2';g.font='bold 12px system-ui';g.fillText('D  '+(p.cc<=0?'爆撃 READY':'爆撃 CHARGE'),16,y+34);
   g.fillStyle='#34392d';g.fillRect(126,y+25,102,7);g.fillStyle=p.cc<=0?'#ffd27a':'#718093';g.fillRect(126,y+25,102*(1-Math.max(0,p.cc)/v.t.ccd),7);
-  const fmax=v.t.fmax||100,fr=Math.max(0,v.f)/fmax;g.fillStyle='#34392d';g.fillRect(16,y+45,212,9);g.fillStyle=fr>.25?'#dce7b8':v.f>0?'#ffd27a':'#ff7666';g.fillRect(16,y+45,212*fr,9);g.fillStyle='#e6e9d8';g.font='bold 10px system-ui';g.fillText(debugMode===3?'燃料 ∞':'燃料 '+Math.ceil(v.f)+' / '+Math.ceil(fmax),16,y+66);
+  const fmax=v.t.fmax||100,fr=Math.max(0,v.f)/fmax;g.fillStyle='#34392d';g.fillRect(16,y+45,212,9);g.fillStyle=fr>.25?'#dce7b8':v.f>0?'#ffd27a':'#ff7666';g.fillRect(16,y+45,212*fr,9);g.fillStyle='#e6e9d8';g.font='bold 10px system-ui';g.fillText(debugMode>=3?'燃料 ∞':'燃料 '+Math.ceil(v.f)+' / '+Math.ceil(fmax),16,y+66);
  }else if(v.kind==='truck'){
   const h=54,y=baseBottom-h,fmax=v.t.fmax||100,fr=Math.max(0,v.f)/fmax;g.fillStyle='rgba(8,10,7,.78)';g.fillRect(8,y,w,h);g.strokeStyle='rgba(230,233,216,.28)';g.strokeRect(8.5,y+.5,w-1,h-1);
   g.fillStyle='#e6e9d8';g.font='bold 12px system-ui';g.fillText('トラック  耐久 '+Math.max(0,5-(v.mgHits||0))+'/5',16,y+16);g.fillStyle='#34392d';g.fillRect(16,y+25,212,9);g.fillStyle=fr>.25?'#dce7b8':v.f>0?'#ffd27a':'#ff7666';g.fillRect(16,y+25,212*fr,9);g.fillStyle='#e6e9d8';g.font='bold 10px system-ui';g.fillText((areaDebugEnabled||v.debugInfinite)?'燃料 ∞':'燃料 '+Math.ceil(v.f)+' / '+Math.ceil(fmax),16,y+49);
@@ -6922,11 +6926,11 @@ function loop(n){
 }
 let gameErrorCount=0;
 function reportGameError(error){
- gameErrorCount++;console.error('Tank game v195',error);
+ gameErrorCount++;console.error('Tank game v196',error);
  let panel=document.getElementById('runtimeError');
  if(!panel){panel=document.createElement('div');panel.id='runtimeError';panel.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;background:#422018;color:#fff2dc;padding:12px;border:1px solid #f7b083;border-radius:8px;font:12px system-ui;white-space:pre-wrap;max-height:35vh;overflow:auto';document.body.appendChild(panel);}
  const stack=String(error&&error.stack||error).split('\n').slice(0,4).join('\n');
- panel.textContent='v195 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
+ panel.textContent='v196 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 requestAnimationFrame(loop);
 </script>
@@ -6944,7 +6948,7 @@ const press=(c)=>{
 const release=(c)=>{keys[c]=false;};
 const cap=(el,e)=>{try{el.setPointerCapture(e.pointerId);}catch(_){}};
 const debugToggleBtn=document.getElementById('debugToggleBtn');
-const debugModeLabel=()=>debugMode===1?'無敵モード':debugMode===2?'無敵＋索敵解除':debugMode===3?'無敵＋戦闘機∞燃料':'無敵モード OFF';
+const debugModeLabel=()=>debugMode===1?'無敵モード':debugMode===2?'無敵＋索敵解除':debugMode===3?'無敵＋戦闘機∞燃料':debugMode===4?'自動飛行診断（15秒）':'無敵モード OFF';
 if(debugToggleBtn){
  let lastDebugButtonState='';
  const syncDebugToggleButton=()=>{
