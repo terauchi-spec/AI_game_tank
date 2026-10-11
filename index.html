@@ -3644,7 +3644,7 @@ function updatePartner(dt){
  if(playerThreat||partnerThreat)desired=q.playerSpeed>145?'retreat':'combat';
  if(q.modeT<=0||desired==='combat'||desired==='retreat'){
   if(q.mode!==desired){q.mode=desired;q.planT=0;}
-  q.modeT=desired==='combat'||desired==='retreat'?.6:1.0;
+  q.modeT=(desired==='combat'||desired==='retreat') ? 0.6 : 1.0;
  }
  const left=cx+25,right=cx+W-25,top=cy+25,bottom=cy+H-25;
  const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
