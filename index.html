@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.11.182</title>
+<title>戦車ゲーム 2026.10.11.183</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -450,7 +450,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <section class="spec-section" id="spec-map"><h2>2. ステージ構成とランダム生成</h2>
 <p>ステージは全7エリア。<strong>最初は草原、最後は敵司令本部</strong>で、その間の5エリアは候補から毎回重複なしでランダムに選ばれます。中間エリアにも草原が選ばれることがあります。</p>
 <p>中間エリア候補：草原／森林／村／丘陵／敵前線基地／街／敵迷路基地／湿地。</p>
-<ul><li>エリアごとに地形や建物、木、岩、草むら、障害物などの配置が異なります。作戦1回の通常車両は合計2〜5台で、トラック・装甲車・戦車からランダムに選ばれ、戦車が最低1台出現します。戦闘機は通常配置の対象外です。橋幅は64〜256px、川ごとの流速は6〜30px/秒です。</li><li>左右端の危険度は<strong>左重点・右重点・両側重点</strong>から毎回抽選され、巡回兵の配置や遮蔽物が変化します。</li><li>迷路基地には広い会議室と幅の広い廊下、空きスペースの木箱があります。青の通常兵はつながった通路を広く探索します。迷路壁はプレイヤー戦車の接触で破壊できます。接触による破壊範囲は少し抑えており、押し込み続けると広がります。トラック・装甲車の接触では破壊できません。木箱等の爆風では破壊できます。敵司令本部にも固有の構造があります。</li><li>道路は川と同様に2か所の候補それぞれで独立して75%の出現抽選を行います。アスファルト舗装・乾いた締め固め土を各50%、土の道路は1車線（96px）・対面2車線（176px）を各50%、舗装道路は対面2車線（176px）・対面4車線（320px）を各50%で選択します。川・橋と司令本部を避けて配置し、土の道路は迷路基地も避けます。舗装道路は迷路基地にも出現し、道幅の壁を除去します。場所が確保できない場合は出現しません。対面車線の中央は白い実線です。路面には汚れ・補修跡・ひび、白線には濃い汚れと不規則な塗装欠けを表現します。道路の描画は初回にキャッシュし、画面内だけ表示します。土の道路は横筋を抑えた専用タイルを使用し、不規則な路肩が周囲の地面になじみます。中央付近には、太めで濃い雑草を不規則に配置しています。道路上には建物・木・岩・塀・草むら・泥を配置しません。舗装道路と重なる木箱・ドラム缶は路肩の安全な空き場所へ移動し、空き場所がなければ除去します。土の道路は明るさと彩度を抑えて周囲になじませます。道路自体による速度変更はありません。マップ・敵・障害物の配置は出撃ごとに再生成されます。</li></ul>
+<ul><li>エリアごとに地形や建物、木、岩、草むら、障害物などの配置が異なります。作戦1回の通常車両は合計2〜5台で、トラック・装甲車・戦車からランダムに選ばれ、戦車が最低1台出現します。戦闘機は通常配置の対象外です。橋幅は64〜256px、川ごとの流速は6〜30px/秒です。</li><li>左右端の危険度は<strong>左重点・右重点・両側重点</strong>から毎回抽選され、巡回兵の配置や遮蔽物が変化します。</li><li>迷路基地には広い会議室と幅の広い廊下、空きスペースの木箱があります。青の通常兵はつながった通路を広く探索します。迷路壁はプレイヤー戦車の接触で破壊できます。接触による破壊範囲は少し抑えており、押し込み続けると広がります。トラック・装甲車の接触では破壊できません。木箱等の爆風では破壊できます。敵司令本部にも固有の構造があります。</li><li>道路は川と同様に2か所の候補それぞれで独立して75%の出現抽選を行います。アスファルト舗装・乾いた締め固め土を各50%、土の道路は1車線（96px）・対面2車線（176px）を各50%、舗装道路は対面2車線（176px）・対面4車線（320px）を各50%で選択します。川・橋と司令本部を避けて配置し、土の道路は迷路基地も避けます。舗装道路は迷路基地にも出現し、道幅の壁を除去します。場所が確保できない場合は出現しません。対面車線の中央は白い実線です。路面には汚れ・補修跡・ひび、白線には濃い汚れと不規則な塗装欠けを表現します。敵の障害物迂回探索は複数フレームへ分割し、全敵合計で約2msを目安に処理します。道路の描画は初回にキャッシュし、画面内だけ表示します。土の道路は横筋を抑えた専用タイルを使用し、不規則な路肩が周囲の地面になじみます。中央付近には、太めで濃い雑草を不規則に配置しています。道路上には建物・木・岩・塀・草むら・泥を配置しません。舗装道路と重なる木箱・ドラム缶は路肩の安全な空き場所へ移動し、空き場所がなければ除去します。土の道路は明るさと彩度を抑えて周囲になじませます。道路自体による速度変更はありません。マップ・敵・障害物の配置は出撃ごとに再生成されます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-controls"><h2>3. 基本操作</h2>
 <ul><li><strong>PC：</strong>矢印キーで移動。D＝爆弾・乗り物の主攻撃、S＝スキル・戦車MG、A＝乗降・近接アクション。</li><li><strong>スマホ：</strong>左スティックで移動。画面のB・S・Aボタンを使用。</li><li><strong>戦車（スマホ）：</strong>Bをドラッグして砲塔を照準、離すと主砲発射。Sを押し続けてMGを撃ち、ドラッグで照準を動かせます。</li><li><strong>狙撃中：</strong>左右で視点移動、上下で1.5倍／2.5倍／3.5倍レンズを変更。Sで狙撃、Aで解除します。</li></ul>
@@ -520,7 +520,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 
 <script>
 const cv=document.getElementById('c'),gm=cv.getContext('2d'),oc=document.createElement('canvas'),MOBILE_VIEW=matchMedia('(pointer:coarse)').matches,W=MOBILE_VIEW?480:840,H=MOBILE_VIEW?Math.max(680,Math.round(W*((window.visualViewport&&visualViewport.height)||innerHeight)/Math.max(1,((window.visualViewport&&visualViewport.width)||innerWidth)))):680,WH=12800,WW=960;const MAP_SCALE=4;cv.width=W;cv.height=H;oc.width=W/2;oc.height=Math.ceil(H/2);const og=oc.getContext('2d');let g=gm;
-const GAME_VERSION='2026.10.11.182',FILE_CREATED_AT='2026/10/11 18:11',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.11.183',FILE_CREATED_AT='2026/10/11 18:15',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -2179,19 +2179,21 @@ function drawPatrolChatBubble(h){
  // About 12% smaller than the previous map balloon.
  drawPatrolChatBubbleAt(centerX,centerY-25,.88,bob);
 }
-let patrolRoutePlanAt=0;
+let patrolRoutePlanAt=0,patrolSearchBudgetMs=2;
+const PATROL_SEARCH_PENDING=Symbol('patrolSearchPending');
 function patrolLineClear(a,b,r){
  const d=Math.hypot(b.x-a.x,b.y-a.y),steps=Math.max(1,Math.ceil(d/8));
  for(let i=1;i<=steps;i++){const x=a.x+(b.x-a.x)*i/steps,y=a.y+(b.y-a.y)*i/steps;if(x<=r||x>=WW-r||y<=r||y>=WH-r||hitsC(x,y,r+2))return false;}
  return true;
 }
-function findPatrolReturnPath(start,goal,r){
+function* patrolReturnSearch(start,goal,r){
  if(hitsC(goal.x,goal.y,r+2))return null;
  const cell=20,heap=[],seen=new Map(),closed=new Set();
  const push=n=>{heap.push(n);let i=heap.length-1;while(i>0){const p=(i-1)>>1;if(heap[p].f<=n.f)break;heap[i]=heap[p];i=p;}heap[i]=n;};
  const pop=()=>{const top=heap[0],tail=heap.pop();if(heap.length){let i=0;while(i*2+1<heap.length){let j=i*2+1;if(j+1<heap.length&&heap[j+1].f<heap[j].f)j++;if(heap[j].f>=tail.f)break;heap[i]=heap[j];i=j;}heap[i]=tail;}return top;};
  const first={ix:0,iy:0,x:start.x,y:start.y,g:0,f:Math.hypot(goal.x-start.x,goal.y-start.y),prev:null};push(first);seen.set('0,0',first);
  for(let count=0;heap.length&&count<3500;count++){
+  if(count&&count%16===0)yield;
   const n=pop(),key=n.ix+','+n.iy;if(closed.has(key))continue;closed.add(key);
   if(Math.hypot(goal.x-n.x,goal.y-n.y)<cell*1.5&&patrolLineClear(n,goal,r)){
    const path=[{x:goal.x,y:goal.y}];for(let q=n;q.prev;q=q.prev)path.push({x:q.x,y:q.y});path.reverse();return path;
@@ -2205,14 +2207,26 @@ function findPatrolReturnPath(start,goal,r){
  }
  return null;
 }
+// 探索の総量は維持し、全敵で共有する2ms予算に分割。画面外の敵も一括探索しない。
+function findPatrolReturnPath(start,goal,r,owner=null){
+ if(!owner){const search=patrolReturnSearch(start,goal,r);let result;do{result=search.next();}while(!result.done);return result.value;}
+ let task=owner.patrolSearch;
+ if(task&&(task.gx!==goal.x||task.gy!==goal.y||task.r!==r||task.covers!==covers||task.coverLen!==covers.length||Math.hypot(start.x-task.sx,start.y-task.sy)>60)){owner.patrolSearch=null;task=null;}
+ if(!task)task=owner.patrolSearch={gx:goal.x,gy:goal.y,r,sx:start.x,sy:start.y,covers,coverLen:covers.length,search:patrolReturnSearch({x:start.x,y:start.y},{x:goal.x,y:goal.y},r)};
+ if(patrolSearchBudgetMs<=0)return PATROL_SEARCH_PENDING;
+ const began=performance.now();let result;
+ do{result=task.search.next();if(result.done){owner.patrolSearch=null;break;}}while(performance.now()-began<patrolSearchBudgetMs);
+ patrolSearchBudgetMs=Math.max(0,patrolSearchBudgetMs-(performance.now()-began));
+ return result.done?result.value:PATROL_SEARCH_PENDING;
+}
 function movePatrolReturn(o,target,dt,sp,r){
  const now=performance.now();
  if(o.returnRoute&&o.returnRouteGoal!==o.wi){o.returnRoute=null;}
- if(!o.returnRoute&&o.stk>.25&&now>=(o.returnRetryAt||0)&&now>=patrolRoutePlanAt){
-  patrolRoutePlanAt=now+100;o.returnRetryAt=now+1500;
-  let route=findPatrolReturnPath(o,target,r);
-  if(!route){const candidates=o.path.map((q,i)=>({q,i,d:Math.hypot(q.x-o.x,q.y-o.y)})).filter(v=>v.i!==o.wi).sort((a,b)=>a.d-b.d);const v=candidates.find(v=>patrolLineClear(o,v.q,r));if(v){o.wi=v.i;route=[{x:v.q.x,y:v.q.y}];}}
-  if(route){o.returnRoute=route;o.returnRouteGoal=o.wi;o.stk=0;o.turnPause=0;}
+ if(o.patrolSearch||(!o.returnRoute&&o.stk>.25&&now>=(o.returnRetryAt||0)&&now>=patrolRoutePlanAt)){
+  if(!o.patrolSearch){patrolRoutePlanAt=now+100;o.returnRetryAt=now+1500;}
+  let route=findPatrolReturnPath(o,target,r,o);
+  if(route!==PATROL_SEARCH_PENDING&&!route){const candidates=o.path.map((q,i)=>({q,i,d:Math.hypot(q.x-o.x,q.y-o.y)})).filter(v=>v.i!==o.wi).sort((a,b)=>a.d-b.d);const v=candidates.find(v=>patrolLineClear(o,v.q,r));if(v){o.wi=v.i;route=[{x:v.q.x,y:v.q.y}];}}
+  if(route!==PATROL_SEARCH_PENDING&&route){o.returnRoute=route;o.returnRouteGoal=o.wi;o.stk=0;o.turnPause=0;}
  }
  let dest=target;
  if(o.returnRoute){while(o.returnRoute.length&&Math.hypot(o.returnRoute[0].x-o.x,o.returnRoute[0].y-o.y)<5)o.returnRoute.shift();if(o.returnRoute.length)dest=o.returnRoute[0];else o.returnRoute=null;}
@@ -2923,8 +2937,9 @@ function updateCommanderSignals(dt){
 function commanderMove(h,target,dt,sp=150){
  if(h.commanderRoute&&Math.hypot(target.x-h.commanderGoal.x,target.y-h.commanderGoal.y)>90)h.commanderRoute=null;
  const a=Math.atan2(target.y-h.y,target.x-h.x),ahead={x:h.x+Math.cos(a)*22,y:h.y+Math.sin(a)*22};
- if(!h.commanderRoute&&!patrolLineClear(h,ahead,8)&&performance.now()>=(h.commanderRetry||0)&&performance.now()>=patrolRoutePlanAt){
-  patrolRoutePlanAt=performance.now()+100;h.commanderRetry=performance.now()+900;h.commanderRoute=findPatrolReturnPath(h,target,8);h.commanderGoal={...target};
+ if(h.patrolSearch||(!h.commanderRoute&&!patrolLineClear(h,ahead,8)&&performance.now()>=(h.commanderRetry||0)&&performance.now()>=patrolRoutePlanAt)){
+  if(!h.patrolSearch){patrolRoutePlanAt=performance.now()+100;h.commanderRetry=performance.now()+900;}
+  const route=findPatrolReturnPath(h,target,8,h);if(route!==PATROL_SEARCH_PENDING){h.commanderRoute=route;h.commanderGoal={...target};}
  }
  let dest=target;if(h.commanderRoute){while(h.commanderRoute.length&&D(h,h.commanderRoute[0])<5)h.commanderRoute.shift();if(h.commanderRoute.length)dest=h.commanderRoute[0];else h.commanderRoute=null;}
  const to=Math.atan2(dest.y-h.y,dest.x-h.x),step=Math.min(sp*dt,D(h,dest)),ox=h.x,oy=h.y;mv(h,Math.cos(to)*step,Math.sin(to)*step,8);
@@ -3030,6 +3045,7 @@ function drawCommanderOverlay(h){
 }
 
 function pauseAfterEnemyDetection(o){
+ o.patrolSearch=null;
  o.returnRoute=null;o.returnRetryAt=0;o.stk=0;o.lastAiMode=o.sus>0?'suspicious':'patrol';o.modePause=.5+R()*.5;o.modeFrozen=true;o.walking=false;
 }
 function holdEnemyModePosition(o){
@@ -3052,7 +3068,7 @@ function enterHumanFound(h,key,pause=null){
   h.foundPause=Math.max(h.foundPause||0,foundModePause());
   commanderWhistle(h,key);
   enemyModePaused(h);
-  h.returnRoute=null;
+  h.returnRoute=null;h.patrolSearch=null;
   h.ct=0;
   if(!h.elite&&!h.bu)h.bombAt=.8+R()*3.7;
   if(key==='p'&&scoreStats&&!scoreStats.finalized)scoreStats.foundEntries++;
@@ -4449,6 +4465,7 @@ function drawSniperScope(){
  }
 
 function update(dt){
+ patrolSearchBudgetMs=2;
  for(const o of [...humans,...etanks]){o.modeStartX=o.x;o.modeStartY=o.y;o.modeFrozen=false;}
  for(const h of humans){h.walkStartX=h.x;h.walkStartY=h.y;}
  updateWeather(dt);updateHQSpawn(dt);updateDrill(dt);
@@ -6818,11 +6835,11 @@ function loop(n){
 }
 let gameErrorCount=0;
 function reportGameError(error){
- gameErrorCount++;console.error('Tank game v182',error);
+ gameErrorCount++;console.error('Tank game v183',error);
  let panel=document.getElementById('runtimeError');
  if(!panel){panel=document.createElement('div');panel.id='runtimeError';panel.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;background:#422018;color:#fff2dc;padding:12px;border:1px solid #f7b083;border-radius:8px;font:12px system-ui;white-space:pre-wrap;max-height:35vh;overflow:auto';document.body.appendChild(panel);}
  const stack=String(error&&error.stack||error).split('\n').slice(0,4).join('\n');
- panel.textContent='v182 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
+ panel.textContent='v183 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 requestAnimationFrame(loop);
 </script>
