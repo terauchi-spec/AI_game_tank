@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="160" viewBox="0 0 48 160">
+<defs>
+ <linearGradient id="side" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#27292b"/><stop offset=".45" stop-color="#414247"/><stop offset="1" stop-color="#505156"/></linearGradient>
+ <linearGradient id="top" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#686a6d"/><stop offset=".28" stop-color="#858487"/><stop offset=".72" stop-color="#9a9897"/><stop offset="1" stop-color="#727476"/></linearGradient>
+ <linearGradient id="edge" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#49494b"/><stop offset="1" stop-color="#27292b"/></linearGradient>
+ <filter id="dust"><feTurbulence type="fractalNoise" baseFrequency=".23" numOctaves="2" seed="9" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope=".085"/></feComponentTransfer></filter>
+</defs>
+<!-- Dedicated vertical overhead concrete barrier: top surface remains upright, never rotate the horizontal illustration. -->
+<rect x="6" y="10" width="40" height="148" rx="1" fill="#101113" opacity=".18"/>
+<path d="M5 7 L18 4 L20 151 L5 155Z" fill="url(#side)"/>
+<path d="M17 5 L39 5 L39 151 L17 152Z" fill="url(#top)"/>
+<path d="M38 5 L42 9 L42 155 L38 151Z" fill="url(#edge)"/>
+<path d="M5 7 L17 5 L17 152 L5 155Z" fill="#282a2d" opacity=".22"/>
+<path d="M17 7 L20 8 L20 149 L17 151Z" fill="#dbd9d0" opacity=".16"/>
+<rect x="5" y="6" width="34" height="7" fill="#747576"/>
+<path d="M6 7 L17 5 L39 5 L39 11 L17 13 L5 13Z" fill="#9d9b97" opacity=".6"/>
+<rect x="17" y="146" width="22" height="6" fill="#717171" opacity=".86"/>
+<path d="M5 149 L17 146 L39 146 L42 152 L5 155Z" fill="#515253" opacity=".60"/>
+<!-- Concrete joins are horizontal across the vertical wall; subtle, not rotated lighting. -->
+<path d="M7 53 L17 52 L39 52 M7 104 L17 103 L39 103" fill="none" stroke="#242729" stroke-width="1.2" opacity=".27"/>
+<path d="M18 54 L37 54 M18 105 L37 105" stroke="#c5c4bb" stroke-width=".8" opacity=".25"/>
+<path d="M9 25 L15 24 M8 84 L15 83 M10 130 L15 129" stroke="#1d2124" stroke-width="1" opacity=".26"/>
+<path d="M24 34 L26 32 M32 72 L34 70 M23 116 L26 119 M30 137 L32 137" stroke="#444648" opacity=".23" fill="none"/>
+<rect x="17" y="5" width="22" height="147" filter="url(#dust)" opacity=".4"/>
+</svg>
