@@ -27,7 +27,14 @@ function updatePartnerPassenger(q,dt){
  return true;
 }
 function drawPartnerPassengerHead(){
- const q=partner;if(skill!=='partner'||!q||!p.tank||q.passengerVehicle!==p.tank||p.tank.kind!=='tank')return;
+ const q=partner;if(skill!=='partner'||!q||!p.tank||q.passengerVehicle!==p.tank)return;
+ // 全車種で同乗を示す静止バッジ。戦車・装甲車は従来の頭も表示。
+ g.save();g.font='bold 11px system-ui';g.textAlign='center';g.textBaseline='middle';
+ const badgeY=p.y-(p.tank.kind==='fighter'?78:p.tank.kind==='truck'?52:58);
+ g.fillStyle='rgba(8,16,20,.82)';g.fillRect(p.x-35,badgeY-9,70,18);
+ g.strokeStyle='#399bff';g.lineWidth=1;g.strokeRect(p.x-35,badgeY-9,70,18);
+ g.fillStyle='#a9dcff';g.fillText('相棒 同乗',p.x,badgeY);g.restore();
+ if(p.tank.kind!=='tank')return;
  g.save();g.translate(p.x,p.y-9);
  g.fillStyle='#263d30';g.strokeStyle='#111b15';g.lineWidth=1.5;
  g.beginPath();g.ellipse(0,0,7,6,0,0,Math.PI*2);g.fill();g.stroke();
@@ -229,7 +236,7 @@ function partnerKnockoutPatrol(dt){
   if(d<near){near=d;target=h;}
  }
  if(!target)return false;
- if(near<=50&&los(q,target)){
+ if(near<=25&&los(q,target)){
   if(q.touchCd<=0&&stunHuman(target)){
    q.grappleT=.45;q.grappleTarget=target;q.touchCd=1;
    q.face=Math.atan2(target.y-q.y,target.x-q.x);q.moving=false;

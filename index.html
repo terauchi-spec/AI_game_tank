@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.12.1301</title>
+<title>戦車ゲーム 2026.10.12.1306</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -520,7 +520,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <li><strong>投擲：</strong>進行方向へ最大11mの距離で爆弾を投げます。5秒で再使用可能。</li>
 <li><strong>潜伏：</strong>0.5秒静止して潜伏準備後、最大5秒間潜伏。解除後は5秒チャージ。水中は移動速度60%、泥では潜伏を解除します。潜伏開始1秒後に敵表示が隠れます。</li>
 <li><strong>偽装：</strong>5秒間残る身代わりを設置して敵の注意をそらします。赤い電波が約1.25秒間隔で半径300pxまで滑らかに広がります。見やすいように少し濃い単色の赤いリングで描いています。身代わり周囲の残り時間の円形ゲージは表示せず、終了時は赤い粒が短く散って消えます。電波の表示範囲と敵を誘導する範囲は別です。チャージ8秒。</li>
-<li><strong>相棒：</strong>青いヘルメットラインの味方が敵司令本部を目指しつつプレイヤーの歩調を模倣します。プレイヤーの行動から潜入・慎重移動・通常前進・突破・戦闘・退避を判断し、約0.35秒ごとに移動先を選びます。草むらや遮蔽物を活用し、速度と距離を調整しながら同行します。交戦時は敵に援護射撃します。画面内にとどまり、敵の攻撃対象にもなります。HP3で、倒れると赤十字の救急箱アイコンが表示され、徒歩で触れると回復します。プレイヤーの設置爆弾の爆風で5秒間気絶し、接触すると早期復帰します。行動モードを問わず100px以内の敵兵に近づき、50px以内で羽交い絞めにして気絶させます。相棒が気絶中は敵兵と同じ星のアイコンが回転します。ルート線上・その50px以内に未搭乗の乗り物があれば、移動途中で搭乗してルートに沿って進みます。戦車は主砲・機銃、装甲車は機銃で援護し、武器を持たないトラックは体当たりで戦います。S短押しでプレイヤーへ戻るバックアップモード、長押しで両者の無線アイコンを表示して移動キーでルートを描き、離して1秒後にルート移動を始めます。ルート入力中はプレイヤーが移動できません。ルート作成中に壁に触れた場合は描き始めへ戻し、移動中に立ち往生した場合も開始地点へ戻ります。ルート確定後は指示線を表示しません。救助待ちや気絶中でも、画面外10秒またはプレイヤーから長時間離れると画面内の救助可能な場所へ復帰します。</li>
+<li><strong>相棒：</strong>青いヘルメットラインの味方が敵司令本部を目指しつつプレイヤーの歩調を模倣します。プレイヤーの行動から潜入・慎重移動・通常前進・突破・戦闘・退避を判断し、約0.35秒ごとに移動先を選びます。草むらや遮蔽物を活用し、速度と距離を調整しながら同行します。交戦時は敵に援護射撃します。画面内にとどまり、敵の攻撃対象にもなります。HP3で、倒れると赤十字の救急箱アイコンが表示され、徒歩で触れると回復します。プレイヤーの設置爆弾の爆風で5秒間気絶し、接触すると早期復帰します。行動モードを問わず100px以内の敵兵に近づき、25px以内で羽交い絞めにして気絶させます。相棒が気絶中は敵兵と同じ星のアイコンが回転します。ルート線上・その50px以内に未搭乗の乗り物があれば、移動途中で搭乗してルートに沿って進みます。戦車は主砲・機銃、装甲車は機銃で援護し、武器を持たないトラックは体当たりで戦います。S短押しでプレイヤーへ戻るバックアップモード、長押しで両者の無線アイコンを表示して移動キーでルートを描き、離して1秒後にルート移動を始めます。ルート入力中はプレイヤーが移動できません。ルート作成中に壁に触れた場合は描き始めへ戻し、移動中に立ち往生した場合も開始地点へ戻ります。ルート確定後は指示線を表示しません。救助待ちや気絶中でも、画面外10秒またはプレイヤーから長時間離れると画面内の救助可能な場所へ復帰します。</li>
 <li><strong>増援：</strong>味方兵士がパラシュート降下して戦闘を援護。同時に最大5人。チャージ6秒。着地後、オブジェクトの爆発や敵戦車の砲撃爆風を受けると吹き飛ばされ、5秒間気絶します。気絶中は移動と射撃を停止し、頭上の星が目印になります。</li>
 <li><strong>突貫：</strong>正面にドリルを展開。持続5秒、終了後は6秒チャージ。遮蔽物の破壊に利用できます。</li>
 <li><strong>建築：</strong>前方にコンクリート防護壁を設置。最大5枚、チャージ1.5秒。</li>
@@ -572,7 +572,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.12.1301',FILE_CREATED_AT='2026/10/12 13:01',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.12.1306',FILE_CREATED_AT='2026/10/12 13:06',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -699,8 +699,8 @@ const COVER_ASSET_SRC={
  "rock":ASSET_DIR+'cover/rock.webp',
  "rock_v2":ASSET_DIR+'cover/rock_v2.webp',
  "maze_wall":ASSET_DIR+'cover/maze_wall.webp',
- "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.webp?v=2026.10.12.1301',
- "barrel":ASSET_DIR+'cover/barrel.webp?v=2026.10.12.1301',
+ "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.webp?v=2026.10.12.1306',
+ "barrel":ASSET_DIR+'cover/barrel.webp?v=2026.10.12.1306',
  "command_building_1":ASSET_DIR+'cover/command_building_1.webp',
  "wood_bridge":ASSET_DIR+'terrain/wood_bridge.webp'
 };
@@ -7165,7 +7165,7 @@ function reportGameError(error){
 }
 requestAnimationFrame(loop);
 </script>
-<script src="js/partner.js?v=2026.10.12.1301"></script>
+<script src="js/partner.js?v=2026.10.12.1306"></script>
 <script>
 (function(){
 // iPhone Chrome/Safari: synthetic KeyboardEvent に依存せず、ゲーム内部の入力状態を直接更新する。
