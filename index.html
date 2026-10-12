@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.12.2218</title>
+<title>こっそり戦車大作戦 2026.10.12.2222</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -459,9 +459,9 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 </style>
 <style>
 /* 作戦説明は静止DOMで表示し、待機中のゲーム更新・再描画を止める。 */
-#missionBriefing,#missionFailure{display:none;position:fixed;inset:0;z-index:72;background:rgba(0,0,0,.5);color:#fff;box-sizing:border-box;padding:max(18px,env(safe-area-inset-top)) 20px max(18px,env(safe-area-inset-bottom));overflow:auto;font-family:system-ui,-apple-system,'Hiragino Sans',sans-serif}
-body.briefing-open #missionBriefing,body.failure-open #missionFailure{display:flex;align-items:center;justify-content:center}
-body.failure-open #pad,body.failure-open #resetBtn,body.failure-open #debugToggleBtn,body.failure-open #debugBadge,body.briefing-open #pad,body.briefing-open #resetBtn,body.briefing-open #debugToggleBtn,body.briefing-open #debugBadge{display:none!important}
+#missionBriefing,#missionFailure,#missionSuccess{display:none;position:fixed;inset:0;z-index:72;background:rgba(0,0,0,.5);color:#fff;box-sizing:border-box;padding:max(18px,env(safe-area-inset-top)) 20px max(18px,env(safe-area-inset-bottom));overflow:auto;font-family:system-ui,-apple-system,'Hiragino Sans',sans-serif}
+body.briefing-open #missionBriefing,body.failure-open #missionFailure,body.success-open #missionSuccess{display:flex;align-items:center;justify-content:center}
+body.success-open #pad,body.success-open #resetBtn,body.success-open #debugToggleBtn,body.success-open #debugBadge,body.failure-open #pad,body.failure-open #resetBtn,body.failure-open #debugToggleBtn,body.failure-open #debugBadge,body.briefing-open #pad,body.briefing-open #resetBtn,body.briefing-open #debugToggleBtn,body.briefing-open #debugBadge{display:none!important}
 .mission-briefing-content{display:flex;align-items:center;justify-content:center;gap:28px;width:min(100%,850px);margin:auto;text-align:center}
 .mission-briefing-image{display:block;width:min(40vw,320px);height: min(72dvh,580px);object-fit:contain;flex-shrink:0}
 /* 画像だけをtransformで動かし、レイアウト・ゲームCanvasの再描画を増やさない。 */
@@ -470,8 +470,8 @@ body.briefing-open .mission-briefing-image{transform-origin:center bottom;animat
 @media(prefers-reduced-motion:reduce){body.briefing-open .mission-briefing-image{animation:none}}
 .mission-briefing-copy h1{font-size:clamp(25px,4vw,36px);margin:0 0 18px;color:#ffe0a0}
 .mission-briefing-copy p{display:block;opacity:1;font-size:clamp(17px,2.5vw,23px);font-weight:750;line-height:1.7;margin:0 0 28px;text-wrap:balance}
-#missionBegin,#missionEvaluate{min-width:210px;min-height:54px;padding:12px 28px;border:1px solid #ffe5ac;border-radius:10px;background:#e2bf78;color:#202a1c;font:850 20px system-ui;cursor:pointer;touch-action:manipulation}
-#missionBegin:focus-visible,#missionEvaluate:focus-visible{outline:3px solid #fff;outline-offset:5px}
+#missionBegin,#missionEvaluate,#missionSuccessEvaluate{min-width:210px;min-height:54px;padding:12px 28px;border:1px solid #ffe5ac;border-radius:10px;background:#e2bf78;color:#202a1c;font:850 20px system-ui;cursor:pointer;touch-action:manipulation}
+#missionBegin:focus-visible,#missionEvaluate:focus-visible,#missionSuccessEvaluate:focus-visible{outline:3px solid #fff;outline-offset:5px}
 @media(max-width:600px){.mission-briefing-content{flex-direction:column;gap:12px}.mission-briefing-image{width:min(70vw,260px);height:min(49dvh,400px)}.mission-briefing-copy h1{margin-bottom:10px}.mission-briefing-copy p{margin-bottom:18px}}
 </style>
 <style>
@@ -481,6 +481,19 @@ body.briefing-open .mission-briefing-image{transform-origin:center bottom;animat
 body.failure-open .mission-briefing-image{transform-origin:center bottom;animation:missionHeroPop 420ms ease-out 1}
 @media(prefers-reduced-motion:reduce){body.failure-open .mission-briefing-image{animation:none}}
 </style>
+<style>
+#missionSuccess{isolation:isolate}
+#missionSuccess .mission-briefing-content{position:relative;z-index:1;flex-direction:column;gap:18px}
+#missionSuccess .mission-briefing-image{width:min(82vw,640px);height:min(51dvh,420px);flex-shrink:0}
+#missionSuccess h1{color:#ffe09a;margin-bottom:24px}
+body.success-open .mission-briefing-image{transform-origin:center bottom;animation:missionHeroPop 420ms ease-out 1}
+.mission-fireworks{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.mission-firework{position:absolute;width:140px;height:140px;margin:-70px;background:url('assets/ui/mission_firework.svg') center/contain no-repeat;opacity:0}
+body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-out var(--burst-delay) 1 forwards}
+@keyframes missionFireworkBurst{0%{opacity:0;transform:scale(.15)}15%{opacity:1}65%{opacity:.8}100%{opacity:0;transform:scale(1.2)}}
+@media(max-width:600px){.mission-firework{width:100px;height:100px;margin:-50px}}
+@media(prefers-reduced-motion:reduce){body.success-open .mission-briefing-image,body.success-open .mission-firework{animation:none}}
+</style>
 </head>
 <body>
 <canvas id="c" width="840" height="720"></canvas>
@@ -489,7 +502,7 @@ body.failure-open .mission-briefing-image{transform-origin:center bottom;animati
 <div id="debugBadge" hidden>無敵モード</div>
 <div id="pad"><div id="stick"><div id="knob"></div></div><div class="btns"><button class="b" id="skillBtn" data-k="KeyS"><span class="coolRing" id="skillCooldown"></span><span class="coolText" id="skillCooldownText"></span><b>S</b><small id="skillLabel">スキル</small></button><button class="b" id="actionBtn" type="button"><span class="coolRing" id="actionCooldown"></span><span class="coolText" id="actionCooldownText"></span><b id="actionGlyph">B</b><small id="actionLabel">爆弾</small></button><button class="b" data-k="KeyA"><b>A</b><small>操作</small></button></div></div>
 <div id="titleScreen" role="region" aria-label="タイトル画面"><div class="title-wrap">
-<div class="title-hero"><img class="title-art" alt="戦場を見下ろす兵士と戦車のイラスト" src="assets/ui/title_hero.webp?v=2026.10.12.2218"><div class="title-hero-text"><div class="title-tag">TACTICAL ACTION GAME</div><h1 class="title-main"><img class="title-logo" src="assets/ui/title_logo.webp?v=2026.10.12.2218" alt="こっそり戦車大作戦"></h1></div></div>
+<div class="title-hero"><img class="title-art" alt="戦場を見下ろす兵士と戦車のイラスト" src="assets/ui/title_hero.webp?v=2026.10.12.2222"><div class="title-hero-text"><div class="title-tag">TACTICAL ACTION GAME</div><h1 class="title-main"><img class="title-logo" src="assets/ui/title_logo.webp?v=2026.10.12.2222" alt="こっそり戦車大作戦"></h1></div></div>
 <nav class="title-actions" aria-label="タイトルメニュー">
 <button type="button" class="title-cta" id="titleStart">ゲームを始める</button>
 <div class="title-secondaries"><button type="button" class="title-secondary" id="titleAwards">称号</button><button type="button" class="title-secondary" id="titleHelp">操作説明</button><button type="button" class="title-secondary" id="titleSpecs">仕様</button><button type="button" class="title-secondary" id="titleDiagnostics">表示診断（停止の調査）</button></div>
@@ -653,8 +666,9 @@ body.failure-open .mission-briefing-image{transform-origin:center bottom;animati
 <style>
 #stageScreen{display:none;position:fixed;inset:0;z-index:70;background:rgba(10,18,14,.98);color:#e6e9d6;overflow:auto;padding:24px 18px;box-sizing:border-box;font-family:system-ui}body.stage-open #stageScreen{display:block}.stage-shell{max-width:760px;margin:auto}.stage-shell h1{font-size:28px;margin:10px 0}.stage-shell p{line-height:1.7;color:#bac9b5}.stage-card{display:block;width:100%;text-align:left;color:inherit;background:#23332a;border:2px solid #526549;border-radius:12px;padding:20px;margin:14px 0;cursor:pointer;font:inherit}.stage-card:hover,.stage-card:focus-visible{background:#314738;border-color:#e2c07c}.stage-card strong{font-size:23px;color:#eed5a1}.stage-card span{display:block;margin-top:8px;line-height:1.7}.stage-card small{display:block;color:#a9c8b7;margin-top:8px}.stage-back{padding:12px 20px;background:#344536;color:white;border:1px solid #829474;border-radius:8px;cursor:pointer}#missionHud{display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:12;max-width:90vw;width:480px;box-sizing:border-box;border:1px solid #829474;background:rgba(14,26,19,.9);color:#eef1df;padding:8px 12px;border-radius:8px;font:13px system-ui;pointer-events:none}#missionHud progress{width:100%;height:9px;accent-color:#9dcaa9}#missionHud small{display:block;color:#cee0bc;margin-top:4px}
 </style>
-<div id="missionFailure" role="dialog" aria-modal="true" aria-labelledby="missionFailureTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_failed.webp?v=2026.10.12.2218" alt="倒れてふらつく主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionFailureTitle">ミッション 失敗</h1><button type="button" id="missionEvaluate">作戦評価</button></div></div></div>
-<div id="missionBriefing" role="dialog" aria-modal="true" aria-labelledby="missionBriefingTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_hero.webp?v=2026.10.12.2218" alt="円形爆弾を抱えて走る主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionBriefingTitle">ミッション</h1><p>敵の拠点にたどりつき、破壊せよ</p><button type="button" id="missionBegin">作戦開始</button></div></div></div>
+<div id="missionSuccess" role="dialog" aria-modal="true" aria-labelledby="missionSuccessTitle"><div class="mission-fireworks" aria-hidden="true"><i class="mission-firework" style="left:18%;top:24%;--burst-delay:0.15s"></i><i class="mission-firework" style="left:78%;top:20%;--burst-delay:0.45s"></i><i class="mission-firework" style="left:48%;top:12%;--burst-delay:0.75s"></i><i class="mission-firework" style="left:22%;top:60%;--burst-delay:1.05s"></i><i class="mission-firework" style="left:81%;top:55%;--burst-delay:1.35s"></i></div><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_success.webp?v=2026.10.12.2222" alt="笑顔でジャンプする主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionSuccessTitle">ミッション 成功</h1><button type="button" id="missionSuccessEvaluate">作戦評価</button></div></div></div>
+<div id="missionFailure" role="dialog" aria-modal="true" aria-labelledby="missionFailureTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_failed.webp?v=2026.10.12.2222" alt="倒れてふらつく主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionFailureTitle">ミッション 失敗</h1><button type="button" id="missionEvaluate">作戦評価</button></div></div></div>
+<div id="missionBriefing" role="dialog" aria-modal="true" aria-labelledby="missionBriefingTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_hero.webp?v=2026.10.12.2222" alt="円形爆弾を抱えて走る主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionBriefingTitle">ミッション</h1><p>敵の拠点にたどりつき、破壊せよ</p><button type="button" id="missionBegin">作戦開始</button></div></div></div>
 <div id="stageScreen" role="region" aria-label="ステージ選択"><div class="stage-shell"><div style="color:#9cbb9b;font-size:12px">CHOOSE YOUR MISSION</div><h1>ステージ選択</h1><p id="stageSkill"></p><button class="stage-card" data-stage="base"><strong>01　拠点破壊</strong><span>敵地を突破し、敵司令本部を破壊せよ。潜入・戦闘・乗り物を組み合わせる従来の作戦。</span><small>バランス型 ／ 目標：司令本部の破壊</small></button><button class="stage-card" data-stage="front"><strong>02　最前線</strong><span>味方部隊と進撃し、3か所の戦線を順番に制圧せよ。円内の敵を排除し、味方と陣地を確保。制圧すると補給と前進増援が到着する。</span><small>戦闘中心 ／ 円内で12秒確保・敵がいると制圧停止</small></button><button class="stage-card" data-stage="stealth"><strong>03　潜入</strong><span>3か所の機密情報を回収し、開始地点の脱出地点へ帰還せよ。徒歩で端末の近くに留まり解析。発見中は解析できず、警戒度が高まると追跡部隊が出現する。</span><small>スニーク中心 ／ 端末で4秒解析・全情報回収後に帰還</small></button><button class="stage-back" id="stageBack">← スキル選択へ</button></div></div><div id="missionHud" role="status"></div>
 
 <script>
@@ -667,7 +681,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.12.2218',FILE_CREATED_AT='2026/10/12 22:18',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.12.2222',FILE_CREATED_AT='2026/10/12 22:22',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -695,7 +709,7 @@ function queueDAction(){
 }
 addEventListener('keydown',e=>{
  const code=normKeyCode(e);
- if(state==='briefing'||state==='failed')return;
+ if(state==='briefing'||state==='failed'||state==='succeeded')return;
  if((state==='play'||state==='blast')&&(code.startsWith('Arrow')||code==='Space'))e.preventDefault();
  const first=!keys[code];keys[code]=true;
  // Dは移動キーとは完全に独立したアクションとして扱う。
@@ -721,7 +735,7 @@ addEventListener('keydown',e=>{
 },true);
 // 一部キーボードでは3キー同時押し時にkeydownだけ欠落するため、keypressも予備経路にする。
 addEventListener('keypress',e=>{
- if(state==='briefing'||state==='failed')return;
+ if(state==='briefing'||state==='failed'||state==='succeeded')return;
  const code=normKeyCode(e);
  if(code==='KeyD'&&!dPressHandled)queueDAction();
 },true);
@@ -796,8 +810,8 @@ const COVER_ASSET_SRC={
  "rock":ASSET_DIR+'cover/rock.webp',
  "rock_v2":ASSET_DIR+'cover/rock_v2.webp',
  "maze_wall":ASSET_DIR+'cover/maze_wall.webp',
- "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.webp?v=2026.10.12.2218',
- "barrel":ASSET_DIR+'cover/barrel.webp?v=2026.10.12.2218',
+ "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.webp?v=2026.10.12.2222',
+ "barrel":ASSET_DIR+'cover/barrel.webp?v=2026.10.12.2222',
  "command_building_1":ASSET_DIR+'cover/command_building_1.webp',
  "wood_bridge":ASSET_DIR+'terrain/wood_bridge.webp'
 };
@@ -5104,7 +5118,7 @@ function useSkill(wx,wy){if(scoreStats&&!scoreStats.finalized)scoreStats.skillUs
 function winSeq(){if(stageMode!=='base'){base.hp=30;say('作戦目標を達成しよう');return;}if(areaDebugEnabled){base.hp=30;say('エリアデバッグ中：司令部破壊判定を無効化');return;}state='blast';blastT=2.4;bq=0;p.dig=0;p.digPrep=0;p.drill=0;sfx('win');}
 function blastUpdate(dt){blastT-=dt;bq-=dt;if(bq<=0){bq=.1;const x=base.x+R()*base.w,y=base.y+R()*base.h;fb(x,y,28+R()*34);burst(x,y,25,'#ff8a3a',380);shake=14;if(R()<.3)flash=.5;}
  for(const f of fx)f.l-=dt;fx=fx.filter(f=>f.l>0);updateParts(dt);
- flash=Math.max(0,flash-dt*2.5);if(blastT<=0){state='win';shake=0;finalizeScore(true);}}
+ flash=Math.max(0,flash-dt*2.5);if(blastT<=0){state='succeeded';successFrameDrawn=false;shake=0;finalizeScore(true);}}
 function fb(x,y,m){fx.push({x,y,max:m,l:.45});}
 function shade(c,k){const n=parseInt(c.slice(1),16),f=v=>Math.max(0,Math.min(255,Math.round(v*k)));return 'rgb('+f(n>>16)+','+f((n>>8)&255)+','+f(n&255)+')';}
 function mkPat(z){
@@ -6325,7 +6339,7 @@ function draw(near){
  // タッチ端末は表示Canvasへ直接描画し、動的な画面外Canvasの毎フレーム転写を避ける。
  g=MOBILE_VIEW?gm:og;g.setTransform(MOBILE_VIEW?1:.5,0,0,MOBILE_VIEW?1:.5,0,0);g.imageSmoothingEnabled=false;labels.length=0;vehicleMarkers.length=0;
  fragmentDrawFrame++;fragmentAssetSignature=Object.values(COVER_IMG).reduce((n,im)=>n+(assetOK(im)?1:0),0);
- const bl=state==='blast'||(state==='win'&&stageMode==='base');
+ const bl=state==='blast'||((state==='win'||state==='succeeded')&&stageMode==='base');
  if(bl){cam+=(0-cam)*.07;camX+=(Math.max(0,Math.min(WW-W,base.x+base.w/2-W/2))-camX)*.07;}else{cam=Math.max(0,Math.min(WH-H,p.y-H*.6));camX=Math.max(0,Math.min(WW-W,p.x-W/2));}
  const cy=Math.round(cam/2)*2,cx=Math.round(camX/2)*2;
  g.save();if(shake>0)g.translate((R()-.5)*shake,(R()-.5)*shake);
@@ -7093,6 +7107,15 @@ const STAGE_NAMES={base:'拠点破壊',front:'最前線',stealth:'潜入'};
 document.querySelectorAll('[data-stage]').forEach(b=>b.addEventListener('click',()=>{stageMode=b.dataset.stage;document.body.classList.remove('stage-open');selectSkillIndex(skillMenuList().findIndex(k=>k.id===selectedSkillId),true);}));
 document.getElementById('stageBack').onclick=()=>{state='skill';};
 let briefingFrameDrawn=false;
+let successFrameDrawn=false;
+function syncMissionSuccess(){
+ const active=state==='succeeded',wasOpen=document.body.classList.contains('success-open');
+ if(active!==wasOpen){document.body.classList.toggle('success-open',active);if(active)document.getElementById('missionSuccessEvaluate').focus({preventScroll:true});}
+}
+document.getElementById('missionSuccessEvaluate').addEventListener('click',()=>{
+ if(state!=='succeeded')return;
+ state='win';resultAnimT=0;syncMissionSuccess();syncResultScreen();sfx('skill');
+});
 let failureFrameDrawn=false;
 function syncMissionFailure(){
  const active=state==='failed',wasOpen=document.body.classList.contains('failure-open');
@@ -7218,6 +7241,7 @@ if(MOBILE_VIEW)requestAnimationFrame(monitorPresentationFrame);
 const MOBILE_DRAW_FPS=60,MOBILE_DRAW_INTERVAL=1000/MOBILE_DRAW_FPS;
 let lastGameDrawAt=null;
 function shouldDrawGameFrame(now){
+ if(state==='succeeded'){if(successFrameDrawn)return false;successFrameDrawn=true;return true;}
  if(state==='failed'){if(failureFrameDrawn)return false;failureFrameDrawn=true;return true;}
  if(state==='briefing'){if(briefingFrameDrawn)return false;briefingFrameDrawn=true;return true;}
  if(!MOBILE_VIEW||state!=='play'){lastGameDrawAt=null;return true;}
@@ -7269,7 +7293,7 @@ function loop(n){
  }while(remain>.000001);
  const frameUpdateEnd=performance.now();
  const gameplayActive=state==='play';if(document.body.classList.contains('gameplay-active')!==gameplayActive)document.body.classList.toggle('gameplay-active',gameplayActive);
- if(shouldDrawGameFrame(n)){draw(near);drawMission();recordGameDraw(n);}const frameDrawEnd=performance.now();syncMissionFailure();syncMissionBriefing();syncStageScreen();syncResultScreen();syncSkillScreen();syncTitleScreen();syncHelpScreen();syncSpecScreen();
+ if(shouldDrawGameFrame(n)){draw(near);drawMission();recordGameDraw(n);}const frameDrawEnd=performance.now();syncMissionSuccess();syncMissionFailure();syncMissionBriefing();syncStageScreen();syncResultScreen();syncSkillScreen();syncTitleScreen();syncHelpScreen();syncSpecScreen();
  recordGameFrameTiming(frameInterval,frameStarted,frameUpdateEnd,frameDrawEnd,performance.now());
  if(firstMenuFrame){firstMenuFrame=false;setTimeout(startAssetLoading,0);}
  }catch(error){reportGameError(error);}finally{queueNextGameFrame(loopStarted);}
@@ -7284,7 +7308,7 @@ function reportGameError(error){
 }
 requestAnimationFrame(loop);
 </script>
-<script src="js/partner.js?v=2026.10.12.2218"></script>
+<script src="js/partner.js?v=2026.10.12.2222"></script>
 <script>
 (function(){
 // iPhone Chrome/Safari: synthetic KeyboardEvent に依存せず、ゲーム内部の入力状態を直接更新する。
