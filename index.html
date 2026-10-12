@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.12.2341</title>
+<title>こっそり戦車大作戦 2026.10.12.2343</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -494,6 +494,16 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 @media(max-width:600px){.mission-firework{width:100px;height:100px;margin:-50px}}
 @media(prefers-reduced-motion:reduce){body.success-open .mission-briefing-image,body.success-open .mission-firework{animation:none}}
 </style>
+<style>
+/* 説明ボタンの余白を本文へ戻し、文字数に応じてカードを縦に伸ばす。 */
+#skillScreen .sk-card{height:auto;overflow:visible}
+#skillScreen .sk-copy{padding-right:0;min-width:0;gap:6px}
+#skillScreen .sk-name{font-size:20px;line-height:1.25;margin:0}
+#skillScreen .sk-desc{font-size:14px;line-height:1.5;margin:0;overflow-wrap:anywhere}
+#skillScreen .sk-ctrl{font-size:13px;line-height:1.5;margin:0;overflow-wrap:anywhere}
+@media(max-width:580px){#skillScreen .sk-copy{gap:5px}#skillScreen .sk-name{font-size:18px}#skillScreen .sk-desc{font-size:13px}#skillScreen .sk-ctrl{font-size:12px}}
+@media(max-width:360px){#skillScreen .sk-name{font-size:17px}#skillScreen .sk-desc{font-size:12.5px}#skillScreen .sk-ctrl{font-size:11.5px}}
+</style>
 </head>
 <body>
 <canvas id="c" width="840" height="720"></canvas>
@@ -502,7 +512,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <div id="debugBadge" hidden>無敵モード</div>
 <div id="pad"><div id="stick"><div id="knob"></div></div><div class="btns"><button class="b" id="skillBtn" data-k="KeyS"><span class="coolRing" id="skillCooldown"></span><span class="coolText" id="skillCooldownText"></span><b>S</b><small id="skillLabel">スキル</small></button><button class="b" id="actionBtn" type="button"><span class="coolRing" id="actionCooldown"></span><span class="coolText" id="actionCooldownText"></span><b id="actionGlyph">B</b><small id="actionLabel">爆弾</small></button><button class="b" data-k="KeyA"><b>A</b><small>操作</small></button></div></div>
 <div id="titleScreen" role="region" aria-label="タイトル画面"><div class="title-wrap">
-<div class="title-hero"><img class="title-art" alt="戦場を見下ろす兵士と戦車のイラスト" src="assets/ui/title_hero.webp?v=2026.10.12.2341"><div class="title-hero-text"><div class="title-tag">TACTICAL ACTION GAME</div><h1 class="title-main"><img class="title-logo" src="assets/ui/title_logo.webp?v=2026.10.12.2341" alt="こっそり戦車大作戦"></h1></div></div>
+<div class="title-hero"><img class="title-art" alt="戦場を見下ろす兵士と戦車のイラスト" src="assets/ui/title_hero.webp?v=2026.10.12.2343"><div class="title-hero-text"><div class="title-tag">TACTICAL ACTION GAME</div><h1 class="title-main"><img class="title-logo" src="assets/ui/title_logo.webp?v=2026.10.12.2343" alt="こっそり戦車大作戦"></h1></div></div>
 <nav class="title-actions" aria-label="タイトルメニュー">
 <button type="button" class="title-cta" id="titleStart">ゲームを始める</button>
 <div class="title-secondaries"><button type="button" class="title-secondary" id="titleAwards">称号</button><button type="button" class="title-secondary" id="titleHelp">操作説明</button><button type="button" class="title-secondary" id="titleSpecs">仕様</button><button type="button" class="title-secondary" id="titleDiagnostics">表示診断（停止の調査）</button></div>
@@ -647,7 +657,6 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <p class="spec-foot">仕様は Ver.<span id="specVersion"></span> 時点の内容です。ゲームの更新に伴い変更される場合があります。</p>
 </div></div>
 <div id="skillScreen" aria-label="スキル選択" role="region"><div class="sk-shell"><header class="sk-top"><div><div class="sk-eyebrow">PREPARE YOUR MISSION</div><h1 class="sk-heading">スキル選択</h1></div><button type="button" class="sk-home" id="skHome">タイトル</button></header><div class="sk-scroll" id="skScroll" aria-label="スキル候補"></div><footer class="sk-bottom"><button type="button" class="sk-toggle" id="skDebugAll">全スキル表示</button><button type="button" class="sk-toggle" id="skAreaDebug">エリアデバッグ OFF</button><button type="button" class="sk-deploy" id="skDeploy">出撃</button></footer></div></div>
-<div id="skillLightbox" role="dialog" aria-modal="true" aria-label="スキル操作方法"><div class="sk-modal"><div class="sk-modal-label">SKILL CONTROLS</div><img id="skModalVisual" class="sk-modal-visual" alt="スキルのイメージイラスト"><div class="sk-modal-name" id="skModalName"></div><div class="sk-modal-key" id="skModalKey"></div><div class="sk-modal-text" id="skModalText"></div><div class="sk-modal-close">画面をもう一度タップして閉じる</div></div></div>
 <div id="trophyScreen" aria-label="獲得した称号と勲章" role="region"><div class="trophy-shell">
  <div class="trophy-nav"><div class="trophy-heading">称号・勲章コレクション</div><button id="trophyBack" class="trophy-back" type="button">タイトル</button></div>
  <div class="trophy-overview" id="trophyOverview" aria-live="polite"></div><div class="trophy-tabs"><button id="trophyTabTitles" class="trophy-tab active" type="button">称号</button><button id="trophyTabMedals" class="trophy-tab" type="button">勲章</button><button id="trophyTabStats" class="trophy-tab" type="button">戦績</button></div>
@@ -666,9 +675,9 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <style>
 #stageScreen{display:none;position:fixed;inset:0;z-index:70;background:rgba(10,18,14,.98);color:#e6e9d6;overflow:auto;padding:24px 18px;box-sizing:border-box;font-family:system-ui}body.stage-open #stageScreen{display:block}.stage-shell{max-width:760px;margin:auto}.stage-shell h1{font-size:28px;margin:10px 0}.stage-shell p{line-height:1.7;color:#bac9b5}.stage-card{display:block;width:100%;text-align:left;color:inherit;background:#23332a;border:2px solid #526549;border-radius:12px;padding:20px;margin:14px 0;cursor:pointer;font:inherit}.stage-card:hover,.stage-card:focus-visible{background:#314738;border-color:#e2c07c}.stage-card strong{font-size:23px;color:#eed5a1}.stage-card span{display:block;margin-top:8px;line-height:1.7}.stage-card small{display:block;color:#a9c8b7;margin-top:8px}.stage-back{padding:12px 20px;background:#344536;color:white;border:1px solid #829474;border-radius:8px;cursor:pointer}#missionHud{display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:12;max-width:90vw;width:480px;box-sizing:border-box;border:1px solid #829474;background:rgba(14,26,19,.9);color:#eef1df;padding:8px 12px;border-radius:8px;font:13px system-ui;pointer-events:none}#missionHud progress{width:100%;height:9px;accent-color:#9dcaa9}#missionHud small{display:block;color:#cee0bc;margin-top:4px}
 </style>
-<div id="missionSuccess" role="dialog" aria-modal="true" aria-labelledby="missionSuccessTitle"><div class="mission-fireworks" aria-hidden="true"><i class="mission-firework" style="left:18%;top:24%;--burst-delay:0.15s"></i><i class="mission-firework" style="left:78%;top:20%;--burst-delay:0.45s"></i><i class="mission-firework" style="left:48%;top:12%;--burst-delay:0.75s"></i><i class="mission-firework" style="left:22%;top:60%;--burst-delay:1.05s"></i><i class="mission-firework" style="left:81%;top:55%;--burst-delay:1.35s"></i></div><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_success.webp?v=2026.10.12.2341" alt="笑顔でジャンプする主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionSuccessTitle">ミッション 成功</h1><button type="button" id="missionSuccessEvaluate">作戦評価</button></div></div></div>
-<div id="missionFailure" role="dialog" aria-modal="true" aria-labelledby="missionFailureTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_failed.webp?v=2026.10.12.2341" alt="倒れてふらつく主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionFailureTitle">ミッション 失敗</h1><button type="button" id="missionEvaluate">作戦評価</button></div></div></div>
-<div id="missionBriefing" role="dialog" aria-modal="true" aria-labelledby="missionBriefingTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_hero.webp?v=2026.10.12.2341" alt="円形爆弾を抱えて走る主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionBriefingTitle">ミッション</h1><p>敵の拠点にたどりつき、破壊せよ</p><button type="button" id="missionBegin">作戦開始</button></div></div></div>
+<div id="missionSuccess" role="dialog" aria-modal="true" aria-labelledby="missionSuccessTitle"><div class="mission-fireworks" aria-hidden="true"><i class="mission-firework" style="left:18%;top:24%;--burst-delay:0.15s"></i><i class="mission-firework" style="left:78%;top:20%;--burst-delay:0.45s"></i><i class="mission-firework" style="left:48%;top:12%;--burst-delay:0.75s"></i><i class="mission-firework" style="left:22%;top:60%;--burst-delay:1.05s"></i><i class="mission-firework" style="left:81%;top:55%;--burst-delay:1.35s"></i></div><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_success.webp?v=2026.10.12.2343" alt="笑顔でジャンプする主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionSuccessTitle">ミッション 成功</h1><button type="button" id="missionSuccessEvaluate">作戦評価</button></div></div></div>
+<div id="missionFailure" role="dialog" aria-modal="true" aria-labelledby="missionFailureTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_failed.webp?v=2026.10.12.2343" alt="倒れてふらつく主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionFailureTitle">ミッション 失敗</h1><button type="button" id="missionEvaluate">作戦評価</button></div></div></div>
+<div id="missionBriefing" role="dialog" aria-modal="true" aria-labelledby="missionBriefingTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_hero.webp?v=2026.10.12.2343" alt="円形爆弾を抱えて走る主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionBriefingTitle">ミッション</h1><p>敵の拠点にたどりつき、破壊せよ</p><button type="button" id="missionBegin">作戦開始</button></div></div></div>
 <div id="stageScreen" role="region" aria-label="ステージ選択"><div class="stage-shell"><div style="color:#9cbb9b;font-size:12px">CHOOSE YOUR MISSION</div><h1>ステージ選択</h1><p id="stageSkill"></p><button class="stage-card" data-stage="base"><strong>01　拠点破壊</strong><span>敵地を突破し、敵司令本部を破壊せよ。潜入・戦闘・乗り物を組み合わせる従来の作戦。</span><small>バランス型 ／ 目標：司令本部の破壊</small></button><button class="stage-card" data-stage="front"><strong>02　最前線</strong><span>味方部隊と進撃し、3か所の戦線を順番に制圧せよ。円内の敵を排除し、味方と陣地を確保。制圧すると補給と前進増援が到着する。</span><small>戦闘中心 ／ 円内で12秒確保・敵がいると制圧停止</small></button><button class="stage-card" data-stage="stealth"><strong>03　潜入</strong><span>3か所の機密情報を回収し、開始地点の脱出地点へ帰還せよ。徒歩で端末の近くに留まり解析。発見中は解析できず、警戒度が高まると追跡部隊が出現する。</span><small>スニーク中心 ／ 端末で4秒解析・全情報回収後に帰還</small></button><button class="stage-back" id="stageBack">← スキル選択へ</button></div></div><div id="missionHud" role="status"></div>
 
 <script>
@@ -681,7 +690,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.12.2341',FILE_CREATED_AT='2026/10/12 23:41',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.12.2343',FILE_CREATED_AT='2026/10/12 23:43',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -810,8 +819,8 @@ const COVER_ASSET_SRC={
  "rock":ASSET_DIR+'cover/rock.webp',
  "rock_v2":ASSET_DIR+'cover/rock_v2.webp',
  "maze_wall":ASSET_DIR+'cover/maze_wall.webp',
- "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.webp?v=2026.10.12.2341',
- "barrel":ASSET_DIR+'cover/barrel.webp?v=2026.10.12.2341',
+ "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.webp?v=2026.10.12.2343',
+ "barrel":ASSET_DIR+'cover/barrel.webp?v=2026.10.12.2343',
  "command_building_1":ASSET_DIR+'cover/command_building_1.webp',
  "wood_bridge":ASSET_DIR+'terrain/wood_bridge.webp'
 };
@@ -1575,7 +1584,7 @@ function skillMenuLayout(){return skillDebugAll?{sy0:88,ch:56,h:52,debugY:602,de
 let gameBuildQueued=false,gameBuildGeneration=0;
 function selectSkillIndex(i,deploy=false){
  const list=skillMenuList();if(i<0||i>=list.length||gameBuildQueued)return false;
- const selected=list[i].id;if(!skillSelectable(selected))return false;if(!deploy){stageMode='base';selectedSkillId=selected;document.body.classList.remove('stage-open');return selectSkillIndex(i,true);}const buildGen=++gameBuildGeneration;skill=selected;closeSkillHelp();
+ const selected=list[i].id;if(!skillSelectable(selected))return false;if(!deploy){stageMode='base';selectedSkillId=selected;document.body.classList.remove('stage-open');return selectSkillIndex(i,true);}const buildGen=++gameBuildGeneration;skill=selected;
  state='preparing';bombReq=false;cannonReq=false;interact=false;skillReq=false;mdown=false;gameBuildQueued=true;sfx('skill');
  // 先に「準備中」を1フレーム描画してから重いステージ生成を行う。
  // その間にタイトルへ戻った場合は世代番号で予約済み生成を無効化する。
@@ -6965,18 +6974,7 @@ function skillArtSrc(id,name=''){
  const label=encodeURIComponent(name||'SKILL');
  return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 410"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="%232e3c2d"/><stop offset="100%" stop-color="%23161f18"/></linearGradient></defs><rect width="720" height="410" fill="url(%23g)"/><circle cx="132" cy="205" r="74" fill="%23374936" stroke="%237d8b72"/><circle cx="132" cy="205" r="44" fill="%2353694f"/><text x="220" y="168" fill="%23ffe2a1" font-size="40" font-weight="800" font-family="Arial, sans-serif">${label}</text><text x="220" y="224" fill="%23d1ddca" font-size="22" font-family="Arial, sans-serif">Graphic test in progress</text></svg>`;
 }
-function closeSkillHelp(){document.getElementById('skillLightbox').classList.remove('open');}
-function openSkillHelp(id){
- const k=SK.find(v=>v.id===id);if(!k)return;
- const c=SK_CONTROL[id]||['S：スキルを使用',''];
- document.getElementById('skModalName').textContent=k.n;
- document.getElementById('skModalVisual').src=SK_ART[id]||'';
- document.getElementById('skModalKey').textContent=c[0];
- document.getElementById('skModalText').textContent=c[1]+'\n\n'+k.d;
- document.getElementById('skillLightbox').classList.add('open');
-}
-document.getElementById('skillLightbox').addEventListener('click',closeSkillHelp);
-document.getElementById('skHome').addEventListener('click',()=>{closeSkillHelp();state='title';sfx('skill');});
+document.getElementById('skHome').addEventListener('click',()=>{state='title';sfx('skill');});
 document.getElementById('skDebugAll').addEventListener('click',()=>{skillDebugAll=!skillDebugAll;skillMenuDirty=true;sfx('skill');});
 document.getElementById('skAreaDebug').addEventListener('click',()=>{areaDebugEnabled=!areaDebugEnabled;skillMenuDirty=true;sfx('skill');});
 document.getElementById('titleStart').addEventListener('click',()=>{rollSkillChoices();state='skill';sfx('skill');});
@@ -7055,9 +7053,8 @@ function renderSkillCards(){
   el.setAttribute('role','button');el.setAttribute('tabindex',locked?'-1':'0');el.setAttribute('aria-disabled',String(locked));el.setAttribute('aria-label',k.n+(locked?'（未解放）':'を選択'));
   const detail=SK_CARD_SUMMARY[k.id]||k.d.split('\n')[0];
   const controls=SK_CARD_CONTROLS[k.id]||'S：使用';
-  el.innerHTML='<img class="sk-media" alt="" loading="lazy"><div class="sk-copy"><h2 class="sk-name"></h2><p class="sk-desc"></p><p class="sk-ctrl"></p></div><button class="sk-how" type="button" aria-label="'+k.n+'の操作方法" title="操作方法を表示">ⓘ</button>';
+  el.innerHTML='<img class="sk-media" alt="" loading="lazy"><div class="sk-copy"><h2 class="sk-name"></h2><p class="sk-desc"></p><p class="sk-ctrl"></p></div>';
   el.querySelector('.sk-media').src=skillCardIconSrc(k.id);el.querySelector('.sk-name').textContent=k.n;el.querySelector('.sk-desc').textContent=detail;el.querySelector('.sk-ctrl').textContent=controls;
-  el.querySelector('.sk-how').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();openSkillHelp(k.id);});
   if(locked){el.querySelector('.sk-copy').insertAdjacentHTML('beforeend','<span class="sk-locked-note">🔒 未解放 ／ クリアで順次解放</span>');}
   el.addEventListener('click',()=>{if(locked)return;setSelectedSkill(k.id);sfx('skill');});
   el.addEventListener('keydown',e=>{if(!locked&&(e.key==='Enter'||e.key===' ')){e.preventDefault();setSelectedSkill(k.id);sfx('skill');}});
@@ -7073,7 +7070,7 @@ function renderSkillCards(){
 function syncSkillScreen(){
  const show=state==='skill',isOpen=document.body.classList.contains('skill-open');
  if(show&&!isOpen){document.body.classList.add('skill-open');document.getElementById('skillScreen').scrollTop=0;selectedSkillId=null;skillMenuDirty=true;}
- else if(!show&&isOpen){document.body.classList.remove('skill-open');closeSkillHelp();}
+ else if(!show&&isOpen){document.body.classList.remove('skill-open');}
  if(show){const snapshot=skillChoices.join(',')+'|'+skillDebugAll+'|'+areaDebugEnabled+'|'+readSkillProgress().unlocked.join(',');
   if(skillMenuDirty||snapshot!==skillMenuSnapshot){renderSkillCards();skillMenuSnapshot=snapshot;}
  }
@@ -7310,7 +7307,7 @@ function reportGameError(error){
 }
 requestAnimationFrame(loop);
 </script>
-<script src="js/partner.js?v=2026.10.12.2341"></script>
+<script src="js/partner.js?v=2026.10.12.2343"></script>
 <script>
 (function(){
 // iPhone Chrome/Safari: synthetic KeyboardEvent に依存せず、ゲーム内部の入力状態を直接更新する。
@@ -7447,7 +7444,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)clearInputs
 addEventListener('blur',clearInputs);
 // Pointer Events 対応端末ではCSS touch-actionに任せ、ページ全体を同期touchmove待ちにしない。
 // 古い端末だけ、従来のスクロール抑止フォールバックを登録する。
-if(!window.PointerEvent)document.addEventListener('touchmove',e=>{const inScrollableLayer=(document.body.classList.contains('trophy-open')&&e.target.closest('#trophyScreen'))||(document.body.classList.contains('result-open')&&e.target.closest('#resultScreen'))||(document.body.classList.contains('skill-open')&&e.target.closest('#skillScreen'))||(document.body.classList.contains('title-open')&&e.target.closest('#titleScreen'))||(document.body.classList.contains('help-open')&&e.target.closest('#helpScreen'))||(document.body.classList.contains('spec-open')&&e.target.closest('#specScreen'))||e.target.closest('#skillLightbox.open');if(inScrollableLayer)return;e.preventDefault();},{passive:false});
+if(!window.PointerEvent)document.addEventListener('touchmove',e=>{const inScrollableLayer=(document.body.classList.contains('trophy-open')&&e.target.closest('#trophyScreen'))||(document.body.classList.contains('result-open')&&e.target.closest('#resultScreen'))||(document.body.classList.contains('skill-open')&&e.target.closest('#skillScreen'))||(document.body.classList.contains('title-open')&&e.target.closest('#titleScreen'))||(document.body.classList.contains('help-open')&&e.target.closest('#helpScreen'))||(document.body.classList.contains('spec-open')&&e.target.closest('#specScreen'));if(inScrollableLayer)return;e.preventDefault();},{passive:false});
 document.addEventListener('gesturestart',e=>e.preventDefault(),{passive:false});
 document.addEventListener('contextmenu',e=>e.preventDefault());
 })();
