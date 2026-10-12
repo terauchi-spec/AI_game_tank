@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.12.1228</title>
+<title>戦車ゲーム 2026.10.12.1232</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -567,7 +567,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.12.1228',FILE_CREATED_AT='2026/10/12 12:28',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.12.1232',FILE_CREATED_AT='2026/10/12 12:32',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -694,7 +694,7 @@ const COVER_ASSET_SRC={
  "rock":ASSET_DIR+'cover/rock.webp',
  "rock_v2":ASSET_DIR+'cover/rock_v2.webp',
  "maze_wall":ASSET_DIR+'cover/maze_wall.webp',
- "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.webp?v=2026.10.12.1228',
+ "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.webp?v=2026.10.12.1232',
  "barrel":ASSET_DIR+'cover/barrel.webp',
  "command_building_1":ASSET_DIR+'cover/command_building_1.webp',
  "wood_bridge":ASSET_DIR+'terrain/wood_bridge.webp'
@@ -1200,7 +1200,16 @@ function drawCoverAsset(c){
   if(!hor){
    // 通常壁は全体を20%縮小。迷路壁は接続を保つため長さと判定を維持し、幅だけ縮小。
    const scale=.8;
-   return drawAssetSprite(COVER_IMG.maze_wall_vertical,cx,cy,short*1.02*scale*.9,long*1.03*(c.mazeWall?1:scale),0,.98);
+   const im=COVER_IMG.maze_wall_vertical;
+   if(!assetOK(im))return false;
+   const dw=short*1.02*scale*.9,dh=long*1.03*(c.mazeWall?1:scale);
+   // 横壁の正面は画像高の約65%。縦壁の端面にも同じ表示高を使う。
+   const faceH=Math.min(dh*.45,short*1.18*.65),split=Math.round(im.naturalHeight*.84);
+   g.save();g.globalAlpha*=.98;
+   const smooth=g.imageSmoothingEnabled;g.imageSmoothingEnabled=true;
+   g.drawImage(im,0,0,im.naturalWidth,split,cx-dw/2,cy-dh/2,dw,dh-faceH);
+   g.drawImage(im,0,split,im.naturalWidth,im.naturalHeight-split,cx-dw/2,cy+dh/2-faceH,dw,faceH);
+   g.imageSmoothingEnabled=smooth;g.restore();return true;
   }
   return drawAssetSprite(COVER_IMG.maze_wall,cx,cy,long*1.03,short*1.18,0,.98);
  }
