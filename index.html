@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.12.1237</title>
+<title>戦車ゲーム 2026.10.12.1241</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -572,7 +572,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.12.1237',FILE_CREATED_AT='2026/10/12 12:37',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.12.1241',FILE_CREATED_AT='2026/10/12 12:41',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -699,7 +699,7 @@ const COVER_ASSET_SRC={
  "rock":ASSET_DIR+'cover/rock.webp',
  "rock_v2":ASSET_DIR+'cover/rock_v2.webp',
  "maze_wall":ASSET_DIR+'cover/maze_wall.webp',
- "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.webp?v=2026.10.12.1237',
+ "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.webp?v=2026.10.12.1241',
  "barrel":ASSET_DIR+'cover/barrel.webp',
  "command_building_1":ASSET_DIR+'cover/command_building_1.webp',
  "wood_bridge":ASSET_DIR+'terrain/wood_bridge.webp'
@@ -5672,12 +5672,11 @@ function drawFuelPickup(x,y){
  g.save();g.translate(x,y);g.lineJoin='round';g.lineWidth=2;
  g.fillStyle='rgba(0,0,0,.28)';g.beginPath();g.ellipse(1,13,15,5,0,0,Math.PI*2);g.fill();
  g.strokeStyle='#381512';g.fillStyle='#c83d32';g.beginPath();g.moveTo(-11,-9);g.lineTo(7,-9);g.lineTo(12,-4);g.lineTo(12,12);g.lineTo(-11,12);g.closePath();g.fill();g.stroke();
- // 赤い金属製携行缶：上部の持ち手、注ぎ口、補強リブ。
- g.strokeStyle='#ef7762';g.lineWidth=3;g.strokeRect(-6,-15,9,6);
- g.fillStyle='#454743';g.fillRect(7,-13,6,5);g.fillStyle='#9fa49a';g.fillRect(8,-13,4,2);
+ // 装飾を省いた赤い携行缶。
+ g.strokeStyle='#87251f';g.lineWidth=2;g.beginPath();g.moveTo(-4,-10);g.quadraticCurveTo(-4,-14,2,-12);g.stroke();
  g.fillStyle='#ed6451';g.fillRect(-9,-7,3,17);g.strokeStyle='#87251f';g.lineWidth=2;
  g.beginPath();g.moveTo(-6,-5);g.lineTo(8,8);g.moveTo(8,-5);g.lineTo(-6,8);g.stroke();
- g.fillStyle='#fff0d3';g.fillRect(-4,0,9,7);g.fillStyle='#30201b';g.beginPath();g.moveTo(.5,.5);g.bezierCurveTo(-3,4,-2,6,.5,6);g.bezierCurveTo(3,6,4,4,.5,.5);g.fill();g.restore();
+ g.restore();
 }
 function drawRadioPickup(x,y){
  g.save();g.translate(x,y);g.lineJoin='round';g.lineCap='round';g.lineWidth=2;
