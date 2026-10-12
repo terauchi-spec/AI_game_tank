@@ -166,10 +166,10 @@ function partnerVehicleAttack(q,dt){
  }
 }
 // S short press: call the partner back. Long press: freeze player and draw a route using movement keys.
-const partnerOrder={pressed:false,held:0,drawing:false,cursor:null,path:[]};
+const partnerOrder={pressed:false,held:0,drawing:false,cursor:null,path:[],signalT:0};
 function startPartnerOrder(){
  if(skill!=='partner'||state!=='play'||!p||p.tank)return;
- partnerOrder.pressed=true;partnerOrder.held=0;partnerOrder.drawing=false;partnerOrder.cursor=null;partnerOrder.path=[];
+ partnerOrder.signalT=0;partnerOrder.pressed=true;partnerOrder.held=0;partnerOrder.drawing=false;partnerOrder.cursor=null;partnerOrder.path=[];
 }
 function finishPartnerOrder(confirm=true){
  if(!partnerOrder.pressed)return;
@@ -178,14 +178,14 @@ function finishPartnerOrder(confirm=true){
   else if(partnerOrder.drawing){
    if(partnerOrder.path.length>1){
     partner.route=partnerOrder.path.slice(1).map(v=>({x:v.x,y:v.y}));
-    partner.routeIndex=0;partner.routeWait=1;partner.routePointT=0;partner.routeStuckT=0;partner.routeStart={x:partner.x,y:partner.y};partner.backup=false;
+    partner.routeIndex=0;partner.routeWait=0;partnerOrder.signalT=1;partner.routePointT=0;partner.routeStuckT=0;partner.routeStart={x:partner.x,y:partner.y};partner.backup=false;
     partner.wallFollow=null;partner.sideStep=null;
     partner.boardTarget=null;
     if(!partner.vehicle){
      const pickup=partnerRouteVehicle([{x:partner.x,y:partner.y},...partner.route]);
      if(pickup){partner.boardTarget=pickup.car;partner.boardAt=pickup.index;}
     }
-    say(partner.boardTarget?'相棒：ルート上の乗り物に搭乗指示！':'相棒にルートを送信！1秒後に出発');
+    // 指差しの吹き出しでルート確定を伝え、待ち時間なしで出発する。
    }else say('方向キーでルートを描いてください');
   }else{
    partner.backup=true;partner.route=null;partner.boardTarget=null;partner.routeWait=0;partner.planT=0;
@@ -195,11 +195,12 @@ function finishPartnerOrder(confirm=true){
  partnerOrder.pressed=false;partnerOrder.held=0;partnerOrder.drawing=false;partnerOrder.cursor=null;partnerOrder.path=[];
 }
 function updatePartnerOrder(dt){
+ partnerOrder.signalT=Math.max(0,partnerOrder.signalT-dt);
  if(!partnerOrder.pressed||skill!=='partner'||state!=='play'||!p||p.tank)return;
  partnerOrder.held+=dt;
  if(partnerOrder.held>=.45&&!partnerOrder.drawing&&partner&&!partner.down&&!(partner.stunT>0)){
   partnerOrder.drawing=true;partnerOrder.cursor={x:partner.x,y:partner.y};
-  partnerOrder.path=[{x:partner.x,y:partner.y}];partnerOrder.blocked=false;say('無線指示中：方向キーでルートを描く');
+  partnerOrder.path=[{x:partner.x,y:partner.y}];partnerOrder.blocked=false;
  }
  if(!partnerOrder.drawing)return;
  let dx=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0),dy=(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0);
@@ -243,7 +244,7 @@ function partnerKnockoutPatrol(dt){
   }
   return q.grappleT>0;
  }
- // While drawing radio directions the partner should remain at the drawn route's start.
+ // While drawing hand-sign directions the partner should remain at the drawn route's start.
  // Otherwise pursuit interrupts autonomous/backup/routed walking.
  const ox=q.x,oy=q.y;
  moveAllySmart(q,target,180,dt);
@@ -429,6 +430,13 @@ function updatePartner(dt){
   }
  }
 }
+// 添付のハンドサインと同じグー／指差しを静止吹き出しで表示。
+function drawPartnerHandSign(x,y,pointing){
+ g.save();g.translate(x,y-43);g.fillStyle='#fff4d7';g.strokeStyle='#473e2c';g.lineWidth=1.5;
+ g.beginPath();g.roundRect(-19,-17,38,32,8);g.fill();g.stroke();
+ g.beginPath();g.moveTo(-4,14);g.lineTo(0,21);g.lineTo(5,14);g.fill();g.stroke();
+ g.font='25px system-ui';g.textAlign='center';g.textBaseline='middle';g.fillStyle='#222';g.fillText(pointing?'👉':'✊',0,0);g.restore();
+}
 function drawPartner(){
  if(!partner||skill!=='partner')return;const q=partner;
  if(q.passengerVehicle===p.tank&&p.tank)return;
@@ -436,7 +444,11 @@ function drawPartner(){
   g.save();g.strokeStyle='#76d5ff';g.lineWidth=3;g.setLineDash([8,5]);g.beginPath();
   partnerOrder.path.forEach((pt,i)=>{if(!i)g.moveTo(pt.x,pt.y);else g.lineTo(pt.x,pt.y);});
   if(partnerOrder.cursor)g.lineTo(partnerOrder.cursor.x,partnerOrder.cursor.y);
-  g.stroke();g.setLineDash([]);g.font='20px system-ui';g.textAlign='center';g.fillText('📻',p.x,p.y-31);g.fillText('📻',q.x,q.y-34);g.restore();
+  g.stroke();g.setLineDash([]);g.restore();
+ }
+
+ if(!q.down&&!(q.stunT>0)&&(partnerOrder.drawing||partnerOrder.signalT>0)){
+  const pointing=!partnerOrder.drawing;drawPartnerHandSign(p.x,p.y,pointing);drawPartnerHandSign(q.x,q.y,pointing);
  }
 
  if(q.down){
