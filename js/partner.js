@@ -448,7 +448,7 @@ function drawPartner(){
  }
 
  if(!q.down&&!(q.stunT>0)&&(partnerOrder.drawing||partnerOrder.signalT>0)){
-  const pointing=!partnerOrder.drawing;drawPartnerHandSign(p.x,p.y,pointing);drawPartnerHandSign(q.x,q.y,pointing);
+  const pointing=!partnerOrder.drawing;drawPartnerHandSign(p.x,p.y,pointing);
  }
 
  if(q.down){
