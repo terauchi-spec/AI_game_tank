@@ -437,9 +437,18 @@ function drawPartner(){
  }
 
  if(q.down){
+  // 横たわった兵士：頭・胴体・曲がった腕・開いた脚を静止描画。
   g.save();g.translate(q.x,q.y);g.rotate(q.face+.8);
-  g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.ellipse(0,0,15,11,0,0,6.28);g.fill();
-  g.fillStyle='#54745c';g.fillRect(-14,-5,28,10);g.fillStyle='#344b3c';g.fillRect(-17,-3,11,6);g.fillStyle='#399bff';g.fillRect(-8,-6,12,2);g.restore();
+  g.fillStyle='rgba(0,0,0,.32)';g.beginPath();g.ellipse(0,3,23,10,0,0,Math.PI*2);g.fill();
+  g.lineCap='round';g.lineJoin='round';g.strokeStyle='#18271e';g.lineWidth=7;
+  g.beginPath();g.moveTo(5,-2);g.lineTo(14,-5);g.lineTo(21,-3);g.moveTo(5,3);g.lineTo(13,8);g.lineTo(19,10);g.stroke();
+  g.strokeStyle='#4b6650';g.lineWidth=5;g.beginPath();g.moveTo(-6,-3);g.lineTo(-3,-10);g.lineTo(4,-11);g.moveTo(-6,4);g.lineTo(-10,10);g.lineTo(-3,13);g.stroke();
+  g.fillStyle='#111912';g.fillRect(18,-6,7,5);g.fillRect(18,8,6,5);
+  g.fillStyle='#54745c';g.strokeStyle='#23382b';g.lineWidth=1.5;g.beginPath();g.ellipse(-2,1,10,6,0,0,Math.PI*2);g.fill();g.stroke();
+  g.fillStyle='#344b3c';g.fillRect(-4,-4,9,9);
+  g.fillStyle='#baa585';g.beginPath();g.arc(-14,3,5,0,Math.PI*2);g.fill();
+  g.fillStyle='#4e6855';g.strokeStyle='#17291d';g.beginPath();g.ellipse(-16,0,7,6,.15,0,Math.PI*2);g.fill();g.stroke();
+  g.strokeStyle='#399bff';g.lineWidth=2;g.beginPath();g.moveTo(-21,-1);g.lineTo(-12,0);g.stroke();g.restore();
   g.save();g.translate(q.x,q.y-26);g.fillStyle='#f3f3f3';g.strokeStyle='#a83232';g.lineWidth=1.5;g.beginPath();g.roundRect(-11,-8,22,17,3);g.fill();g.stroke();g.fillStyle='#d52b31';g.fillRect(-2,-6,4,13);g.fillRect(-7,-1,14,4);g.strokeStyle='#a83232';g.beginPath();g.moveTo(-4,-8);g.lineTo(-4,-11);g.lineTo(4,-11);g.lineTo(4,-8);g.stroke();g.restore();return;
  }
  if(q.vehicle){
