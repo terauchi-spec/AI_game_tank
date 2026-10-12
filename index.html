@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.12.1207</title>
+<title>戦車ゲーム 2026.10.12.1214</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -568,7 +568,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.12.1207',FILE_CREATED_AT='2026/10/12 12:07',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.12.1214',FILE_CREATED_AT='2026/10/12 12:14',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -695,7 +695,7 @@ const COVER_ASSET_SRC={
  "rock":ASSET_DIR+'cover/rock.webp',
  "rock_v2":ASSET_DIR+'cover/rock_v2.webp',
  "maze_wall":ASSET_DIR+'cover/maze_wall.webp',
- "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.webp?v=2026.10.12.1207',
+ "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.webp?v=2026.10.12.1214',
  "barrel":ASSET_DIR+'cover/barrel.webp',
  "command_building_1":ASSET_DIR+'cover/command_building_1.webp',
  "wood_bridge":ASSET_DIR+'terrain/wood_bridge.webp'
@@ -1198,7 +1198,7 @@ function drawCoverAsset(c){
  if(c.kd===1){
   const long=hor?c.w:c.h,short=Math.max(hor?c.h:c.w,14);
   // 縦壁は専用の上面・陰影を描いた画像。横壁画像の90度回転は使わない。
-  if(!hor)return drawAssetSprite(COVER_IMG.maze_wall_vertical,cx,cy,short*1.18,long*1.03,0,.98);
+  if(!hor)return drawAssetSprite(COVER_IMG.maze_wall_vertical,cx,cy,short*1.02,long*1.03,0,.98);
   return drawAssetSprite(COVER_IMG.maze_wall,cx,cy,long*1.03,short*1.18,0,.98);
  }
  if(c.kd===2){
