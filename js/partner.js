@@ -1,3 +1,39 @@
+function updatePartnerPassenger(q,dt){
+ if(q.passengerVehicle&&q.passengerVehicle!==p.tank){
+  q.passengerVehicle=null;q.planT=0;q.backup=true;q.route=null;
+  for(const a of [0,Math.PI/2,Math.PI,-Math.PI/2]){
+   const x=p.x+Math.cos(a)*52,y=p.y+Math.sin(a)*52;
+   if(x>12&&x<WW-12&&y>12&&y<WH-12&&!hitsC(x,y,9)&&!inWaterAt(x,y,8)){q.x=x;q.y=y;break;}
+  }
+ }
+ if(!q.passengerVehicle&&p.tank&&!q.vehicle&&!q.down&&!(q.stunT>0)&&D(q,p)<=200){
+  q.passengerVehicle=p.tank;q.route=null;q.boardTarget=null;q.reentryT=0;q.passengerScan=0;q.passengerTarget=null;
+ }
+ if(!q.passengerVehicle)return false;
+ q.x=p.x;q.y=p.y;q.face=p.body;q.moving=false;
+ const v=p.tank;
+ if(v.kind!=='tank'||q.down||q.stunT>0)return true;
+ q.passengerScan=Math.max(0,(q.passengerScan||0)-dt);
+ if(q.passengerScan<=0){
+  q.passengerScan=.25;q.passengerTarget=null;let nearest=306;
+  for(const h of humans)if(h.alive&&!(h.stun>0)){const d=D(q,h);if(d<nearest&&los(q,h)){nearest=d;q.passengerTarget=h;}}
+ }
+ q.passengerGunT=Math.max(0,(q.passengerGunT||0)-dt);
+ const h=q.passengerTarget;
+ if(h&&h.alive&&!(h.stun>0)&&v.v>0&&q.passengerGunT<=0&&D(q,h)<306&&los(q,h)){
+  const a=Math.atan2(h.y-q.y,h.x-q.x);q.passengerGunT=Math.max(.18,v.t.vcd||.2);v.v--;
+  fire(q.x+Math.cos(a)*35,q.y+Math.sin(a)*35,a+(R()-.5)*.08,'ally','v',468,306);
+ }
+ return true;
+}
+function drawPartnerPassengerHead(){
+ const q=partner;if(skill!=='partner'||!q||!p.tank||q.passengerVehicle!==p.tank||p.tank.kind!=='tank')return;
+ g.save();g.translate(p.x,p.y-9);
+ g.fillStyle='#263d30';g.strokeStyle='#111b15';g.lineWidth=1.5;
+ g.beginPath();g.ellipse(0,0,7,6,0,0,Math.PI*2);g.fill();g.stroke();
+ g.fillStyle='#b5a17e';g.fillRect(-3,3,6,3);
+ g.strokeStyle='#399bff';g.lineWidth=2;g.beginPath();g.moveTo(-5,-1);g.lineTo(5,-1);g.stroke();g.restore();
+}
 // Companion AI and route/vehicle behavior — extracted without behavior changes.
 // Route-bound vehicle boarding is computed on confirmation, not each frame.
 function partnerRouteVehicle(points){
@@ -258,6 +294,7 @@ function updatePartner(dt){
  if(skill!=='partner'||!p)return;
  if(!partner)partner={x:p.x+24,y:p.y+32,face:p.body,hp:3,down:false,off:0,moving:false,mode:'advance',modeT:0,planT:0,shotCd:0,stunT:0,backup:false,route:null};
  const q=partner;
+ if(updatePartnerPassenger(q,dt))return;
  q.grappleT=Math.max(0,(q.grappleT||0)-dt);
  recallSeparatedPartner(q,dt);
  if(q.reentryT>0){
@@ -384,6 +421,7 @@ function updatePartner(dt){
 }
 function drawPartner(){
  if(!partner||skill!=='partner')return;const q=partner;
+ if(q.passengerVehicle===p.tank&&p.tank)return;
  if(partnerOrder.drawing){
   g.save();g.strokeStyle='#76d5ff';g.lineWidth=3;g.setLineDash([8,5]);g.beginPath();
   partnerOrder.path.forEach((pt,i)=>{if(!i)g.moveTo(pt.x,pt.y);else g.lineTo(pt.x,pt.y);});
