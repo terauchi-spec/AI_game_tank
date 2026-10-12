@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.12.1649</title>
+<title>こっそり戦車大作戦 2026.10.12.1726</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -432,6 +432,16 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 #titleScreen .title-actions .title-secondaries{width:100%;align-self:stretch;margin:0;display:grid;grid-template-columns:1fr;gap:9px;}
 #titleScreen .title-actions .title-secondary{grid-column:1;width:100%;min-height:51px;padding:2px 6px;font:850 15px system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;}
 #titleDiagnostics{display:none!important}
+
+#titleScreen .title-hero-text{left:3%;right:auto;bottom:4%;width:44%;}
+#titleScreen .title-main{margin:0 0 8px;line-height:1;}
+#titleScreen .title-logo{display:block;width:100%;height:auto;filter:drop-shadow(0 3px 5px rgba(0,0,0,.55));}
+#titleScreen .title-tag{display:none;}
+@media(pointer:coarse){
+ #titleScreen .title-hero-text{left:4%;right:4%;bottom:3%;width:92%;}
+ #titleScreen .title-sub{font-size:11px;line-height:1.4;max-width:none;text-align:center;}
+ #titleScreen .title-logo{max-width:500px;margin:auto;}
+}
 </style>
 </head>
 <body>
@@ -441,7 +451,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 <div id="debugBadge" hidden>無敵モード</div>
 <div id="pad"><div id="stick"><div id="knob"></div></div><div class="btns"><button class="b" id="skillBtn" data-k="KeyS"><span class="coolRing" id="skillCooldown"></span><span class="coolText" id="skillCooldownText"></span><b>S</b><small id="skillLabel">スキル</small></button><button class="b" id="actionBtn" type="button"><span class="coolRing" id="actionCooldown"></span><span class="coolText" id="actionCooldownText"></span><b id="actionGlyph">B</b><small id="actionLabel">爆弾</small></button><button class="b" data-k="KeyA"><b>A</b><small>操作</small></button></div></div>
 <div id="titleScreen" role="region" aria-label="タイトル画面"><div class="title-wrap">
-<div class="title-hero"><img class="title-art" alt="戦場を見下ろす兵士と戦車のイラスト" src="assets/ui/title_hero.webp?v=2026.10.12.1649"><div class="title-hero-text"><div class="title-tag">TACTICAL ACTION GAME</div><h1 class="title-main">戦車大戦</h1><div class="title-sub">歩兵で敵地へ潜入し、戦車を奪って<br>敵司令本部の破壊を目指せ。</div></div></div>
+<div class="title-hero"><img class="title-art" alt="戦場を見下ろす兵士と戦車のイラスト" src="assets/ui/title_hero.webp?v=2026.10.12.1726"><div class="title-hero-text"><div class="title-tag">TACTICAL ACTION GAME</div><h1 class="title-main"><img class="title-logo" src="assets/ui/title_logo.webp?v=2026.10.12.1726" alt="こっそり戦車大作戦"></h1><div class="title-sub">歩兵で敵地へ潜入し、戦車を奪って<br>敵司令本部の破壊を目指せ。</div></div></div>
 <nav class="title-actions" aria-label="タイトルメニュー">
 <button type="button" class="title-cta" id="titleStart">ゲームを始める</button>
 <div class="title-secondaries"><button type="button" class="title-secondary" id="titleAwards">称号</button><button type="button" class="title-secondary" id="titleHelp">操作説明</button><button type="button" class="title-secondary" id="titleSpecs">仕様</button><button type="button" class="title-secondary" id="titleDiagnostics">表示診断（停止の調査）</button></div>
@@ -617,7 +627,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.12.1649',FILE_CREATED_AT='2026/10/12 16:49',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.12.1726',FILE_CREATED_AT='2026/10/12 17:26',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -744,8 +754,8 @@ const COVER_ASSET_SRC={
  "rock":ASSET_DIR+'cover/rock.webp',
  "rock_v2":ASSET_DIR+'cover/rock_v2.webp',
  "maze_wall":ASSET_DIR+'cover/maze_wall.webp',
- "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.webp?v=2026.10.12.1649',
- "barrel":ASSET_DIR+'cover/barrel.webp?v=2026.10.12.1649',
+ "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.webp?v=2026.10.12.1726',
+ "barrel":ASSET_DIR+'cover/barrel.webp?v=2026.10.12.1726',
  "command_building_1":ASSET_DIR+'cover/command_building_1.webp',
  "wood_bridge":ASSET_DIR+'terrain/wood_bridge.webp'
 };
@@ -7210,7 +7220,7 @@ function reportGameError(error){
 }
 requestAnimationFrame(loop);
 </script>
-<script src="js/partner.js?v=2026.10.12.1649"></script>
+<script src="js/partner.js?v=2026.10.12.1726"></script>
 <script>
 (function(){
 // iPhone Chrome/Safari: synthetic KeyboardEvent に依存せず、ゲーム内部の入力状態を直接更新する。
