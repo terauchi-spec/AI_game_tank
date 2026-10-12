@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>戦車ゲーム 2026.10.12.1336</title>
+<title>戦車ゲーム 2026.10.12.1347</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -572,7 +572,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.12.1336',FILE_CREATED_AT='2026/10/12 13:36',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.12.1347',FILE_CREATED_AT='2026/10/12 13:47',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -699,8 +699,8 @@ const COVER_ASSET_SRC={
  "rock":ASSET_DIR+'cover/rock.webp',
  "rock_v2":ASSET_DIR+'cover/rock_v2.webp',
  "maze_wall":ASSET_DIR+'cover/maze_wall.webp',
- "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.webp?v=2026.10.12.1336',
- "barrel":ASSET_DIR+'cover/barrel.webp?v=2026.10.12.1336',
+ "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.webp?v=2026.10.12.1347',
+ "barrel":ASSET_DIR+'cover/barrel.webp?v=2026.10.12.1347',
  "command_building_1":ASSET_DIR+'cover/command_building_1.webp',
  "wood_bridge":ASSET_DIR+'terrain/wood_bridge.webp'
 };
@@ -1464,7 +1464,7 @@ function skillMenuLayout(){return skillDebugAll?{sy0:88,ch:56,h:52,debugY:602,de
 let gameBuildQueued=false,gameBuildGeneration=0;
 function selectSkillIndex(i,deploy=false){
  const list=skillMenuList();if(i<0||i>=list.length||gameBuildQueued)return false;
- const selected=list[i].id;if(!skillSelectable(selected))return false;if(!deploy){skill=selected;selectedSkillId=selected;closeSkillHelp();state='stage';return true;}const buildGen=++gameBuildGeneration;skill=selected;closeSkillHelp();
+ const selected=list[i].id;if(!skillSelectable(selected))return false;if(!deploy){stageMode='base';selectedSkillId=selected;document.body.classList.remove('stage-open');return selectSkillIndex(i,true);}const buildGen=++gameBuildGeneration;skill=selected;closeSkillHelp();
  state='preparing';bombReq=false;cannonReq=false;interact=false;skillReq=false;mdown=false;gameBuildQueued=true;sfx('skill');
  // 先に「準備中」を1フレーム描画してから重いステージ生成を行う。
  // その間にタイトルへ戻った場合は世代番号で予約済み生成を無効化する。
@@ -7165,7 +7165,7 @@ function reportGameError(error){
 }
 requestAnimationFrame(loop);
 </script>
-<script src="js/partner.js?v=2026.10.12.1336"></script>
+<script src="js/partner.js?v=2026.10.12.1347"></script>
 <script>
 (function(){
 // iPhone Chrome/Safari: synthetic KeyboardEvent に依存せず、ゲーム内部の入力状態を直接更新する。

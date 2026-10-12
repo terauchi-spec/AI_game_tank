@@ -29,11 +29,11 @@ function updatePartnerPassenger(q,dt){
 function drawPartnerPassengerHead(){
  const q=partner;if(skill!=='partner'||!q||!p.tank||q.passengerVehicle!==p.tank)return;
  // 全車種で同乗を示す静止バッジ。戦車・装甲車は従来の頭も表示。
- g.save();g.font='bold 11px system-ui';g.textAlign='center';g.textBaseline='middle';
- const badgeY=p.y-(p.tank.kind==='fighter'?78:p.tank.kind==='truck'?52:58);
- g.fillStyle='rgba(8,16,20,.82)';g.fillRect(p.x-35,badgeY-9,70,18);
- g.strokeStyle='#399bff';g.lineWidth=1;g.strokeRect(p.x-35,badgeY-9,70,18);
- g.fillStyle='#a9dcff';g.fillText('相棒 同乗',p.x,badgeY);g.restore();
+ g.save();const badgeY=p.y-(p.tank.kind==='fighter'?78:p.tank.kind==='truck'?52:58);
+ g.translate(p.x,badgeY);g.fillStyle='rgba(8,16,20,.82)';g.beginPath();g.arc(0,0,14,0,Math.PI*2);g.fill();
+ g.fillStyle='#baa585';g.beginPath();g.arc(0,2,8,0,Math.PI*2);g.fill();
+ g.fillStyle='#4e6855';g.beginPath();g.ellipse(0,-3,10,8,0,Math.PI,Math.PI*2);g.lineTo(10,0);g.lineTo(-10,0);g.closePath();g.fill();
+ g.strokeStyle='#399bff';g.lineWidth=3;g.beginPath();g.moveTo(-9,-2);g.lineTo(9,-2);g.stroke();g.restore();
  if(p.tank.kind!=='tank')return;
  g.save();g.translate(p.x,p.y-9);
  g.fillStyle='#263d30';g.strokeStyle='#111b15';g.lineWidth=1.5;
@@ -72,7 +72,7 @@ function partnerBoardVehicle(q,car){
  // After boarding, continue forward from the point where the vehicle was encountered.
  if(q.route&&q.route.length)q.routeIndex=Math.max(q.routeIndex||0,Math.min(q.route.length-1,(q.boardAt||0)+1));
  q.wallFollow=null;q.sideStep=null;q.moving=false;
- sfx('enter');say('相棒が'+car.t.n+'に搭乗！');return true;
+ sfx('enter');return true;
 }
 function partnerExitVehicle(q){
  if(!q||!q.vehicle)return false;
@@ -299,7 +299,10 @@ function partnerDangerAt(x,y){
 }
 function updatePartner(dt){
  if(skill!=='partner'||!p)return;
- if(!partner)partner={x:p.x+24,y:p.y+32,face:p.body,hp:3,down:false,off:0,moving:false,mode:'advance',modeT:0,planT:0,shotCd:0,stunT:0,backup:false,route:null};
+ if(!partner){
+  partner={x:p.x+24,y:p.y+32,face:p.body,hp:3,down:false,off:10,moving:false,mode:'advance',modeT:0,planT:0,shotCd:0,stunT:0,backup:false,route:null};
+  recallSeparatedPartner(partner,0);
+ }
  const q=partner;
  if(updatePartnerPassenger(q,dt))return;
  q.grappleT=Math.max(0,(q.grappleT||0)-dt);
