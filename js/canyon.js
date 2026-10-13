@@ -1,8 +1,7 @@
 // Wilderness terrain and oasis imagery are cached; only sandstorm dust animates.
-const canyonTiles=new Map(),wildernessRockCache=new Map();
+const wildernessRockCache=new Map();
 let sandIntensity=0,sandDuration=24;
 function clearCanyonTiles(){
- for(const c of canyonTiles.values())invalidateStaticRaster(c);canyonTiles.clear();
  for(const c of wildernessRockCache.values())invalidateStaticRaster(c);wildernessRockCache.clear();sandIntensity=0;
 }
 function oasisContains(w,x,y,r=0){const rx=w.w/2+r,ry=w.h/2+r;return ((x-w.x-w.w/2)/rx)**2+((y-w.y-w.h/2)/ry)**2<1;}
@@ -43,24 +42,6 @@ function buildCanyonZones(){
   for(const yy of [h.y,o?o.y-90:h.y-100,o?o.y+o.h+110:h.y+100])for(const x of [120,WW-120,WW/2,WW/2-130,WW/2+130]){
    const y=Math.max(z.y1+160,Math.min(z.y0-250,yy)),path=[{x,y},{x,y:y-55}];if(!done&&pOK(path,10,false)){h.x=x;h.y=y;h.path=path;h.loop=false;h.wi=1;h.dir=1;h.stk=0;done=true;}
   }
- }
-}
-function canyonTile(){
- if(canyonTiles.has('soil'))return canyonTiles.get('soil');
- const c=document.createElement('canvas');c.width=WW;c.height=512;const q=gameCanvasContext(c);q.fillStyle='#a76b43';q.fillRect(0,0,WW,512);
- let seed=871;const rnd=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
- for(let i=0;i<2200;i++){q.fillStyle=i%3?'rgba(92,49,30,.16)':'rgba(234,179,113,.18)';q.fillRect(rnd()*WW,rnd()*512,1+rnd()*4,1+rnd()*3);}
- const cell=62,cols=Math.ceil(WW/cell)+1,rows=10,pts=[];
- for(let y=0;y<=rows;y++){pts[y]=[];for(let x=0;x<=cols;x++)pts[y][x]=y===rows?{x:pts[0][x].x,y:512}:{x:x*cell+(rnd()-.5)*35,y:y===0?0:y*51.2+(rnd()-.5)*25};}
- q.lineWidth=1.2;q.strokeStyle='rgba(77,40,27,.38)';
- for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){const a=pts[y][x],b=pts[y][x+1],d=pts[y+1][x],e=pts[y+1][x+1];q.beginPath();if(y>0){q.moveTo(a.x,a.y);q.lineTo(b.x,b.y);}q.moveTo(a.x,a.y);q.lineTo(d.x,d.y);q.stroke();}
- q.strokeStyle='rgba(227,163,96,.25)';q.lineWidth=12;for(let i=0;i<5;i++){q.beginPath();q.moveTo(0,i*120+20);q.bezierCurveTo(WW*.3,i*120-40,WW*.6,i*120+70,WW,i*120);q.stroke();}
- canyonTiles.set('soil',c);return c;
-}
-function drawCanyonTerrain(cx,cy){
- for(const z of ZONES)if(z.n==='荒野'&&z.y0>cy&&z.y1<cy+H){
-  const top=Math.max(0,z.y1),bottom=Math.min(WH,z.y0),tile=canyonTile();g.save();g.beginPath();g.rect(0,top,WW,bottom-top);g.clip();
-  for(let y=Math.floor(cy/512)*512;y<cy+H;y+=512)drawStaticRaster(tile,0,y);g.restore();
  }
 }
 function oasisImage(o){
