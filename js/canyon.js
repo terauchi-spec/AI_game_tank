@@ -128,7 +128,15 @@ function tumbleweedSprite(){
  tumbleweedCache=c;return c;
 }
 function tumbleweedRockHit(x,y,r){
- for(const c of nearbyCovers(x,y,r+120))if(c.kd===8&&circleHitsRect(x,y,r,coverHitRect(c)||c))return true;return false;
+ for(const c of nearbyCovers(x,y,r+120))if(c.kd===8&&circleHitsRect(x,y,r,coverHitRect(c)||c))return true;
+ for(const o of nearbyObjects(x,y,r+100))if(circleHitsRect(x,y,r,objectAABB(o)))return true;
+ for(const v of cars||[])if(v.kind!=='fighter'&&Math.hypot(v.x-x,v.y-y)<r+(v.kind==='truck'?32:30))return true;
+ if(p?.tank&&p.tank.kind!=='fighter'&&Math.hypot(p.x-x,p.y-y)<r+30)return true;
+ return false;
+}
+function inTumbleweed(o){if(!o)return false;const z=zoneAt(o.y);if(z.n!=='荒野')return false;return(z.tumbleweeds||[]).some(b=>Math.hypot(o.x-b.x,o.y-b.y)<b.r+8);}
+function updateTumbleweedStealth(){
+ const covered=inTumbleweed(p);if(covered){clearPlayerDetection();for(const o of [...humans,...etanks])if(o._detectCache?.key==='p'){o._detectCache=null;o._nextDetectAt=0;}}return covered;
 }
 function resetTumbleweed(b,z,i,initial=false){
  const top=initial?z.y1+50:Math.max(z.y1+50,p.y-H*.7),bottom=initial?z.y0-70:Math.min(z.y0-70,p.y+H*.45);b.r=(13+i%3*3)*2*.6;b.rot=b.rot||0;

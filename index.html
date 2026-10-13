@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.14.0027</title>
+<title>こっそり戦車大作戦 2026.10.14.0041</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -540,7 +540,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <div id="debugBadge" hidden><span id="debugBadgeText">無敵モード</span><button id="mazeCompareButton" type="button" hidden>比較：通常 → 敵移動停止</button></div>
 <div id="pad"><div id="stick"><div id="knob"></div></div><div class="btns"><button class="b" id="skillBtn" data-k="KeyS"><span class="coolRing" id="skillCooldown"></span><span class="coolText" id="skillCooldownText"></span><b>S</b><small id="skillLabel">スキル</small></button><button class="b" id="actionBtn" type="button"><span class="coolRing" id="actionCooldown"></span><span class="coolText" id="actionCooldownText"></span><b id="actionGlyph">B</b><small id="actionLabel">爆弾</small></button><button class="b" data-k="KeyA"><b>A</b><small>操作</small></button></div></div>
 <div id="titleScreen" role="region" aria-label="タイトル画面"><div class="title-wrap">
-<div class="title-hero"><img class="title-art" alt="戦場を見下ろす兵士と戦車のイラスト" src="assets/ui/title_hero.webp?v=2026.10.14.0027"><div class="title-hero-text"><div class="title-tag">TACTICAL ACTION GAME</div><h1 class="title-main"><img class="title-logo" src="assets/ui/title_logo.webp?v=2026.10.14.0027" alt="こっそり戦車大作戦"></h1></div></div>
+<div class="title-hero"><img class="title-art" alt="戦場を見下ろす兵士と戦車のイラスト" src="assets/ui/title_hero.webp?v=2026.10.14.0041"><div class="title-hero-text"><div class="title-tag">TACTICAL ACTION GAME</div><h1 class="title-main"><img class="title-logo" src="assets/ui/title_logo.webp?v=2026.10.14.0041" alt="こっそり戦車大作戦"></h1></div></div>
 <nav class="title-actions" aria-label="タイトルメニュー">
 <button type="button" class="title-cta" id="titleStart">ゲームを始める</button>
 <div class="title-secondaries"><button type="button" class="title-secondary" id="titleAwards">称号</button><button type="button" class="title-secondary" id="titleHelp">操作説明</button><button type="button" class="title-secondary" id="titleSpecs">仕様</button><button type="button" class="title-secondary" id="titleDiagnostics">表示診断（停止の調査）</button></div>
@@ -703,10 +703,10 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <style>
 #stageScreen{display:none;position:fixed;inset:0;z-index:70;background:rgba(10,18,14,.98);color:#e6e9d6;overflow:auto;padding:24px 18px;box-sizing:border-box;font-family:system-ui}body.stage-open #stageScreen{display:block}.stage-shell{max-width:760px;margin:auto}.stage-shell h1{font-size:28px;margin:10px 0}.stage-shell p{line-height:1.7;color:#bac9b5}.stage-card{display:block;width:100%;text-align:left;color:inherit;background:#23332a;border:2px solid #526549;border-radius:12px;padding:20px;margin:14px 0;cursor:pointer;font:inherit}.stage-card:hover,.stage-card:focus-visible{background:#314738;border-color:#e2c07c}.stage-card strong{font-size:23px;color:#eed5a1}.stage-card span{display:block;margin-top:8px;line-height:1.7}.stage-card small{display:block;color:#a9c8b7;margin-top:8px}.stage-back{padding:12px 20px;background:#344536;color:white;border:1px solid #829474;border-radius:8px;cursor:pointer}#missionHud{display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:12;max-width:90vw;width:480px;box-sizing:border-box;border:1px solid #829474;background:rgba(14,26,19,.9);color:#eef1df;padding:8px 12px;border-radius:8px;font:13px system-ui;pointer-events:none}#missionHud progress{width:100%;height:9px;accent-color:#9dcaa9}#missionHud small{display:block;color:#cee0bc;margin-top:4px}
 </style>
-<div id="missionSuccess" role="dialog" aria-modal="true" aria-labelledby="missionSuccessTitle"><div class="mission-fireworks" aria-hidden="true"><i class="mission-firework" style="left:18%;top:24%;--burst-delay:0.15s"></i><i class="mission-firework" style="left:78%;top:20%;--burst-delay:0.45s"></i><i class="mission-firework" style="left:48%;top:12%;--burst-delay:0.75s"></i><i class="mission-firework" style="left:22%;top:60%;--burst-delay:1.05s"></i><i class="mission-firework" style="left:81%;top:55%;--burst-delay:1.35s"></i></div><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_success.webp?v=2026.10.14.0027" alt="笑顔でジャンプする主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionSuccessTitle">ミッション 成功</h1><button type="button" id="missionSuccessEvaluate">作戦評価</button></div></div></div>
-<div id="missionFailure" role="dialog" aria-modal="true" aria-labelledby="missionFailureTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_failed.webp?v=2026.10.14.0027" alt="倒れてふらつく主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionFailureTitle">ミッション 失敗</h1><button type="button" id="missionEvaluate">作戦評価</button></div></div></div>
+<div id="missionSuccess" role="dialog" aria-modal="true" aria-labelledby="missionSuccessTitle"><div class="mission-fireworks" aria-hidden="true"><i class="mission-firework" style="left:18%;top:24%;--burst-delay:0.15s"></i><i class="mission-firework" style="left:78%;top:20%;--burst-delay:0.45s"></i><i class="mission-firework" style="left:48%;top:12%;--burst-delay:0.75s"></i><i class="mission-firework" style="left:22%;top:60%;--burst-delay:1.05s"></i><i class="mission-firework" style="left:81%;top:55%;--burst-delay:1.35s"></i></div><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_success.webp?v=2026.10.14.0041" alt="笑顔でジャンプする主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionSuccessTitle">ミッション 成功</h1><button type="button" id="missionSuccessEvaluate">作戦評価</button></div></div></div>
+<div id="missionFailure" role="dialog" aria-modal="true" aria-labelledby="missionFailureTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_failed.webp?v=2026.10.14.0041" alt="倒れてふらつく主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionFailureTitle">ミッション 失敗</h1><button type="button" id="missionEvaluate">作戦評価</button></div></div></div>
 <section id="areaDebugPicker" aria-labelledby="areaDebugHeading"><div class="area-debug-panel"><h1 id="areaDebugHeading">テストするエリア</h1><p>無敵で地形や遮蔽物を確認できます。<br>開始地点の戦車は弾数・燃料無制限です。</p><div id="areaDebugList"></div><button id="areaDebugBack" type="button">スキル選択に戻る</button></div></section>
-<div id="missionBriefing" role="dialog" aria-modal="true" aria-labelledby="missionBriefingTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_hero.webp?v=2026.10.14.0027" alt="円形爆弾を抱えて走る主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionBriefingTitle">ミッション</h1><p>敵の拠点にたどりつき、破壊せよ</p><ul class="mission-hud-guide" aria-label="ゲーム画面のアイコン説明"><li><img src="assets/ui/ui_heart_full.png" alt="ハート" decoding="async"><span>残りライフ</span></li><li><img src="assets/ui/ui_bomb_normal.png" alt="爆弾" decoding="async"><span>爆弾の設置状態</span></li><li><svg viewBox="-18 -18 36 36" role="img" aria-label="目に斜線"><path d="M-14 0 C-7-11 7-11 14 0 C7 11-7 11-14 0Z" fill="white" stroke="black" stroke-width="3"/><circle r="5" fill="black"/><path d="M-12 11 12-11" stroke="black" stroke-width="3.5"/><path d="M-12 11 12-11" stroke="#ef3434" stroke-width="2"/></svg><span>敵から隠れている状態</span></li></ul><button type="button" id="missionBegin">作戦開始</button></div></div></div>
+<div id="missionBriefing" role="dialog" aria-modal="true" aria-labelledby="missionBriefingTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_hero.webp?v=2026.10.14.0041" alt="円形爆弾を抱えて走る主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionBriefingTitle">ミッション</h1><p>敵の拠点にたどりつき、破壊せよ</p><ul class="mission-hud-guide" aria-label="ゲーム画面のアイコン説明"><li><img src="assets/ui/ui_heart_full.png" alt="ハート" decoding="async"><span>残りライフ</span></li><li><img src="assets/ui/ui_bomb_normal.png" alt="爆弾" decoding="async"><span>爆弾の設置状態</span></li><li><svg viewBox="-18 -18 36 36" role="img" aria-label="目に斜線"><path d="M-14 0 C-7-11 7-11 14 0 C7 11-7 11-14 0Z" fill="white" stroke="black" stroke-width="3"/><circle r="5" fill="black"/><path d="M-12 11 12-11" stroke="black" stroke-width="3.5"/><path d="M-12 11 12-11" stroke="#ef3434" stroke-width="2"/></svg><span>敵から隠れている状態</span></li></ul><button type="button" id="missionBegin">作戦開始</button></div></div></div>
 <div id="stageScreen" role="region" aria-label="ステージ選択"><div class="stage-shell"><div style="color:#9cbb9b;font-size:12px">CHOOSE YOUR MISSION</div><h1>ステージ選択</h1><p id="stageSkill"></p><button class="stage-card" data-stage="base"><strong>01　拠点破壊</strong><span>敵地を突破し、敵司令本部を破壊せよ。潜入・戦闘・乗り物を組み合わせる従来の作戦。</span><small>バランス型 ／ 目標：司令本部の破壊</small></button><button class="stage-card" data-stage="front"><strong>02　最前線</strong><span>味方部隊と進撃し、3か所の戦線を順番に制圧せよ。円内の敵を排除し、味方と陣地を確保。制圧すると補給と前進増援が到着する。</span><small>戦闘中心 ／ 円内で12秒確保・敵がいると制圧停止</small></button><button class="stage-card" data-stage="stealth"><strong>03　潜入</strong><span>3か所の機密情報を回収し、開始地点の脱出地点へ帰還せよ。徒歩で端末の近くに留まり解析。発見中は解析できず、警戒度が高まると追跡部隊が出現する。</span><small>スニーク中心 ／ 端末で4秒解析・全情報回収後に帰還</small></button><button class="stage-back" id="stageBack">← スキル選択へ</button></div></div><div id="missionHud" role="status"></div>
 
 <script>
@@ -719,7 +719,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.14.0027',FILE_CREATED_AT='2026/10/14 00:27',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.14.0041',FILE_CREATED_AT='2026/10/14 00:41',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -830,7 +830,7 @@ const TERRAIN_ASSET_SRC={
  "敵前線基地":ASSET_DIR+'terrain/front_base.webp',
  "街":ASSET_DIR+'terrain/maze_base.webp',
  "敵迷路基地":ASSET_DIR+'terrain/maze_base.webp',
- "荒野":ASSET_DIR+'terrain/wilderness.webp?v=2026.10.14.0027',
+ "荒野":ASSET_DIR+'terrain/wilderness.webp?v=2026.10.14.0041',
  "湿地":ASSET_DIR+'terrain/wetland.webp',
  "敵司令本部":ASSET_DIR+'terrain/hq.webp',
  "川":ASSET_DIR+'terrain/river_surface.webp'
@@ -847,12 +847,13 @@ const COVER_ASSET_SRC={
  "tree":ASSET_DIR+'cover/tree.webp',
  "tree_v2":ASSET_DIR+'cover/tree_v2.webp',
  "barrier":ASSET_DIR+'cover/barrier.webp',
- "spinifex":ASSET_DIR+'cover/spinifex.webp?v=2026.10.14.0027',
+ "spinifex_green":ASSET_DIR+'cover/spinifex_green.webp?v=2026.10.14.0041',
+ "spinifex":ASSET_DIR+'cover/spinifex.webp?v=2026.10.14.0041',
  "rock":ASSET_DIR+'cover/rock.webp',
  "rock_v2":ASSET_DIR+'cover/rock_v2.webp',
  "maze_wall":ASSET_DIR+'cover/maze_wall.webp',
- "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.webp?v=2026.10.14.0027',
- "barrel":ASSET_DIR+'cover/barrel.webp?v=2026.10.14.0027',
+ "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.webp?v=2026.10.14.0041',
+ "barrel":ASSET_DIR+'cover/barrel.webp?v=2026.10.14.0041',
  "command_building_1":ASSET_DIR+'cover/command_building_1.webp',
  "wood_bridge":ASSET_DIR+'terrain/wood_bridge.webp'
 };
@@ -871,7 +872,7 @@ function startAssetLoading(){
  assetInitStarted=true;assetLoadStart=performance.now();
  // 初回タイトルを先に1フレーム描画してから、画像の読み込みをバックグラウンドで開始する。
  for(const [k,v] of Object.entries(TERRAIN_ASSET_SRC))TERRAIN_IMG[k]=makeAssetImage(v,()=>{for(const z of ZONES||[])z.pat=null;if(k==='川'){riverSurfaceVersion++;invalidateRiverVisualCaches();}});
- for(const [k,v] of Object.entries(COVER_ASSET_SRC))COVER_IMG[k]=makeAssetImage(v,()=>{if(k==='spinifex')invalidateSpinifexVegetation();});
+ for(const [k,v] of Object.entries(COVER_ASSET_SRC))COVER_IMG[k]=makeAssetImage(v,()=>{if(k==='spinifex'||k==='spinifex_green')invalidateSpinifexVegetation();});
 }
 function assetsLoading(){return assetInitStarted&&assetLoadTotal>0&&assetLoadDone<assetLoadTotal;}
 function assetOK(im){return !!(im&&im.complete&&im.naturalWidth>0);}
@@ -2600,7 +2601,7 @@ function distributeFlankPatrols(){
 }
 
 function reset(rerollSkills=true){
- clearStaticRasterCache();clearFragmentRenderCache();clearMazeWallChunks();clearCanyonTiles();
+ clearStaticRasterCache();clearFragmentRenderCache();clearMazeWallChunks();clearCanyonTiles();clearSpinifexScatters();
  radioStrikeKillContext=0;burningNatureSet.clear();lastEnemySeparationAt=-1e9;patrolChatScanT=0;allyTargetRefreshAt=0;
  resetMazeComparison();partnerOrder.pressed=false;partnerOrder.drawing=false;partnerOrder.path=[];partnerOrder.cursor=null;partnerOrder.signalT=0;partnerOrder.signalKind='point';
  state='play';shake=0;flash=0;msg='';msgT=0;chainToastT=0;oneShotToastT=0;chainToast='';oneShotToast='';interact=false;bombReq=false;skillReq=false;decoy=null;allies=[];partner=null;hound=null;houndTrail=[];allySeq=0;builtWalls=[];tankWrecks=[];radio=null;airstrike=null;airbombs=[];weather='clear';weatherT=0;rainIntensity=0;weatherNext=15+R()*35;baseSpawnT=5;deathT=0;cam=0;camX=0;scoreStats=newScoreStats();
@@ -3053,7 +3054,7 @@ function targetObj(key){if(key==='partner')return partner&&!partner.down?partner
 function canDetect(o,target,face,key){
  if(!target)return false;const d=D(o,target),known=o.st&&o.target===key,searchBoost=(o&&o.sus>0&&!o.st)?1.5:1,eliteRange=o&&o.commander==='white'?1.6:o&&o.elite?1.2:1,eliteFov=o&&o.commander==='white'?1.3:o&&o.elite?1.2:1,humanFov=(humans||[]).includes(o)?1.2:1,fovBoost=eliteFov*humanFov;
  const chatSight=(o&&o.chatT>0)?.5:1;
- const hiddenPlayer=(key==='partner'&&(partner?.down||inBush(partner)))||(key==='p'&&(debugMode>=2||p.dig>0||(!p.tank&&inBush(p))||(weather==='rain'&&inWaterAt(p.x,p.y,0))));if(hiddenPlayer)return false;
+ const hiddenPlayer=(key==='partner'&&(partner?.down||inBush(partner)))||(key==='p'&&(debugMode>=2||inTumbleweed(p)||p.dig>0||(!p.tank&&inBush(p))||(weather==='rain'&&inWaterAt(p.x,p.y,0))));if(hiddenPlayer)return false;
  if(known){if(d>=detectDropRange(key)*eliteRange)return false;return los(o,target);}
  const da=Math.abs(angD(Math.atan2(target.y-o.y,target.x-o.x),face));
  const inCenter=da<=DETECT_CENTER_HALF*fovBoost&&d<detectRange(key)*searchBoost*eliteRange*chatSight;
@@ -3077,7 +3078,7 @@ const MAX_PARTS=MOBILE_VIEW?240:360;
 function trimParts(extra=0){if(!parts)return;const over=parts.length+extra-MAX_PARTS;if(over>0)parts.splice(0,over);}
 function burst(x,y,n,col,sp){const nn=Math.min(n,MAX_PARTS);trimParts(nn);for(let i=0;i<nn;i++){const a=R()*6.28,s=R()*sp;parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.4+R()*.4,col});}}
 function cannonCoverDebris(x,y,col='#8a7a55',amount=3){amount=Math.min(amount,MAX_PARTS);trimParts(amount);for(let i=0;i<amount;i++){const a=R()*6.28318,s=70+R()*150;parts.push({x:x+(R()-.5)*16,y:y+(R()-.5)*12,vx:Math.cos(a)*s,vy:Math.sin(a)*s*.58,z:2+R()*6,vz:105+R()*155,g:360,life:1.05+R()*.75,col,sz:5+R()*7,arcFrag:1,rot:R()*6.28,vr:(R()-.5)*9});}}
-function updateParts(dt){trimParts();let w=0;for(let i=0;i<parts.length;i++){const q=parts[i];q.life-=dt;if(q.life<=0)continue;q.x+=q.vx*dt;q.y+=q.vy*dt;if(q.arcFrag){q.vz-=q.g*dt;q.z=Math.max(0,(q.z||0)+q.vz*dt);q.rot=(q.rot||0)+(q.vr||0)*dt;if(q.z<=0&&q.vz<0){q.z=0;q.vz*=-.22;q.vx*=.68;q.vy*=.68;}}q.vx*=q.arcFrag?.985:.93;q.vy*=q.arcFrag?.985:.93;parts[w++]=q;}parts.length=w;}
+function updateParts(dt){updateSpinifexScatters(dt);trimParts();let w=0;for(let i=0;i<parts.length;i++){const q=parts[i];q.life-=dt;if(q.life<=0)continue;q.x+=q.vx*dt;q.y+=q.vy*dt;if(q.arcFrag){q.vz-=q.g*dt;q.z=Math.max(0,(q.z||0)+q.vz*dt);q.rot=(q.rot||0)+(q.vr||0)*dt;if(q.z<=0&&q.vz<0){q.z=0;q.vz*=-.22;q.vx*=.68;q.vy*=.68;}}q.vx*=q.arcFrag?.985:.93;q.vy*=q.arcFrag?.985:.93;parts[w++]=q;}parts.length=w;}
 function digUsesWaterFx(x,y,pad=11){
  return (water||[]).some(w=>w.oasis?oasisContains(w,x,y,pad):x>=w.x-pad&&x<=w.x+w.w+pad&&y>=w.y-pad&&y<=w.y+w.h+pad);
 }
@@ -4918,7 +4919,8 @@ function update(dt){
  for(const it of items)if(p.tank&&!it.got&&D(it,p)<38){it.got=true;const fm=p.tank.t.fmax||100;p.tank.f=fm;sfx('pickup');say('ガソリン満タン!');}
  if(radio&&!radio.got&&D(radio,p)<30){radio.got=true;startAirstrike();}
  updateHound(dt);
- const stealthCover=(!p.tank&&inBush(p))||(weather==='rain'&&inWaterAt(p.x,p.y,0))||(p.dig>0);
+ const tumbleCover=updateTumbleweedStealth();
+ const stealthCover=tumbleCover||(!p.tank&&inBush(p))||(weather==='rain'&&inWaterAt(p.x,p.y,0))||(p.dig>0);
  if(stealthCover){const wasFound=humans.some(h=>h.alive&&h.st&&h.target==='p')||etanks.some(e=>e.alive&&e.st&&e.target==='p');p.bushHide=(p.bushHide||0)+dt;if(!wasFound||p.bushHide>=1){for(const h of humans)if(h.alive&&h.target==='p'&&!(h.sniperForcedFoundT>0)){h.st=0;h.target=null;h.lost=0;h.foundPause=0;pauseAfterEnemyDetection(h);}for(const e of etanks)if(e.alive&&e.target==='p'&&!(e.sniperForcedFoundT>0)){e.st=0;e.target=null;e.lost=0;e.foundPause=0;pauseAfterEnemyDetection(e);}}}else p.bushHide=0;
  updateCommanderSignals(dt);updateCommanderMotion(dt);
  // 敵人間：プレイヤー・相棒・偽装を個別に索敵。遮蔽物があれば発見しない。
@@ -5357,6 +5359,7 @@ function redrawGrassBushChunk(z,ch){
  invalidateStaticRaster(ch.c);
  const q=gameCanvasContext(ch.c);q.setTransform(1,0,0,1,0,0);q.clearRect(0,0,ch.c.width,ch.c.height);q.imageSmoothingEnabled=true;
  for(const b of bushes||[]){
+  if(b.spinifex)continue;
   const cy=b.y+b.h*.5;if(cy<=z.y1||cy>z.y0)continue;
   if(b.y+b.h<ch.y||b.y>ch.y+ch.h)continue;
   q.drawImage(bushSpriteFor(b),b.x*GRASS_BUSH_CACHE_SCALE,(b.y-ch.y)*GRASS_BUSH_CACHE_SCALE,b.w*GRASS_BUSH_CACHE_SCALE,b.h*GRASS_BUSH_CACHE_SCALE);
@@ -6340,7 +6343,7 @@ function drawStealthHudIcon(x,y,col){
 }
 function drawInfantryBottomHud(){
  if(p.tank)return;
- const x=12,cy=TOUCH?94:H-71,riverStealth=weather==='rain'&&inWaterAt(p.x,p.y,0),bushStealth=inBush(p),stealth=!decoy&&(p.dig>0||bushStealth||riverStealth);
+ const x=12,cy=TOUCH?94:H-71,riverStealth=weather==='rain'&&inWaterAt(p.x,p.y,0),bushStealth=inBush(p),stealth=!decoy&&(p.dig>0||bushStealth||riverStealth||inTumbleweed(p));
  const detected=stealth&&(humans.some(h=>h.alive&&h.st&&h.target==='p')||etanks.some(e=>e.alive&&e.st&&e.target==='p'));
  // UIアイコンはゲーム背景上に直接表示し、背後の黒い板・枠線を描画しない。
  g.save();
@@ -6550,7 +6553,8 @@ function draw(near){
  else{drawBlastShadow(p);soldier(p.x,p.y-blastLift(p),p.body,true,false,!!(keys.ArrowUp||keys.ArrowDown||keys.ArrowLeft||keys.ArrowRight));}
  if(!p.tank&&p.drill>0){const a=p.body,t=performance.now()/90;g.save();g.translate(p.x,p.y);g.rotate(a);g.fillStyle='#30343a';g.beginPath();g.moveTo(10,-10);g.lineTo(48,0);g.lineTo(10,10);g.closePath();g.fill();g.strokeStyle='#d6d9dd';g.lineWidth=2;for(let q=0;q<4;q++){const xx=14+q*8,yy=Math.sin(t+q*1.7)*6;g.beginPath();g.moveTo(xx,-8+yy*.25);g.lineTo(xx+6,8-yy*.25);g.stroke();}g.fillStyle='#ffd27a';g.beginPath();g.arc(49,0,3+Math.sin(t)*1.2,0,6.28);g.fill();g.restore();if(p.drillTarget){g.fillStyle='rgba(0,0,0,.58)';g.fillRect(p.x-22,p.y-31,44,5);g.fillStyle='#ffd27a';g.fillRect(p.x-22,p.y-31,44*Math.min(1,p.drillHit/.5),5);}}
  drawGrassBushChunks(cx,cy);
- for(const b of nearbyBushes(cx+W/2,cy+H/2,Math.max(W,H)*.8+100)){if(isGrassBush(b)||b.x+b.w<cx-40||b.x>cx+W+40||b.y+b.h<cy-40||b.y>cy+H+40)continue;drawBushCached(b);}
+ for(const b of nearbyBushes(cx+W/2,cy+H/2,Math.max(W,H)*.8+100)){if(b.spinifex||isGrassBush(b)||b.x+b.w<cx-40||b.x>cx+W+40||b.y+b.h<cy-40||b.y>cy+H+40)continue;drawBushCached(b);}
+ drawSpinifexTopLayer(cx,cy);
  // 草むらに隠れた歩兵（プレイヤー・味方・敵兵）の輪郭強調は行わない。
  // 草むら自体は前面レイヤーに残し、遮蔽・索敵の判定にも変更を加えない。
  // 会話フキダシは草むらより前面に描画する。
@@ -6571,7 +6575,7 @@ function draw(near){
  if(airstrike)drawSupportBomber(airstrike.x,airstrike.y);
  for(const q of parts){const psz=q.sz||4,dy=q.y-(q.z||0);if(q.x+psz<cx-30||q.x-psz>cx+W+30||dy+psz<cy-30||dy-psz>cy+H+30)continue;g.globalAlpha=Math.min(1,q.life*2);g.fillStyle=q.col;if(q.arcFrag){g.save();g.translate(q.x,dy);g.rotate(q.rot||0);g.fillRect(-psz/2,-psz/2,psz,Math.max(2,psz*.65));g.restore();}else if(q.waterRipple){const k=1-q.life/(q.ttl||.5);g.save();g.strokeStyle=q.col;g.globalAlpha=Math.max(0,(1-k)*.72);g.lineWidth=1.7;g.beginPath();g.ellipse(q.x,dy,psz*(.45+k*.78),psz*(.20+k*.30),0,0,6.28);g.stroke();g.restore();}else g.fillRect(q.x-psz/2,dy-psz/2,psz,psz);}g.globalAlpha=1;
  let explosionComposing=false;for(const f of fx){if(f.x+f.max<cx-40||f.x-f.max>cx+W+40||f.y+f.max<cy-40||f.y-f.max>cy+H+40)continue;if(!explosionComposing){g.save();g.globalCompositeOperation='lighter';explosionComposing=true;}const t=1-f.l/.45,r=f.max*(.35+.65*t),gr=g.createRadialGradient(f.x,f.y,0,f.x,f.y,r);gr.addColorStop(0,'rgba(255,250,200,'+(1-t)+')');gr.addColorStop(.45,'rgba(255,140,30,'+.8*(1-t)+')');gr.addColorStop(1,'rgba(160,30,0,0)');g.fillStyle=gr;g.beginPath();g.arc(f.x,f.y,r,0,6.28);g.fill();}if(explosionComposing)g.restore();
- drawPartnerOrderSignal();
+ drawSpinifexScatters(cx,cy);drawPartnerOrderSignal();
  g.restore();
  g=gm;gm.imageSmoothingEnabled=false;if(!MOBILE_VIEW)gm.drawImage(oc,0,0,W,H);drawWeatherOverlay();
  // 潜伏中：画面全体を徐々に暗くする。HUDはこの後に描画して可読性を維持。
@@ -7397,10 +7401,10 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/partner.js?v=2026.10.14.0027"></script>
-<script src="js/maze-walls.js?v=2026.10.14.0027"></script>
-<script src="js/canyon.js?v=2026.10.14.0027"></script>
-<script src="js/vegetation.js?v=2026.10.14.0027"></script>
+<script src="js/partner.js?v=2026.10.14.0041"></script>
+<script src="js/maze-walls.js?v=2026.10.14.0041"></script>
+<script src="js/canyon.js?v=2026.10.14.0041"></script>
+<script src="js/vegetation.js?v=2026.10.14.0041"></script>
 <script>
 (function(){
 // iPhone Chrome/Safari: synthetic KeyboardEvent に依存せず、ゲーム内部の入力状態を直接更新する。

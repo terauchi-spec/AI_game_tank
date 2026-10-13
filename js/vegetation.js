@@ -1,5 +1,4 @@
 // Static vegetation sprites/flowers are shared; blast debris uses the bounded parts pool.
-let greenSpinifexCanvas=null,greenSpinifexSource=null;
 const flowerBushSprites=new Map();
 function setupGrassVegetation(){
  for(const z of ZONES)if(z.n==='草原'){
@@ -9,29 +8,32 @@ function setupGrassVegetation(){
  }
 }
 function invalidateSpinifexVegetation(){
- if(greenSpinifexCanvas)invalidateStaticRaster(greenSpinifexCanvas);greenSpinifexCanvas=null;greenSpinifexSource=null;
  for(const chunks of grassBushChunkCache.values())for(const ch of chunks)ch.dirty=true;
 }
-function spinifexSprite(b){
- const im=COVER_IMG.spinifex;if(!b.spinifexGreen||!assetOK(im))return im;
- if(greenSpinifexCanvas&&greenSpinifexSource===im)return greenSpinifexCanvas;
- const c=document.createElement('canvas');c.width=c.height=128;const q=gameCanvasContext(c);q.drawImage(im,0,0,128,128);
- const pixels=q.getImageData(0,0,128,128),d=pixels.data;
- for(let i=0;i<d.length;i+=4){if(!d[i+3])continue;const v=.2126*d[i]+.7152*d[i+1]+.0722*d[i+2];d[i]=v*.46;d[i+1]=Math.min(255,v*1.05+18);d[i+2]=v*.31;}
- q.putImageData(pixels,0,0);c.complete=true;c.naturalWidth=c.naturalHeight=128;greenSpinifexCanvas=c;greenSpinifexSource=im;return c;
-}
+function spinifexSprite(b){return b.spinifexGreen?COVER_IMG.spinifex_green:COVER_IMG.spinifex;}
 function floweringBushSprite(base,variant){
  if(flowerBushSprites.has(variant))return flowerBushSprites.get(variant);
  const c=document.createElement('canvas');c.width=base.width;c.height=base.height;const q=gameCanvasContext(c);q.drawImage(base,0,0);
- for(let i=0;i<5;i++){const x=20+(i*29+variant*7)%88,y=18+(i*17+variant*11)%57;q.fillStyle=i%2?'#f3eee0':'#cd4038';q.beginPath();q.arc(x,y,2.7,0,Math.PI*2);q.fill();q.fillStyle='#dfc569';q.fillRect(x-.6,y-.6,1.2,1.2);}
+ for(let i=0;i<5;i++){const x=20+(i*29+variant*7)%88,y=18+(i*17+variant*11)%57;q.fillStyle=i%2?'#fff5e9':'#ed4540';for(let k=0;k<5;k++){const a=k*Math.PI*2/5;q.beginPath();q.ellipse(x+Math.cos(a)*2.3,y+Math.sin(a)*2.3,2.7,1.9,a,0,Math.PI*2);q.fill();}q.fillStyle='#f4cf55';q.beginPath();q.arc(x,y,1.35,0,Math.PI*2);q.fill();}
  flowerBushSprites.set(variant,c);return c;
 }
+const spinifexScatters=[];
+function clearSpinifexScatters(){spinifexScatters.length=0;}
+function drawSpinifexTopLayer(cx,cy){
+ for(const b of nearbyBushes(cx+W/2,cy+H/2,Math.max(W,H)*.8+140))if(b.spinifex&&drawBoundsInView(b.x,b.y,b.w,b.h,cx,cy,16))drawBushCached(b);
+}
 function scatterSpinifexAt(x,y,r){
- const dead=new Set();let budget=36;
+ const dead=new Set();let budget=6;
  for(const b of nearbyBushes(x,y,r+140))if(b.spinifex&&circleHitsRect(x,y,r,b)){
   dead.add(b);markGrassBushChunkDirty(b);burningNatureSet.delete(b);
-  const n=Math.min(6,budget);budget-=n;if(!n)continue;trimParts(n);const cx=b.x+b.w/2,cy=b.y+b.h/2,away=Math.atan2(cy-y,cx-x);
-  for(let i=0;i<n;i++){const a=away+(stableRand(b,820+i)-.5)*2.4,speed=95+stableRand(b,850+i)*80;parts.push({x:cx+(stableRand(b,880+i)-.5)*b.w*.4,y:cy+(stableRand(b,910+i)-.5)*b.h*.4,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,life:.45+stableRand(b,940+i)*.18,col:b.spinifexGreen?'#6f9e3c':'#b98b48',sz:3+stableRand(b,970+i)*4,arcFrag:true,z:0,vz:65,g:240,rot:a,vr:3});}
+  if(budget-->0){if(spinifexScatters.length>=6)spinifexScatters.shift();spinifexScatters.push({b:{...b},t:0,away:Math.atan2(b.y+b.h/2-y,b.x+b.w/2-x)});}
  }
  if(!dead.size)return;let w=0;for(const b of bushes)if(!dead.has(b))bushes[w++]=b;bushes.length=w;
+}
+function updateSpinifexScatters(dt){let w=0;for(const f of spinifexScatters){f.t+=dt;if(f.t<.95)spinifexScatters[w++]=f;}spinifexScatters.length=w;}
+function drawSpinifexScatters(cx,cy){
+ for(const f of spinifexScatters){const b=f.b,im=spinifexSprite(b);if(!assetOK(im)||!drawBoundsInView(b.x-130,b.y-130,b.w+260,b.h+260,cx,cy,20))continue;
+  const t=f.t,iw=im.naturalWidth/2,ih=im.naturalHeight/2;g.save();g.imageSmoothingEnabled=true;g.globalAlpha=Math.min(1,(.95-t)*2.2);
+  for(let i=0;i<4;i++){const a=f.away+(i-1.5)*.65,travel=(70+i*16)*t,sz=Math.max(14,b.w*.32)*(1-t*.25);g.save();g.translate(b.x+b.w/2+Math.cos(a)*travel,b.y+b.h/2+Math.sin(a)*travel-Math.sin(Math.PI*t/.95)*24);g.rotate(a+t*(i%2?3:-3));g.drawImage(im,(i%2)*iw,(i>>1)*ih,iw,ih,-sz/2,-sz/2,sz,sz);g.restore();}g.restore();
+ }
 }
