@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.13.0956</title>
+<title>こっそり戦車大作戦 2026.10.13.1010</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -39,6 +39,8 @@ p{font-size:12px;opacity:.75;margin:8px 0 0;text-align:center;line-height:1.6}
 #debugToggleBtn:active{background:rgba(255,210,122,.32)}
 #debugBadge{position:fixed;top:max(10px,calc(env(safe-area-inset-top,0px) + 8px));right:max(10px,calc(env(safe-area-inset-right,0px) + 8px));z-index:41;padding:8px 14px;border:1px solid rgba(255,210,122,.70);border-radius:999px;background:rgba(104,20,14,.72);color:#fff0ba;font:600 12px/1 system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;box-shadow:0 2px 12px rgba(0,0,0,.28);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);pointer-events:none;white-space:nowrap}
 #debugBadge[hidden]{display:none}
+#mazeCompareButton{pointer-events:auto;display:block;margin:7px 0 0;padding:8px 10px;font:600 12px system-ui;color:#fff0ba;background:#332c25;border:1px solid #b29b6c;border-radius:6px;touch-action:manipulation}
+#mazeCompareButton[hidden]{display:none}
 @media (pointer:coarse){
  html,body{width:100%;height:100%;overflow:hidden;background:#000}
  body{padding:0;display:block}
@@ -524,10 +526,10 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <canvas id="c" width="840" height="720"></canvas>
 <button id="resetBtn" type="button" aria-label="タイトルへ戻る" title="タイトルへ戻る">⌂</button>
 <button id="debugToggleBtn" type="button" aria-label="無敵モード切替" title="無敵モード切替"><span class="icon">🛡</span><span class="key">P</span></button>
-<div id="debugBadge" hidden>無敵モード</div>
+<div id="debugBadge" hidden><span id="debugBadgeText">無敵モード</span><button id="mazeCompareButton" type="button" hidden>比較：通常 → 敵移動停止</button></div>
 <div id="pad"><div id="stick"><div id="knob"></div></div><div class="btns"><button class="b" id="skillBtn" data-k="KeyS"><span class="coolRing" id="skillCooldown"></span><span class="coolText" id="skillCooldownText"></span><b>S</b><small id="skillLabel">スキル</small></button><button class="b" id="actionBtn" type="button"><span class="coolRing" id="actionCooldown"></span><span class="coolText" id="actionCooldownText"></span><b id="actionGlyph">B</b><small id="actionLabel">爆弾</small></button><button class="b" data-k="KeyA"><b>A</b><small>操作</small></button></div></div>
 <div id="titleScreen" role="region" aria-label="タイトル画面"><div class="title-wrap">
-<div class="title-hero"><img class="title-art" alt="戦場を見下ろす兵士と戦車のイラスト" src="assets/ui/title_hero.webp?v=2026.10.13.0956"><div class="title-hero-text"><div class="title-tag">TACTICAL ACTION GAME</div><h1 class="title-main"><img class="title-logo" src="assets/ui/title_logo.webp?v=2026.10.13.0956" alt="こっそり戦車大作戦"></h1></div></div>
+<div class="title-hero"><img class="title-art" alt="戦場を見下ろす兵士と戦車のイラスト" src="assets/ui/title_hero.webp?v=2026.10.13.1010"><div class="title-hero-text"><div class="title-tag">TACTICAL ACTION GAME</div><h1 class="title-main"><img class="title-logo" src="assets/ui/title_logo.webp?v=2026.10.13.1010" alt="こっそり戦車大作戦"></h1></div></div>
 <nav class="title-actions" aria-label="タイトルメニュー">
 <button type="button" class="title-cta" id="titleStart">ゲームを始める</button>
 <div class="title-secondaries"><button type="button" class="title-secondary" id="titleAwards">称号</button><button type="button" class="title-secondary" id="titleHelp">操作説明</button><button type="button" class="title-secondary" id="titleSpecs">仕様</button><button type="button" class="title-secondary" id="titleDiagnostics">表示診断（停止の調査）</button></div>
@@ -690,9 +692,9 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <style>
 #stageScreen{display:none;position:fixed;inset:0;z-index:70;background:rgba(10,18,14,.98);color:#e6e9d6;overflow:auto;padding:24px 18px;box-sizing:border-box;font-family:system-ui}body.stage-open #stageScreen{display:block}.stage-shell{max-width:760px;margin:auto}.stage-shell h1{font-size:28px;margin:10px 0}.stage-shell p{line-height:1.7;color:#bac9b5}.stage-card{display:block;width:100%;text-align:left;color:inherit;background:#23332a;border:2px solid #526549;border-radius:12px;padding:20px;margin:14px 0;cursor:pointer;font:inherit}.stage-card:hover,.stage-card:focus-visible{background:#314738;border-color:#e2c07c}.stage-card strong{font-size:23px;color:#eed5a1}.stage-card span{display:block;margin-top:8px;line-height:1.7}.stage-card small{display:block;color:#a9c8b7;margin-top:8px}.stage-back{padding:12px 20px;background:#344536;color:white;border:1px solid #829474;border-radius:8px;cursor:pointer}#missionHud{display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:12;max-width:90vw;width:480px;box-sizing:border-box;border:1px solid #829474;background:rgba(14,26,19,.9);color:#eef1df;padding:8px 12px;border-radius:8px;font:13px system-ui;pointer-events:none}#missionHud progress{width:100%;height:9px;accent-color:#9dcaa9}#missionHud small{display:block;color:#cee0bc;margin-top:4px}
 </style>
-<div id="missionSuccess" role="dialog" aria-modal="true" aria-labelledby="missionSuccessTitle"><div class="mission-fireworks" aria-hidden="true"><i class="mission-firework" style="left:18%;top:24%;--burst-delay:0.15s"></i><i class="mission-firework" style="left:78%;top:20%;--burst-delay:0.45s"></i><i class="mission-firework" style="left:48%;top:12%;--burst-delay:0.75s"></i><i class="mission-firework" style="left:22%;top:60%;--burst-delay:1.05s"></i><i class="mission-firework" style="left:81%;top:55%;--burst-delay:1.35s"></i></div><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_success.webp?v=2026.10.13.0956" alt="笑顔でジャンプする主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionSuccessTitle">ミッション 成功</h1><button type="button" id="missionSuccessEvaluate">作戦評価</button></div></div></div>
-<div id="missionFailure" role="dialog" aria-modal="true" aria-labelledby="missionFailureTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_failed.webp?v=2026.10.13.0956" alt="倒れてふらつく主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionFailureTitle">ミッション 失敗</h1><button type="button" id="missionEvaluate">作戦評価</button></div></div></div>
-<div id="missionBriefing" role="dialog" aria-modal="true" aria-labelledby="missionBriefingTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_hero.webp?v=2026.10.13.0956" alt="円形爆弾を抱えて走る主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionBriefingTitle">ミッション</h1><p>敵の拠点にたどりつき、破壊せよ</p><button type="button" id="missionBegin">作戦開始</button></div></div></div>
+<div id="missionSuccess" role="dialog" aria-modal="true" aria-labelledby="missionSuccessTitle"><div class="mission-fireworks" aria-hidden="true"><i class="mission-firework" style="left:18%;top:24%;--burst-delay:0.15s"></i><i class="mission-firework" style="left:78%;top:20%;--burst-delay:0.45s"></i><i class="mission-firework" style="left:48%;top:12%;--burst-delay:0.75s"></i><i class="mission-firework" style="left:22%;top:60%;--burst-delay:1.05s"></i><i class="mission-firework" style="left:81%;top:55%;--burst-delay:1.35s"></i></div><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_success.webp?v=2026.10.13.1010" alt="笑顔でジャンプする主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionSuccessTitle">ミッション 成功</h1><button type="button" id="missionSuccessEvaluate">作戦評価</button></div></div></div>
+<div id="missionFailure" role="dialog" aria-modal="true" aria-labelledby="missionFailureTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_failed.webp?v=2026.10.13.1010" alt="倒れてふらつく主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionFailureTitle">ミッション 失敗</h1><button type="button" id="missionEvaluate">作戦評価</button></div></div></div>
+<div id="missionBriefing" role="dialog" aria-modal="true" aria-labelledby="missionBriefingTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_hero.webp?v=2026.10.13.1010" alt="円形爆弾を抱えて走る主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionBriefingTitle">ミッション</h1><p>敵の拠点にたどりつき、破壊せよ</p><button type="button" id="missionBegin">作戦開始</button></div></div></div>
 <div id="stageScreen" role="region" aria-label="ステージ選択"><div class="stage-shell"><div style="color:#9cbb9b;font-size:12px">CHOOSE YOUR MISSION</div><h1>ステージ選択</h1><p id="stageSkill"></p><button class="stage-card" data-stage="base"><strong>01　拠点破壊</strong><span>敵地を突破し、敵司令本部を破壊せよ。潜入・戦闘・乗り物を組み合わせる従来の作戦。</span><small>バランス型 ／ 目標：司令本部の破壊</small></button><button class="stage-card" data-stage="front"><strong>02　最前線</strong><span>味方部隊と進撃し、3か所の戦線を順番に制圧せよ。円内の敵を排除し、味方と陣地を確保。制圧すると補給と前進増援が到着する。</span><small>戦闘中心 ／ 円内で12秒確保・敵がいると制圧停止</small></button><button class="stage-card" data-stage="stealth"><strong>03　潜入</strong><span>3か所の機密情報を回収し、開始地点の脱出地点へ帰還せよ。徒歩で端末の近くに留まり解析。発見中は解析できず、警戒度が高まると追跡部隊が出現する。</span><small>スニーク中心 ／ 端末で4秒解析・全情報回収後に帰還</small></button><button class="stage-back" id="stageBack">← スキル選択へ</button></div></div><div id="missionHud" role="status"></div>
 
 <script>
@@ -705,7 +707,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.13.0956',FILE_CREATED_AT='2026/10/13 09:56',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.13.1010',FILE_CREATED_AT='2026/10/13 10:10',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -834,8 +836,8 @@ const COVER_ASSET_SRC={
  "rock":ASSET_DIR+'cover/rock.webp',
  "rock_v2":ASSET_DIR+'cover/rock_v2.webp',
  "maze_wall":ASSET_DIR+'cover/maze_wall.webp',
- "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.webp?v=2026.10.13.0956',
- "barrel":ASSET_DIR+'cover/barrel.webp?v=2026.10.13.0956',
+ "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.webp?v=2026.10.13.1010',
+ "barrel":ASSET_DIR+'cover/barrel.webp?v=2026.10.13.1010',
  "command_building_1":ASSET_DIR+'cover/command_building_1.webp',
  "wood_bridge":ASSET_DIR+'terrain/wood_bridge.webp'
 };
@@ -2506,6 +2508,7 @@ function movePatrolReturn(o,target,dt,sp,r){
  return a;
 }
 function patrol(o,dt,sp,r){
+ if(mazeComparisonEnemyFrozen(o))return Number.isFinite(o.face)?o.face:o.ang||0;
  // Stationary guards have one waypoint. Do not run the two-endpoint reversal.
  if(!Array.isArray(o.path)||o.path.length<2){o.wi=0;o.turnPause=0;o.stk=0;return Number.isFinite(o.face)?o.face:Number.isFinite(o.ang)?o.ang:0;}
  if(!Number.isInteger(o.wi)||o.wi<0||o.wi>=o.path.length)o.wi=0;
@@ -2581,7 +2584,7 @@ function distributeFlankPatrols(){
 function reset(rerollSkills=true){
  clearStaticRasterCache();clearFragmentRenderCache();
  radioStrikeKillContext=0;burningNatureSet.clear();lastEnemySeparationAt=-1e9;patrolChatScanT=0;allyTargetRefreshAt=0;
- partnerOrder.pressed=false;partnerOrder.drawing=false;partnerOrder.path=[];partnerOrder.cursor=null;partnerOrder.signalT=0;partnerOrder.signalKind='point';
+ resetMazeComparison();partnerOrder.pressed=false;partnerOrder.drawing=false;partnerOrder.path=[];partnerOrder.cursor=null;partnerOrder.signalT=0;partnerOrder.signalKind='point';
  state='play';shake=0;flash=0;msg='';msgT=0;chainToastT=0;oneShotToastT=0;chainToast='';oneShotToast='';interact=false;bombReq=false;skillReq=false;decoy=null;allies=[];partner=null;hound=null;houndTrail=[];allySeq=0;builtWalls=[];tankWrecks=[];radio=null;airstrike=null;airbombs=[];weather='clear';weatherT=0;rainIntensity=0;weatherNext=15+R()*35;baseSpawnT=5;deathT=0;cam=0;camX=0;scoreStats=newScoreStats();
  setupZones();if(rerollSkills)rollSkillChoices();
  waterRipples=[];
@@ -2959,11 +2962,11 @@ function terrainMoveScale(o,dx,dy,r){
  }
  return 1;
 }
-function mv(o,dx,dy,r,slowOverride=null){const slow=Number.isFinite(slowOverride)?slowOverride:terrainMoveScale(o,dx,dy,r);dx*=slow;dy*=slow;const nx=o.x+dx;if(nx>r&&nx<WW-r&&!hitsC(nx,o.y,r)&&!enemyTankObjectBlocked(o,nx,o.y)&&!tankBlocked(o,nx,o.y,r)&&!enemyUnitBlocked(o,nx,o.y,r))o.x=nx;const ny=o.y+dy;if(ny>r&&ny<WH-r&&!hitsC(o.x,ny,r)&&!enemyTankObjectBlocked(o,o.x,ny)&&!tankBlocked(o,o.x,ny,r)&&!enemyUnitBlocked(o,o.x,ny,r))o.y=ny;}
+function mv(o,dx,dy,r,slowOverride=null){if(mazeComparisonEnemyFrozen(o))return;const slow=Number.isFinite(slowOverride)?slowOverride:terrainMoveScale(o,dx,dy,r);dx*=slow;dy*=slow;const nx=o.x+dx;if(nx>r&&nx<WW-r&&!hitsC(nx,o.y,r)&&!enemyTankObjectBlocked(o,nx,o.y)&&!tankBlocked(o,nx,o.y,r)&&!enemyUnitBlocked(o,nx,o.y,r))o.x=nx;const ny=o.y+dy;if(ny>r&&ny<WH-r&&!hitsC(o.x,ny,r)&&!enemyTankObjectBlocked(o,o.x,ny)&&!tankBlocked(o,o.x,ny,r)&&!enemyUnitBlocked(o,o.x,ny,r))o.y=ny;}
 let lastEnemySeparationAt=-1e9;
 function separateEnemyUnits(force=false){
  const now=performance.now();if(!force&&now-lastEnemySeparationAt<100)return;lastEnemySeparationAt=now;
- const u=[];for(const h of humans||[])if(h.alive)u.push({o:h,r:8,static:!!(h.areaDebugStatic||h.modeFrozen)});for(const e of etanks||[])if(e.alive)u.push({o:e,r:TANK_HIT,static:!!(e.static||e.areaDebugStatic||e.modeFrozen)});
+ const u=[];for(const h of humans||[])if(h.alive)u.push({o:h,r:8,static:!!(h.areaDebugStatic||h.modeFrozen||mazeComparisonEnemyFrozen(h))});for(const e of etanks||[])if(e.alive)u.push({o:e,r:TANK_HIT,static:!!(e.static||e.areaDebugStatic||e.modeFrozen||mazeComparisonEnemyFrozen(e))});
  for(let pass=0;pass<3;pass++)for(let i=0;i<u.length;i++)for(let j=i+1;j<u.length;j++){
   const a=u[i],b=u[j],dx=b.o.x-a.o.x,dy=b.o.y-a.o.y,d=Math.hypot(dx,dy),bothHuman=a.r===8&&b.r===8,min=a.r+b.r+(bothHuman?12:8);if(d>=min)continue;
   const ang=d>.001?Math.atan2(dy,dx):((i*2.17+j*1.31)%6.28318),ux=Math.cos(ang),uy=Math.sin(ang),need=min-Math.max(.001,d)+.2;
@@ -3347,7 +3350,7 @@ function pauseAfterEnemyDetection(o){
  o.returnRoute=null;o.returnRetryAt=0;o.stk=0;o.lastAiMode=o.sus>0?'suspicious':'patrol';o.modePause=.5+R()*.5;o.modeFrozen=true;o.walking=false;
 }
 function holdEnemyModePosition(o){
- if(o.modeFrozen&&o.alive&&!(o.blastAirT>0)&&!(o.stun>0)&&!o.houndPinned&&Number.isFinite(o.modeStartX)&&Number.isFinite(o.modeStartY)){o.x=o.modeStartX;o.y=o.modeStartY;o.walking=false;}
+ if((o.modeFrozen||mazeComparisonEnemyFrozen(o))&&o.alive&&!(o.blastAirT>0)&&!(o.stun>0)&&!o.houndPinned&&Number.isFinite(o.modeStartX)&&Number.isFinite(o.modeStartY)){o.x=o.modeStartX;o.y=o.modeStartY;o.walking=false;}
 }
 function enemyModePaused(o,dt=0){
  const mode=o.st?'found':o.sus>0?'suspicious':'patrol';
@@ -3444,6 +3447,7 @@ function coverPerimeterPoint(st,s){
  return{x:rx,y:ry+rh-s};
 }
 function moveHumanChase(h,toT,sp,dt){
+ if(mazeComparisonEnemyFrozen(h))return;
  if(!h.elite){mv(h,Math.cos(toT)*sp*dt,Math.sin(toT)*sp*dt,8);return;}
  const tg=targetObj(h.target),aheadBlocked=hitsC(h.x+Math.cos(toT)*18,h.y+Math.sin(toT)*18,8);
  if(h.wallFollow&&(!covers.includes(h.wallFollow.cover)||!tg))h.wallFollow=null;
@@ -3505,6 +3509,31 @@ function exitDebugFighterToHuman(){
   burst(p.x,p.y,12,'#d9efff',120);
  }
 }
+const mazeCompare={mode:0,switchedAt:0,samples:[null,null,null]};
+const MAZE_COMPARE_NAMES=['通常','敵移動停止','壁描画省略'];
+function mazeComparisonActive(){return debugMode>0&&state==='play';}
+function mazeComparisonEnemyFrozen(o){
+ return mazeComparisonActive()&&mazeCompare.mode===1&&((humans||[]).includes(o)||(etanks||[]).includes(o))&&(o.zoneHeavy==='敵迷路基地'||zoneAt(o.y).n==='敵迷路基地');
+}
+function switchMazeComparison(){
+ if(!mazeComparisonActive()||!p||zoneAt(p.y).n!=='敵迷路基地')return;
+ mazeCompare.mode=(mazeCompare.mode+1)%3;mazeCompare.switchedAt=performance.now();
+ mazeCompare.samples[mazeCompare.mode]=null;
+ updateDebugBadge();
+}
+function recordMazeComparison(updateMs,drawMs,now){
+ if(!mazeComparisonActive()||!p||zoneAt(p.y).n!=='敵迷路基地'||now-mazeCompare.switchedAt<2000)return;
+ const i=mazeCompare.mode;let a=mazeCompare.samples[i];
+ if(!a)mazeCompare.samples[i]=a={frames:0,update:0,draw:0,max:0,raf:0,rafMax:0,stalls:0,started:now};
+ a.frames++;a.update+=updateMs;a.draw+=drawMs;a.max=Math.max(a.max,updateMs+drawMs);
+}
+function recordMazePresentation(gap,now){
+ const a=mazeCompare.samples[mazeCompare.mode];
+ if(!mazeComparisonActive()||!a||!p||zoneAt(p.y).n!=='敵迷路基地'||now-mazeCompare.switchedAt<2000||gap<=0||gap>=2000)return;
+ a.raf++;a.rafMax=Math.max(a.rafMax,gap);if(gap>=120)a.stalls++;
+}
+function resetMazeComparison(){mazeCompare.mode=0;mazeCompare.switchedAt=performance.now();mazeCompare.samples=[null,null,null];}
+document.getElementById('mazeCompareButton').addEventListener('click',e=>{e.stopPropagation();switchMazeComparison();});
 function updateDebugBadge(){
  const badge=document.getElementById('debugBadge');if(!badge)return;
  const hidden=debugMode===0;if(badge.hidden!==hidden)badge.hidden=hidden;
@@ -3519,7 +3548,17 @@ function updateDebugBadge(){
   const d=debugRenderDiagnostic;
   if(MOBILE_VIEW)text+='\n全体：最大 '+Math.round(d.stats.world.max)+'ms／停止 '+d.stats.world.stalls+'回\n背景：最大 '+Math.round(d.stats.terrain.max)+'ms／停止 '+d.stats.terrain.stalls+'回';
  }
- if(badge.textContent!==text)badge.textContent=text;
+ const compareBtn=document.getElementById('mazeCompareButton'),inMaze=mazeComparisonActive()&&p&&zoneAt(p.y).n==='敵迷路基地';
+ if(compareBtn.hidden===!!inMaze)compareBtn.hidden=!inMaze;
+ if(inMaze){
+  const label='比較：'+MAZE_COMPARE_NAMES[mazeCompare.mode]+' → '+MAZE_COMPARE_NAMES[(mazeCompare.mode+1)%3];if(compareBtn.textContent!==label)compareBtn.textContent=label;
+  text+='\n迷路比較：'+MAZE_COMPARE_NAMES[mazeCompare.mode]+'（各10秒以上）';
+  for(let i=0;i<3;i++){const a=mazeCompare.samples[i];if(!a||!a.frames)continue;
+   text+='\n'+MAZE_COMPARE_NAMES[i]+' 更新'+(a.update/a.frames).toFixed(1)+'／描画'+(a.draw/a.frames).toFixed(1)+'ms';
+   text+='\n  '+a.frames+'測定 処理最大'+Math.round(a.max)+'ms 表示間隔最大'+Math.round(a.rafMax)+'ms／停止'+a.stalls+'回';
+  }
+ }
+ const badgeText=document.getElementById('debugBadgeText');if(badgeText.textContent!==text)badgeText.textContent=text;
 }
 let debugRenderDiagnostic=null;
 function beginDebugRenderDiagnostic(){
@@ -3542,7 +3581,7 @@ function updateDebugRenderDiagnostic(dt){
 }
 function toggleDebugInvincible(){
  debugMode=(debugMode+1)%4;debugInvincible=debugMode>0;if(scoreStats&&!scoreStats.finalized)scoreStats.debugUsed=true;
- if(debugMode===0){debugRenderDiagnostic=null;exitDebugFighterToHuman();}
+ if(debugMode===0){resetMazeComparison();debugRenderDiagnostic=null;exitDebugFighterToHuman();}
  if(debugInvincible&&p){
   p.hp=Math.max(3,p.hp||0);
   if(p.tank){p.tank.ch=0;p.tank.mgHits=0;if(p.tank.kind==='fighter')p.tank.hp=Math.max(FIGHTER_TYPE.hp,p.tank.hp||0);}
@@ -6402,6 +6441,7 @@ function draw(near){
  drawBuildingGroundMarks(cx,cy);
  const CC=[['#8a7a55','#6a5d40'],['#8c8c86','#6a6a66'],['#7a5f3a','#4e3c24'],['#55504a','#35322e'],['#b9ab8a','#8f8263'],['#7a5f3a','#4e3c24'],['#2f6b34','#1d4a22'],['#4a5a4a','#33403a'],['#7a7468','#57534a'],['#666865','#4e514e'],['#b9ab8a','#8f8263']];
  for(const c of coversInBox(cx-100,cy-100,cx+W+100,cy+H+100)){
+  if(c.mazeWall&&mazeComparisonActive()&&mazeCompare.mode===2)continue;
   // 空間グリッドで画面周辺の遮蔽物だけ描画する。
   if(c.x+c.w<cx-90||c.x>cx+W+90||c.y+c.h<cy-90||c.y>cy+H+90)continue;
   if(c.fr){drawCoverFragmentGroup(c);continue;}
@@ -7245,7 +7285,7 @@ function recordPresentationOpportunity(now,active){
 function monitorPresentationFrame(n){
  const active=state==='play'&&document.visibilityState!=='hidden';recordPresentationOpportunity(n,active);
  if(active&&gameFramePerf.rafPlay&&gameFramePerf.rafAt!==null){
-  const gap=n-gameFramePerf.rafAt;
+  const gap=n-gameFramePerf.rafAt;recordMazePresentation(gap,performance.now());
   if(debugMode===4&&debugRenderDiagnostic?.active&&gap>0&&gap<2000){
    const sample=debugRenderDiagnostic.stats[debugRenderDiagnostic.phase];sample.max=Math.max(sample.max,gap);if(gap>=120)sample.stalls++;
   }
@@ -7277,6 +7317,7 @@ function recordGameDraw(now){
 }
 function recordGameFrameTiming(interval,started,updateEnd,drawEnd,ended){
  const current={update:updateEnd-started,draw:drawEnd-updateEnd,ui:ended-drawEnd,total:ended-started};
+ recordMazeComparison(current.update,current.draw,ended);
  const prev=gameFramePerf.previous;
  if(state==='play'&&document.visibilityState!=='hidden'&&interval>=120&&interval<2000&&prev){
   const item={at:ended,version:GAME_VERSION,gap:Math.round(interval),update:Math.round(prev.update),draw:Math.round(prev.draw),ui:Math.round(prev.ui),wait:Math.round(Math.max(0,interval-prev.total)),zone:zoneAt(p.y).n,x:Math.round(p.x),y:Math.round(p.y)};
@@ -7325,7 +7366,7 @@ function reportGameError(error){
 }
 requestAnimationFrame(loop);
 </script>
-<script src="js/partner.js?v=2026.10.13.0956"></script>
+<script src="js/partner.js?v=2026.10.13.1010"></script>
 <script>
 (function(){
 // iPhone Chrome/Safari: synthetic KeyboardEvent に依存せず、ゲーム内部の入力状態を直接更新する。
