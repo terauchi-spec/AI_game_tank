@@ -28,11 +28,11 @@ function buildCanyonZones(){
    if(hitsM(x+w/2,y+h/2,r)||(p&&Math.hypot(x+w/2-p.x,y+h/2-p.y)<200))continue;
    covers.push({kd:8,x,y,w,h,wildernessRock:1});made++;rebuildSpatialGrid();
   }
-  const addShrub=(x,y)=>{
-   const w=65+R()*30,h=45+R()*20;if(x<12||x+w>WW-12||y<top+30||y+h>bottom-170||hitsM(x+w/2,y+h/2,40)||bushes.some(b=>circleHitsRect(x+w/2,y+h/2,45,b)))return false;
-   const b={x,y,w,h};if(R()<.15)b.wildFlowers=Array.from({length:3+(R()*3|0)},()=>({dx:w*(.2+R()*.6),dy:h*(.2+R()*.5),white:R()<.55}));bushes.push(b);rebuildSpatialGrid();return true;
+  const addShrub=(x,y,spinifex=false)=>{
+   const w=65+R()*30,h=spinifex?w:45+R()*20;if(x<12||x+w>WW-12||y<top+30||y+h>bottom-170||hitsM(x+w/2,y+h/2,40)||bushes.some(b=>circleHitsRect(x+w/2,y+h/2,45,b)))return false;
+   const b={x,y,w,h,spinifex};if(!spinifex&&R()<.15)b.wildFlowers=Array.from({length:3+(R()*3|0)},()=>({dx:w*(.2+R()*.6),dy:h*(.2+R()*.5),white:R()<.55}));bushes.push(b);rebuildSpatialGrid();return true;
   };
-  for(let i=0,made=0;i<80&&made<3;i++)if(addShrub(35+R()*(WW-135),top+70+R()*Math.max(1,span-360)))made++;
+  for(let i=0,made=0;i<80&&made<3;i++)if(addShrub(35+R()*(WW-135),top+70+R()*Math.max(1,span-360),true))made++;
   if(z.oasis){const o=z.oasis;for(let i=0,made=0;i<160&&made<20;i++){const a=R()*Math.PI*2,rx=o.w/2+55+R()*50,ry=o.h/2+55+R()*50;if(addShrub(o.x+o.w/2+Math.cos(a)*rx-40,o.y+o.h/2+Math.sin(a)*ry-25))made++;}}
  }
  rebuildSpatialGrid();
