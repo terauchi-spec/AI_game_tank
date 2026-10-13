@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.13.1740</title>
+<title>こっそり戦車大作戦 2026.10.13.2002</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -458,6 +458,12 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
  #titleScreen .title-hero-text{bottom:calc(-34px - 10%);}
  #titleScreen .title-hero{margin-bottom:calc(38px + 10vw);}
 }
+#areaDebugPicker{display:none;position:fixed;inset:0;z-index:74;overflow:auto;box-sizing:border-box;padding:max(24px,env(safe-area-inset-top)) 20px max(24px,env(safe-area-inset-bottom));background:#17201b;color:#f5efdb;font-family:system-ui;text-align:center}
+body.area-picker-open #areaDebugPicker{display:block}
+body.area-picker-open #pad,body.area-picker-open #resetBtn,body.area-picker-open #debugToggleBtn,body.area-picker-open #debugBadge{display:none!important}
+.area-debug-panel{max-width:660px;margin:auto}.area-debug-panel h1{font-size:28px;color:#ffe0a0}.area-debug-panel p{font-size:16px;line-height:1.6}
+#areaDebugList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:24px 0}
+#areaDebugPicker button{padding:16px 12px;border:1px solid #9b9874;border-radius:10px;background:#303d30;color:#fff3d4;font:700 20px system-ui;cursor:pointer}#areaDebugPicker button:focus-visible{outline:3px solid #ffd27a;outline-offset:3px}
 </style>
 <style>
 /* 作戦説明は静止DOMで表示し、待機中のゲーム更新・再描画を止める。 */
@@ -534,7 +540,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <div id="debugBadge" hidden><span id="debugBadgeText">無敵モード</span><button id="mazeCompareButton" type="button" hidden>比較：通常 → 敵移動停止</button></div>
 <div id="pad"><div id="stick"><div id="knob"></div></div><div class="btns"><button class="b" id="skillBtn" data-k="KeyS"><span class="coolRing" id="skillCooldown"></span><span class="coolText" id="skillCooldownText"></span><b>S</b><small id="skillLabel">スキル</small></button><button class="b" id="actionBtn" type="button"><span class="coolRing" id="actionCooldown"></span><span class="coolText" id="actionCooldownText"></span><b id="actionGlyph">B</b><small id="actionLabel">爆弾</small></button><button class="b" data-k="KeyA"><b>A</b><small>操作</small></button></div></div>
 <div id="titleScreen" role="region" aria-label="タイトル画面"><div class="title-wrap">
-<div class="title-hero"><img class="title-art" alt="戦場を見下ろす兵士と戦車のイラスト" src="assets/ui/title_hero.webp?v=2026.10.13.1740"><div class="title-hero-text"><div class="title-tag">TACTICAL ACTION GAME</div><h1 class="title-main"><img class="title-logo" src="assets/ui/title_logo.webp?v=2026.10.13.1740" alt="こっそり戦車大作戦"></h1></div></div>
+<div class="title-hero"><img class="title-art" alt="戦場を見下ろす兵士と戦車のイラスト" src="assets/ui/title_hero.webp?v=2026.10.13.2002"><div class="title-hero-text"><div class="title-tag">TACTICAL ACTION GAME</div><h1 class="title-main"><img class="title-logo" src="assets/ui/title_logo.webp?v=2026.10.13.2002" alt="こっそり戦車大作戦"></h1></div></div>
 <nav class="title-actions" aria-label="タイトルメニュー">
 <button type="button" class="title-cta" id="titleStart">ゲームを始める</button>
 <div class="title-secondaries"><button type="button" class="title-secondary" id="titleAwards">称号</button><button type="button" class="title-secondary" id="titleHelp">操作説明</button><button type="button" class="title-secondary" id="titleSpecs">仕様</button><button type="button" class="title-secondary" id="titleDiagnostics">表示診断（停止の調査）</button></div>
@@ -598,7 +604,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <section class="spec-section" id="spec-map"><h2>2. ステージ構成とランダム生成</h2>
 <p>ステージは全7エリア。<strong>最初は草原、最後は敵司令本部</strong>で、その間の5エリアは候補から毎回重複なしでランダムに選ばれます。中間エリアにも草原が選ばれることがあります。</p>
 <p>中間エリア候補：草原／森林／村／丘陵／敵前線基地／街／敵迷路基地／湿地。</p>
-<ul><li>エリアごとに地形や建物、木、岩、草むら、障害物などの配置が異なります。作戦1回の通常車両は合計2〜5台で、トラック・装甲車・戦車からランダムに選ばれ、戦車が最低1台出現します。戦闘機は通常配置の対象外です。橋幅は64〜256px、川ごとの流速は6〜30px/秒です。</li><li>左右端の危険度は<strong>左重点・右重点・両側重点</strong>から毎回抽選され、巡回兵の配置や遮蔽物が変化します。</li><li>迷路基地には広い会議室と幅の広い廊下、空きスペースの木箱があります。青の通常兵はつながった通路を広く探索します。迷路壁は256px高の区画単位で描画をキャッシュし、破壊された区画だけ再描画します。描画キャッシュは最大8区画です。迷路壁はプレイヤー戦車の接触で破壊できます。接触による破壊範囲は少し抑えており、押し込み続けると広がります。トラック・装甲車の接触では破壊できません。木箱等の爆風では破壊できます。敵司令本部にも固有の構造があります。</li><li>道路は川と同様に2か所の候補それぞれで独立して75%の出現抽選を行います。アスファルト舗装・乾いた締め固め土を各50%、土の道路は1車線（96px）・対面2車線（176px）を各50%、舗装道路は対面2車線（176px）・対面4車線（320px）を各50%で選択します。川・橋と司令本部を避けて配置し、土の道路は迷路基地も避けます。舗装道路は迷路基地にも出現し、道幅の壁を除去します。場所が確保できない場合は出現しません。対面車線の中央は白い実線です。路面には汚れ・補修跡・ひび、白線には濃い汚れと不規則な塗装欠けを表現します。敵の障害物迂回探索は複数フレームへ分割し、全敵合計で約2msを目安に処理します。道路の描画は初回にキャッシュし、画面内だけ表示します。土の道路は横筋を抑えた専用タイルを使用し、不規則な路肩が周囲の地面になじみます。中央付近には、太めで濃い雑草を不規則に配置しています。道路上には建物・木・岩・塀・草むら・泥を配置しません。舗装道路と重なる木箱・ドラム缶は路肩の安全な空き場所へ移動し、空き場所がなければ除去します。土の道路は明るさと彩度を抑えて周囲になじませます。道路自体による速度変更はありません。マップ・敵・障害物の配置は出撃ごとに再生成されます。</li></ul>
+<ul><li>エリアごとに地形や建物、木、岩、草むら、障害物などの配置が異なります。作戦1回の通常車両は合計2〜5台で、トラック・装甲車・戦車からランダムに選ばれ、戦車が最低1台出現します。戦闘機は通常配置の対象外です。橋幅は64〜256px、川ごとの流速は6〜30px/秒です。</li><li>左右端の危険度は<strong>左重点・右重点・両側重点</strong>から毎回抽選され、巡回兵の配置や遮蔽物が変化します。</li><li>渓谷には左右いずれかの沢、清流と淵、小さな滝、両側の岩肌や斜面、苔や藪があります。背景をキャッシュし、滝の水流だけ軽く動かします。迷路基地には広い会議室と幅の広い廊下、空きスペースの木箱があります。青の通常兵はつながった通路を広く探索します。迷路壁は256px高の区画単位で描画をキャッシュし、破壊された区画だけ再描画します。描画キャッシュは最大8区画です。迷路壁はプレイヤー戦車の接触で破壊できます。接触による破壊範囲は少し抑えており、押し込み続けると広がります。トラック・装甲車の接触では破壊できません。木箱等の爆風では破壊できます。敵司令本部にも固有の構造があります。</li><li>道路は川と同様に2か所の候補それぞれで独立して75%の出現抽選を行います。アスファルト舗装・乾いた締め固め土を各50%、土の道路は1車線（96px）・対面2車線（176px）を各50%、舗装道路は対面2車線（176px）・対面4車線（320px）を各50%で選択します。川・橋と司令本部を避けて配置し、土の道路は迷路基地も避けます。舗装道路は迷路基地にも出現し、道幅の壁を除去します。場所が確保できない場合は出現しません。対面車線の中央は白い実線です。路面には汚れ・補修跡・ひび、白線には濃い汚れと不規則な塗装欠けを表現します。敵の障害物迂回探索は複数フレームへ分割し、全敵合計で約2msを目安に処理します。道路の描画は初回にキャッシュし、画面内だけ表示します。土の道路は横筋を抑えた専用タイルを使用し、不規則な路肩が周囲の地面になじみます。中央付近には、太めで濃い雑草を不規則に配置しています。道路上には建物・木・岩・塀・草むら・泥を配置しません。舗装道路と重なる木箱・ドラム缶は路肩の安全な空き場所へ移動し、空き場所がなければ除去します。土の道路は明るさと彩度を抑えて周囲になじませます。道路自体による速度変更はありません。マップ・敵・障害物の配置は出撃ごとに再生成されます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-controls"><h2>3. 基本操作</h2>
 <ul><li><strong>PC：</strong>矢印キーで移動。D＝爆弾・乗り物の主攻撃、S＝スキル・戦車MG、A＝乗降・近接アクション。</li><li><strong>スマホ：</strong>左スティックで移動。画面のB・S・Aボタンを使用。</li><li><strong>戦車（スマホ）：</strong>Bをドラッグして砲塔を照準、離すと主砲発射。Sを押し続けてMGを撃ち、ドラッグで照準を動かせます。</li><li><strong>狙撃中：</strong>左右で視点移動、上下で1.5倍／2.5倍／3.5倍レンズを変更。Sで狙撃、Aで解除します。</li></ul>
@@ -697,9 +703,10 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <style>
 #stageScreen{display:none;position:fixed;inset:0;z-index:70;background:rgba(10,18,14,.98);color:#e6e9d6;overflow:auto;padding:24px 18px;box-sizing:border-box;font-family:system-ui}body.stage-open #stageScreen{display:block}.stage-shell{max-width:760px;margin:auto}.stage-shell h1{font-size:28px;margin:10px 0}.stage-shell p{line-height:1.7;color:#bac9b5}.stage-card{display:block;width:100%;text-align:left;color:inherit;background:#23332a;border:2px solid #526549;border-radius:12px;padding:20px;margin:14px 0;cursor:pointer;font:inherit}.stage-card:hover,.stage-card:focus-visible{background:#314738;border-color:#e2c07c}.stage-card strong{font-size:23px;color:#eed5a1}.stage-card span{display:block;margin-top:8px;line-height:1.7}.stage-card small{display:block;color:#a9c8b7;margin-top:8px}.stage-back{padding:12px 20px;background:#344536;color:white;border:1px solid #829474;border-radius:8px;cursor:pointer}#missionHud{display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:12;max-width:90vw;width:480px;box-sizing:border-box;border:1px solid #829474;background:rgba(14,26,19,.9);color:#eef1df;padding:8px 12px;border-radius:8px;font:13px system-ui;pointer-events:none}#missionHud progress{width:100%;height:9px;accent-color:#9dcaa9}#missionHud small{display:block;color:#cee0bc;margin-top:4px}
 </style>
-<div id="missionSuccess" role="dialog" aria-modal="true" aria-labelledby="missionSuccessTitle"><div class="mission-fireworks" aria-hidden="true"><i class="mission-firework" style="left:18%;top:24%;--burst-delay:0.15s"></i><i class="mission-firework" style="left:78%;top:20%;--burst-delay:0.45s"></i><i class="mission-firework" style="left:48%;top:12%;--burst-delay:0.75s"></i><i class="mission-firework" style="left:22%;top:60%;--burst-delay:1.05s"></i><i class="mission-firework" style="left:81%;top:55%;--burst-delay:1.35s"></i></div><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_success.webp?v=2026.10.13.1740" alt="笑顔でジャンプする主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionSuccessTitle">ミッション 成功</h1><button type="button" id="missionSuccessEvaluate">作戦評価</button></div></div></div>
-<div id="missionFailure" role="dialog" aria-modal="true" aria-labelledby="missionFailureTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_failed.webp?v=2026.10.13.1740" alt="倒れてふらつく主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionFailureTitle">ミッション 失敗</h1><button type="button" id="missionEvaluate">作戦評価</button></div></div></div>
-<div id="missionBriefing" role="dialog" aria-modal="true" aria-labelledby="missionBriefingTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_hero.webp?v=2026.10.13.1740" alt="円形爆弾を抱えて走る主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionBriefingTitle">ミッション</h1><p>敵の拠点にたどりつき、破壊せよ</p><ul class="mission-hud-guide" aria-label="ゲーム画面のアイコン説明"><li><img src="assets/ui/ui_heart_full.png" alt="ハート" decoding="async"><span>残りライフ</span></li><li><img src="assets/ui/ui_bomb_normal.png" alt="爆弾" decoding="async"><span>爆弾の設置状態</span></li><li><svg viewBox="-18 -18 36 36" role="img" aria-label="目に斜線"><path d="M-14 0 C-7-11 7-11 14 0 C7 11-7 11-14 0Z" fill="white" stroke="black" stroke-width="3"/><circle r="5" fill="black"/><path d="M-12 11 12-11" stroke="black" stroke-width="3.5"/><path d="M-12 11 12-11" stroke="#ef3434" stroke-width="2"/></svg><span>敵から隠れている状態</span></li></ul><button type="button" id="missionBegin">作戦開始</button></div></div></div>
+<div id="missionSuccess" role="dialog" aria-modal="true" aria-labelledby="missionSuccessTitle"><div class="mission-fireworks" aria-hidden="true"><i class="mission-firework" style="left:18%;top:24%;--burst-delay:0.15s"></i><i class="mission-firework" style="left:78%;top:20%;--burst-delay:0.45s"></i><i class="mission-firework" style="left:48%;top:12%;--burst-delay:0.75s"></i><i class="mission-firework" style="left:22%;top:60%;--burst-delay:1.05s"></i><i class="mission-firework" style="left:81%;top:55%;--burst-delay:1.35s"></i></div><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_success.webp?v=2026.10.13.2002" alt="笑顔でジャンプする主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionSuccessTitle">ミッション 成功</h1><button type="button" id="missionSuccessEvaluate">作戦評価</button></div></div></div>
+<div id="missionFailure" role="dialog" aria-modal="true" aria-labelledby="missionFailureTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_failed.webp?v=2026.10.13.2002" alt="倒れてふらつく主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionFailureTitle">ミッション 失敗</h1><button type="button" id="missionEvaluate">作戦評価</button></div></div></div>
+<section id="areaDebugPicker" aria-labelledby="areaDebugHeading"><div class="area-debug-panel"><h1 id="areaDebugHeading">テストするエリア</h1><p>無敵で地形や遮蔽物を確認できます。<br>開始地点の戦車は弾数・燃料無制限です。</p><div id="areaDebugList"></div><button id="areaDebugBack" type="button">スキル選択に戻る</button></div></section>
+<div id="missionBriefing" role="dialog" aria-modal="true" aria-labelledby="missionBriefingTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_hero.webp?v=2026.10.13.2002" alt="円形爆弾を抱えて走る主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionBriefingTitle">ミッション</h1><p>敵の拠点にたどりつき、破壊せよ</p><ul class="mission-hud-guide" aria-label="ゲーム画面のアイコン説明"><li><img src="assets/ui/ui_heart_full.png" alt="ハート" decoding="async"><span>残りライフ</span></li><li><img src="assets/ui/ui_bomb_normal.png" alt="爆弾" decoding="async"><span>爆弾の設置状態</span></li><li><svg viewBox="-18 -18 36 36" role="img" aria-label="目に斜線"><path d="M-14 0 C-7-11 7-11 14 0 C7 11-7 11-14 0Z" fill="white" stroke="black" stroke-width="3"/><circle r="5" fill="black"/><path d="M-12 11 12-11" stroke="black" stroke-width="3.5"/><path d="M-12 11 12-11" stroke="#ef3434" stroke-width="2"/></svg><span>敵から隠れている状態</span></li></ul><button type="button" id="missionBegin">作戦開始</button></div></div></div>
 <div id="stageScreen" role="region" aria-label="ステージ選択"><div class="stage-shell"><div style="color:#9cbb9b;font-size:12px">CHOOSE YOUR MISSION</div><h1>ステージ選択</h1><p id="stageSkill"></p><button class="stage-card" data-stage="base"><strong>01　拠点破壊</strong><span>敵地を突破し、敵司令本部を破壊せよ。潜入・戦闘・乗り物を組み合わせる従来の作戦。</span><small>バランス型 ／ 目標：司令本部の破壊</small></button><button class="stage-card" data-stage="front"><strong>02　最前線</strong><span>味方部隊と進撃し、3か所の戦線を順番に制圧せよ。円内の敵を排除し、味方と陣地を確保。制圧すると補給と前進増援が到着する。</span><small>戦闘中心 ／ 円内で12秒確保・敵がいると制圧停止</small></button><button class="stage-card" data-stage="stealth"><strong>03　潜入</strong><span>3か所の機密情報を回収し、開始地点の脱出地点へ帰還せよ。徒歩で端末の近くに留まり解析。発見中は解析できず、警戒度が高まると追跡部隊が出現する。</span><small>スニーク中心 ／ 端末で4秒解析・全情報回収後に帰還</small></button><button class="stage-back" id="stageBack">← スキル選択へ</button></div></div><div id="missionHud" role="status"></div>
 
 <script>
@@ -712,7 +719,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.13.1740',FILE_CREATED_AT='2026/10/13 17:40',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.13.2002',FILE_CREATED_AT='2026/10/13 20:02',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -809,6 +816,7 @@ const ZONE_STYLE={
  '敵前線基地':{g:'#5d5f68',p:['#4a4c54','#6d7078','#3d3f47']},
  '街':{g:'#57595e',p:['#47494e','#65686e','#3c3f44','#72757b']},
  '敵迷路基地':{g:'#50535a',p:['#3f4249','#60646c','#34373d','#70747c']},
+ '渓谷':{g:'#67715c',p:['#47574b','#819079','#426f67','#6d7759']},
  '湿地':{g:'#596946',p:['#4a5b39','#697753','#52623f','#76815d']},
  '敵司令本部':{g:'#44464c',p:['#35373c','#53565e','#2a2c31']}
 };
@@ -841,8 +849,8 @@ const COVER_ASSET_SRC={
  "rock":ASSET_DIR+'cover/rock.webp',
  "rock_v2":ASSET_DIR+'cover/rock_v2.webp',
  "maze_wall":ASSET_DIR+'cover/maze_wall.webp',
- "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.webp?v=2026.10.13.1740',
- "barrel":ASSET_DIR+'cover/barrel.webp?v=2026.10.13.1740',
+ "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.webp?v=2026.10.13.2002',
+ "barrel":ASSET_DIR+'cover/barrel.webp?v=2026.10.13.2002',
  "command_building_1":ASSET_DIR+'cover/command_building_1.webp',
  "wood_bridge":ASSET_DIR+'terrain/wood_bridge.webp'
 };
@@ -1549,7 +1557,7 @@ function drawBridgeFancy(b){
 let ZONES=[];
 function setupZones(){
  // 開始エリアは必ず草原。その後の5エリアは草原を含む候補から毎回ランダム選出。
- const pool=['草原','森林','村','丘陵','敵前線基地','街','敵迷路基地','湿地'];
+ const pool=['草原','森林','村','丘陵','敵前線基地','街','敵迷路基地','湿地'];if(stageMode==='base')pool.push('渓谷');
  for(let i=pool.length-1;i>0;i--){const j=R()*(i+1)|0;[pool[i],pool[j]]=[pool[j],pool[i]];}
  const mid=pool.slice(0,5);
  const names=['草原',...mid,'敵司令本部'],edges=[13200,10800,9040,7280,5520,3760,2000,-400];
@@ -1606,16 +1614,16 @@ function skillMenuLayout(){return skillDebugAll?{sy0:88,ch:56,h:52,debugY:602,de
 let gameBuildQueued=false,gameBuildGeneration=0;
 function selectSkillIndex(i,deploy=false){
  const list=skillMenuList();if(i<0||i>=list.length||gameBuildQueued)return false;
- const selected=list[i].id;if(!skillSelectable(selected))return false;if(!deploy){stageMode='base';selectedSkillId=selected;document.body.classList.remove('stage-open');return selectSkillIndex(i,true);}const buildGen=++gameBuildGeneration;skill=selected;
+ const selected=list[i].id;if(!skillSelectable(selected))return false;if(areaDebugEnabled&&!deploy){selectedSkillId=selected;skill=selected;selectedAreaDebug=null;state='areaPick';sfx('skill');return true;}if(!deploy){stageMode='base';selectedSkillId=selected;document.body.classList.remove('stage-open');return selectSkillIndex(i,true);}const buildGen=++gameBuildGeneration;skill=selected;
  state='preparing';bombReq=false;cannonReq=false;interact=false;skillReq=false;mdown=false;gameBuildQueued=true;sfx('skill');
  // 先に「準備中」を1フレーム描画してから重いステージ生成を行う。
  // その間にタイトルへ戻った場合は世代番号で予約済み生成を無効化する。
  requestAnimationFrame(()=>requestAnimationFrame(()=>{
   if(buildGen!==gameBuildGeneration||state!=='preparing'){gameBuildQueued=false;return;}
   reset(false);skill=selected;
-  if(areaDebugEnabled){setupAreaDebugStage();if(hound)resetHoundPosition();}
+  if(areaDebugEnabled&&hound)resetHoundPosition();
   if(buildGen!==gameBuildGeneration){gameBuildQueued=false;return;}
-  state=stageMode==='base'?'briefing':'play';briefingFrameDrawn=false;gameBuildQueued=false;
+  state=areaDebugEnabled?'play':stageMode==='base'?'briefing':'play';briefingFrameDrawn=false;gameBuildQueued=false;
  }));
  return true;
 }
@@ -1774,6 +1782,8 @@ function genCovers(edgeCoverReservations=[]){covers=[];
    // 草むら主体。硬い遮蔽物は控えめだが、木と小岩も少し置く。
    for(let k=0;k<18;k++){const ts=TREE_BOX*(1+R()*.5);tryAdd(6,35+R()*850,ry(),ts,ts,6,18);}
    for(let k=0;k<7;k++)fen(55+R()*760,ry(),80+R()*80,0,R()<.78);
+  }else if(z.n==='渓谷'){
+   for(let k=0;k<14;k++){const side=k%2,xx=side?WW-165:35;tryAdd(8,xx+R()*35,ry(),70+R()*30,70+R()*35,8,12);}
   }else if(z.n==='湿地'){
    // 湿地は草地＋泥＋まばらな草むらが主役。硬い遮蔽物はごく少数。
   }else if(z.n==='森林'){
@@ -1885,7 +1895,7 @@ function genCovers(edgeCoverReservations=[]){covers=[];
      const yy=top+(k+.18+R()*.62)/count*span;
      const x=side==='left'?26+R()*145:WW-210+R()*145;
      let kd=6,w=TREE_BOX,h=TREE_BOX;
-     if(z.n==='丘陵'){kd=8;w=ROCK_W*(.9+R()*.65);h=ROCK_H*(.9+R()*.65);}
+     if(z.n==='丘陵'||z.n==='渓谷'){kd=8;w=ROCK_W*(.9+R()*.65);h=ROCK_H*(.9+R()*.65);}
      else if(z.n==='街'){kd=R()<.68?7:9;w=kd===7?BARRIER_LONG:CONCRETE_MINI_W;h=kd===7?BARRIER_SHORT:CONCRETE_MINI_H;}
      else if(z.n==='村'){kd=R()<.74?6:10;w=kd===6?TREE_BOX:WOOD_MINI_W;h=kd===6?TREE_BOX:WOOD_MINI_H;}
      else if(z.n==='敵前線基地'){kd=R()<.7?7:1;w=kd===7?BARRIER_LONG:85;h=kd===7?BARRIER_SHORT:16;}
@@ -1922,6 +1932,7 @@ function genObjects(){
  const bands=ZONES.map(z=>({n:z.n,y0:z.y0/MAP_SCALE,y1:Math.max(0,z.y1/MAP_SCALE)}));
  for(const z of bands){const top=z.y1+24,bottom=z.y0-24,span=Math.max(90,bottom-top),ry=()=>top+R()*span;
   if(z.n==='草原'){for(let k=0;k<16;k++)tryObject('crate',35+R()*850,ry(),CRATE_W,CRATE_H,9);}
+  else if(z.n==='渓谷'){for(let k=0;k<4;k++)tryObject('crate',300+R()*350,ry(),CRATE_W,CRATE_H,10);}
   else if(z.n==='湿地'){for(let k=0;k<4;k++)tryObject('crate',45+R()*830,ry(),CRATE_W,CRATE_H,10);for(let k=0;k<5;k++)tryObject('barrel',42+R()*836,ry(),BARREL_SIZE,BARREL_SIZE,8);}
   else if(z.n==='村'){for(let k=0;k<6;k++)tryObject('crate',34+R()*850,ry(),CRATE_W,CRATE_H,8);for(let k=0;k<8;k++)tryObject('barrel',40+R()*840,ry(),BARREL_SIZE,BARREL_SIZE,7);}
   else if(z.n==='街'){for(let k=0;k<6;k++)tryObject('barrel',36+R()*850,ry(),BARREL_SIZE,BARREL_SIZE,7);for(let k=0;k<6;k++)tryObject('crate',40+R()*840,ry(),CRATE_W,CRATE_H,9);}
@@ -1937,7 +1948,7 @@ function genObjects(){
  }
 }
 
-const AREA_DEBUG_ORDER=['草原','森林','村','丘陵','敵前線基地','街','敵迷路基地','湿地','敵司令本部'];
+const AREA_DEBUG_ORDER=['草原','森林','村','丘陵','敵前線基地','街','敵迷路基地','湿地','渓谷','敵司令本部'];
 const COVER_DEBUG_NAMES={1:'壁',2:'木箱',3:'コンクリート建物',4:'木造建物',5:'木の柵',6:'木',7:'防護壁',8:'岩',9:'小さなコンクリートの建物',10:'小さな木造の建物'};
 function setupAreaDebugStage(){
  const areaH=1350,bottom=WH-100;
@@ -2587,13 +2598,14 @@ function distributeFlankPatrols(){
 }
 
 function reset(rerollSkills=true){
- clearStaticRasterCache();clearFragmentRenderCache();clearMazeWallChunks();
+ clearStaticRasterCache();clearFragmentRenderCache();clearMazeWallChunks();clearCanyonTiles();
  radioStrikeKillContext=0;burningNatureSet.clear();lastEnemySeparationAt=-1e9;patrolChatScanT=0;allyTargetRefreshAt=0;
  resetMazeComparison();partnerOrder.pressed=false;partnerOrder.drawing=false;partnerOrder.path=[];partnerOrder.cursor=null;partnerOrder.signalT=0;partnerOrder.signalKind='point';
  state='play';shake=0;flash=0;msg='';msgT=0;chainToastT=0;oneShotToastT=0;chainToast='';oneShotToast='';interact=false;bombReq=false;skillReq=false;decoy=null;allies=[];partner=null;hound=null;houndTrail=[];allySeq=0;builtWalls=[];tankWrecks=[];radio=null;airstrike=null;airbombs=[];weather='clear';weatherT=0;rainIntensity=0;weatherNext=15+R()*35;baseSpawnT=5;deathT=0;cam=0;camX=0;scoreStats=newScoreStats();
  setupZones();if(rerollSkills)rollSkillChoices();
  waterRipples=[];
  p={x:WW/2,y:3100,hp:3,tank:null,cc:0,vc:0,ang:-1.57,body:-1.57,dig:0,digPrep:0,digElapsed:0,digExitAnim:0,digExitX:0,digExitY:0,scd:0,scdMax:0,drill:0,drillHit:0,drillTarget:null,drillSfx:0,bushHide:0,grappleT:0,grappleTarget:null,flameFuel:3,flameActive:false,flameLockA:null,flamePath:[],flameSfx:0,flameReach:0,fireExposure:0,sniperMode:false,sniperLockA:null,sniperAimN:0,sniperZoom:1.5,sniperLensChangeT:0,sniperEnterT:0,sniperReadyT:0,sniperExitT:0,sniperFlash:0,sniperHitT:0,sniperHitX:0,sniperHitY:0,sniperFireCd:0,sniperNoiseEvents:[]};touchTurretAngle=null;
+ if(areaDebugEnabled&&selectedAreaDebug){setupSelectedAreaDebugStage();if(skill==='hound')spawnHound();setupMission();return;}
  base={x:WW/2-COMMAND_BASE_W/2,y:60,w:COMMAND_BASE_W,h:COMMAND_BASE_H,hp:30,maxHp:30,deadAt:0};bullets=[];parts=[];bombs=[];waves=[];fx=[];items=[];bushes=[];
  roadBands=[];water=[];bridges=[];mud=[];
  for(const ry of [2675,1325]){
@@ -2694,7 +2706,7 @@ function reset(rerollSkills=true){
  };
  // 通常配置：森林・村・丘陵・街は10人、湿地は8人。指定外のエリアは従来どおり6人。
  // 数にはエリート兵も含む。開始草原・前線基地・迷路基地などの特別配置は別途維持する。
- const zoneHumanCounts={'森林':10,'村':10,'丘陵':10,'街':10,'湿地':8};
+ const zoneHumanCounts={'森林':10,'村':10,'丘陵':10,'街':10,'湿地':8,'渓谷':8};
  for(const z of ZONES.slice(1))addZoneHumans(z,zoneHumanCounts[z.n]??6,'base:'+z.n);
  // 開始草原は敵歩兵4人。開始地点直近の安全圏だけは避けて配置する。
  addZoneHumans(ZONES[0],4,'startGrass');
@@ -2730,10 +2742,10 @@ function reset(rerollSkills=true){
  captureBuildingGroundMarks();
  // 縦4倍化は配列要素をin-placeで動かすため、旧座標で作られた空間グリッドをここで必ず再構築する。
  // これを行わないと、迷路基地など拡大後に行うスポーン判定が古い壁位置を参照してしまう。
- rebuildSpatialGrid();ensurePlayerVehicleSpawns();
+ rebuildSpatialGrid();
  humans.forEach(o=>{sy(o);if(o.path)o.path.forEach(sy);});
  etanks.forEach(o=>{sy(o);if(o.path)o.path.forEach(sy);});
- ensureEnemyTankSpawns();
+ buildCanyonZones();ensurePlayerVehicleSpawns();ensureEnemyTankSpawns();
 
  // 敵迷路基地は密な壁のため通常の route() が失敗しやすい。
  // ランダム座標ではなく、迷路のセル中央を候補にして歩兵20体を分散配置する（うち4体=20%をエリート）。
@@ -3585,7 +3597,7 @@ function updateDebugRenderDiagnostic(dt){
  return null;
 }
 function toggleDebugInvincible(){
- debugMode=(debugMode+1)%4;debugInvincible=debugMode>0;if(scoreStats&&!scoreStats.finalized)scoreStats.debugUsed=true;
+ debugMode=(debugMode+1)%4;debugInvincible=debugMode>0||areaDebugEnabled;if(scoreStats&&!scoreStats.finalized)scoreStats.debugUsed=true;
  if(debugMode===0){resetMazeComparison();debugRenderDiagnostic=null;exitDebugFighterToHuman();}
  if(debugInvincible&&p){
   p.hp=Math.max(3,p.hp||0);
@@ -3599,7 +3611,7 @@ function toggleDebugInvincible(){
 }
 function triggerPlayerDeath(){
  if(state!=='play')return;
- if(debugInvincible){p.hp=Math.max(3,p.hp||0);shake=Math.max(shake,3);flash=Math.max(flash,.12);return;}
+ if(debugInvincible||areaDebugEnabled){p.hp=Math.max(3,p.hp||0);shake=Math.max(shake,3);flash=Math.max(flash,.12);return;}
  p.hp=0;state='dying';deathT=1.35;p.drill=0;p.dig=0;p.digPrep=0;shake=Math.max(shake,16);flash=.65;sfx('deathHit');fb(p.x,p.y,38);burst(p.x,p.y,34,'#ff8a4a',260);burst(p.x,p.y,14,'#fff0a0',330);
 }
 function damagePlayerByOwnBomb(){
@@ -3701,7 +3713,7 @@ function drawTankWrecks(cx,cy){
  }
 }
 function wreck(){
- if(debugInvincible&&p.tank){
+ if((debugInvincible||areaDebugEnabled)&&p.tank){
   p.tank.ch=0;p.tank.mgHits=0;
   if(p.tank.kind==='fighter')p.tank.hp=FIGHTER_TYPE.hp;
   shake=Math.max(shake,4);flash=Math.max(flash,.14);return;
@@ -4856,6 +4868,7 @@ function update(dt){
  const areaDebugInfiniteAmmo=!!(p.tank&&p.tank.kind==='tank'&&(areaDebugEnabled||p.tank.debugInfinite));
  cleanBuiltWalls(cy,cx);updateFlame(dt);if(debugMode>=2)clearPlayerDetection();if(areaDebugInfiniteFuel)p.tank.f=p.tank.t.fmax||100;if(areaDebugInfiniteAmmo){p.tank.c=p.tank.t.cmax;p.tank.v=p.tank.t.vmax;}if(debugMode>=3&&p.tank&&p.tank.kind==='fighter'){p.tank.f=FIGHTER_TYPE.fmax;p.tank.hp=FIGHTER_TYPE.hp;}
  if((ix||iy)&&!sniperLocked&&!(p.grappleT>0)&&!prepDig&&!playerAir){if(!p.tank||p.tank.f>0){const digSwimSlow=(p.dig>0&&inWaterAt(p.x,p.y,r))?.6:null;frameMove=playerMove(ix/il*sp*dt,iy/il*sp*dt,r,dt,digSwimSlow);if(p.tank){if(areaDebugInfiniteFuel)p.tank.f=p.tank.t.fmax||100;else if(!(debugMode>=3&&isFighter))p.tank.f=Math.max(0,p.tank.f-frameMove*.04);else p.tank.f=FIGHTER_TYPE.fmax;if(isWheeled&&frameMove>0){p.tank.lastDriveSpeed=frameMove/Math.max(.001,dt);p.tank.lastDriveAt=performance.now();}}if(!p.flameActive)p.body=Math.atan2(iy,ix);else if(Number.isFinite(p.flameLockA))p.body=p.flameLockA;if(isTruck||isFighter)p.ang=p.body;if(isWheeled&&frameMove>0)checkDrivenTruckCrash();}else if(msgT<=0)say('ガソリン切れ!Aで降車');}
+ if(areaDebugEnabled&&selectedAreaDebug){const z=ZONES[0];p.y=Math.max(z.y1+32,Math.min(z.y0-32,p.y));}
  // 潜伏前の0.5秒は静止して潜行アニメーションを再生。潜伏5秒は準備完了後に開始する。
  if(p.digPrep>0){
   p.digPrep=Math.max(0,p.digPrep-dt);
@@ -5720,7 +5733,7 @@ function generateRoadBands(){
   let y=null;
   for(const offset of [0,360,-360,720,-720,1080,-1080]){
    const center=candidateY+offset,z=zoneAt(center);
-   if((z.n==='敵迷路基地'&&kind!=='asphalt')||z.n==='敵司令本部'||center-h/2<z.y1+50||center+h/2>z.y0-50)continue;
+   if((z.n==='敵迷路基地'&&kind!=='asphalt')||z.n==='渓谷'||z.n==='敵司令本部'||center-h/2<z.y1+50||center+h/2>z.y0-50)continue;
    if(water.some(w=>center+h/2+28>w.y&&center-h/2-28<w.y+w.h)||roadBands.some(r=>Math.abs(center-(r.y+r.h/2))<(h+r.h)/2+150))continue;
    y=center-h/2;break;
   }
@@ -6416,16 +6429,18 @@ function draw(near){
  g.fillStyle='#2b3322';g.fillRect(-20,-20,W+40,H+40);g.translate(-cx,-cy);
  for(const z of ZONES){
   if(z.y0<cy-160||z.y1>cy+H+160)continue;
-  drawTerrainSurface(z,cx,cy);
+  if(z.n!=='渓谷')drawTerrainSurface(z,cx,cy);
  }
  if(debugMode===4&&debugRenderDiagnostic?.active&&debugRenderDiagnostic.phase==='terrain'){
   g.restore();g=gm;gm.imageSmoothingEnabled=false;if(!MOBILE_VIEW)gm.drawImage(oc,0,0,W,H);return;
  }
+ drawCanyonTerrain(cx,cy);
  for(let i=0;i<ZONES.length-1;i++)drawZoneTransition(ZONES[i],ZONES[i+1],cy,cy+H);
  for(const r of roadBands)if(r.y+r.h+24>=cy&&r.y-24<=cy+H)drawRoadBand(r);
  if(areaDebugEnabled)for(const l of areaDebugLabels)lab(l.t,l.x,l.y,l.f,l.c);
  for(const m of (mud||[]))if(m.x+m.w>=cx-12&&m.x<=cx+W+12&&m.y+m.h>=cy-12&&m.y<=cy+H+12)drawMudPatch(m);
  for(const w of water){
+  if(w.canyon)continue;
   const pad=RIVER_BANK_PAD;
   if(w.x+w.w<cx-pad||w.x>cx+W+pad||w.y+w.h<cy-pad||w.y>cy+H+pad)continue;
   const rc=riverVisualCache(w);
@@ -6441,6 +6456,7 @@ function draw(near){
    g.restore();
   }
  }
+ drawCanyonWaterfalls(cx,cy);
  for(const b of bridges)if(drawBoundsInView(b.x,b.y,b.w||100,b.h||100,cx,cy,80))drawBridgeFancy(b);
  // 背景と建物の間に薄い建物跡を置く。建物破壊後も同じ位置に残る。
  drawBuildingGroundMarks(cx,cy);
@@ -6569,7 +6585,7 @@ function draw(near){
  }
  drawLabels(cx,cy);drawVehicleMarkers(cx,cy);
  // 右上のナビ情報は従来どおり。スマホでは状態HUDを左上へ集約する。
- g.fillStyle='#e6e9d8';g.font='bold 14px system-ui';g.textAlign='right';g.fillText('司令部まで '+distanceMeters(p.y-150)+'m',W-12,22);
+ g.fillStyle='#e6e9d8';g.font='bold 14px system-ui';g.textAlign='right';g.fillText(areaDebugEnabled?'エリアテスト：'+zoneAt(p.y).n:'司令部まで '+distanceMeters(p.y-150)+'m',W-12,22);
  g.fillStyle=areaDebugEnabled?'#ffd27a':'#b9c19a';g.font='12px system-ui';g.fillText((areaDebugEnabled?'AREA DEBUG / ':'エリア: ')+zoneAt(p.y).n,W-12,40);
  // 歩兵HUDはHP・爆弾・索敵解除をアイコン化。スマホは左上、PCは左下に表示する。
  drawInfantryBottomHud();drawSkillBottomHud();drawVehicleBottomHud();
@@ -7357,7 +7373,7 @@ function loop(n){
  }while(remain>.000001);
  const frameUpdateEnd=performance.now();
  const gameplayActive=state==='play';if(document.body.classList.contains('gameplay-active')!==gameplayActive)document.body.classList.toggle('gameplay-active',gameplayActive);
- if(shouldDrawGameFrame(n)){draw(near);drawMission();recordGameDraw(n);}const frameDrawEnd=performance.now();syncMissionSuccess();syncMissionFailure();syncMissionBriefing();syncStageScreen();syncResultScreen();syncSkillScreen();syncTitleScreen();syncHelpScreen();syncSpecScreen();
+ if(shouldDrawGameFrame(n)){draw(near);drawMission();recordGameDraw(n);}const frameDrawEnd=performance.now();syncMissionSuccess();syncMissionFailure();syncMissionBriefing();syncStageScreen();syncResultScreen();syncSkillScreen();syncAreaDebugPicker();syncTitleScreen();syncHelpScreen();syncSpecScreen();
  recordGameFrameTiming(frameInterval,frameStarted,frameUpdateEnd,frameDrawEnd,performance.now());
  if(firstMenuFrame){firstMenuFrame=false;setTimeout(startAssetLoading,0);}
  }catch(error){reportGameError(error);}finally{queueNextGameFrame(loopStarted);}
@@ -7372,8 +7388,9 @@ function reportGameError(error){
 }
 requestAnimationFrame(loop);
 </script>
-<script src="js/partner.js?v=2026.10.13.1740"></script>
-<script src="js/maze-walls.js?v=2026.10.13.1740"></script>
+<script src="js/partner.js?v=2026.10.13.2002"></script>
+<script src="js/maze-walls.js?v=2026.10.13.2002"></script>
+<script src="js/canyon.js?v=2026.10.13.2002"></script>
 <script>
 (function(){
 // iPhone Chrome/Safari: synthetic KeyboardEvent に依存せず、ゲーム内部の入力状態を直接更新する。
