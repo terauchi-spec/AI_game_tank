@@ -2,9 +2,9 @@
 const wildernessRockCache=new Map();
 let sandIntensity=0,sandDuration=4.5,sandTime=0,sandTravel=0,sandWindSpeed=0;
 const SAND_WIND_X=.9537,SAND_WIND_Y=-.3007,tumbleweeds=[];
-let tumbleweedZone=null,tumbleweedCache=null;
+let tumbleweedZone=null,tumbleweedCache=null,sandWeatherZone=null,sandCloudCache=null;
 function clearCanyonTiles(){
- for(const c of wildernessRockCache.values())invalidateStaticRaster(c);wildernessRockCache.clear();sandIntensity=0;sandTime=0;sandTravel=0;sandWindSpeed=0;tumbleweeds.length=0;tumbleweedZone=null;
+ for(const c of wildernessRockCache.values())invalidateStaticRaster(c);wildernessRockCache.clear();sandIntensity=0;sandTime=0;sandTravel=0;sandWindSpeed=0;tumbleweeds.length=0;tumbleweedZone=null;sandWeatherZone=null;
 }
 function oasisContains(w,x,y,r=0){const rx=w.w/2+r,ry=w.h/2+r;return ((x-w.x-w.w/2)/rx)**2+((y-w.y-w.h/2)/ry)**2<1;}
 function wildernessRockSprite(c){
@@ -139,10 +139,11 @@ function updateTumbleweedStealth(){
  const covered=inTumbleweed(p);if(covered){clearPlayerDetection();for(const o of [...humans,...etanks])if(o._detectCache?.key==='p'){o._detectCache=null;o._nextDetectAt=0;}}return covered;
 }
 function resetTumbleweed(b,z,i,initial=false){
- const top=initial?z.y1+50:Math.max(z.y1+50,p.y-H*.7),bottom=initial?z.y0-70:Math.min(z.y0-70,p.y+H*.45);b.r=(13+i%3*3)*2*.6;b.rot=b.rot||0;
+ const viewX=Math.max(0,Math.min(WW-W,p.x-W/2)),viewY=Math.max(0,Math.min(WH-H,p.y-H*.6));
+ const top=initial?z.y1+50:Math.max(z.y1+50,viewY+70),bottom=initial?z.y0-70:Math.min(z.y0-70,viewY+H-70);b.r=(13+i%3*3)*2*.6;b.rot=b.rot||0;b.avoidT=0;
  for(let tries=0;tries<24;tries++){
   b.seed=((b.seed||571+i*913)*1664525+1013904223)>>>0;const f=b.seed/4294967296;
-  b.x=35+(i*179+f*87+tries*71)%(WW-70);b.y=top+Math.max(1,bottom-top)*((i*.217+f)%1);
+  b.x=initial?35+(i*179+f*87+tries*71)%(WW-70):viewX-b.r-50;b.y=top+Math.max(1,bottom-top)*((i*.217+f)%1);
   if((!z.oasis||!oasisContains(z.oasis,b.x,b.y,b.r))&&!tumbleweedRockHit(b.x,b.y,b.r))break;
  }
 }
@@ -159,7 +160,8 @@ function updateTumbleweeds(dt,z){
   b.avoidT=Math.max(0,(b.avoidT||0)-dt);let a=b.avoidT>0?b.avoidA:wind,x=b.x+Math.cos(a)*travel,y=b.y+Math.sin(a)*travel;
   if(!clear(x,y)){let found=false;const side=i%2?1:-1;for(const off of [.65,1.1,1.57]){for(const sign of [side,-side]){const aa=wind+off*sign,xx=b.x+Math.cos(aa)*travel,yy=b.y+Math.sin(aa)*travel;if(clear(xx,yy)){a=aa;x=xx;y=yy;b.avoidA=aa;b.avoidT=.4;found=true;break;}}if(found)break;}if(!found)continue;}
   b.x=x;b.y=y;b.rot+=travel/b.r;
-  if(b.x>WW+45||b.y<z.y1+35){resetTumbleweed(b,z,i);}
+  const viewX=Math.max(0,Math.min(WW-W,p.x-W/2)),viewY=Math.max(0,Math.min(WH-H,p.y-H*.6));
+  if(b.x-b.r>viewX+W+45||b.y+b.r<viewY-45){resetTumbleweed(b,z,i);}
  }
 }
 function drawTumbleweeds(cx,cy){
@@ -169,21 +171,28 @@ function drawTumbleweeds(cx,cy){
 }
 function updateSandstorm(dt){
  const z=p&&zoneAt(p.y),arid=z&&z.n==='荒野';
- if(!arid){sandIntensity=0;sandWindSpeed=0;if(weather==='sandstorm'){weather='clear';weatherT=0;weatherNext=20+R()*30;}return false;}
- if(weather==='rain'){weather='clear';weatherT=0;weatherNext=8+R()*12;}
+ if(!arid){sandIntensity=0;sandWindSpeed=0;sandWeatherZone=null;if(weather==='sandstorm'){weather='clear';weatherT=0;weatherNext=20+R()*30;}return false;}
+ if(sandWeatherZone!==z){sandWeatherZone=z;weather='clear';weatherT=0;weatherNext=10;}
+ if(weather==='rain'){weather='clear';weatherT=0;weatherNext=10;}
  rainIntensity=0;sandTime+=dt;
- if(weather==='sandstorm'){weatherT=Math.max(0,weatherT-dt);if(weatherT===0){weather='clear';weatherNext=22+R()*40;say('砂嵐が収まった');}}
+ if(weather==='sandstorm'){weatherT=Math.max(0,weatherT-dt);if(weatherT===0){weather='clear';weatherNext=Math.max(0,10-sandDuration);say('砂嵐が収まった');}}
  else{weatherNext-=dt;if(weatherNext<=0){weather='sandstorm';sandDuration=3+R()*3;weatherT=sandDuration;say('砂嵐：視界と索敵距離が低下');}}
  const k=weather==='sandstorm'?Math.max(0,Math.min(1,(sandDuration-weatherT)/.45,weatherT/.75)):0;sandIntensity=k*k*(3-2*k);
  const gust=.70+.30*(.5+.5*Math.sin(sandTime*2.3+Math.sin(sandTime*.71)));
  sandWindSpeed=620*sandIntensity*gust;sandTravel+=sandWindSpeed*dt;updateTumbleweeds(dt,z);return true;
 }
+function sandCloudSprite(){
+ if(sandCloudCache)return sandCloudCache;const c=document.createElement('canvas');c.width=256;c.height=96;const q=gameCanvasContext(c);
+ for(let i=0;i<3;i++){q.save();q.translate(60+i*68,48);q.scale(1,.38);const gr=q.createRadialGradient(0,0,4,0,0,90);gr.addColorStop(0,'rgba(226,190,128,.48)');gr.addColorStop(.55,'rgba(205,162,97,.26)');gr.addColorStop(1,'rgba(205,162,97,0)');q.fillStyle=gr;q.fillRect(-100,-100,200,200);q.restore();}sandCloudCache=c;return c;
+}
 function drawSandstormOverlay(){
  if(sandIntensity<=0)return;const q=gm,s=sandIntensity,t=sandTravel;
- q.save();q.fillStyle='rgba(145,92,45,'+(.35*s)+')';q.fillRect(0,0,W,H);q.lineCap='round';
+ q.save();q.fillStyle='rgba(164,116,62,'+(.58*s)+')';q.fillRect(0,0,W,H);q.lineCap='round';
  // Both displacement and streak tails follow the same wind vector as the weeds.
  const wrap=(v,n)=>(v%n+n)%n;
- for(let i=0;i<40;i++){
+ const cloud=staticRasterSource(sandCloudSprite());q.globalAlpha=.46*s;
+ for(let i=0;i<2;i++){const x=wrap(i*(W+260)*.5+t*SAND_WIND_X*.32,W+260)-130,y=wrap(i*H*.6+t*SAND_WIND_Y*.24,H+220)-110;q.save();q.translate(x,y);q.rotate(Math.atan2(SAND_WIND_Y,SAND_WIND_X));q.drawImage(cloud,-W*.6,-H*.14,W*1.2,H*.28);q.restore();}q.globalAlpha=1;
+ for(let i=0;i<32;i++){
   const speed=.72+(i%5)*.13,x=wrap(i*137+t*SAND_WIND_X*speed,W+240)-120,y=wrap(i*173+t*SAND_WIND_Y*speed,H+160)-80,len=35+i%6*13;
   q.strokeStyle='rgba(244,205,147,'+((.16+i%3*.075)*s)+')';q.lineWidth=1+i%3*.65;q.beginPath();q.moveTo(x-SAND_WIND_X*len,y-SAND_WIND_Y*len);q.lineTo(x,y);q.stroke();
  }
@@ -205,7 +214,7 @@ function setupSelectedAreaDebugStage(){
  covers=covers.filter(c=>!circleHitsRect(WW/2,p.y-50,145,coverSpriteRect(c)||c));
  objects=objects.filter(o=>!circleHitsRect(WW/2,p.y-50,170,o));bushes=bushes.filter(b=>!circleHitsRect(WW/2,p.y-50,170,b));mud=mud.filter(m=>!circleHitsRect(WW/2,p.y-50,170,m));
  const type=TYPES[0];cars.push({x:WW/2+75,y:p.y-60,t:type,kind:'tank',hp:type.hp,c:type.cmax,v:type.vmax,f:type.fmax,ch:0,body:-Math.PI/2,areaDebug:1,debugInfinite:1});
- weather='clear';weatherT=0;weatherNext=name==='荒野'?8+R()*10:99999;rainIntensity=0;baseSpawnT=99999;radio=null;airstrike=null;airbombs=[];debugMode=1;debugInvincible=true;
+ weather='clear';weatherT=0;weatherNext=name==='荒野'?10:99999;rainIntensity=0;baseSpawnT=99999;radio=null;airstrike=null;airbombs=[];debugMode=1;debugInvincible=true;
  captureBuildingGroundMarks();rebuildSpatialGrid();say(name+' テスト：無敵／戦車の弾数・燃料無制限');
 }
 function syncAreaDebugPicker(){document.body.classList.toggle('area-picker-open',state==='areaPick');}
