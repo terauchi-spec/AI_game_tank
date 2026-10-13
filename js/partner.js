@@ -133,9 +133,25 @@ function partnerVehicleMove(q,goal,speed,dt){
  if(moved>.05){q.face=Math.atan2(q.y-oldY,q.x-oldX);if(!v.debugInfinite&&!v.areaDebug&&!areaDebugEnabled)v.f=Math.max(0,v.f-moved*.04);}
  v.x=q.x;v.y=q.y;v.body=q.face;
 }
+function partnerWaterMovement(q,ox,oy){
+ const v=q.vehicle;
+ if(q.passengerVehicle||(v&&v.kind==='fighter')){q.waterWakeDistance=0;return;}
+ const moved=Math.hypot(q.x-ox,q.y-oy);if(moved<=.05)return;
+ const r=v?(v.kind==='truck'?20:15):8,wet=inWaterAt(q.x,q.y,r);
+ if(!wet){q.waterWakeDistance=0;return;}
+ if(!inWaterAt(ox,oy,r)){
+  sfx('splash');burst(q.x,q.y+3,8,'#c3f1fd',65);
+  addWaterRipple(q.x,q.y+3,v?22:10,1.6);q.waterWakeDistance=0;
+ }else{
+  q.waterWakeDistance=(q.waterWakeDistance||0)+moved;
+  if(q.waterWakeDistance>=(v?22:13)){addWaterRipple(q.x,q.y+3,v?22:10);q.waterWakeDistance=0;}
+ }
+}
 function partnerCompanionMove(q,goal,speed,dt){
+ const ox=q.x,oy=q.y;
  if(q.vehicle)partnerVehicleMove(q,goal,speed,dt);
  else moveAllySmart(q,goal,speed,dt);
+ partnerWaterMovement(q,ox,oy);
 }
 function partnerVehicleAttack(q,dt){
  const v=q.vehicle;if(!v||q.down||q.stunT>0)return;
@@ -262,6 +278,7 @@ function partnerKnockoutPatrol(dt){
  // Otherwise pursuit interrupts autonomous/backup/routed walking.
  const ox=q.x,oy=q.y;
  moveAllySmart(q,target,180,dt);
+ partnerWaterMovement(q,ox,oy);
  q.moving=Math.hypot(q.x-ox,q.y-oy)>.1;
  if(q.moving)q.face=Math.atan2(q.y-oy,q.x-ox);
  return true;
@@ -452,6 +469,10 @@ function drawPartnerHandSign(x,y,pointing){
  g.beginPath();g.moveTo(-4,14);g.lineTo(0,21);g.lineTo(5,14);g.fill();g.stroke();
  g.font='25px system-ui';g.textAlign='center';g.textBaseline='middle';g.fillStyle='#222';g.fillText(pointing==='call'?'🫴':pointing?'👉':'✊',0,0);g.restore();
 }
+function drawPartnerOrderSignal(){
+ const q=partner;if(skill!=='partner'||!q||!p||q.down||q.stunT>0)return;
+ if(partnerOrder.drawing||partnerOrder.signalT>0)drawPartnerHandSign(p.x,p.y,partnerOrder.drawing?false:partnerOrder.signalKind);
+}
 function drawPartner(){
  if(!partner||skill!=='partner')return;const q=partner;
  if(q.passengerVehicle===p.tank&&p.tank)return;
@@ -466,9 +487,6 @@ function drawPartner(){
   g.restore();
  }
 
- if(!q.down&&!(q.stunT>0)&&(partnerOrder.drawing||partnerOrder.signalT>0)){
-  const pointing=partnerOrder.drawing?false:partnerOrder.signalKind;drawPartnerHandSign(p.x,p.y,pointing);
- }
 
  if(q.down){
   // 横たわった兵士：頭・胴体・曲がった腕・開いた脚を静止描画。
