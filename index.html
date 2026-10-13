@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.14.0018</title>
+<title>こっそり戦車大作戦 2026.10.14.0027</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -540,7 +540,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <div id="debugBadge" hidden><span id="debugBadgeText">無敵モード</span><button id="mazeCompareButton" type="button" hidden>比較：通常 → 敵移動停止</button></div>
 <div id="pad"><div id="stick"><div id="knob"></div></div><div class="btns"><button class="b" id="skillBtn" data-k="KeyS"><span class="coolRing" id="skillCooldown"></span><span class="coolText" id="skillCooldownText"></span><b>S</b><small id="skillLabel">スキル</small></button><button class="b" id="actionBtn" type="button"><span class="coolRing" id="actionCooldown"></span><span class="coolText" id="actionCooldownText"></span><b id="actionGlyph">B</b><small id="actionLabel">爆弾</small></button><button class="b" data-k="KeyA"><b>A</b><small>操作</small></button></div></div>
 <div id="titleScreen" role="region" aria-label="タイトル画面"><div class="title-wrap">
-<div class="title-hero"><img class="title-art" alt="戦場を見下ろす兵士と戦車のイラスト" src="assets/ui/title_hero.webp?v=2026.10.14.0018"><div class="title-hero-text"><div class="title-tag">TACTICAL ACTION GAME</div><h1 class="title-main"><img class="title-logo" src="assets/ui/title_logo.webp?v=2026.10.14.0018" alt="こっそり戦車大作戦"></h1></div></div>
+<div class="title-hero"><img class="title-art" alt="戦場を見下ろす兵士と戦車のイラスト" src="assets/ui/title_hero.webp?v=2026.10.14.0027"><div class="title-hero-text"><div class="title-tag">TACTICAL ACTION GAME</div><h1 class="title-main"><img class="title-logo" src="assets/ui/title_logo.webp?v=2026.10.14.0027" alt="こっそり戦車大作戦"></h1></div></div>
 <nav class="title-actions" aria-label="タイトルメニュー">
 <button type="button" class="title-cta" id="titleStart">ゲームを始める</button>
 <div class="title-secondaries"><button type="button" class="title-secondary" id="titleAwards">称号</button><button type="button" class="title-secondary" id="titleHelp">操作説明</button><button type="button" class="title-secondary" id="titleSpecs">仕様</button><button type="button" class="title-secondary" id="titleDiagnostics">表示診断（停止の調査）</button></div>
@@ -574,7 +574,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
     <div class="help-row"><span class="help-key">狙撃</span><span class="help-text"><span class="help-highlight">Sで構え、狙撃中はSで発射</span>。←→で視点を動かし、↑↓でレンズを<span class="help-highlight">1.5 / 2.5 / 3.5倍</span>に切替。Aで解除。</span></div>
   </div></section>
   <section class="help-block"><h2>出撃からクリアまで</h2>
-    <div class="help-step"><strong>1</strong><span><b>スキル・ステージ選択</b>：初回は「投擲」のみ。スキルを選び、3種類の作戦から出撃。</span></div>
+    <div class="help-step"><strong>1</strong><span><b>スキル・ステージ選択</b>：初回は「遠投」のみ。スキルを選び、3種類の作戦から出撃。</span></div>
     <div class="help-step"><strong>2</strong><span><b>潜入・戦闘</b>：敵の警戒と地形を見ながら進軍。マルチキルやワンショットキルも評価の対象。</span></div>
     <div class="help-step"><strong>3</strong><span><b>任務完了</b>：選んだ作戦の目標を達成してクリア。通常プレイでクリアするたびにスキルが1つ解放される。</span></div>
     <div class="help-step"><strong>4</strong><span><b>評価・戦績</b>：スコア、8軸のプレイスタイル、称号・勲章を確認。タイトルの「称号」では獲得履歴と戦績も見られる。</span></div>
@@ -661,7 +661,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <section class="spec-section" id="spec-skills"><h2>8. 10種類のスキル</h2>
 <p>通常プレイでは出撃前に<strong>解放済みスキルから1種類</strong>を選択します。スキルごとに使用方法・持続時間・チャージが異なります。</p>
 <ul>
-<li><strong>投擲：</strong>進行方向へ最大11mの距離で爆弾を投げます。5秒で再使用可能。</li>
+<li><strong>遠投：</strong>進行方向へ最大11mの距離で爆弾を投げます。5秒で再使用可能。</li>
 <li><strong>潜伏：</strong>0.5秒静止して潜伏準備後、最大5秒間潜伏。解除後は5秒チャージ。水中は移動速度60%、泥では潜伏を解除します。潜伏開始1秒後に敵表示が隠れます。</li>
 <li><strong>偽装：</strong>5秒間残る身代わりを設置して敵の注意をそらします。赤い電波が約1.25秒間隔で半径300pxまで滑らかに広がります。見やすいように少し濃い単色の赤いリングで描いています。身代わり周囲の残り時間の円形ゲージは表示せず、終了時は赤い粒が短く散って消えます。電波の表示範囲と敵を誘導する範囲は別です。チャージ8秒。</li>
 <li><strong>相棒：</strong>青いヘルメットラインの味方が敵司令本部を目指しつつプレイヤーの歩調を模倣します。プレイヤーの行動から潜入・慎重移動・通常前進・突破・戦闘・退避を判断し、約0.35秒ごとに移動先を選びます。草むらや遮蔽物を活用し、速度と距離を調整しながら同行します。交戦時は敵に援護射撃します。画面内にとどまり、敵の攻撃対象にもなります。HP3で、倒れると赤十字の救急箱アイコンが表示され、徒歩で触れると回復します。プレイヤーの設置爆弾の爆風で5秒間気絶し、接触すると早期復帰します。行動モードを問わず100px以内の敵兵に近づき、25px以内で羽交い絞めにして気絶させます。相棒が気絶中は敵兵と同じ星のアイコンが回転します。ルート線上・その50px以内に未搭乗の乗り物があれば、移動途中で搭乗してルートに沿って進みます。戦車は主砲・機銃、装甲車は機銃で援護し、武器を持たないトラックは体当たりで戦います。S短押しで手のひらを上に向けた手招きの吹き出しを出してプレイヤーへ戻るバックアップモード、0.18秒の長押しでプレイヤーだけの吹き出しにグーのハンドサインを表示して移動キーでルートを描き、離すと指差しのハンドサインへ切り替わり、すぐにルート移動を始めます。指差しの吹き出しは1秒間表示します。スキルボタンを押している間はプレイヤーが移動できません。青い破線の先端に進行方向の矢印を表示します。相棒がプレイヤーの乗り物に同乗すると機銃を相棒が担当し、プレイヤーは機銃を撃てません。プレイヤーが相棒の乗り物に同乗すると、相棒が設定済みルートを運転し、プレイヤーが機銃を担当します。同乗アイコンは車体に重ねて表示します。ルート作成中に壁に触れた場合は描き始めへ戻し、移動中に立ち往生した場合も開始地点へ戻ります。ルート確定後は指示線を表示しません。救助待ちや気絶中でも、画面外10秒またはプレイヤーから長時間離れると画面内の救助可能な場所へ復帰します。</li>
@@ -680,7 +680,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <ul><li>クリアまたは失敗後の評価画面に、総合スコアと<strong>F〜Sの7段階ランク</strong>を表示します。</li><li>スコアは潜入・戦闘・任務達成・クリア時間などをもとに計算します。到達距離は出撃開始地点からの最大前進距離です。距離表示はすべてm単位です。</li><li>プレイスタイルを<strong>潜入／索敵／射撃／戦闘／爆破／機動／戦術／生存</strong>の8軸（Lv0〜5）で評価します。索敵は未発見での前進距離、射撃は発射数あたりの撃破効率などを指標にします。</li><li><strong>マルチキル：</strong>撃破間隔4秒以内で続けて敵を撃破すること。<strong>ワンショットキル：</strong>同一攻撃で複数の敵を撃破すること。無線支援爆撃とその連鎖爆発は、マルチキル・ワンショットキルの対象外です。</li><li>条件を満たすと称号・勲章を獲得。タイトル画面の「称号」からコレクションと累計戦績を確認できます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-save"><h2>11. スキル解放・保存・デバッグ</h2>
-<ul><li>初期解放スキルは<strong>投擲</strong>。通常プレイでクリアするたびに、新しいスキルが順番に1種類ずつ解放されます。</li><li>スキル解放・称号・勲章・ハイスコア・戦績などは、このブラウザ内に保存されます。</li><li>称号画面の「戦績」から保存データを初期化できます。初期化は取り消せません。</li><li>デバッグではPキー（スマホは上部アイコン）で「無敵→無敵＋索敵解除→無敵＋戦闘機（燃料無限）→通常」を切り替え、描画診断ではAI・衝突等の更新を止め、最初の15秒はゲーム画面全体、次の15秒は背景だけを、同じ経路で自動スクロールします。終了後は無敵＋戦闘機に戻ります。Oキーで前方に戦車を出現、Lキーで巡回ルート表示を切り替えられます。スキル選択画面には全スキル表示とエリアデバッグがあります。エリアデバッグでは全エリアの遮蔽物・静止した敵のサンプルを確認でき、出発地点付近にガソリンと無線を配置しています。デバッグ用ガソリンは徒歩でも表示され、取得には乗車が必要です。デバッグプレイの実績は通常の称号・勲章・戦績やスキル解放の対象外です。</li></ul>
+<ul><li>初期解放スキルは<strong>遠投</strong>。通常プレイでクリアするたびに、新しいスキルが順番に1種類ずつ解放されます。</li><li>スキル解放・称号・勲章・ハイスコア・戦績などは、このブラウザ内に保存されます。</li><li>称号画面の「戦績」から保存データを初期化できます。初期化は取り消せません。</li><li>デバッグではPキー（スマホは上部アイコン）で「無敵→無敵＋索敵解除→無敵＋戦闘機（燃料無限）→通常」を切り替え、描画診断ではAI・衝突等の更新を止め、最初の15秒はゲーム画面全体、次の15秒は背景だけを、同じ経路で自動スクロールします。終了後は無敵＋戦闘機に戻ります。Oキーで前方に戦車を出現、Lキーで巡回ルート表示を切り替えられます。スキル選択画面には全スキル表示とエリアデバッグがあります。エリアデバッグでは全エリアの遮蔽物・静止した敵のサンプルを確認でき、出発地点付近にガソリンと無線を配置しています。デバッグ用ガソリンは徒歩でも表示され、取得には乗車が必要です。デバッグプレイの実績は通常の称号・勲章・戦績やスキル解放の対象外です。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <p class="spec-foot">仕様は Ver.<span id="specVersion"></span> 時点の内容です。ゲームの更新に伴い変更される場合があります。</p>
 </div></div>
@@ -703,10 +703,10 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <style>
 #stageScreen{display:none;position:fixed;inset:0;z-index:70;background:rgba(10,18,14,.98);color:#e6e9d6;overflow:auto;padding:24px 18px;box-sizing:border-box;font-family:system-ui}body.stage-open #stageScreen{display:block}.stage-shell{max-width:760px;margin:auto}.stage-shell h1{font-size:28px;margin:10px 0}.stage-shell p{line-height:1.7;color:#bac9b5}.stage-card{display:block;width:100%;text-align:left;color:inherit;background:#23332a;border:2px solid #526549;border-radius:12px;padding:20px;margin:14px 0;cursor:pointer;font:inherit}.stage-card:hover,.stage-card:focus-visible{background:#314738;border-color:#e2c07c}.stage-card strong{font-size:23px;color:#eed5a1}.stage-card span{display:block;margin-top:8px;line-height:1.7}.stage-card small{display:block;color:#a9c8b7;margin-top:8px}.stage-back{padding:12px 20px;background:#344536;color:white;border:1px solid #829474;border-radius:8px;cursor:pointer}#missionHud{display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:12;max-width:90vw;width:480px;box-sizing:border-box;border:1px solid #829474;background:rgba(14,26,19,.9);color:#eef1df;padding:8px 12px;border-radius:8px;font:13px system-ui;pointer-events:none}#missionHud progress{width:100%;height:9px;accent-color:#9dcaa9}#missionHud small{display:block;color:#cee0bc;margin-top:4px}
 </style>
-<div id="missionSuccess" role="dialog" aria-modal="true" aria-labelledby="missionSuccessTitle"><div class="mission-fireworks" aria-hidden="true"><i class="mission-firework" style="left:18%;top:24%;--burst-delay:0.15s"></i><i class="mission-firework" style="left:78%;top:20%;--burst-delay:0.45s"></i><i class="mission-firework" style="left:48%;top:12%;--burst-delay:0.75s"></i><i class="mission-firework" style="left:22%;top:60%;--burst-delay:1.05s"></i><i class="mission-firework" style="left:81%;top:55%;--burst-delay:1.35s"></i></div><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_success.webp?v=2026.10.14.0018" alt="笑顔でジャンプする主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionSuccessTitle">ミッション 成功</h1><button type="button" id="missionSuccessEvaluate">作戦評価</button></div></div></div>
-<div id="missionFailure" role="dialog" aria-modal="true" aria-labelledby="missionFailureTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_failed.webp?v=2026.10.14.0018" alt="倒れてふらつく主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionFailureTitle">ミッション 失敗</h1><button type="button" id="missionEvaluate">作戦評価</button></div></div></div>
+<div id="missionSuccess" role="dialog" aria-modal="true" aria-labelledby="missionSuccessTitle"><div class="mission-fireworks" aria-hidden="true"><i class="mission-firework" style="left:18%;top:24%;--burst-delay:0.15s"></i><i class="mission-firework" style="left:78%;top:20%;--burst-delay:0.45s"></i><i class="mission-firework" style="left:48%;top:12%;--burst-delay:0.75s"></i><i class="mission-firework" style="left:22%;top:60%;--burst-delay:1.05s"></i><i class="mission-firework" style="left:81%;top:55%;--burst-delay:1.35s"></i></div><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_success.webp?v=2026.10.14.0027" alt="笑顔でジャンプする主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionSuccessTitle">ミッション 成功</h1><button type="button" id="missionSuccessEvaluate">作戦評価</button></div></div></div>
+<div id="missionFailure" role="dialog" aria-modal="true" aria-labelledby="missionFailureTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_failed.webp?v=2026.10.14.0027" alt="倒れてふらつく主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionFailureTitle">ミッション 失敗</h1><button type="button" id="missionEvaluate">作戦評価</button></div></div></div>
 <section id="areaDebugPicker" aria-labelledby="areaDebugHeading"><div class="area-debug-panel"><h1 id="areaDebugHeading">テストするエリア</h1><p>無敵で地形や遮蔽物を確認できます。<br>開始地点の戦車は弾数・燃料無制限です。</p><div id="areaDebugList"></div><button id="areaDebugBack" type="button">スキル選択に戻る</button></div></section>
-<div id="missionBriefing" role="dialog" aria-modal="true" aria-labelledby="missionBriefingTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_hero.webp?v=2026.10.14.0018" alt="円形爆弾を抱えて走る主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionBriefingTitle">ミッション</h1><p>敵の拠点にたどりつき、破壊せよ</p><ul class="mission-hud-guide" aria-label="ゲーム画面のアイコン説明"><li><img src="assets/ui/ui_heart_full.png" alt="ハート" decoding="async"><span>残りライフ</span></li><li><img src="assets/ui/ui_bomb_normal.png" alt="爆弾" decoding="async"><span>爆弾の設置状態</span></li><li><svg viewBox="-18 -18 36 36" role="img" aria-label="目に斜線"><path d="M-14 0 C-7-11 7-11 14 0 C7 11-7 11-14 0Z" fill="white" stroke="black" stroke-width="3"/><circle r="5" fill="black"/><path d="M-12 11 12-11" stroke="black" stroke-width="3.5"/><path d="M-12 11 12-11" stroke="#ef3434" stroke-width="2"/></svg><span>敵から隠れている状態</span></li></ul><button type="button" id="missionBegin">作戦開始</button></div></div></div>
+<div id="missionBriefing" role="dialog" aria-modal="true" aria-labelledby="missionBriefingTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_hero.webp?v=2026.10.14.0027" alt="円形爆弾を抱えて走る主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionBriefingTitle">ミッション</h1><p>敵の拠点にたどりつき、破壊せよ</p><ul class="mission-hud-guide" aria-label="ゲーム画面のアイコン説明"><li><img src="assets/ui/ui_heart_full.png" alt="ハート" decoding="async"><span>残りライフ</span></li><li><img src="assets/ui/ui_bomb_normal.png" alt="爆弾" decoding="async"><span>爆弾の設置状態</span></li><li><svg viewBox="-18 -18 36 36" role="img" aria-label="目に斜線"><path d="M-14 0 C-7-11 7-11 14 0 C7 11-7 11-14 0Z" fill="white" stroke="black" stroke-width="3"/><circle r="5" fill="black"/><path d="M-12 11 12-11" stroke="black" stroke-width="3.5"/><path d="M-12 11 12-11" stroke="#ef3434" stroke-width="2"/></svg><span>敵から隠れている状態</span></li></ul><button type="button" id="missionBegin">作戦開始</button></div></div></div>
 <div id="stageScreen" role="region" aria-label="ステージ選択"><div class="stage-shell"><div style="color:#9cbb9b;font-size:12px">CHOOSE YOUR MISSION</div><h1>ステージ選択</h1><p id="stageSkill"></p><button class="stage-card" data-stage="base"><strong>01　拠点破壊</strong><span>敵地を突破し、敵司令本部を破壊せよ。潜入・戦闘・乗り物を組み合わせる従来の作戦。</span><small>バランス型 ／ 目標：司令本部の破壊</small></button><button class="stage-card" data-stage="front"><strong>02　最前線</strong><span>味方部隊と進撃し、3か所の戦線を順番に制圧せよ。円内の敵を排除し、味方と陣地を確保。制圧すると補給と前進増援が到着する。</span><small>戦闘中心 ／ 円内で12秒確保・敵がいると制圧停止</small></button><button class="stage-card" data-stage="stealth"><strong>03　潜入</strong><span>3か所の機密情報を回収し、開始地点の脱出地点へ帰還せよ。徒歩で端末の近くに留まり解析。発見中は解析できず、警戒度が高まると追跡部隊が出現する。</span><small>スニーク中心 ／ 端末で4秒解析・全情報回収後に帰還</small></button><button class="stage-back" id="stageBack">← スキル選択へ</button></div></div><div id="missionHud" role="status"></div>
 
 <script>
@@ -719,7 +719,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.14.0018',FILE_CREATED_AT='2026/10/14 00:18',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.14.0027',FILE_CREATED_AT='2026/10/14 00:27',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -830,7 +830,7 @@ const TERRAIN_ASSET_SRC={
  "敵前線基地":ASSET_DIR+'terrain/front_base.webp',
  "街":ASSET_DIR+'terrain/maze_base.webp',
  "敵迷路基地":ASSET_DIR+'terrain/maze_base.webp',
- "荒野":ASSET_DIR+'terrain/wilderness.webp?v=2026.10.14.0018',
+ "荒野":ASSET_DIR+'terrain/wilderness.webp?v=2026.10.14.0027',
  "湿地":ASSET_DIR+'terrain/wetland.webp',
  "敵司令本部":ASSET_DIR+'terrain/hq.webp',
  "川":ASSET_DIR+'terrain/river_surface.webp'
@@ -847,12 +847,12 @@ const COVER_ASSET_SRC={
  "tree":ASSET_DIR+'cover/tree.webp',
  "tree_v2":ASSET_DIR+'cover/tree_v2.webp',
  "barrier":ASSET_DIR+'cover/barrier.webp',
- "spinifex":ASSET_DIR+'cover/spinifex.webp?v=2026.10.14.0018',
+ "spinifex":ASSET_DIR+'cover/spinifex.webp?v=2026.10.14.0027',
  "rock":ASSET_DIR+'cover/rock.webp',
  "rock_v2":ASSET_DIR+'cover/rock_v2.webp',
  "maze_wall":ASSET_DIR+'cover/maze_wall.webp',
- "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.webp?v=2026.10.14.0018',
- "barrel":ASSET_DIR+'cover/barrel.webp?v=2026.10.14.0018',
+ "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.webp?v=2026.10.14.0027',
+ "barrel":ASSET_DIR+'cover/barrel.webp?v=2026.10.14.0027',
  "command_building_1":ASSET_DIR+'cover/command_building_1.webp',
  "wood_bridge":ASSET_DIR+'terrain/wood_bridge.webp'
 };
@@ -1577,7 +1577,7 @@ function setupZones(){
 }
 const zoneAt=y=>ZONES.find(z=>y<=z.y0&&y>z.y1)||ZONES[ZONES.length-1];
 const SK=[
- {id:'throw',n:'投擲',d:'進行方向へ爆弾を投げて設置\n(最大11m)\nD（スマホ：B）で起爆'},
+ {id:'throw',n:'遠投',d:'進行方向へ爆弾を投げて設置\n(最大11m)\nD（スマホ：B）で起爆'},
  {id:'dig',n:'潜伏',d:'0.5秒の潜行準備の後、最大5秒間潜伏\n潜行1秒後に敵表示・草むら内の敵輪郭を非表示\n川では泳いで潜伏（移動60%）／泥で強制解除／解除後CT5秒'},
  {id:'decoy',n:'偽装',d:'身代わりを設置して\n敵の注意を5秒間そらす'},
  {id:'buddy',n:'増援',d:'味方兵士がパラシュート降下\n最大5人まで同時に援護\n移動速度は歩兵の90%'},
@@ -1589,7 +1589,7 @@ const SK=[
  {id:'partner',n:'相棒',d:'自律的に司令本部へ進む味方\nプレイヤーの画面内で行動\nHP3・接触救助・画面外10秒で復帰'}
 ];
 const TOUCH=matchMedia('(pointer:coarse)').matches;
-const SKN={throw:'投擲',dig:'潜伏',decoy:'偽装',buddy:'増援',partner:'相棒',drill:'突貫',build:'建築',flame:'火炎',hound:'猟犬',sniper:'狙撃'};
+const SKN={throw:'遠投',dig:'潜伏',decoy:'偽装',buddy:'増援',partner:'相棒',drill:'突貫',build:'建築',flame:'火炎',hound:'猟犬',sniper:'狙撃'};
 let skill='throw',skillChoices=[],skillDebugAll=false,areaDebugEnabled=false,areaDebugLabels=[];
 const SKILL_PROGRESS_KEY='tankGameSkillProgressV1';
 function readSkillProgress(){
@@ -5187,7 +5187,7 @@ function carve(x,y,r,credit=false,objectDamageSource='impact'){
 }
 function useSkill(wx,wy){if(scoreStats&&!scoreStats.finalized)scoreStats.skillUses++;
  if(skill==='throw'){if(bombs.some(b=>b.own==='p')){say('爆弾は1つまで');return;}const a=p.body;let d=0;for(let k=4;k<=110;k+=2){if(hitsM(p.x+Math.cos(a)*k,p.y+Math.sin(a)*k,4))break;d=k;}
-  bombs.push({x:p.x,y:p.y,own:'p',armed:false,fly:.35,sx:p.x,sy:p.y,tx:p.x+Math.cos(a)*d,ty:p.y+Math.sin(a)*d});setSkillCooldown(5);sfx('skill');say('爆弾を投擲（D（スマホ：B）で起爆）');}
+  bombs.push({x:p.x,y:p.y,own:'p',armed:false,fly:.35,sx:p.x,sy:p.y,tx:p.x+Math.cos(a)*d,ty:p.y+Math.sin(a)*d});setSkillCooldown(5);sfx('skill');say('爆弾を遠投（D（スマホ：B）で起爆）');}
  else if(skill==='dig'){
   // Sを押したら0.5秒その場で静止し、地面／水面に潜るモーションを再生してから潜伏する。
   p.digPrep=DIG_PREP_DURATION;p.dig=0;p.digElapsed=0;p.digExitAnim=0;
@@ -6769,7 +6769,7 @@ const MEDAL_CATALOG=[
  {id:'tank_hunter',name:'戦車キラー',icon:'✦',note:'1回のプレイで敵戦車を3台以上撃破する',valid:s=>s.tankKills>=3},
  {id:'chain_five',name:'連撃の達人',icon:'⚔',note:'4秒以内のマルチキルを5回以上つなげる',valid:s=>s.maxKillChain>=5},
  {id:'sniper_three',name:'一発必中の狩人',icon:'◎',note:'狙撃スキルで敵を3体以上撃破する',valid:s=>s.sniperKills>=3},
- {id:'bomb_three',name:'爆破の名手',icon:'✹',note:'設置・投擲爆弾で敵を3体以上撃破する',valid:s=>s.bombKills>=3},
+ {id:'bomb_three',name:'爆破の名手',icon:'✹',note:'設置・遠投爆弾で敵を3体以上撃破する',valid:s=>s.bombKills>=3},
  {id:'three_vehicles',name:'乗り物の達人',icon:'➤',note:'1回のプレイで3種類以上の乗り物を利用する',valid:s=>Object.keys(s.vehicleKinds||{}).length>=3},
  {id:'infantry_hero',name:'歩兵の英雄',icon:'♜',note:'一度も搭乗せずに作戦をクリアする',valid:(s,r)=>!!r.cleared&&s.vehicleBoards===0},
  {id:'one_shot_three',name:'ワンショットキル',icon:'✹',note:'一度の攻撃で敵3体以上を撃破する',valid:s=>(s.maxOneShotKills||0)>=3}
@@ -7124,7 +7124,7 @@ const SK_CARD_SUMMARY={
  sniper:'スナイパーライフルで遠距離から狙撃。弾は敵兵を貫通する'
 };
 const SK_CARD_CONTROLS={
- throw:'S：投擲　／　D：起爆',
+ throw:'S：遠投　／　D：起爆',
  dig:'S：潜伏開始／解除',
  decoy:'S：偽装を設置',
  buddy:'S：仲間を呼ぶ',
@@ -7397,10 +7397,10 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/partner.js?v=2026.10.14.0018"></script>
-<script src="js/maze-walls.js?v=2026.10.14.0018"></script>
-<script src="js/canyon.js?v=2026.10.14.0018"></script>
-<script src="js/vegetation.js?v=2026.10.14.0018"></script>
+<script src="js/partner.js?v=2026.10.14.0027"></script>
+<script src="js/maze-walls.js?v=2026.10.14.0027"></script>
+<script src="js/canyon.js?v=2026.10.14.0027"></script>
+<script src="js/vegetation.js?v=2026.10.14.0027"></script>
 <script>
 (function(){
 // iPhone Chrome/Safari: synthetic KeyboardEvent に依存せず、ゲーム内部の入力状態を直接更新する。
