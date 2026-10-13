@@ -2,7 +2,7 @@
 const wildernessRockCache=new Map();
 let sandIntensity=0,sandDuration=24,sandTime=0,sandTravel=0,sandWindSpeed=0;
 const SAND_WIND_X=.9537,SAND_WIND_Y=-.3007,tumbleweeds=[];
-let tumbleweedZone=null,tumbleweedCache=null,tumbleweedSource=null;
+let tumbleweedZone=null,tumbleweedCache=null;
 function clearCanyonTiles(){
  for(const c of wildernessRockCache.values())invalidateStaticRaster(c);wildernessRockCache.clear();sandIntensity=0;sandTime=0;sandTravel=0;sandWindSpeed=0;tumbleweeds.length=0;tumbleweedZone=null;
 }
@@ -95,14 +95,31 @@ function drawWildernessFlowers(cx,cy){
  for(const b of bushes)if(b.wildFlowers&&drawBoundsInView(b.x,b.y,b.w,b.h,cx,cy,10))for(const f of b.wildFlowers){g.fillStyle=f.white?'#f4e8cb':'#c74732';g.beginPath();g.arc(b.x+f.dx,b.y+f.dy,2.5,0,Math.PI*2);g.fill();g.fillStyle='#d5b655';g.fillRect(b.x+f.dx-.6,b.y+f.dy-.6,1.2,1.2);}
 }
 function tumbleweedSprite(){
- const im=COVER_IMG.spinifex,ready=assetOK(im);
- if(tumbleweedCache&&tumbleweedSource===(ready?im:null))return tumbleweedCache;
- if(tumbleweedCache)invalidateStaticRaster(tumbleweedCache);
- const c=document.createElement('canvas');c.width=c.height=64;const q=gameCanvasContext(c);
- if(ready){q.drawImage(im,3,3,58,58);q.globalCompositeOperation='source-atop';q.fillStyle='rgba(169,113,51,.48)';q.fillRect(0,0,64,64);q.globalCompositeOperation='source-over';}
- q.lineWidth=1.15;q.strokeStyle='rgba(188,147,82,.85)';
- for(let i=0;i<11;i++){q.beginPath();q.ellipse(32,32,17+i%4*2,25, i*.57,0,Math.PI*2);q.stroke();}
- tumbleweedSource=ready?im:null;tumbleweedCache=c;return c;
+ if(tumbleweedCache)return tumbleweedCache;
+ const c=document.createElement('canvas');c.width=c.height=64;const q=gameCanvasContext(c);let seed=87193;
+ const rnd=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
+ q.lineJoin='miter';q.lineCap='butt';
+ const twig=(pts,width,color)=>{
+  const trace=()=>{q.beginPath();pts.forEach((p,i)=>i?q.lineTo(p.x,p.y):q.moveTo(p.x,p.y));};
+  trace();q.strokeStyle='#352419';q.lineWidth=width+1.3;q.stroke();
+  trace();q.strokeStyle=color;q.lineWidth=width;q.stroke();
+ };
+ // Airy ball of angular, weathered woody stems: no green foliage or smooth rings.
+ for(let i=0;i<13;i++){
+  const a=rnd()*Math.PI*2,rx=10+rnd()*13,ry=18+rnd()*7,pts=[];
+  for(let k=0;k<=10;k++){const t=k/10*Math.PI*2,r=.83+rnd()*.28,x=Math.cos(t)*rx*r,y=Math.sin(t)*ry*r;pts.push({x:32+x*Math.cos(a)-y*Math.sin(a),y:32+x*Math.sin(a)+y*Math.cos(a)});}
+  twig(pts,1.2+rnd()*1.2,i%3?'#926330':'#b4874d');
+ }
+ for(let i=0;i<22;i++){
+  const a=rnd()*Math.PI*2,r1=10+rnd()*15,r2=10+rnd()*15,pts=[{x:32+Math.cos(a)*r1,y:32+Math.sin(a)*r1},{x:24+rnd()*16,y:24+rnd()*16},{x:32-Math.cos(a+.25)*r2,y:32-Math.sin(a+.25)*r2}];
+  twig(pts,1+rnd()*1.7,i%4?'#9d703b':'#c09a5b');
+  const p=pts[1];twig([p,{x:p.x+3+rnd()*6,y:p.y-3-rnd()*6}],.9,'#ad8148');
+ }
+ for(let i=0;i<15;i++){
+  const a=i/15*Math.PI*2+.12*rnd(),x=32+Math.cos(a)*20,y=32+Math.sin(a)*20,tip={x:32+Math.cos(a)*(26+rnd()*4),y:32+Math.sin(a)*(26+rnd()*4)};
+  twig([{x,y},tip,{x:tip.x+Math.cos(a+1)*3,y:tip.y+Math.sin(a+1)*3}],1.2,'#aa7941');
+ }
+ tumbleweedCache=c;return c;
 }
 function resetTumbleweed(b,z,i){
  const top=Math.max(z.y1+50,p.y-H*.7),bottom=Math.min(z.y0-70,p.y+H*.45);
