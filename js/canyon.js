@@ -1,15 +1,19 @@
 // Wilderness terrain and oasis imagery are cached; only sandstorm dust animates.
 const wildernessRockCache=new Map();
-let sandIntensity=0,sandDuration=24;
+let sandIntensity=0,sandDuration=24,sandTime=0,sandTravel=0,sandWindSpeed=0;
+const SAND_WIND_X=.9537,SAND_WIND_Y=-.3007,tumbleweeds=[];
+let tumbleweedZone=null,tumbleweedCache=null,tumbleweedSource=null;
 function clearCanyonTiles(){
- for(const c of wildernessRockCache.values())invalidateStaticRaster(c);wildernessRockCache.clear();sandIntensity=0;
+ for(const c of wildernessRockCache.values())invalidateStaticRaster(c);wildernessRockCache.clear();sandIntensity=0;sandTime=0;sandTravel=0;sandWindSpeed=0;tumbleweeds.length=0;tumbleweedZone=null;
 }
 function oasisContains(w,x,y,r=0){const rx=w.w/2+r,ry=w.h/2+r;return ((x-w.x-w.w/2)/rx)**2+((y-w.y-w.h/2)/ry)**2<1;}
 function wildernessRockSprite(c){
  const im=naturalCoverImage(c,'rock');if(!assetOK(im))return im;
  if(wildernessRockCache.has(im))return wildernessRockCache.get(im);
  const canvas=document.createElement('canvas');canvas.width=im.naturalWidth;canvas.height=im.naturalHeight;const q=gameCanvasContext(canvas);q.drawImage(im,0,0);
- q.globalCompositeOperation='source-atop';q.fillStyle='rgba(137,62,20,.65)';q.fillRect(0,0,canvas.width,canvas.height);q.globalCompositeOperation='source-over';
+ // Preserve the source's illuminated top and shaded sides; a flat tint erased these.
+ const pixels=q.getImageData(0,0,canvas.width,canvas.height),d=pixels.data;
+ for(let i=0;i<d.length;i+=4){if(!d[i+3])continue;const light=.2126*d[i]+.7152*d[i+1]+.0722*d[i+2],v=Math.max(12,Math.min(225,(light-96)*1.45+112));d[i]=Math.min(255,v*1.15);d[i+1]=v*.72;d[i+2]=v*.40;}q.putImageData(pixels,0,0);
  canvas.complete=true;canvas.naturalWidth=canvas.width;canvas.naturalHeight=canvas.height;wildernessRockCache.set(im,canvas);return canvas;
 }
 function buildCanyonZones(){
@@ -56,14 +60,17 @@ function oasisImage(o){
  const points=Array.from({length:96},(_,i)=>{const a=i/96*Math.PI*2,k=.985+.018*Math.sin(a*3+phase)+.012*Math.sin(a*7-phase)+.006*Math.sin(a*13+phase);return{x:Math.cos(a)*rx*k,y:Math.sin(a)*ry*k};});
  const trace=(ctx,f=1)=>{ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(cx+p.x*f,cy+p.y*f):ctx.moveTo(cx+p.x*f,cy+p.y*f));ctx.closePath();};
  const river=TERRAIN_IMG['川'];
+ q.fillStyle='#63b7b0';q.fillRect(pad,pad,o.w,o.h);
  if(assetOK(river)){
   const iw=river.naturalWidth||river.width,ih=river.naturalHeight||river.height,ar=o.w/o.h;let sw=iw,sh=ih;
   if(ar>=iw/ih)sh=iw/ar;else sw=ih*ar;
   const sx=(iw-sw)*riverHash(o,977),sy=(ih-sh)*riverHash(o,1421);
-  q.drawImage(river,sx,sy,sw,sh,pad,pad,o.w,o.h);
- }else{q.fillStyle='#285d65';q.fillRect(pad,pad,o.w,o.h);}
+  q.globalAlpha=.40;q.drawImage(river,sx,sy,sw,sh,pad,pad,o.w,o.h);q.globalAlpha=1;
+ }
  const depth=q.createRadialGradient(cx-rx*.18,cy-ry*.18,20,cx,cy,rx);
- depth.addColorStop(0,'rgba(8,38,47,.20)');depth.addColorStop(.66,'rgba(28,102,104,.10)');depth.addColorStop(1,'rgba(126,170,128,.25)');q.fillStyle=depth;q.fillRect(0,0,o.w+pad*2,o.h+pad*2);
+ depth.addColorStop(0,'rgba(8,67,88,.22)');depth.addColorStop(.66,'rgba(76,184,184,.10)');depth.addColorStop(1,'rgba(178,224,186,.44)');q.fillStyle=depth;q.fillRect(0,0,o.w+pad*2,o.h+pad*2);
+ // Faint submerged stones suggest a visible bottom in the clear shallows.
+ for(let i=0;i<22;i++){const a=riverHash(o,7100+i)*Math.PI*2,r=.76+riverHash(o,7200+i)*.13,x=cx+Math.cos(a)*rx*r,y=cy+Math.sin(a)*ry*r,sz=1.5+riverHash(o,7300+i)*3;q.fillStyle=i%3?'rgba(188,185,132,.16)':'rgba(39,104,107,.12)';q.beginPath();q.ellipse(x,y,sz*1.5,sz,a,0,Math.PI*2);q.fill();}
  // A stepped alpha mask softens the shore instead of cutting out a crisp ellipse.
  const mask=document.createElement('canvas');mask.width=c.width;mask.height=c.height;const m=gameCanvasContext(mask);m.setTransform(S,0,0,S,0,0);m.fillStyle='#fff';
  for(let i=0;i<8;i++){m.globalAlpha=i===7?1:.12+i*.07;trace(m,1.025-i*.006);m.fill();}
@@ -76,7 +83,7 @@ function oasisImage(o){
   const a=riverHash(o,5100+i)*Math.PI*2,idx=Math.floor(a/Math.PI/2*points.length),p=points[idx],f=1.012+riverHash(o,5200+i)*.018,rr=1+riverHash(o,5300+i)*2;
   q.fillStyle=i%3?'rgba(88,67,39,.22)':'rgba(170,140,85,.20)';q.beginPath();q.ellipse(cx+p.x*f,cy+p.y*f,rr*1.5,rr,a,0,Math.PI*2);q.fill();
  }
- q.save();trace(q,.92);q.clip();q.strokeStyle='rgba(205,232,220,.16)';q.lineWidth=1.3;
+ q.save();trace(q,.92);q.clip();q.strokeStyle='rgba(212,250,243,.24)';q.lineWidth=1.3;
  for(let i=0;i<16;i++){const x=pad+riverHash(o,6100+i)*o.w,y=pad+riverHash(o,6200+i)*o.h,len=9+riverHash(o,6300+i)*22;q.beginPath();q.moveTo(x,y);q.quadraticCurveTo(x+len*.5,y+2,x+len,y);q.stroke();}q.restore();
  o.visualCache=c;o.visualVersion=riverSurfaceVersion;return c;
 }
@@ -87,18 +94,59 @@ function drawCanyonWaterfalls(cx,cy){
 function drawWildernessFlowers(cx,cy){
  for(const b of bushes)if(b.wildFlowers&&drawBoundsInView(b.x,b.y,b.w,b.h,cx,cy,10))for(const f of b.wildFlowers){g.fillStyle=f.white?'#f4e8cb':'#c74732';g.beginPath();g.arc(b.x+f.dx,b.y+f.dy,2.5,0,Math.PI*2);g.fill();g.fillStyle='#d5b655';g.fillRect(b.x+f.dx-.6,b.y+f.dy-.6,1.2,1.2);}
 }
+function tumbleweedSprite(){
+ const im=COVER_IMG.spinifex,ready=assetOK(im);
+ if(tumbleweedCache&&tumbleweedSource===(ready?im:null))return tumbleweedCache;
+ if(tumbleweedCache)invalidateStaticRaster(tumbleweedCache);
+ const c=document.createElement('canvas');c.width=c.height=64;const q=gameCanvasContext(c);
+ if(ready){q.drawImage(im,3,3,58,58);q.globalCompositeOperation='source-atop';q.fillStyle='rgba(169,113,51,.48)';q.fillRect(0,0,64,64);q.globalCompositeOperation='source-over';}
+ q.lineWidth=1.15;q.strokeStyle='rgba(188,147,82,.85)';
+ for(let i=0;i<11;i++){q.beginPath();q.ellipse(32,32,17+i%4*2,25, i*.57,0,Math.PI*2);q.stroke();}
+ tumbleweedSource=ready?im:null;tumbleweedCache=c;return c;
+}
+function resetTumbleweed(b,z,i){
+ const top=Math.max(z.y1+50,p.y-H*.7),bottom=Math.min(z.y0-70,p.y+H*.45);
+ // Deterministic local placement avoids altering the game's enemy/map random sequence.
+ b.seed=((b.seed||571+i*913)*1664525+1013904223)>>>0;const f=b.seed/4294967296;
+ b.x=35+(i*179+f*87)%(WW-70);b.y=top+Math.max(1,bottom-top)*((i*.217+f)%1);b.r=13+i%3*3;b.rot=b.rot||0;
+ if(z.oasis&&oasisContains(z.oasis,b.x,b.y,b.r)){b.y=Math.max(z.y1+70,z.oasis.y-60-b.r);}
+}
+function updateTumbleweeds(dt,z){
+ if(tumbleweedZone!==z){tumbleweeds.length=0;tumbleweedZone=z;}
+ if(!tumbleweeds.length&&sandIntensity>.05)for(let i=0;i<5;i++){const b={};resetTumbleweed(b,z,i);tumbleweeds.push(b);}
+ if(sandWindSpeed<=.01)return;
+ for(let i=0;i<tumbleweeds.length;i++){
+  const b=tumbleweeds[i],travel=sandWindSpeed*(.24+i*.025)*dt,x=b.x+SAND_WIND_X*travel,y=b.y+SAND_WIND_Y*travel;
+  if(!z.oasis||!oasisContains(z.oasis,x,y,b.r)){b.x=x;b.y=y;b.rot+=travel/b.r;}
+  if(b.x>WW+45||b.y<z.y1+35){resetTumbleweed(b,z,i);b.x=-35;}
+ }
+}
+function drawTumbleweeds(cx,cy){
+ if(!p||zoneAt(p.y).n!=='荒野'||!tumbleweeds.length)return;
+ const im=tumbleweedSprite();
+ for(const b of tumbleweeds)if(drawPointInView(b.x,b.y,cx,cy,45)){g.save();g.translate(b.x,b.y-Math.sin(b.rot*1.7)*2);g.rotate(b.rot);drawStaticRaster(im,-b.r,-b.r,b.r*2,b.r*2);g.restore();}
+}
 function updateSandstorm(dt){
- const arid=p&&zoneAt(p.y).n==='荒野';
- if(!arid){sandIntensity=0;if(weather==='sandstorm'){weather='clear';weatherT=0;weatherNext=20+R()*30;}return false;}
+ const z=p&&zoneAt(p.y),arid=z&&z.n==='荒野';
+ if(!arid){sandIntensity=0;sandWindSpeed=0;if(weather==='sandstorm'){weather='clear';weatherT=0;weatherNext=20+R()*30;}return false;}
  if(weather==='rain'){weather='clear';weatherT=0;weatherNext=8+R()*12;}
- rainIntensity=0;
+ rainIntensity=0;sandTime+=dt;
  if(weather==='sandstorm'){weatherT=Math.max(0,weatherT-dt);if(weatherT===0){weather='clear';weatherNext=22+R()*40;say('砂嵐が収まった');}}
  else{weatherNext-=dt;if(weatherNext<=0){weather='sandstorm';sandDuration=18+R()*10;weatherT=sandDuration;say('砂嵐：視界と索敵距離が低下');}}
- const k=weather==='sandstorm'?Math.max(0,Math.min(1,(sandDuration-weatherT)/4,weatherT/4)):0;sandIntensity=k*k*(3-2*k);return true;
+ const k=weather==='sandstorm'?Math.max(0,Math.min(1,(sandDuration-weatherT)/3,weatherT/4)):0;sandIntensity=k*k*(3-2*k);
+ const gust=.70+.30*(.5+.5*Math.sin(sandTime*2.3+Math.sin(sandTime*.71)));
+ sandWindSpeed=620*sandIntensity*gust;sandTravel+=sandWindSpeed*dt;updateTumbleweeds(dt,z);return true;
 }
 function drawSandstormOverlay(){
- if(sandIntensity<=0)return;const q=gm,t=performance.now(),s=sandIntensity;q.save();q.fillStyle='rgba(132,83,43,'+(.40*s)+')';q.fillRect(0,0,W,H);
- q.strokeStyle='rgba(243,199,133,'+(.34*s)+')';q.lineWidth=2;for(let i=0;i<28;i++){const x=((i*127+t*(.16+(i%3)*.025))%(W+140))-70,y=(i*173+t*.015)%(H+40)-20;q.beginPath();q.moveTo(x,y);q.lineTo(x+20+i%4*7,y-6);q.stroke();}q.restore();
+ if(sandIntensity<=0)return;const q=gm,s=sandIntensity,t=sandTravel;
+ q.save();q.fillStyle='rgba(145,92,45,'+(.35*s)+')';q.fillRect(0,0,W,H);q.lineCap='round';
+ // Both displacement and streak tails follow the same wind vector as the weeds.
+ const wrap=(v,n)=>(v%n+n)%n;
+ for(let i=0;i<40;i++){
+  const speed=.72+(i%5)*.13,x=wrap(i*137+t*SAND_WIND_X*speed,W+240)-120,y=wrap(i*173+t*SAND_WIND_Y*speed,H+160)-80,len=35+i%6*13;
+  q.strokeStyle='rgba(244,205,147,'+((.16+i%3*.075)*s)+')';q.lineWidth=1+i%3*.65;q.beginPath();q.moveTo(x-SAND_WIND_X*len,y-SAND_WIND_Y*len);q.lineTo(x,y);q.stroke();
+ }
+ q.restore();
 }
 let selectedAreaDebug=null;
 function setupSelectedAreaDebugStage(){
