@@ -9,7 +9,7 @@ function wildernessRockSprite(c){
  const im=naturalCoverImage(c,'rock');if(!assetOK(im))return im;
  if(wildernessRockCache.has(im))return wildernessRockCache.get(im);
  const canvas=document.createElement('canvas');canvas.width=im.naturalWidth;canvas.height=im.naturalHeight;const q=gameCanvasContext(canvas);q.drawImage(im,0,0);
- q.globalCompositeOperation='source-atop';q.fillStyle='rgba(183,87,36,.52)';q.fillRect(0,0,canvas.width,canvas.height);q.globalCompositeOperation='source-over';
+ q.globalCompositeOperation='source-atop';q.fillStyle='rgba(137,62,20,.65)';q.fillRect(0,0,canvas.width,canvas.height);q.globalCompositeOperation='source-over';
  canvas.complete=true;canvas.naturalWidth=canvas.width;canvas.naturalHeight=canvas.height;wildernessRockCache.set(im,canvas);return canvas;
 }
 function buildCanyonZones(){
@@ -44,19 +44,45 @@ function buildCanyonZones(){
   }
  }
 }
+// The water and feathered bank are baked once at the same half resolution as rivers.
+const OASIS_PAD=36,OASIS_CACHE_SCALE=.5;
 function oasisImage(o){
- if(o.visualCache)return o.visualCache;
- const pad=24,c=document.createElement('canvas');c.width=Math.ceil(o.w)+pad*2;c.height=Math.ceil(o.h)+pad*2;const q=gameCanvasContext(c),cx=o.w/2+pad,cy=o.h/2+pad;
- q.fillStyle='#5e7947';q.beginPath();q.ellipse(cx,cy,o.w/2+15,o.h/2+15,0,0,Math.PI*2);q.fill();
- q.save();q.beginPath();q.ellipse(cx,cy,o.w/2,o.h/2,0,0,Math.PI*2);q.clip();
- const gr=q.createRadialGradient(cx-o.w*.12,cy-o.h*.12,20,cx,cy,o.w*.6);gr.addColorStop(0,'#245d61');gr.addColorStop(.7,'#438e88');gr.addColorStop(1,'#8cba99');q.fillStyle=gr;q.fillRect(0,0,c.width,c.height);
- const river=TERRAIN_IMG['川'];if(assetOK(river)){q.globalAlpha=.25;q.drawImage(river,pad,pad,o.w,o.h);q.globalAlpha=1;}
- q.strokeStyle='rgba(200,241,220,.25)';q.lineWidth=2;for(let i=0;i<10;i++){q.beginPath();q.ellipse(cx,cy,Math.max(20,o.w/2-i*19),Math.max(15,o.h/2-i*12),0,Math.PI*.1,Math.PI*.8);q.stroke();}q.restore();
- q.strokeStyle='#b6c698';q.lineWidth=3;q.beginPath();q.ellipse(cx,cy,o.w/2,o.h/2,0,0,Math.PI*2);q.stroke();o.visualCache=c;return c;
+ if(o.visualCache&&o.visualVersion===riverSurfaceVersion)return o.visualCache;
+ if(o.visualCache)invalidateStaticRaster(o.visualCache);
+ const pad=OASIS_PAD,S=OASIS_CACHE_SCALE,c=document.createElement('canvas');c.width=Math.ceil((o.w+pad*2)*S);c.height=Math.ceil((o.h+pad*2)*S);
+ const q=gameCanvasContext(c),cx=o.w/2+pad,cy=o.h/2+pad,rx=o.w/2,ry=o.h/2,phase=riverHash(o,732)*Math.PI*2;
+ q.setTransform(S,0,0,S,0,0);q.imageSmoothingEnabled=true;
+ // Gentle lobes stay close to the elliptical shallow-water collision boundary.
+ const points=Array.from({length:96},(_,i)=>{const a=i/96*Math.PI*2,k=.985+.018*Math.sin(a*3+phase)+.012*Math.sin(a*7-phase)+.006*Math.sin(a*13+phase);return{x:Math.cos(a)*rx*k,y:Math.sin(a)*ry*k};});
+ const trace=(ctx,f=1)=>{ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(cx+p.x*f,cy+p.y*f):ctx.moveTo(cx+p.x*f,cy+p.y*f));ctx.closePath();};
+ const river=TERRAIN_IMG['川'];
+ if(assetOK(river)){
+  const iw=river.naturalWidth||river.width,ih=river.naturalHeight||river.height,ar=o.w/o.h;let sw=iw,sh=ih;
+  if(ar>=iw/ih)sh=iw/ar;else sw=ih*ar;
+  const sx=(iw-sw)*riverHash(o,977),sy=(ih-sh)*riverHash(o,1421);
+  q.drawImage(river,sx,sy,sw,sh,pad,pad,o.w,o.h);
+ }else{q.fillStyle='#285d65';q.fillRect(pad,pad,o.w,o.h);}
+ const depth=q.createRadialGradient(cx-rx*.18,cy-ry*.18,20,cx,cy,rx);
+ depth.addColorStop(0,'rgba(8,38,47,.20)');depth.addColorStop(.66,'rgba(28,102,104,.10)');depth.addColorStop(1,'rgba(126,170,128,.25)');q.fillStyle=depth;q.fillRect(0,0,o.w+pad*2,o.h+pad*2);
+ // A stepped alpha mask softens the shore instead of cutting out a crisp ellipse.
+ const mask=document.createElement('canvas');mask.width=c.width;mask.height=c.height;const m=gameCanvasContext(mask);m.setTransform(S,0,0,S,0,0);m.fillStyle='#fff';
+ for(let i=0;i<8;i++){m.globalAlpha=i===7?1:.12+i*.07;trace(m,1.025-i*.006);m.fill();}
+ q.save();q.setTransform(1,0,0,1,0,0);q.globalCompositeOperation='destination-in';q.drawImage(mask,0,0);q.restore();
+ // Wet clay and sparse moss fade out into the sand behind the water layer.
+ q.globalCompositeOperation='destination-over';q.lineJoin='round';q.lineCap='round';
+ for(const [width,color,f] of [[30,'rgba(73,59,32,.08)',1.018],[22,'rgba(112,82,41,.12)',1.018],[14,'rgba(98,112,52,.17)',1.016],[7,'rgba(160,145,87,.15)',1.012]]){q.strokeStyle=color;q.lineWidth=width;trace(q,f);q.stroke();}
+ q.globalCompositeOperation='source-over';
+ for(let i=0;i<52;i++){
+  const a=riverHash(o,5100+i)*Math.PI*2,idx=Math.floor(a/Math.PI/2*points.length),p=points[idx],f=1.012+riverHash(o,5200+i)*.018,rr=1+riverHash(o,5300+i)*2;
+  q.fillStyle=i%3?'rgba(88,67,39,.22)':'rgba(170,140,85,.20)';q.beginPath();q.ellipse(cx+p.x*f,cy+p.y*f,rr*1.5,rr,a,0,Math.PI*2);q.fill();
+ }
+ q.save();trace(q,.92);q.clip();q.strokeStyle='rgba(205,232,220,.16)';q.lineWidth=1.3;
+ for(let i=0;i<16;i++){const x=pad+riverHash(o,6100+i)*o.w,y=pad+riverHash(o,6200+i)*o.h,len=9+riverHash(o,6300+i)*22;q.beginPath();q.moveTo(x,y);q.quadraticCurveTo(x+len*.5,y+2,x+len,y);q.stroke();}q.restore();
+ o.visualCache=c;o.visualVersion=riverSurfaceVersion;return c;
 }
 function drawCanyonWaterfalls(cx,cy){
- // Historical hook name: water layer now draws still oasis ponds, without waterfalls.
- for(const w of water)if(w.oasis&&drawBoundsInView(w.x,w.y,w.w,w.h,cx,cy,24))drawStaticRaster(oasisImage(w),w.x-24,w.y-24);
+ // Historical hook name: still oasis ponds have no river current or waterfall.
+ for(const w of water)if(w.oasis&&drawBoundsInView(w.x,w.y,w.w,w.h,cx,cy,OASIS_PAD))drawStaticRaster(oasisImage(w),w.x-OASIS_PAD,w.y-OASIS_PAD,w.w+OASIS_PAD*2,w.h+OASIS_PAD*2);
 }
 function drawWildernessFlowers(cx,cy){
  for(const b of bushes)if(b.wildFlowers&&drawBoundsInView(b.x,b.y,b.w,b.h,cx,cy,10))for(const f of b.wildFlowers){g.fillStyle=f.white?'#f4e8cb':'#c74732';g.beginPath();g.arc(b.x+f.dx,b.y+f.dy,2.5,0,Math.PI*2);g.fill();g.fillStyle='#d5b655';g.fillRect(b.x+f.dx-.6,b.y+f.dy-.6,1.2,1.2);}
