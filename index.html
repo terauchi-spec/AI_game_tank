@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.13.0832</title>
+<title>こっそり戦車大作戦 2026.10.13.0918</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -527,7 +527,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <div id="debugBadge" hidden>無敵モード</div>
 <div id="pad"><div id="stick"><div id="knob"></div></div><div class="btns"><button class="b" id="skillBtn" data-k="KeyS"><span class="coolRing" id="skillCooldown"></span><span class="coolText" id="skillCooldownText"></span><b>S</b><small id="skillLabel">スキル</small></button><button class="b" id="actionBtn" type="button"><span class="coolRing" id="actionCooldown"></span><span class="coolText" id="actionCooldownText"></span><b id="actionGlyph">B</b><small id="actionLabel">爆弾</small></button><button class="b" data-k="KeyA"><b>A</b><small>操作</small></button></div></div>
 <div id="titleScreen" role="region" aria-label="タイトル画面"><div class="title-wrap">
-<div class="title-hero"><img class="title-art" alt="戦場を見下ろす兵士と戦車のイラスト" src="assets/ui/title_hero.webp?v=2026.10.13.0832"><div class="title-hero-text"><div class="title-tag">TACTICAL ACTION GAME</div><h1 class="title-main"><img class="title-logo" src="assets/ui/title_logo.webp?v=2026.10.13.0832" alt="こっそり戦車大作戦"></h1></div></div>
+<div class="title-hero"><img class="title-art" alt="戦場を見下ろす兵士と戦車のイラスト" src="assets/ui/title_hero.webp?v=2026.10.13.0918"><div class="title-hero-text"><div class="title-tag">TACTICAL ACTION GAME</div><h1 class="title-main"><img class="title-logo" src="assets/ui/title_logo.webp?v=2026.10.13.0918" alt="こっそり戦車大作戦"></h1></div></div>
 <nav class="title-actions" aria-label="タイトルメニュー">
 <button type="button" class="title-cta" id="titleStart">ゲームを始める</button>
 <div class="title-secondaries"><button type="button" class="title-secondary" id="titleAwards">称号</button><button type="button" class="title-secondary" id="titleHelp">操作説明</button><button type="button" class="title-secondary" id="titleSpecs">仕様</button><button type="button" class="title-secondary" id="titleDiagnostics">表示診断（停止の調査）</button></div>
@@ -651,7 +651,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <li><strong>投擲：</strong>進行方向へ最大11mの距離で爆弾を投げます。5秒で再使用可能。</li>
 <li><strong>潜伏：</strong>0.5秒静止して潜伏準備後、最大5秒間潜伏。解除後は5秒チャージ。水中は移動速度60%、泥では潜伏を解除します。潜伏開始1秒後に敵表示が隠れます。</li>
 <li><strong>偽装：</strong>5秒間残る身代わりを設置して敵の注意をそらします。赤い電波が約1.25秒間隔で半径300pxまで滑らかに広がります。見やすいように少し濃い単色の赤いリングで描いています。身代わり周囲の残り時間の円形ゲージは表示せず、終了時は赤い粒が短く散って消えます。電波の表示範囲と敵を誘導する範囲は別です。チャージ8秒。</li>
-<li><strong>相棒：</strong>青いヘルメットラインの味方が敵司令本部を目指しつつプレイヤーの歩調を模倣します。プレイヤーの行動から潜入・慎重移動・通常前進・突破・戦闘・退避を判断し、約0.35秒ごとに移動先を選びます。草むらや遮蔽物を活用し、速度と距離を調整しながら同行します。交戦時は敵に援護射撃します。画面内にとどまり、敵の攻撃対象にもなります。HP3で、倒れると赤十字の救急箱アイコンが表示され、徒歩で触れると回復します。プレイヤーの設置爆弾の爆風で5秒間気絶し、接触すると早期復帰します。行動モードを問わず100px以内の敵兵に近づき、25px以内で羽交い絞めにして気絶させます。相棒が気絶中は敵兵と同じ星のアイコンが回転します。ルート線上・その50px以内に未搭乗の乗り物があれば、移動途中で搭乗してルートに沿って進みます。戦車は主砲・機銃、装甲車は機銃で援護し、武器を持たないトラックは体当たりで戦います。S短押しでプレイヤーへ戻るバックアップモード、長押しでプレイヤーだけの吹き出しにグーのハンドサインを表示して移動キーでルートを描き、離すと指差しのハンドサインへ切り替わり、すぐにルート移動を始めます。指差しの吹き出しは1秒間表示します。ルート入力中はプレイヤーが移動できません。ルート作成中に壁に触れた場合は描き始めへ戻し、移動中に立ち往生した場合も開始地点へ戻ります。ルート確定後は指示線を表示しません。救助待ちや気絶中でも、画面外10秒またはプレイヤーから長時間離れると画面内の救助可能な場所へ復帰します。</li>
+<li><strong>相棒：</strong>青いヘルメットラインの味方が敵司令本部を目指しつつプレイヤーの歩調を模倣します。プレイヤーの行動から潜入・慎重移動・通常前進・突破・戦闘・退避を判断し、約0.35秒ごとに移動先を選びます。草むらや遮蔽物を活用し、速度と距離を調整しながら同行します。交戦時は敵に援護射撃します。画面内にとどまり、敵の攻撃対象にもなります。HP3で、倒れると赤十字の救急箱アイコンが表示され、徒歩で触れると回復します。プレイヤーの設置爆弾の爆風で5秒間気絶し、接触すると早期復帰します。行動モードを問わず100px以内の敵兵に近づき、25px以内で羽交い絞めにして気絶させます。相棒が気絶中は敵兵と同じ星のアイコンが回転します。ルート線上・その50px以内に未搭乗の乗り物があれば、移動途中で搭乗してルートに沿って進みます。戦車は主砲・機銃、装甲車は機銃で援護し、武器を持たないトラックは体当たりで戦います。S短押しで手のひらを上に向けた手招きの吹き出しを出してプレイヤーへ戻るバックアップモード、0.18秒の長押しでプレイヤーだけの吹き出しにグーのハンドサインを表示して移動キーでルートを描き、離すと指差しのハンドサインへ切り替わり、すぐにルート移動を始めます。指差しの吹き出しは1秒間表示します。スキルボタンを押している間はプレイヤーが移動できません。青い破線の先端に進行方向の矢印を表示します。相棒がプレイヤーの乗り物に同乗すると機銃を相棒が担当し、プレイヤーは機銃を撃てません。プレイヤーが相棒の乗り物に同乗すると、相棒が設定済みルートを運転し、プレイヤーが機銃を担当します。同乗アイコンは車体に重ねて表示します。ルート作成中に壁に触れた場合は描き始めへ戻し、移動中に立ち往生した場合も開始地点へ戻ります。ルート確定後は指示線を表示しません。救助待ちや気絶中でも、画面外10秒またはプレイヤーから長時間離れると画面内の救助可能な場所へ復帰します。</li>
 <li><strong>増援：</strong>味方兵士がパラシュート降下して戦闘を援護。同時に最大5人。チャージ6秒。着地後、オブジェクトの爆発や敵戦車の砲撃爆風を受けると吹き飛ばされ、5秒間気絶します。気絶中は移動と射撃を停止し、頭上の星が目印になります。</li>
 <li><strong>突貫：</strong>正面にドリルを展開。持続5秒、終了後は6秒チャージ。遮蔽物の破壊に利用できます。</li>
 <li><strong>建築：</strong>前方にコンクリート防護壁を設置。最大5枚、チャージ1.5秒。</li>
@@ -690,9 +690,9 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <style>
 #stageScreen{display:none;position:fixed;inset:0;z-index:70;background:rgba(10,18,14,.98);color:#e6e9d6;overflow:auto;padding:24px 18px;box-sizing:border-box;font-family:system-ui}body.stage-open #stageScreen{display:block}.stage-shell{max-width:760px;margin:auto}.stage-shell h1{font-size:28px;margin:10px 0}.stage-shell p{line-height:1.7;color:#bac9b5}.stage-card{display:block;width:100%;text-align:left;color:inherit;background:#23332a;border:2px solid #526549;border-radius:12px;padding:20px;margin:14px 0;cursor:pointer;font:inherit}.stage-card:hover,.stage-card:focus-visible{background:#314738;border-color:#e2c07c}.stage-card strong{font-size:23px;color:#eed5a1}.stage-card span{display:block;margin-top:8px;line-height:1.7}.stage-card small{display:block;color:#a9c8b7;margin-top:8px}.stage-back{padding:12px 20px;background:#344536;color:white;border:1px solid #829474;border-radius:8px;cursor:pointer}#missionHud{display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:12;max-width:90vw;width:480px;box-sizing:border-box;border:1px solid #829474;background:rgba(14,26,19,.9);color:#eef1df;padding:8px 12px;border-radius:8px;font:13px system-ui;pointer-events:none}#missionHud progress{width:100%;height:9px;accent-color:#9dcaa9}#missionHud small{display:block;color:#cee0bc;margin-top:4px}
 </style>
-<div id="missionSuccess" role="dialog" aria-modal="true" aria-labelledby="missionSuccessTitle"><div class="mission-fireworks" aria-hidden="true"><i class="mission-firework" style="left:18%;top:24%;--burst-delay:0.15s"></i><i class="mission-firework" style="left:78%;top:20%;--burst-delay:0.45s"></i><i class="mission-firework" style="left:48%;top:12%;--burst-delay:0.75s"></i><i class="mission-firework" style="left:22%;top:60%;--burst-delay:1.05s"></i><i class="mission-firework" style="left:81%;top:55%;--burst-delay:1.35s"></i></div><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_success.webp?v=2026.10.13.0832" alt="笑顔でジャンプする主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionSuccessTitle">ミッション 成功</h1><button type="button" id="missionSuccessEvaluate">作戦評価</button></div></div></div>
-<div id="missionFailure" role="dialog" aria-modal="true" aria-labelledby="missionFailureTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_failed.webp?v=2026.10.13.0832" alt="倒れてふらつく主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionFailureTitle">ミッション 失敗</h1><button type="button" id="missionEvaluate">作戦評価</button></div></div></div>
-<div id="missionBriefing" role="dialog" aria-modal="true" aria-labelledby="missionBriefingTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_hero.webp?v=2026.10.13.0832" alt="円形爆弾を抱えて走る主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionBriefingTitle">ミッション</h1><p>敵の拠点にたどりつき、破壊せよ</p><button type="button" id="missionBegin">作戦開始</button></div></div></div>
+<div id="missionSuccess" role="dialog" aria-modal="true" aria-labelledby="missionSuccessTitle"><div class="mission-fireworks" aria-hidden="true"><i class="mission-firework" style="left:18%;top:24%;--burst-delay:0.15s"></i><i class="mission-firework" style="left:78%;top:20%;--burst-delay:0.45s"></i><i class="mission-firework" style="left:48%;top:12%;--burst-delay:0.75s"></i><i class="mission-firework" style="left:22%;top:60%;--burst-delay:1.05s"></i><i class="mission-firework" style="left:81%;top:55%;--burst-delay:1.35s"></i></div><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_success.webp?v=2026.10.13.0918" alt="笑顔でジャンプする主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionSuccessTitle">ミッション 成功</h1><button type="button" id="missionSuccessEvaluate">作戦評価</button></div></div></div>
+<div id="missionFailure" role="dialog" aria-modal="true" aria-labelledby="missionFailureTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_failed.webp?v=2026.10.13.0918" alt="倒れてふらつく主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionFailureTitle">ミッション 失敗</h1><button type="button" id="missionEvaluate">作戦評価</button></div></div></div>
+<div id="missionBriefing" role="dialog" aria-modal="true" aria-labelledby="missionBriefingTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_hero.webp?v=2026.10.13.0918" alt="円形爆弾を抱えて走る主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionBriefingTitle">ミッション</h1><p>敵の拠点にたどりつき、破壊せよ</p><button type="button" id="missionBegin">作戦開始</button></div></div></div>
 <div id="stageScreen" role="region" aria-label="ステージ選択"><div class="stage-shell"><div style="color:#9cbb9b;font-size:12px">CHOOSE YOUR MISSION</div><h1>ステージ選択</h1><p id="stageSkill"></p><button class="stage-card" data-stage="base"><strong>01　拠点破壊</strong><span>敵地を突破し、敵司令本部を破壊せよ。潜入・戦闘・乗り物を組み合わせる従来の作戦。</span><small>バランス型 ／ 目標：司令本部の破壊</small></button><button class="stage-card" data-stage="front"><strong>02　最前線</strong><span>味方部隊と進撃し、3か所の戦線を順番に制圧せよ。円内の敵を排除し、味方と陣地を確保。制圧すると補給と前進増援が到着する。</span><small>戦闘中心 ／ 円内で12秒確保・敵がいると制圧停止</small></button><button class="stage-card" data-stage="stealth"><strong>03　潜入</strong><span>3か所の機密情報を回収し、開始地点の脱出地点へ帰還せよ。徒歩で端末の近くに留まり解析。発見中は解析できず、警戒度が高まると追跡部隊が出現する。</span><small>スニーク中心 ／ 端末で4秒解析・全情報回収後に帰還</small></button><button class="stage-back" id="stageBack">← スキル選択へ</button></div></div><div id="missionHud" role="status"></div>
 
 <script>
@@ -705,7 +705,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.13.0832',FILE_CREATED_AT='2026/10/13 08:32',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.13.0918',FILE_CREATED_AT='2026/10/13 09:18',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -834,8 +834,8 @@ const COVER_ASSET_SRC={
  "rock":ASSET_DIR+'cover/rock.webp',
  "rock_v2":ASSET_DIR+'cover/rock_v2.webp',
  "maze_wall":ASSET_DIR+'cover/maze_wall.webp',
- "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.webp?v=2026.10.13.0832',
- "barrel":ASSET_DIR+'cover/barrel.webp?v=2026.10.13.0832',
+ "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.webp?v=2026.10.13.0918',
+ "barrel":ASSET_DIR+'cover/barrel.webp?v=2026.10.13.0918',
  "command_building_1":ASSET_DIR+'cover/command_building_1.webp',
  "wood_bridge":ASSET_DIR+'terrain/wood_bridge.webp'
 };
@@ -2581,7 +2581,7 @@ function distributeFlankPatrols(){
 function reset(rerollSkills=true){
  clearStaticRasterCache();clearFragmentRenderCache();
  radioStrikeKillContext=0;burningNatureSet.clear();lastEnemySeparationAt=-1e9;patrolChatScanT=0;allyTargetRefreshAt=0;
- partnerOrder.pressed=false;partnerOrder.drawing=false;partnerOrder.path=[];partnerOrder.cursor=null;partnerOrder.signalT=0;
+ partnerOrder.pressed=false;partnerOrder.drawing=false;partnerOrder.path=[];partnerOrder.cursor=null;partnerOrder.signalT=0;partnerOrder.signalKind='point';
  state='play';shake=0;flash=0;msg='';msgT=0;chainToastT=0;oneShotToastT=0;chainToast='';oneShotToast='';interact=false;bombReq=false;skillReq=false;decoy=null;allies=[];partner=null;hound=null;houndTrail=[];allySeq=0;builtWalls=[];tankWrecks=[];radio=null;airstrike=null;airbombs=[];weather='clear';weatherT=0;rainIntensity=0;weatherNext=15+R()*35;baseSpawnT=5;deathT=0;cam=0;camX=0;scoreStats=newScoreStats();
  setupZones();if(rerollSkills)rollSkillChoices();
  waterRipples=[];
@@ -3662,7 +3662,7 @@ function wreck(){
   if(p.tank.kind==='fighter')p.tank.hp=FIGHTER_TYPE.hp;
   shake=Math.max(shake,4);flash=Math.max(flash,.14);return;
  }
- const veh=p.tank,kind=veh&&veh.kind,wasTruck=kind==='truck',wasFighter=kind==='fighter';if(kind==='tank'&&veh.t.id!=='armored')spawnTankWreck(p.x,p.y,p.body,p.ang,veh.t);sfx('explosion');fb(p.x,p.y,50);burst(p.x,p.y,50,wasTruck?'#d48a52':wasFighter?'#9fc8e8':'#ff7b3a',330);p.tank=null;p.hp=3;p.cc=0;p.vc=0;shake=16;flash=.5;say(veh&&veh.t.id==='armored'?'装甲車大破! 歩兵として脱出':wasTruck?'トラック大破! 歩兵として脱出':wasFighter?'戦闘機撃墜! 歩兵として脱出':'戦車大破!歩兵として脱出');
+ const veh=p.tank,kind=veh&&veh.kind,wasTruck=kind==='truck',wasFighter=kind==='fighter';if(kind==='tank'&&veh.t.id!=='armored')spawnTankWreck(p.x,p.y,p.body,p.ang,veh.t);sfx('explosion');fb(p.x,p.y,50);burst(p.x,p.y,50,wasTruck?'#d48a52':wasFighter?'#9fc8e8':'#ff7b3a',330);releasePartnerSharedWreck(veh);p.partnerDriver=false;p.tank=null;p.hp=3;p.cc=0;p.vc=0;shake=16;flash=.5;say(veh&&veh.t.id==='armored'?'装甲車大破! 歩兵として脱出':wasTruck?'トラック大破! 歩兵として脱出':wasFighter?'戦闘機撃墜! 歩兵として脱出':'戦車大破!歩兵として脱出');
 }
 function truckTankCrashFx(x,y,e,actionId=0){
  if(e&&e.alive){destroyEnemyTank(e,x,y);if(actionId)recordPlayerKill(actionId);burst(e.x,e.y,46,'#ff6a2a',380);}
@@ -4806,7 +4806,7 @@ function update(dt){
  if(sniperLocked){bombReq=false;cannonReq=false;}
  const cy=Math.max(0,Math.min(WH-H,p.y-H*.6)),cx=Math.max(0,Math.min(WW-W,p.x-W/2)),wx=mx+cx,wy=my+cy;
  const autoFlight=debugMode===4;
- const ix=partnerOrder.drawing?0:autoFlight?0:(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0),iy=partnerOrder.drawing?0:autoFlight?-1:(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0),il=Math.hypot(ix,iy)||1,V=p.tank,T=V&&V.t,isTruck=!!(V&&V.kind==='truck'),isWheeled=truckLikeVehicle(V),isFighter=!!(V&&V.kind==='fighter');
+ const ix=(partnerOrder.pressed||partnerOrder.drawing||isPartnerDrivenVehicle())?0:autoFlight?0:(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0),iy=(partnerOrder.pressed||partnerOrder.drawing||isPartnerDrivenVehicle())?0:autoFlight?-1:(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0),il=Math.hypot(ix,iy)||1,V=p.tank,T=V&&V.t,isTruck=!!(V&&V.kind==='truck'),isWheeled=truckLikeVehicle(V),isFighter=!!(V&&V.kind==='fighter');
  const prepDig=p.digPrep>0,sp=T?(debugMode>=3&&isFighter?T.sp*3:T.sp):150,r=T?(isFighter?24:isTruck?20:TANK_HIT):8;let frameMove=0;
  const areaDebugInfiniteFuel=!!(p.tank&&(p.tank.kind==='tank'||p.tank.kind==='truck')&&(areaDebugEnabled||p.tank.debugInfinite));
  const areaDebugInfiniteAmmo=!!(p.tank&&p.tank.kind==='tank'&&(areaDebugEnabled||p.tank.debugInfinite));
@@ -4838,21 +4838,22 @@ function update(dt){
  if(skillReq){skillReq=false;if(p.sniperMode){if(!(p.sniperExitT>0))fireSniper();}else if(p.sniperEnterT>0||p.sniperReadyT>0){}else if(T)say('スキルは歩兵のときに使える');else if(skill==='hound'&&hound&&hound.stun>0){say('猟犬は気絶中');}else if(skill==='hound'&&hound&&hound.state!=='follow'){say('猟犬は行動中');}else if(skill==='dig'&&p.dig>0){finishDig('潜航解除：地上に出た');}else if(skill==='dig'&&p.digPrep>0){say('潜伏準備中');}else if(skill==='flame'){}else if(skill==='throw'){const pb=bombs.findIndex(b=>b.own==='p');if(pb>=0&&!(bombs[pb].fly>0)){bombBlast(bombs[pb].x,bombs[pb].y);bombs.splice(pb,1);say('起爆!');}else if(p.scd>0)say('スキル準備中');else if(p.dig<=0&&p.digPrep<=0)useSkill(wx,wy);}else if(p.scd>0)say('スキル準備中');else if(p.dig<=0&&p.digPrep<=0&&p.drill<=0)useSkill(wx,wy);}
  if(bombReq){bombReq=false;if(!T&&!(p.dig>0)&&!(p.digPrep>0)){const pb=bombs.findIndex(b=>b.own==='p');if(pb<0){bombs.push({x:p.x,y:p.y,own:'p',armed:false});sfx('skill');say('爆弾を設置(D（スマホ：B）で起爆)');}else if(!(bombs[pb].fly>0)){bombBlast(bombs[pb].x,bombs[pb].y);bombs.splice(pb,1);}}}
  let near=null;if(!sniperLocked&&!T&&!(p.digPrep>0))near=cars.find(c=>D(c,p)<(c.kind==='fighter'?76:58));
+ if(!sniperLocked&&!T&&!(p.digPrep>0)&&skill==='partner'&&partner&&partner.vehicle&&!partner.down&&!(partner.stunT>0)&&D(partner,p)<(partner.vehicle.kind==='fighter'?76:58)&&(!near||D(partner,p)<D(near,p)))near=partner.vehicle;
  const nearHuman=!sniperLocked&&!T&&!(p.dig>0)&&!(p.digPrep>0)&&!(p.drill>0)?humans.filter(h=>h.alive&&!(h.stun>0)&&D(h,p)<38).sort((a,b)=>D(a,p)-D(b,p))[0]:null;
  if(interact){interact=false;if(p.digPrep>0){say('潜伏準備中');}
   else if(T){const veh=p.tank,spot=findDismountSpot(p.x,p.y,veh.kind);if(!spot){say('ここでは降車できない');}else{
    Object.assign(veh,{x:p.x,y:p.y,body:p.body});
    if(truckLikeVehicle(veh)){const recent=performance.now()-(veh.lastDriveAt||0)<650;veh.coastMax=recent?1.4:.38;veh.coastT=veh.coastMax;veh.coastSp=recent?Math.max(45,Math.min(veh.t.sp,veh.lastDriveSpeed||veh.t.sp*.7)):veh.t.sp*.22;veh.coastActionId=newCombatAction('truckCoast');}
-   cars.push(veh);p.tank=null;touchTurretAngle=null;p.x=spot.x;p.y=spot.y;onHoundPlayerDismount();sfx('enter');say('降車');
+   if(!isPartnerDrivenVehicle())cars.push(veh);p.partnerDriver=false;p.tank=null;touchTurretAngle=null;p.x=spot.x;p.y=spot.y;onHoundPlayerDismount();sfx('enter');say('降車');
   }}
   else if(nearHuman){if(stunHuman(nearHuman)){p.grappleT=.3;p.grappleTarget=nearHuman;p.body=Math.atan2(nearHuman.y-p.y,nearHuman.x-p.x);}}
-  else if(near&&!(p.dig>0)&&!(p.drill>0)){cars=cars.filter(c=>c!==near);p.tank=near;if(scoreStats){scoreStats.vehicleBoards++;scoreStats.vehicleKinds[near.t.id==='armored'?'armored':near.kind]=true;}p.body=near.body??p.body;p.ang=p.body;touchTurretAngle=null;sfx('enter');vehicleNameT=1.8;say(near.t.n+' に搭乗!');}else if(near&&p.drill>0)say('突貫中は搭乗できない');}
+  else if(near&&!(p.dig>0)&&!(p.drill>0)){cars=cars.filter(c=>c!==near);p.tank=near;p.partnerDriver=!!(partner&&partner.vehicle===near);if(p.partnerDriver){p.x=partner.x;p.y=partner.y;}if(scoreStats){scoreStats.vehicleBoards++;scoreStats.vehicleKinds[near.t.id==='armored'?'armored':near.kind]=true;}p.body=near.body??p.body;p.ang=p.body;touchTurretAngle=null;sfx('enter');vehicleNameT=1.8;say(near.t.n+' に搭乗!');}else if(near&&p.drill>0)say('突貫中は搭乗できない');}
  updateCoastingTrucks(dt);
  const dAttack=!!(keys.KeyD||mdown||cannonReq);cannonReq=false;
- if(p.tank&&p.tank.kind==='fighter'){if(dAttack&&p.cc<=0)fighterBomb();}
+ if(p.tank&&p.tank.kind==='fighter'){if(!isPartnerDrivenVehicle()&&dAttack&&p.cc<=0)fighterBomb();}
  else if(p.tank&&p.tank.kind==='tank'){const t=p.tank.t;
-  if(t.id!=='armored'&&dAttack&&p.cc<=0&&p.tank.c>0){p.cc=t.ccd;if(!areaDebugInfiniteAmmo)p.tank.c--;fire(p.x+Math.cos(p.ang)*44,p.y+Math.sin(p.ang)*44,p.ang,'p','c',t.cspd,t.crng,t.cdmg);shake=6;burst(p.x+Math.cos(p.ang)*47,p.y+Math.sin(p.ang)*47,8,'#ffd27a',140);}
-  if((keys.KeyS||(t.id==='armored'&&dAttack))&&p.vc<=0&&p.tank.v>0){p.vc=t.vcd;if(!areaDebugInfiniteAmmo)p.tank.v--;fire(p.x+Math.cos(p.ang)*36,p.y+Math.sin(p.ang)*36,p.ang+(R()-.5)*.1,'p','v',468,306);}}
+  if(!isPartnerDrivenVehicle()&&t.id!=='armored'&&dAttack&&p.cc<=0&&p.tank.c>0){p.cc=t.ccd;if(!areaDebugInfiniteAmmo)p.tank.c--;fire(p.x+Math.cos(p.ang)*44,p.y+Math.sin(p.ang)*44,p.ang,'p','c',t.cspd,t.crng,t.cdmg);shake=6;burst(p.x+Math.cos(p.ang)*47,p.y+Math.sin(p.ang)*47,8,'#ffd27a',140);}
+  if(!playerVehicleGunBlocked()&&(keys.KeyS||(t.id==='armored'&&dAttack))&&p.vc<=0&&p.tank.v>0){p.vc=t.vcd;if(!areaDebugInfiniteAmmo)p.tank.v--;fire(p.x+Math.cos(p.ang)*36,p.y+Math.sin(p.ang)*36,p.ang+(R()-.5)*.1,'p','v',468,306);}}
  for(const it of items)if(p.tank&&!it.got&&D(it,p)<38){it.got=true;const fm=p.tank.t.fmax||100;p.tank.f=fm;sfx('pickup');say('ガソリン満タン!');}
  if(radio&&!radio.got&&D(radio,p)<30){radio.got=true;startAirstrike();}
  updateHound(dt);
@@ -4996,7 +4997,7 @@ function update(dt){
     if(fh){fh.alive=false;burst(fh.x,fh.y,14,'#c05a3a',180);}
     if(!dead){const ft=etanks.find(e=>e.alive&&Math.hypot(b.x-e.x,b.y-e.y)<TANK_HIT);if(ft){dead=true;cannonImpact(ft.x,ft.y,b.from);destroyEnemyTank(ft,ox,oy);burst(ft.x,ft.y,45,'#ff6a2a',360);shake=Math.max(shake,10);}}
    }
-   if(!dead&&partner&&!partner.down&&D(b,partner)<(partner.vehicle?30:12)){
+   if(!dead&&partner&&!partner.down&&!(p.tank&&(partner.vehicle===p.tank||partner.passengerVehicle===p.tank))&&D(b,partner)<(partner.vehicle?30:12)){
     dead=true;if(b.k==='c')cannonImpact(b.x,b.y,b.from);
     if(partner.vehicle){
      const v=partner.vehicle;
@@ -5018,7 +5019,7 @@ function update(dt){
   if(dead)bullets.splice(i,1);}
  for(const w of waves){w.r+=260*dt;if(!w.houndHit&&hound&&D(w,hound)<w.r){w.houndHit=true;stunHound(5);}if(!w.bh){const br=baseHitRect(),nx=Math.max(br.x,Math.min(br.x+br.w,w.x)),ny=Math.max(br.y,Math.min(br.y+br.h,w.y));if(Math.hypot(nx-w.x,ny-w.y)<w.r){w.bh=true;damageBase(6,nx,ny,30,1);fb(nx,ny,34);burst(nx,ny,30,'#ffb347',300);shake=Math.max(shake,10);}}for(const h of humans)if(h.alive&&Math.hypot(h.x-w.x,h.y-w.y)<w.r){h.alive=false;recordPlayerKill(w.actionId||0);burst(h.x,h.y,12,'#c05a3a',180);}
   if(!w.hit&&!p.tank&&!(p.dig>0)&&D(w,p)<w.r){w.hit=true;damagePlayerByOwnBomb();}}waves=waves.filter(w=>w.r<w.max);
- updateAlly(dt);updatePartner(dt);updateAirstrike(dt);
+ updateAlly(dt);updatePartner(dt);syncPartnerDriverPassenger();updateAirstrike(dt);
  // 水面アニメーションと同じ向きの流れを地上ユニットへ反映する。
  applyRiverCurrents(dt);
  for(const o of [...humans,...etanks])holdEnemyModePosition(o);
@@ -7322,7 +7323,7 @@ function reportGameError(error){
 }
 requestAnimationFrame(loop);
 </script>
-<script src="js/partner.js?v=2026.10.13.0832"></script>
+<script src="js/partner.js?v=2026.10.13.0918"></script>
 <script>
 (function(){
 // iPhone Chrome/Safari: synthetic KeyboardEvent に依存せず、ゲーム内部の入力状態を直接更新する。
@@ -7375,8 +7376,8 @@ const syncActionButton=()=>{
  const truckMode=!!(p&&p.tank&&p.tank.kind==='truck'),fighterMode=!!(p&&p.tank&&p.tank.kind==='fighter'),tankMode=!!(p&&p.tank&&p.tank.kind==='tank'),sniperMode=!!(p&&p.sniperMode),planted=!!(p&&!p.tank&&bombs&&bombs.some(b=>b.own==='p'&&!(b.fly>0))),mode=armoredMode?'armored':sniperMode?'sniper':truckMode?'truck':fighterMode?'fighter':tankMode?'tank':planted?'detonate':'human';
  if(mode!==lastActionMode){lastActionMode=mode;actionGlyph.textContent=truckMode||sniperMode?'×':'B';actionBtn.setAttribute('aria-label',sniperMode?'狙撃中は使用不可':truckMode?'攻撃不可':fighterMode?'爆撃':armoredMode?'SMG':tankMode?'主砲':planted?'起爆':'爆弾');}
  const specialSkillGauge=!p?.tank?skillGaugeStatus():null;
- const nextActionLabel=sniperMode?'使用不可':truckMode?'攻撃不可':fighterMode?'爆撃':armoredMode?'SMG':tankMode?'主砲':planted?'起爆':'爆弾',nextSkillLabel=sniperMode&&p?.sniperExitT>0?'収納中':armoredMode?'SMG':tankMode?'MG':fighterMode||truckMode?'—':specialSkillGauge?specialSkillGauge.touch:(p&&p.drill>0?'突貫':SKN[skill]);
- if(nextActionLabel!==lastActionLabel){lastActionLabel=nextActionLabel;actionLabel.textContent=nextActionLabel;}
+ const nextActionLabel=isPartnerDrivenVehicle()?(armoredMode?'SMG':'相棒操作'):playerVehicleGunBlocked()&&armoredMode?'相棒操作':sniperMode?'使用不可':truckMode?'攻撃不可':fighterMode?'爆撃':armoredMode?'SMG':tankMode?'主砲':planted?'起爆':'爆弾',nextSkillLabel=playerVehicleGunBlocked()?'相棒担当':sniperMode&&p?.sniperExitT>0?'収納中':armoredMode?'SMG':tankMode?'MG':fighterMode||truckMode?'—':specialSkillGauge?specialSkillGauge.touch:(p&&p.drill>0?'突貫':SKN[skill]);
+ if(nextActionLabel!==lastActionLabel){lastActionLabel=nextActionLabel;actionLabel.textContent=nextActionLabel;actionBtn.setAttribute('aria-label',nextActionLabel);}
  if(nextSkillLabel!==lastSkillLabel){lastSkillLabel=nextSkillLabel;skillLabel.textContent=nextSkillLabel;}
  if(armoredMode)paintRing(actionCooldown,Math.max(0,p.vc),p.tank.t.vcd);else if((tankMode||fighterMode)&&p&&p.tank)paintRing(actionCooldown,Math.max(0,p.cc),p.tank.t.ccd);else paintRing(actionCooldown,0,1);
  if(tankMode&&p&&p.tank)paintRing(skillCooldown,Math.max(0,p.vc),Math.max(.01,p.tank.t.vcd));

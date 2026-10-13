@@ -1,3 +1,15 @@
+function isPartnerDrivenVehicle(){return !!(p&&p.partnerDriver&&p.tank&&partner&&partner.vehicle===p.tank);}
+function playerVehicleGunBlocked(){return !!(skill==='partner'&&p&&p.tank&&partner&&partner.passengerVehicle===p.tank);}
+function syncPartnerDriverPassenger(){
+ if(!isPartnerDrivenVehicle())return;
+ p.x=partner.x;p.y=partner.y;p.body=partner.face;
+}
+function releasePartnerSharedWreck(v){
+ if(!partner||partner.vehicle!==v)return;
+ partner.vehicle=null;partner.route=null;partner.boardTarget=null;partner.backup=false;partner.moving=false;
+ partner.hp=Math.max(0,partner.hp-1);partner.down=partner.hp<=0;partner.stunT=partner.down?0:2;partner.stunContactDelay=.3;
+ p.partnerDriver=false;
+}
 function updatePartnerPassenger(q,dt){
  if(q.passengerVehicle&&q.passengerVehicle!==p.tank){
   q.passengerVehicle=null;q.planT=0;q.backup=true;q.route=null;
@@ -7,7 +19,7 @@ function updatePartnerPassenger(q,dt){
   }
  }
  if(!q.passengerVehicle&&p.tank&&!q.vehicle&&!q.down&&!(q.stunT>0)&&D(q,p)<=200){
-  q.passengerVehicle=p.tank;q.route=null;q.boardTarget=null;q.reentryT=0;q.passengerScan=0;q.passengerTarget=null;
+  q.passengerVehicle=p.tank;p.partnerDriver=false;q.route=null;q.boardTarget=null;q.reentryT=0;q.passengerScan=0;q.passengerTarget=null;
  }
  if(!q.passengerVehicle)return false;
  q.x=p.x;q.y=p.y;q.face=p.body;q.moving=false;
@@ -27,10 +39,10 @@ function updatePartnerPassenger(q,dt){
  return true;
 }
 function drawPartnerPassengerHead(){
- const q=partner;if(skill!=='partner'||!q||!p.tank||q.passengerVehicle!==p.tank)return;
+ const q=partner;if(skill!=='partner'||!q||!p.tank||q.passengerVehicle!==p.tank&&!isPartnerDrivenVehicle())return;
  // 全車種で同乗を示す静止バッジ。戦車・装甲車は従来の頭も表示。
- g.save();const badgeY=p.y-(p.tank.kind==='fighter'?78:p.tank.kind==='truck'?52:58);
- g.translate(p.x,badgeY);g.fillStyle='rgba(8,16,20,.82)';g.beginPath();g.arc(0,0,14,0,Math.PI*2);g.fill();
+ g.save();const badgeY=p.y-(p.tank.kind==='fighter'?15:10);
+ g.translate(p.x+14,badgeY);g.fillStyle='rgba(8,16,20,.82)';g.beginPath();g.arc(0,0,14,0,Math.PI*2);g.fill();
  g.fillStyle='#baa585';g.beginPath();g.arc(0,2,8,0,Math.PI*2);g.fill();
  g.fillStyle='#4e6855';g.beginPath();g.ellipse(0,-3,10,8,0,Math.PI,Math.PI*2);g.lineTo(10,0);g.lineTo(-10,0);g.closePath();g.fill();
  g.strokeStyle='#399bff';g.lineWidth=3;g.beginPath();g.moveTo(-9,-2);g.lineTo(9,-2);g.stroke();g.restore();
@@ -75,7 +87,7 @@ function partnerBoardVehicle(q,car){
  sfx('enter');return true;
 }
 function partnerExitVehicle(q){
- if(!q||!q.vehicle)return false;
+ if(!q||!q.vehicle||isPartnerDrivenVehicle())return false;
  const v=q.vehicle,ang=q.face||0;
  const options=[ang+Math.PI/2,ang-Math.PI/2,ang+Math.PI,ang,0,Math.PI];
  let spot=null;
@@ -93,6 +105,7 @@ function partnerExitVehicle(q){
 }
 function partnerVehicleDestroyed(q){
  if(!q||!q.vehicle)return;
+ if(isPartnerDrivenVehicle()){wreck();return;}
  const v=q.vehicle;q.vehicle=null;q.boardTarget=null;q.route=null;q.routeStart=null;
  q.routeWait=0;q.backup=false;q.moving=false;q.wallFollow=null;q.sideStep=null;
  burst(q.x,q.y,32,'#ff8244',220);sfx('explosion');
@@ -150,7 +163,7 @@ function partnerVehicleAttack(q,dt){
    q.vehicleCannonT=v.t.ccd||2.5;v.c--;
    fire(q.x+Math.cos(a)*44,q.y+Math.sin(a)*44,a,'ally','c',v.t.cspd||558,v.t.crng||504,v.t.cdmg||3);
   }
-  if(closestHuman&&v.v>0&&q.vehicleGunT<=0){
+  if(!isPartnerDrivenVehicle()&&closestHuman&&v.v>0&&q.vehicleGunT<=0){
    const ma=Math.atan2(closestHuman.y-q.y,closestHuman.x-q.x);
    q.vehicleAim=ma;q.vehicleGunT=v.t.vcd||.2;v.v--;
    fire(q.x+Math.cos(ma)*35,q.y+Math.sin(ma)*35,ma+(R()-.5)*.08,'ally','v',468,306);
@@ -166,7 +179,7 @@ function partnerVehicleAttack(q,dt){
  }
 }
 // S short press: call the partner back. Long press: freeze player and draw a route using movement keys.
-const partnerOrder={pressed:false,held:0,drawing:false,cursor:null,path:[],signalT:0};
+const partnerOrder={pressed:false,held:0,drawing:false,cursor:null,path:[],signalT:0,signalKind:'point'};
 function startPartnerOrder(){
  if(skill!=='partner'||state!=='play'||!p||p.tank)return;
  partnerOrder.signalT=0;partnerOrder.pressed=true;partnerOrder.held=0;partnerOrder.drawing=false;partnerOrder.cursor=null;partnerOrder.path=[];
@@ -174,11 +187,12 @@ function startPartnerOrder(){
 function finishPartnerOrder(confirm=true){
  if(!partnerOrder.pressed)return;
  if(confirm&&partner&&!partner.down&&!(partner.stunT>0)){
+  if(!partnerOrder.drawing){partnerOrder.signalT=1;partnerOrder.signalKind='call';}
   if(partner.vehicle&&!partnerOrder.drawing){partnerExitVehicle(partner);}
   else if(partnerOrder.drawing){
    if(partnerOrder.path.length>1){
     partner.route=partnerOrder.path.slice(1).map(v=>({x:v.x,y:v.y}));
-    partner.routeIndex=0;partner.routeWait=0;partnerOrder.signalT=1;partner.routePointT=0;partner.routeStuckT=0;partner.routeStart={x:partner.x,y:partner.y};partner.backup=false;
+    partner.routeIndex=0;partner.routeWait=0;partnerOrder.signalT=1;partnerOrder.signalKind='point';partner.routePointT=0;partner.routeStuckT=0;partner.routeStart={x:partner.x,y:partner.y};partner.backup=false;
     partner.wallFollow=null;partner.sideStep=null;
     partner.boardTarget=null;
     if(!partner.vehicle){
@@ -188,7 +202,7 @@ function finishPartnerOrder(confirm=true){
     // 指差しの吹き出しでルート確定を伝え、待ち時間なしで出発する。
    }else say('方向キーでルートを描いてください');
   }else{
-   partner.backup=true;partner.route=null;partner.boardTarget=null;partner.routeWait=0;partner.planT=0;
+   partnerOrder.signalT=1;partnerOrder.signalKind='call';partner.backup=true;partner.route=null;partner.boardTarget=null;partner.routeWait=0;partner.planT=0;
    partner.wallFollow=null;partner.sideStep=null;say('相棒：バックアップ！');
   }
  }
@@ -198,7 +212,7 @@ function updatePartnerOrder(dt){
  partnerOrder.signalT=Math.max(0,partnerOrder.signalT-dt);
  if(!partnerOrder.pressed||skill!=='partner'||state!=='play'||!p||p.tank)return;
  partnerOrder.held+=dt;
- if(partnerOrder.held>=.45&&!partnerOrder.drawing&&partner&&!partner.down&&!(partner.stunT>0)){
+ if(partnerOrder.held>=.18&&!partnerOrder.drawing&&partner&&!partner.down&&!(partner.stunT>0)){
   partnerOrder.drawing=true;partnerOrder.cursor={x:partner.x,y:partner.y};
   partnerOrder.path=[{x:partner.x,y:partner.y}];partnerOrder.blocked=false;
  }
@@ -254,7 +268,7 @@ function partnerKnockoutPatrol(dt){
 }
 // Revival/reposition must execute even when the companion is incapacitated.
 function recallSeparatedPartner(q,dt){
- if(!q||!p)return false;
+ if(!q||!p||isPartnerDrivenVehicle())return false;
  const cx=Math.max(0,Math.min(WW-W,p.x-W/2)),cy=Math.max(0,Math.min(WH-H,p.y-H*.6));
  const separated=q.x<cx-12||q.x>cx+W+12||q.y<cy-12||q.y>cy+H+12;
  const tooFar=D(q,p)>Math.max(300,Math.max(W,H)*.8);
@@ -352,6 +366,7 @@ function updatePartner(dt){
   if(q.routeIndex>=q.route.length){q.route=null;q.routeStart=null;q.planT=0;say('相棒が指定ルートを完了！');}
   return;
  }
+ if(isPartnerDrivenVehicle()){q.moving=false;return;}
  if(q.backup){
   const oldX=q.x,oldY=q.y,d=D(q,p);
   if(d<49){q.backup=false;q.planT=0;q.moving=false;}
@@ -435,7 +450,7 @@ function drawPartnerHandSign(x,y,pointing){
  g.save();g.translate(x,y-43);g.fillStyle='#fff4d7';g.strokeStyle='#473e2c';g.lineWidth=1.5;
  g.beginPath();g.roundRect(-19,-17,38,32,8);g.fill();g.stroke();
  g.beginPath();g.moveTo(-4,14);g.lineTo(0,21);g.lineTo(5,14);g.fill();g.stroke();
- g.font='25px system-ui';g.textAlign='center';g.textBaseline='middle';g.fillStyle='#222';g.fillText(pointing?'👉':'✊',0,0);g.restore();
+ g.font='25px system-ui';g.textAlign='center';g.textBaseline='middle';g.fillStyle='#222';g.fillText(pointing==='call'?'🫴':pointing?'👉':'✊',0,0);g.restore();
 }
 function drawPartner(){
  if(!partner||skill!=='partner')return;const q=partner;
@@ -444,11 +459,15 @@ function drawPartner(){
   g.save();g.strokeStyle='#76d5ff';g.lineWidth=3;g.setLineDash([8,5]);g.beginPath();
   partnerOrder.path.forEach((pt,i)=>{if(!i)g.moveTo(pt.x,pt.y);else g.lineTo(pt.x,pt.y);});
   if(partnerOrder.cursor)g.lineTo(partnerOrder.cursor.x,partnerOrder.cursor.y);
-  g.stroke();g.setLineDash([]);g.restore();
+  g.stroke();g.setLineDash([]);
+  const tip=partnerOrder.cursor||partnerOrder.path[partnerOrder.path.length-1];
+  let from=null;for(let i=partnerOrder.path.length-1;i>=0;i--){const pt=partnerOrder.path[i];if(tip&&Math.hypot(tip.x-pt.x,tip.y-pt.y)>1){from=pt;break;}}
+  if(tip&&from){const a=Math.atan2(tip.y-from.y,tip.x-from.x);g.fillStyle='#76d5ff';g.beginPath();g.moveTo(tip.x,tip.y);g.lineTo(tip.x-Math.cos(a-.5)*15,tip.y-Math.sin(a-.5)*15);g.lineTo(tip.x-Math.cos(a+.5)*15,tip.y-Math.sin(a+.5)*15);g.closePath();g.fill();}
+  g.restore();
  }
 
  if(!q.down&&!(q.stunT>0)&&(partnerOrder.drawing||partnerOrder.signalT>0)){
-  const pointing=!partnerOrder.drawing;drawPartnerHandSign(p.x,p.y,pointing);
+  const pointing=partnerOrder.drawing?false:partnerOrder.signalKind;drawPartnerHandSign(p.x,p.y,pointing);
  }
 
  if(q.down){
@@ -466,6 +485,7 @@ function drawPartner(){
   g.strokeStyle='#399bff';g.lineWidth=2;g.beginPath();g.moveTo(-21,-1);g.lineTo(-12,0);g.stroke();g.restore();
   g.save();g.translate(q.x,q.y-26);g.fillStyle='#f3f3f3';g.strokeStyle='#a83232';g.lineWidth=1.5;g.beginPath();g.roundRect(-11,-8,22,17,3);g.fill();g.stroke();g.fillStyle='#d52b31';g.fillRect(-2,-6,4,13);g.fillRect(-7,-1,14,4);g.strokeStyle='#a83232';g.beginPath();g.moveTo(-4,-8);g.lineTo(-4,-11);g.lineTo(4,-11);g.lineTo(4,-8);g.stroke();g.restore();return;
  }
+ if(isPartnerDrivenVehicle())return;
  if(q.vehicle){
   drawVehicle(q.vehicle,q.x,q.y,q.face,q.vehicleAim??q.face);
   // Blue marker distinguishes the companion-operated vehicle from the player's.
