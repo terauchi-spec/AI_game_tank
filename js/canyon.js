@@ -33,12 +33,13 @@ function buildCanyonZones(){
    covers.push({kd:8,x,y,w,h,wildernessRock:1});made++;rebuildSpatialGrid();
   }
   const addShrub=(x,y,spinifex=false)=>{
-   const baseSize=65+R()*30,w=spinifex?baseSize*1.3*(1+R()*.5):baseSize,h=spinifex?w:45+R()*20,clearance=spinifex?w/2+8:40;
+   const baseSize=65+R()*30,w=spinifex?baseSize*1.3*.7*(1+R()*.5):baseSize,h=spinifex?w:45+R()*20,clearance=spinifex?w/2+8:40;
    if(x<12||x+w>WW-12||y<top+30||y+h>bottom-170||hitsM(x+w/2,y+h/2,clearance)||bushes.some(b=>circleHitsRect(x+w/2,y+h/2,spinifex?clearance:45,b)))return false;
    const b={x,y,w,h,spinifex};if(!spinifex&&R()<.15)b.wildFlowers=Array.from({length:3+(R()*3|0)},()=>({dx:w*(.2+R()*.6),dy:h*(.2+R()*.5),white:R()<.55}));bushes.push(b);rebuildSpatialGrid();return true;
   };
   for(let i=0,made=0;i<80&&made<3;i++)if(addShrub(35+R()*(WW-135),top+70+R()*Math.max(1,span-360),true))made++;
   if(z.oasis){const o=z.oasis;for(let i=0,made=0;i<160&&made<20;i++){const a=R()*Math.PI*2,rx=o.w/2+55+R()*50,ry=o.h/2+55+R()*50;if(addShrub(o.x+o.w/2+Math.cos(a)*rx-40,o.y+o.h/2+Math.sin(a)*ry-25))made++;}}
+  initTumbleweeds(z);
  }
  rebuildSpatialGrid();
  // Relocate only patrols invalidated by a new pond or mesa, to a dry short route.
@@ -126,16 +127,19 @@ function tumbleweedSprite(){
  }
  tumbleweedCache=c;return c;
 }
-function resetTumbleweed(b,z,i){
- const top=Math.max(z.y1+50,p.y-H*.7),bottom=Math.min(z.y0-70,p.y+H*.45);
+function resetTumbleweed(b,z,i,initial=false){
+ const top=initial?z.y1+50:Math.max(z.y1+50,p.y-H*.7),bottom=initial?z.y0-70:Math.min(z.y0-70,p.y+H*.45);
  // Deterministic local placement avoids altering the game's enemy/map random sequence.
  b.seed=((b.seed||571+i*913)*1664525+1013904223)>>>0;const f=b.seed/4294967296;
- b.x=35+(i*179+f*87)%(WW-70);b.y=top+Math.max(1,bottom-top)*((i*.217+f)%1);b.r=(13+i%3*3)*2;b.rot=b.rot||0;
+ b.x=35+(i*179+f*87)%(WW-70);b.y=top+Math.max(1,bottom-top)*((i*.217+f)%1);b.r=(13+i%3*3)*2*.6;b.rot=b.rot||0;
  if(z.oasis&&oasisContains(z.oasis,b.x,b.y,b.r)){b.y=Math.max(z.y1+70,z.oasis.y-60-b.r);}
 }
+function initTumbleweeds(z){
+ z.tumbleweeds=[];for(let i=0;i<7;i++){const b={};resetTumbleweed(b,z,i,true);z.tumbleweeds.push(b);}
+}
 function updateTumbleweeds(dt,z){
- if(tumbleweedZone!==z){tumbleweeds.length=0;tumbleweedZone=z;}
- if(!tumbleweeds.length&&sandIntensity>.05)for(let i=0;i<10;i++){const b={};resetTumbleweed(b,z,i);tumbleweeds.push(b);}
+ if(!z.tumbleweeds)initTumbleweeds(z);
+ if(tumbleweedZone!==z){tumbleweeds.length=0;tumbleweeds.push(...z.tumbleweeds);tumbleweedZone=z;}
  if(sandWindSpeed<=.01)return;
  for(let i=0;i<tumbleweeds.length;i++){
   const b=tumbleweeds[i],travel=sandWindSpeed*(.24+i*.025)*dt,x=b.x+SAND_WIND_X*travel,y=b.y+SAND_WIND_Y*travel;
@@ -144,9 +148,9 @@ function updateTumbleweeds(dt,z){
  }
 }
 function drawTumbleweeds(cx,cy){
- if(!p||zoneAt(p.y).n!=='荒野'||!tumbleweeds.length)return;
- const im=tumbleweedSprite();
- for(const b of tumbleweeds)if(drawPointInView(b.x,b.y,cx,cy,45)){g.save();g.translate(b.x,b.y-Math.sin(b.rot*1.7)*2);g.rotate(b.rot);drawStaticRaster(im,-b.r,-b.r,b.r*2,b.r*2);g.restore();}
+ let im=null;for(const z of ZONES)if(z.n==='荒野'&&z.y0>cy-45&&z.y1<cy+H+45)for(const b of z.tumbleweeds||[])if(drawPointInView(b.x,b.y,cx,cy,45)){
+  if(!im)im=tumbleweedSprite();g.save();g.translate(b.x,b.y-Math.sin(b.rot*1.7)*2);g.rotate(b.rot);drawStaticRaster(im,-b.r,-b.r,b.r*2,b.r*2);g.restore();
+ }
 }
 function updateSandstorm(dt){
  const z=p&&zoneAt(p.y),arid=z&&z.n==='荒野';
