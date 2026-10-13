@@ -33,7 +33,7 @@ function buildCanyonZones(){
    covers.push({kd:8,x,y,w,h,wildernessRock:1});made++;rebuildSpatialGrid();
   }
   const addShrub=(x,y,spinifex=false)=>{
-   const baseSize=65+R()*30,w=spinifex?baseSize*1.3*.7*(1+R()*.5):baseSize,h=spinifex?w:45+R()*20,clearance=spinifex?w/2+8:40;
+   const baseSize=65+R()*30,w=spinifex?spinifexPlacementSize(baseSize,R()):baseSize,h=spinifex?w:45+R()*20,clearance=spinifex?w/2+8:40;
    if(x<12||x+w>WW-12||y<top+30||y+h>bottom-170||hitsM(x+w/2,y+h/2,clearance)||bushes.some(b=>circleHitsRect(x+w/2,y+h/2,spinifex?clearance:45,b)))return false;
    const b={x,y,w,h,spinifex};if(!spinifex&&R()<.15)b.wildFlowers=Array.from({length:3+(R()*3|0)},()=>({dx:w*(.2+R()*.6),dy:h*(.2+R()*.5),white:R()<.55}));bushes.push(b);rebuildSpatialGrid();return true;
   };
