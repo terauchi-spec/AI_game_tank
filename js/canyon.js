@@ -52,7 +52,7 @@ function buildCanyonZones(){
 // The water and feathered bank are baked once at the same half resolution as rivers.
 const OASIS_PAD=36,OASIS_CACHE_SCALE=.5;
 function oasisImage(o){
- if(o.visualCache&&o.visualVersion===riverSurfaceVersion)return o.visualCache;
+ if(o.visualCache&&o.visualVersion===riverSurfaceVersion&&o.visualSoilReady===assetOK(TERRAIN_IMG['荒野']))return o.visualCache;
  if(o.visualCache)invalidateStaticRaster(o.visualCache);
  const pad=OASIS_PAD,S=OASIS_CACHE_SCALE,c=document.createElement('canvas');c.width=Math.ceil((o.w+pad*2)*S);c.height=Math.ceil((o.h+pad*2)*S);
  const q=gameCanvasContext(c),cx=o.w/2+pad,cy=o.h/2+pad,rx=o.w/2,ry=o.h/2,phase=riverHash(o,732)*Math.PI*2;
@@ -60,18 +60,22 @@ function oasisImage(o){
  // Gentle lobes stay close to the elliptical shallow-water collision boundary.
  const points=Array.from({length:96},(_,i)=>{const a=i/96*Math.PI*2,k=.985+.018*Math.sin(a*3+phase)+.012*Math.sin(a*7-phase)+.006*Math.sin(a*13+phase);return{x:Math.cos(a)*rx*k,y:Math.sin(a)*ry*k};});
  const trace=(ctx,f=1)=>{ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(cx+p.x*f,cy+p.y*f):ctx.moveTo(cx+p.x*f,cy+p.y*f));ctx.closePath();};
- const river=TERRAIN_IMG['川'];
- q.fillStyle='#63b7b0';q.fillRect(pad,pad,o.w,o.h);
+ // Bake a sandy bottom beneath a translucent water layer, rather than a solid cyan tint.
+ q.fillStyle='#b0a084';q.fillRect(0,0,o.w+pad*2,o.h+pad*2);
+ const soil=TERRAIN_IMG['荒野'];if(assetOK(soil)){const pt=q.createPattern(soil,'repeat');if(pt){if(pt.setTransform&&typeof DOMMatrix!=='undefined')pt.setTransform(new DOMMatrix().scale(.725));q.globalAlpha=.28;q.fillStyle=pt;q.fillRect(0,0,o.w+pad*2,o.h+pad*2);q.globalAlpha=1;}}
+ const river=TERRAIN_IMG['川'],wc=document.createElement('canvas');wc.width=c.width;wc.height=c.height;const wq=gameCanvasContext(wc);wq.setTransform(S,0,0,S,0,0);wq.imageSmoothingEnabled=true;wq.fillStyle='#427773';wq.fillRect(0,0,o.w+pad*2,o.h+pad*2);
  if(assetOK(river)){
   const iw=river.naturalWidth||river.width,ih=river.naturalHeight||river.height,ar=o.w/o.h;let sw=iw,sh=ih;
   if(ar>=iw/ih)sh=iw/ar;else sw=ih*ar;
   const sx=(iw-sw)*riverHash(o,977),sy=(ih-sh)*riverHash(o,1421);
-  q.globalAlpha=.40;q.drawImage(river,sx,sy,sw,sh,pad,pad,o.w,o.h);q.globalAlpha=1;
+  wq.drawImage(river,sx,sy,sw,sh,pad,pad,o.w,o.h);
  }
- const depth=q.createRadialGradient(cx-rx*.18,cy-ry*.18,20,cx,cy,rx);
- depth.addColorStop(0,'rgba(8,67,88,.22)');depth.addColorStop(.66,'rgba(76,184,184,.10)');depth.addColorStop(1,'rgba(178,224,186,.44)');q.fillStyle=depth;q.fillRect(0,0,o.w+pad*2,o.h+pad*2);
+ // The bed becomes more visible toward the shallow shore; deep water remains subdued.
+ wq.globalCompositeOperation='destination-in';wq.save();wq.translate(cx,cy);wq.scale(rx,ry);
+ const clarity=wq.createRadialGradient(0,0,0,0,0,1.05);clarity.addColorStop(0,'rgba(255,255,255,.91)');clarity.addColorStop(.55,'rgba(255,255,255,.82)');clarity.addColorStop(.85,'rgba(255,255,255,.62)');clarity.addColorStop(1,'rgba(255,255,255,.39)');wq.fillStyle=clarity;wq.fillRect(-2,-2,4,4);wq.restore();
+ q.save();q.setTransform(1,0,0,1,0,0);q.drawImage(wc,0,0);q.restore();
  // Faint submerged stones suggest a visible bottom in the clear shallows.
- for(let i=0;i<22;i++){const a=riverHash(o,7100+i)*Math.PI*2,r=.76+riverHash(o,7200+i)*.13,x=cx+Math.cos(a)*rx*r,y=cy+Math.sin(a)*ry*r,sz=1.5+riverHash(o,7300+i)*3;q.fillStyle=i%3?'rgba(188,185,132,.16)':'rgba(39,104,107,.12)';q.beginPath();q.ellipse(x,y,sz*1.5,sz,a,0,Math.PI*2);q.fill();}
+ for(let i=0;i<22;i++){const a=riverHash(o,7100+i)*Math.PI*2,r=.76+riverHash(o,7200+i)*.13,x=cx+Math.cos(a)*rx*r,y=cy+Math.sin(a)*ry*r,sz=1.5+riverHash(o,7300+i)*3;q.fillStyle=i%3?'rgba(168,163,133,.24)':'rgba(50,74,65,.20)';q.beginPath();q.ellipse(x,y,sz*1.5,sz,a,0,Math.PI*2);q.fill();}
  // A stepped alpha mask softens the shore instead of cutting out a crisp ellipse.
  const mask=document.createElement('canvas');mask.width=c.width;mask.height=c.height;const m=gameCanvasContext(mask);m.setTransform(S,0,0,S,0,0);m.fillStyle='#fff';
  for(let i=0;i<8;i++){m.globalAlpha=i===7?1:.12+i*.07;trace(m,1.025-i*.006);m.fill();}
@@ -84,9 +88,9 @@ function oasisImage(o){
   const a=riverHash(o,5100+i)*Math.PI*2,idx=Math.floor(a/Math.PI/2*points.length),p=points[idx],f=1.012+riverHash(o,5200+i)*.018,rr=1+riverHash(o,5300+i)*2;
   q.fillStyle=i%3?'rgba(88,67,39,.22)':'rgba(170,140,85,.20)';q.beginPath();q.ellipse(cx+p.x*f,cy+p.y*f,rr*1.5,rr,a,0,Math.PI*2);q.fill();
  }
- q.save();trace(q,.92);q.clip();q.strokeStyle='rgba(212,250,243,.24)';q.lineWidth=1.3;
+ q.save();trace(q,.92);q.clip();q.strokeStyle='rgba(205,230,216,.19)';q.lineWidth=1.3;
  for(let i=0;i<16;i++){const x=pad+riverHash(o,6100+i)*o.w,y=pad+riverHash(o,6200+i)*o.h,len=9+riverHash(o,6300+i)*22;q.beginPath();q.moveTo(x,y);q.quadraticCurveTo(x+len*.5,y+2,x+len,y);q.stroke();}q.restore();
- o.visualCache=c;o.visualVersion=riverSurfaceVersion;return c;
+ o.visualCache=c;o.visualVersion=riverSurfaceVersion;o.visualSoilReady=assetOK(soil);return c;
 }
 function drawCanyonWaterfalls(cx,cy){
  // Historical hook name: still oasis ponds have no river current or waterfall.
@@ -126,12 +130,12 @@ function resetTumbleweed(b,z,i){
  const top=Math.max(z.y1+50,p.y-H*.7),bottom=Math.min(z.y0-70,p.y+H*.45);
  // Deterministic local placement avoids altering the game's enemy/map random sequence.
  b.seed=((b.seed||571+i*913)*1664525+1013904223)>>>0;const f=b.seed/4294967296;
- b.x=35+(i*179+f*87)%(WW-70);b.y=top+Math.max(1,bottom-top)*((i*.217+f)%1);b.r=13+i%3*3;b.rot=b.rot||0;
+ b.x=35+(i*179+f*87)%(WW-70);b.y=top+Math.max(1,bottom-top)*((i*.217+f)%1);b.r=(13+i%3*3)*2;b.rot=b.rot||0;
  if(z.oasis&&oasisContains(z.oasis,b.x,b.y,b.r)){b.y=Math.max(z.y1+70,z.oasis.y-60-b.r);}
 }
 function updateTumbleweeds(dt,z){
  if(tumbleweedZone!==z){tumbleweeds.length=0;tumbleweedZone=z;}
- if(!tumbleweeds.length&&sandIntensity>.05)for(let i=0;i<5;i++){const b={};resetTumbleweed(b,z,i);tumbleweeds.push(b);}
+ if(!tumbleweeds.length&&sandIntensity>.05)for(let i=0;i<10;i++){const b={};resetTumbleweed(b,z,i);tumbleweeds.push(b);}
  if(sandWindSpeed<=.01)return;
  for(let i=0;i<tumbleweeds.length;i++){
   const b=tumbleweeds[i],travel=sandWindSpeed*(.24+i*.025)*dt,x=b.x+SAND_WIND_X*travel,y=b.y+SAND_WIND_Y*travel;
