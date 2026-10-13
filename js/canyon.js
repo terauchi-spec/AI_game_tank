@@ -1,6 +1,6 @@
 // Wilderness terrain and oasis imagery are cached; only sandstorm dust animates.
 const wildernessRockCache=new Map();
-let sandIntensity=0,sandDuration=24,sandTime=0,sandTravel=0,sandWindSpeed=0;
+let sandIntensity=0,sandDuration=4.5,sandTime=0,sandTravel=0,sandWindSpeed=0;
 const SAND_WIND_X=.9537,SAND_WIND_Y=-.3007,tumbleweeds=[];
 let tumbleweedZone=null,tumbleweedCache=null;
 function clearCanyonTiles(){
@@ -147,7 +147,7 @@ function resetTumbleweed(b,z,i,initial=false){
  }
 }
 function initTumbleweeds(z){
- z.tumbleweeds=[];for(let i=0;i<7;i++){const b={};resetTumbleweed(b,z,i,true);z.tumbleweeds.push(b);}
+ z.tumbleweeds=[];for(let i=0;i<4;i++){const b={};resetTumbleweed(b,z,i,true);z.tumbleweeds.push(b);}
 }
 function updateTumbleweeds(dt,z){
  if(!z.tumbleweeds)initTumbleweeds(z);
@@ -173,8 +173,8 @@ function updateSandstorm(dt){
  if(weather==='rain'){weather='clear';weatherT=0;weatherNext=8+R()*12;}
  rainIntensity=0;sandTime+=dt;
  if(weather==='sandstorm'){weatherT=Math.max(0,weatherT-dt);if(weatherT===0){weather='clear';weatherNext=22+R()*40;say('砂嵐が収まった');}}
- else{weatherNext-=dt;if(weatherNext<=0){weather='sandstorm';sandDuration=18+R()*10;weatherT=sandDuration;say('砂嵐：視界と索敵距離が低下');}}
- const k=weather==='sandstorm'?Math.max(0,Math.min(1,(sandDuration-weatherT)/3,weatherT/4)):0;sandIntensity=k*k*(3-2*k);
+ else{weatherNext-=dt;if(weatherNext<=0){weather='sandstorm';sandDuration=3+R()*3;weatherT=sandDuration;say('砂嵐：視界と索敵距離が低下');}}
+ const k=weather==='sandstorm'?Math.max(0,Math.min(1,(sandDuration-weatherT)/.45,weatherT/.75)):0;sandIntensity=k*k*(3-2*k);
  const gust=.70+.30*(.5+.5*Math.sin(sandTime*2.3+Math.sin(sandTime*.71)));
  sandWindSpeed=620*sandIntensity*gust;sandTravel+=sandWindSpeed*dt;updateTumbleweeds(dt,z);return true;
 }

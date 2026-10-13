@@ -3,7 +3,7 @@ const flowerBushSprites=new Map();
 let matchedGreenSpinifex=null,matchedGreenSource=null;
 function spinifexPlacementSize(base,variation){return base*1.3*.7*(1+variation*.5);}
 function sizeGrassSpinifex(b,z){
- const cx=b.x+b.w/2,cy=b.y+b.h/2,size=spinifexPlacementSize(65+stableRand(b,743)*30,stableRand(b,751));
+ const cx=b.x+b.w/2,cy=b.y+b.h/2,size=60+stableRand(b,743)*20;
  b.w=b.h=size;b.x=Math.max(12,Math.min(WW-size-12,cx-size/2));b.y=Math.max(z.y1+12,Math.min(z.y0-size-12,cy-size/2));
 }
 function setupGrassVegetation(){
@@ -23,7 +23,7 @@ function spinifexSprite(b){
  const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;const q=gameCanvasContext(c);q.drawImage(im,0,0);
  const pixels=q.getImageData(0,0,c.width,c.height),d=pixels.data;
  // Match the nearby bush's cool medium green without sharpening or resizing the source.
- for(let i=0;i<d.length;i+=4){if(!d[i+3])continue;const v=.2126*d[i]+.7152*d[i+1]+.0722*d[i+2];d[i]=v*.43+8;d[i+1]=v*.70+37;d[i+2]=v*.46+7;}q.putImageData(pixels,0,0);
+ for(let i=0;i<d.length;i+=4){if(!d[i+3])continue;const v=.2126*d[i]+.7152*d[i+1]+.0722*d[i+2];d[i]=v*.40+20;d[i+1]=v*.65+54;d[i+2]=v*.42+18;}q.putImageData(pixels,0,0);
  c.complete=true;c.naturalWidth=c.width;c.naturalHeight=c.height;matchedGreenSpinifex=c;matchedGreenSource=im;return c;
 }
 function floweringBushSprite(base,variant){
