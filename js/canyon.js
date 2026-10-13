@@ -127,12 +127,16 @@ function tumbleweedSprite(){
  }
  tumbleweedCache=c;return c;
 }
+function tumbleweedRockHit(x,y,r){
+ for(const c of nearbyCovers(x,y,r+120))if(c.kd===8&&circleHitsRect(x,y,r,coverHitRect(c)||c))return true;return false;
+}
 function resetTumbleweed(b,z,i,initial=false){
- const top=initial?z.y1+50:Math.max(z.y1+50,p.y-H*.7),bottom=initial?z.y0-70:Math.min(z.y0-70,p.y+H*.45);
- // Deterministic local placement avoids altering the game's enemy/map random sequence.
- b.seed=((b.seed||571+i*913)*1664525+1013904223)>>>0;const f=b.seed/4294967296;
- b.x=35+(i*179+f*87)%(WW-70);b.y=top+Math.max(1,bottom-top)*((i*.217+f)%1);b.r=(13+i%3*3)*2*.6;b.rot=b.rot||0;
- if(z.oasis&&oasisContains(z.oasis,b.x,b.y,b.r)){b.y=Math.max(z.y1+70,z.oasis.y-60-b.r);}
+ const top=initial?z.y1+50:Math.max(z.y1+50,p.y-H*.7),bottom=initial?z.y0-70:Math.min(z.y0-70,p.y+H*.45);b.r=(13+i%3*3)*2*.6;b.rot=b.rot||0;
+ for(let tries=0;tries<24;tries++){
+  b.seed=((b.seed||571+i*913)*1664525+1013904223)>>>0;const f=b.seed/4294967296;
+  b.x=35+(i*179+f*87+tries*71)%(WW-70);b.y=top+Math.max(1,bottom-top)*((i*.217+f)%1);
+  if((!z.oasis||!oasisContains(z.oasis,b.x,b.y,b.r))&&!tumbleweedRockHit(b.x,b.y,b.r))break;
+ }
 }
 function initTumbleweeds(z){
  z.tumbleweeds=[];for(let i=0;i<7;i++){const b={};resetTumbleweed(b,z,i,true);z.tumbleweeds.push(b);}
@@ -142,9 +146,12 @@ function updateTumbleweeds(dt,z){
  if(tumbleweedZone!==z){tumbleweeds.length=0;tumbleweeds.push(...z.tumbleweeds);tumbleweedZone=z;}
  if(sandWindSpeed<=.01)return;
  for(let i=0;i<tumbleweeds.length;i++){
-  const b=tumbleweeds[i],travel=sandWindSpeed*(.24+i*.025)*dt,x=b.x+SAND_WIND_X*travel,y=b.y+SAND_WIND_Y*travel;
-  if(!z.oasis||!oasisContains(z.oasis,x,y,b.r)){b.x=x;b.y=y;b.rot+=travel/b.r;}
-  if(b.x>WW+45||b.y<z.y1+35){resetTumbleweed(b,z,i);b.x=-35;}
+  const b=tumbleweeds[i],travel=sandWindSpeed*(.24+i*.025)*dt,wind=Math.atan2(SAND_WIND_Y,SAND_WIND_X);
+  const clear=(x,y)=>!tumbleweedRockHit(x,y,b.r)&&(!z.oasis||!oasisContains(z.oasis,x,y,b.r));
+  b.avoidT=Math.max(0,(b.avoidT||0)-dt);let a=b.avoidT>0?b.avoidA:wind,x=b.x+Math.cos(a)*travel,y=b.y+Math.sin(a)*travel;
+  if(!clear(x,y)){let found=false;const side=i%2?1:-1;for(const off of [.65,1.1,1.57]){for(const sign of [side,-side]){const aa=wind+off*sign,xx=b.x+Math.cos(aa)*travel,yy=b.y+Math.sin(aa)*travel;if(clear(xx,yy)){a=aa;x=xx;y=yy;b.avoidA=aa;b.avoidT=.4;found=true;break;}}if(found)break;}if(!found)continue;}
+  b.x=x;b.y=y;b.rot+=travel/b.r;
+  if(b.x>WW+45||b.y<z.y1+35){resetTumbleweed(b,z,i);}
  }
 }
 function drawTumbleweeds(cx,cy){
@@ -185,7 +192,7 @@ function setupSelectedAreaDebugStage(){
  if(name==='湿地')for(let i=0;i<12;i++)mud.push({x:90+R()*650,y:z.y1+160+R()*1700,w:100+R()*120,h:55+R()*40});
  const bushN=name==='草原'?50:name==='湿地'?30:name==='森林'?12:name==='村'?8:name==='荒野'?0:5;
  for(let i=0,made=0;i<bushN*40&&made<bushN;i++){const x=40+R()*(WW-150),y=z.y1+140+R()*1900;if(!hitsM(x+40,y+25,45)&&!bushes.some(b=>circleHitsRect(x+40,y+25,50,b))){bushes.push({x,y,w:85,h:55});made++;}}
- if(name==='荒野')buildCanyonZones();
+ if(name==='荒野')buildCanyonZones();if(name==='草原')setupGrassVegetation();
  // Reserve a safe starting space for infantry and the unlimited-ammo tank.
  covers=covers.filter(c=>!circleHitsRect(WW/2,p.y-50,145,coverSpriteRect(c)||c));
  objects=objects.filter(o=>!circleHitsRect(WW/2,p.y-50,170,o));bushes=bushes.filter(b=>!circleHitsRect(WW/2,p.y-50,170,b));mud=mud.filter(m=>!circleHitsRect(WW/2,p.y-50,170,m));
