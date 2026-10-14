@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.14.1931</title>
+<title>こっそり戦車大作戦 2026.10.14.2012</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -714,19 +714,53 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 </div><footer class="res-actions" aria-label="評価画面の操作"><button class="res-btn primary" id="resRetry" type="button">再出撃</button><button class="res-btn" id="resHome" type="button">称号</button></footer>
 </div>
 <style>
-#stageScreen{display:none;position:fixed;inset:0;z-index:70;background:rgba(10,18,14,.98);color:#e6e9d6;overflow:auto;padding:24px 18px;box-sizing:border-box;font-family:system-ui}body.stage-open #stageScreen{display:block}.stage-shell{max-width:760px;margin:auto}.stage-shell h1{font-size:28px;margin:10px 0}.stage-shell p{line-height:1.7;color:#bac9b5}.stage-card{display:block;width:100%;text-align:left;color:inherit;background:#23332a;border:2px solid #526549;border-radius:12px;padding:20px;margin:14px 0;cursor:pointer;font:inherit}.stage-card:hover,.stage-card:focus-visible{background:#314738;border-color:#e2c07c}.stage-card strong{font-size:23px;color:#eed5a1}.stage-card span{display:block;margin-top:8px;line-height:1.7}.stage-card small{display:block;color:#a9c8b7;margin-top:8px}.stage-back{padding:12px 20px;background:#344536;color:white;border:1px solid #829474;border-radius:8px;cursor:pointer}#missionHud{display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:12;max-width:90vw;width:480px;box-sizing:border-box;border:1px solid #829474;background:rgba(14,26,19,.9);color:#eef1df;padding:8px 12px;border-radius:8px;font:13px system-ui;pointer-events:none}#missionHud progress{width:100%;height:9px;accent-color:#9dcaa9}#missionHud small{display:block;color:#cee0bc;margin-top:4px}
- .stage-preview{display:block;max-width:160px;width:42%;height:auto;max-height:125px;object-fit:contain;margin:9px auto 0;filter:drop-shadow(0 4px 12px #0008)}
- @media(max-width:580px){.stage-card{padding:15px}.stage-card strong{font-size:21px}.stage-card span{font-size:13px}.stage-preview{max-width:105px;max-height:85px}}
+/* War-room map is the focal point. Choices float over its lower edge. */
+#stageScreen{display:none;position:fixed;inset:0;z-index:70;overflow-y:auto;box-sizing:border-box;
+ color:#f7f1dd;font-family:system-ui,-apple-system,'Hiragino Sans',sans-serif;
+ background:#141712 url('assets/ui/stage_map.webp?v=2026.10.14.2012') center center/cover no-repeat;
+ padding:max(20px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(20px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));
+ -webkit-overflow-scrolling:touch}
+body.stage-open #stageScreen{display:block}
+#stageScreen:before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+ background:linear-gradient(180deg,rgba(5,10,8,.84) 0%,rgba(8,12,10,.28) 23%,rgba(8,12,10,.04) 45%,rgba(8,12,10,.45) 70%,rgba(5,10,8,.90) 100%)}
+.stage-shell{position:relative;z-index:1;max-width:900px;margin:auto;min-height:calc(100dvh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:stretch}
+.stage-kicker{font-size:11px;font-weight:850;letter-spacing:.23em;color:#e4c58a;text-shadow:0 2px 9px #000}
+.stage-shell h1{font-size:clamp(28px,5vw,42px);letter-spacing:.09em;margin:7px 0 0;text-shadow:0 3px 14px #000}
+#stageSkill{font-size:13px;line-height:1.6;color:#e9e8d7;text-shadow:0 2px 10px #000;margin:6px 0}
+.stage-options{margin-top:auto;display:grid;grid-template-columns:1fr 1fr;gap:12px;padding-top:32px}
+.stage-card{min-width:0;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:5px;
+ padding:15px 18px;border:1px solid rgba(241,215,156,.65);border-radius:10px;
+ background:rgba(12,22,18,.80);-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);
+ color:#f9f5e7;text-align:left;cursor:pointer;font:inherit;box-shadow:0 6px 25px #0008;
+ touch-action:manipulation;transition:background .15s,border-color .15s,transform .15s}
+.stage-card:hover,.stage-card:focus-visible{background:rgba(31,49,38,.94);border-color:#ffe5a8;transform:translateY(-2px);outline:none}
+.stage-card strong{font-size:clamp(18px,3vw,23px);color:#ffdf9d;line-height:1.3}
+.stage-card span{display:block;font-size:13px;line-height:1.5;color:#e5e7d9}
+.stage-card small{display:block;font-size:11px;line-height:1.5;color:#c3d0bd}
+.stage-back{align-self:flex-start;min-height:38px;margin-top:12px;padding:8px 14px;
+ background:rgba(9,19,15,.74);border:1px solid rgba(236,218,176,.6);border-radius:7px;
+ color:#f4e8cd;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation}
+.stage-back:hover,.stage-back:focus-visible{background:#263e30;outline:2px solid #e6d2a2}
+@media(max-width:580px){
+ #stageScreen{background-position:center center}
+ .stage-shell{min-height:calc(100dvh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom))}
+ .stage-options{grid-template-columns:1fr;gap:9px;padding-top:20px}
+ .stage-card{padding:12px 14px;gap:3px}
+ .stage-card strong{font-size:19px}.stage-card span{font-size:12px}.stage-card small{font-size:10px}
+ #stageSkill{font-size:12px}
+}
+@media(max-height:660px){.stage-options{padding-top:20px}.stage-card{padding-top:10px;padding-bottom:10px}}
 </style>
 <div id="missionSuccess" role="dialog" aria-modal="true" aria-labelledby="missionSuccessTitle"><div class="mission-fireworks" aria-hidden="true"><i class="mission-firework" style="left:18%;top:24%;--burst-delay:0.15s"></i><i class="mission-firework" style="left:78%;top:20%;--burst-delay:0.45s"></i><i class="mission-firework" style="left:48%;top:12%;--burst-delay:0.75s"></i><i class="mission-firework" style="left:22%;top:60%;--burst-delay:1.05s"></i><i class="mission-firework" style="left:81%;top:55%;--burst-delay:1.35s"></i></div><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_success.webp?v=2026.10.14.1653" alt="笑顔でジャンプする主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionSuccessTitle">ミッション 成功</h1><button type="button" id="missionSuccessEvaluate">作戦評価</button></div></div></div>
 <div id="missionFailure" role="dialog" aria-modal="true" aria-labelledby="missionFailureTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_failed.webp?v=2026.10.14.1653" alt="倒れてふらつく主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionFailureTitle">ミッション 失敗</h1><button type="button" id="missionEvaluate">作戦評価</button></div></div></div>
 <section id="areaDebugPicker" aria-labelledby="areaDebugHeading"><div class="area-debug-panel"><h1 id="areaDebugHeading">テストするエリア</h1><p>無敵で地形や遮蔽物を確認できます。<br>開始地点の戦車は弾数・燃料無制限です。</p><div id="areaDebugList"></div><button id="areaDebugBack" type="button">スキル選択に戻る</button></div></section>
 <div id="missionBriefing" role="dialog" aria-modal="true" aria-labelledby="missionBriefingTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_hero.webp?v=2026.10.14.1653" alt="円形爆弾を抱えて走る主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionBriefingTitle">ミッション</h1><p id="missionBriefingGoal">敵の拠点にたどりつき、破壊せよ</p><ul class="mission-hud-guide" aria-label="ゲーム画面のアイコン説明"><li><img src="assets/ui/ui_heart_full.png" alt="ハート" decoding="async"><span>残りライフ</span></li><li><img src="assets/ui/ui_bomb_normal.png" alt="爆弾" decoding="async"><span>爆弾の設置状態</span></li><li><svg viewBox="-18 -18 36 36" role="img" aria-label="目に斜線"><path d="M-14 0 C-7-11 7-11 14 0 C7 11-7 11-14 0Z" fill="white" stroke="black" stroke-width="3"/><circle r="5" fill="black"/><path d="M-12 11 12-11" stroke="black" stroke-width="3.5"/><path d="M-12 11 12-11" stroke="#ef3434" stroke-width="2"/></svg><span>敵から隠れている状態</span></li></ul><button type="button" id="missionBegin">作戦開始</button></div></div></div>
 <div id="stageScreen" role="region" aria-label="ステージ選択"><div class="stage-shell">
-<div style="color:#9cbb9b;font-size:12px">CHOOSE YOUR MISSION</div><h1>ステージ選択</h1><p id="stageSkill"></p>
-<button class="stage-card" data-stage="beginner"><strong>01　初級ステージ</strong><span>開始草原から3つのランダムエリアを進み、最後の草原にある電波施設を破壊せよ。</span><small>全5エリア ／ 青兵のみ ／ 敵戦車は最大2台</small><img class="stage-preview" src="assets/cover/radio_facility.webp?v=2026.10.14.1930" alt="破壊目標の大型パラボラアンテナ" loading="lazy"></button>
-<button class="stage-card" data-stage="base"><strong>02　上級ステージ</strong><span>従来どおり全7エリアを突破し、敵司令本部を破壊せよ。白兵・指揮官・犬兵も登場する。</span><small>全7エリア ／ 従来の敵・配置・ゲーム仕様を維持</small></button>
-<button class="stage-back" id="stageBack">← スキル選択へ</button></div></div><div id="missionHud" role="status"></div>
+<div class="stage-kicker">CHOOSE YOUR MISSION</div><h1>ステージ選択</h1><p id="stageSkill"></p>
+<div class="stage-options">
+<button type="button" class="stage-card" data-stage="beginner"><strong>01　初級ステージ</strong><span>3つのランダムエリアを進み、電波施設を破壊する</span><small>全5エリア ／ 青兵中心 ／ 敵戦車は最大2台</small></button>
+<button type="button" class="stage-card" data-stage="base"><strong>02　上級ステージ</strong><span>敵部隊を突破し、司令本部を破壊する</span><small>全7エリア ／ 白兵・指揮官・犬兵が登場</small></button>
+</div><button type="button" class="stage-back" id="stageBack">← スキル選択へ戻る</button></div></div><div id="missionHud" role="status"></div>
 
 <script>
 const MOBILE_VIEW=matchMedia('(pointer:coarse)').matches;
@@ -738,7 +772,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.14.1931',FILE_CREATED_AT='2026/10/14 19:31',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.14.2012',FILE_CREATED_AT='2026/10/14 20:12',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
