@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.14.2258</title>
+<title>こっそり戦車大作戦 2026.10.15.0826</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -611,7 +611,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 </ol></nav>
 <section class="spec-section" id="spec-goal"><h2>1. 目的とクリア条件</h2>
 <p>スキル選択後に<strong>初級・上級</strong>のステージを選びます。<strong>初級</strong>は最後の草原にある大型パラボラアンテナの電波施設、<strong>上級</strong>は敵司令本部を破壊するとクリアです。敵に倒されると任務失敗となり、結果画面へ移行します。</p>
-<p><strong>初級：</strong>開始草原→候補5エリアからランダムに3エリア→最後は草原（電波施設）の全5エリア。通常の青兵だけが登場し、白兵・青白指揮官・犬兵は出現しません。敵戦車は最大2台です。<strong>上級：</strong>従来の全7エリア、敵AI、敵配置、敵司令本部破壊のルールを維持します。</p>
+<p><strong>初級：</strong>開始草原→候補5エリアからランダムに3エリア→最後は草原（電波施設）の全5エリア。通常の青兵と青兵指揮官2体が登場し、白兵・白兵指揮官・犬兵は出現しません。敵戦車は最大2台です。<strong>上級：</strong>従来の全7エリア、敵AI、敵配置、敵司令本部破壊のルールを維持します。</p>
 <p>歩兵の潜入に加え、戦車などの乗り物を利用した戦闘や、出撃前に選ぶスキルによる攻略ができます。</p><a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-map"><h2>2. ステージ構成とランダム生成</h2>
 <p><strong>初級：</strong>全5エリア。開始草原→草原・森林・丘陵・村・湿地から重複なしでランダムに3エリア→電波施設のある草原。<strong>上級：</strong>全7エリア。最初は草原、最後は敵司令本部で、その間の5エリアは従来の候補から重複なしでランダムに選ばれます。</p>
@@ -799,7 +799,7 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 <div id="stageScreen" role="region" aria-label="ステージ選択"><div class="stage-shell">
 <div class="stage-kicker">CHOOSE YOUR MISSION</div><h1>ステージ選択</h1><p id="stageSkill"></p>
 <div class="stage-options">
-<button type="button" class="stage-card" data-stage="beginner"><strong>01　初級ステージ</strong><span>3つのランダムエリアを進み、電波施設を破壊する</span><small>全5エリア ／ 青兵中心 ／ 敵戦車は最大2台</small></button>
+<button type="button" class="stage-card" data-stage="beginner"><strong>01　初級ステージ</strong><span>3つのランダムエリアを進み、電波施設を破壊する</span><small>全5エリア ／ 青兵・青兵指揮官 ／ 敵戦車は最大2台</small></button>
 <button type="button" class="stage-card" data-stage="base"><strong>02　上級ステージ</strong><span>敵部隊を突破し、司令本部を破壊する</span><small>全7エリア ／ 白兵・指揮官・犬兵が登場</small></button>
 </div><button type="button" class="stage-back" id="stageBack">← スキル選択へ戻る</button></div></div><div id="missionHud" role="status"></div>
 
@@ -813,7 +813,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.14.2258',FILE_CREATED_AT='2026/10/14 22:58',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.15.0826',FILE_CREATED_AT='2026/10/15 08:26',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -2929,7 +2929,7 @@ function reset(rerollSkills=true){
   etanks.length=Math.min(2,etanks.length);
  }
  if(skill==='hound')spawnHound();setupMission();
- if(!beginner){spawnCommanderClasses();spawnEnemyDogs();}
+ spawnCommanderClasses(beginner?['blue']:['blue','white']);if(!beginner)spawnEnemyDogs();
  // The radio is independent of commanders and dog pairs.
  // Both coordinates and the zone change on each mission.
  const radioSpot=randomSpecialSpawn(12,null,specialSpawnZones(),420);
@@ -2938,9 +2938,34 @@ function reset(rerollSkills=true){
 }
 // 敵司令本部のコリジョンは command_building_1.webp の実描画領域に合わせる。
 // 元画像256x221のうち、主要な不透明領域はおよそ x=4..248 / y=6..213。
+// Radio facility alpha silhouette, baked from the 256x253 sprite (alpha >=160).
+// Four source-pixel strips avoid runtime image readbacks; transparent gaps stay open.
+const RADIO_FACILITY_ROWS=[[106,135],[100,144],[95,152],[92,158],[89,163],[87,167],[86,171],[84,175],[83,179],[82,182],[81,185],[81,188],[81,191],[81,194],[47,54,81,196],[47,54,81,204],[48,53,81,207],[34,207,230,242],[29,247],[27,250],[26,250],[26,250],[26,250],[26,250],[25,251],[23,254],[23,254],[23,254],[23,254],[23,254],[23,254],[23,254],[27,250],[27,250],[27,250],[27,250],[27,250],[23,254],[23,254],[23,254],[23,254],[22,254],[22,254],[23,253],[26,250],[26,250],[26,250],[23,254],[23,254],[23,254],[23,254],[22,254],[23,254],[26,250],[27,250],[26,250],[26,250],[26,250],[27,250],[27,250],[27,250],[27,250],[37,49,96,180,228,240],[]];
+function radioFacilityHits(x,y,r=0){
+ const b=base;if(!b)return false;
+ const sx=b.w/256,sy=b.h/253,strip=4*sy;
+ const first=Math.max(0,Math.floor((y-r-b.y)/strip)),last=Math.min(RADIO_FACILITY_ROWS.length-1,Math.floor((y+r-b.y)/strip));
+ for(let row=first;row<=last;row++){
+  const spans=RADIO_FACILITY_ROWS[row],top=b.y+row*strip,bottom=Math.min(b.y+b.h,top+strip);
+  for(let i=0;i<spans.length;i+=2){
+   const left=b.x+spans[i]*sx,right=b.x+spans[i+1]*sx;
+   if(x+r<left||x-r>right)continue;
+   if(r===0&&x>=left&&x<=right&&y>=top&&y<=bottom){if(!b.fragMask)return true;const cx=Math.floor((x-b.x)/b.fragTile),ry=Math.floor((y-b.y)/b.fragTile);if(cx>=0&&cx<b.fragCols&&ry>=0&&ry<b.fragRows&&b.fragMask[ry*b.fragCols+cx])return true;continue;}
+   if(!b.fragMask){if(circleHitsRect(x,y,r,{x:left,y:top,w:right-left,h:bottom-top}))return true;continue;}
+   const t=b.fragTile,c0=Math.max(0,Math.floor((Math.max(left,x-r)-b.x)/t)),c1=Math.min(b.fragCols-1,Math.floor((Math.min(right,x+r)-b.x)/t));
+   const r0=Math.max(0,Math.floor((top-b.y)/t)),r1=Math.min(b.fragRows-1,Math.floor((bottom-b.y)/t));
+   for(let ry=r0;ry<=r1;ry++)for(let cx=c0;cx<=c1;cx++){
+    if(!b.fragMask[ry*b.fragCols+cx])continue;
+    const lx=Math.max(left,b.x+cx*t),rx=Math.min(right,b.x+(cx+1)*t),ty=Math.max(top,b.y+ry*t),by=Math.min(bottom,b.y+(ry+1)*t);
+    if(rx>lx&&by>ty&&circleHitsRect(x,y,r,{x:lx,y:ty,w:rx-lx,h:by-ty}))return true;
+   }
+  }
+ }
+ return false;
+}
 function baseHitRect(){
  const b=base;
- if(stageMode==='beginner'&&!areaDebugEnabled)return{x:b.x+16,y:b.y+15,w:b.w-32,h:b.h-30};
+ if(stageMode==='beginner'&&!areaDebugEnabled)return{x:b.x+b.w*22/256,y:b.y,w:b.w*232/256,h:b.h};
  const l=b.w*(4/256),r=b.w*(8/256),t=b.h*(6/221),bt=b.h*(8/221);
  return{x:b.x+l,y:b.y+t,w:b.w-l-r,h:b.h-t-bt};
 }
@@ -2993,6 +3018,7 @@ function damageBase(amount,ix,iy,rr=20,multi=1){
 }
 function baseFragmentAliveAt(x,y){
  const b=ensureBaseState();if(!b)return false;
+ if(stageMode==='beginner'&&!areaDebugEnabled)return radioFacilityHits(x,y,0);
  const br=baseHitRect();if(x<br.x||x>br.x+br.w||y<br.y||y>br.y+br.h)return false;
  if(!b.fragMask)return true;
  const c=Math.floor((x-b.x)/b.fragTile),r=Math.floor((y-b.y)/b.fragTile);
@@ -3001,6 +3027,7 @@ function baseFragmentAliveAt(x,y){
 }
 function circleHitsBase(x,y,r=0){
  const b=ensureBaseState(),br=baseHitRect();if(!b)return false;
+ if(stageMode==='beginner'&&!areaDebugEnabled)return radioFacilityHits(x,y,r);
  if(!(x+r>br.x&&x-r<br.x+br.w&&y+r>br.y&&y-r<br.y+br.h))return false;
  if(!b.fragMask)return true;
  const t=b.fragTile,minC=Math.max(0,Math.floor((x-r-b.x)/t)),maxC=Math.min(b.fragCols-1,Math.floor((x+r-b.x)/t));
@@ -3367,12 +3394,12 @@ function randomSpecialSpawn(r=18,accept=null,zones=null,minGap=SPECIAL_UNIT_GAP)
  }
  return null;
 }
-function spawnCommanderClasses(){
+function spawnCommanderClasses(types=['blue','white']){
  commanderPrevX=p.x;commanderPrevY=p.y;commanderVelocity={x:0,y:0};commanderRallying=false;commanderSignals=[];
  if(areaDebugEnabled)return;
  const usedZones=new Set(),typeZones={blue:new Set(),white:new Set()};
  // Prefer four distinct zones; never intentionally cluster the same type.
- for(const type of ['blue','white'])for(let i=0;i<2;i++){
+ for(const type of types)for(let i=0;i<2;i++){
   const zones=specialSpawnZones();
   const preferred=zones.filter(z=>!usedZones.has(z));
   const remaining=zones.filter(z=>usedZones.has(z)&&!typeZones[type].has(z));
