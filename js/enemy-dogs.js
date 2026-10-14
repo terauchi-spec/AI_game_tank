@@ -20,7 +20,7 @@ function spawnEnemyDogs(){
   // missionSpot searches open terrain; if its immediate ring is blocked, search
   // another verified location rather than creating a dog inside an obstacle.
   if(!pos){pos=missionSpot(spot.x+100,spot.y,7);Object.assign(handler,missionSpot(pos.x-80,pos.y,18));handler.path=[{x:handler.x,y:handler.y}];}
-  const dog={...pos,handler,enemyDog:true,col:'#222222',face:0,state:'patrol',stun:0,barkT:0,barkCooldown:0,orbit:i*Math.PI,orbitRadius:90+i*35,lostPhase:0,lostBase:0,avoidT:0,avoidSide:i?1:-1,dogWall:null,alertDisabled:false,walking:false};
+  const dog={...pos,handler,enemyDog:true,col:'#222222',face:0,state:'patrol',stun:0,barkT:0,barkCooldown:0,orbit:i*Math.PI,orbitRadius:90+i*35,patrolMode:i===0?'orbit':'south',southX:spot.x,southY:spot.y,southTime:0,lostPhase:0,lostBase:0,avoidT:0,avoidSide:i?1:-1,dogWall:null,alertDisabled:false,walking:false};
   handler.dog=dog;humans.push(handler);enemyDogs.push(dog);
  }
 }
@@ -125,6 +125,16 @@ function updateEnemyDogs(dt){
       dogMoveAround(h,dog,150,dt,8,false);h.modeFrozen=false;h.walking=true;
      }
      dogMoveAround(dog,p,150,dt,7,true);
+    }
+   }else if(dog.patrolMode==='south'){
+    // The second dog leads its blue handler toward the bottom of the map.
+    // The target advances from the spawn point, not from the player's camera.
+    dog.southTime+=dt;
+    dog.southY=Math.min(WH-45,dog.southY+75*dt);
+    const target={x:dog.southX,y:dog.southY};
+    if(D(dog,target)>5)dogMoveAround(dog,target,75,dt,7,true);
+    if(D(h,dog)>105&&!(h.stun>0)&&!(h.stunRecover>0)&&!h.houndPinned&&!(h.blastAirT>0)){
+     dogMoveAround(h,dog,75,dt,8,false);h.modeFrozen=false;h.walking=true;
     }
    }else{
     dog.orbit+=dt*.35;
