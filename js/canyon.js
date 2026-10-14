@@ -20,8 +20,14 @@ function buildCanyonZones(){
  for(const z of ZONES)if(z.n==='荒野'){
   const top=Math.max(0,z.y1),bottom=Math.min(WH,z.y0),span=bottom-top;z.oasis=null;
   if(R()<.55){
-   const w=600+R()*220,h=Math.min(440+R()*240,span*.42),cx=R()*WW,cy=top+span*(.3+R()*.35);
-   z.oasis={x:cx-w/2,y:cy-h/2,w,h,oasis:true,flowSpeed:0};water.push(z.oasis);
+   // Scale both dimensions together so the original shape stays intact.
+   const sizeScale=.5+R(),baseW=600+R()*220,baseH=Math.min(440+R()*240,span*.42);
+   const w=baseW*sizeScale,h=baseH*sizeScale;
+   // Keep large ponds visible, including at the edges of the wilderness zone.
+   const rawX=R()*WW,rawY=top+span*(.3+R()*.35);
+   const cx=w>=WW-24?WW/2:Math.max(w/2+12,Math.min(WW-w/2-12,rawX));
+   const cy=h>=span-40?(top+bottom)/2:Math.max(top+h/2+20,Math.min(bottom-h/2-20,rawY));
+   z.oasis={x:cx-w/2,y:cy-h/2,w,h,oasis:true,flowSpeed:0,sizeScale};water.push(z.oasis);
    covers=covers.filter(c=>!oasisContains(z.oasis,c.x+c.w/2,c.y+c.h/2,Math.max(c.w,c.h)/2+8));
    objects=objects.filter(o=>!oasisContains(z.oasis,o.x+o.w/2,o.y+o.h/2,Math.max(o.w,o.h)/2+8));
    bushes=bushes.filter(b=>!oasisContains(z.oasis,b.x+b.w/2,b.y+b.h/2,40));rebuildSpatialGrid();
