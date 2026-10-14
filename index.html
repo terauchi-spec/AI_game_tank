@@ -3285,6 +3285,8 @@ function updateCommanderAI(h,dt){
   h.st=0;h.target=null;h.sus=0;h.foundPause=0;cancelCommanderAttack(h);pauseAfterEnemyDetection(h);return true;
  }
  if(!h.st){
+  // Preserve the white commander's cached route while investigating a sound.
+  if(h.commander==='white'&&h.sus>0){h.commanderCharge=0;h.commanderAim=null;return false;}
   cancelCommanderAttack(h);
   if(h.sus>0)return false;
   if(enemyModePaused(h))return true;
