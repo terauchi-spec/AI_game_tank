@@ -868,6 +868,7 @@ const COVER_ASSET_SRC={
  "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.webp?v=2026.10.14.1653',
  "barrel":ASSET_DIR+'cover/barrel.webp?v=2026.10.14.1653',
  "command_building_1":ASSET_DIR+'cover/command_building_1.webp',
+ "radio_facility":ASSET_DIR+'cover/radio_facility.svg?v=2026.10.14.beginner',
  "wood_bridge":ASSET_DIR+'terrain/wood_bridge.webp'
 };
 const TERRAIN_IMG={},COVER_IMG={};
@@ -1572,11 +1573,14 @@ function drawBridgeFancy(b){
 
 let ZONES=[];
 function setupZones(){
- // 開始エリアは必ず草原。その後の5エリアは草原を含む候補から毎回ランダム選出。
- const pool=['草原','森林','村','丘陵','敵前線基地','街','敵迷路基地','湿地'];if(stageMode==='base')pool.push('荒野');
+ // 初級は開始草原→3エリア→電波施設のある草原、上級は従来の全7エリア。
+ const beginner=stageMode==='beginner'&&!areaDebugEnabled;
+ const pool=beginner?['草原','森林','丘陵','村','湿地']:['草原','森林','村','丘陵','敵前線基地','街','敵迷路基地','湿地'];
+ if(!beginner&&stageMode==='base')pool.push('荒野');
  for(let i=pool.length-1;i>0;i--){const j=R()*(i+1)|0;[pool[i],pool[j]]=[pool[j],pool[i]];}
- const mid=pool.slice(0,5);
- const names=['草原',...mid,'敵司令本部'],edges=[13200,10800,9040,7280,5520,3760,2000,-400];
+ const mid=pool.slice(0,beginner?3:5);
+ const names=beginner?['草原',...mid,'草原']:['草原',...mid,'敵司令本部'];
+ const edges=beginner?[13200,10800,8100,5400,2700,-400]:[13200,10800,9040,7280,5520,3760,2000,-400];
  ZONES=names.map((n,i)=>({n,y0:edges[i],y1:edges[i+1],g:ZONE_STYLE[n].g,p:ZONE_STYLE[n].p.slice()}));
  // Every run rerolls flank risk for each stage, rather than binding it to zone type.
  // Discourage the same dominant side across three consecutive areas.
@@ -1630,7 +1634,7 @@ function skillMenuLayout(){return skillDebugAll?{sy0:88,ch:56,h:52,debugY:602,de
 let gameBuildQueued=false,gameBuildGeneration=0;
 function selectSkillIndex(i,deploy=false){
  const list=skillMenuList();if(i<0||i>=list.length||gameBuildQueued)return false;
- const selected=list[i].id;if(!skillSelectable(selected))return false;if(areaDebugEnabled&&!deploy){selectedSkillId=selected;skill=selected;selectedAreaDebug=null;state='areaPick';sfx('skill');return true;}if(!deploy){stageMode='base';selectedSkillId=selected;document.body.classList.remove('stage-open');return selectSkillIndex(i,true);}const buildGen=++gameBuildGeneration;skill=selected;
+ const selected=list[i].id;if(!skillSelectable(selected))return false;if(areaDebugEnabled&&!deploy){selectedSkillId=selected;skill=selected;selectedAreaDebug=null;state='areaPick';sfx('skill');return true;}if(!deploy){selectedSkillId=selected;skill=selected;state='stage';sfx('skill');return true;}const buildGen=++gameBuildGeneration;skill=selected;
  state='preparing';bombReq=false;cannonReq=false;interact=false;skillReq=false;mdown=false;gameBuildQueued=true;sfx('skill');
  // 先に「準備中」を1フレーム描画してから重いステージ生成を行う。
  // その間にタイトルへ戻った場合は世代番号で予約済み生成を無効化する。
@@ -1639,7 +1643,7 @@ function selectSkillIndex(i,deploy=false){
   reset(false);skill=selected;
   if(areaDebugEnabled&&hound)resetHoundPosition();
   if(buildGen!==gameBuildGeneration){gameBuildQueued=false;return;}
-  state=areaDebugEnabled?'play':stageMode==='base'?'briefing':'play';briefingFrameDrawn=false;gameBuildQueued=false;
+  state=areaDebugEnabled?'play':(stageMode==='base'||stageMode==='beginner')?'briefing':'play';briefingFrameDrawn=false;gameBuildQueued=false;
  }));
  return true;
 }
@@ -2623,7 +2627,9 @@ function reset(rerollSkills=true){
  waterRipples=[];
  p={x:WW/2,y:3100,hp:3,tank:null,cc:0,vc:0,ang:-1.57,body:-1.57,dig:0,digPrep:0,digElapsed:0,digExitAnim:0,digExitX:0,digExitY:0,scd:0,scdMax:0,drill:0,drillHit:0,drillTarget:null,drillSfx:0,bushHide:0,grappleT:0,grappleTarget:null,flameFuel:3,flameActive:false,flameLockA:null,flamePath:[],flameSfx:0,flameReach:0,fireExposure:0,sniperMode:false,sniperLockA:null,sniperAimN:0,sniperZoom:1.5,sniperLensChangeT:0,sniperEnterT:0,sniperReadyT:0,sniperExitT:0,sniperFlash:0,sniperHitT:0,sniperHitX:0,sniperHitY:0,sniperFireCd:0,sniperNoiseEvents:[]};touchTurretAngle=null;
  if(areaDebugEnabled&&selectedAreaDebug){setupSelectedAreaDebugStage();if(skill==='hound')spawnHound();setupMission();return;}
- base={x:WW/2-COMMAND_BASE_W/2,y:60,w:COMMAND_BASE_W,h:COMMAND_BASE_H,hp:30,maxHp:30,deadAt:0};bullets=[];parts=[];bombs=[];waves=[];fx=[];items=[];bushes=[];
+ const beginner=stageMode==='beginner'&&!areaDebugEnabled;
+ const baseW=beginner?360:COMMAND_BASE_W,baseH=beginner?355:COMMAND_BASE_H;
+ base={x:WW/2-baseW/2,y:60,w:baseW,h:baseH,hp:30,maxHp:30,deadAt:0};bullets=[];parts=[];bombs=[];waves=[];fx=[];items=[];bushes=[];
  roadBands=[];water=[];bridges=[];mud=[];
  for(const ry of [2675,1325]){
   if(zoneAt(ry*MAP_SCALE).n==='荒野')continue;
@@ -2824,13 +2830,25 @@ function reset(rerollSkills=true){
   }
   humans.push(...mazeHumans);
  }
- // スタート地点の周囲260pxには草むらを置かない。
- bushes=bushes.filter(b=>{const nx=Math.max(b.x,Math.min(b.x+b.w,p.x)),ny=Math.max(b.y,Math.min(b.y+b.h,p.y));return Math.hypot(nx-p.x,ny-p.y)>260;});
+ // 開始地点と初級の電波施設周囲は草むらを置かない。
+ bushes=bushes.filter(b=>{const nx=Math.max(b.x,Math.min(b.x+b.w,p.x)),ny=Math.max(b.y,Math.min(b.y+b.h,p.y));
+  if(Math.hypot(nx-p.x,ny-p.y)<=260)return false;
+  if(beginner&&b.x<base.x+base.w+55&&b.x+b.w>base.x-55&&b.y<base.y+base.h+55&&b.y+b.h>base.y-55)return false;
+  return true;});
  // 開始地点の周囲は安全地帯にする。開始直後には敵と接触しない。
  humans=humans.filter(h=>D(h,p)>520);etanks=etanks.filter(e=>D(e,p)>700);assignBuildingPatrols();reconcileBushBuildingPlacement();clearRoadScenery();rebuildSpatialGrid();captureBuildingGroundMarks();separateEnemyUnits(true);
  // Only distribute flank patrols AFTER the final building-patrol reservations.
  // This prevents late-added patrol buildings from obstructing new guard routes.
- distributeFlankPatrols();patrolRoutesVisible=!!(skillDebugAll||areaDebugEnabled);if(skill==='hound')spawnHound();setupMission();spawnCommanderClasses();spawnEnemyDogs();
+ distributeFlankPatrols();patrolRoutesVisible=!!(skillDebugAll||areaDebugEnabled);
+ if(beginner){
+  // 通常の青兵のみ。敵戦車は全域で最大2台。
+  for(const h of humans){h.elite=false;h.commander=null;}
+  etanks=etanks.filter(e=>e.alive&&zoneAt(e.y)!==ZONES[0]);
+  for(let i=etanks.length-1;i>0;i--){const j=R()*(i+1)|0;[etanks[i],etanks[j]]=[etanks[j],etanks[i]];}
+  etanks.length=Math.min(2,etanks.length);
+ }
+ if(skill==='hound')spawnHound();setupMission();
+ if(!beginner){spawnCommanderClasses();spawnEnemyDogs();}
  // The radio is independent of commanders and dog pairs.
  // Both coordinates and the zone change on each mission.
  const radioSpot=randomSpecialSpawn(12,null,specialSpawnZones(),420);
@@ -2840,7 +2858,9 @@ function reset(rerollSkills=true){
 // 敵司令本部のコリジョンは command_building_1.webp の実描画領域に合わせる。
 // 元画像256x221のうち、主要な不透明領域はおよそ x=4..248 / y=6..213。
 function baseHitRect(){
- const b=base,l=b.w*(4/256),r=b.w*(8/256),t=b.h*(6/221),bt=b.h*(8/221);
+ const b=base;
+ if(stageMode==='beginner'&&!areaDebugEnabled)return{x:b.x+16,y:b.y+15,w:b.w-32,h:b.h-30};
+ const l=b.w*(4/256),r=b.w*(8/256),t=b.h*(6/221),bt=b.h*(8/221);
  return{x:b.x+l,y:b.y+t,w:b.w-l-r,h:b.h-t-bt};
 }
 function ensureBaseState(){
@@ -5335,7 +5355,7 @@ function useSkill(wx,wy){if(scoreStats&&!scoreStats.finalized)scoreStats.skillUs
  else if(skill==='flame'){/* S長押しで連続使用 */}
  else if(skill==='sniper')enterSniperMode();
  else if(skill==='hound')beginHoundAttack();}
-function winSeq(){if(stageMode!=='base'){base.hp=30;say('作戦目標を達成しよう');return;}if(areaDebugEnabled){base.hp=30;say('エリアデバッグ中：司令部破壊判定を無効化');return;}state='blast';blastT=2.4;bq=0;p.dig=0;p.digPrep=0;p.drill=0;sfx('win');}
+function winSeq(){if(stageMode!=='base'&&stageMode!=='beginner'){base.hp=30;say('作戦目標を達成しよう');return;}if(areaDebugEnabled){base.hp=30;say('エリアデバッグ中：司令部破壊判定を無効化');return;}state='blast';blastT=2.4;bq=0;p.dig=0;p.digPrep=0;p.drill=0;sfx('win');}
 function blastUpdate(dt){blastT-=dt;bq-=dt;if(bq<=0){bq=.1;const x=base.x+R()*base.w,y=base.y+R()*base.h;fb(x,y,28+R()*34);burst(x,y,25,'#ff8a3a',380);shake=14;if(R()<.3)flash=.5;}
  for(const f of fx)f.l-=dt;fx=fx.filter(f=>f.l>0);updateParts(dt);
  flash=Math.max(0,flash-dt*2.5);if(blastT<=0){state='succeeded';successFrameDrawn=false;shake=0;finalizeScore(true);}}
@@ -6197,7 +6217,7 @@ function drawAllyParachute(ally){
 }
 
 function baseDamageCanvas(){
- const b=ensureBaseState(),im=COVER_IMG.command_building_1;if(!b||!assetOK(im)||!b.fragMask)return null;
+ const b=ensureBaseState(),im=COVER_IMG[stageMode==='beginner'&&!areaDebugEnabled?'radio_facility':'command_building_1'];if(!b||!assetOK(im)||!b.fragMask)return null;
  const key=(b.damageVersion||0)+':'+(b.hp<=0?1:0)+':'+b.w+'x'+b.h;
  if(b._damageCanvas&&b._damageCanvasKey===key)return b._damageCanvas;
  const c=document.createElement('canvas');c.width=Math.max(1,Math.round(b.w));c.height=Math.max(1,Math.round(b.h));
@@ -6231,7 +6251,7 @@ function baseDamageCanvas(){
  b._damageCanvas=c;b._damageCanvasKey=key;return c;
 }
 function drawBase(){
- const b=ensureBaseState(),dead=b.hp<=0,cx=b.x+b.w/2,cy=b.y+b.h/2,im=COVER_IMG.command_building_1,dmg=baseDamageCanvas();
+ const b=ensureBaseState(),dead=b.hp<=0,cx=b.x+b.w/2,cy=b.y+b.h/2,im=COVER_IMG[stageMode==='beginner'&&!areaDebugEnabled?'radio_facility':'command_building_1'],dmg=baseDamageCanvas();
  g.save();
  if(dmg)drawStaticRaster(dmg,b.x,b.y,b.w,b.h);
  else if(assetOK(im))g.drawImage(im,b.x,b.y,b.w,b.h);
@@ -6567,7 +6587,7 @@ function draw(near){
  // タッチ端末は表示Canvasへ直接描画し、動的な画面外Canvasの毎フレーム転写を避ける。
  g=MOBILE_VIEW?gm:og;g.setTransform(MOBILE_VIEW?1:.5,0,0,MOBILE_VIEW?1:.5,0,0);g.imageSmoothingEnabled=false;labels.length=0;vehicleMarkers.length=0;
  fragmentDrawFrame++;fragmentAssetSignature=Object.values(COVER_IMG).reduce((n,im)=>n+(assetOK(im)?1:0),0);
- const bl=state==='blast'||((state==='win'||state==='succeeded')&&stageMode==='base');
+ const bl=state==='blast'||((state==='win'||state==='succeeded')&&(stageMode==='base'||stageMode==='beginner'));
  if(bl){cam+=(0-cam)*.07;camX+=(Math.max(0,Math.min(WW-W,base.x+base.w/2-W/2))-camX)*.07;}else{cam=Math.max(0,Math.min(WH-H,p.y-H*.6));camX=Math.max(0,Math.min(WW-W,p.x-W/2));}
  const cy=Math.round(cam/2)*2,cx=Math.round(camX/2)*2;
  g.save();if(shake>0)g.translate((R()-.5)*shake,(R()-.5)*shake);
@@ -7328,7 +7348,7 @@ document.getElementById('specVersion').textContent=GAME_VERSION;
 
 
 let stageMode='base',mission=null;
-const STAGE_NAMES={base:'拠点破壊',front:'最前線',stealth:'潜入'};
+const STAGE_NAMES={beginner:'初級・電波施設破壊',base:'上級・拠点破壊',front:'最前線',stealth:'潜入'};
 document.querySelectorAll('[data-stage]').forEach(b=>b.addEventListener('click',()=>{stageMode=b.dataset.stage;document.body.classList.remove('stage-open');selectSkillIndex(skillMenuList().findIndex(k=>k.id===selectedSkillId),true);}));
 document.getElementById('stageBack').onclick=()=>{state='skill';};
 let briefingFrameDrawn=false;
@@ -7383,7 +7403,7 @@ function missionEnemy(x,y,alert=false){
 }
 function missionAllies(y){const count=Math.min(6,10-allies.filter(a=>a.alive&&a.frontline).length);for(let i=0;i<count;i++){const q=missionSpot(150+i*125,y+100,14);allies.push({...q,id:++allySeq,alive:true,chute:0,shotCd:.2+i*.1,burstLeft:3,face:-Math.PI/2,slot:i,frontline:true});}}
 function setupMission(){
- mission=null;if(areaDebugEnabled||stageMode==='base')return;
+ mission=null;if(areaDebugEnabled||stageMode==='base'||stageMode==='beginner')return;
  mission={index:0,progress:0,alarm:0,waveT:15,reinforceT:20,detected:false,points:[],exit:{x:p.x,y:p.y},alertCount:0};
  if(stageMode==='front'){
   mission.points=[10000,6500,3000].map((y,i)=>({...missionSpot(WW/2,y,30),name:['南部戦線','中央戦線','北部戦線'][i],done:false}));
