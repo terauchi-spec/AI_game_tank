@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.14.1852</title>
+<title>こっそり戦車大作戦 2026.10.14.1856</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -727,7 +727,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.14.1852',FILE_CREATED_AT='2026/10/14 18:52',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.14.1856',FILE_CREATED_AT='2026/10/14 18:56',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -7156,28 +7156,28 @@ function skillCardIconSrc(id){
  return 'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg);
 }
 const SK_CARD_SUMMARY={
- throw:'爆弾を遠くへ投げて設置し、好きなタイミングで爆破する',
- dig:'地面に潜伏して敵の発見を避ける',
- decoy:'自分の身代わりを置き、敵の注意をそらす',
- buddy:'味方兵士を呼び、敵への攻撃を援護させる',
- partner:'移動を真似して同行し、倒れたら接触で救助',
- drill:'ドリルで敵や遮蔽物を突き破る',
- build:'進行方向に防護壁を設置して身を守る',
- flame:'火炎を放射して敵や遮蔽物を燃やす',
- hound:'猟犬に指示を出し、敵兵を気絶させる',
- sniper:'スナイパーライフルで遠距離から狙撃。弾は敵兵を貫通する'
+ throw:"爆弾を遠くへ投げて設置し、好きなタイミングで起爆する",
+ dig:"地面に穴を掘り、潜伏して敵から逃れる",
+ decoy:"自分の身代わりとなるデコイを設置し、敵の注意をそらす",
+ buddy:"味方の兵士を呼び、援護してもらう",
+ drill:"巨大なドリルで敵や障害物を破壊する",
+ build:"進行方向に防護壁を設置して、敵から身を守る",
+ flame:"火炎放射器で敵や障害物を燃やしつくす",
+ hound:"軍犬に指示を出し、敵兵を気絶させる",
+ sniper:"スナイパーライフルで遠距離から敵を狙撃",
+ partner:"相棒の兵士に指示をだし、潜入や戦闘の連係プレイ"
 };
 const SK_CARD_CONTROLS={
- throw:'S：遠投　／　D：起爆',
- dig:'S：潜伏開始／解除',
- decoy:'S：偽装を設置',
- buddy:'S：仲間を呼ぶ',
- partner:'S短押し：バックアップ／長押し＋方向キー：ルートを描き、離すと指差しに切り替わり移動',
- drill:'S：突貫',
- build:'S：防護壁を設置',
- flame:'S：長押しで火炎放射',
- hound:'S：突撃指示（長押し可）',
- sniper:'S：狙撃準備　／　狙撃モード：S 狙撃　←→ 視点移動　↑↓ ズーム'
+ throw:"S：遠くへ投げる　/　BまたはS：起爆",
+ dig:"S：潜伏開始　/　解除",
+ decoy:"S：デコイを設置",
+ buddy:"S：仲間を呼ぶ（最大５人）",
+ drill:"S：ドリル起動",
+ build:"S：防護壁を設置",
+ flame:"S：長押しで火炎放射",
+ hound:"S：突撃指示（長押しで距離延長）",
+ sniper:"S：狙撃体制　/　狙撃体制中　S：狙撃　←→視点移動　↑↓ズーム",
+ partner:"S：相棒を呼ぶ　/　S長押し＋方向キー：ルート指示（乗り物に乗る）"
 };
 function renderSkillCards(){
  const list=skillMenuList();const keep=selectedSkillId;
