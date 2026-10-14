@@ -150,8 +150,16 @@ function resetTumbleweed(b,z,i,initial=false){
 function initTumbleweeds(z){
  z.tumbleweeds=[];for(let i=0;i<4;i++){const b={};resetTumbleweed(b,z,i,true);z.tumbleweeds.push(b);}
 }
+function igniteTumbleweedsByPath(path){
+ if(!path||path.length<2)return;let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+ for(const q of path){minX=Math.min(minX,q.x);maxX=Math.max(maxX,q.x);minY=Math.min(minY,q.y);maxY=Math.max(maxY,q.y);}
+ for(const z of ZONES)if(z.n==='荒野')for(const b of z.tumbleweeds||[]){if(b.burnT>0||b.x+b.r<minX-8||b.x-b.r>maxX+8||b.y+b.r<minY-8||b.y-b.r>maxY+8)continue;
+  for(let i=1;i<path.length;i++)if(pointSegDistance(b.x,b.y,path[i-1],path[i])<b.r+8){b.burnT=2.2;b.burnSeed=(b.x*13+b.y*7)|0;break;}
+ }
+}
 function updateTumbleweeds(dt,z){
  if(!z.tumbleweeds)initTumbleweeds(z);
+ for(let i=z.tumbleweeds.length-1;i>=0;i--){const b=z.tumbleweeds[i];if(b.burnT>0){b.burnT=Math.max(0,b.burnT-dt);if(b.burnT===0){z.tumbleweeds.splice(i,1);const gi=tumbleweeds.indexOf(b);if(gi>=0)tumbleweeds.splice(gi,1);}}}
  if(tumbleweedZone!==z){tumbleweeds.length=0;tumbleweeds.push(...z.tumbleweeds);tumbleweedZone=z;}
  if(sandWindSpeed<=.01)return;
  for(let i=0;i<tumbleweeds.length;i++){
@@ -167,6 +175,7 @@ function updateTumbleweeds(dt,z){
 function drawTumbleweeds(cx,cy){
  let im=null;for(const z of ZONES)if(z.n==='荒野')for(const b of z.tumbleweeds||[])if(drawPointInView(b.x,b.y,cx,cy,45)){
   if(!im)im=tumbleweedSprite();g.save();g.translate(b.x,b.y-Math.sin(b.rot*1.7)*2);g.rotate(b.rot);drawStaticRaster(im,-b.r,-b.r,b.r*2,b.r*2);g.restore();
+  if(b.burnT>0){const t=performance.now()*.012+(b.burnSeed||0),cx=b.x,cy=b.y;g.save();g.globalCompositeOperation='lighter';for(let j=0;j<3;j++)flameBlob(cx+Math.sin(t+j*2.1)*b.r*.28,cy-b.r*.35+j*3,5+j%2*2,t+j*1.8,.68);g.restore();}
  }
 }
 function updateSandstorm(dt){
