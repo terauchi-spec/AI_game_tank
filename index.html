@@ -717,7 +717,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 /* War-room map is the focal point. Choices float over its lower edge. */
 #stageScreen{display:none;position:fixed;inset:0;z-index:70;overflow-y:auto;box-sizing:border-box;
  color:#f7f1dd;font-family:system-ui,-apple-system,'Hiragino Sans',sans-serif;
- background:#141712 url('stage_map.png') center center/cover no-repeat;
+ background:#141712 url('stage_map.webp') center center/cover no-repeat;
  padding:max(20px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(20px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));
  -webkit-overflow-scrolling:touch}
 body.stage-open #stageScreen{display:block}
@@ -751,7 +751,7 @@ body.stage-open #stageScreen{display:block}
 }
 @media(max-height:660px){.stage-options{padding-top:20px}.stage-card{padding-top:10px;padding-bottom:10px}}
 /* Keep the selected war-room artwork visible while building the stage. */
-#stageLoadingScreen{display:none;position:fixed;inset:0;z-index:72;box-sizing:border-box;background:#17150f url('stage_map.png') center 46%/cover no-repeat;color:#fff0cc;font-family:system-ui,-apple-system,'Hiragino Sans',sans-serif}
+#stageLoadingScreen{display:none;position:fixed;inset:0;z-index:72;box-sizing:border-box;background:#17150f url('stage_map.webp') center 46%/cover no-repeat;color:#fff0cc;font-family:system-ui,-apple-system,'Hiragino Sans',sans-serif}
 body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify-content:center}
 #stageLoadingScreen:before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,8,6,.3),rgba(8,8,6,.2) 35%,rgba(8,8,6,.78))}
 .stage-loading-content{position:relative;text-align:center;width:min(86vw,450px);padding:30px 20px;background:rgba(23,24,18,.82);border:1px solid rgba(224,185,116,.7);box-shadow:0 12px 50px #000b;box-sizing:border-box}
