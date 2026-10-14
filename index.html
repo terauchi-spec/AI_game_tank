@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.14.1906</title>
+<title>こっそり戦車大作戦 2026.10.14.1911</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -516,6 +516,10 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 #skillScreen .sk-ctrl{font-size:13px;line-height:1.5;margin:0;overflow-wrap:anywhere}
 @media(max-width:580px){#skillScreen .sk-copy{gap:5px}#skillScreen .sk-name{font-size:18px}#skillScreen .sk-desc{font-size:13px}#skillScreen .sk-ctrl{font-size:12px}}
 @media(max-width:360px){#skillScreen .sk-name{font-size:17px}#skillScreen .sk-desc{font-size:12.5px}#skillScreen .sk-ctrl{font-size:11.5px}}
+/* The skill cards already expand vertically; improve text readability without clipping. */
+#skillScreen .sk-desc{font-size:15px;line-height:1.46;overflow-wrap:anywhere}
+@media(max-width:580px){#skillScreen .sk-desc{font-size:14px;line-height:1.42}}
+@media(max-width:360px){#skillScreen .sk-desc{font-size:13.5px;line-height:1.4}}
 </style>
 <style>
 /* メニューボタンの文字を開始ボタンと同じ20pxへ統一。 */
@@ -649,7 +653,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <ul><li>通常の1ゲームに2組を必ず配置。出現時は青兵の周囲を回る周回型と、出現地点からマップ下方向へ青兵を引いて歩く南下型の2種類です。犬は50〜150pxのリードで青兵につながれ、遮蔽物・オブジェクトに接触すると回り込みます。犬と青兵が地形に詰まった場合は、一定時間後に別方向への迂回を試みます。</li><li>徒歩のプレイヤーと相棒スキルの相棒を、潜伏や草むらに関係なく250px以内で追跡します。デバッグモードの索敵解除中やプレイヤーの乗り物搭乗中は反応しません。標的の100px以内で吠え、半径200pxの赤い電波を3回表示し、500px以内の敵兵にその標的の発見を伝えます。発見モード開始から8秒間は距離によって解除されず、8秒経過後に犬と標的が100px以上、または青兵と標的が250px以上離れると解除します。距離による解除後は、いったん250pxの索敵範囲外に出た標的が再接近した際に再発見します。</li><li>爆風や火炎スキルの直撃で犬は5秒気絶し、その後は再び発見モードになりません。猟犬スキルの犬が100px以内に近づくと猟犬が吠え、文字表示ではなく犬兵と同じ赤い電波を3回表示します。犬兵の犬の発見モードは解除され、以降も再発見しません。青兵が倒れるとリードが外れ、半速のS字移動で迷子になります。</li></ul>
 <h3>白兵指揮官：ヘルメットの太い帯</h3>
 <ul><li>通常の出撃では2体配置され、ヘルメットの赤茶色の太い帯が目印です。マップ上部から左右端を大きく蛇行しながら南下し、顔を左右に振って索敵します。</li>
-<li>移動速度は通常青兵の1.5倍（巡回45px/秒、交戦142.5px/秒）。通常青兵より索敵距離が1.6倍で、視野も広くなっています。発見済み対象の追跡距離は1000pxです。</li>
+<li>移動速度は通常青兵の1.5倍（巡回45px/秒、交戦142.5px/秒）。通常青兵より索敵距離が1.6倍で、視野も広くなっています。発見済み対象の追跡距離は1000pxです。巡回中も遮蔽物の外周を迂回し、長時間進めない巡回地点は飛ばして次へ進みます。</li>
 <li>疑惑モードではプレイヤーの現在位置ではなく、設置爆弾・木箱・ドラム缶などの爆発地点や銃声の発生地点へ向かい、周辺を調べます。発見後は距離を保ち、プレイヤーの進行方向へ先回りする行動と、距離を置いて後方から尾行する行動を、交戦中7秒ごとに切り替えます。近づかれた場合は離れる方向へ動きます。追跡中は遮蔽物やオブジェクトの外周を回り込んで障害物を避けます。</li>
 <li>射程480pxの単発ライフルを使用。移動中は武器を隠し、射撃時だけ表示します。170px以上離れ、射線が通ると、移動先を予測して照準を決め、0.7秒間停止した後に発射します。次の射撃までの待ち時間は3.2秒です。</li></ul>
 <h3>敵戦車</h3>
@@ -728,7 +732,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.14.1906',FILE_CREATED_AT='2026/10/14 19:06',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.14.1911',FILE_CREATED_AT='2026/10/14 19:11',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -3309,7 +3313,38 @@ function commanderMove(h,target,dt,sp=150){
  const to=Math.atan2(dest.y-h.y,dest.x-h.x),step=Math.min(sp*dt,D(h,dest)),ox=h.x,oy=h.y;mv(h,Math.cos(to)*step,Math.sin(to)*step,8);
  if(Math.hypot(h.x-ox,h.y-oy)<step*.1){h.commanderStuck=(h.commanderStuck||0)+dt;if(h.commanderStuck>.4){h.commanderRoute=null;h.commanderStuck=0;}}else h.commanderStuck=0;
 }
-function cancelCommanderAttack(h){h.commanderRelocateT=0;h.commanderRelocateGoal=null;h.commanderShotT=0;h.commanderCharge=0;h.commanderAim=null;h.commanderRoute=null;h.dogWall=null;}
+function cancelCommanderAttack(h){h.commanderRelocateT=0;h.commanderRelocateGoal=null;h.commanderShotT=0;h.commanderCharge=0;h.commanderAim=null;h.commanderRoute=null;h.dogWall=null;h.dogEscape=null;}
+// White patrols retain obstacle navigation, with bounded waypoint recovery.
+function patrolWhiteCommander(h,dt,sp=45){
+ if(mazeComparisonEnemyFrozen(h))return Number.isFinite(h.face)?h.face:0;
+ if(!Array.isArray(h.path)||h.path.length<2)return Number.isFinite(h.face)?h.face:0;
+ if(!Number.isInteger(h.wi)||h.wi<0||h.wi>=h.path.length)h.wi=0;
+ const advance=()=>{
+  if(h.loop)h.wi=(h.wi+(h.dir||1)+h.path.length)%h.path.length;
+  else{h.wi+=h.dir;if(h.wi<0||h.wi>=h.path.length){h.dir*=-1;h.wi+=2*h.dir;}}
+  h.whitePatrolGoal=-1;h.whitePatrolStill=0;h.whitePatrolNoProgress=0;
+  h.commanderRoute=null;h.patrolSearch=null;h.dogWall=null;h.dogEscape=null;
+ };
+ const target=h.path[h.wi],facing=Math.atan2(target.y-h.y,target.x-h.x);
+ if(h.turnPause>0){h.turnPause=Math.max(0,h.turnPause-dt);if(h.turnPause<=0)advance();return h.pauseFace??facing;}
+ if(D(h,target)<12){h.stk=0;h.turnPause=2;h.pauseFace=facing;return facing;}
+ if(h.whitePatrolGoal!==h.wi){
+  h.whitePatrolGoal=h.wi;h.whitePatrolBest=D(h,target);
+  h.whitePatrolNoProgress=0;h.whitePatrolStill=0;h.whitePatrolSampleT=0;h.whitePatrolSampleX=h.x;h.whitePatrolSampleY=h.y;
+ }
+ commanderMove(h,target,dt,sp);
+ const distance=D(h,target);
+ if(distance<h.whitePatrolBest-12){h.whitePatrolBest=distance;h.whitePatrolNoProgress=0;}
+ else h.whitePatrolNoProgress=(h.whitePatrolNoProgress||0)+dt;
+ h.whitePatrolSampleT=(h.whitePatrolSampleT||0)+dt;
+ if(h.whitePatrolSampleT>=1.5){
+  const moved=Math.hypot(h.x-h.whitePatrolSampleX,h.y-h.whitePatrolSampleY);
+  h.whitePatrolStill=moved<8?(h.whitePatrolStill||0)+h.whitePatrolSampleT:0;
+  h.whitePatrolSampleX=h.x;h.whitePatrolSampleY=h.y;h.whitePatrolSampleT=0;
+ }
+ if(h.whitePatrolStill>=4.5||h.whitePatrolNoProgress>=22)advance();
+ return facing;
+}
 function updateCommanderAI(h,dt){
  if(h.dogHandler&&h.dog?.handler&&h.dog.state==='chase'&&!h.st)return true;
  if(!h.commander)return false;
@@ -3325,12 +3360,15 @@ function updateCommanderAI(h,dt){
   h.st=0;h.target=null;h.sus=0;h.foundPause=0;cancelCommanderAttack(h);pauseAfterEnemyDetection(h);return true;
  }
  if(!h.st){
-  // Preserve the white commander's cached route while investigating a sound.
-  if(h.commander==='white'&&h.sus>0){h.commanderCharge=0;h.commanderAim=null;return false;}
-  cancelCommanderAttack(h);
+  // Keep white patrol's perimeter and detour state across frames.
+  if(h.commander==='white'){
+   h.commanderCharge=0;h.commanderAim=null;h.commanderShotT=0;
+   h.commanderRelocateT=0;h.commanderRelocateGoal=null;
+   if(h.sus>0)return false;
+  }else cancelCommanderAttack(h);
   if(h.sus>0)return false;
   if(enemyModePaused(h))return true;
-  const facing=patrol(h,dt,h.commander==='white'?45:30,8);
+  const facing=h.commander==='white'?patrolWhiteCommander(h,dt,45):patrol(h,dt,30,8);
   h.face=facing+(h.commander==='white'?Math.sin(h.commanderScan*2.2)*.8:0);
   return true;
  }
@@ -3450,6 +3488,7 @@ function enterHumanFound(h,key,pause=null,ignoreStealth=false){
   commanderWhistle(h,key);
   enemyModePaused(h);
   h.returnRoute=null;h.patrolSearch=null;
+  if(h.commander==='white'){h.commanderRoute=null;h.dogWall=null;h.dogEscape=null;h.whitePatrolGoal=-1;}
   h.ct=0;
   if(!h.elite&&!h.bu)h.bombAt=.8+R()*3.7;
   if(key==='p'&&scoreStats&&!scoreStats.finalized)scoreStats.foundEntries++;
@@ -3508,7 +3547,7 @@ function setSuspicion(h,dur=2,sourceX=null,sourceY=null){
    h.susSourceX=Number.isFinite(sourceX)?sourceX:h.x;
    h.susSourceY=Number.isFinite(sourceY)?sourceY:h.y;
    h.susCx=h.susSourceX;h.susCy=h.susSourceY;
-   h.commanderRoute=null;h.dogWall=null;
+   h.commanderRoute=null;h.dogWall=null;h.dogEscape=null;h.whitePatrolGoal=-1;
   }
  if(freshSuspicion&&scoreStats&&!scoreStats.finalized)scoreStats.suspicionEntries++;
  h.target=null;h.lost=0;h.burstLeft=0;h.cd=0;
@@ -7481,8 +7520,8 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/enemy-dogs.js?v=2026.10.14.1906"></script>
-<script src="js/partner.js?v=2026.10.14.1653"></script>
+<script src="js/enemy-dogs.js?v=2026.10.14.1911"></script>
+<script src="js/partner.js?v=2026.10.14.1911"></script>
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/canyon.js?v=2026.10.14.1836"></script>
 <script src="js/vegetation.js?v=2026.10.14.1653"></script>
