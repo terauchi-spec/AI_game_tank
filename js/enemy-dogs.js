@@ -20,14 +20,14 @@ function spawnEnemyDogs(){
   // missionSpot searches open terrain; if its immediate ring is blocked, search
   // another verified location rather than creating a dog inside an obstacle.
   if(!pos){pos=missionSpot(spot.x+100,spot.y,7);Object.assign(handler,missionSpot(pos.x-80,pos.y,18));handler.path=[{x:handler.x,y:handler.y}];}
-  const dog={...pos,handler,enemyDog:true,col:'#222222',face:0,state:'patrol',stun:0,barkT:0,barkCooldown:0,orbit:i*Math.PI,orbitRadius:90+i*35,patrolMode:i===0?'orbit':'south',southX:spot.x,southY:spot.y,southTime:0,lostPhase:0,lostBase:0,avoidT:0,avoidSide:i?1:-1,dogWall:null,alertDisabled:false,walking:false};
+  const dog={...pos,handler,enemyDog:true,col:'#222222',face:0,state:'patrol',stun:0,barkT:0,barkCooldown:0,orbit:i*Math.PI,orbitRadius:90+i*35,patrolMode:i===0?'orbit':'south',southX:spot.x,southY:spot.y,southTime:0,lostPhase:0,lostBase:0,avoidT:0,avoidSide:i?1:-1,dogWall:null,alertDisabled:false,chaseElapsed:0,walking:false};
   handler.dog=dog;humans.push(handler);enemyDogs.push(dog);
  }
 }
 
 function dogEndAlert(dog,permanent=false){
  if(permanent)dog.alertDisabled=true;
- dog.state=dog.handler?'patrol':'lost';dog.barkT=0;dog.dogWall=null;dog.walking=false;
+ dog.state=dog.handler?'patrol':'lost';dog.chaseElapsed=0;dog.barkT=0;dog.dogWall=null;dog.walking=false;
 }
 function dogSilence(dog){
  if(dog.alertDisabled)return;
@@ -101,11 +101,13 @@ function updateEnemyDogs(dt){
   if(h&&!h.alive){dog.handler=null;dog.state='lost';dog.lostBase=dog.face;dog.lostPhase=0;dog.barkT=0;}
   dog.barkT=Math.max(0,dog.barkT-dt);dog.barkCooldown=Math.max(0,dog.barkCooldown-dt);dog.walking=false;
   if(dog.stun>0){dog.stun=Math.max(0,dog.stun-dt);continue;}
+  // Chase age must advance even while the pair is outside the render/update window.
+  if(dog.state==='chase')dog.chaseElapsed=(dog.chaseElapsed||0)+dt;
   // Far-off pairs remain stationary; timers and owner death still update.
   if(Math.abs(dog.y-p.y)>H+600||Math.abs(dog.x-p.x)>W+400)continue;
   const ox=dog.x,oy=dog.y;
   if(!dog.alertDisabled&&hound&&skill==='hound'&&!(hound.stun>0)&&D(hound,dog)<=100){dogSilence(dog);hound.warningBarkT=.9;tone(225,.18,.03,'sawtooth',110);say('猟犬が吠えて犬兵を追い払った！');}
-  if(dog.handler&&!dog.alertDisabled&&dog.state==='chase'&&(D(dog,p)>DOG_DETECT||D(dog.handler,p)>DOG_HANDLER_DROP)){
+  if(dog.handler&&!dog.alertDisabled&&dog.state==='chase'&&dog.chaseElapsed>=10&&(D(dog,p)>=DOG_DETECT||D(dog.handler,p)>=DOG_HANDLER_DROP)){
    const h=dog.handler;if(D(h,p)>DOG_HANDLER_DROP&&h.target==='p'){h.st=0;h.target=null;h.lost=0;h.foundPause=0;}
    dogEndAlert(dog);
   }
@@ -117,7 +119,7 @@ function updateEnemyDogs(dt){
   }else{
    const distance=D(dog,p);
    // Smell deliberately ignores cover, stealth and debug detection suppression.
-   if(!dog.alertDisabled&&distance<=DOG_DETECT&&D(h,p)<=DOG_HANDLER_DROP)dog.state='chase';
+   if(!dog.alertDisabled&&dog.state!=='chase'&&distance<=DOG_DETECT&&D(h,p)<=DOG_HANDLER_DROP){dog.state='chase';dog.chaseElapsed=0;}
    if(dog.state==='chase'){
     if(distance<=DOG_BARK){if(dog.barkCooldown<=0)dogBark(dog);}
     else if(dog.barkT<=0){
