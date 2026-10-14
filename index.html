@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.14.2230</title>
+<title>こっそり戦車大作戦 2026.10.14.2250</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -750,6 +750,19 @@ body.stage-open #stageScreen{display:block}
  #stageSkill{font-size:12px}
 }
 @media(max-height:660px){.stage-options{padding-top:20px}.stage-card{padding-top:10px;padding-bottom:10px}}
+/* Keep the selected war-room artwork visible while building the stage. */
+#stageLoadingScreen{display:none;position:fixed;inset:0;z-index:72;box-sizing:border-box;background:#17150f url('stage_map.png') center 46%/cover no-repeat;color:#fff0cc;font-family:system-ui,-apple-system,'Hiragino Sans',sans-serif}
+body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify-content:center}
+#stageLoadingScreen:before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,8,6,.3),rgba(8,8,6,.2) 35%,rgba(8,8,6,.78))}
+.stage-loading-content{position:relative;text-align:center;width:min(86vw,450px);padding:30px 20px;background:rgba(23,24,18,.82);border:1px solid rgba(224,185,116,.7);box-shadow:0 12px 50px #000b;box-sizing:border-box}
+.stage-loading-kicker{font-size:11px;letter-spacing:.25em;color:#e3c084;font-weight:800}
+.stage-loading-title{font-size:clamp(22px,5vw,32px);font-weight:900;margin:12px 0 8px}
+.stage-loading-sub{font-size:13px;color:#e3d6b9}
+.stage-loading-track{height:5px;background:#514632;margin-top:24px;overflow:hidden}
+.stage-loading-track span{display:block;height:100%;width:36%;background:#dfbd7c;animation:stageLoadingSweep 1.5s ease-in-out infinite alternate}
+@keyframes stageLoadingSweep{from{transform:translateX(-110%)}to{transform:translateX(300%)}}
+@media(max-width:580px){#stageLoadingScreen{background-position:center 40%}.stage-loading-content{padding:24px 16px}}
+@media(prefers-reduced-motion:reduce){.stage-loading-track span{animation:none;width:60%}}
 /* Mission briefing: photographic war-room map and tactile paper operation cards. */
 #stageScreen{background-color:#17150f;background-size:cover;background-position:center 46%}
 #stageScreen:before{background:linear-gradient(180deg,rgba(10,10,8,.79) 0%,rgba(9,10,9,.15) 27%,rgba(7,9,8,.04) 47%,rgba(10,9,7,.40) 68%,rgba(9,8,6,.89) 100%)}
@@ -780,6 +793,7 @@ body.stage-open #stageScreen{display:block}
 <div id="missionFailure" role="dialog" aria-modal="true" aria-labelledby="missionFailureTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_failed.webp?v=2026.10.14.1653" alt="倒れてふらつく主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionFailureTitle">ミッション 失敗</h1><button type="button" id="missionEvaluate">作戦評価</button></div></div></div>
 <section id="areaDebugPicker" aria-labelledby="areaDebugHeading"><div class="area-debug-panel"><h1 id="areaDebugHeading">テストするエリア</h1><p>無敵で地形や遮蔽物を確認できます。<br>開始地点の戦車は弾数・燃料無制限です。</p><div id="areaDebugList"></div><button id="areaDebugBack" type="button">スキル選択に戻る</button></div></section>
 <div id="missionBriefing" role="dialog" aria-modal="true" aria-labelledby="missionBriefingTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_hero.webp?v=2026.10.14.1653" alt="円形爆弾を抱えて走る主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionBriefingTitle">ミッション</h1><p id="missionBriefingGoal">敵の拠点にたどりつき、破壊せよ</p><ul class="mission-hud-guide" aria-label="ゲーム画面のアイコン説明"><li><img src="assets/ui/ui_heart_full.png" alt="ハート" decoding="async"><span>残りライフ</span></li><li><img src="assets/ui/ui_bomb_normal.png" alt="爆弾" decoding="async"><span>爆弾の設置状態</span></li><li><svg viewBox="-18 -18 36 36" role="img" aria-label="目に斜線"><path d="M-14 0 C-7-11 7-11 14 0 C7 11-7 11-14 0Z" fill="white" stroke="black" stroke-width="3"/><circle r="5" fill="black"/><path d="M-12 11 12-11" stroke="black" stroke-width="3.5"/><path d="M-12 11 12-11" stroke="#ef3434" stroke-width="2"/></svg><span>敵から隠れている状態</span></li></ul><button type="button" id="missionBegin">作戦開始</button></div></div></div>
+<div id="stageLoadingScreen" role="status" aria-live="polite" aria-label="ステージを準備中"><div class="stage-loading-content"><div class="stage-loading-kicker">MISSION BRIEFING</div><div class="stage-loading-title">作戦準備中…</div><div class="stage-loading-sub">戦場を生成しています</div><div class="stage-loading-track"><span></span></div></div></div>
 <div id="stageScreen" role="region" aria-label="ステージ選択"><div class="stage-shell">
 <div class="stage-kicker">CHOOSE YOUR MISSION</div><h1>ステージ選択</h1><p id="stageSkill"></p>
 <div class="stage-options">
@@ -797,7 +811,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.14.2230',FILE_CREATED_AT='2026/10/14 22:30',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.14.2250',FILE_CREATED_AT='2026/10/14 22:50',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -7450,6 +7464,7 @@ document.getElementById('missionBegin').addEventListener('click',()=>{
  state='play';last=performance.now();syncMissionBriefing();sfx('skill');
 });
 function syncStageScreen(){
+ document.body.classList.toggle('stage-preparing',state==='preparing');
  const active=state==='stage';if(document.body.classList.contains('stage-open')!==active)document.body.classList.toggle('stage-open',active);
  if(active){const el=document.getElementById('stageSkill'),text='選択スキル：'+(SKN[skill]||skill)+'　／　作戦を選んで出撃';if(el.textContent!==text)el.textContent=text;}
 }
