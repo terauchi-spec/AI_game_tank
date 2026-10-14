@@ -165,13 +165,19 @@ function updateTumbleweeds(dt,z){
  }
 }
 function drawTumbleweeds(cx,cy){
- let im=null;for(const z of ZONES)if(z.n==='荒野'&&z.y0>cy-45&&z.y1<cy+H+45)for(const b of z.tumbleweeds||[])if(drawPointInView(b.x,b.y,cx,cy,45)){
+ let im=null;for(const z of ZONES)if(z.n==='荒野')for(const b of z.tumbleweeds||[])if(drawPointInView(b.x,b.y,cx,cy,45)){
   if(!im)im=tumbleweedSprite();g.save();g.translate(b.x,b.y-Math.sin(b.rot*1.7)*2);g.rotate(b.rot);drawStaticRaster(im,-b.r,-b.r,b.r*2,b.r*2);g.restore();
  }
 }
 function updateSandstorm(dt){
  const z=p&&zoneAt(p.y),arid=z&&z.n==='荒野';
- if(!arid){sandIntensity=0;sandWindSpeed=0;sandWeatherZone=null;if(weather==='sandstorm'){weather='clear';weatherT=0;weatherNext=20+R()*30;}return false;}
+ if(!arid){
+  // Keep the remaining dust and existing weeds visible across the area boundary.
+  sandIntensity=Math.max(0,sandIntensity-dt/1.2);sandWindSpeed*=Math.max(0,1-dt*5);sandTravel+=sandWindSpeed*dt;
+  if(tumbleweedZone&&sandIntensity>0)updateTumbleweeds(dt,tumbleweedZone);
+  else sandWindSpeed=0;
+  sandWeatherZone=null;if(weather==='sandstorm'){weather='clear';weatherT=0;weatherNext=20+R()*30;}return false;
+ }
  if(sandWeatherZone!==z){sandWeatherZone=z;weather='clear';weatherT=0;weatherNext=10;}
  if(weather==='rain'){weather='clear';weatherT=0;weatherNext=10;}
  rainIntensity=0;sandTime+=dt;
