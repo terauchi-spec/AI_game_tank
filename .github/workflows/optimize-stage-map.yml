@@ -1,0 +1,40 @@
+name: Optimize stage map
+on:
+  push:
+    paths:
+      - '.github/workflows/optimize-stage-map.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  optimize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Convert map to optimized WebP
+        run: |
+          python -m pip install --quiet pillow
+          python - <<'PY'
+          from PIL import Image
+          im=Image.open('stage_map.png').convert('RGB')
+          im.save('stage_map.webp','WEBP',quality=79,method=6)
+          import os
+          print('PNG bytes:',os.path.getsize('stage_map.png'))
+          print('WebP bytes:',os.path.getsize('stage_map.webp'))
+          PY
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          assert "url('stage_map.png')" in s
+          p.write_text(s.replace("url('stage_map.png')","url('stage_map.webp')"))
+          PY
+      - name: Commit optimized asset
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add stage_map.webp index.html
+          git commit -m "Optimize stage selection background to WebP" || exit 0
+          git push
