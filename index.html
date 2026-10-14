@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.14.1208</title>
+<title>こっそり戦車大作戦 2026.10.14.1653</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -546,7 +546,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <div id="debugBadge" hidden><span id="debugBadgeText">無敵モード</span><button id="mazeCompareButton" type="button" hidden>比較：通常 → 敵移動停止</button></div>
 <div id="pad"><div id="stick"><div id="knob"></div></div><div class="btns"><button class="b" id="skillBtn" data-k="KeyS"><span class="coolRing" id="skillCooldown"></span><span class="coolText" id="skillCooldownText"></span><b>S</b><small id="skillLabel">スキル</small></button><button class="b" id="actionBtn" type="button"><span class="coolRing" id="actionCooldown"></span><span class="coolText" id="actionCooldownText"></span><b id="actionGlyph">B</b><small id="actionLabel">爆弾</small></button><button class="b" data-k="KeyA"><b>A</b><small>操作</small></button></div></div>
 <div id="titleScreen" role="region" aria-label="タイトル画面"><div class="title-wrap">
-<div class="title-hero"><img class="title-art" alt="戦場を見下ろす兵士と戦車のイラスト" src="assets/ui/title_hero.webp?v=2026.10.14.1208"><div class="title-hero-text"><div class="title-tag">TACTICAL ACTION GAME</div><h1 class="title-main"><img class="title-logo" src="assets/ui/title_logo.webp?v=2026.10.14.1208" alt="こっそり戦車大作戦"></h1></div></div>
+<div class="title-hero"><img class="title-art" alt="戦場を見下ろす兵士と戦車のイラスト" src="assets/ui/title_hero.webp?v=2026.10.14.1653"><div class="title-hero-text"><div class="title-tag">TACTICAL ACTION GAME</div><h1 class="title-main"><img class="title-logo" src="assets/ui/title_logo.webp?v=2026.10.14.1653" alt="こっそり戦車大作戦"></h1></div></div>
 <nav class="title-actions" aria-label="タイトルメニュー">
 <button type="button" class="title-cta" id="titleStart">ゲームを始める</button>
 <div class="title-secondaries"><button type="button" class="title-secondary" id="titleAwards">称号</button><button type="button" class="title-secondary" id="titleHelp">操作説明</button><button type="button" class="title-secondary" id="titleSpecs">仕様</button><button type="button" class="title-secondary" id="titleDiagnostics">表示診断（停止の調査）</button></div>
@@ -644,6 +644,8 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <li>プレイヤーを新たに発見すると笛を吹き、偽装スキルと同じ単色の赤い電波リングを半径300pxまで2回（各1.25秒）広げます。2回の電波が終わるまで武器をしまってその場で停止します。1秒後、1000px以内の活動可能な敵歩兵を発見モードへ移行させます。笛の再使用には8秒の間隔があります。</li>
 <li>武器は射程480pxのバズーカ。標的が120pxより遠く、射線が通ると、0.5秒間停止して構えた時点の方向へ発射します。発射まで標的の動きに追従して照準を変えることはありません。発射準備は頭上の直線型チャージバーで表示します。</li>
 <li>被弾威力は戦車砲の約半分、爆破範囲は110px（設置爆弾は95px）。射撃後は約1.2秒、横方向へ移動し、次の射撃までの待ち時間は4秒です。</li></ul>
+<h3>犬兵：黒い犬を連れた青兵</h3>
+<ul><li>通常の1ゲームに2組を必ず配置。犬はリードで青兵につながれ、50〜200pxの範囲で動きます。</li><li>犬は潜伏・草むら・索敵解除中でも300px以内のプレイヤーを発見し、青兵を引っ張って接近します。50px以内で吠え、200pxの赤い電波を素早く3回表示し、青兵と500px以内の敵兵へ発見を伝えます。</li><li>爆弾・オブジェクト爆発・砲弾の爆風で犬は5秒気絶。青兵が倒れるとリードが外れ、半速のS字移動で迷子になります。</li></ul>
 <h3>白兵指揮官：ヘルメットの太い帯</h3>
 <ul><li>通常の出撃では2体配置され、ヘルメットの赤茶色の太い帯が目印です。マップ上部から左右端を大きく蛇行しながら南下し、顔を左右に振って索敵します。</li>
 <li>移動速度は通常青兵の1.5倍（巡回45px/秒、交戦142.5px/秒）。通常青兵より索敵距離が1.6倍で、視野も広くなっています。</li>
@@ -709,10 +711,10 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <style>
 #stageScreen{display:none;position:fixed;inset:0;z-index:70;background:rgba(10,18,14,.98);color:#e6e9d6;overflow:auto;padding:24px 18px;box-sizing:border-box;font-family:system-ui}body.stage-open #stageScreen{display:block}.stage-shell{max-width:760px;margin:auto}.stage-shell h1{font-size:28px;margin:10px 0}.stage-shell p{line-height:1.7;color:#bac9b5}.stage-card{display:block;width:100%;text-align:left;color:inherit;background:#23332a;border:2px solid #526549;border-radius:12px;padding:20px;margin:14px 0;cursor:pointer;font:inherit}.stage-card:hover,.stage-card:focus-visible{background:#314738;border-color:#e2c07c}.stage-card strong{font-size:23px;color:#eed5a1}.stage-card span{display:block;margin-top:8px;line-height:1.7}.stage-card small{display:block;color:#a9c8b7;margin-top:8px}.stage-back{padding:12px 20px;background:#344536;color:white;border:1px solid #829474;border-radius:8px;cursor:pointer}#missionHud{display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:12;max-width:90vw;width:480px;box-sizing:border-box;border:1px solid #829474;background:rgba(14,26,19,.9);color:#eef1df;padding:8px 12px;border-radius:8px;font:13px system-ui;pointer-events:none}#missionHud progress{width:100%;height:9px;accent-color:#9dcaa9}#missionHud small{display:block;color:#cee0bc;margin-top:4px}
 </style>
-<div id="missionSuccess" role="dialog" aria-modal="true" aria-labelledby="missionSuccessTitle"><div class="mission-fireworks" aria-hidden="true"><i class="mission-firework" style="left:18%;top:24%;--burst-delay:0.15s"></i><i class="mission-firework" style="left:78%;top:20%;--burst-delay:0.45s"></i><i class="mission-firework" style="left:48%;top:12%;--burst-delay:0.75s"></i><i class="mission-firework" style="left:22%;top:60%;--burst-delay:1.05s"></i><i class="mission-firework" style="left:81%;top:55%;--burst-delay:1.35s"></i></div><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_success.webp?v=2026.10.14.1208" alt="笑顔でジャンプする主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionSuccessTitle">ミッション 成功</h1><button type="button" id="missionSuccessEvaluate">作戦評価</button></div></div></div>
-<div id="missionFailure" role="dialog" aria-modal="true" aria-labelledby="missionFailureTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_failed.webp?v=2026.10.14.1208" alt="倒れてふらつく主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionFailureTitle">ミッション 失敗</h1><button type="button" id="missionEvaluate">作戦評価</button></div></div></div>
+<div id="missionSuccess" role="dialog" aria-modal="true" aria-labelledby="missionSuccessTitle"><div class="mission-fireworks" aria-hidden="true"><i class="mission-firework" style="left:18%;top:24%;--burst-delay:0.15s"></i><i class="mission-firework" style="left:78%;top:20%;--burst-delay:0.45s"></i><i class="mission-firework" style="left:48%;top:12%;--burst-delay:0.75s"></i><i class="mission-firework" style="left:22%;top:60%;--burst-delay:1.05s"></i><i class="mission-firework" style="left:81%;top:55%;--burst-delay:1.35s"></i></div><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_success.webp?v=2026.10.14.1653" alt="笑顔でジャンプする主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionSuccessTitle">ミッション 成功</h1><button type="button" id="missionSuccessEvaluate">作戦評価</button></div></div></div>
+<div id="missionFailure" role="dialog" aria-modal="true" aria-labelledby="missionFailureTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_failed.webp?v=2026.10.14.1653" alt="倒れてふらつく主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionFailureTitle">ミッション 失敗</h1><button type="button" id="missionEvaluate">作戦評価</button></div></div></div>
 <section id="areaDebugPicker" aria-labelledby="areaDebugHeading"><div class="area-debug-panel"><h1 id="areaDebugHeading">テストするエリア</h1><p>無敵で地形や遮蔽物を確認できます。<br>開始地点の戦車は弾数・燃料無制限です。</p><div id="areaDebugList"></div><button id="areaDebugBack" type="button">スキル選択に戻る</button></div></section>
-<div id="missionBriefing" role="dialog" aria-modal="true" aria-labelledby="missionBriefingTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_hero.webp?v=2026.10.14.1208" alt="円形爆弾を抱えて走る主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionBriefingTitle">ミッション</h1><p>敵の拠点にたどりつき、破壊せよ</p><ul class="mission-hud-guide" aria-label="ゲーム画面のアイコン説明"><li><img src="assets/ui/ui_heart_full.png" alt="ハート" decoding="async"><span>残りライフ</span></li><li><img src="assets/ui/ui_bomb_normal.png" alt="爆弾" decoding="async"><span>爆弾の設置状態</span></li><li><svg viewBox="-18 -18 36 36" role="img" aria-label="目に斜線"><path d="M-14 0 C-7-11 7-11 14 0 C7 11-7 11-14 0Z" fill="white" stroke="black" stroke-width="3"/><circle r="5" fill="black"/><path d="M-12 11 12-11" stroke="black" stroke-width="3.5"/><path d="M-12 11 12-11" stroke="#ef3434" stroke-width="2"/></svg><span>敵から隠れている状態</span></li></ul><button type="button" id="missionBegin">作戦開始</button></div></div></div>
+<div id="missionBriefing" role="dialog" aria-modal="true" aria-labelledby="missionBriefingTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_hero.webp?v=2026.10.14.1653" alt="円形爆弾を抱えて走る主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionBriefingTitle">ミッション</h1><p>敵の拠点にたどりつき、破壊せよ</p><ul class="mission-hud-guide" aria-label="ゲーム画面のアイコン説明"><li><img src="assets/ui/ui_heart_full.png" alt="ハート" decoding="async"><span>残りライフ</span></li><li><img src="assets/ui/ui_bomb_normal.png" alt="爆弾" decoding="async"><span>爆弾の設置状態</span></li><li><svg viewBox="-18 -18 36 36" role="img" aria-label="目に斜線"><path d="M-14 0 C-7-11 7-11 14 0 C7 11-7 11-14 0Z" fill="white" stroke="black" stroke-width="3"/><circle r="5" fill="black"/><path d="M-12 11 12-11" stroke="black" stroke-width="3.5"/><path d="M-12 11 12-11" stroke="#ef3434" stroke-width="2"/></svg><span>敵から隠れている状態</span></li></ul><button type="button" id="missionBegin">作戦開始</button></div></div></div>
 <div id="stageScreen" role="region" aria-label="ステージ選択"><div class="stage-shell"><div style="color:#9cbb9b;font-size:12px">CHOOSE YOUR MISSION</div><h1>ステージ選択</h1><p id="stageSkill"></p><button class="stage-card" data-stage="base"><strong>01　拠点破壊</strong><span>敵地を突破し、敵司令本部を破壊せよ。潜入・戦闘・乗り物を組み合わせる従来の作戦。</span><small>バランス型 ／ 目標：司令本部の破壊</small></button><button class="stage-card" data-stage="front"><strong>02　最前線</strong><span>味方部隊と進撃し、3か所の戦線を順番に制圧せよ。円内の敵を排除し、味方と陣地を確保。制圧すると補給と前進増援が到着する。</span><small>戦闘中心 ／ 円内で12秒確保・敵がいると制圧停止</small></button><button class="stage-card" data-stage="stealth"><strong>03　潜入</strong><span>3か所の機密情報を回収し、開始地点の脱出地点へ帰還せよ。徒歩で端末の近くに留まり解析。発見中は解析できず、警戒度が高まると追跡部隊が出現する。</span><small>スニーク中心 ／ 端末で4秒解析・全情報回収後に帰還</small></button><button class="stage-back" id="stageBack">← スキル選択へ</button></div></div><div id="missionHud" role="status"></div>
 
 <script>
@@ -725,7 +727,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.14.1208',FILE_CREATED_AT='2026/10/14 12:08',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.14.1653',FILE_CREATED_AT='2026/10/14 16:53',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -836,7 +838,7 @@ const TERRAIN_ASSET_SRC={
  "敵前線基地":ASSET_DIR+'terrain/front_base.webp',
  "街":ASSET_DIR+'terrain/maze_base.webp',
  "敵迷路基地":ASSET_DIR+'terrain/maze_base.webp',
- "荒野":ASSET_DIR+'terrain/wilderness.webp?v=2026.10.14.1208',
+ "荒野":ASSET_DIR+'terrain/wilderness.webp?v=2026.10.14.1653',
  "湿地":ASSET_DIR+'terrain/wetland.webp',
  "敵司令本部":ASSET_DIR+'terrain/hq.webp',
  "川":ASSET_DIR+'terrain/river_surface.webp'
@@ -853,13 +855,13 @@ const COVER_ASSET_SRC={
  "tree":ASSET_DIR+'cover/tree.webp',
  "tree_v2":ASSET_DIR+'cover/tree_v2.webp',
  "barrier":ASSET_DIR+'cover/barrier.webp',
- "spinifex_green":ASSET_DIR+'cover/spinifex_green.webp?v=2026.10.14.1208',
- "spinifex":ASSET_DIR+'cover/spinifex.webp?v=2026.10.14.1208',
+ "spinifex_green":ASSET_DIR+'cover/spinifex_green.webp?v=2026.10.14.1653',
+ "spinifex":ASSET_DIR+'cover/spinifex.webp?v=2026.10.14.1653',
  "rock":ASSET_DIR+'cover/rock.webp',
  "rock_v2":ASSET_DIR+'cover/rock_v2.webp',
  "maze_wall":ASSET_DIR+'cover/maze_wall.webp',
- "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.webp?v=2026.10.14.1208',
- "barrel":ASSET_DIR+'cover/barrel.webp?v=2026.10.14.1208',
+ "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.webp?v=2026.10.14.1653',
+ "barrel":ASSET_DIR+'cover/barrel.webp?v=2026.10.14.1653',
  "command_building_1":ASSET_DIR+'cover/command_building_1.webp',
  "wood_bridge":ASSET_DIR+'terrain/wood_bridge.webp'
 };
@@ -2611,7 +2613,7 @@ function reset(rerollSkills=true){
  clearStaticRasterCache();clearFragmentRenderCache();clearMazeWallChunks();clearCanyonTiles();clearSpinifexScatters();
  radioStrikeKillContext=0;burningNatureSet.clear();lastEnemySeparationAt=-1e9;patrolChatScanT=0;allyTargetRefreshAt=0;
  resetMazeComparison();partnerOrder.pressed=false;partnerOrder.drawing=false;partnerOrder.path=[];partnerOrder.cursor=null;partnerOrder.signalT=0;partnerOrder.signalKind='point';
- state='play';shake=0;flash=0;msg='';msgT=0;chainToastT=0;oneShotToastT=0;chainToast='';oneShotToast='';interact=false;bombReq=false;skillReq=false;decoy=null;allies=[];partner=null;hound=null;houndTrail=[];allySeq=0;builtWalls=[];tankWrecks=[];radio=null;airstrike=null;airbombs=[];weather='clear';weatherT=0;rainIntensity=0;weatherNext=15+R()*35;baseSpawnT=5;deathT=0;cam=0;camX=0;scoreStats=newScoreStats();
+ enemyDogs=[];state='play';shake=0;flash=0;msg='';msgT=0;chainToastT=0;oneShotToastT=0;chainToast='';oneShotToast='';interact=false;bombReq=false;skillReq=false;decoy=null;allies=[];partner=null;hound=null;houndTrail=[];allySeq=0;builtWalls=[];tankWrecks=[];radio=null;airstrike=null;airbombs=[];weather='clear';weatherT=0;rainIntensity=0;weatherNext=15+R()*35;baseSpawnT=5;deathT=0;cam=0;camX=0;scoreStats=newScoreStats();
  setupZones();if(rerollSkills)rollSkillChoices();
  waterRipples=[];
  p={x:WW/2,y:3100,hp:3,tank:null,cc:0,vc:0,ang:-1.57,body:-1.57,dig:0,digPrep:0,digElapsed:0,digExitAnim:0,digExitX:0,digExitY:0,scd:0,scdMax:0,drill:0,drillHit:0,drillTarget:null,drillSfx:0,bushHide:0,grappleT:0,grappleTarget:null,flameFuel:3,flameActive:false,flameLockA:null,flamePath:[],flameSfx:0,flameReach:0,fireExposure:0,sniperMode:false,sniperLockA:null,sniperAimN:0,sniperZoom:1.5,sniperLensChangeT:0,sniperEnterT:0,sniperReadyT:0,sniperExitT:0,sniperFlash:0,sniperHitT:0,sniperHitX:0,sniperHitY:0,sniperFireCd:0,sniperNoiseEvents:[]};touchTurretAngle=null;
@@ -2823,7 +2825,7 @@ function reset(rerollSkills=true){
  humans=humans.filter(h=>D(h,p)>520);etanks=etanks.filter(e=>D(e,p)>700);assignBuildingPatrols();reconcileBushBuildingPlacement();clearRoadScenery();rebuildSpatialGrid();captureBuildingGroundMarks();separateEnemyUnits(true);
  // Only distribute flank patrols AFTER the final building-patrol reservations.
  // This prevents late-added patrol buildings from obstructing new guard routes.
- distributeFlankPatrols();patrolRoutesVisible=!!(skillDebugAll||areaDebugEnabled);if(skill==='hound')spawnHound();setupMission();spawnCommanderClasses();
+ distributeFlankPatrols();patrolRoutesVisible=!!(skillDebugAll||areaDebugEnabled);if(skill==='hound')spawnHound();setupMission();spawnCommanderClasses();spawnEnemyDogs();
 }
 // 敵司令本部のコリジョンは command_building_1.webp の実描画領域に合わせる。
 // 元画像256x221のうち、主要な不透明領域はおよそ x=4..248 / y=6..213。
@@ -2990,7 +2992,7 @@ function terrainMoveScale(o,dx,dy,r){
  }
  return 1;
 }
-function mv(o,dx,dy,r,slowOverride=null){if(mazeComparisonEnemyFrozen(o))return;const slow=Number.isFinite(slowOverride)?slowOverride:terrainMoveScale(o,dx,dy,r);dx*=slow;dy*=slow;const nx=o.x+dx;if(nx>r&&nx<WW-r&&!hitsC(nx,o.y,r)&&!enemyTankObjectBlocked(o,nx,o.y)&&!tankBlocked(o,nx,o.y,r)&&!enemyUnitBlocked(o,nx,o.y,r))o.x=nx;const ny=o.y+dy;if(ny>r&&ny<WH-r&&!hitsC(o.x,ny,r)&&!enemyTankObjectBlocked(o,o.x,ny)&&!tankBlocked(o,o.x,ny,r)&&!enemyUnitBlocked(o,o.x,ny,r))o.y=ny;}
+function mv(o,dx,dy,r,slowOverride=null){if(mazeComparisonEnemyFrozen(o))return;const slow=Number.isFinite(slowOverride)?slowOverride:terrainMoveScale(o,dx,dy,r);dx*=slow;dy*=slow;const nx=o.x+dx;if(nx>r&&nx<WW-r&&!hitsC(nx,o.y,r)&&!enemyTankObjectBlocked(o,nx,o.y)&&!tankBlocked(o,nx,o.y,r)&&!enemyUnitBlocked(o,nx,o.y,r)&&(!o.dogHandler||dogHandlerStepAllowed(o,nx,o.y)))o.x=nx;const ny=o.y+dy;if(ny>r&&ny<WH-r&&!hitsC(o.x,ny,r)&&!enemyTankObjectBlocked(o,o.x,ny)&&!tankBlocked(o,o.x,ny,r)&&!enemyUnitBlocked(o,o.x,ny,r)&&(!o.dogHandler||dogHandlerStepAllowed(o,o.x,ny)))o.y=ny;}
 let lastEnemySeparationAt=-1e9;
 function separateEnemyUnits(force=false){
  const now=performance.now();if(!force&&now-lastEnemySeparationAt<100)return;lastEnemySeparationAt=now;
@@ -3234,7 +3236,7 @@ function spawnCommanderClasses(){
  }
 }
 function commanderWhistle(h,key){
- if(commanderRallying||h.commander!=='blue'||key!=='p'||(h.whistleCooldown||0)>0)return;
+ if(h.dogHandler||commanderRallying||h.commander!=='blue'||key!=='p'||(h.whistleCooldown||0)>0)return;
  h.whistleT=2.5;h.whistleCooldown=8;h.whistleSignalT=1;
  commanderSignals.push({source:h,x:h.x,y:h.y,remaining:1});
  tone(1450,.16,.035,'sine',1850);setTimeout(()=>tone(1800,.16,.03,'sine',1450),170);
@@ -3262,6 +3264,7 @@ function commanderMove(h,target,dt,sp=150){
 }
 function cancelCommanderAttack(h){h.commanderRelocateT=0;h.commanderRelocateGoal=null;h.commanderShotT=0;h.commanderCharge=0;h.commanderAim=null;h.commanderRoute=null;}
 function updateCommanderAI(h,dt){
+ if(h.dogHandler&&h.dog?.handler&&h.dog.state==='chase'&&!h.st)return true;
  if(!h.commander)return false;
  h.whistleT=Math.max(0,(h.whistleT||0)-dt);h.whistleCooldown=Math.max(0,(h.whistleCooldown||0)-dt);
  h.commanderCooldown=Math.max(0,(h.commanderCooldown||0)-dt);
@@ -3388,8 +3391,8 @@ function enemyModePaused(o,dt=0){
  if(paused){o.modeFrozen=true;o.walking=false;o.modePause=Math.max(0,o.modePause-dt);o.foundPause=Math.max(0,(o.foundPause||0)-dt);o.susPause=Math.max(0,(o.susPause||0)-dt);o.sharePause=Math.max(0,(o.sharePause||0)-dt);o.firePause=Math.max(0,(o.firePause||0)-dt);}
  return paused;
 }
-function enterHumanFound(h,key,pause=null){
- if(!h||!h.alive||h.stun>0||(key==='p'&&debugMode>=2))return false;
+function enterHumanFound(h,key,pause=null,ignoreStealth=false){
+ if(!h||!h.alive||h.stun>0||(key==='p'&&debugMode>=2&&!ignoreStealth))return false;
  if(h.chatT>0)cancelPatrolChat(h);
  const fresh=!h.st,tg=targetObj(key);h.sus=0;h.susPause=0;h.st=1;h.target=key;h.lost=humanMemory(h);
  if(tg)h.face=Math.atan2(tg.y-h.y,tg.x-h.x);
@@ -3895,7 +3898,7 @@ function onHoundPlayerVehicleChange(){
 function stunHound(sec=5){
  if(!hound)return false;if(hound.target)hound.target.houndPinned=false;hound.target=null;hound.state='stunned';hound.stun=Math.max(hound.stun||0,sec);hound.biteT=0;hound.dashDist=0;hound.coverContact=0;burst(hound.x,hound.y,8,'#d7cf9a',85);return true;
 }
-function stunHoundAtBlast(x,y,r=95){if(hound&&Math.hypot(hound.x-x,hound.y-y)<=r)stunHound(5);}
+function stunHoundAtBlast(x,y,r=95){stunEnemyDogsAtBlast(x,y,r);if(hound&&Math.hypot(hound.x-x,hound.y-y)<=r)stunHound(5);}
 function houndTrailTarget(){
  // 乗り物搭乗中は車体グラフィックと重ならないよう、歩兵時より少し後方・外側を追従する。
  const vehicle=!!(p&&p.tank),followBack=vehicle?58:34,latBase=vehicle?24:15,fallbackBack=vehicle?50:26;
@@ -3907,7 +3910,8 @@ function houndTrailTarget(){
 function updateHoundTrail(){
  if(!hound||!p)return;const q=houndTrail[houndTrail.length-1];if(!q||Math.hypot(p.x-q.x,p.y-q.y)>7)houndTrail.push({x:p.x,y:p.y,a:p.body});else{q.a=p.body;q.x=p.x;q.y=p.y;}while(houndTrail.length>90)houndTrail.shift();
 }
-function houndTryStep(a,sp,dt,allowAvoid=true){
+function houndTryStep(a,sp,dt,allowAvoid=true,dog=hound){
+ const hound=dog;
  if(!hound)return false;
  const terrainSlow=inSlowTerrainAt(hound.x,hound.y,7)?.3:1,step=sp*terrainSlow*dt;
  // 遮蔽物の縁で毎フレーム左右の回避方向を選び直すと、犬がブルブル向きを変える。
@@ -3918,6 +3922,7 @@ function houndTryStep(a,sp,dt,allowAvoid=true){
  for(const off of angles){
   const aa=a+off,nx=hound.x+Math.cos(aa)*step,ny=hound.y+Math.sin(aa)*step;
   if(nx<=7||nx>=WW-7||ny<=7||ny>=WH-7||hitsC(nx,ny,7))continue;
+  if(hound.enemyDog&&hound.handler?.alive){const leash=Math.hypot(nx-hound.handler.x,ny-hound.handler.y);if(leash>200||leash<50)continue;}
   if(allowAvoid){
    if(Math.abs(off)>.08&&Math.abs(off)<2){hound.avoidSide=off>0?1:-1;hound.avoidT=Math.max(hound.avoidT||0,.34);}
    else if(off===0&&(hound.avoidT||0)<=0)hound.avoidSide=0;
@@ -3999,18 +4004,19 @@ function updateHound(dt){
  }
  const target=houndTrailTarget(),d=Math.hypot(target.x-hound.x,target.y-hound.y);if(d>10){const dash=d>95,sp=dash?375:150,a=Math.atan2(target.y-hound.y,target.x-hound.x);if(hound.state==='return'){const coverTouch=houndDirectStepTouchesCover(a,sp,dt);if(coverTouch){hound.coverContact=(hound.coverContact||0)+dt;if(hound.coverContact>=1){enterHoundLost();say('猟犬がプレイヤーを見失った');return;}houndTryStep(a,sp,dt,false);}else{hound.coverContact=0;houndTryStep(a,sp,dt,true);}}else{hound.coverContact=0;houndTryStep(a,sp,dt,true);}}else{hound.face=target.a??p.body;hound.coverContact=0;if(hound.state==='return'){hound.state='follow';hound.returnFromBite=false;hound.reacquired=false;hound.lostMode=null;}}
 }
-function drawHound(){
- if(!hound||skill!=='hound')return;
+function drawHound(dog=hound){
+ const hound=dog;
+ if(!hound||(!hound.enemyDog&&skill!=='hound'))return;
  const a=hound.face||0,stunned=hound.stun>0,bite=hound.state==='bite';
  const dashState=!stunned&&!bite&&(hound.state==='dashOut'||hound.state==='chase'||hound.state==='returnDash');
  let moveDist=0;
  if(!stunned&&!bite&&(hound.state==='follow'||hound.state==='return')){const tt=houndTrailTarget();moveDist=Math.hypot(tt.x-hound.x,tt.y-hound.y);}
- const walking=!stunned&&!bite&&(hound.state==='lost'||hound.state==='follow'||hound.state==='return'||dashState)&&((hound.state==='lost')||dashState||moveDist>10);
+ const walking=hound.enemyDog?(!stunned&&hound.walking):!stunned&&!bite&&(hound.state==='lost'||hound.state==='follow'||hound.state==='return'||dashState)&&((hound.state==='lost')||dashState||moveDist>10);
  const now=performance.now(),rate=dashState?.026:.014,phase=walking?now*rate:0;
  const strideBase=dashState?6.6:3.8;
  const stride=walking?Math.sin(phase)*strideBase:0;
  const legLift=walking?Math.cos(phase*2)*(dashState?1.8:1.05):0;
- const bob=bite?Math.sin(now*.04)*1.4:walking?Math.sin(phase*2)*(dashState?.65:.35):0;
+ const bob=hound.enemyDog&&hound.barkT>0?Math.sin(now*.045)*1.8:bite?Math.sin(now*.04)*1.4:walking?Math.sin(phase*2)*(dashState?.65:.35):0;
  const fur=hound.col,dark=fur==='#222222'?'#0f1110':fur==='#e8e5da'?'#b9b6ad':fur==='#4a3025'?'#201710':'#58412e';
  const light=fur==='#222222'?'#4a4d49':fur==='#e8e5da'?'#f7f4e9':fur==='#4a3025'?'#89674c':'#dfc59a';
  g.save();g.translate(hound.x,hound.y+bob);g.rotate(a);g.scale(.8625,.8625);
@@ -4064,6 +4070,8 @@ function drawHound(){
  g.globalAlpha=1;
  // 鼻先。
  g.fillStyle=dark;g.beginPath();g.ellipse(27.4,0,1.9,1.6,0,0,Math.PI*2);g.fill();
+ // 犬兵専用：前脚を踏ん張り、口を開閉して吠える。
+ if(hound.enemyDog&&hound.barkT>0){const jaw=2+Math.abs(Math.sin(now*.045))*4;g.fillStyle='#b67357';g.beginPath();g.ellipse(25,0,4,jaw,0,0,Math.PI*2);g.fill();g.strokeStyle='#eed6a6';g.lineWidth=1.5;for(const yy of [-1,1]){g.beginPath();g.moveTo(32,yy*5);g.lineTo(37,yy*9);g.stroke();}}
  // 噛みつきアニメーション。
  if(bite){const jaw=2+Math.abs(Math.sin(now*.03))*3.4;g.strokeStyle='#ffb347';g.lineWidth=2;for(const yy of [-4,0,4]){g.beginPath();g.moveTo(26,yy);g.lineTo(30.5+jaw,yy+(yy===0?0:(yy<0?-1.8:1.8)));g.stroke();}}
  // ダッシュ時は後方へ短いスピード線。
@@ -5095,6 +5103,7 @@ function update(dt){
  // 水面アニメーションと同じ向きの流れを地上ユニットへ反映する。
  applyRiverCurrents(dt);
  for(const o of [...humans,...etanks])holdEnemyModePosition(o);
+ updateEnemyDogs(dt);
  separateFootPlayerEnemyTanks();
  for(const f of fx)f.l-=dt;fx=fx.filter(f=>f.l>0);
  updateParts(dt);updateWaterRipples(dt);
@@ -6552,7 +6561,7 @@ function draw(near){
  if(decoy){g.globalAlpha=.7;soldier(decoy.x,decoy.y,decoy.face,true,false,false);g.globalAlpha=1;drawDecoySignalPulse(decoy.x,decoy.y,(5-decoy.t));}
  drawPartner();
  for(const ally of (allies||[]))if(ally.alive&&!(ally.chute>0)){drawBlastShadow(ally);soldier(ally.x,ally.y-blastLift(ally),ally.face,true,false,false,false,'',false,false);drawAllyStun(ally);}
- drawHound();
+ drawHound();drawEnemyDogs();
  for(const ab of airbombs){const mt=ab.maxT||.48,k=Math.max(0,Math.min(1,1-ab.t/mt));g.fillStyle=ab.fighter?'#252b31':'#171717';g.beginPath();g.ellipse(ab.x,ab.y,ab.fighter?7:5,ab.fighter?13:10,0,0,6.28);g.fill();g.strokeStyle=ab.fighter?'rgba(180,220,255,.65)':'rgba(255,190,80,.55)';g.beginPath();g.arc(ab.x,ab.y,(ab.fighter?20:14)*k,0,6.28);g.stroke();}
  if(!p.tank&&p.grappleT>0&&p.grappleTarget&&p.grappleTarget.alive){const h=p.grappleTarget,a=Math.atan2(h.y-p.y,h.x-p.x),k=1-p.grappleT/.3;g.save();g.strokeStyle='rgba(255,230,170,'+(1-k*.25)+')';g.lineWidth=3;g.beginPath();g.moveTo(p.x+Math.cos(a+.55)*8,p.y+Math.sin(a+.55)*8);g.lineTo(h.x-Math.cos(a)*5,h.y-Math.sin(a)*5);g.moveTo(p.x+Math.cos(a-.55)*8,p.y+Math.sin(a-.55)*8);g.lineTo(h.x-Math.cos(a)*5,h.y-Math.sin(a)*5);g.stroke();g.strokeStyle='rgba(255,255,255,'+(0.7-k*.4)+')';g.lineWidth=2;for(let q=0;q<3;q++){const off=(q-1)*7;g.beginPath();g.moveTo(p.x-Math.cos(a)*10+Math.cos(a+1.57)*off,p.y-Math.sin(a)*10+Math.sin(a+1.57)*off);g.lineTo(p.x-Math.cos(a)*20+Math.cos(a+1.57)*off,p.y-Math.sin(a)*20+Math.sin(a+1.57)*off);g.stroke();}g.restore();}
  if(p.tank){if(!(p.tank.kind==='tank'&&inBush(p)))drawVehicle(p.tank,p.x,p.y,p.body,p.ang);if(p.tank.f<=0)markVehicle(p.x,p.y-(p.tank.kind==='fighter'?66:p.tank.kind==='truck'?42:50),'fuel');}
@@ -7410,10 +7419,11 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/partner.js?v=2026.10.14.1208"></script>
-<script src="js/maze-walls.js?v=2026.10.14.1208"></script>
-<script src="js/canyon.js?v=2026.10.14.1208"></script>
-<script src="js/vegetation.js?v=2026.10.14.1208"></script>
+<script src="js/enemy-dogs.js?v=2026.10.14.1653"></script>
+<script src="js/partner.js?v=2026.10.14.1653"></script>
+<script src="js/maze-walls.js?v=2026.10.14.1653"></script>
+<script src="js/canyon.js?v=2026.10.14.1653"></script>
+<script src="js/vegetation.js?v=2026.10.14.1653"></script>
 <script>
 (function(){
 // iPhone Chrome/Safari: synthetic KeyboardEvent に依存せず、ゲーム内部の入力状態を直接更新する。
