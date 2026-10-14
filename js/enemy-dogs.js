@@ -20,20 +20,37 @@ function spawnEnemyDogs(){
   // missionSpot searches open terrain; if its immediate ring is blocked, search
   // another verified location rather than creating a dog inside an obstacle.
   if(!pos){pos=missionSpot(spot.x+100,spot.y,7);Object.assign(handler,missionSpot(pos.x-80,pos.y,18));handler.path=[{x:handler.x,y:handler.y}];}
-  const dog={...pos,handler,enemyDog:true,col:'#222222',face:0,state:'patrol',stun:0,barkT:0,barkCooldown:0,orbit:i*Math.PI,orbitRadius:90+i*35,patrolMode:i===0?'orbit':'south',southX:spot.x,southY:spot.y,southTime:0,lostPhase:0,lostBase:0,avoidT:0,avoidSide:i?1:-1,dogWall:null,alertDisabled:false,chaseElapsed:0,rearmRequired:false,walking:false};
+  const dog={...pos,handler,enemyDog:true,col:'#222222',face:0,state:'patrol',stun:0,barkT:0,barkCooldown:0,orbit:i*Math.PI,orbitRadius:90+i*35,patrolMode:i===0?'orbit':'south',southX:spot.x,southY:spot.y,southTime:0,lostPhase:0,lostBase:0,avoidT:0,avoidSide:i?1:-1,dogWall:null,alertDisabled:false,chaseElapsed:0,rearmRequired:false,rearmKey:null,targetKey:null,walking:false};
   handler.dog=dog;humans.push(handler);enemyDogs.push(dog);
  }
 }
 
 function dogEndAlert(dog,permanent=false){
  if(permanent)dog.alertDisabled=true;
- dog.state=dog.handler?'patrol':'lost';dog.chaseElapsed=0;dog.barkT=0;dog.dogWall=null;dog.walking=false;
+ dog.state=dog.handler?'patrol':'lost';dog.targetKey=null;dog.chaseElapsed=0;dog.barkT=0;dog.dogWall=null;dog.dogEscape=null;dog.walking=false;
 }
 function dogSilence(dog){
  if(dog.alertDisabled)return;
- dogEndAlert(dog,true);
+ const key=dog.targetKey;dogEndAlert(dog,true);
  const h=dog.handler;
- if(h&&h.target==='p'){h.st=0;h.target=null;h.lost=0;h.foundPause=0;}
+ if(h&&key&&h.target===key){h.st=0;h.target=null;h.lost=0;h.foundPause=0;}
+}
+// Smell works on the player and the on-foot Partner; neither is detectable in
+// a vehicle or during the debug detection-off mode.
+function dogTargetObject(key){
+ if(debugMode>=2||p.tank)return null;
+ if(key==='p')return p;
+ if(key==='partner'&&skill==='partner'&&partner&&!partner.down&&!partner.vehicle&&!partner.passengerVehicle)return partner;
+ return null;
+}
+function dogFindTarget(dog){
+ let best=null,bestD=DOG_DETECT+1;
+ for(const key of ['p','partner']){
+  if(dog.rearmRequired&&dog.rearmKey===key)continue;
+  const target=dogTargetObject(key);if(!target)continue;
+  const d=D(dog,target);if(d<=DOG_DETECT&&d<bestD){best={key,target};bestD=d;}
+ }
+ return best;
 }
 // The white-soldier style perimeter navigation is shared by the dog and handler.
 // Preserve obstacle/direction between frames to avoid shaking at wall corners.
@@ -45,7 +62,7 @@ function dogTakeStep(unit,a,speed,dt,r=7,isDog=true){
  if(moved)unit.face=Math.atan2(unit.y-oy,unit.x-ox);
  return moved;
 }
-function dogMoveAround(unit,goal,speed,dt,r=7,isDog=true){
+function dogMoveAroundCore(unit,goal,speed,dt,r=7,isDog=true){
  const dx=goal.x-unit.x,dy=goal.y-unit.y,d=Math.hypot(dx,dy);
  if(d<5){unit.dogWall=null;return false;}
  const a=Math.atan2(dy,dx),look=Math.min(50,d),probe={x:unit.x+Math.cos(a)*look,y:unit.y+Math.sin(a)*look};
@@ -82,66 +99,135 @@ function dogMoveAround(unit,goal,speed,dt,r=7,isDog=true){
   if(dogTakeStep(unit,a+v,speed,dt,r,isDog)){unit.avoidSide=v>0?1:-1;return true;}
  return false;
 }
+// Stuck recovery is restricted to dog pairs, preserving the white commander's AI.
+function dogPickEscape(unit,goal,r,isDog){
+ const to=Math.atan2(goal.y-unit.y,goal.x-unit.x),side=unit.avoidSide||1;
+ const anchor=isDog?unit.handler:unit.dogHandler?unit.dog:null;
+ const dirs=[to+side*Math.PI/2,to-side*Math.PI/2,to+side*2.2,to-side*2.2,to+Math.PI,to+side*.75,to-side*.75];
+ if(anchor&&anchor.alive){
+  const towardAnchor=Math.atan2(anchor.y-unit.y,anchor.x-unit.x);
+  dirs.unshift(towardAnchor+side*.65,towardAnchor-side*.65,towardAnchor);
+ }
+ let best=null,bestScore=Infinity;
+ for(const dist of [48,78,110]){
+  for(let i=0;i<dirs.length;i++){
+   const a=dirs[i],q={x:unit.x+Math.cos(a)*dist,y:unit.y+Math.sin(a)*dist};
+   if(q.x<r+4||q.x>WW-r-4||q.y<r+4||q.y>WH-r-4||hitsC(q.x,q.y,r+2))continue;
+   if(anchor&&anchor.alive){const leash=D(q,anchor);if(leash<DOG_LEASH_MIN+3||leash>DOG_LEASH_MAX-3)continue;}
+   if(!patrolLineClear(unit,q,r))continue;
+   const score=D(q,goal)+dist*.15+i*3+((unit.dogEscapeAttempts||0)%2)*(i%2?6:-6);
+   if(score<bestScore){bestScore=score;best=q;}
+  }
+  if(best)break;
+ }
+ return best?{x:best.x,y:best.y,t:2.2}:null;
+}
+function dogMoveAround(unit,goal,speed,dt,r=7,isDog=true){
+ if(!unit.enemyDog&&!unit.dogHandler)return dogMoveAroundCore(unit,goal,speed,dt,r,isDog);
+ let escape=unit.dogEscape;
+ if(escape){escape.t-=dt;if(escape.t<=0||D(unit,escape)<12){escape=unit.dogEscape=null;unit.dogWall=null;}}
+ const moved=dogMoveAroundCore(unit,escape||goal,speed,dt,r,isDog);
+ if(D(unit,goal)<22){
+  unit.dogStallT=0;unit.dogProgressT=0;unit.dogProgressX=unit.x;unit.dogProgressY=unit.y;unit.dogEscape=null;return moved;
+ }
+ unit.dogStallT=moved?0:(unit.dogStallT||0)+dt;
+ if(!Number.isFinite(unit.dogProgressX)){unit.dogProgressX=unit.x;unit.dogProgressY=unit.y;unit.dogProgressT=0;}
+ unit.dogProgressT=(unit.dogProgressT||0)+dt;
+ const sample=unit.dogProgressT>=1.15;
+ const net=sample?Math.hypot(unit.x-unit.dogProgressX,unit.y-unit.dogProgressY):0;
+ if(unit.dogStallT>=.85||(sample&&net<9)){
+  unit.dogEscapeAttempts=(unit.dogEscapeAttempts||0)+1;unit.avoidSide=-(unit.avoidSide||1);
+  unit.dogEscape=dogPickEscape(unit,goal,r,isDog);unit.dogWall=null;
+  unit.dogStallT=0;unit.dogProgressT=0;unit.dogProgressX=unit.x;unit.dogProgressY=unit.y;
+ }else if(sample){
+  unit.dogProgressT=0;unit.dogProgressX=unit.x;unit.dogProgressY=unit.y;
+  if(net>20)unit.dogEscapeAttempts=0;
+ }
+ return moved;
+}
 function dogBark(dog){
- if(dog.alertDisabled||dog.stun>0||dog.barkCooldown>0||p.tank)return;
+ const key=dog.targetKey,target=dogTargetObject(key);
+ if(!key||!target||dog.alertDisabled||dog.stun>0||dog.barkCooldown>0)return;
  tone(190,.13,.025,'sawtooth',95);
  dog.barkT=.9;dog.barkCooldown=3;dog.signalX=dog.x;dog.signalY=dog.y;
- // Suppress commander whistle cascades: this bark alone has a 500px radius.
+ // The bark identifies the actual target, including the Partner, to nearby infantry.
  const rallying=commanderRallying;commanderRallying=true;
- try{for(const h of humans)if(h.alive&&(h===dog.handler||D(h,dog)<=500))enterHumanFound(h,'p',null,true);}
+ try{for(const h of humans)if(h.alive&&(h===dog.handler||D(h,dog)<=500))enterHumanFound(h,key,null,true);}
  finally{commanderRallying=rallying;}
 }
+function stunEnemyDog(dog){
+ dogSilence(dog);dog.stun=Math.max(dog.stun,5);dog.barkT=0;dog.walking=false;
+ dog.dogEscape=null;dog.dogStallT=0;dog.dogProgressT=0;
+}
 function stunEnemyDogsAtBlast(x,y,r){
- for(const dog of enemyDogs)if(Math.hypot(dog.x-x,dog.y-y)<=r){dogSilence(dog);dog.stun=Math.max(dog.stun,5);dog.barkT=0;dog.walking=false;}
+ for(const dog of enemyDogs)if(Math.hypot(dog.x-x,dog.y-y)<=r)stunEnemyDog(dog);
+}
+function stunEnemyDogsAtFlame(path){
+ if(!path||path.length<2||!enemyDogs.length)return;
+ for(const dog of enemyDogs){
+  if(dog.stun>0)continue;
+  for(let i=1;i<path.length;i++){
+   if(pointSegDistance(dog.x,dog.y,path[i-1],path[i])<18){stunEnemyDog(dog);break;}
+  }
+ }
 }
 function updateEnemyDogs(dt){
  if(hound?.warningBarkT>0)hound.warningBarkT=Math.max(0,hound.warningBarkT-dt);
  for(const dog of enemyDogs){
   const h=dog.handler;
-  if(h&&!h.alive){dog.handler=null;dog.state='lost';dog.lostBase=dog.face;dog.lostPhase=0;dog.barkT=0;}
+  if(h&&!h.alive){dog.handler=null;dog.state='lost';dog.targetKey=null;dog.lostBase=dog.face;dog.lostPhase=0;dog.barkT=0;}
   dog.barkT=Math.max(0,dog.barkT-dt);dog.barkCooldown=Math.max(0,dog.barkCooldown-dt);dog.walking=false;
-  if(dog.stun>0){dog.stun=Math.max(0,dog.stun-dt);continue;}
-  // Chase age and vehicle immunity must update even when the pair is offscreen.
-  if(dog.state==='chase')dog.chaseElapsed=(dog.chaseElapsed||0)+dt;
-  if(p.tank){
+  if(debugMode>=2||p.tank){
    if(dog.state==='chase')dogEndAlert(dog);
-   dog.rearmRequired=false;
-  }else if(dog.rearmRequired&&D(dog,p)>DOG_DETECT){
-   // A released dog needs the player to leave and re-enter its detection radius.
-   // Otherwise the 100px release would immediately re-trigger at 101–250px.
-   dog.rearmRequired=false;
+   dog.barkT=0;dog.rearmRequired=false;dog.rearmKey=null;
   }
-  // Far-off pairs remain stationary; timers and owner death still update.
-  if(Math.abs(dog.y-p.y)>H+600||Math.abs(dog.x-p.x)>W+400)continue;
+  if(dog.stun>0){dog.stun=Math.max(0,dog.stun-dt);continue;}
+  if(dog.state==='chase')dog.chaseElapsed=(dog.chaseElapsed||0)+dt;
+  if(dog.rearmRequired){
+   const target=dogTargetObject(dog.rearmKey);
+   if(!target||D(dog,target)>DOG_DETECT){dog.rearmRequired=false;dog.rearmKey=null;}
+  }
+  const partnerNear=dogTargetObject('partner');
+  if(Math.abs(dog.y-p.y)>H+600||Math.abs(dog.x-p.x)>W+400){
+   if(!partnerNear||Math.abs(dog.y-partnerNear.y)>H+600||Math.abs(dog.x-partnerNear.x)>W+400)continue;
+  }
   const ox=dog.x,oy=dog.y;
-  if(!dog.alertDisabled&&hound&&skill==='hound'&&!(hound.stun>0)&&D(hound,dog)<=100){dogSilence(dog);hound.warningBarkT=.9;tone(225,.18,.03,'sawtooth',110);say('猟犬が吠えて犬兵を追い払った！');}
-  if(dog.handler&&!dog.alertDisabled&&dog.state==='chase'&&dog.chaseElapsed>=DOG_GRACE&&(D(dog,p)>=DOG_DROP||D(dog.handler,p)>=DOG_HANDLER_DROP)){
-   const h=dog.handler;if(D(h,p)>=DOG_HANDLER_DROP&&h.target==='p'){h.st=0;h.target=null;h.lost=0;h.foundPause=0;}
-   dogEndAlert(dog);
-   dog.rearmRequired=true;
+  if(debugMode<2&&!dog.alertDisabled&&hound&&skill==='hound'&&!(hound.stun>0)&&D(hound,dog)<=100){
+   dogSilence(dog);
+   hound.warningBarkT=.9;hound.warningBarkX=hound.x;hound.warningBarkY=hound.y;
+   tone(225,.18,.03,'sawtooth',110);say('猟犬が吠えて犬兵を追い払った！');
+  }
+  const chaseTarget=dog.state==='chase'?dogTargetObject(dog.targetKey):null;
+  if(dog.state==='chase'&&!chaseTarget)dogEndAlert(dog);
+  else if(dog.handler&&!dog.alertDisabled&&dog.state==='chase'&&dog.chaseElapsed>=DOG_GRACE
+   &&(D(dog,chaseTarget)>=DOG_DROP||D(dog.handler,chaseTarget)>=DOG_HANDLER_DROP)){
+   const key=dog.targetKey;
+   if(h.target===key){h.st=0;h.target=null;h.lost=0;h.foundPause=0;}
+   dogEndAlert(dog);dog.rearmRequired=true;dog.rearmKey=key;
   }
   if(!dog.handler){
-   // Same half-speed S-shaped wandering as the skill hound; no new owner.
    dog.lostPhase+=dt*3.15;dog.lostBase+=Math.sin(dog.lostPhase*.37)*.1*dt;
    const a=dog.lostBase+Math.sin(dog.lostPhase)*.78;
    dogMoveAround(dog,{x:dog.x+Math.cos(a)*75,y:dog.y+Math.sin(a)*75},75,dt,7,true);
   }else{
-   const distance=D(dog,p);
-   // Smell deliberately ignores cover, stealth and debug detection suppression.
-   if(!p.tank&&!dog.alertDisabled&&!dog.rearmRequired&&dog.state!=='chase'&&distance<=DOG_DETECT){dog.state='chase';dog.chaseElapsed=0;}
+   if(!dog.alertDisabled&&dog.state!=='chase'){
+    const found=dogFindTarget(dog);
+    if(found){dog.state='chase';dog.targetKey=found.key;dog.chaseElapsed=0;dog.dogEscape=null;}
+   }
    if(dog.state==='chase'){
-    if(distance<=DOG_BARK){if(dog.barkCooldown<=0)dogBark(dog);}
-    else if(dog.barkT<=0){
-     if(D(h,dog)>105&&!(h.stun>0)&&!(h.stunRecover>0)&&!h.houndPinned&&!(h.blastAirT>0)){
-      dogMoveAround(h,dog,150,dt,8,false);h.modeFrozen=false;h.walking=true;
+    const target=dogTargetObject(dog.targetKey);
+    if(target){
+     const distance=D(dog,target);
+     if(distance<=DOG_BARK){if(dog.barkCooldown<=0)dogBark(dog);}
+     else if(dog.barkT<=0){
+      if(D(h,dog)>105&&!(h.stun>0)&&!(h.stunRecover>0)&&!h.houndPinned&&!(h.blastAirT>0)){
+       dogMoveAround(h,dog,150,dt,8,false);h.modeFrozen=false;h.walking=true;
+      }
+      dogMoveAround(dog,target,150,dt,7,true);
      }
-     dogMoveAround(dog,p,150,dt,7,true);
     }
    }else if(dog.patrolMode==='south'){
-    // The second dog leads its blue handler toward the bottom of the map.
-    // The target advances from the spawn point, not from the player's camera.
-    dog.southTime+=dt;
-    dog.southY=Math.min(WH-45,dog.southY+75*dt);
+    dog.southTime+=dt;dog.southY=Math.min(WH-45,dog.southY+75*dt);
     const target={x:dog.southX,y:dog.southY};
     if(D(dog,target)>5)dogMoveAround(dog,target,75,dt,7,true);
     if(D(h,dog)>105&&!(h.stun>0)&&!(h.stunRecover>0)&&!h.houndPinned&&!(h.blastAirT>0)){
@@ -156,19 +242,18 @@ function updateEnemyDogs(dt){
   dog.walking=Math.hypot(dog.x-ox,dog.y-oy)>.05;
  }
 }
+function drawDogBarkWaves(x,y,remaining){
+ const phase=((.9-remaining)%.3)/.3;
+ g.save();g.strokeStyle='#e44949';g.lineWidth=4.5;g.globalAlpha=Math.min(1,phase*10)*(1-phase);
+ g.beginPath();g.arc(x,y,200*phase,0,Math.PI*2);g.stroke();g.restore();
+}
 function drawEnemyDogs(){
  for(const dog of enemyDogs){
   if(dog.y<cam-230||dog.y>cam+H+230||dog.x<camX-230||dog.x>camX+W+230)continue;
   const h=dog.handler;
   if(h&&h.alive){g.save();g.strokeStyle='#aa9270';g.lineWidth=1.5;g.beginPath();g.moveTo(h.x,h.y);g.lineTo(dog.x+Math.cos(dog.face)*8,dog.y+Math.sin(dog.face)*8);g.stroke();g.restore();}
   drawHound(dog);
-  if(dog.barkT>0){
-   const phase=((.9-dog.barkT)%.3)/.3;
-   g.save();g.strokeStyle='#e44949';g.lineWidth=4.5;g.globalAlpha=Math.min(1,phase*10)*(1-phase);g.beginPath();g.arc(dog.signalX,dog.signalY,200*phase,0,Math.PI*2);g.stroke();g.restore();
-  }
+  if(dog.barkT>0)drawDogBarkWaves(dog.signalX,dog.signalY,dog.barkT);
  }
- if(hound?.warningBarkT>0){
-  g.save();g.fillStyle='#fff0ba';g.font='bold 13px system-ui';g.textAlign='center';
-  g.fillText('ワン！',hound.x,hound.y-38);g.restore();
- }
+ if(hound?.warningBarkT>0)drawDogBarkWaves(hound.warningBarkX??hound.x,hound.warningBarkY??hound.y,hound.warningBarkT);
 }
