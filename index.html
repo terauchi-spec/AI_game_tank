@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.14.1800</title>
+<title>こっそり戦車大作戦 2026.10.14.1810</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -645,7 +645,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <li>武器は射程480pxのバズーカ。標的が120pxより遠く、射線が通ると、0.5秒間停止して構えた時点の方向へ発射します。発射まで標的の動きに追従して照準を変えることはありません。発射準備は頭上の直線型チャージバーで表示します。</li>
 <li>被弾威力は戦車砲の約半分、爆破範囲は110px（設置爆弾は95px）。射撃後は約1.2秒、横方向へ移動し、次の射撃までの待ち時間は4秒です。</li></ul>
 <h3>犬兵：黒い犬を連れた青兵</h3>
-<ul><li>通常の1ゲームに2組を必ず配置。出現時は青兵の周囲を回る周回型と、出現地点からマップ下方向へ青兵を引いて歩く南下型の2種類です。犬は50〜150pxのリードで青兵につながれ、遮蔽物・オブジェクトに接触すると回り込みます。</li><li>潜伏・草むら・索敵解除中でも200px以内のプレイヤーを追跡。100px以内で吠え、半径200pxの赤い電波を3回表示し、500px以内の敵兵に発見を伝えます。犬が200px超、または青兵が350px超離れると犬の発見モードを解除します。</li><li>爆風で犬は5秒気絶し、その後は再び発見モードになりません。猟犬スキルの犬が100px以内に近づくと猟犬が吠え、犬兵の犬の発見モードが解除され、以降も再発見しません。青兵が倒れるとリードが外れ、半速のS字移動で迷子になります。</li></ul>
+<ul><li>通常の1ゲームに2組を必ず配置。出現時は青兵の周囲を回る周回型と、出現地点からマップ下方向へ青兵を引いて歩く南下型の2種類です。犬は50〜150pxのリードで青兵につながれ、遮蔽物・オブジェクトに接触すると回り込みます。</li><li>潜伏・草むら・索敵解除中でも200px以内のプレイヤーを追跡。100px以内で吠え、半径200pxの赤い電波を3回表示し、500px以内の敵兵に発見を伝えます。発見モード開始から10秒間は距離によって解除されません。10秒経過後、犬とプレイヤーが200px以上、または青兵とプレイヤーが350px以上離れると発見モードを解除します。</li><li>爆風で犬は5秒気絶し、その後は再び発見モードになりません。猟犬スキルの犬が100px以内に近づくと猟犬が吠え、犬兵の犬の発見モードが解除され、以降も再発見しません。青兵が倒れるとリードが外れ、半速のS字移動で迷子になります。</li></ul>
 <h3>白兵指揮官：ヘルメットの太い帯</h3>
 <ul><li>通常の出撃では2体配置され、ヘルメットの赤茶色の太い帯が目印です。マップ上部から左右端を大きく蛇行しながら南下し、顔を左右に振って索敵します。</li>
 <li>移動速度は通常青兵の1.5倍（巡回45px/秒、交戦142.5px/秒）。通常青兵より索敵距離が1.6倍で、視野も広くなっています。</li>
@@ -727,7 +727,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.14.1800',FILE_CREATED_AT='2026/10/14 18:00',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.14.1810',FILE_CREATED_AT='2026/10/14 18:10',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -7419,7 +7419,7 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/enemy-dogs.js?v=2026.10.14.1800"></script>
+<script src="js/enemy-dogs.js?v=2026.10.14.1810"></script>
 <script src="js/partner.js?v=2026.10.14.1653"></script>
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/canyon.js?v=2026.10.14.1653"></script>
