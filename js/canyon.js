@@ -27,8 +27,8 @@ function buildCanyonZones(){
    bushes=bushes.filter(b=>!oasisContains(z.oasis,b.x+b.w/2,b.y+b.h/2,40));rebuildSpatialGrid();
   }
   // Scattered mesas/inselbergs keep the main trail open and retain rock collision.
-  for(let i=0,made=0;i<100&&made<3;i++){
-   const w=110+R()*95,h=80+R()*75,x=110+R()*(WW-w-220),y=top+120+R()*Math.max(1,span-h-380),r=Math.max(w,h)*.55;
+  for(let i=0,made=0;i<100&&made<2;i++){
+   const w=110+R()*95,h=80+R()*75,x=150+R()*(WW-w-300),y=top+120+R()*Math.max(1,span-h-380),r=Math.max(w,h)*.55;
    if(hitsM(x+w/2,y+h/2,r)||(p&&Math.hypot(x+w/2-p.x,y+h/2-p.y)<200))continue;
    covers.push({kd:8,x,y,w,h,wildernessRock:1});made++;rebuildSpatialGrid();
   }
