@@ -1,6 +1,6 @@
 // Two bounded enemy dog/blue-handler pairs per map. No per-frame enemy search:
 // the 500px infantry scan happens once per bark, at most once every 3 seconds.
-const DOG_LEASH_MIN=50,DOG_LEASH_MAX=150,DOG_DETECT=200,DOG_BARK=100,DOG_HANDLER_DROP=350;
+const DOG_LEASH_MIN=50,DOG_LEASH_MAX=150,DOG_DETECT=250,DOG_BARK=100,DOG_DROP=100,DOG_HANDLER_DROP=250,DOG_GRACE=8;
 let enemyDogs=[];
 function dogHandlerStepAllowed(h,x,y){
  if(!h.dogHandler||!h.dog||h.dog.handler!==h)return true;
@@ -20,7 +20,7 @@ function spawnEnemyDogs(){
   // missionSpot searches open terrain; if its immediate ring is blocked, search
   // another verified location rather than creating a dog inside an obstacle.
   if(!pos){pos=missionSpot(spot.x+100,spot.y,7);Object.assign(handler,missionSpot(pos.x-80,pos.y,18));handler.path=[{x:handler.x,y:handler.y}];}
-  const dog={...pos,handler,enemyDog:true,col:'#222222',face:0,state:'patrol',stun:0,barkT:0,barkCooldown:0,orbit:i*Math.PI,orbitRadius:90+i*35,patrolMode:i===0?'orbit':'south',southX:spot.x,southY:spot.y,southTime:0,lostPhase:0,lostBase:0,avoidT:0,avoidSide:i?1:-1,dogWall:null,alertDisabled:false,chaseElapsed:0,walking:false};
+  const dog={...pos,handler,enemyDog:true,col:'#222222',face:0,state:'patrol',stun:0,barkT:0,barkCooldown:0,orbit:i*Math.PI,orbitRadius:90+i*35,patrolMode:i===0?'orbit':'south',southX:spot.x,southY:spot.y,southTime:0,lostPhase:0,lostBase:0,avoidT:0,avoidSide:i?1:-1,dogWall:null,alertDisabled:false,chaseElapsed:0,rearmRequired:false,walking:false};
   handler.dog=dog;humans.push(handler);enemyDogs.push(dog);
  }
 }
@@ -83,7 +83,7 @@ function dogMoveAround(unit,goal,speed,dt,r=7,isDog=true){
  return false;
 }
 function dogBark(dog){
- if(dog.alertDisabled||dog.stun>0||dog.barkCooldown>0)return;
+ if(dog.alertDisabled||dog.stun>0||dog.barkCooldown>0||p.tank)return;
  tone(190,.13,.025,'sawtooth',95);
  dog.barkT=.9;dog.barkCooldown=3;dog.signalX=dog.x;dog.signalY=dog.y;
  // Suppress commander whistle cascades: this bark alone has a 500px radius.
@@ -101,15 +101,24 @@ function updateEnemyDogs(dt){
   if(h&&!h.alive){dog.handler=null;dog.state='lost';dog.lostBase=dog.face;dog.lostPhase=0;dog.barkT=0;}
   dog.barkT=Math.max(0,dog.barkT-dt);dog.barkCooldown=Math.max(0,dog.barkCooldown-dt);dog.walking=false;
   if(dog.stun>0){dog.stun=Math.max(0,dog.stun-dt);continue;}
-  // Chase age must advance even while the pair is outside the render/update window.
+  // Chase age and vehicle immunity must update even when the pair is offscreen.
   if(dog.state==='chase')dog.chaseElapsed=(dog.chaseElapsed||0)+dt;
+  if(p.tank){
+   if(dog.state==='chase')dogEndAlert(dog);
+   dog.rearmRequired=false;
+  }else if(dog.rearmRequired&&D(dog,p)>DOG_DETECT){
+   // A released dog needs the player to leave and re-enter its detection radius.
+   // Otherwise the 100px release would immediately re-trigger at 101–250px.
+   dog.rearmRequired=false;
+  }
   // Far-off pairs remain stationary; timers and owner death still update.
   if(Math.abs(dog.y-p.y)>H+600||Math.abs(dog.x-p.x)>W+400)continue;
   const ox=dog.x,oy=dog.y;
   if(!dog.alertDisabled&&hound&&skill==='hound'&&!(hound.stun>0)&&D(hound,dog)<=100){dogSilence(dog);hound.warningBarkT=.9;tone(225,.18,.03,'sawtooth',110);say('猟犬が吠えて犬兵を追い払った！');}
-  if(dog.handler&&!dog.alertDisabled&&dog.state==='chase'&&dog.chaseElapsed>=10&&(D(dog,p)>=DOG_DETECT||D(dog.handler,p)>=DOG_HANDLER_DROP)){
-   const h=dog.handler;if(D(h,p)>DOG_HANDLER_DROP&&h.target==='p'){h.st=0;h.target=null;h.lost=0;h.foundPause=0;}
+  if(dog.handler&&!dog.alertDisabled&&dog.state==='chase'&&dog.chaseElapsed>=DOG_GRACE&&(D(dog,p)>=DOG_DROP||D(dog.handler,p)>=DOG_HANDLER_DROP)){
+   const h=dog.handler;if(D(h,p)>=DOG_HANDLER_DROP&&h.target==='p'){h.st=0;h.target=null;h.lost=0;h.foundPause=0;}
    dogEndAlert(dog);
+   dog.rearmRequired=true;
   }
   if(!dog.handler){
    // Same half-speed S-shaped wandering as the skill hound; no new owner.
@@ -119,7 +128,7 @@ function updateEnemyDogs(dt){
   }else{
    const distance=D(dog,p);
    // Smell deliberately ignores cover, stealth and debug detection suppression.
-   if(!dog.alertDisabled&&dog.state!=='chase'&&distance<=DOG_DETECT&&D(h,p)<=DOG_HANDLER_DROP){dog.state='chase';dog.chaseElapsed=0;}
+   if(!p.tank&&!dog.alertDisabled&&!dog.rearmRequired&&dog.state!=='chase'&&distance<=DOG_DETECT){dog.state='chase';dog.chaseElapsed=0;}
    if(dog.state==='chase'){
     if(distance<=DOG_BARK){if(dog.barkCooldown<=0)dogBark(dog);}
     else if(dog.barkT<=0){
