@@ -140,7 +140,7 @@ function updateTumbleweedStealth(){
 }
 function resetTumbleweed(b,z,i,initial=false){
  const viewX=Math.max(0,Math.min(WW-W,p.x-W/2)),viewY=Math.max(0,Math.min(WH-H,p.y-H*.6));
- const top=initial?z.y1+50:Math.max(z.y1+50,viewY+70),bottom=initial?z.y0-70:Math.min(z.y0-70,viewY+H-70);b.r=(13+i%3*3)*2*.6;b.rot=b.rot||0;b.avoidT=0;
+ const top=initial?z.y1+50:Math.max(z.y1+50,viewY+70),bottom=initial?z.y0-70:Math.min(z.y0-70,viewY+H-70);b.r=(13+i%3*3)*2*.6*1.3;b.rot=b.rot||0;b.avoidT=0;
  for(let tries=0;tries<24;tries++){
   b.seed=((b.seed||571+i*913)*1664525+1013904223)>>>0;const f=b.seed/4294967296;
   b.x=initial?35+(i*179+f*87+tries*71)%(WW-70):viewX-b.r-50;b.y=top+Math.max(1,bottom-top)*((i*.217+f)%1);
