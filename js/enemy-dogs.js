@@ -19,19 +19,20 @@ function dogSpawnPosition(spot){
 }
 function spawnEnemyDogs(){
  enemyDogs=[];
+ const usedZones=new Set();
  for(let i=0;i<2;i++){
-  // Some dog pairs appear near commanders; others spawn independently.
-  const commanders=humans.filter(h=>h.alive&&h.commander&&h.y>=850&&h.y<=WH-550);
-  const near=commanders.length&&R()<.35?commanders[R()*commanders.length|0]:null;
+  // Dog pairs are placed independently of commanders and of each other.
+  // The southbound pair needs room to move without entering starting grassland.
+  const zones=specialSpawnZones().filter(z=>!usedZones.has(z)&&
+   (i===0||z.y1<ZONES[0].y1-600));
   let pos=null;
-  const spot=randomSpecialSpawn(1100,WH-850,18,near,q=>{
+  const spot=randomSpecialSpawn(18,q=>{
+   if(q.y>=ZONES[0].y1-220)return false;
    pos=dogSpawnPosition(q);return !!pos;
-  })||missionSpot(50+R()*(WW-100),1100+R()*(WH-1950),18);
+  },zones);
+  if(!spot||!pos){console.warn('Dog pair spawn skipped: no safe separated location',i);continue;}
+  usedZones.add(zoneAt(spot.y));
   const handler={...spot,path:[{...spot}],wi:0,dir:1,loop:true,stk:0,alive:true,elite:false,commander:null,dogHandler:true,st:0,sus:0,lost:0,cd:1,burstLeft:0,face:Math.PI/2,commanderScan:0,commanderTactics:0,commanderCooldown:2,whistleT:0,whistleCooldown:0};
-  if(!pos)pos=dogSpawnPosition(spot);
-  // missionSpot searches open terrain; if its immediate ring is blocked, search
-  // another verified location rather than creating a dog inside an obstacle.
-  if(!pos){pos=missionSpot(spot.x+100,spot.y,7);Object.assign(handler,missionSpot(pos.x-80,pos.y,18));handler.path=[{x:handler.x,y:handler.y}];}
   const dog={...pos,handler,enemyDog:true,col:'#222222',face:0,state:'patrol',stun:0,barkT:0,barkCooldown:0,orbit:i*Math.PI,orbitRadius:90+i*35,patrolMode:i===0?'orbit':'south',southX:spot.x,southY:spot.y,southTime:0,lostPhase:0,lostBase:0,avoidT:0,avoidSide:i?1:-1,dogWall:null,alertDisabled:false,chaseElapsed:0,rearmRequired:false,rearmKey:null,targetKey:null,walking:false};
   handler.dog=dog;humans.push(handler);enemyDogs.push(dog);
  }
@@ -239,7 +240,7 @@ function updateEnemyDogs(dt){
      }
     }
    }else if(dog.patrolMode==='south'){
-    dog.southTime+=dt;dog.southY=Math.min(WH-45,dog.southY+75*dt);
+    dog.southTime+=dt;dog.southY=Math.min(ZONES[0].y1-180,dog.southY+75*dt);
     const target={x:dog.southX,y:dog.southY};
     if(D(dog,target)>5)dogMoveAround(dog,target,75,dt,7,true);
     if(D(h,dog)>105&&!(h.stun>0)&&!(h.stunRecover>0)&&!h.houndPinned&&!(h.blastAirT>0)){
