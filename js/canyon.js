@@ -205,6 +205,20 @@ function drawSandstormOverlay(){
  q.restore();
 }
 let selectedAreaDebug=null;
+// Small fixed enemy population uses final-world collision checks and normal AI.
+function spawnAreaDebugEnemies(z){
+ const placed=[];
+ const add=(tank,count)=>{for(let i=0;i<count;i++)for(let tries=0;tries<100;tries++){
+  const r=tank?TANK_HIT:8,x=55+R()*(WW-110),y=z.y1+130+R()*(z.y0-z.y1-650),a=R()<.5?0:Math.PI/2,len=40+R()*70;
+  const path=[{x,y},{x:x+Math.cos(a)*len,y:y+Math.sin(a)*len}];
+  if(path.some(q=>q.x<r+20||q.x>WW-r-20||q.y<z.y1+60||q.y>z.y0-350||hitsM(q.x,q.y,r+2))||!pOK(path,r,false)||Math.hypot(x-p.x,y-p.y)<400||placed.some(q=>Math.hypot(x-q.x,y-q.y)<100))continue;
+  const o={x,y,path,loop:false,wi:1,dir:1,stk:0,alive:true,st:0,sus:0,lost:0,target:null,areaDebug:1};
+  if(tank)etanks.push({...o,cc:R()*1.5,vc:0,ang:a,body:a,scanTurret:true,scanPhase:R()*Math.PI*2,scanRate:.5});
+  else humans.push({...o,cd:R()*1.2,burstLeft:0,face:a,patrolMode:'axis',elite:false});
+  placed.push(o);break;
+ }};
+ add(false,8);add(true,2);
+}
 function setupSelectedAreaDebugStage(){
  const name=selectedAreaDebug||'草原',z={n:name,y0:WH-40,y1:WH-2440,g:ZONE_STYLE[name].g,p:ZONE_STYLE[name].p.slice(),areaDebug:1};ZONES=[z];
  clearCanyonTiles();clearMazeWallChunks();clearFragmentRenderCache();
@@ -221,7 +235,7 @@ function setupSelectedAreaDebugStage(){
  objects=objects.filter(o=>!circleHitsRect(WW/2,p.y-50,170,o));bushes=bushes.filter(b=>!circleHitsRect(WW/2,p.y-50,170,b));mud=mud.filter(m=>!circleHitsRect(WW/2,p.y-50,170,m));
  const type=TYPES[0];cars.push({x:WW/2+75,y:p.y-60,t:type,kind:'tank',hp:type.hp,c:type.cmax,v:type.vmax,f:type.fmax,ch:0,body:-Math.PI/2,areaDebug:1,debugInfinite:1});
  weather='clear';weatherT=0;weatherNext=name==='荒野'?10:99999;rainIntensity=0;baseSpawnT=99999;radio=null;airstrike=null;airbombs=[];debugMode=1;debugInvincible=true;
- captureBuildingGroundMarks();rebuildSpatialGrid();say(name+' テスト：無敵／戦車の弾数・燃料無制限');
+ captureBuildingGroundMarks();rebuildSpatialGrid();spawnAreaDebugEnemies(z);say(name+' テスト：無敵／戦車の弾数・燃料無制限');
 }
 function syncAreaDebugPicker(){document.body.classList.toggle('area-picker-open',state==='areaPick');}
 const areaList=document.getElementById('areaDebugList');
