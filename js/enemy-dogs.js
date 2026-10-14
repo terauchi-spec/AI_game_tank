@@ -7,16 +7,28 @@ function dogHandlerStepAllowed(h,x,y){
  const next=Math.hypot(x-h.dog.x,y-h.dog.y),current=D(h,h.dog);
  return (next>=DOG_LEASH_MIN&&next<=DOG_LEASH_MAX)||(current>DOG_LEASH_MAX&&next<current)||(current<DOG_LEASH_MIN&&next>current);
 }
+function dogSpawnPosition(spot){
+ for(const radius of [90,115,75,135]){
+  const phase=R()*Math.PI*2;
+  for(let n=0;n<16;n++){
+   const a=phase+n*Math.PI/8,q={x:spot.x+Math.cos(a)*radius,y:spot.y+Math.sin(a)*radius};
+   if(specialSpawnValid(q,7)&&patrolLineClear(spot,q,7))return q;
+  }
+ }
+ return null;
+}
 function spawnEnemyDogs(){
  enemyDogs=[];
  for(let i=0;i<2;i++){
-  const spot=missionSpot(i?WW*.72:WW*.28,i?5400:9400,18);
-  const handler={...spot,path:[{...spot}],wi:0,dir:1,loop:true,stk:0,alive:true,elite:false,commander:null,dogHandler:true,st:0,sus:0,lost:0,cd:1,burstLeft:0,face:Math.PI/2,commanderScan:0,commanderTactics:0,commanderCooldown:2,whistleT:0,whistleCooldown:0};
+  // Some dog pairs appear near commanders; others spawn independently.
+  const commanders=humans.filter(h=>h.alive&&h.commander&&h.y>=850&&h.y<=WH-550);
+  const near=commanders.length&&R()<.35?commanders[R()*commanders.length|0]:null;
   let pos=null;
-  for(let radius=75;radius<=125&&!pos;radius+=25)for(let n=0;n<16;n++){
-   const a=n*Math.PI/8,q={x:spot.x+Math.cos(a)*radius,y:spot.y+Math.sin(a)*radius};
-   if(q.x>8&&q.x<WW-8&&q.y>8&&q.y<WH-8&&!hitsC(q.x,q.y,7)&&patrolLineClear(spot,q,7)){pos=q;break;}
-  }
+  const spot=randomSpecialSpawn(1100,WH-850,18,near,q=>{
+   pos=dogSpawnPosition(q);return !!pos;
+  })||missionSpot(50+R()*(WW-100),1100+R()*(WH-1950),18);
+  const handler={...spot,path:[{...spot}],wi:0,dir:1,loop:true,stk:0,alive:true,elite:false,commander:null,dogHandler:true,st:0,sus:0,lost:0,cd:1,burstLeft:0,face:Math.PI/2,commanderScan:0,commanderTactics:0,commanderCooldown:2,whistleT:0,whistleCooldown:0};
+  if(!pos)pos=dogSpawnPosition(spot);
   // missionSpot searches open terrain; if its immediate ring is blocked, search
   // another verified location rather than creating a dog inside an obstacle.
   if(!pos){pos=missionSpot(spot.x+100,spot.y,7);Object.assign(handler,missionSpot(pos.x-80,pos.y,18));handler.path=[{x:handler.x,y:handler.y}];}
