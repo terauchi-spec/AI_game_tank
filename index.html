@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.14.1856</title>
+<title>こっそり戦車大作戦 2026.10.14.1906</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -639,6 +639,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <ul><li>通常青兵より索敵距離・視野・移動速度が高く、巡回36px/秒、追跡114px/秒。索敵距離は通常兵の1.2倍で、建物を回り込む追跡も行います。</li>
 <li>150px以内で射線が通ると、通常兵よりばらつきの少ない単発射撃を約1.35秒間隔で行います。設置爆弾は使いません。</li>
 <li>疑惑中は約2秒間プレイヤーの方向へ接近した後、約2秒間周囲を確認します。巡回・発見時の銃表示と歩行アニメーションは青の通常兵と同じルールです。</li></ul>
+<p><strong>特殊配置：</strong>青・白の指揮官各2体、犬兵2組、取得アイテムの無線機は出撃ごとに出現位置が変化します。指揮官と犬兵が近い場所に出現することもあります。障害物・水場・開始地点の安全圏を避けて配置します。</p>
 <h3>青兵指揮官：無線機とアンテナ</h3>
 <ul><li>通常の出撃では2体配置され、青の通常兵と同様に定期ルートを巡回します。背面の無線機と長いアンテナが目印です。</li>
 <li>プレイヤーを新たに発見すると笛を吹き、偽装スキルと同じ単色の赤い電波リングを半径300pxまで2回（各1.25秒）広げます。2回の電波が終わるまで武器をしまってその場で停止します。1秒後、1000px以内の活動可能な敵歩兵を発見モードへ移行させます。笛の再使用には8秒の間隔があります。</li>
@@ -727,7 +728,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.14.1856',FILE_CREATED_AT='2026/10/14 18:56',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.14.1906',FILE_CREATED_AT='2026/10/14 19:06',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -2727,7 +2728,7 @@ function reset(rerollSkills=true){
  for(const z of ZONES.slice(1,-1))if(z.n==='草原')addZoneHumans(z,8,'randomGrass');
  for(const z of ZONES)if(z.n==='敵前線基地')addZoneHumans(z,12,'敵前線基地');
  // 敵迷路基地は、マップ拡大後に迷路専用ロジックで通路上へ確実に配置する。
- const rsp=freeSpot(80+R()*800,1500,12,100);radio={x:rsp.x,y:rsp.y,got:false};
+ // Radio is placed after world scaling and after the special units.
  etanks=[[2300,0],[1700,1],[1450,0],[1100,1],[800,0],[560,1],[420,0],[330,1],[210,0],[210,1]].map(([y,hf])=>{const o=route(y,hf?500:30,hf?860:400,15,1,'mixed');return o&&Object.assign(o,{alive:true,st:0,lost:0,cc:1,vc:0,ang:0,body:0,target:null,scanTurret:R()<.5,scanPhase:R()*6.28318,scanRate:.42+R()*.22});}).filter(Boolean);
  // ランダム選出で再登場した草原には、巡回する敵戦車も出現。
  const addZoneTanks=(z,n)=>{if(!z)return;const y1=z.y1/MAP_SCALE+70,y0=z.y0/MAP_SCALE-70;for(let i=0;i<n;i++){for(let t=0;t<100;t++){const yy=y1+R()*Math.max(70,y0-y1),o=route(yy,45,915,15,1,'mixed');if(!o)continue;if(etanks.every(e=>D(e,o)>80)){etanks.push(Object.assign(o,{alive:true,st:0,lost:0,cc:R()*1.5,vc:0,ang:R()*6.28,body:R()*6.28,target:null,zoneHeavy:'randomGrass',scanTurret:R()<.5,scanPhase:R()*6.28318,scanRate:.42+R()*.22}));break;}}}};
@@ -2826,6 +2827,11 @@ function reset(rerollSkills=true){
  // Only distribute flank patrols AFTER the final building-patrol reservations.
  // This prevents late-added patrol buildings from obstructing new guard routes.
  distributeFlankPatrols();patrolRoutesVisible=!!(skillDebugAll||areaDebugEnabled);if(skill==='hound')spawnHound();setupMission();spawnCommanderClasses();spawnEnemyDogs();
+ const specialUnits=humans.filter(h=>h.alive&&(h.commander||h.dogHandler));
+ const radioNear=specialUnits.length&&R()<.30?specialUnits[R()*specialUnits.length|0]:null;
+ const radioSpot=randomSpecialSpawn(1000,WH-850,12,radioNear)
+     ||missionSpot(50+R()*(WW-100),1100+R()*(WH-2050),12);
+ radio={...radioSpot,got:false};
 }
 // 敵司令本部のコリジョンは command_building_1.webp の実描画領域に合わせる。
 // 元画像256x221のうち、主要な不透明領域はおよそ x=4..248 / y=6..213。
@@ -3221,11 +3227,45 @@ function updateCommanderMotion(dt){
  if(commanderPrevX!==null){const vx=(p.x-commanderPrevX)/Math.max(.001,dt),vy=(p.y-commanderPrevY)/Math.max(.001,dt),speed=Math.hypot(vx,vy),scale=speed>300?300/speed:1;commanderVelocity={x:vx*scale,y:vy*scale};}
  commanderPrevX=p.x;commanderPrevY=p.y;
 }
+// Special encounters are independent, with occasional nearby group encounters.
+// Only physical overlap, unsafe terrain and the starting safe zone are rejected.
+function specialSpawnValid(q,r=18){
+ if(!q||q.x<r+26||q.x>WW-r-26||q.y<r+70||q.y>WH-r-70)return false;
+ if(hitsM(q.x,q.y,r)||inBase(q.x,q.y)||D(q,p)<650||zoneAt(q.y).n==='敵迷路基地')return false;
+ if((humans||[]).some(h=>h.alive&&D(h,q)<40))return false;
+ if((enemyDogs||[]).some(d=>D(d,q)<44))return false;
+ if((etanks||[]).some(e=>e.alive&&D(e,q)<TANK_HIT+r+12))return false;
+ if((cars||[]).some(v=>v.kind!=='fighter'&&D(v,q)<r+45))return false;
+ if((items||[]).some(v=>!v.got&&D(v,q)<r+22))return false;
+ if(radio&&!radio.got&&D(radio,q)<40)return false;
+ return true;
+}
+function randomSpecialSpawn(yMin,yMax,r=18,near=null,accept=null){
+ const low=Math.max(120,yMin),high=Math.min(WH-120,yMax);
+ // Group encounter: try 135-315px from a randomly selected unit first.
+ for(let k=0;k<220;k++){
+  const nearby=near&&k<70,a=R()*Math.PI*2,dist=135+R()*180;
+  const q=nearby?{x:near.x+Math.cos(a)*dist,y:near.y+Math.sin(a)*dist}
+                :{x:44+R()*(WW-88),y:low+R()*(high-low)};
+  if(q.y<low||q.y>high||!specialSpawnValid(q,r)||(accept&&!accept(q)))continue;
+  return q;
+ }
+ for(let k=0;k<35;k++){
+  const q=missionSpot(50+R()*(WW-100),low+R()*(high-low),r);
+  if(q.y>=low&&q.y<=high&&specialSpawnValid(q,r)&&(!accept||accept(q)))return q;
+ }
+ return null;
+}
 function spawnCommanderClasses(){
  commanderPrevX=p.x;commanderPrevY=p.y;commanderVelocity={x:0,y:0};commanderRallying=false;commanderSignals=[];
  if(areaDebugEnabled)return;
  for(const type of ['blue','white'])for(let i=0;i<2;i++){
-  const spot=missionSpot(type==='blue'?(i?720:240):(i?740:220),type==='blue'?(i?5400:9400):(i?1900:700),18);
+  // White commanders still start in the northern half and sweep south.
+  const yMin=type==='white'?550:1100,yMax=type==='white'?5300:WH-850;
+  const others=humans.filter(h=>h.alive&&h.commander&&h.y>=yMin-320&&h.y<=yMax+320);
+  const near=others.length&&R()<.25?others[R()*others.length|0]:null;
+  const spot=randomSpecialSpawn(yMin,yMax,18,near)
+      ||missionSpot(50+R()*(WW-100),yMin+R()*(yMax-yMin),18);
   let path=[{...spot}];
   if(type==='white'){
    for(let y=spot.y+400,k=0;y<WH-500;y+=450,k++)path.push(missionSpot(k%2?WW-40:40,y,18));
@@ -7441,7 +7481,7 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/enemy-dogs.js?v=2026.10.14.1852"></script>
+<script src="js/enemy-dogs.js?v=2026.10.14.1906"></script>
 <script src="js/partner.js?v=2026.10.14.1653"></script>
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/canyon.js?v=2026.10.14.1836"></script>
