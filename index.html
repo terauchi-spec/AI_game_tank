@@ -3064,7 +3064,7 @@ function canDetect(o,target,face,key){
  if(!target)return false;const d=D(o,target),known=o.st&&o.target===key,searchBoost=(o&&o.sus>0&&!o.st)?1.5:1,eliteRange=o&&o.commander==='white'?1.6:o&&o.elite?1.2:1,eliteFov=o&&o.commander==='white'?1.3:o&&o.elite?1.2:1,humanFov=(humans||[]).includes(o)?1.2:1,fovBoost=eliteFov*humanFov;
  const chatSight=(o&&o.chatT>0)?.5:1;
  const hiddenPlayer=(key==='partner'&&(partner?.down||inBush(partner)))||(key==='p'&&(debugMode>=2||inTumbleweed(p)||p.dig>0||(!p.tank&&inBush(p))||(weather==='rain'&&inWaterAt(p.x,p.y,0))));if(hiddenPlayer)return false;
- if(known){if(d>=detectDropRange(key)*eliteRange)return false;return los(o,target);}
+ if(known){if(d>=(o&&o.commander==='white'?WHITE_CHASE_DROP:detectDropRange(key)*eliteRange))return false;return los(o,target);}
  const da=Math.abs(angD(Math.atan2(target.y-o.y,target.x-o.x),face));
  const inCenter=da<=DETECT_CENTER_HALF*fovBoost&&d<detectRange(key)*searchBoost*eliteRange*chatSight;
  const inOuter=da<=DETECT_OUTER_HALF*fovBoost&&d<detectOuterRange(key)*searchBoost*eliteRange*chatSight;
@@ -3215,7 +3215,7 @@ function finalizeScore(cleared){
 function humanMemory(h){return DETECT_MEMORY*(h&&h.elite?1.5:1);}
 function foundModePause(){return .5+R()*.5;}
 
-const COMMANDER_BLUE_RANGE=480,COMMANDER_WHITE_RANGE=480,COMMANDER_BLAST_RADIUS=110;
+const COMMANDER_BLUE_RANGE=480,COMMANDER_WHITE_RANGE=480,COMMANDER_BLAST_RADIUS=110,WHITE_CHASE_DROP=1000;
 let commanderSignals=[],commanderRallying=false,commanderPrevX=null,commanderPrevY=null,commanderVelocity={x:0,y:0};
 function updateCommanderMotion(dt){
  if(commanderPrevX!==null){const vx=(p.x-commanderPrevX)/Math.max(.001,dt),vy=(p.y-commanderPrevY)/Math.max(.001,dt),speed=Math.hypot(vx,vy),scale=speed>300?300/speed:1;commanderVelocity={x:vx*scale,y:vy*scale};}
@@ -3259,10 +3259,17 @@ function commanderMove(h,target,dt,sp=150){
   const route=findPatrolReturnPath(h,target,8,h);if(route!==PATROL_SEARCH_PENDING){h.commanderRoute=route;h.commanderGoal={...target};}
  }
  let dest=target;if(h.commanderRoute){while(h.commanderRoute.length&&D(h,h.commanderRoute[0])<5)h.commanderRoute.shift();if(h.commanderRoute.length)dest=h.commanderRoute[0];else h.commanderRoute=null;}
+ // White commanders use the same cached cover/object perimeter navigation as dog units.
+ if(h.commander==='white'){
+  const moved=dogMoveAround(h,dest,sp,dt,8,false);
+  h.commanderStuck=moved?0:(h.commanderStuck||0)+dt;
+  if(h.commanderStuck>.7){h.commanderRoute=null;h.commanderRetry=0;h.commanderStuck=0;}
+  return;
+ }
  const to=Math.atan2(dest.y-h.y,dest.x-h.x),step=Math.min(sp*dt,D(h,dest)),ox=h.x,oy=h.y;mv(h,Math.cos(to)*step,Math.sin(to)*step,8);
  if(Math.hypot(h.x-ox,h.y-oy)<step*.1){h.commanderStuck=(h.commanderStuck||0)+dt;if(h.commanderStuck>.4){h.commanderRoute=null;h.commanderStuck=0;}}else h.commanderStuck=0;
 }
-function cancelCommanderAttack(h){h.commanderRelocateT=0;h.commanderRelocateGoal=null;h.commanderShotT=0;h.commanderCharge=0;h.commanderAim=null;h.commanderRoute=null;}
+function cancelCommanderAttack(h){h.commanderRelocateT=0;h.commanderRelocateGoal=null;h.commanderShotT=0;h.commanderCharge=0;h.commanderAim=null;h.commanderRoute=null;h.dogWall=null;}
 function updateCommanderAI(h,dt){
  if(h.dogHandler&&h.dog?.handler&&h.dog.state==='chase'&&!h.st)return true;
  if(!h.commander)return false;
@@ -3274,7 +3281,7 @@ function updateCommanderAI(h,dt){
  if(h.commander==='blue'&&h.whistleT>0){h.modeFrozen=true;h.walking=false;return true;}
  const detected=findDetectedTarget(h,h.face);if(detected)enterHumanFound(h,detected.key);
  let target=targetObj(h.target);
- if(h.st&&(!target||(!detected&&(h.lost-=dt)<=0)||target&&D(h,target)>detectDropRange(h.target)*1.6)){
+ if(h.st&&(!target||(!detected&&(h.lost-=dt)<=0)||target&&D(h,target)>(h.commander==='white'?WHITE_CHASE_DROP:detectDropRange(h.target)*1.6))){
   h.st=0;h.target=null;h.sus=0;h.foundPause=0;cancelCommanderAttack(h);pauseAfterEnemyDetection(h);return true;
  }
  if(!h.st){
@@ -3449,15 +3456,22 @@ function alertEnemiesNear(x,y,r=100){
  for(const h of (humans||[])){if(!h.alive||h.stun>0||Math.hypot(h.x-x,h.y-y)>r)continue;enterHumanFound(h,'p',.5);}
  suspectTanksNear(x,y,r);
 }
-function setSuspicion(h,dur=2){
+function setSuspicion(h,dur=2,sourceX=null,sourceY=null){
  if(h&&h.chatT>0)cancelPatrolChat(h);
  if(!h||!h.alive||h.stun>0||h.st)return;
  const freshSuspicion=!(h.sus>0);
  const total=h.elite?dur+2:dur;h.sus=total;h.susMax=total;h.susPause=.5+R()*.5;h.susApproach=h.elite?2:0;h.susDir=R()<.5?1:-1;h.susOrbit=R()*Math.PI*2;h.susCx=h.x;h.susCy=h.y;h.susRadius=14+R()*8;
+  // White commanders investigate the event location, not the player's live position.
+  if(h.commander==='white'){
+   h.susSourceX=Number.isFinite(sourceX)?sourceX:h.x;
+   h.susSourceY=Number.isFinite(sourceY)?sourceY:h.y;
+   h.susCx=h.susSourceX;h.susCy=h.susSourceY;
+   h.commanderRoute=null;h.dogWall=null;
+  }
  if(freshSuspicion&&scoreStats&&!scoreStats.finalized)scoreStats.suspicionEntries++;
  h.target=null;h.lost=0;h.burstLeft=0;h.cd=0;
 }
-function suspectHumansNear(x,y,r=500){if(debugMode>=2)return;for(const h of (humans||[]))if(h.alive&&!(h.stun>0)&&Math.hypot(h.x-x,h.y-y)<=r)setSuspicion(h,2);suspectTanksNear(x,y,r);}
+function suspectHumansNear(x,y,r=500){if(debugMode>=2)return;for(const h of (humans||[]))if(h.alive&&!(h.stun>0)&&Math.hypot(h.x-x,h.y-y)<=r)setSuspicion(h,2,x,y);suspectTanksNear(x,y,r);}
 function alertedHumanInSearch(h){
  for(const b of (humans||[])){if(b===h||!b.alive||!b.st||b.stun>0||!b.target||(b.whistleSignalT||0)>0)continue;if(canDetect(h,b,h.face,'human'))return b;}
  return null;
@@ -4968,7 +4982,12 @@ function update(dt){
   if(h.sus>0&&!h.st){
    if((h.susPause||0)>0){h.susPause=Math.max(0,h.susPause-dt);const shared=alertedHumanInSearch(h);if(shared)inheritAlertFromHuman(h,shared);const detectedSus=findDetectedTarget(h,h.face);if(detectedSus)enterHumanFound(h,detectedSus.key,.5);if(!h.st)continue;}
    h.sus=Math.max(0,h.sus-dt);const max=h.susMax||(h.elite?4:2),approach=h.elite&&h.sus>2;
-   if(approach){const toP=Math.atan2(p.y-h.y,p.x-h.x);h.face=toP;mv(h,Math.cos(toP)*114*dt,Math.sin(toP)*114*dt,8);}
+   if(approach){
+    const white=h.commander==='white',point=white?{x:h.susSourceX??h.x,y:h.susSourceY??h.y}:p;
+    const toSource=Math.atan2(point.y-h.y,point.x-h.x);h.face=toSource;
+    if(white){if(D(h,point)>16)commanderMove(h,point,dt,114);}
+    else mv(h,Math.cos(toSource)*114*dt,Math.sin(toSource)*114*dt,8);
+   }
    else{const circleMax=2;h.susOrbit=(h.susOrbit||0)+(h.susDir||1)*Math.PI*2*dt/circleMax;const tx=(h.susCx??h.x)+Math.cos(h.susOrbit)*(h.susRadius||18),ty=(h.susCy??h.y)+Math.sin(h.susOrbit)*(h.susRadius||18),ma=Math.atan2(ty-h.y,tx-h.x);mv(h,Math.cos(ma)*(h.elite?50:42)*dt,Math.sin(ma)*(h.elite?50:42)*dt,8);h.face=h.susOrbit;}
    const shared=alertedHumanInSearch(h);if(shared)inheritAlertFromHuman(h,shared);
    const detectedSus=findDetectedTarget(h,h.face);if(detectedSus)enterHumanFound(h,detectedSus.key,.5);
