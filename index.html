@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.14.1927</title>
+<title>こっそり戦車大作戦 2026.10.14.1931</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -724,7 +724,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <div id="missionBriefing" role="dialog" aria-modal="true" aria-labelledby="missionBriefingTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_hero.webp?v=2026.10.14.1653" alt="円形爆弾を抱えて走る主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionBriefingTitle">ミッション</h1><p id="missionBriefingGoal">敵の拠点にたどりつき、破壊せよ</p><ul class="mission-hud-guide" aria-label="ゲーム画面のアイコン説明"><li><img src="assets/ui/ui_heart_full.png" alt="ハート" decoding="async"><span>残りライフ</span></li><li><img src="assets/ui/ui_bomb_normal.png" alt="爆弾" decoding="async"><span>爆弾の設置状態</span></li><li><svg viewBox="-18 -18 36 36" role="img" aria-label="目に斜線"><path d="M-14 0 C-7-11 7-11 14 0 C7 11-7 11-14 0Z" fill="white" stroke="black" stroke-width="3"/><circle r="5" fill="black"/><path d="M-12 11 12-11" stroke="black" stroke-width="3.5"/><path d="M-12 11 12-11" stroke="#ef3434" stroke-width="2"/></svg><span>敵から隠れている状態</span></li></ul><button type="button" id="missionBegin">作戦開始</button></div></div></div>
 <div id="stageScreen" role="region" aria-label="ステージ選択"><div class="stage-shell">
 <div style="color:#9cbb9b;font-size:12px">CHOOSE YOUR MISSION</div><h1>ステージ選択</h1><p id="stageSkill"></p>
-<button class="stage-card" data-stage="beginner"><strong>01　初級ステージ</strong><span>開始草原から3つのランダムエリアを進み、最後の草原にある電波施設を破壊せよ。</span><small>全5エリア ／ 青兵のみ ／ 敵戦車は最大2台</small><img class="stage-preview" src="assets/cover/radio_facility.svg?v=2026.10.14.beginner" alt="破壊目標の大型パラボラアンテナ" loading="lazy"></button>
+<button class="stage-card" data-stage="beginner"><strong>01　初級ステージ</strong><span>開始草原から3つのランダムエリアを進み、最後の草原にある電波施設を破壊せよ。</span><small>全5エリア ／ 青兵のみ ／ 敵戦車は最大2台</small><img class="stage-preview" src="assets/cover/radio_facility.webp?v=2026.10.14.1930" alt="破壊目標の大型パラボラアンテナ" loading="lazy"></button>
 <button class="stage-card" data-stage="base"><strong>02　上級ステージ</strong><span>従来どおり全7エリアを突破し、敵司令本部を破壊せよ。白兵・指揮官・犬兵も登場する。</span><small>全7エリア ／ 従来の敵・配置・ゲーム仕様を維持</small></button>
 <button class="stage-back" id="stageBack">← スキル選択へ</button></div></div><div id="missionHud" role="status"></div>
 
@@ -738,7 +738,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.14.1927',FILE_CREATED_AT='2026/10/14 19:27',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.14.1931',FILE_CREATED_AT='2026/10/14 19:31',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -874,7 +874,7 @@ const COVER_ASSET_SRC={
  "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.webp?v=2026.10.14.1653',
  "barrel":ASSET_DIR+'cover/barrel.webp?v=2026.10.14.1653',
  "command_building_1":ASSET_DIR+'cover/command_building_1.webp',
- "radio_facility":ASSET_DIR+'cover/radio_facility.svg?v=2026.10.14.beginner',
+ "radio_facility":ASSET_DIR+'cover/radio_facility.webp?v=2026.10.14.1930',
  "wood_bridge":ASSET_DIR+'terrain/wood_bridge.webp'
 };
 const TERRAIN_IMG={},COVER_IMG={};
