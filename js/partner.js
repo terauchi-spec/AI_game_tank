@@ -40,18 +40,12 @@ function updatePartnerPassenger(q,dt){
 }
 function drawPartnerPassengerHead(){
  const q=partner;if(skill!=='partner'||!q||!p.tank||q.passengerVehicle!==p.tank&&!isPartnerDrivenVehicle())return;
- // 全車種で同乗を示す静止バッジ。戦車・装甲車は従来の頭も表示。
+ // One large passenger badge for every vehicle type. The smaller tank badge was duplicate.
  g.save();const badgeY=p.y-(p.tank.kind==='fighter'?15:10);
  g.translate(p.x+14,badgeY);g.fillStyle='rgba(8,16,20,.82)';g.beginPath();g.arc(0,0,14,0,Math.PI*2);g.fill();
  g.fillStyle='#baa585';g.beginPath();g.arc(0,2,8,0,Math.PI*2);g.fill();
  g.fillStyle='#4e6855';g.beginPath();g.ellipse(0,-3,10,8,0,Math.PI,Math.PI*2);g.lineTo(10,0);g.lineTo(-10,0);g.closePath();g.fill();
  g.strokeStyle='#399bff';g.lineWidth=3;g.beginPath();g.moveTo(-9,-2);g.lineTo(9,-2);g.stroke();g.restore();
- if(p.tank.kind!=='tank')return;
- g.save();g.translate(p.x,p.y-9);
- g.fillStyle='#263d30';g.strokeStyle='#111b15';g.lineWidth=1.5;
- g.beginPath();g.ellipse(0,0,7,6,0,0,Math.PI*2);g.fill();g.stroke();
- g.fillStyle='#b5a17e';g.fillRect(-3,3,6,3);
- g.strokeStyle='#399bff';g.lineWidth=2;g.beginPath();g.moveTo(-5,-1);g.lineTo(5,-1);g.stroke();g.restore();
 }
 // Companion AI and route/vehicle behavior — extracted without behavior changes.
 // Route-bound vehicle boarding is computed on confirmation, not each frame.
