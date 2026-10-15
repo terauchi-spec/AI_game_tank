@@ -52,7 +52,7 @@ function composeOverheadCutout(im,width,height,stride=0,armed=false){
   const side=i===2?1:-1,ax=left+width*.55,ay=top+height*(i===2?.28:.72);
   g.save();
   if(armed){g.translate(ax,ay);g.rotate(side*.68);g.translate(-ax,-ay);}
-  else g.translate(side*stride*1.25,0);
+  else g.translate(side*stride*(im===CHARACTER_ART.player?3:1.25),0);
   g.drawImage(part.im,left+part.x*width,top+part.y*height,part.w*width,part.h*height);g.restore();
  }
  g.drawImage(layers.core,left,top,width,height);
@@ -89,11 +89,11 @@ function drawPortraitCutout(im,width,height,stride=0,armed=false){
  region(.23,.46,.54,.28);
  region(0,0,1,.49);
 }
-function drawCharacterWeapon(commander,shot=0,flame=false,player=false,elite=false){
+function drawCharacterWeapon(commander,shot=0,flame=false,player=false,elite=false,size=1){
  const launcher=commander==='blue'||flame,im=CHARACTER_ART[launcher?'launcher':'rifle'];
  if(!assetOK(im))return;
- const long=commander==='white',width=flame?25:launcher?36:long?42:29;
- const height=launcher?11:long?8:7;
+ const long=commander==='white',width=(flame?25:launcher?36:long?42:29)*size;
+ const height=(launcher?11:long?8:7)*size;
  const recoil=shot>0?Math.min(1,shot/.09)*2:0,x=(launcher?-9:-2)-recoil;
  // Sleeves and fingers hold the independent textured gun in an aiming pose.
  // Textured sleeves and hands are articulated in the body cutout.
@@ -117,6 +117,8 @@ function drawCharacterWebP(x,y,face,isPlayer,alert,moving,elite,commander,weapon
  g.fillStyle='rgba(8,12,9,.30)';g.beginPath();g.ellipse(1,3,11,7,0,0,Math.PI*2);g.fill();
  // The overhead artwork points right, exactly like world angle zero.
  g.rotate(face);
+ // Weapons sit beneath the body/helmet; the muzzle remains forward of the hands.
+ if(armed&&!stunned)drawCharacterWeapon(commander,shot,flame,isPlayer,elite,!isPlayer&&!elite&&!commander?1.5:1);
  if(stunned){g.save();g.rotate(.8);g.scale(1,.68);}
  drawOverheadCutout(im,32,32*im.naturalHeight/im.naturalWidth,stride,armed);
  if(isPlayer&&playerStripe==='blue'){
@@ -124,7 +126,6 @@ function drawCharacterWebP(x,y,face,isPlayer,alert,moving,elite,commander,weapon
   g.strokeStyle='#55bcff';g.lineWidth=4;g.beginPath();g.moveTo(-3.8,0);g.lineTo(11.5,0);g.stroke();
  }
  if(stunned)g.restore();
- if(armed&&!stunned)drawCharacterWeapon(commander,shot,flame,isPlayer,elite);
  g.restore();return true;
 }
 function drawCharacterProne(){
