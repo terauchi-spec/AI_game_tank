@@ -11,13 +11,13 @@ function characterArtKey(isPlayer,elite,commander){
  return isPlayer?'player':commander==='blue'?'blue_commander':commander==='white'?'white_commander':elite?'white':'blue';
 }
 function characterGait(actor,x,y,moving,now,jog=false){
- const cadence=jog?95:110,travelPhase=jog?.075:.065;
+ const cadence=jog?80:110,travelPhase=jog?.09:.065;
  if(!actor)return moving?Math.sin(now/cadence):0;
  let anim=CHARACTER_GAIT.get(actor);
  if(!anim){anim={x:actor.x,y:actor.y,phase:0,lastMove:-1e9,lastAt:now};CHARACTER_GAIT.set(actor,anim);return 0;}
  const elapsed=Math.max(0,now-anim.lastAt),distance=Math.hypot(actor.x-anim.x,actor.y-anim.y);
  anim.x=actor.x;anim.y=actor.y;anim.lastAt=now;
- // A light player jog is slightly quicker than the legacy walk. Distance
+ // Player running uses a fuller stride and quicker cadence than the legacy walk. Distance
  // coupling stops the feet at walls; elapsed time prevents rapid foot flutter.
  if(moving&&distance>0&&distance<30){anim.phase+=Math.min(distance*travelPhase,elapsed/cadence);anim.lastMove=now;}
  return moving&&now-anim.lastMove<100?Math.sin(anim.phase):0;
@@ -52,7 +52,7 @@ function composeOverheadCutout(im,width,height,stride=0,armed=false){
     // Turn the original rear-facing boot cutout toward travel. Only the toe
     // peeks ahead of the torso on its forward step; heels stay underneath.
     const fw=part.w*width*.8,fh=part.h*height*.7;
-    const fx=width*.10+step*(step>0?4.5:2),fy=(i?1:-1)*height*.21-fh/2;
+    const fx=width*.10+step*(step>0?6:2.5),fy=(i?1:-1)*height*.21-fh/2;
     g.save();g.translate(fx+fw,fy);g.scale(-1,1);g.drawImage(part.im,0,0,fw,fh);g.restore();
    }else g.drawImage(part.im,-width*.12+step*2,(i?1:-1)*height*.25-part.h*height*.35,part.w*width*.8,part.h*height*.7);
    continue;
@@ -61,7 +61,7 @@ function composeOverheadCutout(im,width,height,stride=0,armed=false){
   g.save();
   if(armed){g.translate(ax,ay);g.rotate(side*.68);g.translate(-ax,-ay);}
   // A forward foot pairs with the opposite arm, not the arm on its own side.
-  else g.translate(side*stride*(im===CHARACTER_ART.player?-3.5:1.25),0);
+  else g.translate(side*stride*(im===CHARACTER_ART.player?-4.5:1.25),0);
   g.drawImage(part.im,left+part.x*width,top+part.y*height,part.w*width,part.h*height);g.restore();
  }
  g.drawImage(layers.core,left,top,width,height);
