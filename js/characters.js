@@ -46,8 +46,15 @@ function composeOverheadCutout(im,width,height,stride=0,armed=false){
   if(i<2){
    // Feet sit beneath the torso like the legacy renderer, never behind the pack.
    // Draw them first so the body naturally occludes the heels and upper legs.
-   const step=(i?-1:1)*stride*2;
-   g.drawImage(part.im,-width*.12+step,(i?1:-1)*height*.25-part.h*height*.35,part.w*width*.8,part.h*height*.7);continue;
+   const step=(i?-1:1)*stride;
+   if(im===CHARACTER_ART.player){
+    // Turn the original rear-facing boot cutout toward travel. Only the toe
+    // peeks ahead of the torso on its forward step; heels stay underneath.
+    const fw=part.w*width*.8,fh=part.h*height*.7;
+    const fx=width*.10+step*(step>0?4:2),fy=(i?1:-1)*height*.21-fh/2;
+    g.save();g.translate(fx+fw,fy);g.scale(-1,1);g.drawImage(part.im,0,0,fw,fh);g.restore();
+   }else g.drawImage(part.im,-width*.12+step*2,(i?1:-1)*height*.25-part.h*height*.35,part.w*width*.8,part.h*height*.7);
+   continue;
   }
   const side=i===2?1:-1,ax=left+width*.55,ay=top+height*(i===2?.28:.72);
   g.save();
