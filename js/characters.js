@@ -52,8 +52,8 @@ function composeOverheadCutout(im,width,height,stride=0,armed=false){
     // A long forward step and a short rear kick replace the sliding-foot pose.
     // The torso hides the returning leg; only the extended kick peeks past the
     // backpack. Foreshorten and tilt the raised boot as it pushes off.
-    const kick=Math.max(0,-step),fw=part.w*width*.8,fh=part.h*height*(.7-kick*.12);
-    const fx=width*.10+step*(step>0?8:17),fy=(i?1:-1)*height*.21-fh/2;
+    const kick=Math.max(0,-step),fw=part.w*width*.8,fh=part.h*height*(.7-kick*.04);
+    const fx=width*.10+step*(step>0?8:24),fy=(i?1:-1)*height*(.21+kick*.035)-fh/2;
     // The trouser leg joins hip and ankle beneath the body, avoiding floating boots.
     g.save();g.strokeStyle='#77734f';g.lineWidth=3.2;g.lineCap='round';g.beginPath();g.moveTo(-1,(i?1:-1)*height*.21);g.lineTo(fx+fw*.35,fy+fh/2);g.stroke();g.restore();
     g.save();g.translate(fx+fw/2,fy+fh/2);g.rotate((i?-1:1)*kick*.22);g.scale(-1,1);g.drawImage(part.im,-fw/2,-fh/2,fw,fh);g.restore();
