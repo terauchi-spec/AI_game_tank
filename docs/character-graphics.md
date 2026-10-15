@@ -22,8 +22,8 @@ most 288 pixels tall. Generated alpha is preserved.
 canvases. Movement distance drives alternating steps; idle and blocked characters
 stop stepping. Player cadence is capped at 80 ms/radian for running; enemy walking keeps
 the legacy 110 ms/radian cadence;
-boots are tucked beneath the torso; player toes face forward and peek slightly
-ahead on alternating steps, free arms translate in counterphase (player: ±4.5 px, opposite the foot on the same side),
+boots draw beneath the torso; player toes extend ahead in a longer stride and
+the raised kicking boot briefly peeks behind the pack at rear extension, free arms translate in counterphase (player: ±4.5 px, opposite the foot on the same side),
 and there is no sideways body bob. Procedural limb compositions are cached and reused. The cache is
 bounded to 18 poses per overhead model; there is no frame atlas, per-frame image
 readback, new navigation/vision scan, or remote image-generation request in play.
