@@ -11,11 +11,14 @@ function characterArtKey(isPlayer,elite,commander){
  return isPlayer?'player':commander==='blue'?'blue_commander':commander==='white'?'white_commander':elite?'white':'blue';
 }
 function characterGait(actor,x,y,moving,now){
- if(!actor)return moving?Math.sin(now*.009+x*.13+y*.07):0;
+ if(!actor)return moving?Math.sin(now/110):0;
  let anim=CHARACTER_GAIT.get(actor);
- if(!anim){anim={x:actor.x,y:actor.y,phase:0,lastMove:-1e9};CHARACTER_GAIT.set(actor,anim);return 0;}
- const distance=Math.hypot(actor.x-anim.x,actor.y-anim.y);anim.x=actor.x;anim.y=actor.y;
- if(moving&&distance>0&&distance<30){anim.phase+=distance*.23;anim.lastMove=now;}
+ if(!anim){anim={x:actor.x,y:actor.y,phase:0,lastMove:-1e9,lastAt:now};CHARACTER_GAIT.set(actor,anim);return 0;}
+ const elapsed=Math.max(0,now-anim.lastAt),distance=Math.hypot(actor.x-anim.x,actor.y-anim.y);
+ anim.x=actor.x;anim.y=actor.y;anim.lastAt=now;
+ // Match the legacy 110 ms/radian cadence, even while sprinting. Distance
+ // coupling stops the feet at walls; elapsed time prevents rapid foot flutter.
+ if(moving&&distance>0&&distance<30){anim.phase+=Math.min(distance*.065,elapsed/110);anim.lastMove=now;}
  return moving&&now-anim.lastMove<100?Math.sin(anim.phase):0;
 }
 function prepareCharacterLayers(im){
@@ -24,25 +27,32 @@ function prepareCharacterLayers(im){
  // The overhead asset faces right. Boots are at the rear/left; fingertips
  // are at the forward top/bottom. Cache these layers ONCE at decode time.
  const boxes=[[0,.18,.24,.25],[0,.59,.24,.25],[.4,0,.6,.30],[.4,.70,.6,.30]];
- const core=copy(),armed=copy(),parts=[];
+ const core=copy(),parts=[];
  for(let i=0;i<boxes.length;i++){
   const [x,y,w,h]=boxes[i],sx=Math.round(x*iw),sy=Math.round(y*ih),sw=Math.min(iw-sx,Math.round(w*iw)),sh=Math.min(ih-sy,Math.round(h*ih));
   const c=document.createElement('canvas');c.width=sw;c.height=sh;const q=c.getContext('2d');q.drawImage(im,sx,sy,sw,sh,0,0,sw,sh);
   if(i>=2){q.globalCompositeOperation='destination-out';q.beginPath();q.ellipse(iw*.60-sx,ih*.50-sy,iw*.34,ih*.34,0,0,Math.PI*2);q.fill();}
-  core.getContext('2d').clearRect(sx,sy,sw,sh);if(i>=2)armed.getContext('2d').clearRect(sx,sy,sw,sh);
+  core.getContext('2d').clearRect(sx,sy,sw,sh);
   parts.push({im:c,x:sx/iw,y:sy/ih,w:sw/iw,h:sh/ih});
  }
- for(const canvas of [core,armed]){const q=canvas.getContext('2d');q.save();q.beginPath();q.ellipse(iw*.60,ih*.50,iw*.34,ih*.34,0,0,Math.PI*2);q.clip();q.drawImage(im,0,0);q.restore();}
- CHARACTER_LAYERS.set(im,{core,armed,parts});
+ for(const canvas of [core]){const q=canvas.getContext('2d');q.save();q.beginPath();q.ellipse(iw*.60,ih*.50,iw*.34,ih*.34,0,0,Math.PI*2);q.clip();q.drawImage(im,0,0);q.restore();}
+ CHARACTER_LAYERS.set(im,{core,parts});
 }
 function composeOverheadCutout(im,width,height,stride=0,armed=false){
  const left=-width*.60,top=-height*.50,layers=CHARACTER_LAYERS.get(im);
  if(!layers){g.drawImage(im,left,top,width,height);return;}
  for(let i=0;i<layers.parts.length;i++){
   const part=layers.parts[i];
-  if(i<2){g.drawImage(part.im,left+part.x*width+(i?-1:1)*stride*1.75,top+part.y*height,part.w*width,part.h*height);continue;}
+  if(i<2){
+   // Feet sit beneath the torso like the legacy renderer, never behind the pack.
+   // Draw them first so the body naturally occludes the heels and upper legs.
+   const step=(i?-1:1)*stride*2;
+   g.drawImage(part.im,-width*.12+step,(i?1:-1)*height*.25-part.h*height*.35,part.w*width*.8,part.h*height*.7);continue;
+  }
   const side=i===2?1:-1,ax=left+width*.55,ay=top+height*(i===2?.28:.72);
-  g.save();g.translate(ax,ay);g.rotate(side*(armed?.68:stride*.08));g.translate(-ax,-ay);
+  g.save();
+  if(armed){g.translate(ax,ay);g.rotate(side*.68);g.translate(-ax,-ay);}
+  else g.translate(side*stride*1.25,0);
   g.drawImage(part.im,left+part.x*width,top+part.y*height,part.w*width,part.h*height);g.restore();
  }
  g.drawImage(layers.core,left,top,width,height);
@@ -99,14 +109,14 @@ function drawCharacterWebP(x,y,face,isPlayer,alert,moving,elite,commander,weapon
  if(CHARACTER_GRAPHICS_MODE!=='webp')return false;
  const im=CHARACTER_ART[characterArtKey(isPlayer,elite,commander)];if(!assetOK(im))return false;
  const now=performance.now(),stunned=actor&&(actor.stun>0||actor.stunT>0||actor.down);
- const stride=characterGait(actor,x,y,moving&&!stunned,now),bob=Math.abs(stride)*.45;
+ const stride=characterGait(actor,x,y,moving&&!stunned,now);
  const flame=!!(isPlayer&&actor===p&&p.flameActive);
  const armed=(!isPlayer&&weaponVisible)||(isPlayer&&playerStripe==='blue'&&weaponVisible)||flame;
  const shot=actor?Math.max(0,.09-(now-(actor.characterShotAt||-1e9))/1000):0;
  g.save();g.imageSmoothingEnabled=true;g.translate(x,y);
  g.fillStyle='rgba(8,12,9,.30)';g.beginPath();g.ellipse(1,3,11,7,0,0,Math.PI*2);g.fill();
  // The overhead artwork points right, exactly like world angle zero.
- g.rotate(face);g.translate(0,-bob);
+ g.rotate(face);
  if(stunned){g.save();g.rotate(.8);g.scale(1,.68);}
  drawOverheadCutout(im,32,32*im.naturalHeight/im.naturalWidth,stride,armed);
  if(isPlayer&&playerStripe==='blue'){
