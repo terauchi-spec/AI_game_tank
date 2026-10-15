@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.15.1053</title>
+<title>こっそり戦車大作戦 2026.10.15.2321</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -641,6 +641,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <ul><li>巡回速度は30px/秒、追跡速度は95px/秒。標的へ接近し、150px以内で射線が通るとサブマシンガンを撃ちます。3連射の間隔は0.14秒、3発撃った後は2秒休止します。</li>
 <li>発見後は、個体ごとに決まるタイミングで一度だけ設置爆弾を置きます。設置時は短時間停止し、爆弾は約4秒後に爆発します。</li>
 <li>疑惑中は開始時の静止後、約2秒間、円を描くように周囲を確認します。巡回中は銃を隠し、発見中は銃を構え、腕を振らずに歩きます。</li></ul>
+<p>人物は透過WebPで描画し、プレイヤーの赤い帯、青兵の青い制服、エリートの白い制服、青兵指揮官の無線機・アンテナ、白兵指揮官の太い帯で区別します。歩行・照準・射撃・気絶の表示は各状態に連動します。</p>
 <h3>白の通常エリート</h3>
 <p>森林・村・丘陵・街には通常配置10人のうち3人を配置します（初級は青兵のみ）。発見中、索敵範囲内に見える設置爆弾は、爆風半径95pxに兵士の大きさと余裕を加えた125pxの範囲を避けて迂回します。範囲内にいる場合は外へ離れます。</p>
 <ul><li>通常青兵より索敵距離・視野・移動速度が高く、巡回36px/秒、追跡114px/秒。索敵距離は通常兵の1.2倍で、建物を回り込む追跡も行います。</li>
@@ -814,7 +815,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.15.1053',FILE_CREATED_AT='2026/10/15 10:53',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.15.2321',FILE_CREATED_AT='2026/10/15 23:21',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -969,6 +970,7 @@ function startAssetLoading(){
  // 初回タイトルを先に1フレーム描画してから、画像の読み込みをバックグラウンドで開始する。
  for(const [k,v] of Object.entries(TERRAIN_ASSET_SRC))TERRAIN_IMG[k]=makeAssetImage(v,()=>{for(const z of ZONES||[])z.pat=null;if(k==='川'){riverSurfaceVersion++;invalidateRiverVisualCaches();}});
  for(const [k,v] of Object.entries(COVER_ASSET_SRC))COVER_IMG[k]=makeAssetImage(v,()=>{if(k==='spinifex'||k==='spinifex_green')invalidateSpinifexVegetation();});
+ if(typeof loadCharacterArtwork==='function')loadCharacterArtwork();
 }
 function assetsLoading(){return assetInitStarted&&assetLoadTotal>0&&assetLoadDone<assetLoadTotal;}
 function assetOK(im){return !!(im&&im.complete&&im.naturalWidth>0);}
@@ -3523,7 +3525,7 @@ function updateCommanderAI(h,dt){
   h.modeFrozen=true;h.walking=false;h.face=h.commanderAim;h.commanderCharge=Math.max(0,h.commanderCharge-dt);
   if(h.commanderCharge<=0){
    const angle=h.commanderAim,blue=h.commander==='blue';
-   fire(h.x+Math.cos(angle)*22,h.y+Math.sin(angle)*22,angle,'e',blue?'c':'r',blue?enemyCannonSpeed():520,blue?COMMANDER_BLUE_RANGE:COMMANDER_WHITE_RANGE);
+   h.characterShotAt=performance.now();fire(h.x+Math.cos(angle)*22,h.y+Math.sin(angle)*22,angle,'e',blue?'c':'r',blue?enemyCannonSpeed():520,blue?COMMANDER_BLUE_RANGE:COMMANDER_WHITE_RANGE);
    const bullet=bullets[bullets.length-1];bullet.commanderRocket=blue;bullet.commanderRifle=!blue;bullet.commanderShooter=h;
    h.commanderCooldown=blue?4:3.2;h.commanderShotT=blue?0:.06;h.commanderAim=null;
    if(blue){h.commanderRelocateT=1.2;h.commanderRoute=null;
@@ -4786,6 +4788,7 @@ function updateSniperState(dt){
 }
 function drawSniperSetupPlayer(){
  if(!p)return;
+ if(typeof drawCharacterProne==='function'&&drawCharacterProne())return;
  const deploying=p.sniperEnterT>0;
  // 狙撃準備中は、通常プレイヤーと同じ配色の「伏せてライフルを覗く姿」を最初から表示する。
  // 立ち姿からの変形・クロスフェードは行わず、違和感の少ないシンプルな専用ポーズに固定。
@@ -4936,6 +4939,8 @@ function drawSniperScopedHuman(it,pr,viewRange,cy,R){
  const outline=elite?'#58656a':'#132e49';
  g.save();
  if(falling){const anchorY=pr.y+hh*.48;g.translate(pr.x,anchorY);g.translate(fallK*ww*.35,fallK*hh*.16);g.rotate((o.sniperFallA&&Math.sin(o.sniperFallA)<0?-1:1)*fallK*1.18);g.translate(-pr.x,-anchorY);g.globalAlpha=Math.max(.28,1-fallK*.42);}
+ const rendered=typeof drawScopedCharacter==='function'&&drawScopedCharacter(o,elite,pr.x,top,hh,falling);
+ if(!rendered){
  // 両脚・両腕。軍服と同じ青/白で、輪郭だけ暗めにして背景から分離する。
  g.fillStyle=shade;g.strokeStyle=outline;g.lineWidth=Math.max(.9,hh*.021);
  for(const sx of [-1,1]){
@@ -4956,6 +4961,7 @@ function drawSniperScopedHuman(it,pr,viewRange,cy,R){
  if(o.commander){g.fillStyle='#ffd56a';g.strokeStyle='#3a2a10';g.beginPath();g.arc(pr.x+headR*.9,headY-headR*.3,Math.max(1.5,headR*.28),0,Math.PI*2);g.fill();g.stroke();}
  // エリートはヘルメット前面に控えめな銀の徽章を付ける。
  if(elite){g.fillStyle='#576670';g.beginPath();g.arc(pr.x,headY-headR*.35,Math.max(1.2,ww*.055),0,Math.PI*2);g.fill();}
+ }
  g.restore();
  const distM=Math.max(1,distanceMeters(pr.d));
  g.textAlign='center';g.font='bold '+Math.max(10,Math.min(13,hh*.16))+'px system-ui';g.fillStyle='#eef3e8';
@@ -5265,7 +5271,7 @@ function update(dt){
     if(h.plantT>0){h.plantT=Math.max(0,h.plantT-dt);h.face=h.plantA??toT;if(h.plantT<=0){const bp=enemyBombPoint(h,h.plantA??toT,100);bombs.push({x:bp.x,y:bp.y,own:'e',armed:true,t:4});h.plantA=null;}}
     else if(!movePause){if(!moveEliteBombAvoidance(h,moveSp,dt)&&d>110)moveHumanChase(h,toT,moveSp,dt);}
     // 発見モードへの移行直後は、0.5〜1秒の静止が終わるまで発砲しない。
-    if(!movePause&&d<150&&h.cd<=0&&vis){if(h.elite){fire(h.x,h.y,toT+(R()-.5)*.08,'e','r',330,150);h.cd=1.35;}else{if(!(h.burstLeft>0))h.burstLeft=3;fire(h.x,h.y,toT+(R()-.5)*.15,'e','r',330,150);h.burstLeft--;h.cd=h.burstLeft>0?.14:2;}}}
+    if(!movePause&&d<150&&h.cd<=0&&vis){if(h.elite){h.characterShotAt=performance.now();fire(h.x,h.y,toT+(R()-.5)*.08,'e','r',330,150);h.cd=1.35;}else{if(!(h.burstLeft>0))h.burstLeft=3;h.characterShotAt=performance.now();fire(h.x,h.y,toT+(R()-.5)*.15,'e','r',330,150);h.burstLeft--;h.cd=h.burstLeft>0?.14:2;}}}
   }
   if(!h.st){h.wallFollow=null;if(!enemyModePaused(h)&&!(h.chatResumeT>0))h.face=patrol(h,dt,30*(h.elite?1.2:1),8);}
  }
@@ -6253,7 +6259,8 @@ function armoredShape(x,y,body,ang){
 }
 function drawVehicle(v,x,y,body,ang,layer='both'){if(v&&v.t.id==='armored'){if(layer==='both')armoredShape(x,y,body,ang);}else if(v&&v.kind==='truck'){if(layer==='both')truckShape(x,y,body,28);}else if(v&&v.kind==='fighter'){if(layer==='both')fighterShape(x,y,body,36);}else if(v)tankShape(x,y,body,ang,v.t,TANK_DRAW,layer);}
 function enemyIsWalking(h){return !!(h.alive&&!(h.stun>0)&&!(h.stunRecover>0)&&!h.houndPinned&&!(h.blastAirT>0)&&Math.hypot(h.x-h.walkStartX,h.y-h.walkStartY)>.02);}
-function soldier(x,y,face,isP,alert,moving,elite=false,commander='',weaponVisible=alert,playerStripe=isP){
+function soldier(x,y,face,isP,alert,moving,elite=false,commander='',weaponVisible=alert,playerStripe=isP,actor=null){
+ if(typeof drawCharacterWebP==='function'&&drawCharacterWebP(x,y,face,isP,alert,moving,elite,commander,weaponVisible,playerStripe,actor))return;
  const sw=moving?Math.sin(performance.now()/110)*3:0,armSw=!isP&&weaponVisible?0:sw;
  const uni=isP?'#6f8a55':elite?'#f2f1e9':alert?'#a8463c':'#56628a',dk=isP?'#4a6038':elite?'#b9bab5':alert?'#6e2a24':'#3c4566',hel=isP?'#587044':elite?'#dedfd9':alert?'#7a2e28':'#444f70';
  g.save();g.translate(x,y);
@@ -6359,7 +6366,7 @@ function drawAllyParachute(ally){
  g.strokeStyle='#758a82';g.lineWidth=1.25;g.beginPath();g.moveTo(-10,-10);g.lineTo(10,-10);g.stroke();
  g.fillStyle='#263b38';g.fillRect(-9,-12,18,6);g.fillStyle='#bacbc4';g.fillRect(-7,-10,14,2);
  g.restore();
- soldier(ally.x,ally.y,ally.face,true,false,false,false,'',false,false);
+ soldier(ally.x,ally.y,ally.face,true,false,false,false,'',false,false,ally);
 }
 
 function baseDamageCanvas(){
@@ -6823,7 +6830,7 @@ function draw(near){
  for(const w of waves){const k=1-w.r/w.max;g.strokeStyle='rgba(255,170,60,'+k+')';g.lineWidth=6;g.beginPath();g.arc(w.x,w.y,w.r,0,6.28);g.stroke();g.fillStyle='rgba(255,200,100,'+.35*k+')';g.fill();}
  for(const c of cars){if(!drawPointInView(c.x,c.y,cx,cy,160))continue;const foregroundVehicle=c.kind==='truck'||(c.kind==='tank'&&inBush(c));if(!foregroundVehicle)drawVehicle(c,c.x,c.y,c.body??-1.57,c.body??-1.57);const iy=c.y-(c.kind==='fighter'?66:c.kind==='truck'?42:50);markVehicle(c.x,iy,c.f<=0?'fuel':'ride');if(near===c)lab(c.t.n,c.x,iy-24,c.kind==='tank'?'bold 17px system-ui':'bold 14px system-ui','#fff');}
  const enemyAlpha=digEnemyAlpha()*(1-sandIntensity);if(enemyAlpha>.001)for(const e of etanks){if(!enemyInView(e,cx,cy,140))continue;g.save();g.globalAlpha*=enemyAlpha;if(e.alive){if(!e.st){g.fillStyle='rgba(255,80,80,.035)';g.beginPath();g.moveTo(e.x,e.y);g.arc(e.x,e.y,detectOuterRange('p'),e.ang-DETECT_OUTER_HALF,e.ang+DETECT_OUTER_HALF);g.closePath();g.fill();g.fillStyle='rgba(255,80,80,.055)';g.beginPath();g.moveTo(e.x,e.y);g.arc(e.x,e.y,detectRange('p'),e.ang-DETECT_CENTER_HALF,e.ang+DETECT_CENTER_HALF);g.closePath();g.fill();}if(!inBush(e))tankShape(e.x,e.y,e.body,e.ang,{id:'enemy',col:'#4b5f9e'},TANK_DRAW);}else if(!e.wreckSpawned){g.fillStyle='#1c1a18';g.beginPath();g.arc(e.x,e.y,14,0,6.28);g.fill();}g.restore();if(e.alive&&enemyAlpha>.18){if(e.st)lab('!',e.x,e.y-38,'bold 18px system-ui','#ff5a5a');else if(e.sus>0)lab('?',e.x,e.y-38,'bold 18px system-ui','#ffd27a');}}
- if(enemyAlpha>.001)for(const h of humans){const sniperFalling=!h.alive&&h.sniperFallT>0;if((!h.alive&&!sniperFalling)||!enemyInView(h,cx,cy,100))continue;const lift=sniperFalling?0:blastLift(h);if(!sniperFalling)drawBlastShadow(h);g.save();g.translate(0,-lift);g.globalAlpha*=enemyAlpha;if(sniperFalling){const fk=Math.max(0,Math.min(1,1-h.sniperFallT/Math.max(.01,h.sniperFallMax||.72))),side=(h.sniperFallA&&Math.sin(h.sniperFallA)<0?-1:1);g.translate(h.x,h.y);g.rotate(side*fk*1.18);g.translate(-h.x,-h.y);g.globalAlpha*=Math.max(.35,1-fk*.38);}soldier(h.x,h.y,h.face,false,sniperFalling?false:h.st,!sniperFalling&&!!h.walking,!!h.elite,h.commander||'',!sniperFalling&&!(h.commander==='blue'&&h.whistleT>0)&&(h.commander==='white'?h.commanderCharge>0||h.commanderShotT>0:!!h.st));drawCommanderOverlay(h);
+ if(enemyAlpha>.001)for(const h of humans){const sniperFalling=!h.alive&&h.sniperFallT>0;if((!h.alive&&!sniperFalling)||!enemyInView(h,cx,cy,100))continue;const lift=sniperFalling?0:blastLift(h);if(!sniperFalling)drawBlastShadow(h);g.save();g.translate(0,-lift);g.globalAlpha*=enemyAlpha;if(sniperFalling){const fk=Math.max(0,Math.min(1,1-h.sniperFallT/Math.max(.01,h.sniperFallMax||.72))),side=(h.sniperFallA&&Math.sin(h.sniperFallA)<0?-1:1);g.translate(h.x,h.y);g.rotate(side*fk*1.18);g.translate(-h.x,-h.y);g.globalAlpha*=Math.max(.35,1-fk*.38);}soldier(h.x,h.y,h.face,false,sniperFalling?false:h.st,!sniperFalling&&!!h.walking,!!h.elite,h.commander||'',!sniperFalling&&!(h.commander==='blue'&&h.whistleT>0)&&(h.commander==='white'?h.commanderCharge>0||h.commanderShotT>0:!!h.st),false,h);drawCommanderOverlay(h);
  if(!sniperFalling&&h.humanBurnT>0){const tt=performance.now()*.018;g.save();g.globalCompositeOperation='lighter';flameBlob(h.x-4+Math.sin(tt)*2,h.y+2,7+Math.sin(tt*1.3)*1.5,tt,.42);flameBlob(h.x+4+Math.cos(tt*.8)*2,h.y-5,9+Math.sin(tt*.9+1)*2,tt+1.7,.7);flameBlob(h.x+Math.sin(tt*.65)*3,h.y-12,6+Math.sin(tt*1.6+2)*1.5,tt+3.1,.9);g.restore();}
  if(!sniperFalling&&h.stun>0){drawStunStars(h.x,h.y);if(h.grapple>0){g.strokeStyle='rgba(230,233,216,.85)';g.lineWidth=2;g.beginPath();g.arc(h.x,h.y,13,-2.5,.7);g.stroke();}}g.restore();if(!sniperFalling&&enemyAlpha>.18){if(h.st)lab('!',h.x,h.y-lift-18,'bold 16px system-ui','#ff5a5a');else if(h.sus>0)lab('?',h.x,h.y-lift-18,'bold 16px system-ui','#ffd27a');}}
  for(const b of bullets){g.save();g.translate(b.x,b.y);g.rotate(Math.atan2(b.vy,b.vx));g.globalCompositeOperation='lighter';
@@ -6848,7 +6855,7 @@ function draw(near){
  else if(p.sniperEnterT>0||p.sniperReadyT>0){drawSniperSetupPlayer();}
  else if(p.dig>0){if(digUsesWaterFx(p.x,p.y)){g.save();g.translate(p.x,p.y);g.rotate(p.body+1.5708);g.fillStyle='rgba(38,54,45,.92)';g.beginPath();g.ellipse(0,-2,7,9,0,0,6.28);g.fill();g.fillStyle='#66735f';g.beginPath();g.arc(0,-5,6,Math.PI,0);g.fill();g.strokeStyle='rgba(220,240,245,.65)';g.lineWidth=1.5;g.beginPath();g.moveTo(-10,4);g.quadraticCurveTo(0,8,10,4);g.stroke();g.restore();}else{g.fillStyle='#3a2a18';g.beginPath();g.ellipse(p.x,p.y+2,11,8,0,0,6.28);g.fill();g.fillStyle='#6b4e30';g.beginPath();g.ellipse(p.x,p.y,8,6,0,0,6.28);g.fill();}}
  else if(p.digPrep>0)drawDigPreparation();
- else{drawBlastShadow(p);soldier(p.x,p.y-blastLift(p),p.body,true,false,!!(keys.ArrowUp||keys.ArrowDown||keys.ArrowLeft||keys.ArrowRight));}
+ else{drawBlastShadow(p);soldier(p.x,p.y-blastLift(p),p.body,true,false,!!(keys.ArrowUp||keys.ArrowDown||keys.ArrowLeft||keys.ArrowRight),false,'',false,true,p);}
  if(!p.tank&&p.drill>0){const a=p.body,t=performance.now()/90;g.save();g.translate(p.x,p.y);g.rotate(a);g.fillStyle='#30343a';g.beginPath();g.moveTo(10,-10);g.lineTo(48,0);g.lineTo(10,10);g.closePath();g.fill();g.strokeStyle='#d6d9dd';g.lineWidth=2;for(let q=0;q<4;q++){const xx=14+q*8,yy=Math.sin(t+q*1.7)*6;g.beginPath();g.moveTo(xx,-8+yy*.25);g.lineTo(xx+6,8-yy*.25);g.stroke();}g.fillStyle='#ffd27a';g.beginPath();g.arc(49,0,3+Math.sin(t)*1.2,0,6.28);g.fill();g.restore();if(p.drillTarget){g.fillStyle='rgba(0,0,0,.58)';g.fillRect(p.x-22,p.y-31,44,5);g.fillStyle='#ffd27a';g.fillRect(p.x-22,p.y-31,44*Math.min(1,p.drillHit/.5),5);}}
  drawGrassBushChunks(cx,cy);
  for(const b of nearbyBushes(cx+W/2,cy+H/2,Math.max(W,H)*.8+100)){if(b.spinifex||isGrassBush(b)||b.x+b.w<cx-40||b.x>cx+W+40||b.y+b.h<cy-40||b.y>cy+H+40)continue;drawBushCached(b);}
@@ -7705,8 +7712,9 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
+<script src="js/characters.js?v=2026.10.15.2321"></script>
 <script src="js/enemy-dogs.js?v=2026.10.14.1916"></script>
-<script src="js/partner.js?v=2026.10.14.1911"></script>
+<script src="js/partner.js?v=2026.10.15.2321"></script>
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/canyon.js?v=2026.10.14.1836"></script>
 <script src="js/vegetation.js?v=2026.10.14.1653"></script>

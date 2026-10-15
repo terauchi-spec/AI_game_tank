@@ -451,7 +451,7 @@ function updatePartner(dt){
   for(const h of humans)if(h.alive&&D(h,q)<best&&los(q,h)){enemy=h;best=D(h,q);}
   if(enemy){
    const angle=Math.atan2(enemy.y-q.y,enemy.x-q.x);q.face=angle;
-   fire(q.x+Math.cos(angle)*13,q.y+Math.sin(angle)*13,angle+(R()-.5)*.07,'ally','v',480,205);
+   q.characterShotAt=performance.now();fire(q.x+Math.cos(angle)*13,q.y+Math.sin(angle)*13,angle+(R()-.5)*.07,'ally','v',480,205);
    q.shotCd=.75;
   }
  }
@@ -505,7 +505,7 @@ function drawPartner(){
   if(q.stunT>0)lab('★',q.x,q.y-42,'bold 18px system-ui','#ffd85a');
   return;
  }
- soldier(q.x,q.y,q.face,true,false,q.moving,false,'',true,'blue');
+ soldier(q.x,q.y,q.face,true,false,q.moving,false,'',true,'blue',q);
  if(q.grappleT>0&&q.grappleTarget&&q.grappleTarget.alive){
   const h=q.grappleTarget,a=Math.atan2(h.y-q.y,h.x-q.x),k=1-q.grappleT/.45;
   g.save();g.strokeStyle='rgba(255,230,170,'+(1-k*.25)+')';g.lineWidth=3;g.beginPath();
