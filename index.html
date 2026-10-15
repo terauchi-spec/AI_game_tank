@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.16.0723</title>
+<title>こっそり戦車大作戦 2026.10.16.0733</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -815,7 +815,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.16.0723',FILE_CREATED_AT='2026/10/16 07:23',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.16.0733',FILE_CREATED_AT='2026/10/16 07:33',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -5404,7 +5404,7 @@ function skillIcon(id,x,y){
   g.globalAlpha=.4;soldier(x+45,y+52,1.57,true,false,false);g.globalAlpha=1;g.fillStyle='#e6e9d8';g.beginPath();g.moveTo(x+45,y+86);g.lineTo(x+37,y+74);g.lineTo(x+53,y+74);g.fill();
   g.fillStyle='#7a5a38';for(let i=0;i<8;i++)g.fillRect(x+20+i*7,y+34-(i%3)*5,3,3);g.fillStyle='#d8f0b8';g.font='bold 14px system-ui';g.textAlign='center';g.fillText('3s',x+45,y+18);}
  else if(id==='decoy'){soldier(x+22,y+64,0,true,false,false);g.globalAlpha=.6;soldier(x+62,y+64,0,true,false,false);g.globalAlpha=1;soldier(x+70,y+26,3.14,false,true,true);g.fillStyle='#ff5a5a';g.font='bold 16px system-ui';g.textAlign='center';g.fillText('!',x+70,y+10);}
- else if(id==='buddy'){g.fillStyle='#eee9d3';g.beginPath();g.arc(x+45,y+31,28,Math.PI,0);g.lineTo(x+17,y+31);g.closePath();g.fill();g.strokeStyle='#8b5d45';g.lineWidth=2;for(let q=-2;q<=2;q++){g.beginPath();g.moveTo(x+45+q*11,y+31);g.lineTo(x+45+q*4,y+52);g.stroke();}g.strokeStyle='#f7f3df';g.beginPath();g.moveTo(x+17,y+31);g.lineTo(x+38,y+57);g.moveTo(x+73,y+31);g.lineTo(x+52,y+57);g.stroke();soldier(x+45,y+69,-1.57,true,false,false);}
+ else if(id==='buddy'){g.fillStyle='#eee9d3';g.beginPath();g.arc(x+45,y+31,28,Math.PI,0);g.lineTo(x+17,y+31);g.closePath();g.fill();g.strokeStyle='#8b5d45';g.lineWidth=2;for(let q=-2;q<=2;q++){g.beginPath();g.moveTo(x+45+q*11,y+31);g.lineTo(x+45+q*4,y+52);g.stroke();}g.strokeStyle='#f7f3df';g.beginPath();g.moveTo(x+17,y+31);g.lineTo(x+38,y+57);g.moveTo(x+73,y+31);g.lineTo(x+52,y+57);g.stroke();soldier(x+45,y+69,-1.57,true,false,false,false,'',false,false);}
  else if(id==='hound'){soldier(x+21,y+62,0,true,false,false);g.fillStyle='#c9a878';g.fillRect(x+49,y+49,19,13);g.fillRect(x+65,y+51,9,8);g.fillRect(x+51,y+61,4,7);g.fillRect(x+62,y+61,4,7);g.strokeStyle='#c9a878';g.lineWidth=3;g.beginPath();g.moveTo(x+50,y+52);g.lineTo(x+44,y+46);g.stroke();g.strokeStyle='#ffd27a';g.lineWidth=2;g.setLineDash([4,3]);g.beginPath();g.moveTo(x+42,y+60);g.lineTo(x+78,y+34);g.stroke();g.setLineDash([]);g.fillStyle='#ffd27a';g.font='bold 11px system-ui';g.textAlign='center';g.fillText('DOG',x+65,y+25);}
  else if(id==='build'){soldier(x+20,y+66,-.2,true,false,false);g.fillStyle='#aeb2ae';g.fillRect(x+43,y+28,36,42);g.fillStyle='#d5d8d3';g.fillRect(x+46,y+31,30,8);g.fillStyle='#777d79';for(let q=0;q<3;q++)g.fillRect(x+48,y+44+q*8,26,3);g.strokeStyle='#272b29';g.strokeRect(x+43,y+28,36,42);g.fillStyle='#ffd27a';g.font='bold 12px system-ui';g.textAlign='center';g.fillText('×3',x+63,y+84);}
  else if(id==='flame'){soldier(x+20,y+63,0,true,false,false);const gr=g.createLinearGradient(x+34,y+48,x+84,y+48);gr.addColorStop(0,'#fff0a0');gr.addColorStop(.45,'#ff9b25');gr.addColorStop(1,'#d9360b');g.strokeStyle=gr;g.lineWidth=13;g.lineCap='round';g.beginPath();g.moveTo(x+34,y+50);g.quadraticCurveTo(x+60,y+28,x+82,y+48);g.stroke();g.fillStyle='#ffd27a';g.font='bold 12px system-ui';g.textAlign='center';g.fillText('3s',x+68,y+80);}
@@ -7712,9 +7712,9 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/characters.js?v=2026.10.16.0723"></script>
+<script src="js/characters.js?v=2026.10.16.0733"></script>
 <script src="js/enemy-dogs.js?v=2026.10.14.1916"></script>
-<script src="js/partner.js?v=2026.10.16.0723"></script>
+<script src="js/partner.js?v=2026.10.16.0733"></script>
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/canyon.js?v=2026.10.14.1836"></script>
 <script src="js/vegetation.js?v=2026.10.14.1653"></script>

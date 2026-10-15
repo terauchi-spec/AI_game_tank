@@ -5,7 +5,29 @@ const CHARACTER_ART={},CHARACTER_GAIT=new WeakMap(),CHARACTER_LAYERS=new WeakMap
 const CHARACTER_ART_NAMES=['player','blue','blue_commander','white','white_commander','rifle','launcher','scope_blue','scope_blue_commander','scope_white','scope_white_commander'];
 function loadCharacterArtwork(){
  if(CHARACTER_GRAPHICS_MODE!=='webp')return;
- for(const name of CHARACTER_ART_NAMES)CHARACTER_ART[name]=makeAssetImage('assets/characters/'+name+'.webp?v='+GAME_VERSION,()=>{if(!name.startsWith('scope_')&&name!=='rifle'&&name!=='launcher')prepareCharacterLayers(CHARACTER_ART[name]);});
+ for(const name of CHARACTER_ART_NAMES)CHARACTER_ART[name]=makeAssetImage('assets/characters/'+name+'.webp?v='+GAME_VERSION,()=>{if(!name.startsWith('scope_')&&name!=='rifle'&&name!=='launcher'){prepareCharacterLayers(CHARACTER_ART[name]);if(name==='player')prepareAllyHelmetArtwork(CHARACTER_ART[name]);}});
+}
+// Cache allied helmet variants once at load time; no pixel work during play.
+function prepareAllyHelmetArtwork(im){
+ const w=im.naturalWidth,h=im.naturalHeight;
+ for(const blue of [false,true]){
+  const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+  const q=canvas.getContext('2d');q.drawImage(im,0,0);
+  const pixels=q.getImageData(0,0,w,h),d=pixels.data;
+  for(let y=Math.floor(h*.38);y<h*.62;y++)for(let x=0;x<w;x++){
+   if(((x/w-.60)/.34)**2+((y/h-.50)/.34)**2>1)continue;
+   const i=(y*w+x)*4,r=d[i],green=d[i+1],b=d[i+2];
+   if(r<=green*1.18||r<=b*1.20||r<45)continue;
+   const light=r*.299+green*.587+b*.114;
+   d[i]=Math.min(255,light*(blue?.55:1.08));
+   d[i+1]=Math.min(255,light*(blue?1.35:1.12));
+   d[i+2]=Math.min(255,light*(blue?2:.75));
+  }
+  q.putImageData(pixels,0,0);
+  canvas.complete=true;canvas.naturalWidth=w;canvas.naturalHeight=h;
+  CHARACTER_ART[blue?'player_blue':'player_plain']=canvas;
+  prepareCharacterLayers(canvas);
+ }
 }
 function characterArtKey(isPlayer,elite,commander){
  return isPlayer?'player':commander==='blue'?'blue_commander':commander==='white'?'white_commander':elite?'white':'blue';
@@ -41,7 +63,7 @@ function prepareCharacterLayers(im){
 }
 function composeOverheadCutout(im,width,height,stride=0,armed=false){
  const left=-width*.60,top=-height*.50,layers=CHARACTER_LAYERS.get(im);
- const trousers=im===CHARACTER_ART.player?'#77734f':im===CHARACTER_ART.white||im===CHARACTER_ART.white_commander?'#d0cdbd':'#637387';
+ const trousers=(im===CHARACTER_ART.player||im===CHARACTER_ART.player_plain||im===CHARACTER_ART.player_blue)?'#77734f':im===CHARACTER_ART.white||im===CHARACTER_ART.white_commander?'#d0cdbd':'#637387';
  if(!layers){g.drawImage(im,left,top,width,height);return;}
  for(let i=0;i<layers.parts.length;i++){
   const part=layers.parts[i];
@@ -120,7 +142,8 @@ function drawCharacterWeapon(commander,shot=0,flame=false,player=false,elite=fal
 }
 function drawCharacterWebP(x,y,face,isPlayer,alert,moving,elite,commander,weaponVisible,playerStripe,actor=null){
  if(CHARACTER_GRAPHICS_MODE!=='webp')return false;
- const im=CHARACTER_ART[characterArtKey(isPlayer,elite,commander)];if(!assetOK(im))return false;
+ const key=isPlayer?(playerStripe==='blue'?'player_blue':playerStripe?'player':'player_plain'):characterArtKey(false,elite,commander);
+ const im=CHARACTER_ART[key];if(!assetOK(im))return false;
  const now=performance.now(),stunned=actor&&(actor.stun>0||actor.stunT>0||actor.down);
  const stride=characterGait(actor,x,y,moving&&!stunned,now);
  const flame=!!(isPlayer&&actor===p&&p.flameActive);
@@ -134,10 +157,6 @@ function drawCharacterWebP(x,y,face,isPlayer,alert,moving,elite,commander,weapon
  if(armed&&!stunned)drawCharacterWeapon(commander,shot,flame,isPlayer,elite,!isPlayer&&!elite&&!commander?1.5:1);
  if(stunned){g.save();g.rotate(.8);g.scale(1,.68);}
  drawOverheadCutout(im,32,32*im.naturalHeight/im.naturalWidth,stride,armed);
- if(isPlayer&&playerStripe==='blue'){
-  // Preserve the Partner's blue helmet marker.
-  g.strokeStyle='#55bcff';g.lineWidth=4;g.beginPath();g.moveTo(-3.8,0);g.lineTo(11.5,0);g.stroke();
- }
  if(stunned)g.restore();
  g.restore();return true;
 }

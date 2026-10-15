@@ -36,6 +36,14 @@ are 1.5 times their original WebP display dimensions. Aiming, weapon visibility,
 recoil and muzzle flash follow existing actor states.
 The physical actor collision radii, movement speeds, AI and damage remain intact.
 
+## Allied helmets
+
+The player keeps the red stripe. Reinforcements use a plain camouflage helmet;
+Partner uses a blue stripe. Two variants are prepared once from the player WebP
+at decode time, recoloring the baked red paint while keeping its texture.
+Their limb layers and poses are cached like other roles; no additional image
+download or per-frame pixel readback is involved.
+
 ## Restoring the original graphics
 
 The original Canvas renderer remains in `index.html` as the automatic fallback.
