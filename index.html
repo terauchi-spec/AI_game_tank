@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.15.0959</title>
+<title>こっそり戦車大作戦 2026.10.15.1053</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -649,7 +649,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <p><strong>特殊配置：</strong>青・白の指揮官各2体、犬兵2組、無線機1個は出撃ごとにエリアと位置をランダムに決めます。開始草原と敵迷路基地は配置対象外です（途中で登場する草原は対象）。同種の指揮官と犬兵2組は別エリアに分散し、特殊ユニット間は380px以上、無線機と特殊ユニット間は420px以上離します。ガソリンとの距離も確保し、障害物・水場を避けます。</p>
 <h3>青兵指揮官：無線機とアンテナ</h3>
 <ul><li>通常の出撃では2体を別エリアに分散配置し、青の通常兵と同様に定期ルートを巡回します。背面の無線機と長いアンテナが目印です。</li>
-<li>プレイヤーを新たに発見すると笛を吹き、偽装スキルと同じ単色の赤い電波リングを半径300pxまで2回（各1.25秒）広げます。2回の電波が終わるまで武器をしまってその場で停止します。1秒後、1000px以内の活動可能な敵歩兵を発見モードへ移行させます。笛の再使用には8秒の間隔があります。</li>
+<li>プレイヤーを新たに発見すると笛を吹き、偽装スキルと同じ単色の赤い電波リングを半径300pxまで2回（各1.25秒）広げます。2回の電波が終わるまで武器をしまってその場で停止します。1秒後、2000px以内の活動可能な敵歩兵を発見モードへ移行させます。笛の再使用には8秒の間隔があります。</li>
 <li>武器は射程480pxのバズーカ。標的が120pxより遠く、射線が通ると、0.5秒間停止して構えた時点の方向へ発射します。発射まで標的の動きに追従して照準を変えることはありません。発射準備は頭上の直線型チャージバーで表示します。</li>
 <li>被弾威力は戦車砲の約半分、爆破範囲は110px（設置爆弾は95px）。射撃後は約1.2秒、横方向へ移動し、次の射撃までの待ち時間は4秒です。</li></ul>
 <h3>犬兵：黒い犬を連れた青兵</h3>
@@ -814,7 +814,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.15.0959',FILE_CREATED_AT='2026/10/15 09:59',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.15.1053',FILE_CREATED_AT='2026/10/15 10:53',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -3432,7 +3432,7 @@ function updateCommanderSignals(dt){
   signal.remaining-=dt;signal.source.whistleSignalT=Math.max(0,signal.remaining);
   if(signal.remaining>1e-9)continue;
   commanderRallying=true;
-  try{for(const other of humans)if(other!==signal.source&&other.alive&&!(other.stun>0)&&!(other.stunRecover>0)&&!other.houndPinned&&D(other,signal)<=1000)enterHumanFound(other,'p');}
+  try{for(const other of humans)if(other!==signal.source&&other.alive&&!(other.stun>0)&&!(other.stunRecover>0)&&!other.houndPinned&&D(other,signal)<=2000)enterHumanFound(other,'p');}
   finally{commanderRallying=false;}
  }
  commanderSignals=commanderSignals.filter(signal=>signal.remaining>1e-9);
