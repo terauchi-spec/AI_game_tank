@@ -59,7 +59,8 @@ function composeOverheadCutout(im,width,height,stride=0,armed=false){
   const side=i===2?1:-1,ax=left+width*.55,ay=top+height*(i===2?.28:.72);
   g.save();
   if(armed){g.translate(ax,ay);g.rotate(side*.68);g.translate(-ax,-ay);}
-  else g.translate(side*stride*(im===CHARACTER_ART.player?3:1.25),0);
+  // A forward foot pairs with the opposite arm, not the arm on its own side.
+  else g.translate(side*stride*(im===CHARACTER_ART.player?-3:1.25),0);
   g.drawImage(part.im,left+part.x*width,top+part.y*height,part.w*width,part.h*height);g.restore();
  }
  g.drawImage(layers.core,left,top,width,height);
