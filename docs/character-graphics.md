@@ -24,7 +24,8 @@ stop stepping. Player cadence is capped at 80 ms/radian for running; enemy walki
 the legacy 110 ms/radian cadence;
 boots draw beneath the torso; player toes extend ahead in a longer stride and
 the raised kicking boot extends clearly past the pack at rear extension,
-with a connected trouser leg and a slight outward lift, free arms translate in counterphase (player: ±4.5 px, opposite the foot on the same side),
+with a connected trouser leg and a slight outward lift. Player boots use
+roughly 10 × 9 world-pixel cutouts, proportionate to hands rather than tiny dots, free arms translate in counterphase (player: ±4.5 px, opposite the foot on the same side),
 and there is no sideways body bob. Procedural limb compositions are cached and reused. The cache is
 bounded to 18 poses per overhead model; there is no frame atlas, per-frame image
 readback, new navigation/vision scan, or remote image-generation request in play.
