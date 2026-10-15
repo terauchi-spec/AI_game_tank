@@ -10,14 +10,14 @@ function loadCharacterArtwork(){
 function characterArtKey(isPlayer,elite,commander){
  return isPlayer?'player':commander==='blue'?'blue_commander':commander==='white'?'white_commander':elite?'white':'blue';
 }
-function characterGait(actor,x,y,moving,now,jog=false){
+function characterGait(actor,x,y,moving,now,jog=true){
  const cadence=jog?80:110,travelPhase=jog?.09:.065;
  if(!actor)return moving?Math.sin(now/cadence):0;
  let anim=CHARACTER_GAIT.get(actor);
  if(!anim){anim={x:actor.x,y:actor.y,phase:0,lastMove:-1e9,lastAt:now};CHARACTER_GAIT.set(actor,anim);return 0;}
  const elapsed=Math.max(0,now-anim.lastAt),distance=Math.hypot(actor.x-anim.x,actor.y-anim.y);
  anim.x=actor.x;anim.y=actor.y;anim.lastAt=now;
- // Player running uses a fuller stride and quicker cadence than the legacy walk. Distance
+ // Shared running/stepping cadence follows actual travel distance. Distance
  // coupling stops the feet at walls; elapsed time prevents rapid foot flutter.
  if(moving&&distance>0&&distance<30){anim.phase+=Math.min(distance*travelPhase,elapsed/cadence);anim.lastMove=now;}
  return moving&&now-anim.lastMove<100?Math.sin(anim.phase):0;
@@ -41,6 +41,7 @@ function prepareCharacterLayers(im){
 }
 function composeOverheadCutout(im,width,height,stride=0,armed=false){
  const left=-width*.60,top=-height*.50,layers=CHARACTER_LAYERS.get(im);
+ const trousers=im===CHARACTER_ART.player?'#77734f':im===CHARACTER_ART.white||im===CHARACTER_ART.white_commander?'#d0cdbd':'#637387';
  if(!layers){g.drawImage(im,left,top,width,height);return;}
  for(let i=0;i<layers.parts.length;i++){
   const part=layers.parts[i];
@@ -48,23 +49,23 @@ function composeOverheadCutout(im,width,height,stride=0,armed=false){
    // Feet draw beneath the torso; occlusion hides the middle of each stride.
    // Draw them first so the body naturally occludes the heels and upper legs.
    const step=(i?-1:1)*stride;
-   if(im===CHARACTER_ART.player){
+   {
     // A long forward step and a short rear kick replace the sliding-foot pose.
     // The torso hides the returning leg; only the extended kick peeks past the
     // backpack. Foreshorten and tilt the raised boot as it pushes off.
     const kick=Math.max(0,-step),fw=part.w*width*1.3,fh=part.h*height*(1.05-kick*.04);
     const fx=width*.04+step*(step>0?8:22),fy=(i?1:-1)*height*(.21+kick*.035)-fh/2;
     // The trouser leg joins hip and ankle beneath the body, avoiding floating boots.
-    g.save();g.strokeStyle='#77734f';g.lineWidth=4.8;g.lineCap='round';g.beginPath();g.moveTo(-1,(i?1:-1)*height*.21);g.lineTo(fx+fw*.35,fy+fh/2);g.stroke();g.restore();
+    g.save();g.strokeStyle=trousers;g.lineWidth=4.8;g.lineCap='round';g.beginPath();g.moveTo(-1,(i?1:-1)*height*.21);g.lineTo(fx+fw*.35,fy+fh/2);g.stroke();g.restore();
     g.save();g.translate(fx+fw/2,fy+fh/2);g.rotate((i?-1:1)*kick*.22);g.scale(-1,1);g.drawImage(part.im,-fw/2,-fh/2,fw,fh);g.restore();
-   }else g.drawImage(part.im,-width*.12+step*2,(i?1:-1)*height*.25-part.h*height*.35,part.w*width*.8,part.h*height*.7);
+   }
    continue;
   }
   const side=i===2?1:-1,ax=left+width*.55,ay=top+height*(i===2?.28:.72);
   g.save();
   if(armed){g.translate(ax,ay);g.rotate(side*.68);g.translate(-ax,-ay);}
   // A forward foot pairs with the opposite arm, not the arm on its own side.
-  else g.translate(side*stride*(im===CHARACTER_ART.player?-4.5:1.25),0);
+  else g.translate(-side*stride*4.5,0);
   g.drawImage(part.im,left+part.x*width,top+part.y*height,part.w*width,part.h*height);g.restore();
  }
  g.drawImage(layers.core,left,top,width,height);
@@ -121,7 +122,7 @@ function drawCharacterWebP(x,y,face,isPlayer,alert,moving,elite,commander,weapon
  if(CHARACTER_GRAPHICS_MODE!=='webp')return false;
  const im=CHARACTER_ART[characterArtKey(isPlayer,elite,commander)];if(!assetOK(im))return false;
  const now=performance.now(),stunned=actor&&(actor.stun>0||actor.stunT>0||actor.down);
- const stride=characterGait(actor,x,y,moving&&!stunned,now,isPlayer);
+ const stride=characterGait(actor,x,y,moving&&!stunned,now);
  const flame=!!(isPlayer&&actor===p&&p.flameActive);
  const armed=(!isPlayer&&weaponVisible)||(isPlayer&&playerStripe==='blue'&&weaponVisible)||flame;
  const shot=actor?Math.max(0,.09-(now-(actor.characterShotAt||-1e9))/1000):0;

@@ -20,13 +20,15 @@ most 288 pixels tall. Generated alpha is preserved.
 
 `js/characters.js` decodes images once and splits limb regions into small cached
 canvases. Movement distance drives alternating steps; idle and blocked characters
-stop stepping. Player cadence is capped at 80 ms/radian for running; enemy walking keeps
-the legacy 110 ms/radian cadence;
-boots draw beneath the torso; player toes extend ahead in a longer stride and
+stop stepping. All five roles share a distance-driven gait capped at 80 ms/radian;
+slower patrols step more slowly than a running player.
+Boots draw beneath the torso; toes extend ahead in a longer stride and
 the raised kicking boot extends clearly past the pack at rear extension,
-with a connected trouser leg and a slight outward lift. Player boots use
-roughly 10 × 9 world-pixel cutouts, proportionate to hands rather than tiny dots, free arms translate in counterphase (player: ±4.5 px, opposite the foot on the same side),
-and there is no sideways body bob. Procedural limb compositions are cached and reused. The cache is
+with a connected trouser leg and a slight outward lift. All five roles use
+roughly 10 × 9 world-pixel boot cutouts, proportionate to hands.
+Free arms translate in counterphase (±4.5 px, opposite the foot on the same side).
+Armed enemies hold their arms steady while their legs move.
+There is no sideways body bob. Procedural limb compositions are cached and reused. The cache is
 bounded to 18 poses per overhead model; there is no frame atlas, per-frame image
 readback, new navigation/vision scan, or remote image-generation request in play.
 Overhead weapons draw beneath the body and helmet. Ordinary blue infantry rifles
