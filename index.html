@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.15.0826</title>
+<title>こっそり戦車大作戦 2026.10.15.0915</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -642,6 +642,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <li>発見後は、個体ごとに決まるタイミングで一度だけ設置爆弾を置きます。設置時は短時間停止し、爆弾は約4秒後に爆発します。</li>
 <li>疑惑中は開始時の静止後、約2秒間、円を描くように周囲を確認します。巡回中は銃を隠し、発見中は銃を構え、腕を振らずに歩きます。</li></ul>
 <h3>白の通常エリート</h3>
+<p>森林・村・丘陵・街には通常配置10人のうち3人を配置します（初級は青兵のみ）。発見中、索敵範囲内に見える設置爆弾は、爆風半径95pxに兵士の大きさと余裕を加えた125pxの範囲を避けて迂回します。範囲内にいる場合は外へ離れます。</p>
 <ul><li>通常青兵より索敵距離・視野・移動速度が高く、巡回36px/秒、追跡114px/秒。索敵距離は通常兵の1.2倍で、建物を回り込む追跡も行います。</li>
 <li>150px以内で射線が通ると、通常兵よりばらつきの少ない単発射撃を約1.35秒間隔で行います。設置爆弾は使いません。</li>
 <li>疑惑中は約2秒間プレイヤーの方向へ接近した後、約2秒間周囲を確認します。巡回・発見時の銃表示と歩行アニメーションは青の通常兵と同じルールです。</li></ul>
@@ -813,7 +814,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.15.0826',FILE_CREATED_AT='2026/10/15 08:26',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.15.0915',FILE_CREATED_AT='2026/10/15 09:15',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -2825,8 +2826,8 @@ function reset(rerollSkills=true){
  const addZoneTanks=(z,n)=>{if(!z)return;const y1=z.y1/MAP_SCALE+70,y0=z.y0/MAP_SCALE-70;for(let i=0;i<n;i++){for(let t=0;t<100;t++){const yy=y1+R()*Math.max(70,y0-y1),o=route(yy,45,915,15,1,'mixed');if(!o)continue;if(etanks.every(e=>D(e,o)>80)){etanks.push(Object.assign(o,{alive:true,st:0,lost:0,cc:R()*1.5,vc:0,ang:R()*6.28,body:R()*6.28,target:null,zoneHeavy:'randomGrass',scanTurret:R()<.5,scanPhase:R()*6.28318,scanRate:.42+R()*.22}));break;}}}};
  for(const z of ZONES.slice(1,-1))if(z.n==='草原')addZoneTanks(z,2);
  const fz=ZONES.find(z=>z.n==='敵前線基地');if(fz){const fy1=fz.y1/MAP_SCALE+70,fy0=fz.y0/MAP_SCALE-70,staticDirs=[0,Math.PI/2,Math.PI,-Math.PI/2];for(let i=staticDirs.length-1;i>0;i--){const j=R()*(i+1)|0;[staticDirs[i],staticDirs[j]]=[staticDirs[j],staticDirs[i]];}for(let i=0;i<3;i++){for(let t=0;t<80;t++){const sp=freeSpot(70+R()*820,fy1+R()*Math.max(70,fy0-fy1),18,20);if(etanks.every(e=>D(e,sp)>70)){const a=staticDirs[i];etanks.push({x:sp.x,y:sp.y,path:[{x:sp.x,y:sp.y}],loop:false,wi:0,dir:1,stk:0,alive:true,st:0,lost:0,cc:R()*1.5,vc:0,ang:a,body:a,target:null,static:true,scanTurret:R()<.5,scanPhase:R()*6.28318,scanRate:.42+R()*.22});break;}}}}
- // エリート比率：村・丘陵・街は各10人のうち原則1人(10%)、前線基地・迷路基地は20%、司令本部は1/3。
- // 10人が配置できなかったときも、実際に配置された人数に対して約10%を割り当てる。
+ // 森林・村・丘陵・街は各3人のエリート。前線基地は20%、司令本部は1/3。
+ // 配置可能人数が3人未満なら、その人数まで割り当てる。
  const eliteZones=new Set(['敵前線基地','敵迷路基地']);
  for(const h of humans){
   if(h.zoneHeavy==='startGrass'){h.elite=false;continue;}
@@ -2834,10 +2835,10 @@ function reset(rerollSkills=true){
   if(zn==='敵司令本部')h.elite=R()<1/3;
   else if(eliteZones.has(zn)&&R()<.2)h.elite=true;
  }
- for(const z of ZONES.filter(z=>['村','丘陵','街'].includes(z.n))){
+ for(const z of ZONES.filter(z=>['森林','村','丘陵','街'].includes(z.n))){
   const group=humans.filter(h=>zoneAt(h.y*MAP_SCALE).n===z.n);
   for(let i=group.length-1;i>0;i--){const j=R()*(i+1)|0;[group[i],group[j]]=[group[j],group[i]];}
-  for(let i=0;i<Math.round(group.length*.1);i++)group[i].elite=true;
+  for(let i=0;i<Math.min(3,group.length);i++)group[i].elite=true;
  }
  // マップ生成は旧座標系(高さ3200)で行い、配置だけ縦4倍に拡張する。
  const sy=o=>{if(o&&Number.isFinite(o.y))o.y*=MAP_SCALE;};
@@ -3437,6 +3438,7 @@ function updateCommanderSignals(dt){
  commanderSignals=commanderSignals.filter(signal=>signal.remaining>1e-9);
 }
 function commanderMove(h,target,dt,sp=150){
+ if(moveEliteBombAvoidance(h,sp,dt,target))return;
  if(h.commanderRoute&&Math.hypot(target.x-h.commanderGoal.x,target.y-h.commanderGoal.y)>90)h.commanderRoute=null;
  const a=Math.atan2(target.y-h.y,target.x-h.x),ahead={x:h.x+Math.cos(a)*22,y:h.y+Math.sin(a)*22};
  if(h.patrolSearch||(!h.commanderRoute&&!patrolLineClear(h,ahead,8)&&performance.now()>=(h.commanderRetry||0)&&performance.now()>=patrolRoutePlanAt)){
@@ -3712,6 +3714,42 @@ function coverPerimeterPoint(st,s){
  if(s<=rh)return{x:rx+rw,y:ry+s};s-=rh;
  if(s<=rw)return{x:rx+rw-s,y:ry+rh};s-=rw;
  return{x:rx,y:ry+rh-s};
+}
+// Visible planted bombs are remembered until removed. Vision scans are limited
+// to every 150ms per found elite; movement uses cheap circle/segment checks.
+const ELITE_BOMB_CLEARANCE=125; // 95px blast + soldier radius + safety margin.
+function eliteBombSegmentDistance(a,b,bomb){
+ const dx=b.x-a.x,dy=b.y-a.y,len=dx*dx+dy*dy,t=len?Math.max(0,Math.min(1,((bomb.x-a.x)*dx+(bomb.y-a.y)*dy)/len)):0;
+ return Math.hypot(a.x+dx*t-bomb.x,a.y+dy*t-bomb.y);
+}
+function moveEliteBombAvoidance(h,sp,dt,target=targetObj(h.target)){
+ if(!h.elite||!h.st||!target){h.bombAvoid=null;h.seenBombs=null;return false;}
+ const now=performance.now();
+ if(!h.seenBombs||now>=(h.bombScanAt||0)){
+  const seen=(h.seenBombs||[]).filter(b=>bombs.includes(b)&&!(b.fly>0));
+  for(const b of bombs)if(!(b.fly>0)&&!seen.includes(b)&&canDetect(h,b,h.face,'bomb'))seen.push(b);
+  h.seenBombs=seen;h.bombScanAt=now+150;
+ }
+ const seen=h.seenBombs.filter(b=>bombs.includes(b)&&!(b.fly>0));
+ let threat=null,best=Infinity;
+ for(const b of seen){const d=D(h,b);if(eliteBombSegmentDistance(h,target,b)<ELITE_BOMB_CLEARANCE&&d<best){threat=b;best=d;}}
+ if(!threat){h.bombAvoid=null;return false;}
+ if(!h.bombAvoid||h.bombAvoid.bomb!==threat){
+  const cross=(h.x-threat.x)*(target.y-threat.y)-(h.y-threat.y)*(target.x-threat.x);
+  h.bombAvoid={bomb:threat,side:cross>=0?-1:1};
+ }
+ const radius=ELITE_BOMB_CLEARANCE+12,around=Math.atan2(h.y-threat.y,h.x-threat.x);
+ const goal=best<ELITE_BOMB_CLEARANCE?{x:threat.x+Math.cos(around)*radius,y:threat.y+Math.sin(around)*radius}:
+  {x:threat.x+Math.cos(around+h.bombAvoid.side*.35)*radius,y:threat.y+Math.sin(around+h.bombAvoid.side*.35)*radius};
+ const angle=Math.atan2(goal.y-h.y,goal.x-h.x),step=Math.min(sp*dt,D(h,goal));
+ for(const off of [0,.35,-.35,.7,-.7,1.05,-1.05,1.57,-1.57]){
+  const a=angle+off,q={x:h.x+Math.cos(a)*step,y:h.y+Math.sin(a)*step};
+  if(hitsC(q.x,q.y,8))continue;
+  if(seen.some(b=>{const current=D(h,b);return current<ELITE_BOMB_CLEARANCE?D(q,b)<=current:eliteBombSegmentDistance(h,q,b)<ELITE_BOMB_CLEARANCE;}))continue;
+  mv(h,q.x-h.x,q.y-h.y,8);h.face=a;return true;
+ }
+ // Hold outside the blast when terrain blocks all safe detours.
+ return true;
 }
 function moveHumanChase(h,toT,sp,dt){
  if(mazeComparisonEnemyFrozen(h))return;
@@ -5225,7 +5263,7 @@ function update(dt){
     // 通常兵だけが設置爆弾を使う。発見モード突入時に設置タイミングを個体ごとにランダム決定。
     if(!h.elite&&!h.bu&&!h.plantT&&h.ct>(h.bombAt??1.5)&&!movePause){h.bu=true;h.plantT=.35+R()*.4;h.plantA=toT;}
     if(h.plantT>0){h.plantT=Math.max(0,h.plantT-dt);h.face=h.plantA??toT;if(h.plantT<=0){const bp=enemyBombPoint(h,h.plantA??toT,100);bombs.push({x:bp.x,y:bp.y,own:'e',armed:true,t:4});h.plantA=null;}}
-    else if(!movePause&&d>110)moveHumanChase(h,toT,moveSp,dt);
+    else if(!movePause){if(!moveEliteBombAvoidance(h,moveSp,dt)&&d>110)moveHumanChase(h,toT,moveSp,dt);}
     // 発見モードへの移行直後は、0.5〜1秒の静止が終わるまで発砲しない。
     if(!movePause&&d<150&&h.cd<=0&&vis){if(h.elite){fire(h.x,h.y,toT+(R()-.5)*.08,'e','r',330,150);h.cd=1.35;}else{if(!(h.burstLeft>0))h.burstLeft=3;fire(h.x,h.y,toT+(R()-.5)*.15,'e','r',330,150);h.burstLeft--;h.cd=h.burstLeft>0?.14:2;}}}
   }
