@@ -3,7 +3,7 @@ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
 function harness(){
  let seed=3;const calls=[];
  const gm=new Proxy({}, {get:(o,k)=>o[k]||((...args)=>calls.push([k,...args])),set:(o,k,v)=>(o[k]=v,true)});
- const c={WW:960,WH:12800,W:480,H:800,TANK_HIT:28,cars:[],etanks:[],p:{x:480,y:10000,body:0},stageMode:'front',areaDebugEnabled:false,mission:{points:[],index:0,enemyRoster:[],enemyRosterIndex:0},humans:[],enemyDogs:[],allies:[],allySeq:0,covers:[],gm,
+ const c={WW:960,WH:12800,W:480,H:800,TANK_HIT:28,cars:[],etanks:[],p:{x:480,y:10000,body:0},stageMode:'front',weather:'clear',areaDebugEnabled:false,mission:{points:[],index:0,enemyRoster:[],enemyRosterIndex:0},humans:[],enemyDogs:[],allies:[],allySeq:0,covers:[],gm,
  R:()=>((seed=(seed*1664525+1013904223)>>>0)/2**32),D:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),hitsM:()=>false,hitsC:()=>false,inWaterAt:()=>false,inBase:()=>false,patrolLineClear:()=>true,missionSpot:(x,y)=>({x,y}),setSkillCooldown(){},sfx(){},say(){},
  mv:(a,dx,dy)=>{a.x+=dx;a.y+=dy;},dogMoveAround:(h,q,sp,dt)=>{const angle=Math.atan2(q.y-h.y,q.x-h.x);h.x+=Math.cos(angle)*sp*dt;h.y+=Math.sin(angle)*sp*dt;}};
  vm.createContext(c);vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/frontline.js'),'utf8'),c);
@@ -148,4 +148,34 @@ test('Frontline blast stun lasts ten seconds without adding an extra recovery de
 });
 test('contact still recovers a Frontline ally before the ten-second timeout',()=>{
  const c=harness();c.los=()=>true;const a={x:c.p.x,y:c.p.y-10,alive:true,stun:9,stunRecover:0};c.updateFrontlineAllyStun(a,.1);assert.equal(a.stun,0);assert.equal(a.shotCd,.2);
+});
+
+test('ally sight distinguishes front, rear, range, corner angles and solid cover',()=>{
+ const c=harness(),a={x:480,y:10000,face:-Math.PI/2};let checks=0;c.los=()=>{checks++;return true;};
+ assert.equal(c.frontlineAllyCanSee(a,{x:480,y:9701,alive:true}),true);
+ for(const h of [{x:480,y:9699,alive:true},{x:480,y:10100,alive:true},{x:680,y:9990,alive:true},{x:480,y:9900,alive:false}])assert.equal(c.frontlineAllyCanSee(a,h),false);
+ assert.equal(checks,1);c.los=()=>false;assert.equal(c.frontlineAllyCanSee(a,{x:480,y:9900,alive:true}),false);
+ c.los=()=>true;assert.equal(c.frontlineAllyCanSee(a,{x:480,y:9600,alive:true},true),true);assert.equal(c.frontlineAllyCanSee(a,{x:480,y:9570,alive:true},true),false);
+ c.weather='rain';assert.equal(c.frontlineAllySightRange(),225);c.weather='sandstorm';assert.equal(c.frontlineAllySightRange(),165);
+});
+test('allies acquire only visible enemies, retain a visible target and lose it behind cover',()=>{
+ const c=harness(),a={x:480,y:10000,face:-Math.PI/2},rear={x:480,y:10050,alive:true},front={x:480,y:9800,alive:true};c.los=()=>true;c.humans=[rear,front];
+ c.refreshFrontlineAllyTargets([a]);assert.equal(a._combatTarget,front);
+ const closer={x:480,y:9900,alive:true};c.humans.push(closer);c.refreshFrontlineAllyTargets([a]);assert.equal(a._combatTarget,front);
+ c.los=()=>false;c.refreshFrontlineAllyTargets([a]);assert.equal(a._combatTarget,null);
+});
+test('found mode runs faster, searches last known position without tracking hidden movement, then returns to patrol',()=>{
+ const c=harness(),a={x:480,y:10000,face:-Math.PI/2,speedScale:1},t={x:480,y:9700,alive:true};c.los=()=>true;
+ c.updateFrontlineAlly(a,t,.1);assert.equal(a.frontMode,'found');assert.ok(Math.abs(a.y-(10000-20.25))<1e-6);assert.equal(a.frontMoving,true);
+ t.x=800;c.updateFrontlineAlly(a,null,.1);assert.equal(a.frontLastSeen.x,480);assert.equal(a.frontLastSeen.y,9700);assert.equal(a.frontMode,'found');
+ c.updateFrontlineAlly(a,null,2);assert.equal(a.frontMode,'patrol');assert.equal(a.frontLastSeen,null);
+});
+test('a dead tracked enemy clears found mode immediately; waiting still limits combat pursuit',()=>{
+ const c=harness(),a={x:480,y:c.frontlineAllyLimit()+5,face:-Math.PI/2,speedScale:1},t={x:480,y:a.y-250,alive:true};
+ const y=a.y;c.updateFrontlineAlly(a,t,.1);assert.equal(a.y,y);assert.equal(a.frontMode,'found');t.alive=false;c.updateFrontlineAlly(a,null,.1);assert.equal(a.frontMode,'patrol');
+});
+test('ally sight and found markers are static canvas shapes and disappear while stunned',()=>{
+ const c=harness();c.g=c.gm;const marks=[];c.lab=(...a)=>marks.push(a);const a={x:480,y:10000,face:-Math.PI/2,frontMode:'found'};
+ c.drawFrontlineAllyVision(a);assert.ok(c.calls.some(x=>x[0]==='arc'&&x[3]===300));assert.equal(marks.length,1);
+ const count=c.calls.length;a.stun=5;c.drawFrontlineAllyVision(a);assert.equal(c.calls.length,count);c.stageMode='base';a.stun=0;c.drawFrontlineAllyVision(a);assert.equal(c.calls.length,count);
 });

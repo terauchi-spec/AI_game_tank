@@ -120,9 +120,18 @@ function moveFrontlineAlly(a,target,sp,dt){
  dogMoveAround(a,goal,sp*(a.speedScale??1),dt,8,false);
  // A detour must obey the advance limit as well; never teleport a unit out of cover.
  if(a.y<limit){a.x=ox;a.y=oy;a.dogWall=null;a.dogEscape=null;}
+ a.frontMoving=Math.hypot(a.x-ox,a.y-oy)>.02;
 }
 function updateFrontlineAlly(a,target,dt){
  if(stageMode!=='front')return false;
+ a.frontMoving=false;
+ if(target){a.frontMode='found';a.frontLostT=2;if(!a.frontLastSeen)a.frontLastSeen={x:target.x,y:target.y};else{a.frontLastSeen.x=target.x;a.frontLastSeen.y=target.y;}a.frontTrackedEnemy=target;}
+ else{
+  if(a.frontTrackedEnemy?.alive===false){a.frontLostT=0;a.frontLastSeen=null;}
+  a.frontLostT=Math.max(0,(a.frontLostT||0)-dt);
+  a.frontMode=a.frontLostT>0&&a.frontLastSeen?'found':'patrol';
+  if(a.frontMode==='patrol'){a.frontLastSeen=null;a.frontTrackedEnemy=null;}
+ }
  const waiting=frontlineAllyWaiting(a,dt),distance=target?D(a,target):Infinity;
  if(target&&distance<176){
   a.face=Math.atan2(target.y-a.y,target.x-a.x);
@@ -136,8 +145,8 @@ function updateFrontlineAlly(a,target,dt){
   a.frontAimTarget=null;a.frontAimT=0;
   if(!waiting){
    const rank=(a.slot||0)-2,q=a.frontline&&mission?mission.points[mission.index]:null;
-   const goal=target&&distance<304?target:q||{x:p.x+rank*30,y:p.y+36+Math.abs(rank)*14};
-   if(D(a,goal)>62)moveFrontlineAlly(a,goal,135,dt);
+   const pursuit=target||a.frontLastSeen,goal=pursuit||q||{x:p.x+rank*30,y:p.y+36+Math.abs(rank)*14};
+   if(D(a,goal)>(pursuit?18:62))moveFrontlineAlly(a,goal,a.frontMode==='found'?202.5:135,dt);
   }
  }
  return true;
@@ -166,4 +175,39 @@ function updateFrontlineAllyStun(a,dt){
  if(rescueFrontlineAlly(a))return;
  a.stun=Math.max(0,(a.stun||0)-dt);
  if(a.stun<=0)a.stunRecover=0;
+}
+
+function frontlineAllySightRange(known=false){
+ return(known?420:300)*(weather==='sandstorm'?.55:weather==='rain'?.75:1);
+}
+function frontlineAllyCanSee(a,h,known=false){
+ if(!h.alive)return false;
+ const dx=h.x-a.x,dy=h.y-a.y,range=frontlineAllySightRange(known);
+ if(dx*dx+dy*dy>range*range)return false;
+ const angle=Math.atan2(dy,dx)-(a.face??-Math.PI/2);
+ if(Math.abs(Math.atan2(Math.sin(angle),Math.cos(angle)))>Math.PI/3)return false;
+ return los(a,h);
+}
+function refreshFrontlineAllyTargets(ready){
+ const assigned=new Map();
+ for(const a of ready){
+  let best=a._combatTarget,bestScore=Infinity;
+  if(!best||!frontlineAllyCanSee(a,best,true)){
+   best=null;
+   for(const h of humans){
+    if(!frontlineAllyCanSee(a,h))continue;
+    const score=(assigned.get(h)||0)*10000+D(a,h);
+    if(score<bestScore){bestScore=score;best=h;}
+   }
+  }
+  a._combatTarget=best;
+  if(best)assigned.set(best,(assigned.get(best)||0)+1);
+ }
+}
+function drawFrontlineAllyVision(a){
+ if(stageMode!=='front'||a.chute>0||a.stun>0||a.stunRecover>0||a.blastAirT>0)return;
+ const face=a.face??-Math.PI/2,found=a.frontMode==='found';
+ g.save();g.fillStyle=found?'rgba(105,215,255,.045)':'rgba(105,215,255,.025)';
+ g.beginPath();g.moveTo(a.x,a.y);g.arc(a.x,a.y,frontlineAllySightRange(!!a._combatTarget),face-Math.PI/3,face+Math.PI/3);g.closePath();g.fill();g.restore();
+ if(found)lab('!',a.x,a.y-30,'bold 18px system-ui','#8ddfff');
 }
