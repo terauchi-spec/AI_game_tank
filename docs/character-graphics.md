@@ -41,6 +41,15 @@ are 1.5 times their original WebP display dimensions. Aiming, weapon visibility,
 recoil and muzzle flash follow existing actor states.
 The physical actor collision radii, movement speeds, AI and damage remain intact.
 
+## Facing direction
+
+All overhead roles, including reinforcement and Partner helmet variants, share
+a more prominent rear pack cutout and a 2 world-pixel forward arm offset.
+The enlarged pack reuses its existing texture, retaining the commander radio.
+Opposite arm/leg phases, rear kicks, helmet colours and held weapon poses remain.
+These cues are baked into the existing bounded pose cache, without extra draws
+for each actor during play.
+
 ## Blue infantry visibility
 
 Blue infantry and blue commander artwork, including scope views, is brightened

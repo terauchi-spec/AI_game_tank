@@ -83,7 +83,13 @@ function prepareCharacterLayers(im){
   parts.push({im:c,x:sx/iw,y:sy/ih,w:sw/iw,h:sh/ih});
  }
  for(const canvas of [core]){const q=canvas.getContext('2d');q.save();q.beginPath();q.ellipse(iw*.60,ih*.50,iw*.34,ih*.34,0,0,Math.PI*2);q.clip();q.drawImage(im,0,0);q.restore();}
- CHARACTER_LAYERS.set(im,{core,parts});
+ // Isolate the existing rear equipment texture; enlarge it behind the helmet.
+ const pack=document.createElement('canvas'),sx=Math.round(iw*.18),sy=Math.round(ih*.13);
+ pack.width=Math.round(iw*.27);pack.height=Math.round(ih*.74);
+ const pq=pack.getContext('2d');pq.drawImage(im,sx,sy,pack.width,pack.height,0,0,pack.width,pack.height);
+ pq.globalCompositeOperation='destination-out';pq.beginPath();pq.ellipse(iw*.60-sx,ih*.50-sy,iw*.34,ih*.34,0,0,Math.PI*2);pq.fill();
+ pq.globalCompositeOperation='source-atop';pq.fillStyle='rgba(223,202,148,.12)';pq.fillRect(0,0,pack.width,pack.height);
+ CHARACTER_LAYERS.set(im,{core,parts,pack});
 }
 function composeOverheadCutout(im,width,height,stride=0,armed=false){
  const left=-width*.60,top=-height*.50,layers=CHARACTER_LAYERS.get(im);
@@ -107,8 +113,13 @@ function composeOverheadCutout(im,width,height,stride=0,armed=false){
    }
    continue;
   }
+  if(i===2&&layers.pack){
+   // A distinct rear silhouette, composed into the same bounded pose cache.
+   g.save();g.shadowColor='rgba(0,0,0,.6)';g.shadowBlur=.65;g.shadowOffsetX=-.5;
+   g.drawImage(layers.pack,-width*.55,-height*.405,width*.365,height*.814);g.restore();
+  }
   const side=i===2?1:-1,ax=left+width*.55,ay=top+height*(i===2?.28:.72);
-  g.save();
+  g.save();g.translate(2,0);
   if(armed){g.translate(ax,ay);g.rotate(side*.68);g.translate(-ax,-ay);}
   // A forward foot pairs with the opposite arm, not the arm on its own side.
   else g.translate(-side*stride*4.5,0);
