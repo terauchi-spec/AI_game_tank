@@ -181,10 +181,10 @@ function partnerVehicleAttack(q,dt){
  }else if(v.kind==='truck'){
   // Trucks have no gun: run over infantry while driving, as in player truck mode.
   if(q.moving)for(const h of humans)if(h.alive&&D(q,h)<28){
-   h.alive=false;burst(h.x,h.y,15,'#c05a3a',180);sfx('crush');
+   h.alive=false;recordSupportResult('kill','partner');burst(h.x,h.y,15,'#c05a3a',180);sfx('crush');
   }
   if(q.moving)for(const e of etanks)if(e.alive&&D(q,e)<TANK_HIT+20){
-   truckTankCrashFx(q.x,q.y,e);partnerVehicleDestroyed(q);break;
+   recordSupportResult('kill','partner');truckTankCrashFx(q.x,q.y,e);partnerVehicleDestroyed(q);break;
   }
  }
 }
@@ -262,7 +262,7 @@ function partnerKnockoutPatrol(dt){
  }
  if(!target)return false;
  if(near<=25&&los(q,target)){
-  if(q.touchCd<=0&&stunHuman(target)){
+  if(q.touchCd<=0&&stunHuman(target,'partner')){
    q.grappleT=.45;q.grappleTarget=target;q.touchCd=1;
    q.face=Math.atan2(target.y-q.y,target.x-q.x);q.moving=false;
   }
@@ -343,7 +343,7 @@ function updatePartner(dt){
   if(!q.down)return;
  }
  if(q.down){
-  if(!p.tank&&Math.hypot(p.x-q.x,p.y-q.y)<22){q.down=false;q.hp=3;q.modeT=0;q.planT=0;burst(q.x,q.y,10,'#8ad9ff',75);say('相棒を救助！');}
+  if(!p.tank&&Math.hypot(p.x-q.x,p.y-q.y)<22){q.down=false;q.hp=3;recordSupportResult('rescue','partner');q.modeT=0;q.planT=0;burst(q.x,q.y,10,'#8ad9ff',75);say('相棒を救助！');}
   return;
  }
  if(q.stunT>0){q.stunT=Math.max(0,q.stunT-dt);q.stunContactDelay=Math.max(0,(q.stunContactDelay||0)-dt);q.moving=false;if(q.stunContactDelay<=0&&!p.tank&&D(q,p)<22)q.stunT=0;if(q.stunT<=0){q.planT=0;burst(q.x,q.y,8,'#8ad9ff',70);say('相棒が気絶から復帰！');}return;}
