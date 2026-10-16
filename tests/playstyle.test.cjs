@@ -33,13 +33,16 @@ test('sniper multikills cannot boost explosion efficiency',()=>{
  const c=harness();Object.assign(c.scoreStats,{explosiveKills:2,maxOneShotKills:10});assert.equal(c.metrics()[3],15);c.scoreStats.blastMaxOneShot=4;assert.equal(c.metrics()[3],40);
 });
 test('new catalogs have unique IDs, correct indices, 40 titles and 22 medals',()=>{
- const c=harness();assert.equal(c.get('TITLE_CATALOG.filter(t=>!t.legacy).length'),40);assert.equal(c.get('MEDAL_CATALOG.length'),22);assert.ok(c.get('new Set(TITLE_CATALOG.map(t=>t.id)).size===TITLE_CATALOG.length'));assert.ok(c.get('new Set(MEDAL_CATALOG.map(t=>t.id)).size===MEDAL_CATALOG.length'));assert.ok(c.get('TITLE_COMBOS.every(t=>t.axes.every(i=>i>=0&&i<8))'));
+ const c=harness();assert.equal(c.get('TITLE_CATALOG.length'),40);assert.equal(c.get('MEDAL_CATALOG.length'),22);assert.ok(c.get('new Set(TITLE_CATALOG.map(t=>t.id)).size===TITLE_CATALOG.length'));assert.ok(c.get('new Set(MEDAL_CATALOG.map(t=>t.id)).size===MEDAL_CATALOG.length'));assert.ok(c.get('TITLE_COMBOS.every(t=>t.axes.every(i=>i>=0&&i<8))'));
 });
 test('every axis can earn its upper title and old titles cannot be awarded anew',()=>{
  const c=harness(),s=Object.assign(c.scoreStats,rich);s.final={cleared:true,total:1000};s.vehicleKinds={tank:true};const result=c.evaluateRunTitles(Array(8).fill(5),c.metrics(),s,s.final,{titles:{},medals:{}});for(let i=0;i<8;i++)assert.ok(result.titles.some(t=>t.id===`v2_single_${i}_elite`));assert.ok(result.titles.every(t=>!t.legacy));
 });
-test('old earned titles, medals and counts survive without becoming new titles',()=>{
- const c=harness();c.saved.set(c.get('TITLE_ARCHIVE_KEY'),JSON.stringify({titles:{single_1_elite:{count:3,at:'old',score:100}},medals:{untouched:{count:2}},runs:8}));const a=c.readTitleArchive();assert.equal(a.titles.single_1_elite.count,3);assert.ok(a.titles.legend_1);assert.equal(a.titles.v2_single_1_elite,undefined);assert.equal(a.titles.v2_legend_1,undefined);assert.equal(a.medals.untouched.count,2);assert.equal(a.runs,8);
+test('retired titles are removed permanently while current titles, medals and runs are preserved',()=>{
+ const c=harness();const titles=Object.fromEntries(c.get('RETIRED_TITLE_IDS').map(id=>[id,{count:3,at:'old',score:100}]));titles.v2_single_1_elite={count:2,at:'current',score:200};
+ c.saved.set(c.get('TITLE_ARCHIVE_KEY'),JSON.stringify({titles,medals:{untouched:{count:2}},runs:8}));
+ const a=c.readTitleArchive();assert.equal(Object.keys(a.titles).length,1);assert.equal(a.titles.v2_single_1_elite.count,2);assert.equal(a.medals.untouched.count,2);assert.equal(a.runs,8);
+ const persisted=JSON.parse(c.saved.get(c.get('TITLE_ARCHIVE_KEY')));assert.deepEqual(Object.keys(persisted.titles),['v2_single_1_elite']);assert.equal(c.readTitleArchive().titles.v2_legend_1,undefined);
 });
 test('third upper-title acquisition earns a new legend without double counting a run',()=>{
  const c=harness();for(let n=1;n<=3;n++){const s=c.scoreStats=Object.assign(c.newScoreStats(),rich,{final:{cleared:true,total:1000},vehicleKinds:{tank:true}});c.recordRunAchievements(s);c.recordRunAchievements(s);assert.equal(!!c.readTitleArchive().titles.v2_legend_1,n===3);}assert.equal(c.readTitleArchive().titles.v2_single_1_elite.count,3);assert.equal(c.readTitleArchive().runs,3);

@@ -7,8 +7,8 @@ vm.runInContext(html.slice(html.indexOf('const RES_AXES='),html.indexOf('functio
 vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/award-icons.js'),'utf8'),c);
 const read=code=>vm.runInContext(code,c);
 const titles=read('TITLE_CATALOG'),medals=read('MEDAL_CATALOG');
-test('all 40 current titles, 22 medals and 40 legacy titles have complete icon definitions',()=>{
- assert.equal(titles.filter(t=>!t.legacy).length,40);assert.equal(medals.length,22);assert.equal(titles.filter(t=>t.legacy).length,40);
+test('all 40 current titles and 22 medals have complete icon definitions',()=>{
+ assert.equal(titles.length,40);assert.equal(medals.length,22);assert.ok(titles.every(t=>t.id.startsWith('v2_')));
  for(const [kind,entries] of [['title',titles],['medal',medals]])for(const entry of entries){const spec=c.awardIconSpec(entry,kind);assert.ok(spec,`${kind} ${entry.id}`);assert.ok(read(`AWARD_SYMBOLS[${JSON.stringify(spec.main)}]`));if(spec.secondary)assert.ok(read(`AWARD_SYMBOLS[${JSON.stringify(spec.secondary)}]`));const svg=c.awardIcon(entry,kind);assert.ok(svg.startsWith('<svg'));assert.ok(!svg.includes('undefined'));assert.match(svg,/aria-hidden="true"/);}
 });
 test('all current titles and medals have distinct visual compositions',()=>{
