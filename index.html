@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.16.1742</title>
+<title>こっそり戦車大作戦 2026.10.16.1807</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -650,7 +650,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <p><strong>特殊配置：</strong>青兵指揮官4体（初級・上級とも確定）、白兵指揮官2体（上級のみ）、犬兵2組、無線機1個は出撃ごとにエリアと位置をランダムに決めます。開始草原と敵迷路基地は配置対象外です（途中で登場する草原は対象）。指揮官は可能な限り別エリアへ、犬兵2組は別エリアに分散し、通常は特殊ユニット間を380px以上、無線機と特殊ユニット間は420px以上離します。ガソリンとの距離も確保し、障害物・水場を避けます。青兵指揮官の配置場所が不足する場合は、既存の安全な場所にいる通常兵を指揮官へ変更して4体を確保します。この場合はエリア重複と指揮官間の距離短縮を許可します。</p>
 <h3>青兵指揮官：無線機とアンテナ</h3>
 <ul><li>通常の出撃では2体を別エリアに分散配置し、青の通常兵と同様に定期ルートを巡回します。背面の無線機と長いアンテナが目印です。</li>
-<li>プレイヤーを新たに発見すると笛を吹き、偽装スキルと同じ単色の赤い電波リングを半径300pxまで2回（各1.25秒）広げます。2回の電波が終わるまで武器をしまってその場で停止します。1秒後、2000px以内の活動可能な敵歩兵を発見モードへ移行させます。笛の再使用には8秒の間隔があります。</li>
+<li>プレイヤーを新たに発見すると笛を吹き、偽装スキルと同じ単色の赤い電波リングを半径300pxまで2回（各1.25秒）広げます。2回の電波が終わるまで武器をしまってその場で停止します。一度発した電波は指揮官が気絶・撃破されても発信地点から最後まで広がります。1秒後、2000px以内の活動可能な敵歩兵を発見モードへ移行させます。笛の再使用には8秒の間隔があります。</li>
 <li>武器は射程480pxのバズーカ。標的が120pxより遠く、射線が通ると、0.5秒間停止して構えた時点の方向へ発射します。発射まで標的の動きに追従して照準を変えることはありません。発射準備は頭上の直線型チャージバーで表示します。</li>
 <li>被弾威力は戦車砲の約半分、爆破範囲は110px（設置爆弾は95px）。射撃後は約1.2秒、横方向へ移動し、次の射撃までの待ち時間は4秒です。</li></ul>
 <h3>犬兵：黒い犬を連れた青兵</h3>
@@ -815,7 +815,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.16.1742',FILE_CREATED_AT='2026/10/16 17:42',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.16.1807',FILE_CREATED_AT='2026/10/16 18:07',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -3445,18 +3445,20 @@ function spawnCommanderClasses(types=['blue','white']){
 function commanderWhistle(h,key){
  if(h.dogHandler||commanderRallying||h.commander!=='blue'||key!=='p'||(h.whistleCooldown||0)>0)return;
  h.whistleT=2.5;h.whistleCooldown=8;h.whistleSignalT=1;
- commanderSignals.push({source:h,x:h.x,y:h.y,remaining:1});
+ commanderSignals.push({source:h,x:h.x,y:h.y,remaining:1,visualRemaining:2.5,notified:false});
  tone(1450,.16,.035,'sine',1850);setTimeout(()=>tone(1800,.16,.03,'sine',1450),170);
 }
 function updateCommanderSignals(dt){
  for(const signal of commanderSignals){
-  signal.remaining-=dt;signal.source.whistleSignalT=Math.max(0,signal.remaining);
-  if(signal.remaining>1e-9)continue;
+  signal.remaining-=dt;signal.visualRemaining=Math.max(0,signal.visualRemaining-dt);
+  signal.source.whistleSignalT=Math.max(0,signal.remaining);signal.source.whistleT=signal.visualRemaining;
+  if(signal.notified||signal.remaining>1e-9)continue;
+  signal.notified=true;
   commanderRallying=true;
   try{for(const other of humans)if(other!==signal.source&&other.alive&&!(other.stun>0)&&!(other.stunRecover>0)&&!other.houndPinned&&D(other,signal)<=2000)enterHumanFound(other,'p');}
   finally{commanderRallying=false;}
  }
- commanderSignals=commanderSignals.filter(signal=>signal.remaining>1e-9);
+ commanderSignals=commanderSignals.filter(signal=>signal.visualRemaining>1e-9);
 }
 function commanderMove(h,target,dt,sp=150){
  if(moveEliteBombAvoidance(h,sp,dt,target))return;
@@ -3512,7 +3514,7 @@ function patrolWhiteCommander(h,dt,sp=45){
 function updateCommanderAI(h,dt){
  if(h.dogHandler&&h.dog?.handler&&h.dog.state==='chase'&&!h.st)return true;
  if(!h.commander)return false;
- h.whistleT=Math.max(0,(h.whistleT||0)-dt);h.whistleCooldown=Math.max(0,(h.whistleCooldown||0)-dt);
+ h.whistleCooldown=Math.max(0,(h.whistleCooldown||0)-dt);
  h.commanderCooldown=Math.max(0,(h.commanderCooldown||0)-dt);
  h.commanderScan=(h.commanderScan||0)+dt;
  h.commanderShotT=Math.max(0,(h.commanderShotT||0)-dt);
@@ -3604,7 +3606,7 @@ function updateCommanderRocket(b,ox,oy,expired){
  if(expired){commanderRocketBlast(b.x,b.y);return true;}
  return false;
 }
-// 電波リングの基本描画は共通。偽装は赤・半径300px、指揮官の笛は従来の黄色・半径52px。
+// 電波リングの基本描画。偽装・青指揮官の笛は赤・半径300px。
 function drawSignalPulse(x,y,pulse,maxRadius=52,color='rgba(255,230,120,.8)'){
  g.save();g.strokeStyle=color;g.lineWidth=2;g.globalAlpha*=1-pulse;
  g.beginPath();g.arc(x,y,18+pulse*(maxRadius-18),0,6.28);g.stroke();g.restore();
@@ -3621,9 +3623,15 @@ function drawDecoySignalPulse(x,y,elapsed){
  g.strokeStyle='#e44949';g.lineWidth=4.5;g.stroke();
  g.restore();
 }
+// Emitted pulses live at their launch point, independently of the soldier.
+function drawCommanderSignals(cx,cy,alpha=1){
+ if(alpha<=.001)return;
+ g.save();g.globalAlpha*=alpha;
+ for(const signal of commanderSignals)if(signal.visualRemaining>0&&drawPointInView(signal.x,signal.y,cx,cy,320))drawDecoySignalPulse(signal.x,signal.y,2.5-signal.visualRemaining);
+ g.restore();
+}
 function drawCommanderOverlay(h){
  if(!h.commander)return;
- if(h.commander==='blue'&&h.whistleT>0)drawDecoySignalPulse(h.x,h.y,2.5-h.whistleT);
  if(h.commanderCharge>0){const total=h.commander==='blue'?.5:.7,progress=Math.max(0,Math.min(1,1-h.commanderCharge/total));g.save();g.fillStyle='rgba(0,0,0,.58)';g.fillRect(h.x-22,h.y-31,44,5);g.fillStyle=h.commander==='blue'?'#ffb879':'#ffe3a0';g.fillRect(h.x-22,h.y-31,44*progress,5);g.restore();}
 }
 
@@ -6882,6 +6890,7 @@ function draw(near){
  if(enemyAlpha>.001)for(const h of humans){const sniperFalling=!h.alive&&h.sniperFallT>0;if((!h.alive&&!sniperFalling)||!enemyInView(h,cx,cy,100))continue;const lift=sniperFalling?0:blastLift(h);if(!sniperFalling)drawBlastShadow(h);g.save();g.translate(0,-lift);g.globalAlpha*=enemyAlpha;if(sniperFalling){const fk=Math.max(0,Math.min(1,1-h.sniperFallT/Math.max(.01,h.sniperFallMax||.72))),side=(h.sniperFallA&&Math.sin(h.sniperFallA)<0?-1:1);g.translate(h.x,h.y);g.rotate(side*fk*1.18);g.translate(-h.x,-h.y);g.globalAlpha*=Math.max(.35,1-fk*.38);}soldier(h.x,h.y,h.face,false,sniperFalling?false:h.st,!sniperFalling&&!!h.walking,!!h.elite,h.commander||'',!sniperFalling&&!(h.commander==='blue'&&h.whistleT>0)&&(h.commander==='white'?h.commanderCharge>0||h.commanderShotT>0:!!h.st),false,h);drawCommanderOverlay(h);
  if(!sniperFalling&&h.humanBurnT>0){const tt=performance.now()*.018;g.save();g.globalCompositeOperation='lighter';flameBlob(h.x-4+Math.sin(tt)*2,h.y+2,7+Math.sin(tt*1.3)*1.5,tt,.42);flameBlob(h.x+4+Math.cos(tt*.8)*2,h.y-5,9+Math.sin(tt*.9+1)*2,tt+1.7,.7);flameBlob(h.x+Math.sin(tt*.65)*3,h.y-12,6+Math.sin(tt*1.6+2)*1.5,tt+3.1,.9);g.restore();}
  if(!sniperFalling&&h.stun>0){drawStunStars(h.x,h.y);if(h.grapple>0){g.strokeStyle='rgba(230,233,216,.85)';g.lineWidth=2;g.beginPath();g.arc(h.x,h.y,13,-2.5,.7);g.stroke();}}g.restore();if(!sniperFalling&&enemyAlpha>.18){if(h.st)lab('!',h.x,h.y-lift-18,'bold 16px system-ui','#ff5a5a');else if(h.sus>0)lab('?',h.x,h.y-lift-18,'bold 16px system-ui','#ffd27a');}}
+ drawCommanderSignals(cx,cy,enemyAlpha);
  for(const b of bullets){g.save();g.translate(b.x,b.y);g.rotate(Math.atan2(b.vy,b.vx));g.globalCompositeOperation='lighter';
   if(b.k==='c'){
    g.shadowColor='rgba(255,170,70,.9)';g.shadowBlur=10;
@@ -7761,9 +7770,9 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/characters.js?v=2026.10.16.1742"></script>
+<script src="js/characters.js?v=2026.10.16.1807"></script>
 <script src="js/enemy-dogs.js?v=2026.10.14.1916"></script>
-<script src="js/partner.js?v=2026.10.16.1742"></script>
+<script src="js/partner.js?v=2026.10.16.1807"></script>
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/canyon.js?v=2026.10.14.1836"></script>
 <script src="js/vegetation.js?v=2026.10.14.1653"></script>
