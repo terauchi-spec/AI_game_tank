@@ -161,3 +161,9 @@ function updateFrontlineCounterattack(point,dt){
   point.counterPending-=spawnFrontlineWave(point.counterPending,point);point.counterRetry=1;
  }
 }
+
+function updateFrontlineAllyStun(a,dt){
+ if(rescueFrontlineAlly(a))return;
+ a.stun=Math.max(0,(a.stun||0)-dt);
+ if(a.stun<=0)a.stunRecover=0;
+}

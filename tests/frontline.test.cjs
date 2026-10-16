@@ -139,3 +139,13 @@ test('blue commander and regular blue soldier use equal body heights despite dif
  for(const type of ['', 'blue'])c.drawCharacterWebP(0,0,0,false,false,false,false,type,false,false);
  assert.equal(calls[0][2],calls[1][2]);assert.equal(calls[0][1],32);assert.ok(calls[1][1]>32);delete c.CHARACTER_ART.blue;c.drawCharacterWebP(0,0,0,false,false,false,false,'blue',false,false);assert.equal(calls[2][2],calls[1][2]);
 });
+test('Frontline blast stun lasts ten seconds without adding an extra recovery delay',()=>{
+ const c=harness();vm.runInContext(html.slice(html.indexOf('function stunHumanBlast('),html.indexOf('function beginBlastFlight(')),c);
+ const a={x:480,y:9500,alive:true};c.allies=[a];c.stunHumanBlast(a,5);assert.equal(a.stun,10);assert.equal(a.stunRecover,0);
+ c.updateFrontlineAllyStun(a,9.9);assert.ok(a.stun>0);c.updateFrontlineAllyStun(a,.11);assert.equal(a.stun,0);assert.equal(a.stunRecover,0);
+ const enemy={alive:true};c.stunHumanBlast(enemy,5);assert.equal(enemy.stun,5);assert.equal(enemy.stunRecover,1);
+ c.stageMode='base';a.stun=0;c.stunHumanBlast(a,5);assert.equal(a.stun,5);assert.equal(a.stunRecover,1);
+});
+test('contact still recovers a Frontline ally before the ten-second timeout',()=>{
+ const c=harness();c.los=()=>true;const a={x:c.p.x,y:c.p.y-10,alive:true,stun:9,stunRecover:0};c.updateFrontlineAllyStun(a,.1);assert.equal(a.stun,0);assert.equal(a.shotCd,.2);
+});
