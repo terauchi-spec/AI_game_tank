@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.16.2321</title>
+<title>こっそり戦車大作戦 2026.10.17.0641</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -466,6 +466,17 @@ body.area-picker-open #pad,body.area-picker-open #resetBtn,body.area-picker-open
 .area-debug-panel{max-width:660px;margin:auto}.area-debug-panel h1{font-size:28px;color:#ffe0a0}.area-debug-panel p{font-size:16px;line-height:1.6}
 #areaDebugList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:24px 0}
 #areaDebugPicker button{padding:16px 12px;border:1px solid #9b9874;border-radius:10px;background:#303d30;color:#fff3d4;font:700 20px system-ui;cursor:pointer}#areaDebugPicker button:focus-visible{outline:3px solid #ffd27a;outline-offset:3px}
+
+/* Static emblems: reused SVG strings, no animation or per-frame work. */
+.award-icon{display:block;width:34px;height:34px;flex:0 0 auto;overflow:visible}
+.res-award-chip{display:inline-flex;align-items:center;gap:7px;max-width:100%;box-sizing:border-box;padding:5px 10px 5px 6px;min-width:0;line-height:1.5}
+.award-chip-label{min-width:0;overflow-wrap:anywhere}.award-new{color:#ffe3a0;white-space:nowrap}
+.res-title-name{display:flex;align-items:center;gap:12px;line-height:1.4;min-width:0}
+.res-title-name>span{min-width:0;overflow-wrap:anywhere}.res-title-name .award-icon{width:58px;height:58px}
+.trophy-card .tc-mark{position:static;float:right;margin:0 0 8px 8px;line-height:1}
+.trophy-card .tc-mark .award-icon{width:52px;height:52px}.trophy-card .tc-note{clear:both}
+.trophy-card.locked .award-icon{opacity:.4;filter:none}
+@media(max-width:380px){.res-title-name{gap:8px;font-size:19px}.res-title-name .award-icon{width:48px;height:48px}.trophy-card .tc-mark .award-icon{width:42px;height:42px}}
 </style>
 <style>
 /* 作戦説明は静止DOMで表示し、待機中のゲーム更新・再描画を止める。 */
@@ -816,7 +827,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.16.2321',FILE_CREATED_AT='2026/10/16 23:21',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.17.0641',FILE_CREATED_AT='2026/10/17 06:41',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -7286,7 +7297,7 @@ function evaluateRunTitles(levels,metrics,s,r,archive=readTitleArchive()){
 }
 function resultStyle(levels,s){
  const metrics=resultMetrics(s,s.final),v=evaluateRunTitles(levels,metrics,s,s.final);
- return[v.primary.name,v.primary.note];
+ return[v.primary.name,v.primary.note,v.primary];
 }
 function readTitleArchive(){
  try{
@@ -7342,14 +7353,10 @@ function renderAwardResult(s){
  const el=id=>document.getElementById(id),aw=s.awards||{titles:[],medals:[],newTitles:[],newMedals:[],titleCounts:{},disabled:false};
  const titleById=new Map(TITLE_CATALOG.map(t=>[t.id,t]));
  const medalById=new Map(MEDAL_CATALOG.map(m=>[m.id,m]));
- const chips=(ids,lookup,news)=>ids.map(id=>{const entry=lookup.get(id);return entry?'<span class="res-award-chip'+(news.includes(id)?' new':'')+'">'+(news.includes(id)?'NEW! ':'')+entry.name+'</span>':'';}).join('');
- // 今回獲得した称号は、初獲得・再獲得のどちらも一覧表示する。
- el('resNewTitles').innerHTML=(aw.titles||[]).map(id=>{
-  const entry=titleById.get(id);if(!entry)return '';
-  const fresh=aw.newTitles.includes(id);
-  return '<span class="res-award-chip'+(fresh?' new':'')+(entry.type==='伝説級'?' legendary':'')+'">'+(fresh?'NEW! ':'')+entry.name+'</span>';
- }).join('')||'<span class="res-sub">今回の獲得称号はありません</span>';
- el('resMedals').innerHTML=chips(aw.medals,medalById,aw.newMedals)||'<span class="res-sub">今回の勲章はありません</span>';
+ const chips=(ids,lookup,news,kind)=>ids.map(id=>renderAwardChip(lookup.get(id),kind,news.includes(id))).join('');
+ // 初獲得・再獲得とも同じ特徴アイコンを使い、NEW! は文字でも示す。
+ el('resNewTitles').innerHTML=chips(aw.titles||[],titleById,aw.newTitles||[],'title')||'<span class="res-sub">今回の獲得称号はありません</span>';
+ el('resMedals').innerHTML=chips(aw.medals,medalById,aw.newMedals,'medal')||'<span class="res-sub">今回の勲章はありません</span>';
  el('resMedalNote').textContent=aw.disabled?'デバッグプレイ中のため称号・勲章は保存されません':aw.saveFailed?'保存できませんでした。ブラウザの保存設定をご確認ください。':aw.newTitles.length+aw.newMedals.length?'新しい称号・勲章を獲得！':'獲得履歴はタイトル画面の「称号・勲章」から確認できます。';
 }
 let trophyTab='title';
@@ -7371,12 +7378,12 @@ function renderTrophyArchive(){
   const got=!!found[d.id],card=document.createElement('article');card.className='trophy-card'+(got?'':' locked');
   if(isTitle&&d.type==='伝説級')card.classList.add('legendary');
   const type=document.createElement('div');type.className='tc-type';type.textContent=isTitle?d.type:'MISSION MEDAL';
-  const mark=document.createElement('div');mark.className='tc-mark';mark.textContent=got?(isTitle?'★':d.icon):'♧';
+  const mark=document.createElement('div');mark.className='tc-mark';mark.innerHTML=awardIcon(d,isTitle?'title':'medal');
   const name=document.createElement('div');name.className='tc-name';name.textContent=got?d.name:'？？？';
   const flavor=document.createElement('div');flavor.className='tc-flavor';flavor.textContent=isTitle?(TITLE_FLAVOR[d.id]||''):'';
   const note=document.createElement('div');note.className='tc-note';note.textContent=d.note;
   const st=document.createElement('div');st.className='tc-state';st.textContent=got?'✓ 獲得済み ／ 取得数 '+titleAcquisitionCount(found[d.id])+'回':'未獲得';
-  card.append(type,mark,name);if(isTitle)card.append(flavor);card.append(note,st);grid.append(card);
+  card.append(mark,type,name);if(isTitle)card.append(flavor);card.append(note,st);grid.append(card);
  }
 }
 const RUN_HISTORY_KEY='tankGameRunHistoryV1';
@@ -7438,7 +7445,7 @@ function renderResultScreen(){const s=scoreStats,r=s&&s.final;if(!r)return;
  el('resInsignia').textContent=glyph[r.rank];el('resInsignia').style.color=r.rank==='S'?'#ffdb71':'#e2d4b0';
  el('resRadar').innerHTML=resultRadar(levels);
  el('resAxes').innerHTML=RES_AXES.map((name,i)=>`<div class="res-axis" title="${RES_AXIS_NOTES[i]}"><span>${name}<small class="res-axis-note">${RES_AXIS_NOTES[i]}</small></span><span class="res-stars" aria-label="レベル${levels[i]}">${'★'.repeat(levels[i])}<span style="color:#65705d">${'☆'.repeat(5-levels[i])}</span></span></div>`).join('');
- el('resTitle').textContent=sty[0];el('resTitleFlavor').textContent=TITLE_FLAVOR[s.awards?.primary]||'';el('resTitleNote').textContent=sty[1];renderAwardResult(s);
+ el('resTitle').innerHTML=awardIcon(sty[2],'title')+'<span>'+escapeAwardText(sty[0])+'</span>';el('resTitleFlavor').textContent=TITLE_FLAVOR[s.awards?.primary]||'';el('resTitleNote').textContent=sty[1];renderAwardResult(s);
  const quick=[['プレイ時間',formatRunTime(s.time)],['到達距離',distanceMeters(s.maxProgress)+'m'],['総撃破数',kills],['発見回数',s.detections],['被弾回数',s.damageHits],['気絶数',s.stuns]];
  el('resQuick').innerHTML=quick.map(([n,v])=>`<div class="res-stat"><label>${n}</label><strong>${v}</strong></div>`).join('');
  const entries=[['発見状態での撃破',s.assaultKills],['評価対象の破壊面積',Math.round(s.styleDestroyed/100)+'m²'],['車両での新たな前進',distanceMeters(s.vehicleAdvance)+'m'],['車両での撃破',s.vehicleKills],['偽装で誘導した敵',s.decoyLures],['防護壁で防いだ弾',s.wallBlocks],['組み付き成功',s.tacticalStuns],['味方による撃破',s.allyKills],['味方による気絶',s.allyStuns],['相棒の救助',s.partnerRescues],['同乗中の共同撃破',s.jointKills],['歩兵撃破',s.humanKills],['エリート撃破',s.eliteKills],['戦車撃破',s.tankKills],['最大マルチキル',s.maxKillChain],['最大ワンショットキル',s.maxOneShotKills||0],['ワンショットキル発生数',s.oneShotEvents||0],['未発見移動距離',distanceMeters(s.unseenDist)+'m'],['累計移動距離',distanceMeters(s.totalTravel)+'m'],['発見状態の累計時間',formatRunTime(s.detectedTime)],['疑惑状態の発生',s.suspicionEntries],['遮蔽物破壊面積',Math.round(s.coverDestroyed/100)+'m²'],['射撃数（記録対象）',s.shots],['狙撃発射数',s.sniperShots],['狙撃撃破数',s.sniperKills],['爆弾撃破数',s.bombKills],['爆発による撃破',s.explosiveKills],['主砲発射数',s.cannonShots],['MG等発射数',s.mgShots],['爆弾爆発数',s.bombBlasts],['スキル発動数（記録対象）',s.skillUses],['乗り物搭乗回数',s.vehicleBoards],['乗り物利用時間',formatRunTime(s.vehicleTime)],['乗り物の種類数',Object.keys(s.vehicleKinds).length],['潜入スコア',r.stealth],['戦闘スコア',r.combat],['マルチキルボーナス',r.chainBonus],['ワンショットキルボーナス',r.multiKillBonus],['任務達成・タイムボーナス',r.bonus]];
@@ -7827,9 +7834,10 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/characters.js?v=2026.10.16.2321"></script>
+<script src="js/award-icons.js?v=2026.10.17.0641"></script>
+<script src="js/characters.js?v=2026.10.17.0641"></script>
 <script src="js/enemy-dogs.js?v=2026.10.14.1916"></script>
-<script src="js/partner.js?v=2026.10.16.2321"></script>
+<script src="js/partner.js?v=2026.10.17.0641"></script>
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/canyon.js?v=2026.10.14.1836"></script>
 <script src="js/vegetation.js?v=2026.10.14.1653"></script>
