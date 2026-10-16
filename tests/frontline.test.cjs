@@ -51,3 +51,16 @@ test('navigation anchor stays below the top-right area label at different viewpo
 test('frontline-specific initialization leaves other stages alone',()=>{
  const c=harness();c.stageMode='base';const original=[{alive:true}];c.humans=original;c.setupFrontlineArmy();assert.equal(c.humans,original);assert.equal(c.spawnFrontlineWave(),0);
 });
+
+test('white commanders can engage and fire without patrol waypoints',()=>{
+ for(const route of [[],undefined,[{x:800}]]){
+  const c=harness(),moves=[];Object.assign(c,{commanderVelocity:{x:0,y:0},WHITE_CHASE_DROP:2000,COMMANDER_WHITE_RANGE:700,COMMANDER_BLUE_RANGE:700,bullets:[],performance:{now:()=>1000},
+   findDetectedTarget:()=>({key:'p'}),enterHumanFound(){},targetObj:key=>key==='p'?c.p:null,enemyModePaused:()=>false,los:()=>true,commanderMove:(h,q)=>moves.push({...q}),fire:()=>c.bullets.push({})});
+  vm.runInContext(html.slice(html.indexOf('function updateCommanderAI('),html.indexOf('function commanderRocketBlast(')),c);
+  const h={x:480,y:9700,alive:true,commander:'white',st:1,target:'p',path:route,frontMarch:true,frontLaneX:200,commanderTactics:0,commanderMode:'intercept',commanderCharge:0};
+  const expectedSide=(route?.[0]?.x??h.frontLaneX)<c.WW/2?1:-1;
+  assert.doesNotThrow(()=>c.updateCommanderAI(h,.1));assert.equal(moves[0].y,c.p.y+expectedSide*100);
+  for(let i=0;i<200;i++)c.updateCommanderAI(h,.1);
+  assert.ok(moves.length>10);assert.ok(moves.every(q=>Number.isFinite(q.x)&&Number.isFinite(q.y)));assert.ok(c.bullets.length>=3);assert.ok(c.bullets.every(b=>b.commanderRifle&&b.commanderShooter===h));
+ }
+});

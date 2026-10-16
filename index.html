@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.17.0743</title>
+<title>こっそり戦車大作戦 2026.10.17.0748</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -829,7 +829,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.17.0743',FILE_CREATED_AT='2026/10/17 07:43',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.17.0748',FILE_CREATED_AT='2026/10/17 07:48',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -3616,7 +3616,7 @@ function updateCommanderAI(h,dt){
  }else{
   h.commanderTactics+=dt;if(h.commanderTactics>=7){h.commanderTactics=0;h.commanderMode=h.commanderMode==='intercept'?'tail':'intercept';h.commanderRoute=null;}
   const speed=Math.hypot(commanderVelocity.x,commanderVelocity.y),dx=speed>12?commanderVelocity.x/speed:Math.cos(p.body),dy=speed>12?commanderVelocity.y/speed:Math.sin(p.body);
-  const offset=h.commanderMode==='intercept'?250:-250,side=h.path[0].x<WW/2?1:-1;
+  const offset=h.commanderMode==='intercept'?250:-250,side=(h.path?.[0]?.x??h.frontLaneX??h.x)<WW/2?1:-1;
   let destination={x:target.x+dx*offset-dy*side*100,y:target.y+dy*offset+dx*side*100};
   if(distance<200)destination={x:h.x-Math.cos(to)*180,y:h.y-Math.sin(to)*180};
   destination.x=Math.max(30,Math.min(WW-30,destination.x));destination.y=Math.max(30,Math.min(WH-30,destination.y));
