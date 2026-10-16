@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.17.0647</title>
+<title>こっそり戦車大作戦 2026.10.17.0659</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -621,11 +621,12 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <li><a href="#spec-save">スキル解放・保存・デバッグ</a></li>
 </ol></nav>
 <section class="spec-section" id="spec-goal"><h2>1. 目的とクリア条件</h2>
-<p>スキル選択後に<strong>初級・上級</strong>のステージを選びます。<strong>初級</strong>は最後の草原にある大型パラボラアンテナの電波施設、<strong>上級</strong>は敵司令本部を破壊するとクリアです。敵に倒されると任務失敗となり、結果画面へ移行します。</p>
+<p>スキル選択後に<strong>初級・上級・最前線</strong>の3種類のステージから選びます。<strong>初級</strong>は最後の草原にある大型パラボラアンテナの電波施設、<strong>上級</strong>は敵司令本部を破壊するとクリアです。<strong>最前線</strong>は味方と協力し、南部・中央・北部の3つの戦線を順番に制圧するとクリアです。円内の敵を排除し、プレイヤーまたは味方部隊が12秒間確保します。敵に倒されると任務失敗となり、結果画面へ移行します。</p>
 <p><strong>初級：</strong>開始草原→候補5エリアからランダムに3エリア→最後は草原（電波施設）の全5エリア。通常の青兵と青兵指揮官4体が必ず登場し、白兵・白兵指揮官・犬兵は出現しません。敵戦車は最大2台です。<strong>上級：</strong>従来の全7エリア、敵AI、敵配置、敵司令本部破壊のルールを維持します。</p>
 <p>歩兵の潜入に加え、戦車などの乗り物を利用した戦闘や、出撃前に選ぶスキルによる攻略ができます。</p><a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-map"><h2>2. ステージ構成とランダム生成</h2>
 <p><strong>初級：</strong>全5エリア。開始草原→草原・森林・丘陵・村・湿地から重複なしでランダムに3エリア→電波施設のある草原。<strong>上級：</strong>全7エリア。最初は草原、最後は敵司令本部で、その間の5エリアは従来の候補から重複なしでランダムに選ばれます。</p>
+<p><strong>最前線：</strong>既存の戦場を舞台に、味方部隊と3つの戦線を押し上げる制圧作戦です。敵の増援と味方の補充があり、各戦線の制圧時にライフ・搭乗車両の弾薬と燃料を補給します。</p>
 <p>上級の中間エリア候補：草原／森林／村／丘陵／敵前線基地／街／敵迷路基地／湿地／荒野。</p>
 <ul><li>エリアごとに地形や建物、木、岩、草むら、障害物などの配置が異なります。作戦1回の通常車両は合計2〜5台で、トラック・装甲車・戦車からランダムに選ばれ、戦車が最低1台出現します。戦闘機は通常配置の対象外です。橋幅は64〜256px、川ごとの流速は6〜30px/秒です。</li><li>左右端の危険度は<strong>左重点・右重点・両側重点</strong>から毎回抽選され、巡回兵の配置や遮蔽物が変化します。</li><li>荒野は赤茶色の砂地・ひび割れた粘土質の地面・風化した岩山・残丘で構成されます。時折砂嵐が起き、視界と索敵距離が低下します。オアシスは毎回出現するとは限らず、出現時は従来の50〜150%の大きさにランダム変化し、中央や画面端に生成され、池へ入ると川と同様に減速します。草むらは少なめですが、オアシス周辺に多く、まれに赤や白の小花が混じります。地面と池の描画はキャッシュします。迷路基地には広い会議室と幅の広い廊下、空きスペースの木箱があります。青の通常兵はつながった通路を広く探索します。迷路壁は256px高の区画単位で描画をキャッシュし、破壊された区画だけ再描画します。描画キャッシュは最大8区画です。迷路壁はプレイヤー戦車の接触で破壊できます。接触による破壊範囲は少し抑えており、押し込み続けると広がります。トラック・装甲車の接触では破壊できません。木箱等の爆風では破壊できます。敵司令本部にも固有の構造があります。</li><li>道路は川と同様に2か所の候補それぞれで独立して75%の出現抽選を行います。アスファルト舗装・乾いた締め固め土を各50%、土の道路は1車線（96px）・対面2車線（176px）を各50%、舗装道路は対面2車線（176px）・対面4車線（320px）を各50%で選択します。川・橋と司令本部を避けて配置し、土の道路は迷路基地も避けます。舗装道路は迷路基地にも出現し、道幅の壁を除去します。場所が確保できない場合は出現しません。対面車線の中央は白い実線です。路面には汚れ・補修跡・ひび、白線には濃い汚れと不規則な塗装欠けを表現します。敵の障害物迂回探索は複数フレームへ分割し、全敵合計で約2msを目安に処理します。道路の描画は初回にキャッシュし、画面内だけ表示します。土の道路は横筋を抑えた専用タイルを使用し、不規則な路肩が周囲の地面になじみます。中央付近には、太めで濃い雑草を不規則に配置しています。道路上には建物・木・岩・塀・草むら・泥を配置しません。舗装道路と重なる木箱・ドラム缶は路肩の安全な空き場所へ移動し、空き場所がなければ除去します。土の道路は明るさと彩度を抑えて周囲になじませます。道路自体による速度変更はありません。マップ・敵・障害物の配置は出撃ごとに再生成されます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
@@ -743,7 +744,7 @@ body.stage-open #stageScreen{display:block}
 .stage-kicker{font-size:11px;font-weight:850;letter-spacing:.23em;color:#e4c58a;text-shadow:0 2px 9px #000}
 .stage-shell h1{font-size:clamp(28px,5vw,42px);letter-spacing:.09em;margin:7px 0 0;text-shadow:0 3px 14px #000}
 #stageSkill{font-size:13px;line-height:1.6;color:#e9e8d7;text-shadow:0 2px 10px #000;margin:6px 0}
-.stage-options{margin-top:auto;display:grid;grid-template-columns:1fr 1fr;gap:12px;padding-top:32px}
+.stage-options{margin-top:auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding-top:32px}
 .stage-card{min-width:0;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:5px;
  padding:15px 18px;border:1px solid rgba(241,215,156,.65);border-radius:10px;
  background:rgba(12,22,18,.80);-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);
@@ -785,7 +786,7 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 .stage-shell{max-width:1060px}
 .stage-kicker{color:#ffe0a1;letter-spacing:.28em}
 .stage-shell h1{color:#fff4d5}
-.stage-options{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;padding-top:clamp(26px,10vh,120px)}
+.stage-options{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding-top:clamp(26px,10vh,120px)}
 .stage-card{position:relative;overflow:hidden;min-height:132px;padding:18px 20px 18px 25px;border:2px solid #9b794a;border-left:7px solid #b03f2e;border-radius:4px;background:linear-gradient(135deg,rgba(55,45,31,.94),rgba(24,27,22,.95));box-shadow:0 4px 0 #322719,0 12px 30px #000a;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
 .stage-card:before{content:'✦';position:absolute;right:15px;top:10px;font-size:19px;color:#d3a867;opacity:.7}
 .stage-card strong{font-size:clamp(18px,2.5vw,24px);color:#ffdfa0;letter-spacing:.03em}
@@ -815,6 +816,7 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 <div class="stage-options">
 <button type="button" class="stage-card" data-stage="beginner"><strong>01　初級ステージ</strong><span>3つのランダムエリアを進み、電波施設を破壊する</span><small>全5エリア ／ 青兵・青兵指揮官 ／ 敵戦車は最大2台</small></button>
 <button type="button" class="stage-card" data-stage="base"><strong>02　上級ステージ</strong><span>敵部隊を突破し、司令本部を破壊する</span><small>全7エリア ／ 白兵・指揮官・犬兵が登場</small></button>
+<button type="button" class="stage-card" data-stage="front"><strong>03　最前線</strong><span>味方と協力し、3つの戦線を順番に制圧する</span><small>南部 → 中央 → 北部 ／ 円内の敵を排除し、各戦線を12秒確保</small></button>
 </div><button type="button" class="stage-back" id="stageBack">← スキル選択へ戻る</button></div></div><div id="missionHud" role="status"></div>
 
 <script>
@@ -827,7 +829,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.17.0647',FILE_CREATED_AT='2026/10/17 06:47',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.17.0659',FILE_CREATED_AT='2026/10/17 06:59',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -7781,10 +7783,10 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/award-icons.js?v=2026.10.17.0647"></script>
-<script src="js/characters.js?v=2026.10.17.0647"></script>
+<script src="js/award-icons.js?v=2026.10.17.0659"></script>
+<script src="js/characters.js?v=2026.10.17.0659"></script>
 <script src="js/enemy-dogs.js?v=2026.10.14.1916"></script>
-<script src="js/partner.js?v=2026.10.17.0647"></script>
+<script src="js/partner.js?v=2026.10.17.0659"></script>
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/canyon.js?v=2026.10.14.1836"></script>
 <script src="js/vegetation.js?v=2026.10.14.1653"></script>
