@@ -100,7 +100,7 @@ function partnerExitVehicle(q){
 function partnerVehicleDestroyed(q){
  if(!q||!q.vehicle)return;
  if(isPartnerDrivenVehicle()){wreck();return;}
- const v=q.vehicle;q.vehicle=null;q.boardTarget=null;q.route=null;q.routeStart=null;
+ const v=q.vehicle;if(truckLikeVehicle(v))spawnVehicleWreck(v,q.x,q.y,q.face,q.vehicleAim??q.face);q.vehicle=null;q.boardTarget=null;q.route=null;q.routeStart=null;
  q.routeWait=0;q.backup=false;q.moving=false;q.wallFollow=null;q.sideStep=null;
  burst(q.x,q.y,32,'#ff8244',220);sfx('explosion');
  q.hp=Math.max(0,q.hp-1);
