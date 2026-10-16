@@ -211,3 +211,22 @@ function drawFrontlineAllyVision(a){
  g.beginPath();g.moveTo(a.x,a.y);g.arc(a.x,a.y,frontlineAllySightRange(!!a._combatTarget),face-Math.PI/3,face+Math.PI/3);g.closePath();g.fill();g.restore();
  if(found)lab('!',a.x,a.y-30,'bold 18px system-ui','#8ddfff');
 }
+
+// Generation-only simplification: preserve cover islands and three clear north/south lanes.
+function openFrontlineMaze(V,Hh,zone,mx0,csx,wt){
+ if(stageMode!=='front')return;
+ const walls=[];
+ for(const grid of [V,Hh])for(const column of grid)for(let j=0;j<column.length;j++)if(column[j])walls.push([column,j]);
+ for(let i=walls.length-1;i>0;i--){const j=R()*(i+1)|0;[walls[i],walls[j]]=[walls[j],walls[i]];}
+ for(let i=Math.floor(walls.length*.15);i<walls.length;i++){const [column,j]=walls[i];column[j]=0;}
+ const C=Hh.length;zone.frontlineMazeLanes=[];
+ for(const start of [1,Math.floor(C/2)-1,C-4]){
+  for(let i=start;i<start+3;i++)Hh[i].fill(0);
+  for(let i=start+1;i<start+3;i++)V[i].fill(0);
+  zone.frontlineMazeLanes.push({x:mx0+start*csx+wt,y:zone.y1,w:csx*3-wt*2,h:zone.y0-zone.y1});
+ }
+}
+function frontlineMazeLaneBlocked(rect){
+ if(stageMode!=='front')return false;
+ return ZONES.some(z=>(z.frontlineMazeLanes||[]).some(lane=>rect.x<lane.x+lane.w&&rect.x+rect.w>lane.x&&rect.y<lane.y+lane.h&&rect.y+rect.h>lane.y));
+}

@@ -179,3 +179,29 @@ test('ally sight and found markers are static canvas shapes and disappear while 
  c.drawFrontlineAllyVision(a);assert.ok(c.calls.some(x=>x[0]==='arc'&&x[3]===300));assert.equal(marks.length,1);
  const count=c.calls.length;a.stun=5;c.drawFrontlineAllyVision(a);assert.equal(c.calls.length,count);c.stageMode='base';a.stun=0;c.drawFrontlineAllyVision(a);assert.equal(c.calls.length,count);
 });
+
+function mazeHarness(mode,seed=3){
+ const c=harness();Object.assign(c,{stageMode:mode,MAP_SCALE:4,ZONES:[{n:'敵迷路基地',y0:9000,y1:7000}],water:[],bridges:[],mud:[],bushes:[],base:{x:0,y:-1000,w:1,h:1},BLOCK_WALL_LONG:128,BLOCK_WALL_SHORT:32,BARRIER_LONG:126,BARRIER_SHORT:39,CRATE_W:74.8,CRATE_H:74.8,BARREL_SIZE:39.1,nearBridge:()=>false,coverFragmentRect:q=>q});
+ c.R=()=>((seed=(seed*1664525+1013904223)>>>0)/2**32);
+ vm.runInContext(html.slice(html.indexOf('function genCovers('),html.indexOf('const AREA_DEBUG_ORDER=')),c);return c;
+}
+test('Frontline maze wall count falls by at least 75% across twenty map seeds',()=>{
+ for(let seed=1;seed<=20;seed++){
+  const base=mazeHarness('base',seed),front=mazeHarness('front',seed);base.genCovers();front.genCovers();
+  const normal=base.covers.filter(c=>c.mazeWall).length,reduced=front.covers.filter(c=>c.mazeWall).length;
+  assert.ok(normal>400);assert.ok(reduced<=normal*.25,`${seed}: ${reduced}/${normal}`);
+ }
+});
+test('all three Frontline maze lanes remain clear of walls, defense barriers and crate colliders',()=>{
+ for(let seed=1;seed<=10;seed++){
+  const c=mazeHarness('front',seed);c.genCovers();c.genObjects();const lanes=c.ZONES[0].frontlineMazeLanes;
+  assert.equal(lanes.length,3);assert.ok(lanes.every(l=>l.w>=150&&l.h===2000));
+  for(const cover of c.covers)assert.equal(c.frontlineMazeLaneBlocked({...cover,y:cover.y*4}),false);
+  for(const o of c.objects)assert.equal(c.frontlineMazeLaneBlocked({...o,y:o.y*4}),false);
+ }
+});
+test('base maze generation is identical with and without Frontline hooks',()=>{
+ const current=mazeHarness('base',3),baseline=mazeHarness('base',3);baseline.openFrontlineMaze=()=>{};baseline.frontlineMazeLaneBlocked=()=>false;
+ for(const c of [current,baseline]){c.genCovers();c.genObjects();}
+ assert.equal(JSON.stringify(current.covers),JSON.stringify(baseline.covers));assert.equal(JSON.stringify(current.objects),JSON.stringify(baseline.objects));assert.equal(current.ZONES[0].frontlineMazeLanes,undefined);
+});
