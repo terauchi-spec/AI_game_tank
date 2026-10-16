@@ -18,15 +18,25 @@ function frontlineSpawnSpot(hasDog=false){
  }
  return null;
 }
-function spawnFrontlineWave(count=3){
+function spawnFrontlineWave(count=3,counterPoint=null){
  if(stageMode!=='front'||!mission||areaDebugEnabled)return 0;
  const m=mission,active=humans.reduce((n,h)=>n+Number(!!h.alive),0),available=Math.min(count,FRONTLINE_ENEMY_LIMIT-active);
  let spawned=0;
  for(let i=0;i<available;i++){
-  const candidate=m.enemyRoster?.[m.enemyRosterIndex||0],spot=frontlineSpawnSpot(!!candidate?.dog);if(!spot)break;
-  const h=candidate||{alive:true,elite:false};if(candidate)m.enemyRosterIndex++;
+  const roster=m.enemyRoster||[],index=m.enemyRosterIndex||0;
+  const wantBlue=(counterPoint?.counterBluePending||0)>0||(m.enemySpawned||0)%4===0;
+  let candidate=roster[index];
+  if(wantBlue){
+   const blueIndex=roster.findIndex((h,i)=>i>=index&&h.commander==='blue');
+   if(blueIndex>=0){[roster[index],roster[blueIndex]]=[roster[blueIndex],roster[index]];candidate=roster[index];}
+   else candidate={alive:true,elite:false,commander:'blue',commanderScan:0,commanderTactics:0,commanderMode:'intercept',commanderCharge:0,commanderCooldown:2,whistleT:0,whistleCooldown:0};
+  }
+  const spot=frontlineSpawnSpot(!!candidate?.dog);if(!spot)break;
+  const h=candidate||{alive:true,elite:false};if(candidate===roster[index]&&candidate)m.enemyRosterIndex=index+1;
+  m.enemySpawned=(m.enemySpawned||0)+1;
+  if(counterPoint&&h.commander==='blue')counterPoint.counterBluePending=Math.max(0,(counterPoint.counterBluePending||0)-1);
   Object.assign(h,spot,{alive:true,st:0,sus:0,lost:0,target:null,cd:1,burstLeft:0,face:Math.PI/2,
-   frontMarch:true,frontLaneX:spot.x,frontRetired:false,frontStuck:0,scoreCounted:false,
+   frontMarch:true,frontLaneX:spot.x,frontObjective:counterPoint?{x:counterPoint.x,y:counterPoint.y}:null,frontRetired:false,frontStuck:0,scoreCounted:false,
    path:[],wi:0,dir:1,loop:false,stk:0,turnPause:0,modePause:0,modeFrozen:false,
    buildingPatrol:false,patrolCover:null,edgePatrol:null,returnRoute:null,patrolSearch:null,
    chatT:0,chatMate:null,chatResumeT:0,chatCooldown:0,foundPause:0,sharePause:0,
@@ -57,7 +67,7 @@ function cleanupFrontlineArmy(dt){
  enemyDogs=enemyDogs.filter(d=>!d.handler?.frontRetired);
 }
 function moveFrontlineEnemy(h,dt,speed){
- const ox=h.x,oy=h.y,goal={x:h.frontLaneX??h.x,y:Math.min(WH-16,h.y+180)};
+ const ox=h.x,oy=h.y,goal=h.frontObjective||{x:h.frontLaneX??h.x,y:Math.min(WH-16,h.y+180)};
  dogMoveAround(h,goal,speed,dt,8,false);
  const moved=Math.hypot(h.x-ox,h.y-oy);h.frontStuck=moved<.02?(h.frontStuck||0)+dt:0;
  // Change lanes when blocked by another soldier; never turn back along a patrol route.
@@ -131,4 +141,23 @@ function updateFrontlineAlly(a,target,dt){
   }
  }
  return true;
+}
+
+function rescueFrontlineAlly(a){
+ if(stageMode!=='front'||!a.alive||!(a.stun>0)||p.tank||p.dig>0||D(a,p)>=22||!los(p,a))return false;
+ a.stun=0;a.stunRecover=0;a.frontAimT=0;a.frontAimTarget=null;a._combatTarget=null;
+ a.burstLeft=3;a.shotCd=.2;a.dogWall=null;a.dogEscape=null;
+ sfx('ally');say('味方兵を救助！');return true;
+}
+function updateFrontlineCounterattack(point,dt){
+ if(!point||point.done)return;
+ if(!point.counterTriggered&&D(p,point)<180){
+  point.counterTriggered=true;point.counterPending=6;point.counterBluePending=2;point.counterRetry=0;
+  mission.waveT=Math.max(mission.waveT||0,12);say('敵の反撃部隊が接近！');
+ }
+ if(!(point.counterPending>0))return;
+ point.counterRetry=(point.counterRetry||0)-dt;
+ if(point.counterRetry<=0){
+  point.counterPending-=spawnFrontlineWave(point.counterPending,point);point.counterRetry=1;
+ }
 }

@@ -213,7 +213,10 @@ function drawCharacterWebP(x,y,face,isPlayer,alert,moving,elite,commander,weapon
  // Weapons sit beneath the body/helmet; the muzzle remains forward of the hands.
  if(armed&&!stunned)drawCharacterWeapon(commander,shot,flame,isPlayer,elite,!isPlayer&&!elite&&!commander?1.5:1);
  if(stunned){g.save();g.rotate(.8);g.scale(1,.68);}
- drawOverheadCutout(im,32,32*im.naturalHeight/im.naturalWidth,stride,armed);
+ // Normalize blue commander body height to the regular blue soldier; the radio/antenna keeps its silhouette.
+ // blue.webp is 175×192; use its aspect even before it finishes loading.
+ const height=commander==='blue'?32*192/175:32*im.naturalHeight/im.naturalWidth,width=height*im.naturalWidth/im.naturalHeight;
+ drawOverheadCutout(im,width,height,stride,armed);
  if(stunned)g.restore();
  g.restore();return true;
 }

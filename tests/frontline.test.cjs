@@ -109,3 +109,33 @@ test('allies left at a distant objective cannot capture it without the player ad
  c.updateMission(10);assert.equal(c.mission.progress,0);assert.equal(c.mission.capturing,false);
  c.p.y=q.y+100;c.updateMission(1);assert.equal(c.mission.progress,1);assert.equal(c.mission.capturing,true);
 });
+
+test('a stunned Frontline ally needs on-foot contact and line of sight to recover',()=>{
+ const c=harness();c.los=()=>true;const a={x:c.p.x,y:c.p.y-30,alive:true,stun:5,stunRecover:1};
+ assert.equal(c.rescueFrontlineAlly(a),false);a.y=c.p.y-15;c.p.tank={};assert.equal(c.rescueFrontlineAlly(a),false);c.p.tank=null;c.los=()=>false;assert.equal(c.rescueFrontlineAlly(a),false);
+ c.los=()=>true;assert.equal(c.rescueFrontlineAlly(a),true);assert.equal(a.stun,0);assert.equal(a.stunRecover,0);assert.equal(a.shotCd,.2);assert.equal(c.rescueFrontlineAlly(a),false);
+ a.stun=5;c.stageMode='base';assert.equal(c.rescueFrontlineAlly(a),false);a.alive=false;c.stageMode='front';assert.equal(c.rescueFrontlineAlly(a),false);
+});
+test('each objective triggers a six-person counterattack only on the player’s first entry',()=>{
+ const c=harness(),q={x:c.p.x,y:c.p.y-200};let calls=0,total=0;c.spawnFrontlineWave=(n,point)=>{calls++;total+=n;assert.equal(point,q);return n;};
+ c.updateFrontlineCounterattack(q,.1);assert.equal(calls,0);c.p.y-=50;c.updateFrontlineCounterattack(q,.1);assert.equal(total,6);assert.equal(q.counterTriggered,true);assert.equal(q.counterBluePending,2);
+ c.p.y+=500;c.updateFrontlineCounterattack(q,2);c.p.y-=500;c.updateFrontlineCounterattack(q,2);assert.equal(calls,1);
+});
+test('counterattacks retry safely after a full enemy cap and include two blue commanders',()=>{
+ const c=harness(),q={x:c.p.x,y:c.p.y};c.humans=Array.from({length:16},()=>({alive:true,x:100,y:100}));c.updateFrontlineCounterattack(q,.1);assert.equal(q.counterPending,6);assert.equal(c.humans.length,16);
+ c.humans=[];c.updateFrontlineCounterattack(q,1);assert.equal(c.humans.length,6);assert.equal(q.counterPending,0);assert.equal(q.counterBluePending,0);assert.ok(c.humans.filter(h=>h.commander==='blue').length>=2);assert.ok(c.humans.every(h=>h.frontObjective.x===q.x&&h.frontObjective.y===q.y&&h.y<c.frontlineView().y));
+});
+test('ordinary waves retain a blue commander for every four spawned enemies after reserves run out',()=>{
+ const c=harness();let blue=0;for(let i=0;i<5;i++){c.spawnFrontlineWave(4);blue+=c.humans.filter(h=>h.commander==='blue').length;c.humans=[];}
+ assert.equal(blue,5);assert.equal(c.mission.enemySpawned,20);
+});
+test('counterattack troops move toward the captured area instead of marching past its lane',()=>{
+ const c=harness(),h={x:200,y:9000,frontLaneX:200,frontObjective:{x:480,y:9200}};c.moveFrontlineEnemy(h,1,30);assert.ok(h.x>200&&h.y>9000);
+});
+test('blue commander and regular blue soldier use equal body heights despite differing image widths',()=>{
+ const c=harness(),b={naturalWidth:175,naturalHeight:192},commander={naturalWidth:182,naturalHeight:192},calls=[];
+ Object.assign(c,{CHARACTER_GRAPHICS_MODE:'webp',CHARACTER_GRAPHICS_SCALE:.84,CHARACTER_ART:{blue:b,blue_commander:commander},performance:{now:()=>1000},g:c.gm,assetOK:()=>true,characterArtKey:(p,e,t)=>t==='blue'?'blue_commander':'blue',characterGait:()=>0,drawOverheadCutout:(...a)=>calls.push(a)});
+ const source=fs.readFileSync(path.join(__dirname,'../js/characters.js'),'utf8');vm.runInContext(source.slice(source.indexOf('function drawCharacterWebP('),source.indexOf('function drawCharacterProne(')),c);
+ for(const type of ['', 'blue'])c.drawCharacterWebP(0,0,0,false,false,false,false,type,false,false);
+ assert.equal(calls[0][2],calls[1][2]);assert.equal(calls[0][1],32);assert.ok(calls[1][1]>32);delete c.CHARACTER_ART.blue;c.drawCharacterWebP(0,0,0,false,false,false,false,'blue',false,false);assert.equal(calls[2][2],calls[1][2]);
+});
