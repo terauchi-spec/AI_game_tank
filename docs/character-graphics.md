@@ -51,6 +51,13 @@ Opposite arm/leg phases, rear kicks, helmet colours and held weapon poses remain
 These cues are baked into the existing bounded pose cache, without extra draws
 for each actor during play.
 
+## Blue commander radio
+
+The blue commander has a reinforced olive field-radio case with a larger rear
+silhouette, whip antenna, speaker grille, pale tuning dial and status indicator.
+The existing pack texture is reused on the case. These features are composed
+once into the same bounded pose cache; ordinary blue infantry is unchanged.
+
 ## Blue infantry visibility
 
 Blue infantry and blue commander artwork, including scope views, is brightened

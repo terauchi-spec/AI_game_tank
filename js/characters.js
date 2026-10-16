@@ -91,6 +91,27 @@ function prepareCharacterLayers(im){
  pq.globalCompositeOperation='source-atop';pq.fillStyle='rgba(223,202,148,.12)';pq.fillRect(0,0,pack.width,pack.height);
  CHARACTER_LAYERS.set(im,{core,parts,pack});
 }
+// A readable field-radio silhouette, baked into commander poses once.
+function drawCommanderRadio(pack,width){
+ g.save();g.scale(width/32,width/32);
+ g.shadowColor='rgba(0,0,0,.65)';g.shadowBlur=.7;g.shadowOffsetX=-.5;
+ g.fillStyle='#1b241c';g.beginPath();g.roundRect(-22.3,-13.2,12.2,26.4,1.4);g.fill();
+ g.shadowBlur=0;g.shadowOffsetX=0;
+ const metal=g.createLinearGradient(-21.5,-12,-11,12);metal.addColorStop(0,'#b2b681');metal.addColorStop(.35,'#88965c');metal.addColorStop(1,'#4f603b');
+ g.fillStyle=metal;g.fillRect(-21.4,-12.1,10.4,24.2);
+ g.save();g.globalAlpha=.25;g.drawImage(pack,-21,-11.5,10,23);g.restore();
+ // Reinforced case, speaker grille, a light dial, tuning knob and indicator.
+ g.strokeStyle='#d0c79e';g.lineWidth=.8;g.strokeRect(-21,-11.7,9.7,23.4);
+ g.fillStyle='#283a2e';g.fillRect(-20,-8.9,7.8,7);
+ g.fillStyle='#a8b493';for(let i=0;i<3;i++)g.fillRect(-19.2,-8+i*1.7,6.2,.65);
+ g.fillStyle='#252e23';g.fillRect(-20,.2,7.8,8.2);
+ g.fillStyle='#eee2b1';g.beginPath();g.arc(-16.2,3.4,2.15,0,Math.PI*2);g.fill();
+ g.fillStyle='#3d4934';g.beginPath();g.arc(-16.2,3.4,.85,0,Math.PI*2);g.fill();
+ g.fillStyle='#d8eb8e';g.fillRect(-19.3,6.6,2.1,1);g.fillStyle='#b9b89b';g.fillRect(-14.9,6.3,1.9,1.7);
+ g.strokeStyle='#18221c';g.lineWidth=2;g.beginPath();g.moveTo(-18.2,-12.3);g.lineTo(-20.5,-20);g.stroke();
+ g.strokeStyle='#d3d5b8';g.lineWidth=.65;g.beginPath();g.moveTo(-18.4,-12.4);g.lineTo(-20.6,-20);g.stroke();
+ g.restore();
+}
 function composeOverheadCutout(im,width,height,stride=0,armed=false){
  const left=-width*.60,top=-height*.50,layers=CHARACTER_LAYERS.get(im);
  const trousers=(im===CHARACTER_ART.player||im===CHARACTER_ART.player_plain||im===CHARACTER_ART.player_blue)?'#77734f':im===CHARACTER_ART.white||im===CHARACTER_ART.white_commander?'#d0cdbd':'#7c97b5';
@@ -126,6 +147,7 @@ function composeOverheadCutout(im,width,height,stride=0,armed=false){
   g.drawImage(part.im,left+part.x*width,top+part.y*height,part.w*width,part.h*height);g.restore();
  }
  g.drawImage(layers.core,left,top,width,height);
+ if(im===CHARACTER_ART.blue_commander&&layers.pack)drawCommanderRadio(layers.pack,width);
 }
 function drawOverheadCutout(im,width,height,stride=0,armed=false){
  // Cache procedural limb compositions, not an authored frame sheet. At runtime
