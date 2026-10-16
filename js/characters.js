@@ -1,5 +1,6 @@
 // Individual transparent WebP cutouts, not animation sheets. The textures are
 // decoded once; cached cutout parts articulate limbs without frame atlases.
+const CHARACTER_GRAPHICS_SCALE=.8; // Trial: 20% smaller artwork; gameplay radii stay unchanged.
 const CHARACTER_GRAPHICS_MODE='webp'; // Set to 'legacy' to restore all original character drawing.
 const CHARACTER_ART={},CHARACTER_GAIT=new WeakMap(),CHARACTER_LAYERS=new WeakMap(),CHARACTER_POSES=new WeakMap();
 const CHARACTER_ART_NAMES=['player','blue','blue_commander','white','white_commander','rifle','launcher','scope_blue','scope_blue_commander','scope_white','scope_white_commander'];
@@ -149,7 +150,7 @@ function drawCharacterWebP(x,y,face,isPlayer,alert,moving,elite,commander,weapon
  const flame=!!(isPlayer&&actor===p&&p.flameActive);
  const armed=(!isPlayer&&weaponVisible)||(isPlayer&&playerStripe==='blue'&&weaponVisible)||flame;
  const shot=actor?Math.max(0,.09-(now-(actor.characterShotAt||-1e9))/1000):0;
- g.save();g.imageSmoothingEnabled=true;g.translate(x,y);
+ g.save();g.imageSmoothingEnabled=true;g.translate(x,y);g.scale(CHARACTER_GRAPHICS_SCALE,CHARACTER_GRAPHICS_SCALE);
  g.fillStyle='rgba(8,12,9,.30)';g.beginPath();g.ellipse(1,3,11,7,0,0,Math.PI*2);g.fill();
  // The overhead artwork points right, exactly like world angle zero.
  g.rotate(face);
@@ -163,7 +164,7 @@ function drawCharacterWebP(x,y,face,isPlayer,alert,moving,elite,commander,weapon
 function drawCharacterProne(){
  if(CHARACTER_GRAPHICS_MODE!=='webp')return false;
  const im=CHARACTER_ART.player;if(!assetOK(im))return false;
- g.save();g.imageSmoothingEnabled=true;g.translate(p.x,p.y);g.rotate(p.body);
+ g.save();g.imageSmoothingEnabled=true;g.translate(p.x,p.y);g.rotate(p.body);g.scale(CHARACTER_GRAPHICS_SCALE,CHARACTER_GRAPHICS_SCALE);
  g.fillStyle='rgba(0,0,0,.28)';g.beginPath();g.ellipse(-5,3,22,8,0,0,Math.PI*2);g.fill();
  g.save();g.scale(1.35,.8);drawOverheadCutout(im,32,32*im.naturalHeight/im.naturalWidth,0,true);g.restore();
  drawCharacterWeapon('white',0);g.restore();
@@ -173,6 +174,7 @@ function drawCharacterProne(){
 function drawScopedCharacter(o,elite,x,top,height,falling){
  if(CHARACTER_GRAPHICS_MODE!=='webp')return false;
  const im=CHARACTER_ART['scope_'+characterArtKey(false,elite,o.commander||'')];if(!assetOK(im))return false;
+ top+=height*(1-CHARACTER_GRAPHICS_SCALE);height*=CHARACTER_GRAPHICS_SCALE;
  const now=performance.now();
  const stride=characterGait(o,o.x,o.y,!!o.walking&&!falling,now);
  g.save();g.imageSmoothingEnabled=true;g.translate(x,top+height*.56);g.scale(height/43,height/43);

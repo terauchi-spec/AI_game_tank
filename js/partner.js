@@ -484,7 +484,7 @@ function drawPartner(){
 
  if(q.down){
   // 横たわった兵士：頭・胴体・曲がった腕・開いた脚を静止描画。
-  g.save();g.translate(q.x,q.y);g.rotate(q.face+.8);
+  g.save();g.translate(q.x,q.y);g.rotate(q.face+.8);if(CHARACTER_GRAPHICS_MODE==='webp')g.scale(CHARACTER_GRAPHICS_SCALE,CHARACTER_GRAPHICS_SCALE);
   g.fillStyle='rgba(0,0,0,.32)';g.beginPath();g.ellipse(0,3,23,10,0,0,Math.PI*2);g.fill();
   g.lineCap='round';g.lineJoin='round';g.strokeStyle='#18271e';g.lineWidth=7;
   g.beginPath();g.moveTo(5,-2);g.lineTo(14,-5);g.lineTo(21,-3);g.moveTo(5,3);g.lineTo(13,8);g.lineTo(19,10);g.stroke();
