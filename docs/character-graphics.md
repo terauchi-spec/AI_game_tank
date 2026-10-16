@@ -41,6 +41,14 @@ are 1.5 times their original WebP display dimensions. Aiming, weapon visibility,
 recoil and muzzle flash follow existing actor states.
 The physical actor collision radii, movement speeds, AI and damage remain intact.
 
+## Blue infantry visibility
+
+Blue infantry and blue commander artwork, including scope views, is brightened
+once at decode time. A cool-blue material mask lifts the uniform and helmet
+while preserving texture shading, transparency, skin, leather and radio colours.
+The processed canvases use the existing pose cache; no per-frame image filter or
+extra image download is used. White infantry and player artwork are unchanged.
+
 ## Allied helmets
 
 The player keeps the red stripe. Reinforcements use a plain camouflage helmet;

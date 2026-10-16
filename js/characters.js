@@ -6,7 +6,30 @@ const CHARACTER_ART={},CHARACTER_GAIT=new WeakMap(),CHARACTER_LAYERS=new WeakMap
 const CHARACTER_ART_NAMES=['player','blue','blue_commander','white','white_commander','rifle','launcher','scope_blue','scope_blue_commander','scope_white','scope_white_commander'];
 function loadCharacterArtwork(){
  if(CHARACTER_GRAPHICS_MODE!=='webp')return;
- for(const name of CHARACTER_ART_NAMES)CHARACTER_ART[name]=makeAssetImage('assets/characters/'+name+'.webp?v='+GAME_VERSION,()=>{if(!name.startsWith('scope_')&&name!=='rifle'&&name!=='launcher'){prepareCharacterLayers(CHARACTER_ART[name]);if(name==='player')prepareAllyHelmetArtwork(CHARACTER_ART[name]);}});
+ for(const name of CHARACTER_ART_NAMES)CHARACTER_ART[name]=makeAssetImage('assets/characters/'+name+'.webp?v='+GAME_VERSION,()=>{
+  if(['blue','blue_commander','scope_blue','scope_blue_commander'].includes(name))CHARACTER_ART[name]=brightenBlueArtwork(CHARACTER_ART[name]);
+  if(!name.startsWith('scope_')&&name!=='rifle'&&name!=='launcher'){
+   prepareCharacterLayers(CHARACTER_ART[name]);if(name==='player')prepareAllyHelmetArtwork(CHARACTER_ART[name]);
+  }
+ });
+}
+// Lift only cool blue materials once at decode time, preserving shading and alpha.
+// Skin, leather, radio packs and weapons keep their existing warm/neutral colours.
+function brightenBlueArtwork(im){
+ const canvas=document.createElement('canvas'),w=im.naturalWidth,h=im.naturalHeight;
+ canvas.width=w;canvas.height=h;const q=canvas.getContext('2d');q.drawImage(im,0,0);
+ const pixels=q.getImageData(0,0,w,h),d=pixels.data;
+ for(let i=0;i<d.length;i+=4){
+  if(!d[i+3])continue;
+  const r=d[i],green=d[i+1],b=d[i+2];
+  const mask=Math.min(1,Math.max(0,(b-r-2)/12))*Math.min(1,Math.max(0,(b-green+4)/10));
+  if(!mask)continue;
+  d[i]=r+mask*(Math.min(255,r*1.12+20)-r);
+  d[i+1]=green+mask*(Math.min(255,green*1.15+24)-green);
+  d[i+2]=b+mask*(Math.min(255,b*1.16+30)-b);
+ }
+ q.putImageData(pixels,0,0);canvas.complete=true;canvas.naturalWidth=w;canvas.naturalHeight=h;
+ return canvas;
 }
 // Cache allied helmet variants once at load time; no pixel work during play.
 function prepareAllyHelmetArtwork(im){
@@ -64,7 +87,7 @@ function prepareCharacterLayers(im){
 }
 function composeOverheadCutout(im,width,height,stride=0,armed=false){
  const left=-width*.60,top=-height*.50,layers=CHARACTER_LAYERS.get(im);
- const trousers=(im===CHARACTER_ART.player||im===CHARACTER_ART.player_plain||im===CHARACTER_ART.player_blue)?'#77734f':im===CHARACTER_ART.white||im===CHARACTER_ART.white_commander?'#d0cdbd':'#637387';
+ const trousers=(im===CHARACTER_ART.player||im===CHARACTER_ART.player_plain||im===CHARACTER_ART.player_blue)?'#77734f':im===CHARACTER_ART.white||im===CHARACTER_ART.white_commander?'#d0cdbd':'#7c97b5';
  if(!layers){g.drawImage(im,left,top,width,height);return;}
  for(let i=0;i<layers.parts.length;i++){
   const part=layers.parts[i];
