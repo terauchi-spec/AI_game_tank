@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.16.1729</title>
+<title>こっそり戦車大作戦 2026.10.16.1742</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -611,7 +611,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 </ol></nav>
 <section class="spec-section" id="spec-goal"><h2>1. 目的とクリア条件</h2>
 <p>スキル選択後に<strong>初級・上級</strong>のステージを選びます。<strong>初級</strong>は最後の草原にある大型パラボラアンテナの電波施設、<strong>上級</strong>は敵司令本部を破壊するとクリアです。敵に倒されると任務失敗となり、結果画面へ移行します。</p>
-<p><strong>初級：</strong>開始草原→候補5エリアからランダムに3エリア→最後は草原（電波施設）の全5エリア。通常の青兵と青兵指揮官2体が登場し、白兵・白兵指揮官・犬兵は出現しません。敵戦車は最大2台です。<strong>上級：</strong>従来の全7エリア、敵AI、敵配置、敵司令本部破壊のルールを維持します。</p>
+<p><strong>初級：</strong>開始草原→候補5エリアからランダムに3エリア→最後は草原（電波施設）の全5エリア。通常の青兵と青兵指揮官4体が必ず登場し、白兵・白兵指揮官・犬兵は出現しません。敵戦車は最大2台です。<strong>上級：</strong>従来の全7エリア、敵AI、敵配置、敵司令本部破壊のルールを維持します。</p>
 <p>歩兵の潜入に加え、戦車などの乗り物を利用した戦闘や、出撃前に選ぶスキルによる攻略ができます。</p><a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-map"><h2>2. ステージ構成とランダム生成</h2>
 <p><strong>初級：</strong>全5エリア。開始草原→草原・森林・丘陵・村・湿地から重複なしでランダムに3エリア→電波施設のある草原。<strong>上級：</strong>全7エリア。最初は草原、最後は敵司令本部で、その間の5エリアは従来の候補から重複なしでランダムに選ばれます。</p>
@@ -647,7 +647,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <ul><li>通常青兵より索敵距離・視野・移動速度が高く、巡回36px/秒、追跡114px/秒。索敵距離は通常兵の1.2倍で、建物を回り込む追跡も行います。</li>
 <li>150px以内で射線が通ると、通常兵よりばらつきの少ない単発射撃を約1.35秒間隔で行います。設置爆弾は使いません。</li>
 <li>疑惑中は約2秒間プレイヤーの方向へ接近した後、約2秒間周囲を確認します。巡回・発見時の銃表示と歩行アニメーションは青の通常兵と同じルールです。</li></ul>
-<p><strong>特殊配置：</strong>青・白の指揮官各2体、犬兵2組、無線機1個は出撃ごとにエリアと位置をランダムに決めます。開始草原と敵迷路基地は配置対象外です（途中で登場する草原は対象）。同種の指揮官と犬兵2組は別エリアに分散し、特殊ユニット間は380px以上、無線機と特殊ユニット間は420px以上離します。ガソリンとの距離も確保し、障害物・水場を避けます。</p>
+<p><strong>特殊配置：</strong>青兵指揮官4体（初級・上級とも確定）、白兵指揮官2体（上級のみ）、犬兵2組、無線機1個は出撃ごとにエリアと位置をランダムに決めます。開始草原と敵迷路基地は配置対象外です（途中で登場する草原は対象）。指揮官は可能な限り別エリアへ、犬兵2組は別エリアに分散し、通常は特殊ユニット間を380px以上、無線機と特殊ユニット間は420px以上離します。ガソリンとの距離も確保し、障害物・水場を避けます。青兵指揮官の配置場所が不足する場合は、既存の安全な場所にいる通常兵を指揮官へ変更して4体を確保します。この場合はエリア重複と指揮官間の距離短縮を許可します。</p>
 <h3>青兵指揮官：無線機とアンテナ</h3>
 <ul><li>通常の出撃では2体を別エリアに分散配置し、青の通常兵と同様に定期ルートを巡回します。背面の無線機と長いアンテナが目印です。</li>
 <li>プレイヤーを新たに発見すると笛を吹き、偽装スキルと同じ単色の赤い電波リングを半径300pxまで2回（各1.25秒）広げます。2回の電波が終わるまで武器をしまってその場で停止します。1秒後、2000px以内の活動可能な敵歩兵を発見モードへ移行させます。笛の再使用には8秒の間隔があります。</li>
@@ -666,7 +666,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <li>発見後は静止時間を挟んで攻撃します。標的が190pxより遠いと接近し、120pxより近いと後退して距離を調整します。</li>
 <li>主砲は射程480px、射撃間隔は約2.8秒。200px以内ではMGも使用します。標的との間に遮蔽物がある場合は、主砲で遮蔽物を破壊しようとします。</li></ul>
 <h3>司令本部の増援</h3>
-<p>司令本部から出る敵兵は巡回モードで登場します。10%の確率で青兵指揮官が出現します。通常配置の指揮官2体ずつとは別の増援です。</p>
+<p>司令本部から出る敵兵は巡回モードで登場します。10%の確率で青兵指揮官が出現します。通常配置の青兵指揮官4体・白兵指揮官2体とは別の増援です。</p>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-vehicles"><h2>6. 乗り物</h2>
 <ul><li><strong>戦車：</strong>主砲（D）とMG（S）で攻撃します。車種により性能が異なり、砲弾・MG弾数・燃料・耐久の管理が必要です。</li><li><strong>装甲車：</strong>速度130.5px/秒で戦車より速く、ジープ相当のトラックより遅い車両です。D（スマホ：B）またはSでサブマシンガンを撃ちます。弾数120、燃料95。敵戦車砲の直撃1発で大破し、敵SMGへの耐久はトラックの1.5倍（7.5発分、実際には8発で大破）です。迷路壁は接触で破壊できません。大破時は黒焦げの車体と壊れた銃座の残骸が残ります。主砲はありません。下車後はトラックと同様に慣性で前進し、敵戦車との体当たりでは両車両が爆発します。</li><li><strong>トラック：</strong>武器による攻撃はできませんが、走行時の接触で敵を倒せます。下車後は慣性で前進し、敵戦車への体当たりでは両車両が爆発します。迷路壁は接触で破壊できません。敵SMGは5発で大破し、大破時は黒焦げの車体の残骸が残ります。</li><li><strong>戦闘機（デバッグ用）：</strong>通常のランダム車両配置には出現しません。デバッグで搭乗すると地上の障害物を越えて飛行し、爆撃できます。無線で呼ぶ支援爆撃機とは別の機体です。</li><li>近づいてAで乗車し、再度Aで降車します。降車地点には十分な空きスペースが必要です。</li></ul>
@@ -815,7 +815,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.16.1729',FILE_CREATED_AT='2026/10/16 17:29',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.16.1742',FILE_CREATED_AT='2026/10/16 17:42',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -3375,7 +3375,7 @@ function specialSpawnValid(q,r=18,minGap=SPECIAL_UNIT_GAP){
  const zone=zoneAt(q.y);
  if(!zone||zone===ZONES[0]||zone.n==='敵迷路基地'||zone.areaDebug)return false;
  if(hitsM(q.x,q.y,r)||inBase(q.x,q.y)||inWaterAt(q.x,q.y,r)||D(q,p)<650)return false;
- if((humans||[]).some(h=>h.alive&&D(h,q)<(h.commander||h.dogHandler?minGap:40)))return false;
+ if((humans||[]).some(h=>h!==q&&h.alive&&D(h,q)<(h.commander||h.dogHandler?minGap:40)))return false;
  if((enemyDogs||[]).some(d=>D(d,q)<minGap))return false;
  if((etanks||[]).some(e=>e.alive&&D(e,q)<TANK_HIT+r+12))return false;
  if((cars||[]).some(v=>v.kind!=='fighter'&&D(v,q)<r+45))return false;
@@ -3397,19 +3397,37 @@ function randomSpecialSpawn(r=18,accept=null,zones=null,minGap=SPECIAL_UNIT_GAP)
  }
  return null;
 }
+// Blue commanders must not disappear when random placement runs out of room.
+// Reuse a safely placed ordinary soldier before searching a bounded fine grid.
+function guaranteedBlueCommanderSpot(zones){
+ const eligible=(humans||[]).filter(h=>h.alive&&!h.elite&&!h.commander&&!h.dogHandler&&zones.includes(zoneAt(h.y))&&D(h,p)>650&&!hitsM(h.x,h.y,8)&&!inBase(h.x,h.y)&&!inWaterAt(h.x,h.y,8));
+ for(const gap of [SPECIAL_UNIT_GAP,160,40])for(const z of zones){
+  const replacement=eligible.find(h=>zoneAt(h.y)===z&&!(humans||[]).some(o=>o!==h&&o.alive&&o.commander&&D(o,h)<gap));
+  if(replacement)return{spot:replacement,replacement};
+ }
+ for(const gap of [160,40])for(const z of zones){
+  const lo=Math.max(83,z.y1+75),hi=Math.min(WH-83,z.y0-75);
+  for(let y=lo;y<hi;y+=64)for(let x=43;x<WW-43;x+=64){const spot={x,y};if(specialSpawnValid(spot,8,gap))return{spot,replacement:null};}
+ }
+ return null;
+}
 function spawnCommanderClasses(types=['blue','white']){
  commanderPrevX=p.x;commanderPrevY=p.y;commanderVelocity={x:0,y:0};commanderRallying=false;commanderSignals=[];
  if(areaDebugEnabled)return;
  const usedZones=new Set(),typeZones={blue:new Set(),white:new Set()};
- // Prefer four distinct zones; never intentionally cluster the same type.
- for(const type of types)for(let i=0;i<2;i++){
+ // Prefer distinct zones for each type; blue commanders always receive four slots.
+ for(const type of types)for(let i=0;i<(type==='blue'?4:2);i++){
   const zones=specialSpawnZones();
   const preferred=zones.filter(z=>!usedZones.has(z));
   const remaining=zones.filter(z=>usedZones.has(z)&&!typeZones[type].has(z));
-  const spot=randomSpecialSpawn(18,null,preferred)||randomSpecialSpawn(18,null,remaining);
+  let spot=randomSpecialSpawn(18,null,preferred)||randomSpecialSpawn(18,null,remaining),replacement=null;
+  if(!spot&&type==='blue'){
+   spot=randomSpecialSpawn(18,null,zones);
+   if(!spot){const fallback=guaranteedBlueCommanderSpot([...preferred,...remaining,...zones.filter(z=>!preferred.includes(z)&&!remaining.includes(z))]);if(fallback){spot=fallback.spot;replacement=fallback.replacement;}}
+  }
   if(!spot){console.warn('Commander spawn skipped: no safe separated location',type);continue;}
   const zone=zoneAt(spot.y);usedZones.add(zone);typeZones[type].add(zone);
-  let path=[{...spot}];
+  let path=[{x:spot.x,y:spot.y}];
   if(type==='white'){
    // The patrol turns around before reaching the starting grassland.
    const southLimit=Math.min(WH-500,ZONES[0].y1-180);
@@ -3420,7 +3438,8 @@ function spawnCommanderClasses(types=['blue','white']){
   }else{
    for(const length of [150,80,40]){for(const a of [0,Math.PI/2,Math.PI,Math.PI*1.5]){const q={x:spot.x+Math.cos(a)*length,y:spot.y+Math.sin(a)*length};if(zoneAt(q.y)!==ZONES[0]&&patrolLineClear(spot,q,8)){path.push(q);break;}}if(path.length>1)break;}
   }
-  humans.push({...spot,path,wi:path.length>1?1:0,dir:1,loop:false,stk:0,alive:true,elite:type==='white',commander:type,st:0,sus:0,lost:0,cd:1,burstLeft:0,face:Math.PI/2,commanderScan:0,commanderTactics:0,commanderMode:'intercept',commanderCharge:0,commanderCooldown:2,whistleT:0,whistleCooldown:0});
+  const unit={x:spot.x,y:spot.y,path,wi:path.length>1?1:0,dir:1,loop:false,stk:0,alive:true,elite:type==='white',commander:type,st:0,sus:0,lost:0,cd:1,burstLeft:0,face:Math.PI/2,commanderScan:0,commanderTactics:0,commanderMode:'intercept',commanderCharge:0,commanderCooldown:2,whistleT:0,whistleCooldown:0};
+  if(replacement){Object.assign(replacement,unit);replacement.patrolMode='axis';replacement.buildingPatrol=false;replacement.patrolCover=null;replacement.edgePatrol=null;replacement.target=null;replacement.hq=false;}else humans.push(unit);
  }
 }
 function commanderWhistle(h,key){
@@ -7742,9 +7761,9 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/characters.js?v=2026.10.16.1729"></script>
+<script src="js/characters.js?v=2026.10.16.1742"></script>
 <script src="js/enemy-dogs.js?v=2026.10.14.1916"></script>
-<script src="js/partner.js?v=2026.10.16.1729"></script>
+<script src="js/partner.js?v=2026.10.16.1742"></script>
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/canyon.js?v=2026.10.14.1836"></script>
 <script src="js/vegetation.js?v=2026.10.14.1653"></script>
