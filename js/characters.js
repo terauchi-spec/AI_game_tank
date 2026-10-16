@@ -1,6 +1,6 @@
 // Individual transparent WebP cutouts, not animation sheets. The textures are
 // decoded once; cached cutout parts articulate limbs without frame atlases.
-const CHARACTER_GRAPHICS_SCALE=.8; // Trial: 20% smaller artwork; gameplay radii stay unchanged.
+const CHARACTER_GRAPHICS_SCALE=.84; // 5% larger than the previous .8 display scale; gameplay radii stay unchanged.
 const CHARACTER_GRAPHICS_MODE='webp'; // Set to 'legacy' to restore all original character drawing.
 const CHARACTER_ART={},CHARACTER_GAIT=new WeakMap(),CHARACTER_LAYERS=new WeakMap(),CHARACTER_POSES=new WeakMap();
 const CHARACTER_ART_NAMES=['player','blue','blue_commander','white','white_commander','rifle','launcher','scope_blue','scope_blue_commander','scope_white','scope_white_commander'];

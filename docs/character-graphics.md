@@ -6,7 +6,8 @@ tool using the supplied illustrations as visual references.
 
 ## Rendering
 
-`CHARACTER_GRAPHICS_SCALE=.8` applies a trial 20% reduction to artwork, limbs,
+`CHARACTER_GRAPHICS_SCALE=.84` makes artwork 5% larger than the previous `.8`
+scale (16% below the initial WebP size), including limbs,
 weapons and shadows. Map collision sizes and movement speeds stay unchanged.
 Prone artwork also scales; scope artwork retains its foot anchor while shrinking.
 Set this display scale back to `1` to restore the pre-trial artwork size.
