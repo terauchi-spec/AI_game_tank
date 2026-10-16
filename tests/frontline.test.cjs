@@ -64,3 +64,48 @@ test('white commanders can engage and fire without patrol waypoints',()=>{
   assert.ok(moves.length>10);assert.ok(moves.every(q=>Number.isFinite(q.x)&&Number.isFinite(q.y)));assert.ok(c.bullets.length>=3);assert.ok(c.bullets.every(b=>b.commanderRifle&&b.commanderShooter===h));
  }
 });
+
+test('Frontline allies stop and aim for half a second before a burst, and re-aim on a target switch',()=>{
+ const c=harness(),shots=[];c.los=()=>true;c.fire=(...a)=>shots.push(a);const a={x:480,y:10000,alive:true,shotCd:0,burstLeft:3},t={x:480,y:9900,alive:true};
+ for(let i=0;i<4;i++)c.updateFrontlineAlly(a,t,.1);assert.equal(shots.length,0);assert.equal(a.y,10000);
+ c.updateFrontlineAlly(a,t,.1);assert.equal(shots.length,1);assert.equal(a.y,10000);
+ a.shotCd=0;c.updateFrontlineAlly(a,{...t},.1);assert.equal(shots.length,1);
+ c.updateFrontlineAlly(a,null,.1);assert.equal(a.frontAimT,0);assert.equal(a.frontAimTarget,null);
+});
+test('allies cannot shoot through cover or while approaching a distant enemy',()=>{
+ const c=harness();let shots=0;c.fire=()=>shots++;c.los=()=>false;const a={x:480,y:10000,shotCd:0,burstLeft:3,speedScale:1};
+ c.updateFrontlineAlly(a,{x:480,y:9900},1);assert.equal(shots,0);
+ c.updateFrontlineAlly(a,{x:480,y:9800},.1);assert.equal(shots,0);assert.equal(a.frontAimT,0);assert.ok(a.y<10000);
+});
+test('allied advance stops at the viewport limit and waits at least two seconds for the player',()=>{
+ const c=harness(),limit=c.frontlineAllyLimit(),a={x:480,y:limit+5};assert.equal(c.frontlineAllyWaiting(a,.1),true);
+ c.p.y-=200;assert.equal(c.frontlineAllyWaiting(a,.5),true);assert.equal(c.frontlineAllyWaiting(a,1),true);assert.equal(c.frontlineAllyWaiting(a,.6),false);
+ c.p.y+=1000;assert.equal(c.frontlineAllyWaiting(a,3),true);
+});
+test('detours cannot cross the allied advance limit and speed randomization still applies',()=>{
+ const c=harness(),limit=c.frontlineAllyLimit(),a={x:480,y:limit+15,speedScale:.5};let speed;
+ c.dogMoveAround=(a,q,sp)=>{speed=sp;a.y=limit-20;a.x+=20;};c.moveFrontlineAlly(a,{x:480,y:limit-500},135,1);
+ assert.equal(speed,67.5);assert.equal(a.y,limit+15);assert.equal(a.x,480);assert.equal(a.frontAllyNav,true);
+});
+test('spawn sites require a free southbound corridor, not only a free center',()=>{
+ const c=harness(),q={x:480,y:9000};assert.equal(c.frontlineSpawnExitClear(q),true);
+ c.hitsM=(x,y)=>y>9030&&y<9070;assert.equal(c.frontlineSpawnExitClear(q),false);
+ c.hitsM=()=>false;c.patrolLineClear=()=>false;assert.equal(c.frontlineSpawnExitClear(q),false);
+ c.patrolLineClear=()=>true;c.cars=[{x:480,y:9060}];assert.equal(c.frontlineSpawnExitClear(q),false);
+ c.cars=[];c.humans=[{x:480,y:9060,alive:true}];assert.equal(c.frontlineSpawnExitClear(q),false);
+});
+test('Frontline aiming does not change other stages',()=>{
+ const c=harness();c.stageMode='base';const a={x:480,y:10000};assert.equal(c.updateFrontlineAlly(a,{},1),false);assert.equal(a.frontAimT,undefined);
+});
+test('the settled advance position enters waiting instead of getting stuck just short of its trigger',()=>{
+ const c=harness(),a={x:480,y:10000,shotCd:0,burstLeft:3,speedScale:1,frontline:true};c.mission.points=[{x:480,y:3000}];
+ for(let i=0;i<600;i++)c.updateFrontlineAlly(a,null,.1);
+ assert.ok(a.y>=c.frontlineAllyLimit());assert.equal(a.frontHolding,true);
+ const y=a.y;c.p.y-=200;c.updateFrontlineAlly(a,null,.5);assert.equal(a.y,y);c.updateFrontlineAlly(a,null,1.6);assert.ok(a.y<y);
+});
+test('allies left at a distant objective cannot capture it without the player advancing',()=>{
+ const c=harness();vm.runInContext(html.slice(html.indexOf('function updateMission('),html.indexOf('let missionHudNextAt=')),c);
+ const q={x:480,y:3000};c.mission={points:[q],index:0,progress:0,waveT:999,reinforceT:999};c.allies=[{...q,alive:true,frontline:true}];
+ c.updateMission(10);assert.equal(c.mission.progress,0);assert.equal(c.mission.capturing,false);
+ c.p.y=q.y+100;c.updateMission(1);assert.equal(c.mission.progress,1);assert.equal(c.mission.capturing,true);
+});

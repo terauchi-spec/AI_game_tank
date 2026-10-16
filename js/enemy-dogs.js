@@ -112,7 +112,7 @@ function dogMoveAroundCore(unit,goal,speed,dt,r=7,isDog=true){
   if(dogTakeStep(unit,a+v,speed,dt,r,isDog)){unit.avoidSide=v>0?1:-1;return true;}
  return false;
 }
-// Stuck recovery is restricted to dog pairs, preserving the white commander's AI.
+// Bounded stuck recovery is shared by dog pairs and Frontline infantry.
 function dogPickEscape(unit,goal,r,isDog){
  const to=Math.atan2(goal.y-unit.y,goal.x-unit.x),side=unit.avoidSide||1;
  const anchor=isDog?unit.handler:unit.dogHandler?unit.dog:null;
@@ -136,7 +136,7 @@ function dogPickEscape(unit,goal,r,isDog){
  return best?{x:best.x,y:best.y,t:2.2}:null;
 }
 function dogMoveAround(unit,goal,speed,dt,r=7,isDog=true){
- if(!unit.enemyDog&&!unit.dogHandler&&unit.commander!=='white')return dogMoveAroundCore(unit,goal,speed,dt,r,isDog);
+ if(!unit.enemyDog&&!unit.dogHandler&&unit.commander!=='white'&&!unit.frontAllyNav&&!unit.frontMarch)return dogMoveAroundCore(unit,goal,speed,dt,r,isDog);
  let escape=unit.dogEscape;
  if(escape){escape.t-=dt;if(escape.t<=0||D(unit,escape)<12){escape=unit.dogEscape=null;unit.dogWall=null;}}
  const moved=dogMoveAroundCore(unit,escape||goal,speed,dt,r,isDog);

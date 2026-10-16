@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.17.0748</title>
+<title>こっそり戦車大作戦 2026.10.17.0802</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -626,7 +626,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <p>歩兵の潜入に加え、戦車などの乗り物を利用した戦闘や、出撃前に選ぶスキルによる攻略ができます。</p><a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-map"><h2>2. ステージ構成とランダム生成</h2>
 <p><strong>初級：</strong>全5エリア。開始草原→草原・森林・丘陵・村・湿地から重複なしでランダムに3エリア→電波施設のある草原。<strong>上級：</strong>全7エリア。最初は草原、最後は敵司令本部で、その間の5エリアは従来の候補から重複なしでランダムに選ばれます。</p>
-<p><strong>最前線：</strong>既存の戦場を舞台に、味方部隊と3つの戦線を押し上げる制圧作戦です。敵の増援と味方の補充があり、各戦線の制圧時にライフ・搭乗車両の弾薬と燃料を補給します。目的地の矢印は右上のエリア名の下に表示し、制圧中は水色の円周ゲージと残り秒数で進み具合がわかります。味方部隊と増援の移動速度は個体ごとに従来の50〜100%です。敵兵は画面上側の外から出現し、非交戦時は下へ進軍します。同時に活動する敵兵は最大16人で、画面下へ通過した兵士は撃破扱いにせず退場します。</p>
+<p><strong>最前線：</strong>既存の戦場を舞台に、味方部隊と3つの戦線を押し上げる制圧作戦です。敵の増援と味方の補充があり、各戦線の制圧時にライフ・搭乗車両の弾薬と燃料を補給します。目的地の矢印は右上のエリア名の下に表示し、制圧中は水色の円周ゲージと残り秒数で進み具合がわかります。味方部隊と増援の移動速度は個体ごとに従来の50〜100%です。射撃前は0.5秒静止して狙いを定めます。味方は画面上端の80px先で最低2秒待機し、プレイヤーが近づくと前進を再開します。敵兵は画面上側の外から出現し、非交戦時は下へ進軍します。同時に活動する敵兵は最大16人で、画面下へ通過した兵士は撃破扱いにせず退場します。</p>
 <p>上級の中間エリア候補：草原／森林／村／丘陵／敵前線基地／街／敵迷路基地／湿地／荒野。</p>
 <ul><li>エリアごとに地形や建物、木、岩、草むら、障害物などの配置が異なります。作戦1回の通常車両は合計2〜5台で、トラック・装甲車・戦車からランダムに選ばれ、戦車が最低1台出現します。戦闘機は通常配置の対象外です。橋幅は64〜256px、川ごとの流速は6〜30px/秒です。</li><li>左右端の危険度は<strong>左重点・右重点・両側重点</strong>から毎回抽選され、巡回兵の配置や遮蔽物が変化します。</li><li>荒野は赤茶色の砂地・ひび割れた粘土質の地面・風化した岩山・残丘で構成されます。時折砂嵐が起き、視界と索敵距離が低下します。オアシスは毎回出現するとは限らず、出現時は従来の50〜150%の大きさにランダム変化し、中央や画面端に生成され、池へ入ると川と同様に減速します。草むらは少なめですが、オアシス周辺に多く、まれに赤や白の小花が混じります。地面と池の描画はキャッシュします。迷路基地には広い会議室と幅の広い廊下、空きスペースの木箱があります。青の通常兵はつながった通路を広く探索します。迷路壁は256px高の区画単位で描画をキャッシュし、破壊された区画だけ再描画します。描画キャッシュは最大8区画です。迷路壁はプレイヤー戦車の接触で破壊できます。接触による破壊範囲は少し抑えており、押し込み続けると広がります。トラック・装甲車の接触では破壊できません。木箱等の爆風では破壊できます。敵司令本部にも固有の構造があります。</li><li>道路は川と同様に2か所の候補それぞれで独立して75%の出現抽選を行います。アスファルト舗装・乾いた締め固め土を各50%、土の道路は1車線（96px）・対面2車線（176px）を各50%、舗装道路は対面2車線（176px）・対面4車線（320px）を各50%で選択します。川・橋と司令本部を避けて配置し、土の道路は迷路基地も避けます。舗装道路は迷路基地にも出現し、道幅の壁を除去します。場所が確保できない場合は出現しません。対面車線の中央は白い実線です。路面には汚れ・補修跡・ひび、白線には濃い汚れと不規則な塗装欠けを表現します。敵の障害物迂回探索は複数フレームへ分割し、全敵合計で約2msを目安に処理します。道路の描画は初回にキャッシュし、画面内だけ表示します。土の道路は横筋を抑えた専用タイルを使用し、不規則な路肩が周囲の地面になじみます。中央付近には、太めで濃い雑草を不規則に配置しています。道路上には建物・木・岩・塀・草むら・泥を配置しません。舗装道路と重なる木箱・ドラム缶は路肩の安全な空き場所へ移動し、空き場所がなければ除去します。土の道路は明るさと彩度を抑えて周囲になじませます。道路自体による速度変更はありません。マップ・敵・障害物の配置は出撃ごとに再生成されます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
@@ -829,7 +829,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.17.0748',FILE_CREATED_AT='2026/10/17 07:48',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.17.0802',FILE_CREATED_AT='2026/10/17 08:02',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -4230,8 +4230,8 @@ function updateAlly(dt){
  const active=(allies||[]).filter(a=>a.alive),ready=[];
  for(const ally of active){
   if(ally.chute>0){ally.chute=Math.max(0,ally.chute-dt);const total=ally.chuteTotal||3,t=1-ally.chute/total,e=t*t*(3-2*t);ally.y=(ally.startY??ally.y)+(ally.landY-(ally.startY??ally.y))*e;if(ally.chute<=0){ally.y=ally.landY;ally.chute=0;sfx('ally');say('増援が到着!');}continue;}
-  if(updateBlastFlight(ally,dt))continue;
-  if((ally.stun||0)>0){ally.stun=Math.max(0,ally.stun-dt);ally._combatTarget=null;ally.burstLeft=3;continue;}
+  if(updateBlastFlight(ally,dt)){ally.frontAimT=0;ally.frontAimTarget=null;continue;}
+  if((ally.stun||0)>0){ally.stun=Math.max(0,ally.stun-dt);ally._combatTarget=null;ally.frontAimT=0;ally.frontAimTarget=null;ally.burstLeft=3;continue;}
   if((ally.stunRecover||0)>0){ally.stunRecover=Math.max(0,ally.stunRecover-dt);continue;}
   if(!ally.frontline&&D(ally,p)>900){ally.alive=false;continue;}ally.shotCd-=dt;ready.push(ally);
  }
@@ -4242,7 +4242,7 @@ function updateAlly(dt){
    ally._combatTarget=best;if(best)assigned.set(best,(assigned.get(best)||0)+1);
   }
  }
- for(const ally of ready){let target=ally._combatTarget;if(target&&!target.alive){target=null;ally._combatTarget=null;}const bd=target?D(ally,target):1e9;
+ for(const ally of ready){let target=ally._combatTarget;if(target&&!target.alive){target=null;ally._combatTarget=null;}const bd=target?D(ally,target):1e9;if(updateFrontlineAlly(ally,target,dt))continue;
   if(target&&bd<range+40){ally.face=Math.atan2(target.y-ally.y,target.x-ally.x);if(bd>176)moveAllySmart(ally,target,135,dt);else if(ally.shotCd<=0){fire(ally.x+Math.cos(ally.face)*12,ally.y+Math.sin(ally.face)*12,ally.face+(R()-.5)*.08,'ally','v',480,205);ally.burstLeft--;if(ally.burstLeft<=0){ally.burstLeft=3;ally.shotCd=3;}else ally.shotCd=.16;}}
   else{ally._combatTarget=null;const rank=(ally.slot||0)-2,followX=ally.frontline&&mission?mission.points[mission.index]?.x??p.x:p.x+rank*30,followY=ally.frontline&&mission?mission.points[mission.index]?.y??p.y:p.y+36+Math.abs(rank)*14,d=Math.hypot(followX-ally.x,followY-ally.y);if(d>62)moveAllySmart(ally,{x:followX,y:followY},135,dt);}
  }
@@ -7659,7 +7659,7 @@ function updateMission(dt){
   cleanupFrontlineArmy(dt);
   const q=m.points[m.index];if(!q)return;
   const foes=humans.filter(h=>h.alive&&!(h.stun>0)&&D(h,q)<210).length+etanks.filter(e=>e.alive&&D(e,q)<210).length;
-  const friendly=D(p,q)<180||allies.some(a=>a.alive&&a.frontline&&D(a,q)<180);
+  const friendly=D(p,q)<180||allies.some(a=>a.alive&&a.frontline&&q.y>=frontlineAllyLimit()&&D(a,q)<180);
   m.capturing=friendly&&!foes;m.contested=foes>0;
   if(m.capturing)m.progress=Math.min(12,m.progress+dt);else if(foes)m.progress=Math.max(0,m.progress-dt*.35);
   m.waveT-=dt;m.reinforceT-=dt;
@@ -7790,10 +7790,10 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/frontline.js?v=2026.10.17.0743"></script>
+<script src="js/frontline.js?v=2026.10.17.0802"></script>
 <script src="js/award-icons.js?v=2026.10.17.0743"></script>
 <script src="js/characters.js?v=2026.10.17.0743"></script>
-<script src="js/enemy-dogs.js?v=2026.10.17.0743"></script>
+<script src="js/enemy-dogs.js?v=2026.10.17.0802"></script>
 <script src="js/partner.js?v=2026.10.17.0743"></script>
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/canyon.js?v=2026.10.14.1836"></script>

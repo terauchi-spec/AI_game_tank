@@ -10,8 +10,9 @@ function frontlineSpawnSpot(hasDog=false){
   const y=view.y-(hasDog?180:90)-row*48;if(y<24)continue;
   for(let n=0;n<columns;n++){
    const x=view.x+24+(((n+phase)%columns)+.5)*(Math.min(W,WW)-48)/columns,q={x,y};
-   if(hitsM(x,y,10)||inWaterAt(x,y,10)||inBase(x,y)||humans.some(h=>h.alive&&D(h,q)<38)||enemyDogs.some(d=>D(d,q)<30)||etanks.some(e=>e.alive&&D(e,q)<TANK_HIT+18)||cars.some(v=>D(v,q)<TANK_HIT+18))continue;
+   if(hitsM(x,y,24)||inWaterAt(x,y,10)||inBase(x,y)||humans.some(h=>h.alive&&D(h,q)<38)||enemyDogs.some(d=>D(d,q)<30)||etanks.some(e=>e.alive&&D(e,q)<TANK_HIT+18)||cars.some(v=>D(v,q)<TANK_HIT+18))continue;
    if(hasDog){const dog={x,y:y+75};if(hitsM(dog.x,dog.y,8)||inWaterAt(dog.x,dog.y,8)||inBase(dog.x,dog.y)||humans.some(h=>h.alive&&D(h,dog)<38)||enemyDogs.some(d=>D(d,dog)<30)||!patrolLineClear(q,dog,8))continue;}
+   if(!frontlineSpawnExitClear(q,hasDog))continue;
    return q;
   }
  }
@@ -80,4 +81,54 @@ function drawFrontlineArrow(point){
  if(!point)return;
  const {x,y}=frontlineArrowPosition(),angle=Math.atan2(point.y-p.y,point.x-p.x);
  gm.save();gm.translate(x,y);gm.rotate(angle);gm.fillStyle='#ffe1a0';gm.strokeStyle='rgba(0,0,0,.85)';gm.lineWidth=3;gm.beginPath();gm.moveTo(13,0);gm.lineTo(-8,-8);gm.lineTo(-5,0);gm.lineTo(-8,8);gm.closePath();gm.stroke();gm.fill();gm.restore();
+}
+
+// Spawn-only checks: leave clearance around the unit AND a dry southbound exit.
+function frontlineSpawnExitClear(q,hasDog=false){
+ const end={x:q.x,y:q.y+(hasDog?150:110)};
+ if(!patrolLineClear(q,end,14))return false;
+ for(let y=q.y+16;y<=end.y;y+=16){
+  if(hitsM(q.x,y,14)||inBase(q.x,y)||humans.some(h=>h.alive&&Math.hypot(h.x-q.x,h.y-y)<30)||enemyDogs.some(d=>Math.hypot(d.x-q.x,d.y-y)<26)||etanks.some(e=>e.alive&&Math.hypot(e.x-q.x,e.y-y)<TANK_HIT+22)||cars.some(v=>Math.hypot(v.x-q.x,v.y-y)<TANK_HIT+22))return false;
+ }
+ return true;
+}
+function frontlineAllyLimit(){return Math.max(24,frontlineView().y-80);}
+function frontlineAllyWaiting(a,dt){
+ const limit=frontlineAllyLimit();
+ if(a.y<=limit+24){a.frontHolding=true;a.frontWaitT=Math.max(a.frontWaitT||0,2);}
+ if(a.frontHolding){
+  a.frontWaitT=Math.max(0,(a.frontWaitT||0)-dt);
+  if(a.frontWaitT>0||a.y<limit+48)return true;
+  a.frontHolding=false;
+ }
+ return false;
+}
+function moveFrontlineAlly(a,target,sp,dt){
+ a.frontAllyNav=true;
+ const limit=frontlineAllyLimit(),goal={x:target.x,y:Math.max(limit+12,target.y)},ox=a.x,oy=a.y;
+ if(oy<=limit+8)return;
+ dogMoveAround(a,goal,sp*(a.speedScale??1),dt,8,false);
+ // A detour must obey the advance limit as well; never teleport a unit out of cover.
+ if(a.y<limit){a.x=ox;a.y=oy;a.dogWall=null;a.dogEscape=null;}
+}
+function updateFrontlineAlly(a,target,dt){
+ if(stageMode!=='front')return false;
+ const waiting=frontlineAllyWaiting(a,dt),distance=target?D(a,target):Infinity;
+ if(target&&distance<176){
+  a.face=Math.atan2(target.y-a.y,target.x-a.x);
+  if(a.frontAimTarget!==target){a.frontAimTarget=target;a.frontAimT=0;}
+  a.frontAimT=(a.frontAimT||0)+dt;
+  if(a.frontAimT>=.5&&a.shotCd<=0&&los(a,target)){
+   fire(a.x+Math.cos(a.face)*12,a.y+Math.sin(a.face)*12,a.face+(R()-.5)*.08,'ally','v',480,205);
+   a.burstLeft--;if(a.burstLeft<=0){a.burstLeft=3;a.shotCd=3;a.frontAimT=0;}else a.shotCd=.16;
+  }
+ }else{
+  a.frontAimTarget=null;a.frontAimT=0;
+  if(!waiting){
+   const rank=(a.slot||0)-2,q=a.frontline&&mission?mission.points[mission.index]:null;
+   const goal=target&&distance<304?target:q||{x:p.x+rank*30,y:p.y+36+Math.abs(rank)*14};
+   if(D(a,goal)>62)moveFrontlineAlly(a,goal,135,dt);
+  }
+ }
+ return true;
 }
