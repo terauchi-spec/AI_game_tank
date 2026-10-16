@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.16.0918</title>
+<title>こっそり戦車大作戦 2026.10.16.0930</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -815,7 +815,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.16.0918',FILE_CREATED_AT='2026/10/16 09:18',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.16.0930',FILE_CREATED_AT='2026/10/16 09:30',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -7712,9 +7712,9 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/characters.js?v=2026.10.16.0918"></script>
+<script src="js/characters.js?v=2026.10.16.0930"></script>
 <script src="js/enemy-dogs.js?v=2026.10.14.1916"></script>
-<script src="js/partner.js?v=2026.10.16.0918"></script>
+<script src="js/partner.js?v=2026.10.16.0930"></script>
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/canyon.js?v=2026.10.14.1836"></script>
 <script src="js/vegetation.js?v=2026.10.14.1653"></script>
@@ -7750,9 +7750,10 @@ if(debugToggleBtn){
  setInterval(syncDebugToggleButton,250);
 }
 
+const buttonPointers=new Map();
 document.querySelectorAll('[data-k]').forEach(el=>{const c=el.dataset.k;
- const down=e=>{e.preventDefault();cap(el,e);el.classList.add('on');press(c);};
- const up=e=>{if(e)e.preventDefault();el.classList.remove('on');release(c);};
+ const down=e=>{e.preventDefault();if(buttonPointers.has(el))return;buttonPointers.set(el,e.pointerId);cap(el,e);el.classList.add('on');press(c);};
+ const up=e=>{if(!buttonPointers.has(el)||(e&&buttonPointers.get(el)!==e.pointerId))return;if(e)e.preventDefault();buttonPointers.delete(el);el.classList.remove('on');release(c);};
  el.addEventListener('pointerdown',down,{passive:false});
  el.addEventListener('pointerup',up,{passive:false});
  el.addEventListener('pointercancel',up,{passive:false});
@@ -7779,14 +7780,14 @@ const syncActionButton=()=>{
  else if(!p?.tank){if(skill==='flame')paintRing(skillCooldown,Math.max(0,3-(p?.flameFuel||0)),3);else paintRing(skillCooldown,Math.max(0,p?.scd||0),Math.max(.01,p?.scdMax||1));}
  else paintRing(skillCooldown,0,1);
 };
-let actionAimPointer=null,actionAimStartX=0,actionAimStartY=0,skillAimPointer=null,skillAimStartX=0,skillAimStartY=0;
+let actionPointer=null,actionAimPointer=null,actionAimStartX=0,actionAimStartY=0,skillAimPointer=null,skillAimStartX=0,skillAimStartY=0;
 const updateTouchTurretAim=(e,sx,sy)=>{
  if(!p||!p.tank||p.tank.kind!=='tank')return false;
  const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.hypot(dx,dy)<7)return false;
  touchTurretAngle=Math.atan2(dy,dx);p.ang=touchTurretAngle;return true;
 };
 const actionDown=e=>{
- e.preventDefault();cap(actionBtn,e);actionBtn.classList.add('on');
+ e.preventDefault();if(actionPointer!==null)return;actionPointer=e.pointerId;cap(actionBtn,e);actionBtn.classList.add('on');
  if(p&&p.sniperMode){say('狙撃中：Sで発射 / Aで解除');actionKey=null;return;}
  if(p&&p.tank&&p.tank.kind==='truck'){say('トラックは攻撃できない');actionKey=null;return;}
  if(p&&p.tank&&p.tank.kind==='tank'){
@@ -7796,7 +7797,8 @@ const actionDown=e=>{
  actionKey='KeyD';press(actionKey);
 };
 const finishAction=(e,fireTank)=>{
- if(e)e.preventDefault();
+ if(actionPointer===null||(e&&e.pointerId!==actionPointer))return;
+ actionPointer=null;if(e)e.preventDefault();
  const wasTankAim=actionAimPointer!==null&&(!e||e.pointerId===actionAimPointer);
  if(wasTankAim&&e)updateTouchTurretAim(e,actionAimStartX,actionAimStartY);
  if(wasTankAim&&fireTank&&p&&p.tank&&p.tank.kind==='tank')cannonReq=true;
@@ -7808,7 +7810,7 @@ actionBtn.addEventListener('pointerup',e=>finishAction(e,true),{passive:false});
 actionBtn.addEventListener('pointercancel',e=>finishAction(e,false),{passive:false});
 actionBtn.addEventListener('lostpointercapture',e=>finishAction(e,false),{passive:false});
 // スマホ戦車: SはMGを押下中ずっと発射。ドラッグ中は射撃しながら砲塔を旋回する。
-skillBtn.addEventListener('pointerdown',e=>{if(p&&p.tank&&p.tank.kind==='tank'){skillAimPointer=e.pointerId;skillAimStartX=e.clientX;skillAimStartY=e.clientY;}},{passive:false});
+skillBtn.addEventListener('pointerdown',e=>{if(buttonPointers.get(skillBtn)!==e.pointerId)return;if(p&&p.tank&&p.tank.kind==='tank'){skillAimPointer=e.pointerId;skillAimStartX=e.clientX;skillAimStartY=e.clientY;}},{passive:false});
 skillBtn.addEventListener('pointermove',e=>{if(skillAimPointer===e.pointerId){e.preventDefault();updateTouchTurretAim(e,skillAimStartX,skillAimStartY);}},{passive:false});
 const finishSkillAim=e=>{if(skillAimPointer!==null&&(!e||e.pointerId===skillAimPointer))skillAimPointer=null;};
 skillBtn.addEventListener('pointerup',finishSkillAim,{passive:false});skillBtn.addEventListener('pointercancel',finishSkillAim,{passive:false});skillBtn.addEventListener('lostpointercapture',finishSkillAim,{passive:false});
@@ -7827,9 +7829,9 @@ function mvp(e){
 }
 addEventListener('resize',()=>{stickGeometry=null;});
 if(window.visualViewport){visualViewport.addEventListener('resize',()=>{stickGeometry=null;});visualViewport.addEventListener('scroll',()=>{stickGeometry=null;});}
-pad.addEventListener('pointerdown',e=>{e.preventDefault();cap(pad,e);act=e.pointerId;refreshStickGeometry();mvp(e);},{passive:false});
+pad.addEventListener('pointerdown',e=>{e.preventDefault();if(act!==null)return;cap(pad,e);act=e.pointerId;refreshStickGeometry();mvp(e);},{passive:false});
 pad.addEventListener('pointermove',e=>{if(act===e.pointerId){e.preventDefault();mvp(e);}},{passive:false});
-const end=e=>{if(e)e.preventDefault();act=null;knob.style.transform='';setDir(0,0);};
+const end=e=>{if(act===null||(e&&e.pointerId!==act))return;if(e)e.preventDefault();act=null;knob.style.transform='';setDir(0,0);};
 pad.addEventListener('pointerup',end,{passive:false});pad.addEventListener('pointercancel',end,{passive:false});pad.addEventListener('lostpointercapture',end,{passive:false});
 
 // 古いiOS向けフォールバック: Pointer Events がない場合もタップ開始だけは動かす。
@@ -7837,7 +7839,7 @@ if(!window.PointerEvent){
  cv.addEventListener('touchstart',e=>{const t=e.changedTouches[0];if(!t)return;e.preventDefault();const r=cv.getBoundingClientRect();mx=(t.clientX-r.left)*W/r.width;my=(t.clientY-r.top)*H/r.height;if(state==='title')handleTitlePointer(mx,my);else if(state==='help')handleHelpPointer(mx,my);else if(state==='skill'){handleSkillMenuPointer(mx,my);}else if(state==='win'||state==='lose'){handleResultPointer(mx,my);}},{passive:false});
 }
 
-const clearInputs=()=>{for(const k in keys)keys[k]=false;for(const k in st)st[k]=0;act=null;actionKey=null;actionAimPointer=null;skillAimPointer=null;touchTurretAngle=null;dPressHandled=false;bombReq=false;cannonReq=false;interact=false;skillReq=false;knob.style.transform='';document.querySelectorAll('[data-k]').forEach(el=>el.classList.remove('on'));actionBtn.classList.remove('on');mdown=false;};
+const clearInputs=()=>{for(const k in keys)keys[k]=false;for(const k in st)st[k]=0;act=null;buttonPointers.clear();actionPointer=null;actionKey=null;actionAimPointer=null;skillAimPointer=null;touchTurretAngle=null;dPressHandled=false;bombReq=false;cannonReq=false;interact=false;skillReq=false;knob.style.transform='';document.querySelectorAll('[data-k]').forEach(el=>el.classList.remove('on'));actionBtn.classList.remove('on');mdown=false;};
 const resetBtn=document.getElementById('resetBtn');
 const backToTitle=e=>{
  if(e){e.preventDefault();e.stopPropagation();}
