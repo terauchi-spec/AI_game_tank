@@ -239,6 +239,8 @@ function updateEnemyDogs(dt){
       dogMoveAround(dog,target,150,dt,7,true);
      }
     }
+   }else if(h.frontMarch){
+    dogMoveAround(dog,{x:h.frontLaneX??h.x,y:Math.min(WH-16,h.y+100)},75,dt,7,true);
    }else if(dog.patrolMode==='south'){
     dog.southTime+=dt;dog.southY=Math.min(ZONES[0].y1-180,dog.southY+75*dt);
     const target={x:dog.southX,y:dog.southY};
