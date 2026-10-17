@@ -138,6 +138,44 @@ function moveFrontlineEnemy(h,dt,speed){
  if(moved>.02)h.frontMoveFace=Math.atan2(h.y-oy,h.x-ox);
  return h.frontMoveFace??Math.PI/2;
 }
+const FRONTLINE_CAPTURE_COLORS={
+ ready:{stroke:'#8dd3ff',fill:'rgba(95,185,210,.13)',track:'rgba(141,211,255,.24)',text:'#d5f0ff'},
+ contested:{stroke:'#ffac52',fill:'rgba(255,153,55,.17)',track:'rgba(255,172,82,.28)',text:'#ffe0b6'},
+ done:{stroke:'#9de7ae',fill:'rgba(75,170,100,.15)',track:'rgba(157,231,174,.24)',text:'#d5f0ff'}
+};
+function frontlineCaptureColors(point,m){
+ if(point.done)return FRONTLINE_CAPTURE_COLORS.done;
+ const active=m.points[m.index]===point;
+ return active&&(point.captureStarted||m.progress>0)&&(m.enemiesInside??m.contested)?FRONTLINE_CAPTURE_COLORS.contested:FRONTLINE_CAPTURE_COLORS.ready;
+}
+function beginFrontlineVictory(){
+ if(stageMode!=='front'||!mission||mission.index!==3||!mission.points.every(q=>q.done))return false;
+ mission.victory={elapsed:0,duration:3,point:mission.points[2],fromX:camX,fromY:cam};
+ state='frontVictory';return true;
+}
+function updateFrontlineVictory(dt){
+ if(state!=='frontVictory'||!mission?.victory)return;
+ const v=mission.victory;v.elapsed=Math.min(v.duration,v.elapsed+dt);
+ if(v.elapsed>=v.duration){state='succeeded';successFrameDrawn=false;}
+}
+function frontlineVictoryCamera(){
+ const v=stageMode==='front'&&mission?.victory;
+ if(!v||!['frontVictory','succeeded','win'].includes(state))return null;
+ const a=v.point.antenna||frontlineAntennaGeometry(v.point,2),t=Math.min(1,v.elapsed/.7),ease=t*t*(3-2*t);
+ const x=Math.max(0,Math.min(WW-W,v.point.x-W/2)),y=Math.max(0,Math.min(WH-H,v.point.y-a.height*.43-H/2));
+ return{x:v.fromX+(x-v.fromX)*ease,y:v.fromY+(y-v.fromY)*ease};
+}
+function drawFrontlineVictorySignal(){
+ const v=state==='frontVictory'&&stageMode==='front'&&mission?.victory;if(!v||v.elapsed<.5)return;
+ const a=v.point.antenna||frontlineAntennaGeometry(v.point,2),x=v.point.x-Math.round(camX/2)*2,y=a.y+12-Math.round(cam/2)*2;
+ gm.save();gm.setTransform(1,0,0,1,0,0);gm.strokeStyle='#a2eaff';gm.lineWidth=4;
+ // Three simple rings; no extra images, particles or ongoing work after the transition.
+ for(let i=0;i<3;i++){
+  const phase=(v.elapsed-.5-i*.5)/1.5;if(phase<0||phase>1)continue;
+  gm.globalAlpha=Math.sin(Math.PI*phase)*.9;gm.beginPath();gm.arc(x,y,18+phase*300,0,Math.PI*2);gm.stroke();
+ }
+ gm.restore();
+}
 function frontlineCaptureVisual(m){
  const fraction=Math.max(0,Math.min(1,(m.progress||0)/FRONTLINE_CAPTURE_SECONDS));
  const remaining=Math.max(0,FRONTLINE_CAPTURE_SECONDS-(m.progress||0))/Math.max(1,m.captureRate||1);
@@ -145,10 +183,10 @@ function frontlineCaptureVisual(m){
 }
 function drawFrontlineCaptureRing(point,x,y,m){
  const active=m.points[m.index]===point,waiting=m.captureCount===0&&D(p,point)<frontlineCaptureRadius(point);if(!active||(!(m.progress>0)&&!m.capturing&&!waiting))return;
- const status=frontlineCaptureVisual(m),radius=frontlineCaptureRadius(point);
- gm.save();gm.lineWidth=7;gm.strokeStyle='rgba(141,211,255,.24)';gm.beginPath();gm.arc(x,y,radius,0,Math.PI*2);gm.stroke();
- if(status.fraction>0){gm.strokeStyle='#8dd3ff';gm.lineCap='round';gm.beginPath();gm.arc(x,y,radius,-Math.PI/2,-Math.PI/2+Math.PI*2*status.fraction);gm.stroke();}
- gm.textAlign='center';gm.font='bold 16px system-ui';gm.lineWidth=4;gm.strokeStyle='rgba(0,0,0,.8)';const labelY=y+(point.antenna?86:-35);gm.strokeText(status.label,x,labelY);gm.fillStyle='#d5f0ff';gm.fillText(status.label,x,labelY);gm.restore();
+ const status=frontlineCaptureVisual(m),radius=frontlineCaptureRadius(point),colors=frontlineCaptureColors(point,m);
+ gm.save();gm.lineWidth=7;gm.strokeStyle=colors.track;gm.beginPath();gm.arc(x,y,radius,0,Math.PI*2);gm.stroke();
+ if(status.fraction>0){gm.strokeStyle=colors.stroke;gm.lineCap='round';gm.beginPath();gm.arc(x,y,radius,-Math.PI/2,-Math.PI/2+Math.PI*2*status.fraction);gm.stroke();}
+ gm.textAlign='center';gm.font='bold 16px system-ui';gm.lineWidth=4;gm.strokeStyle='rgba(0,0,0,.8)';const labelY=y+(point.antenna?86:-35);gm.strokeText(status.label,x,labelY);gm.fillStyle=colors.text;gm.fillText(status.label,x,labelY);gm.restore();
 }
 function frontlineArrowPosition(){return{x:W-26,y:68};}
 function drawFrontlineArrow(point){

@@ -506,3 +506,35 @@ test('one allied bazooka blast destroys a tank and credits support without damag
  c.p={x:480,y:10000,hp:3};c.allies=[{x:480,y:10000,alive:true}];c.etanks=[{x:480,y:10000,alive:true,hp:999}];c.humans=[{x:500,y:10000,alive:true}];
  c.frontlineCommanderRocketBlast(480,10000);assert.equal(c.etanks[0].alive,false);assert.equal(c.humans[0].alive,false);assert.equal(support,2);assert.equal(c.p.hp,3);assert.equal(c.allies[0].alive,true);
 });
+
+test('capture starts blue, turns orange only for an enemy inside an engaged active circle, and returns blue after clearing',()=>{
+ const c=harness(),q={x:480,y:10000,counterTriggered:true,playerEntered:true};c.mission={points:[q,{x:480,y:6500},{x:480,y:3000}],index:0,progress:0,waveT:999,reinforceT:999};c.p={x:480,y:10000};c.allies=[{x:480,y:10000,alive:true,frontline:true}];
+ vm.runInContext(html.slice(html.indexOf('function updateMission('),html.indexOf('let missionHudNextAt=')),c);
+ c.humans=[{x:480,y:10000,alive:true}];c.updateMission(.1);assert.equal(c.frontlineCaptureColors(q,c.mission).stroke,'#8dd3ff');
+ c.humans=[];c.updateMission(1);assert.equal(q.captureStarted,true);assert.ok(c.mission.progress>0);
+ c.humans=[{x:480,y:10365,alive:true}];c.updateMission(.1);assert.equal(c.mission.contested,true);assert.equal(c.frontlineCaptureColors(q,c.mission).stroke,'#8dd3ff');
+ c.humans[0].y=10350;c.updateMission(.1);assert.equal(c.mission.capturing,false);assert.equal(c.frontlineCaptureColors(q,c.mission).stroke,'#ffac52');assert.equal(c.frontlineCaptureColors(c.mission.points[1],c.mission).stroke,'#8dd3ff');
+ c.humans[0].stun=2;c.updateMission(.1);assert.equal(c.frontlineCaptureColors(q,c.mission).stroke,'#8dd3ff');
+ c.etanks=[{x:480,y:10000,alive:true}];c.updateMission(.1);assert.equal(c.frontlineCaptureColors(q,c.mission).stroke,'#ffac52');
+ c.etanks=[];c.updateMission(.1);assert.equal(c.frontlineCaptureColors(q,c.mission).stroke,'#8dd3ff');q.done=true;assert.equal(c.frontlineCaptureColors(q,c.mission).stroke,'#9de7ae');
+});
+test('orange capture colors apply to the gauge and a zero gauge retains the engaged contested state',()=>{
+ const c=harness(),q={captureStarted:true},m={points:[q],index:0,progress:12,contested:true,enemiesInside:true};c.drawFrontlineCaptureRing(q,100,200,m);assert.equal(c.gm.fillStyle,'#ffe0b6');
+ m.progress=0;assert.equal(c.frontlineCaptureColors(q,m).stroke,'#ffac52');m.enemiesInside=false;assert.equal(c.frontlineCaptureColors(q,m).stroke,'#8dd3ff');
+});
+test('three captured objectives freeze combat, finalize once, then show the normal success screen after the antenna transmission',()=>{
+ const c=harness();Object.assign(c,{state:'play',cam:2900,camX:240,successFrameDrawn:true,shake:8});let finalized=0;c.finalizeScore=cleared=>{assert.equal(cleared,true);finalized++;};c.mission={index:3,points:[{done:true},{done:true},{x:480,y:3000,done:true}]};
+ vm.runInContext(html.slice(html.indexOf('function completeMission('),html.indexOf('function updateMission(')),c);
+ c.completeMission();assert.equal(c.state,'frontVictory');assert.equal(finalized,1);c.completeMission();assert.equal(finalized,1);
+ c.updateFrontlineVictory(2.9);assert.equal(c.state,'frontVictory');c.updateFrontlineVictory(.1);assert.equal(c.state,'succeeded');assert.equal(c.successFrameDrawn,false);c.updateFrontlineVictory(1);assert.equal(finalized,1);
+ const d=harness();d.state='play';d.mission={index:2,points:[{done:true},{done:true},{done:false}]};assert.equal(d.beginFrontlineVictory(),false);
+ d.stageMode='stealth';d.finalizeScore=()=>{};vm.runInContext(html.slice(html.indexOf('function completeMission('),html.indexOf('function updateMission(')),d);d.completeMission();assert.equal(d.state,'win');
+});
+test('victory camera keeps the large antenna tip visible and signal rings stop outside the victory transition',()=>{
+ const c=harness();for(const [w,h] of [[840,720],[480,1039],[480,680]]){
+  c.W=w;c.H=h;c.state='frontVictory';c.cam=3000;c.camX=0;c.mission={index:3,points:[],victory:{elapsed:1.5,point:{x:480,y:3000},fromX:0,fromY:3000}};
+  const view=c.frontlineVictoryCamera(),shape=c.frontlineAntennaGeometry(c.mission.victory.point,2);assert.ok(shape.y+12-view.y>0);assert.ok(shape.y+12-view.y<h);c.cam=view.y;c.camX=view.x;
+  const before=c.calls.length;c.drawFrontlineVictorySignal();const arcs=c.calls.slice(before).filter(x=>x[0]==='arc');assert.ok(arcs.length>0&&arcs.length<=3);
+  c.state='succeeded';const count=c.calls.length;c.drawFrontlineVictorySignal();assert.equal(c.calls.length,count);
+ }
+});
