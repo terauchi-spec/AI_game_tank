@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.17.2001</title>
+<title>こっそり戦車大作戦 2026.10.17.2006</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -852,7 +852,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.17.2001',FILE_CREATED_AT='2026/10/17 20:01',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.17.2006',FILE_CREATED_AT='2026/10/17 20:06',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -7707,7 +7707,7 @@ function setupMission(){
  if(stageMode==='front'){
   mission.advanceStartY=p.y;mission.advanceReleased=false;
   const easy=isFrontlineBeginner(),locations=easy?[10000,3500]:[10000,6500,3000];
-  mission.points=locations.map((y,i)=>({...(i===0?frontlineFirstObjectiveSpot():missionSpot(WW/2,y,i===(easy?1:2)?75:35)),name:(easy?['南部戦線','北部戦線']:['南部戦線','中央戦線','北部戦線'])[i],largeAntenna:easy&&i===1,captureRadius:i===(easy?1:2)?540:360,done:false}));
+  mission.points=locations.map((y,i)=>({...(i===0?frontlineFirstObjectiveSpot():missionSpot(WW/2,y,i===(easy?1:2)?75:35)),name:'',largeAntenna:easy&&i===1,captureRadius:i===(easy?1:2)?540:360,done:false}));
   missionAllies(p.y-100);setupFrontlineAntennas();setupFrontlineBoundary();
   say('最前線：24m前進すると味方部隊が進軍！');
  }else{
@@ -7740,7 +7740,7 @@ function updateMission(dt){
   if(m.capturing&&m.progress>0)q.captureStarted=true;
   updateFrontlineWaves(dt);m.reinforceT-=dt;
   if(m.reinforceT<=0){m.reinforceT=18;if(allies.filter(a=>a.alive&&a.frontline).length<4)missionAllies(Math.max(q.y+250,Math.min(p.y+120,WH-200)));}
-  if(m.progress>=FRONTLINE_CAPTURE_SECONDS){q.done=true;m.index++;m.progress=0;p.hp=3;say(q.name+' 制圧！');if(m.index===m.points.length){completeMission();return;}missionAllies(q.y);}
+  if(m.progress>=FRONTLINE_CAPTURE_SECONDS){q.done=true;m.index++;m.progress=0;p.hp=3;say('拠点を制圧！');if(m.index===m.points.length){completeMission();return;}missionAllies(q.y);}
  }else{
   m.alarm=Math.max(0,Math.min(100,m.alarm+dt*(detected?12:-5)));m.waveT-=dt;
   if(m.alarm>=65&&m.waveT<=0){m.waveT=24;m.alertCount++;if(humans.filter(h=>h.alive&&D(h,p)<650).length<12)for(let i=0;i<3;i++)missionEnemy(p.x+(i-1)*110,p.y-340,true);say('警戒部隊が接近！ 草むらや遮蔽物へ');}
@@ -7869,9 +7869,9 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/frontline.js?v=2026.10.17.2001"></script>
+<script src="js/frontline.js?v=2026.10.17.2006"></script>
 <script src="js/award-icons.js?v=2026.10.17.0743"></script>
-<script src="js/characters.js?v=2026.10.17.2001"></script>
+<script src="js/characters.js?v=2026.10.17.2006"></script>
 <script src="js/enemy-dogs.js?v=2026.10.17.0811"></script>
 <script src="js/partner.js?v=2026.10.17.0743"></script>
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
