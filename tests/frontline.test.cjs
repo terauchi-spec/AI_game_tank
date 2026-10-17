@@ -174,9 +174,9 @@ test('a dead tracked enemy clears found mode immediately; waiting still limits c
  const c=harness(),a={x:480,y:c.frontlineAllyLimit()+5,face:-Math.PI/2,speedScale:1},t={x:480,y:a.y-250,alive:true};
  const y=a.y;c.updateFrontlineAlly(a,t,.1);assert.equal(a.y,y);assert.equal(a.frontMode,'found');t.alive=false;c.updateFrontlineAlly(a,null,.1);assert.equal(a.frontMode,'patrol');
 });
-test('ally sight and found markers are static canvas shapes and disappear while stunned',()=>{
+test('ally vision cones stay hidden while found markers disappear when stunned',()=>{
  const c=harness();c.g=c.gm;const marks=[];c.lab=(...a)=>marks.push(a);const a={x:480,y:10000,face:-Math.PI/2,frontMode:'found'};
- c.drawFrontlineAllyVision(a);assert.ok(c.calls.some(x=>x[0]==='arc'&&x[3]===300));assert.equal(marks.length,1);
+ c.drawFrontlineAllyVision(a);assert.equal(c.calls.filter(x=>x[0]==='arc').length,0);assert.equal(marks.length,1);
  const count=c.calls.length;a.stun=5;c.drawFrontlineAllyVision(a);assert.equal(c.calls.length,count);c.stageMode='base';a.stun=0;c.drawFrontlineAllyVision(a);assert.equal(c.calls.length,count);
 });
 
@@ -580,7 +580,7 @@ test('beginner Frontline selects three distinct permitted areas after the starti
 test('beginner Frontline builds two cargo objectives and completes after the second capture',()=>{
  const c=harness();c.frontlineBeginner=true;
  vm.runInContext(html.slice(html.indexOf('function setupMission('),html.indexOf('function completeMission(')),c);c.setupMission();
- assert.equal(c.mission.points.length,2);assert.deepEqual(Array.from(c.mission.points,q=>Array.from(q.cargo,a=>a.asset)),[['frontline_cargo_small'],['frontline_cargo_large','frontline_cargo_large']]);assert.deepEqual(Array.from(c.mission.points,q=>q.captureRadius),[360,540]);
+ assert.equal(c.mission.points.length,2);assert.deepEqual(Array.from(c.mission.points,q=>Array.from(q.cargo,a=>a.asset)),[['frontline_cargo_small'],['frontline_cargo_large','frontline_cargo_large','frontline_cargo_large']]);assert.deepEqual(Array.from(c.mission.points,q=>q.captureRadius),[360,540]);
  const q=c.mission.points[1];c.mission.index=1;c.mission.points[0].done=true;q.playerEntered=true;q.counterTriggered=true;c.mission.progress=47.99;c.mission.waveT=999;c.mission.reinforceT=999;c.p.x=q.x;c.p.y=q.y;c.allies=[{x:q.x,y:q.y,alive:true,frontline:true}];let finished=0;c.completeMission=()=>finished++;
  vm.runInContext(html.slice(html.indexOf('function updateMission('),html.indexOf('let missionHudNextAt=')),c);c.updateMission(.02);assert.equal(finished,1);assert.equal(c.mission.index,2);
  c.state='play';c.camX=0;c.cam=0;assert.equal(c.beginFrontlineVictory(),true);assert.equal(c.state,'frontVictory');assert.equal(c.mission.victory.point,q);c.successFrameDrawn=true;c.updateFrontlineVictory(3);assert.equal(c.state,'succeeded');
@@ -600,11 +600,11 @@ test('beginner first entry sends four attackers including exactly one blue comma
 });
 
 
-test('beginner cargo has one small sprite and two side-by-side large sprites with stable body colliders',()=>{
+test('beginner cargo has one small sprite and three paired sprites showing six containers with stable body colliders',()=>{
  const c=harness();c.frontlineBeginner=true;c.mission.points=[{x:480,y:10000},{x:480,y:3500}];c.setupFrontlineAntennas();
- assert.equal(c.covers.length,3);assert.ok(c.covers.every(v=>v.frontCargo&&v.frontAntenna));assert.ok(c.mission.points.every(q=>!q.antenna));
- const [left,right]=c.mission.points[1].cargo;assert.equal(left.y,right.y);assert.ok(left.x+left.width<right.x);for(const cargo of [left,right])assert.ok(cargo.collider.w<cargo.width&&cargo.collider.h<cargo.height);
- c.setupFrontlineAntennas();assert.equal(c.covers.length,3);
+ assert.equal(c.covers.length,4);assert.ok(c.covers.every(v=>v.frontCargo&&v.frontAntenna));assert.ok(c.mission.points.every(q=>!q.antenna));
+ const [left,middle,right]=c.mission.points[1].cargo;assert.equal(left.y,right.y);assert.ok(left.x+left.width<middle.x&&middle.x+middle.width<right.x);assert.ok(right.x+right.width-left.x<=480);for(const cargo of [left,middle,right])assert.ok(cargo.collider.w<cargo.width&&cargo.collider.h<cargo.height);
+ c.setupFrontlineAntennas();assert.equal(c.covers.length,4);
 });
 test('cargo rejects distant damage, keeps at most six small nicks, and survives repeated cannon, bomb and ram damage',()=>{
  const c=harness();c.frontlineBeginner=true;c.mission.points=[{x:480,y:10000}];c.setupFrontlineAntennas();const block=c.covers[0],cargo=block.frontCargo,original={x:block.x,y:block.y,w:block.w,h:block.h};
@@ -619,7 +619,7 @@ test('cargo damage raster is built only after a new nick and reuses its canvas o
  c.drawFrontlineCargo(cargo);assert.equal(canvases,0);c.damageFrontlineCargo(cargo.collider,cargo.collider.x,cargo.collider.y,4);for(let i=0;i<20;i++)c.drawFrontlineCargo(cargo);assert.equal(canvases,1);assert.equal(contexts,1);
  c.damageFrontlineCargo(cargo.collider,cargo.collider.x,cargo.collider.y+22,4);c.drawFrontlineCargo(cargo);assert.equal(canvases,1);assert.equal(contexts,2);
 });
-test('beginner victory sparkles on both cargo sprites instead of drawing antenna radio rings',()=>{
+test('beginner victory sparkles on all cargo pairs instead of drawing antenna radio rings',()=>{
  const c=harness();c.frontlineBeginner=true;c.cam=3000;c.camX=0;c.state='frontVictory';const point={x:480,y:3500};point.cargo=c.frontlineCargoLayout(point,1);c.mission.victory={point,elapsed:1.1};
  c.drawFrontlineVictorySignal();assert.ok(c.calls.some(a=>a[0]==='fill'));assert.equal(c.calls.filter(a=>a[0]==='arc').length,0);
  const xs=c.calls.filter(a=>a[0]==='moveTo').map(a=>a[1]);assert.ok(xs.some(x=>x<480)&&xs.some(x=>x>480));const before=c.calls.length;c.state='play';c.drawFrontlineVictorySignal();assert.equal(c.calls.length,before);
@@ -635,8 +635,8 @@ test('desktop cargo bypasses the half-resolution pass, draws visible sprites onc
  const c=harness();c.frontlineBeginner=true;c.MOBILE_VIEW=false;c.W=960;c.mission.points=[{x:480,y:10000},{x:480,y:10200}];c.setupFrontlineAntennas();
  c.COVER_IMG={frontline_cargo_small:{},frontline_cargo_large:{}};c.assetOK=()=>true;const original={};c.g=original;
  c.drawFrontlineAntennas(0,9700,true);assert.equal(c.calls.filter(q=>q[0]==='drawImage').length,0);
- c.drawFrontlineCargoNative(0,9700);assert.equal(c.calls.filter(q=>q[0]==='drawImage').length,3);assert.equal(c.g,original);assert.ok(c.calls.some(q=>q[0]==='setTransform'&&q[1]===1&&q[6]===-9700));
- const count=c.calls.length;c.drawFrontlineCargoNative(0,0);assert.equal(c.calls.filter(q=>q[0]==='drawImage').length,3);
+ c.drawFrontlineCargoNative(0,9700);assert.equal(c.calls.filter(q=>q[0]==='drawImage').length,4);assert.equal(c.g,original);assert.ok(c.calls.some(q=>q[0]==='setTransform'&&q[1]===1&&q[6]===-9700));
+ const count=c.calls.length;c.drawFrontlineCargoNative(0,0);assert.equal(c.calls.filter(q=>q[0]==='drawImage').length,4);
  c.MOBILE_VIEW=true;const mobile=c.calls.length;c.drawFrontlineCargoNative(0,9700);assert.equal(c.calls.length,mobile);
  c.MOBILE_VIEW=false;c.frontlineBeginner=false;c.drawFrontlineCargoNative(0,9700);assert.equal(c.calls.length,mobile);
 });

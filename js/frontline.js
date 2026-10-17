@@ -103,7 +103,8 @@ function frontlineAntennaGeometry(point,index){
   base:{x:point.x-(large?52:17),y:point.y-(large?22:10),w:large?104:34,h:large?44:20}};
 }
 function frontlineCargoLayout(point,index){
- const large=index===1,width=large?220:280,height=large?147:140,offsets=large?[-120,120]:[0];
+ // The large asset contains a connected pair: three pairs make six containers.
+ const large=index===1,width=large?140:280,height=large?94:140,offsets=large?[-150,0,150]:[0];
  return offsets.map(offset=>{
   const x=point.x+offset-width/2,y=point.y-height*.6;
   const cargo={x,y,width,height,asset:large?'frontline_cargo_large':'frontline_cargo_small',damage:[]};
@@ -536,10 +537,7 @@ function refreshFrontlineAllyTargets(ready){
 }
 function drawFrontlineAllyVision(a){
  if(stageMode!=='front'||a.chute>0||a.stun>0||a.stunRecover>0||a.blastAirT>0)return;
- const face=a.face??-Math.PI/2,found=a.frontMode==='found';
- g.save();g.fillStyle=found?'rgba(105,215,255,.045)':'rgba(105,215,255,.025)';
- g.beginPath();g.moveTo(a.x,a.y);g.arc(a.x,a.y,frontlineAllySightRange(!!a._combatTarget),face-Math.PI/3,face+Math.PI/3);g.closePath();g.fill();g.restore();
- if(found)lab('!',a.x,a.y-30,'bold 18px system-ui','#8ddfff');
+ if(a.frontMode==='found')lab('!',a.x,a.y-30,'bold 18px system-ui','#8ddfff');
 }
 
 // Generation-only simplification: preserve cover islands and three clear north/south lanes.
