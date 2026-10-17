@@ -640,3 +640,26 @@ test('desktop cargo bypasses the half-resolution pass, draws visible sprites onc
  c.MOBILE_VIEW=true;const mobile=c.calls.length;c.drawFrontlineCargoNative(0,9700);assert.equal(c.calls.length,mobile);
  c.MOBILE_VIEW=false;c.frontlineBeginner=false;c.drawFrontlineCargoNative(0,9700);assert.equal(c.calls.length,mobile);
 });
+
+
+test('frontline end follows the actual final objective in both difficulties',()=>{
+ const c=harness();
+ for(const y of [3000,3500,4700]){
+  c.mission.points=[{y:10000},{y,captureRadius:540}];c.setupFrontlineBoundary();
+  assert.equal(c.frontlineNorthEdge(),y-540-180);
+  c.p.y=100;c.enforceFrontlineBoundary();assert.equal(c.p.y,y-540-180+10);
+  c.p.tank={kind:'tank'};c.p.y=100;c.enforceFrontlineBoundary();assert.equal(c.p.y,y-540-180+c.TANK_HIT);c.p.tank=null;
+  assert.equal(c.frontlineView().y,c.frontlineNorthEdge());
+  assert.equal(c.frontlineMovementTop({frontline:true},14),c.frontlineNorthEdge()+14);
+  assert.equal(c.frontlineMovementTop({frontMarch:true},14),14);
+ }
+ c.stageMode='base';assert.equal(c.frontlineNorthEdge(),0);assert.equal(c.frontlineMovementTop(c.p,10),10);
+ c.stageMode='front';c.areaDebugEnabled=true;assert.equal(c.frontlineNorthEdge(),0);
+});
+test('north boundary allows sideways movement, clamps large forward steps and leaves enemy entries open',()=>{
+ const c=harness();Object.assign(c,{mazeComparisonEnemyFrozen:()=>false,terrainMoveScale:()=>1,hitsC:()=>false,enemyTankObjectBlocked:()=>false,tankBlocked:()=>false,enemyUnitBlocked:()=>false});
+ vm.runInContext(html.slice(html.indexOf('function mv('),html.indexOf('function mv(')+html.slice(html.indexOf('function mv(')).indexOf('\n')),c);
+ c.mission.northEdge=2300;c.p.y=2320;c.mv(c.p,25,-500,10);assert.equal(c.p.y,2310);assert.equal(c.p.x,505);
+ c.mv(c.p,0,50,10);assert.equal(c.p.y,2360);
+ const enemy={x:100,y:2200};c.mv(enemy,0,25,14);assert.equal(enemy.y,2225);
+});

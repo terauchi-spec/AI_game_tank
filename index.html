@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.17.1900</title>
+<title>こっそり戦車大作戦 2026.10.17.1920</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -852,7 +852,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.17.1900',FILE_CREATED_AT='2026/10/17 19:00',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.17.1920',FILE_CREATED_AT='2026/10/17 19:20',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -3178,7 +3178,7 @@ function terrainMoveScale(o,dx,dy,r){
  }
  return 1;
 }
-function mv(o,dx,dy,r,slowOverride=null){if(mazeComparisonEnemyFrozen(o))return;const slow=Number.isFinite(slowOverride)?slowOverride:terrainMoveScale(o,dx,dy,r);dx*=slow;dy*=slow;const nx=o.x+dx;if(nx>r&&nx<WW-r&&!hitsC(nx,o.y,r)&&!enemyTankObjectBlocked(o,nx,o.y)&&!tankBlocked(o,nx,o.y,r)&&!enemyUnitBlocked(o,nx,o.y,r)&&(!o.dogHandler||dogHandlerStepAllowed(o,nx,o.y)))o.x=nx;const ny=o.y+dy;if(ny>r&&ny<WH-r&&!hitsC(o.x,ny,r)&&!enemyTankObjectBlocked(o,o.x,ny)&&!tankBlocked(o,o.x,ny,r)&&!enemyUnitBlocked(o,o.x,ny,r)&&(!o.dogHandler||dogHandlerStepAllowed(o,o.x,ny)))o.y=ny;}
+function mv(o,dx,dy,r,slowOverride=null){if(mazeComparisonEnemyFrozen(o))return;const slow=Number.isFinite(slowOverride)?slowOverride:terrainMoveScale(o,dx,dy,r);dx*=slow;dy*=slow;const nx=o.x+dx;if(nx>r&&nx<WW-r&&!hitsC(nx,o.y,r)&&!enemyTankObjectBlocked(o,nx,o.y)&&!tankBlocked(o,nx,o.y,r)&&!enemyUnitBlocked(o,nx,o.y,r)&&(!o.dogHandler||dogHandlerStepAllowed(o,nx,o.y)))o.x=nx;const top=frontlineMovementTop(o,r),ny=top>r?Math.max(top,o.y+dy):o.y+dy;if(ny>r&&ny<WH-r&&!hitsC(o.x,ny,r)&&!enemyTankObjectBlocked(o,o.x,ny)&&!tankBlocked(o,o.x,ny,r)&&!enemyUnitBlocked(o,o.x,ny,r)&&(!o.dogHandler||dogHandlerStepAllowed(o,o.x,ny)))o.y=ny;}
 let lastEnemySeparationAt=-1e9;
 function separateEnemyUnits(force=false){
  const now=performance.now();if(!force&&now-lastEnemySeparationAt<100)return;lastEnemySeparationAt=now;
@@ -4610,7 +4610,7 @@ function drawWaterRipples(cx,cy){
 }
 function playerMove(dx,dy,r,dt,slowOverride=null){
  const ox=p.x,oy=p.y,moveR=(p.tank&&p.tank.kind==='tank')?TANK_HIT:r;
- if(p.tank&&p.tank.kind==='fighter'){p.x=Math.max(r,Math.min(WW-r,p.x+dx));p.y=Math.max(r,Math.min(WH-r,p.y+dy));return Math.hypot(p.x-ox,p.y-oy);}
+ if(p.tank&&p.tank.kind==='fighter'){p.x=Math.max(r,Math.min(WW-r,p.x+dx));p.y=Math.max(frontlineMovementTop(p,r),Math.min(WH-r,p.y+dy));return Math.hypot(p.x-ox,p.y-oy);}
  if(p.tank&&p.tank.kind!=='fighter'){
   const len=Math.hypot(dx,dy)||1,nx=p.x+dx,ny=p.y+dy,hitObject=nearbyObjects(nx,ny,moveR+10).find(o=>circleHitsObject(nx,ny,moveR,o));
   if(hitObject){damageObject(hitObject,'vehicle');sfx('drillBreak');shake=Math.max(shake,4);alertEnemiesNear(hitObject.x+hitObject.w/2,hitObject.y+hitObject.h/2,100);}
@@ -5541,7 +5541,7 @@ function update(dt){
  applyRiverCurrents(dt);
  for(const o of [...humans,...etanks])holdEnemyModePosition(o);
  updateEnemyDogs(dt);
- separateFootPlayerEnemyTanks();
+ separateFootPlayerEnemyTanks();enforceFrontlineBoundary();
  for(const f of fx)f.l-=dt;fx=fx.filter(f=>f.l>0);
  updateParts(dt);updateWaterRipples(dt);
  shake=Math.max(0,shake-35*dt);flash=Math.max(0,flash-dt*2.5);msgT-=dt;vehicleNameT=Math.max(0,vehicleNameT-dt);updateScoreTracking(dt,frameMove);if(state==='play')updateMission(dt);return near;
@@ -6894,7 +6894,7 @@ function draw(near){
  fragmentDrawFrame++;fragmentAssetSignature=Object.values(COVER_IMG).reduce((n,im)=>n+(assetOK(im)?1:0),0);
  const bl=state==='blast'||((state==='win'||state==='succeeded')&&(stageMode==='base'||stageMode==='beginner'));
  const victoryCamera=frontlineVictoryCamera();
- if(victoryCamera){cam=victoryCamera.y;camX=victoryCamera.x;}else if(bl){cam+=(0-cam)*.07;camX+=(Math.max(0,Math.min(WW-W,base.x+base.w/2-W/2))-camX)*.07;}else{cam=Math.max(0,Math.min(WH-H,p.y-H*.6));camX=Math.max(0,Math.min(WW-W,p.x-W/2));}
+ if(victoryCamera){cam=victoryCamera.y;camX=victoryCamera.x;}else if(bl){cam+=(0-cam)*.07;camX+=(Math.max(0,Math.min(WW-W,base.x+base.w/2-W/2))-camX)*.07;}else{cam=Math.max(frontlineNorthEdge(),Math.min(WH-H,p.y-H*.6));camX=Math.max(0,Math.min(WW-W,p.x-W/2));}
  const cy=Math.round(cam/2)*2,cx=Math.round(camX/2)*2;
  g.save();if(shake>0)g.translate((R()-.5)*shake,(R()-.5)*shake);
  g.fillStyle='#2b3322';g.fillRect(-20,-20,W+40,H+40);g.translate(-cx,-cy);
@@ -7705,7 +7705,7 @@ function setupMission(){
   mission.advanceStartY=p.y;mission.advanceReleased=false;
   const easy=isFrontlineBeginner(),locations=easy?[10000,3500]:[10000,6500,3000];
   mission.points=locations.map((y,i)=>({...(i===0?frontlineFirstObjectiveSpot():missionSpot(WW/2,y,i===(easy?1:2)?75:35)),name:(easy?['南部戦線','北部戦線']:['南部戦線','中央戦線','北部戦線'])[i],largeAntenna:easy&&i===1,captureRadius:i===(easy?1:2)?540:360,done:false}));
-  missionAllies(p.y-100);setupFrontlineAntennas();
+  missionAllies(p.y-100);setupFrontlineAntennas();setupFrontlineBoundary();
   say('最前線：24m前進すると味方部隊が進軍！');
  }else{
   mission.points=[8500,4300,1100].map((y,i)=>({...missionSpot(i%2?740:220,y,25),name:'機密端末 '+(i+1),done:false}));
@@ -7866,7 +7866,7 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/frontline.js?v=2026.10.17.1900"></script>
+<script src="js/frontline.js?v=2026.10.17.1920"></script>
 <script src="js/award-icons.js?v=2026.10.17.0743"></script>
 <script src="js/characters.js?v=2026.10.17.1319"></script>
 <script src="js/enemy-dogs.js?v=2026.10.17.0811"></script>

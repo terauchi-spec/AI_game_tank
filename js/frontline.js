@@ -3,8 +3,26 @@ const FRONTLINE_ENEMY_LIMIT=16,FRONTLINE_CAPTURE_SECONDS=48,FRONTLINE_CAPTURE_RA
 function isFrontlineBeginner(){return stageMode==='front'&&typeof frontlineBeginner!=='undefined'&&frontlineBeginner&&!areaDebugEnabled;}
 function frontlineCaptureRadius(point){return point?.captureRadius||FRONTLINE_CAPTURE_RADIUS;}
 function frontlineTankSightScale(unit){return stageMode==='front'&&(etanks||[]).includes(unit)?2:1;}
+// North of the last capture circle is outside this operation. Keep reserve
+// spawn space off camera while stopping the player and friendly ground units.
+function frontlineNorthEdge(){return stageMode==='front'&&!areaDebugEnabled&&Number.isFinite(mission?.northEdge)?mission.northEdge:0;}
+function setupFrontlineBoundary(){
+ if(stageMode!=='front'||areaDebugEnabled||!mission?.points.length)return;
+ const last=mission.points[mission.points.length-1];
+ mission.northEdge=Math.max(0,last.y-frontlineCaptureRadius(last)-180);
+}
+function frontlineMovementTop(unit,r){
+ const friendly=unit===p||unit.frontline||(typeof partner!=='undefined'&&unit===partner);
+ return friendly?frontlineNorthEdge()+r:r;
+}
+function enforceFrontlineBoundary(){
+ const edge=frontlineNorthEdge();if(!edge||!p)return;
+ const radius=p.tank?TANK_HIT:10;
+ p.y=Math.max(edge+radius,p.y);
+ if(p.partnerDriver&&typeof partner!=='undefined'&&partner?.vehicle)partner.y=p.y;
+}
 function frontlineView(){
- return{x:Math.max(0,Math.min(WW-W,p.x-W/2)),y:Math.max(0,Math.min(WH-H,p.y-H*.6)),w:W,h:H};
+ return{x:Math.max(0,Math.min(WW-W,p.x-W/2)),y:Math.max(frontlineNorthEdge(),Math.min(WH-H,p.y-H*.6)),w:W,h:H};
 }
 function frontlineSpawnSpot(hasDog=false){
  const view=frontlineView(),columns=12,phase=R()*columns|0;
@@ -271,7 +289,7 @@ function frontlineVictoryCamera(){
  const v=stageMode==='front'&&mission?.victory;
  if(!v||!['frontVictory','succeeded','win'].includes(state))return null;
  const a=v.point.cargo?{height:180}:v.point.antenna||frontlineAntennaGeometry(v.point,2),t=Math.min(1,v.elapsed/.7),ease=t*t*(3-2*t);
- const x=Math.max(0,Math.min(WW-W,v.point.x-W/2)),y=Math.max(0,Math.min(WH-H,v.point.y-a.height*.43-H/2));
+ const x=Math.max(0,Math.min(WW-W,v.point.x-W/2)),y=Math.max(frontlineNorthEdge(),Math.min(WH-H,v.point.y-a.height*.43-H/2));
  return{x:v.fromX+(x-v.fromX)*ease,y:v.fromY+(y-v.fromY)*ease};
 }
 function drawFrontlineVictorySignal(){
