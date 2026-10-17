@@ -84,8 +84,81 @@ function frontlineAntennaGeometry(point,index){
  return{large,width,height,x:point.x-width/2,y:point.y-height*(large?.92:.89),cutY:point.y-(large?30:20),
   base:{x:point.x-(large?52:17),y:point.y-(large?22:10),w:large?104:34,h:large?44:20}};
 }
+function frontlineCargoLayout(point,index){
+ const large=index===1,width=large?220:280,height=large?147:140,offsets=large?[-120,120]:[0];
+ return offsets.map(offset=>{
+  const x=point.x+offset-width/2,y=point.y-height*.6;
+  const cargo={x,y,width,height,asset:large?'frontline_cargo_large':'frontline_cargo_small',damage:[]};
+  cargo.collider={x:x+width*.14,y:y+height*.08,w:width*.72,h:height*.84,kd:1,frontAntenna:true,frontCargo:cargo};return cargo;
+ });
+}
+function setupFrontlineCargo(){
+ for(let index=0;index<mission.points.length;index++){
+  const point=mission.points[index];if(point.cargo)continue;
+  const clearance=spot=>{
+   const layout=frontlineCargoLayout(spot,index);
+   for(const cargo of layout){
+    const c=cargo.collider;if(cargo.x<12||cargo.x+cargo.width>WW-12)return false;
+    if(cars.some(v=>v.x+48>c.x&&v.x-48<c.x+c.w&&v.y+48>c.y&&v.y-48<c.y+c.h)||etanks.some(e=>e.alive&&e.x+48>c.x&&e.x-48<c.x+c.w&&e.y+48>c.y&&e.y-48<c.y+c.h))return false;
+    for(let row=0;row<=4;row++)for(let col=0;col<=6;col++){
+     const x=c.x+c.w*col/6,y=c.y+c.h*row/4;
+     if(hitsM(x,y,18)||inWaterAt(x,y,18)||inBase(x,y))return false;
+    }
+   }
+   return true;
+  };
+  let chosen=null;
+  // 配置時のみ探索し、人物の通路とコンテナ本体に余白を確保する。
+  for(let ring=0;ring<=16&&!chosen;ring++)for(let n=0;n<(ring?12:1);n++){
+   const angle=n*Math.PI/6,spot={x:Math.max(index?272:160,Math.min(WW-(index?272:160),point.x+Math.cos(angle)*ring*60)),y:Math.max(500,Math.min(WH-900,point.y+Math.sin(angle)*ring*60))};
+   if(clearance(spot)){chosen=spot;break;}
+  }
+  if(!chosen){
+   for(let y=point.y-1400;y<=point.y+1400&&!chosen;y+=80)for(let x=index?272:160;x<=WW-(index?272:160);x+=80){const spot={x,y};if(y>500&&y<WH-900&&clearance(spot)){chosen=spot;break;}}
+  }
+  if(chosen){point.x=chosen.x;point.y=chosen.y;}
+  point.cargo=frontlineCargoLayout(point,index);for(const cargo of point.cargo)covers.push(cargo.collider);
+ }
+ rebuildSpatialGrid();
+}
+function damageFrontlineCargo(c,x,y,r=0){
+ const cargo=c?.frontCargo;if(!cargo||cargo.damage.length>=6||x+r<c.x||x-r>c.x+c.w||y+r<c.y||y-r>c.y+c.h)return false;
+ let px=Math.max(c.x,Math.min(c.x+c.w,x)),py=Math.max(c.y,Math.min(c.y+c.h,y));
+ const edge=Math.min(px-c.x,c.x+c.w-px,py-c.y,c.y+c.h-py);
+ if(edge===px-c.x)px=c.x;else if(edge===c.x+c.w-px)px=c.x+c.w;else if(edge===py-c.y)py=c.y;else py=c.y+c.h;
+ px-=cargo.x;py-=cargo.y;if(cargo.damage.some(d=>Math.hypot(d.x-px,d.y-py)<10))return false;
+ cargo.damage.push({x:px,y:py});return true;
+}
+function drawFrontlineCargo(cargo){
+ const im=COVER_IMG[cargo.asset];if(!assetOK(im))return;
+ let sprite=im;
+ if(cargo.damage.length){
+  if(cargo.rasterVersion!==cargo.damage.length){
+   const canvas=cargo.raster||(cargo.raster=document.createElement('canvas'));canvas.width=cargo.width*2;canvas.height=cargo.height*2;
+   const ctx=gameCanvasContext(canvas);ctx.scale(2,2);ctx.drawImage(im,0,0,cargo.width,cargo.height);
+   // 小さな欠けは最大6か所。コリジョンと大部分の外形は壊さない。
+   ctx.globalCompositeOperation='destination-out';for(const d of cargo.damage){ctx.beginPath();ctx.arc(d.x,d.y,4.5,0,Math.PI*2);ctx.fill();}
+   ctx.globalCompositeOperation='source-over';ctx.strokeStyle='rgba(27,25,19,.85)';ctx.lineWidth=2;
+   for(const d of cargo.damage){ctx.beginPath();ctx.moveTo(d.x-5,d.y+6);ctx.lineTo(d.x+6,d.y+2);ctx.stroke();}
+   cargo.rasterVersion=cargo.damage.length;
+  }
+  sprite=cargo.raster;
+ }
+ g.drawImage(sprite,cargo.x,cargo.y,cargo.width,cargo.height);
+}
+function drawFrontlineCargoVictory(v){
+ const cx=Math.round(camX/2)*2,cy=Math.round(cam/2)*2,t=v.elapsed-.5;
+ gm.save();gm.setTransform(1,0,0,1,0,0);
+ for(const cargo of v.point.cargo)for(let i=0;i<12;i++){
+  const phase=t*2.8+i*.83,alpha=Math.pow(Math.max(0,Math.sin(phase)),3);if(alpha<.04)continue;
+  const x=cargo.x+cargo.width*(.16+((i*.618)%1)*.68)-cx,y=cargo.y+cargo.height*(.12+((i*.382)%1)*.72)-cy,r=3+alpha*7;
+  gm.globalAlpha=alpha;gm.fillStyle=i%2?'#fff9d6':'#ffe08b';gm.beginPath();gm.moveTo(x,y-r);gm.lineTo(x+r*.23,y-r*.23);gm.lineTo(x+r,y);gm.lineTo(x+r*.23,y+r*.23);gm.lineTo(x,y+r);gm.lineTo(x-r*.23,y+r*.23);gm.lineTo(x-r,y);gm.lineTo(x-r*.23,y-r*.23);gm.closePath();gm.fill();
+ }
+ gm.restore();
+}
 function setupFrontlineAntennas(){
  if(stageMode!=='front'||!mission||areaDebugEnabled)return;
+ if(isFrontlineBeginner()){setupFrontlineCargo();return;}
  for(let i=0;i<mission.points.length;i++){
   const point=mission.points[i];if(point.antenna)continue;
   const radius=i===2||point.largeAntenna?75:35,clear=spot=>!cars.some(v=>D(v,spot)<radius+50)&&!etanks.some(e=>e.alive&&D(e,spot)<radius+45);
@@ -106,6 +179,7 @@ function setupFrontlineAntennas(){
 function drawFrontlineAntennas(cx,cy,upper=false){
  if(stageMode!=='front'||!mission)return;
  for(const point of mission.points){
+  if(point.cargo){if(upper)for(const cargo of point.cargo)if(cargo.x+cargo.width>=cx&&cargo.x<=cx+W&&cargo.y+cargo.height>=cy&&cargo.y<=cy+H)drawFrontlineCargo(cargo);continue;}
   const a=point.antenna;if(!a||a.x+a.width<cx||a.x>cx+W||a.y+a.height<cy||a.y>cy+H)continue;
   const im=COVER_IMG[a.asset];if(!assetOK(im))continue;
   if(upper){
@@ -183,12 +257,13 @@ function updateFrontlineVictory(dt){
 function frontlineVictoryCamera(){
  const v=stageMode==='front'&&mission?.victory;
  if(!v||!['frontVictory','succeeded','win'].includes(state))return null;
- const a=v.point.antenna||frontlineAntennaGeometry(v.point,2),t=Math.min(1,v.elapsed/.7),ease=t*t*(3-2*t);
+ const a=v.point.cargo?{height:180}:v.point.antenna||frontlineAntennaGeometry(v.point,2),t=Math.min(1,v.elapsed/.7),ease=t*t*(3-2*t);
  const x=Math.max(0,Math.min(WW-W,v.point.x-W/2)),y=Math.max(0,Math.min(WH-H,v.point.y-a.height*.43-H/2));
  return{x:v.fromX+(x-v.fromX)*ease,y:v.fromY+(y-v.fromY)*ease};
 }
 function drawFrontlineVictorySignal(){
  const v=state==='frontVictory'&&stageMode==='front'&&mission?.victory;if(!v||v.elapsed<.5)return;
+ if(v.point.cargo){drawFrontlineCargoVictory(v);return;}
  const a=v.point.antenna||frontlineAntennaGeometry(v.point,2),x=v.point.x-Math.round(camX/2)*2,y=a.y+12-Math.round(cam/2)*2;
  gm.save();gm.setTransform(1,0,0,1,0,0);gm.strokeStyle='#a2eaff';gm.lineWidth=4;
  // Three simple rings; no extra images, particles or ongoing work after the transition.
@@ -208,7 +283,7 @@ function drawFrontlineCaptureRing(point,x,y,m){
  const status=frontlineCaptureVisual(m),radius=frontlineCaptureRadius(point),colors=frontlineCaptureColors(point,m);
  gm.save();gm.lineWidth=7;gm.strokeStyle=colors.track;gm.beginPath();gm.arc(x,y,radius,0,Math.PI*2);gm.stroke();
  if(status.fraction>0){gm.strokeStyle=colors.stroke;gm.lineCap='round';gm.beginPath();gm.arc(x,y,radius,-Math.PI/2,-Math.PI/2+Math.PI*2*status.fraction);gm.stroke();}
- gm.textAlign='center';gm.font='bold 16px system-ui';gm.lineWidth=4;gm.strokeStyle='rgba(0,0,0,.8)';const labelY=y+(point.antenna?86:-35);gm.strokeText(status.label,x,labelY);gm.fillStyle=colors.text;gm.fillText(status.label,x,labelY);gm.restore();
+ gm.textAlign='center';gm.font='bold 16px system-ui';gm.lineWidth=4;gm.strokeStyle='rgba(0,0,0,.8)';const labelY=y+(point.cargo?136:point.antenna?86:-35);gm.strokeText(status.label,x,labelY);gm.fillStyle=colors.text;gm.fillText(status.label,x,labelY);gm.restore();
 }
 function frontlineArrowPosition(){return{x:W-26,y:68};}
 function drawFrontlineArrow(point){

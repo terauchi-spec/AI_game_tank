@@ -577,10 +577,10 @@ test('beginner Frontline selects three distinct permitted areas after the starti
  for(let i=0;i<30;i++){c.setupZones();assert.equal(c.ZONES.length,4);assert.equal(c.ZONES[0].n,'草原');const mid=c.ZONES.slice(1).map(z=>z.n);assert.ok(mid.every(n=>allowed.includes(n)));assert.equal(new Set(mid).size,3);combinations.add(mid.join(','));for(let j=1;j<c.ZONES.length;j++)assert.equal(c.ZONES[j].y0,c.ZONES[j-1].y1);}
  assert.ok(combinations.size>10);c.frontlineBeginner=false;c.setupZones();assert.equal(c.ZONES.length,7);c.stageMode='beginner';c.setupZones();assert.equal(c.ZONES.length,5);
 });
-test('beginner Frontline builds two objectives ending at a large antenna and completes after the second capture',()=>{
+test('beginner Frontline builds two cargo objectives and completes after the second capture',()=>{
  const c=harness();c.frontlineBeginner=true;
  vm.runInContext(html.slice(html.indexOf('function setupMission('),html.indexOf('function completeMission(')),c);c.setupMission();
- assert.equal(c.mission.points.length,2);assert.deepEqual(Array.from(c.mission.points,q=>q.antenna.asset),['frontline_antenna_small','frontline_antenna_large']);assert.deepEqual(Array.from(c.mission.points,q=>q.captureRadius),[360,540]);
+ assert.equal(c.mission.points.length,2);assert.deepEqual(Array.from(c.mission.points,q=>Array.from(q.cargo,a=>a.asset)),[['frontline_cargo_small'],['frontline_cargo_large','frontline_cargo_large']]);assert.deepEqual(Array.from(c.mission.points,q=>q.captureRadius),[360,540]);
  const q=c.mission.points[1];c.mission.index=1;c.mission.points[0].done=true;q.playerEntered=true;q.counterTriggered=true;c.mission.progress=47.99;c.mission.waveT=999;c.mission.reinforceT=999;c.p.x=q.x;c.p.y=q.y;c.allies=[{x:q.x,y:q.y,alive:true,frontline:true}];let finished=0;c.completeMission=()=>finished++;
  vm.runInContext(html.slice(html.indexOf('function updateMission('),html.indexOf('let missionHudNextAt=')),c);c.updateMission(.02);assert.equal(finished,1);assert.equal(c.mission.index,2);
  c.state='play';c.camX=0;c.cam=0;assert.equal(c.beginFrontlineVictory(),true);assert.equal(c.state,'frontVictory');assert.equal(c.mission.victory.point,q);c.successFrameDrawn=true;c.updateFrontlineVictory(3);assert.equal(c.state,'succeeded');
@@ -597,4 +597,30 @@ test('beginner regular reinforcements use one blue commander per eight soldiers 
 test('beginner first entry sends four attackers including exactly one blue commander',()=>{
  const c=harness();c.frontlineBeginner=true;c.frontlineSpawnSpot=()=>({x:480,y:9000});const q={...c.p};c.mission.points=[q];c.mission.enemySpawned=7;c.updateFrontlineCounterattack(q,.1);
  assert.equal(c.humans.length,4);assert.equal(c.humans.filter(h=>h.commander==='blue').length,1);assert.equal(q.counterPending,0);c.updateFrontlineCounterattack(q,10);assert.equal(c.humans.length,4);
+});
+
+
+test('beginner cargo has one small sprite and two side-by-side large sprites with stable body colliders',()=>{
+ const c=harness();c.frontlineBeginner=true;c.mission.points=[{x:480,y:10000},{x:480,y:3500}];c.setupFrontlineAntennas();
+ assert.equal(c.covers.length,3);assert.ok(c.covers.every(v=>v.frontCargo&&v.frontAntenna));assert.ok(c.mission.points.every(q=>!q.antenna));
+ const [left,right]=c.mission.points[1].cargo;assert.equal(left.y,right.y);assert.ok(left.x+left.width<right.x);for(const cargo of [left,right])assert.ok(cargo.collider.w<cargo.width&&cargo.collider.h<cargo.height);
+ c.setupFrontlineAntennas();assert.equal(c.covers.length,3);
+});
+test('cargo rejects distant damage, keeps at most six small nicks, and survives repeated cannon, bomb and ram damage',()=>{
+ const c=harness();c.frontlineBeginner=true;c.mission.points=[{x:480,y:10000}];c.setupFrontlineAntennas();const block=c.covers[0],cargo=block.frontCargo,original={x:block.x,y:block.y,w:block.w,h:block.h};
+ assert.equal(c.damageFrontlineCargo(block,0,0,10),false);for(let i=0;i<20;i++)c.damageFrontlineCargo(block,block.x,block.y+i*12,30);assert.equal(cargo.damage.length,6);
+ c.damageObjectsInRadius=()=>{};c.scoreStats={coverDestroyed:0,styleDestroyed:0};vm.runInContext(html.slice(html.indexOf('function carve('),html.indexOf('function useSkill(')),c);
+ for(const source of ['cannonBlast','bombBlast','impact',null])assert.equal(c.carve(block.x,block.y,300,true,source),0);
+ assert.equal(c.covers.length,1);assert.equal(c.covers[0],block);for(const k of ['x','y','w','h'])assert.equal(block[k],original[k]);assert.equal(cargo.damage.length,6);assert.equal(c.scoreStats.coverDestroyed,0);
+});
+test('cargo damage raster is built only after a new nick and reuses its canvas on later frames',()=>{
+ const c=harness();c.frontlineBeginner=true;c.mission.points=[{x:480,y:10000}];c.setupFrontlineAntennas();const cargo=c.mission.points[0].cargo[0];let canvases=0,contexts=0;
+ c.COVER_IMG={frontline_cargo_small:{}};c.assetOK=()=>true;c.g=c.gm;c.document={createElement:()=>{canvases++;return{};}};c.gameCanvasContext=()=>{contexts++;return c.gm;};
+ c.drawFrontlineCargo(cargo);assert.equal(canvases,0);c.damageFrontlineCargo(cargo.collider,cargo.collider.x,cargo.collider.y,4);for(let i=0;i<20;i++)c.drawFrontlineCargo(cargo);assert.equal(canvases,1);assert.equal(contexts,1);
+ c.damageFrontlineCargo(cargo.collider,cargo.collider.x,cargo.collider.y+22,4);c.drawFrontlineCargo(cargo);assert.equal(canvases,1);assert.equal(contexts,2);
+});
+test('beginner victory sparkles on both cargo sprites instead of drawing antenna radio rings',()=>{
+ const c=harness();c.frontlineBeginner=true;c.cam=3000;c.camX=0;c.state='frontVictory';const point={x:480,y:3500};point.cargo=c.frontlineCargoLayout(point,1);c.mission.victory={point,elapsed:1.1};
+ c.drawFrontlineVictorySignal();assert.ok(c.calls.some(a=>a[0]==='fill'));assert.equal(c.calls.filter(a=>a[0]==='arc').length,0);
+ const xs=c.calls.filter(a=>a[0]==='moveTo').map(a=>a[1]);assert.ok(xs.some(x=>x<480)&&xs.some(x=>x>480));const before=c.calls.length;c.state='play';c.drawFrontlineVictorySignal();assert.equal(c.calls.length,before);
 });
