@@ -181,10 +181,10 @@ function partnerVehicleAttack(q,dt){
  }else if(v.kind==='truck'){
   // Trucks have no gun: run over infantry while driving, as in player truck mode.
   if(q.moving)for(const h of humans)if(h.alive&&D(q,h)<28){
-   h.alive=false;recordSupportResult('kill','partner');burst(h.x,h.y,15,'#c05a3a',180);sfx('crush');
+   h.alive=false;recordSupportResult('kill','partner',h);burst(h.x,h.y,15,'#c05a3a',180);sfx('crush');
   }
   if(q.moving)for(const e of etanks)if(e.alive&&D(q,e)<TANK_HIT+20){
-   recordSupportResult('kill','partner');truckTankCrashFx(q.x,q.y,e);partnerVehicleDestroyed(q);break;
+   recordSupportResult('kill','partner',e);truckTankCrashFx(q.x,q.y,e);partnerVehicleDestroyed(q);break;
   }
  }
 }
