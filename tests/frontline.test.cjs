@@ -455,3 +455,54 @@ test('antenna placement avoids parked vehicles and is disabled outside standard 
  for(const mode of ['base','beginner','stealth']){const other=harness();other.stageMode=mode;other.mission.points=[{x:480,y:10000}];other.setupFrontlineAntennas();assert.equal(other.covers.length,0);}
  const debug=harness();debug.areaDebugEnabled=true;debug.mission.points=[{x:480,y:10000}];debug.setupFrontlineAntennas();assert.equal(debug.covers.length,0);
 });
+
+function commanderHarness(){
+ const c=harness();Object.assign(c,{commanderSignals:[],commanderRallying:false,los:()=>true,enemyCannonSpeed:()=>300,bullets:[],fire:(...args)=>c.bullets.push({from:args[3],k:args[4],x:args[0],y:args[1]}),tone(){},setTimeout(){},enterHumanFound:()=>{throw Error('Friendly radio alerted enemies');}});
+ vm.runInContext(html.slice(html.indexOf('function commanderWhistle('),html.indexOf('function commanderMove(')),c);
+ return c;
+}
+test('frontline commanders appear exactly once per five allied spawns across initial, replacement and skill troops',()=>{
+ const c=commanderHarness();c.missionAllies(10000);assert.equal(c.allies.length,6);assert.equal(c.allies.filter(a=>a.frontCommander).length,1);assert.equal(c.allies[4].frontCommander,true);
+ for(const a of c.allies)a.alive=false;c.missionAllies(10000);c.summonAlly();
+ assert.equal(c.mission.allySpawnCount,13);assert.equal(c.allies.filter(a=>a.frontCommander).length,2);
+ for(let i=13;i<25;i++)c.assignFrontlineAllyRole({});assert.equal(c.mission.allySpawnCount,25);
+ c.stageMode='base';const normal=c.assignFrontlineAllyRole({});assert.equal(normal.frontCommander,undefined);assert.equal(c.mission.allySpawnCount,25);
+});
+test('allied radio notifies active nearby allies after one second, without alerting enemies, and completes after source loss',()=>{
+ const c=commanderHarness(),source={x:480,y:10000,alive:true,frontCommander:true},enemy={x:480,y:9900,alive:true};
+ const near={x:580,y:10000,alive:true,frontStyle:{rest:1}},far={x:480,y:12500,alive:true},stunned={x:480,y:10000,alive:true,stun:3};c.allies=[source,near,far,stunned];
+ c.frontlineCommanderRadio(source,enemy);assert.equal(c.commanderSignals.length,1);c.frontlineCommanderRadio(source,enemy);assert.equal(c.commanderSignals.length,1);
+ c.updateCommanderSignals(.9);assert.equal(near.frontMode,undefined);source.alive=false;c.updateCommanderSignals(.1);
+ assert.equal(near.frontMode,'found');assert.equal(near.frontRadioT,6);assert.equal(near.frontLastSeen.y,9900);assert.equal(near.frontStyle.rest,0);assert.equal(far.frontMode,undefined);assert.equal(stunned.frontMode,undefined);
+ enemy.y=9000;assert.equal(near.frontLastSeen.y,9900);c.updateCommanderSignals(1.5);assert.equal(c.commanderSignals.length,0);
+});
+test('a radio report triggers pursuit without granting vision or shots through cover',()=>{
+ const c=commanderHarness(),a={x:480,y:10000,alive:true,shotCd:0,burstLeft:3,face:-Math.PI/2},enemy={x:480,y:9900,alive:true};c.allies=[a];c.humans=[enemy];c.los=()=>false;
+ c.notifyFrontlineAllies({x:480,y:10000,seen:{x:480,y:9900},target:enemy});c.refreshFrontlineAllyTargets([a]);assert.equal(a._combatTarget,null);
+ c.updateFrontlineAlly(a,null,.1);assert.equal(a.frontMode,'found');assert.ok(a.y<10000);assert.equal(c.bullets.length,0);
+});
+test('commanders stop to radio, aim for half a second, launch allied rockets and wait four seconds between shots',()=>{
+ const c=commanderHarness(),a={x:480,y:10000,alive:true,frontCommander:true,shotCd:0},enemy={x:480,y:9900,alive:true};
+ assert.equal(c.updateFrontlineCommander(a,enemy,.1),true);assert.equal(a.whistleT,2.5);assert.equal(c.bullets.length,0);
+ c.updateCommanderSignals(2.5);for(let i=0;i<4;i++)c.updateFrontlineCommander(a,enemy,.1);assert.equal(c.bullets.length,0);
+ c.updateFrontlineCommander(a,enemy,.1);assert.equal(c.bullets.length,1);assert.equal(c.bullets[0].from,'ally');assert.equal(c.bullets[0].commanderRocket,true);assert.equal(a.shotCd,4);
+ c.updateFrontlineCommander(a,enemy,1);assert.equal(c.bullets.length,1);c.los=()=>false;a.shotCd=0;c.updateFrontlineCommander(a,enemy,1);assert.equal(c.bullets.length,1);
+});
+test('commanders prioritize visible tanks while ordinary allies retain infantry-only sight',()=>{
+ const c=commanderHarness(),a={x:480,y:10000,alive:true,frontCommander:true,face:-Math.PI/2},b={...a,frontCommander:false},human={x:480,y:9900,alive:true},tank={x:480,y:9800,alive:true};c.humans=[human];c.etanks=[tank];
+ c.refreshFrontlineAllyTargets([a,b]);assert.equal(a._combatTarget,tank);assert.equal(b._combatTarget,human);
+ c.los=(a,t)=>t!==tank;c.refreshFrontlineAllyTargets([a]);assert.equal(a._combatTarget,human);
+});
+test('allied rockets sweep fast segments, collide with enemies and cover, and pass allied troops safely',()=>{
+ const c=commanderHarness(),hits=[];c.frontlineCommanderRocketBlast=(x,y)=>hits.push({x,y});c.p={x:20,y:0};c.allies=[{x:40,y:0,alive:true}];
+ const bullet={from:'ally',x:200,y:0};assert.equal(c.updateFrontlineCommanderRocket(bullet,0,0,false),false);assert.equal(hits.length,0);
+ c.etanks=[{x:100,y:0,alive:true}];assert.equal(c.updateFrontlineCommanderRocket(bullet,0,0,false),true);assert.ok(hits[0].x<100);
+ c.etanks=[];c.hitsC=x=>x>=48&&x<=56;assert.equal(c.updateFrontlineCommanderRocket(bullet,0,0,false),true);assert.equal(hits[1].x,48);
+ c.hitsC=()=>false;assert.equal(c.updateFrontlineCommanderRocket(bullet,0,0,true),true);assert.equal(hits[2].x,200);
+});
+test('one allied bazooka blast destroys a tank and credits support without damaging player or allies',()=>{
+ const c=commanderHarness();let support=0;Object.assign(c,{cannonImpactFx(){},damageObjectsInRadius(){},carve(){},scatterSpinifexAt(){},fb(){},burst(){},suspectTanksNear(){},recordSupportResult:()=>support++,destroyEnemyTank:e=>{e.alive=false;}});
+ vm.runInContext(html.slice(html.indexOf('function explode('),html.indexOf('function summonAlly(')),c);
+ c.p={x:480,y:10000,hp:3};c.allies=[{x:480,y:10000,alive:true}];c.etanks=[{x:480,y:10000,alive:true,hp:999}];c.humans=[{x:500,y:10000,alive:true}];
+ c.frontlineCommanderRocketBlast(480,10000);assert.equal(c.etanks[0].alive,false);assert.equal(c.humans[0].alive,false);assert.equal(support,2);assert.equal(c.p.hp,3);assert.equal(c.allies[0].alive,true);
+});

@@ -112,7 +112,7 @@ function drawCommanderRadio(pack,width){
  g.strokeStyle='#d3d5b8';g.lineWidth=.65;g.beginPath();g.moveTo(-18.4,-12.4);g.lineTo(-20.6,-20);g.stroke();
  g.restore();
 }
-function composeOverheadCutout(im,width,height,stride=0,armed=false){
+function composeOverheadCutout(im,width,height,stride=0,armed=false,radio=false){
  const left=-width*.60,top=-height*.50,layers=CHARACTER_LAYERS.get(im);
  const trousers=(im===CHARACTER_ART.player||im===CHARACTER_ART.player_plain||im===CHARACTER_ART.player_blue)?'#77734f':im===CHARACTER_ART.white||im===CHARACTER_ART.white_commander?'#d0cdbd':'#7c97b5';
  if(!layers){g.drawImage(im,left,top,width,height);return;}
@@ -147,18 +147,18 @@ function composeOverheadCutout(im,width,height,stride=0,armed=false){
   g.drawImage(part.im,left+part.x*width,top+part.y*height,part.w*width,part.h*height);g.restore();
  }
  g.drawImage(layers.core,left,top,width,height);
- if(im===CHARACTER_ART.blue_commander&&layers.pack)drawCommanderRadio(layers.pack,width);
+ if((im===CHARACTER_ART.blue_commander||radio)&&layers.pack)drawCommanderRadio(layers.pack,width);
 }
-function drawOverheadCutout(im,width,height,stride=0,armed=false){
+function drawOverheadCutout(im,width,height,stride=0,armed=false,radio=false){
  // Cache procedural limb compositions, not an authored frame sheet. At runtime
  // each character needs one texture draw instead of five transformed part draws.
  let poses=CHARACTER_POSES.get(im);if(!poses){poses=new Map();CHARACTER_POSES.set(im,poses);}
- const quant=Math.round(stride*4),key=(armed?'armed:':'free:')+quant;
+ const quant=Math.round(stride*4),key=(radio?'radio:':'')+(armed?'armed:':'free:')+quant;
  let pose=poses.get(key);
  if(!pose){
   const c=document.createElement('canvas');c.width=128;c.height=128;
   const saved=g;g=c.getContext('2d');g.translate(70,64);g.scale(3,3);
-  composeOverheadCutout(im,32,32*im.naturalHeight/im.naturalWidth,quant/4,armed);g=saved;
+  composeOverheadCutout(im,32,32*im.naturalHeight/im.naturalWidth,quant/4,armed,radio);g=saved;
   pose=c;poses.set(key,pose);
  }
  const scale=width/32;
@@ -204,7 +204,7 @@ function drawCharacterWebP(x,y,face,isPlayer,alert,moving,elite,commander,weapon
  const now=performance.now(),stunned=actor&&(actor.stun>0||actor.stunT>0||actor.down);
  const stride=characterGait(actor,x,y,moving&&!stunned,now);
  const flame=!!(isPlayer&&actor===p&&p.flameActive);
- const armed=(!isPlayer&&weaponVisible)||(isPlayer&&playerStripe==='blue'&&weaponVisible)||flame;
+ const armed=(isPlayer&&actor?.frontCommander&&weaponVisible)||(!isPlayer&&weaponVisible)||(isPlayer&&playerStripe==='blue'&&weaponVisible)||flame;
  const shot=actor?Math.max(0,.09-(now-(actor.characterShotAt||-1e9))/1000):0;
  g.save();g.imageSmoothingEnabled=true;g.translate(x,y);g.scale(CHARACTER_GRAPHICS_SCALE,CHARACTER_GRAPHICS_SCALE);
  g.fillStyle='rgba(8,12,9,.30)';g.beginPath();g.ellipse(1,3,11,7,0,0,Math.PI*2);g.fill();
@@ -215,8 +215,8 @@ function drawCharacterWebP(x,y,face,isPlayer,alert,moving,elite,commander,weapon
  if(stunned){g.save();g.rotate(.8);g.scale(1,.68);}
  // Normalize blue commander body height to the regular blue soldier; the radio/antenna keeps its silhouette.
  // blue.webp is 175×192; use its aspect even before it finishes loading.
- const height=commander==='blue'?32*192/175:32*im.naturalHeight/im.naturalWidth,width=height*im.naturalWidth/im.naturalHeight;
- drawOverheadCutout(im,width,height,stride,armed);
+ const height=!isPlayer&&commander==='blue'?32*192/175:32*im.naturalHeight/im.naturalWidth,width=height*im.naturalWidth/im.naturalHeight;
+ drawOverheadCutout(im,width,height,stride,armed,!!actor?.frontCommander);
  if(stunned)g.restore();
  g.restore();return true;
 }

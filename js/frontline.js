@@ -208,6 +208,63 @@ function moveFrontlineAlly(a,target,sp,dt){
  if(a.y<limit){a.x=ox;a.y=oy;a.dogWall=null;a.dogEscape=null;}
  a.frontMoving=Math.hypot(a.x-ox,a.y-oy)>.02;
 }
+// Roles are assigned across the whole mission, including replacement and skill troops.
+function assignFrontlineAllyRole(a){
+ if(stageMode!=='front'||!mission)return a;
+ mission.allySpawnCount=(mission.allySpawnCount||0)+1;
+ a.frontCommander=mission.allySpawnCount%5===0;
+ return a;
+}
+function frontlineCommanderRadio(a,target){
+ if((a.frontRadioCooldown||0)>0)return;
+ a.frontRadioCooldown=8;a.whistleT=2.5;
+ commanderSignals.push({source:a,x:a.x,y:a.y,remaining:1,visualRemaining:2.5,notified:false,team:'ally',target,seen:{x:target.x,y:target.y}});
+}
+function notifyFrontlineAllies(signal){
+ if(stageMode!=='front')return;
+ for(const a of allies)if(a.alive&&!(a.chute>0)&&!(a.stun>0)&&!(a.stunRecover>0)&&D(a,signal)<=2000){
+  a.frontMode='found';a.frontLostT=6;a.frontRadioT=6;
+  a.frontLastSeen={...signal.seen};a.frontTrackedEnemy=signal.target;
+  if(a.frontStyle)a.frontStyle.rest=0;
+ }
+}
+function updateFrontlineCommander(a,target,dt){
+ if(!a.frontCommander)return false;
+ a.frontRadioCooldown=Math.max(0,(a.frontRadioCooldown||0)-dt);
+ const visible=target&&a.frontTargetVisible!==false&&los(a,target);
+ if(visible)frontlineCommanderRadio(a,target);
+ // Like blue commanders, stop to transmit before aiming the launcher.
+ if(a.whistleT>0){a.frontAimT=0;a.frontAimTarget=null;return true;}
+ if(!visible||D(a,target)>480){a.frontAimT=0;a.frontAimTarget=null;return false;}
+ a.face=Math.atan2(target.y-a.y,target.x-a.x);
+ if(a.frontAimTarget!==target){a.frontAimTarget=target;a.frontAimT=0;}
+ if(a.shotCd>0){a.frontAimT=0;return true;}
+ a.frontAimT=(a.frontAimT||0)+dt;
+ if(a.frontAimT>=.5){
+  const muzzle=Math.min(12,D(a,target)*.5);
+  fire(a.x+Math.cos(a.face)*muzzle,a.y+Math.sin(a.face)*muzzle,a.face,'ally','c',enemyCannonSpeed(),480);
+  const bullet=bullets[bullets.length-1];bullet.commanderRocket=true;bullet.commanderShooter=a;
+  a.characterShotAt=performance.now();a.shotCd=4;a.frontAimT=0;
+ }
+ return true;
+}
+function frontlineCommanderRocketBlast(x,y){
+ cannonImpactFx(x,y);sfx('explosion');
+ damageObjectsInRadius(x,y,110,'cannonBlast');damageObjectsInRadius(x,y,28,'cannonDirect');carve(x,y,48,false,'cannonBlast');
+ // Use the existing support damage path: tanks die in one blast, kills belong to allies.
+ explode(x,y,110,false,'ally');
+}
+function updateFrontlineCommanderRocket(b,ox,oy,expired){
+ const steps=Math.max(1,Math.ceil(Math.hypot(b.x-ox,b.y-oy)/8));
+ for(let i=1;i<=steps;i++){
+  const q={x:ox+(b.x-ox)*i/steps,y:oy+(b.y-oy)*i/steps};
+  if(hitsC(q.x,q.y,3)||humans.some(h=>h.alive&&D(h,q)<11)||etanks.some(e=>e.alive&&D(e,q)<TANK_HIT)){
+   frontlineCommanderRocketBlast(q.x,q.y);return true;
+  }
+ }
+ if(expired){frontlineCommanderRocketBlast(b.x,b.y);return true;}
+ return false;
+}
 function updateFrontlineAlly(a,target,dt){
  if(stageMode!=='front')return false;
  const style=frontlineAllyStyle(a);style.paceT-=dt;
@@ -221,14 +278,16 @@ function updateFrontlineAlly(a,target,dt){
   a.frontMode=a.frontLostT>0&&a.frontLastSeen?'found':'patrol';
   if(a.frontMode==='patrol'){a.frontLastSeen=null;a.frontTrackedEnemy=null;}
  }
- if(frontlineCombatPoint(a))a.frontMode='found';
+ a.frontRadioT=Math.max(0,(a.frontRadioT||0)-dt);
+ if(frontlineCombatPoint(a)||a.frontRadioT>0)a.frontMode='found';
+ if(updateFrontlineCommander(a,target,dt))return true;
  const waiting=frontlineAllyWaiting(a,dt),distance=target?D(a,target):Infinity;
  if(target||a.frontLastSeen||a.frontMode==='found')style.rest=0;
  else if(!waiting){
   if(style.rest>0)style.rest=Math.max(0,style.rest-dt);
   else{style.marchT-=dt;if(style.marchT<=0){style.marchT=4+R()*6;style.rest=.3+R()*.6;}}
  }
- if(target&&distance<176&&a.frontTargetVisible!==false){
+ if(!a.frontCommander&&target&&distance<176&&a.frontTargetVisible!==false){
   a.face=Math.atan2(target.y-a.y,target.x-a.x);
   if(a.frontAimTarget!==target){a.frontAimTarget=target;a.frontAimT=0;}
   a.frontAimT=(a.frontAimT||0)+dt;
@@ -298,6 +357,11 @@ function refreshFrontlineAllyTargets(ready){
     const score=(assigned.get(h)||0)*10000+D(a,h);
     if(score<bestScore){bestScore=score;best=h;}
    }
+  }
+  if(a.frontCommander){
+   let tank=null,tankDistance=Infinity;
+   for(const e of etanks)if(frontlineAllyCanSee(a,e,e===a._combatTarget,area)&&D(a,e)<tankDistance){tank=e;tankDistance=D(a,e);}
+   if(tank)best=tank;
   }
   a._combatTarget=best;a.frontTargetVisible=best?(!(area&&D(best,area)<frontlineCaptureRadius(area))||los(a,best)):false;
   if(best)assigned.set(best,(assigned.get(best)||0)+1);
