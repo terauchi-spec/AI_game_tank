@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.18.0820</title>
-<link rel="stylesheet" href="css/infiltration-sample.css?v=2026.10.18.0820">
+<title>こっそり戦車大作戦 2026.10.18.0842</title>
+<link rel="stylesheet" href="css/infiltration-sample.css?v=2026.10.18.0842">
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -855,7 +855,7 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 <section id="infiltrationSample" role="region" aria-label="拠点潜入サンプル" aria-hidden="true" tabindex="-1">
  <header class="inf-top">
   <div class="inf-heading"><small>STEALTH INFILTRATION / PROTOTYPE</small><strong>拠点潜入｜サンプル</strong></div>
-  <div id="infiltrationHud" role="status" aria-live="off">1F ｜ 情報 0/6 ｜ 発見危険 0%</div>
+  <div id="infiltrationHud" role="status" aria-live="off">1F ｜ 情報 0/6 ｜ HP 3 ｜ 発見 0</div>
   <button type="button" id="infiltrationBack">← 戻る</button>
  </header>
  <div class="inf-map">
@@ -868,11 +868,12 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
    <button type="button" data-inf-dir="right" aria-label="右へ">→</button>
   </div>
   <div class="inf-actions">
+   <span class="inf-skill-caption" id="infiltrationSkillLabel"></span>
    <button type="button" id="infiltrationSneak" aria-pressed="false">忍び足 OFF</button>
    <button type="button" id="infiltrationAction" disabled>階段に近づく</button>
   </div>
  </div>
- <footer class="inf-foot">PC：矢印 / WASD 移動、Shift 忍び足、E 階段 ｜ スマホ：方向キー・忍び足・階段</footer>
+ <footer class="inf-foot">PC：方向キー 移動 / A 操作・気絶 / D 起爆 / S スキル / Shift 忍び足 ｜ スマホ：本編と同じスティック＋A・B・S</footer>
  <div id="infiltrationStatus" aria-live="polite" style="position:absolute;left:-9999px"></div>
  <div id="infiltrationEnd" hidden role="dialog" aria-modal="true" aria-labelledby="infiltrationEndTitle">
   <div class="inf-endbox"><h2 id="infiltrationEndTitle"></h2><p id="infiltrationEndBody"></p>
@@ -892,7 +893,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.18.0820',FILE_CREATED_AT='2026/10/18 08:20',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.18.0842',FILE_CREATED_AT='2026/10/18 08:42',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -8091,6 +8092,6 @@ document.addEventListener('contextmenu',e=>e.preventDefault());
 // Start only after every external game script and input handler has loaded.
 requestAnimationFrame(loop);
 </script>
-<script src="js/infiltration-sample.js?v=2026.10.18.0820"></script>
+<script src="js/infiltration-sample.js?v=2026.10.18.0842"></script>
 </body>
 </html>

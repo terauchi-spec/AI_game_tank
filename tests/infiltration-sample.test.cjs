@@ -1,6 +1,6 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
-const {generateFloor,blocked,canGuardSee,WIDTH,HEIGHT,OBJECTIVES_PER_FLOOR}=require('../js/infiltration-sample.js');
+const {generateFloor,blocked,canGuardSee,setMode,moveGuards,WIDTH,HEIGHT,OBJECTIVES_PER_FLOOR}=require('../js/infiltration-sample.js');
 function random(seed){let s=seed>>>0;return()=>{s=(Math.imul(1664525,s)+1013904223)>>>0;return s/4294967296;};}
 function reachable(f,goal){
   const step=14,n=Math.ceil(WIDTH/step),h=Math.ceil(HEIGHT/step),sx=Math.round(f.center/step),sy=Math.round(1285/step);
@@ -38,4 +38,19 @@ test('walls block movement and view even in a sight cone',()=>{
  const g={x:f.center,y:740,face:Math.PI/2,sight:245};
  assert.equal(canGuardSee(f,g,{x:f.center,y:825}),true);
  assert.equal(canGuardSee(f,g,{x:f.center,y:825},true),true);
+});
+
+test('indoor blue guard keeps patrol > suspicious > found state and freezes on transitions',()=>{
+ const h={x:0,y:100,face:0,mode:'patrol',modePause:0,stun:0,spotT:0,suspectT:0,
+  lastX:0,lastY:0,burstLeft:0,shotCd:0,lostT:0,wait:0,
+  speed:50,sight:220,waypoints:[{x:0,y:100},{x:150,y:100}],index:1};
+ const floor={guards:[h],walls:[],furniture:[],rooms:[]};
+ const p={x:70,y:100,concealed:0,sneak:false,detections:0,hp:3};
+ for(let k=0;k<5;k++)moveGuards(floor,p,.05);
+ assert.equal(h.mode,'suspect');
+ assert.ok(h.modePause>0);
+ assert.equal(setMode(h,'found',p),true);
+ assert.equal(h.mode,'found');
+ assert.equal(h.burstLeft,3);
+ assert.ok(h.modePause>=.5);
 });

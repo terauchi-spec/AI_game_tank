@@ -42,3 +42,15 @@ body.infiltration-open #infiltrationSample{display:flex}
  #infiltrationSample .inf-actions button{min-width:105px;font-size:12px}
  #infiltrationSample .inf-foot{font-size:9px;padding-left:5px;padding-right:5px}
 }
+
+/* 本編と同じ実物スティック＆A/B/S操作を屋内でも使用。ステージ選択中の非表示より優先。 */
+@media(pointer:coarse){
+ body.infiltration-open:not(.infiltration-ended) #pad{display:block!important;position:fixed;z-index:230;pointer-events:none}
+ body.infiltration-open.infiltration-ended #pad{display:none!important}
+ #infiltrationSample .inf-pad{display:none!important}
+ #infiltrationSample .inf-actions{bottom:calc(env(safe-area-inset-bottom,0px) + 205px);right:12px}
+ #infiltrationSample .inf-actions #infiltrationAction{display:none}
+ #infiltrationSample .inf-tip{top:12px;max-width:90%;line-height:1.45}
+}
+#infiltrationSample .inf-skill-caption{font-size:11px;color:#e2d8aa;text-align:center;text-shadow:0 1px 3px #000}
+body.infiltration-open #resetBtn,body.infiltration-open #debugToggleBtn{display:none!important}

@@ -89,7 +89,7 @@ function canGuardSee(floor,guard,player,sneaking=false){
   for(const f of floor.furniture)if(segmentRect(guard.x,guard.y,player.x,player.y,f))return false;
   return true;
 }
-const exportsForTests={generateFloor,blocked,canGuardSee,segmentRect,WIDTH,HEIGHT,OBJECTIVES_PER_FLOOR};
+const exportsForTests={generateFloor,blocked,canGuardSee,segmentRect,WIDTH,HEIGHT,OBJECTIVES_PER_FLOOR,setMode,moveGuards,moveGuard};
 if(typeof module!=='undefined'&&module.exports)module.exports=exportsForTests;
 if(typeof document==='undefined')return;
 const screen=document.getElementById('infiltrationSample'),launch=document.getElementById('stageInfiltrationSample');
@@ -98,13 +98,17 @@ const canvas=document.getElementById('infiltrationCanvas'),ctx=canvas.getContext
 const hud=document.getElementById('infiltrationHud'),hint=document.getElementById('infiltrationHint');
 const action=document.getElementById('infiltrationAction'),status=document.getElementById('infiltrationStatus');
 const overlay=document.getElementById('infiltrationEnd'),endTitle=document.getElementById('infiltrationEndTitle'),endBody=document.getElementById('infiltrationEndBody');
-const arrows=new Set(),keys=new Set();let session=null,animation=0,lastTime=0,lastDraw=0,lastUI=0,dpr=1;
+const arrows=new Set(),sampleKeys=new Set();let session=null,animation=0,lastTime=0,lastDraw=0,lastUI=0,dpr=1;
+const held=k=>sampleKeys.has(k)||(typeof keys!=='undefined'&&!!keys[k]);
+const crate=new Image();crate.src='assets/cover/crate.webp?v='+GAME_VERSION;
+const mobileLast={KeyA:false,KeyS:false,KeyD:false};
 const isTouch=!!(root.matchMedia&&root.matchMedia('(pointer:coarse)').matches);
 const announce=(t,seconds=2.8)=>{if(!session)return;session.message=t;session.messageUntil=performance.now()+seconds*1000;};
 function newSession(){
   const floors=[generateFloor(1),generateFloor(2)];
-  session={floors,floorIndex:0,x:floors[0].center,y:1268,found:0,total:2*OBJECTIVES_PER_FLOOR,exposure:0,sneak:false,active:true,over:false,elapsed:0,aiAcc:0,message:'',messageUntil:0};
-  arrows.clear();keys.clear();overlay.hidden=true;status.textContent='';
+  session={floors,floorIndex:0,x:floors[0].center,y:1268,face:-Math.PI/2,walk:false,hp:3,detections:0,found:0,total:2*OBJECTIVES_PER_FLOOR,exposure:0,sneak:false,sneakToggle:false,concealed:0,skillCooldown:0,bomb:null,active:true,over:false,elapsed:0,aiAcc:0,message:'',messageUntil:0};
+  for(const f of floors)for(const h of f.guards)Object.assign(h,{mode:'patrol',modePause:0,suspectT:0,spotT:0,lostT:0,burstLeft:3,shotCd:0,stun:0,lastX:h.x,lastY:h.y,walk:false});
+  arrows.clear();sampleKeys.clear();document.body.classList.remove('infiltration-ended');overlay.hidden=true;status.textContent='';
   announce('青兵の視線を避け、各階の重要情報を集めよう',4);
 }
 function resize(){
@@ -120,20 +124,22 @@ function begin(){
   resize();screen.focus({preventScroll:true});
   lastTime=performance.now();lastDraw=0;lastUI=0;
   if(animation)cancelAnimationFrame(animation);
+  for(const k in mobileLast)mobileLast[k]=false;
   animation=requestAnimationFrame(tick);
 }
 function close(){
   if(session)session.active=false;
   if(animation)cancelAnimationFrame(animation);animation=0;
-  arrows.clear();keys.clear();
-  document.body.classList.remove('infiltration-open');screen.setAttribute('aria-hidden','true');
+  arrows.clear();sampleKeys.clear();
+  if(typeof keys!=='undefined')for(const k in keys)keys[k]=false;
+  document.body.classList.remove('infiltration-open','infiltration-ended');screen.setAttribute('aria-hidden','true');
   // 親のステージ選択をそのまま復帰。攻略・セーブデータには触れない。
   launch.focus({preventScroll:true});
 }
 function finish(won){
-  session.over=true;arrows.clear();keys.clear();overlay.hidden=false;
-  endTitle.textContent=won?'潜入成功！':'発見された！';
-  endBody.textContent=won?'重要情報をすべて奪取し、発見されずに帰還した。':'青兵に発見され、作戦は失敗。部屋の壁や家具で視線を切ろう。';
+  session.over=true;arrows.clear();sampleKeys.clear();document.body.classList.add('infiltration-ended');overlay.hidden=false;
+  endTitle.textContent=won?'潜入成功！':'ミッション失敗';
+  endBody.textContent=won?'重要情報をすべて奪取し、発見されずに帰還した。':session.hp<=0?'敵兵の攻撃で倒された。遮蔽物に隠れよう。':'機密情報は回収したが、敵に発見された。完全潜入を目指そう。';
   status.textContent=won?'MISSION COMPLETE':'MISSION FAILED';
 }
 function climb(){
@@ -145,36 +151,148 @@ function climb(){
   session.x=to.center;session.y=145;session.exposure=0;
   announce((session.floorIndex+1)+'階に移動した',2.2);
 }
-function moveGuards(f,dt){
-  for(const guard of f.guards){
-    if(guard.wait>0){guard.wait-=dt;continue;}
-    const dest=guard.waypoints[guard.index],dx=dest.x-guard.x,dy=dest.y-guard.y;
-    const d=Math.hypot(dx,dy);
-    if(d<3){guard.index=(guard.index+1)%guard.waypoints.length;guard.wait=.55;continue;}
-    guard.face=Math.atan2(dy,dx);
-    const step=Math.min(d,guard.speed*dt);
-    guard.x+=dx/d*step;guard.y+=dy/d*step;
+// 屋外の青兵と同じ「巡回→疑惑→発見→追跡・3連射→見失い」の状態遷移。
+// 狭い室内は壁/家具への衝突と遮蔽を別途考慮する。
+function setMode(h,mode,target){
+  if(h.mode===mode)return false;
+  h.mode=mode;h.modePause=.5+Math.random()*.5;h.walk=false;
+  if(mode==='suspect'){h.suspectT=2;h.lastX=target.x;h.lastY=target.y;h.lostT=0;}
+  if(mode==='found'){h.lostT=1.5;h.burstLeft=3;h.shotCd=.5;h.lastX=target.x;h.lastY=target.y;}
+  return true;
+}
+function moveGuard(f,h,target,dt,speed){
+  const dx=target.x-h.x,dy=target.y-h.y,d=Math.hypot(dx,dy);
+  if(d<=3){h.walk=false;return true;}
+  const step=Math.min(d,speed*dt),vx=dx/d*step,vy=dy/d*step;
+  let moved=false;
+  if(!blocked(f,h.x+vx,h.y+vy,12)){h.x+=vx;h.y+=vy;moved=true;}
+  else {
+    if(!blocked(f,h.x+vx,h.y,12)){h.x+=vx;moved=true;}
+    if(!blocked(f,h.x,h.y+vy,12)){h.y+=vy;moved=true;}
   }
+  // 廊下から室内へ追跡する際、壁ではなく隣室のドアへ経由する。
+  if(!moved){
+    const room=f.rooms.find(r=>target.y>=r.y&&target.y<=r.y+r.h&&target.x>=r.x&&target.x<=r.x+r.w);
+    if(room){
+      const doorX=room.side?room.x:room.x+room.w;
+      const via={x:doorX+(room.side?-35:35),y:room.doorY};
+      const tx=via.x-h.x,ty=via.y-h.y,td=Math.hypot(tx,ty);
+      if(td>2){
+        const mx=tx/td*step,my=ty/td*step;
+        if(!blocked(f,h.x+mx,h.y,12)){h.x+=mx;moved=true;}
+        if(!blocked(f,h.x,h.y+my,12)){h.y+=my;moved=true;}
+      }
+    }
+  }
+  h.walk=moved;
+  return false;
+}
+function alertGuards(f,point,radius){
+  for(const h of f.guards){
+    if(h.stun>0||h.mode==='found'||distance(h,point)>radius)continue;
+    setMode(h,'suspect',point);h.face=Math.atan2(point.y-h.y,point.x-h.x);
+  }
+}
+function moveGuards(f,s,dt){
+  let watched=false;
+  for(const h of f.guards){
+    h.walk=false;
+    if(h.stun>0){h.stun=Math.max(0,h.stun-dt);h.spotT=0;h.mode='patrol';continue;}
+    const seen=s.concealed<=0&&canGuardSee(f,h,s,s.sneak);
+    if(seen){
+      watched=true;
+      h.spotT=Math.min(2,h.spotT+dt*(s.sneak?.65:1));
+      h.lastX=s.x;h.lastY=s.y;
+      if(h.spotT>.18&&h.mode==='patrol')setMode(h,'suspect',s);
+      if(h.spotT>.85&&h.mode!=='found'){
+        setMode(h,'found',s);s.detections++;
+        announce('見つかった！ 壁・家具の陰に退避！',2.8);
+        for(const other of f.guards)if(other!==h&&other.stun<=0&&distance(h,other)<360)setMode(other,'suspect',s);
+      }
+    }else h.spotT=Math.max(0,h.spotT-dt*.9);
+    if(h.modePause>0){h.modePause=Math.max(0,h.modePause-dt);continue;}
+    if(h.mode==='found'){
+      if(seen)h.lostT=1.5;else h.lostT-=dt;
+      if(h.lostT<=0){setMode(h,'suspect',{x:h.lastX,y:h.lastY});continue;}
+      const target=seen?s:{x:h.lastX,y:h.lastY};
+      h.face=Math.atan2(target.y-h.y,target.x-h.x);
+      if(distance(h,target)>85)moveGuard(f,h,target,dt,94);
+      h.shotCd-=dt;
+      // 本編通常青兵の3連射→2秒休止。見えている場合のみ攻撃。
+      if(seen&&distance(h,s)<150&&h.shotCd<=0){
+        h.characterShotAt=performance.now();
+        h.shotCd=h.burstLeft>1?.14:2;
+        h.burstLeft=h.burstLeft>1?h.burstLeft-1:3;
+        s.hp=Math.max(0,s.hp-1);
+        if(typeof sfx==='function')sfx('mg');
+        if(s.hp<=0){finish(false);return watched;}
+      }
+    }else if(h.mode==='suspect'){
+      h.suspectT-=dt;
+      // 疑惑モードは1回停止後、周囲を360度警戒する。
+      h.face+=dt*1.8;
+      if(h.suspectT<=0){setMode(h,'patrol',h);h.spotT=0;}
+    }else{
+      if(h.wait>0){h.wait-=dt;continue;}
+      const target=h.waypoints[h.index];
+      if(moveGuard(f,h,target,dt,h.speed)){h.index=(h.index+1)%h.waypoints.length;h.wait=.55;}
+      else h.face=Math.atan2(target.y-h.y,target.x-h.x);
+    }
+  }
+  return watched;
+}
+function interactNear(){
+  const s=session;if(!s||s.over)return;
+  const f=s.floors[s.floorIndex];
+  const near=f.guards.filter(h=>h.stun<=0).find(h=>distance(s,h)<38);
+  if(near){near.stun=5;near.mode='patrol';near.spotT=0;near.walk=false;announce('青兵を気絶させた',2);if(typeof sfx==='function')sfx('skill');return;}
+  if(distance(s,f.stair)<69){climb();return;}
+  announce('近くに操作できるものがない',1.6);
+}
+function useSkill(){
+  const s=session;if(!s||s.over||s.skillCooldown>0)return;
+  const chosen=typeof selectedSkillId!=='undefined'?(selectedSkillId||'throw'):'throw';
+  if(chosen==='dig'){
+    s.concealed=5;s.skillCooldown=10;announce('潜伏：5秒間敵から身を隠す',2.5);
+  }else if(chosen==='decoy'){
+    const point={x:s.x+Math.cos(s.face)*70,y:s.y+Math.sin(s.face)*70};
+    alertGuards(s.floors[s.floorIndex],point,280);s.skillCooldown=8;announce('偽装：周囲の青兵の注意を引いた',2.5);
+  }else if(chosen==='throw'){
+    const f=s.floors[s.floorIndex],x=s.x+Math.cos(s.face)*85,y=s.y+Math.sin(s.face)*85;
+    s.bomb=blocked(f,x,y,13)?{x:s.x,y:s.y}:{x,y};announce('爆弾を設置：D（スマホB）で起爆',2.5);
+  }else {announce('このスキルは屋内サンプルでは未対応',2.5);return;}
+  if(typeof sfx==='function')sfx('skill');
+}
+function useBomb(){
+  const s=session;if(!s||s.over)return;
+  if(!s.bomb){announce('Sで爆弾を投げてからDで起爆',2.5);return;}
+  const f=s.floors[s.floorIndex],at=s.bomb;s.bomb=null;
+  for(const h of f.guards)if(distance(h,at)<110){h.stun=5;h.mode='patrol';h.spotT=0;}
+  alertGuards(f,at,400);
+  if(typeof sfx==='function')sfx('explosion');
+  announce('爆発音で敵の警戒が高まった！',2);
 }
 function update(dt){
   const s=session;if(!s||s.over)return;
   const f=s.floors[s.floorIndex];s.elapsed+=dt;
-  let x=Number(keys.has('ArrowRight')||keys.has('KeyD')||arrows.has('right'))-Number(keys.has('ArrowLeft')||keys.has('KeyA')||arrows.has('left'));
-  let y=Number(keys.has('ArrowDown')||keys.has('KeyS')||arrows.has('down'))-Number(keys.has('ArrowUp')||keys.has('KeyW')||arrows.has('up'));
-  if(x||y){
+  let x=Number(held('ArrowRight')||arrows.has('right'))-Number(held('ArrowLeft')||arrows.has('left'));
+  let y=Number(held('ArrowDown')||arrows.has('down'))-Number(held('ArrowUp')||arrows.has('up'));
+  s.sneak=!!(s.sneakToggle||held('ShiftLeft')||held('ShiftRight'));
+  s.walk=!!(x||y);
+  if(s.walk){
     const len=Math.hypot(x,y),speed=s.sneak?93:154;
-    x=x/len*speed*dt;y=y/len*speed*dt;
+    x=x/len*speed*dt;y=y/len*speed*dt;s.face=Math.atan2(y,x);
     if(!blocked(f,s.x+x,s.y,13))s.x+=x;
     if(!blocked(f,s.x,s.y+y,13))s.y+=y;
   }
+  s.concealed=Math.max(0,s.concealed-dt);s.skillCooldown=Math.max(0,s.skillCooldown-dt);
   s.aiAcc+=dt;
-  // AIと視線判定は20Hz。描画負荷と独立させてモバイルでも軽量にする。
+  // 移動・索敵は20Hzで判定し、重い1フレーム集中処理を避ける。
   while(s.aiAcc>=.05){
     s.aiAcc-=.05;
-    moveGuards(f,.05);
-    const seen=f.guards.some(g=>canGuardSee(f,g,s,s.sneak));
-    s.exposure=clamp(s.exposure+(seen?.09:-.16),0,1);
-    if(s.exposure>=1){finish(false);return;}
+    const seen=moveGuards(f,s,.05);
+    s.exposure=clamp(s.exposure+(seen?.065:-.12),0,1);
+    if(s.over)return;
   }
   for(const intel of f.intel){
     if(!intel.taken&&distance(s,intel)<30){
@@ -183,21 +301,22 @@ function update(dt){
       if(s.found===s.total)announce('情報をすべて回収。1階の脱出地点へ！',5);
     }
   }
-  if(s.floorIndex===0&&s.found===s.total&&distance(s,f.exit)<62){finish(true);}
+  if(s.floorIndex===0&&s.found===s.total&&distance(s,f.exit)<62){finish(s.detections===0);}
 }
 function roundRect(x,y,w,h,r,fill,stroke){
   ctx.beginPath();ctx.roundRect(x,y,w,h,r);
   if(fill){ctx.fillStyle=fill;ctx.fill();}
   if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke();}
 }
-function drawPerson(x,y,face,color,player=false){
-  ctx.save();ctx.translate(x,y);ctx.rotate(face);
-  ctx.fillStyle='rgba(0,0,0,.36)';ctx.beginPath();ctx.ellipse(3,5,17,13,0,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle=color;ctx.beginPath();ctx.arc(0,0,14,0,Math.PI*2);ctx.fill();
-  ctx.strokeStyle=player?'#eb5550':'#90aed2';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(-4,-11);ctx.lineTo(-4,11);ctx.stroke();
-  ctx.fillStyle='#f1d9bd';ctx.fillRect(5,-5,9,10);
-  ctx.strokeStyle='#0b1517';ctx.lineWidth=3;ctx.strokeRect(-10,-10,20,20);
-  ctx.restore();
+function drawPerson(actor,player=false){
+  // 本編soldier()を直接呼び、WebP素材・歩行アニメーション・ヘルメットを完全共通化。
+  if(typeof soldier==='function'&&typeof g!=='undefined'){
+    const previous=g;
+    try{g=ctx;soldier(actor.x,actor.y,actor.face||0,player,actor.mode==='found',!!actor.walk,false,'',actor.mode==='found',player,actor);return;}
+    finally{g=previous;}
+  }
+  ctx.save();ctx.translate(actor.x,actor.y);ctx.rotate(actor.face||0);
+  ctx.fillStyle=player?'#657a54':'#4c6d91';ctx.beginPath();ctx.arc(0,0,13,0,6.2832);ctx.fill();ctx.restore();
 }
 function draw(){
   if(!session)return;
@@ -218,17 +337,19 @@ function draw(){
   }
   ctx.strokeStyle='rgba(220,204,163,.12)';ctx.lineWidth=1;
   for(let y=100;y<1360;y+=55){ctx.beginPath();ctx.moveTo(f.center-70,y);ctx.lineTo(f.center+70,y);ctx.stroke();}
-  for(const q of f.furniture){roundRect(q.x+2,q.y+3,q.w,q.h,3,'#242d28','#7d6a50');ctx.fillStyle='#77644b';ctx.fillRect(q.x+7,q.y+9,q.w-10,4);}
+  for(const q of f.furniture){roundRect(q.x+2,q.y+3,q.w,q.h,3,'#242d28','#7d6a50');if(crate.complete&&crate.naturalWidth>0)ctx.drawImage(crate,q.x,q.y,q.w,q.h);else{ctx.fillStyle='#77644b';ctx.fillRect(q.x+7,q.y+9,q.w-10,4);}}
   for(const w of f.walls){ctx.fillStyle='#161d1b';ctx.fillRect(w.x-2,w.y-2,w.w+4,w.h+4);ctx.fillStyle='#838778';ctx.fillRect(w.x,w.y,w.w,w.h);}
   // 射界は薄い赤。壁で遮られた実際の判定はcanGuardSeeが担当。
   for(const guard of f.guards){
+    if(guard.stun>0)continue;
     ctx.beginPath();ctx.moveTo(guard.x,guard.y);
     for(let i=0;i<=12;i++){
       const a=guard.face-.83+1.66*i/12;
       ctx.lineTo(guard.x+Math.cos(a)*guard.sight,guard.y+Math.sin(a)*guard.sight);
     }
-    ctx.closePath();ctx.fillStyle='rgba(210,52,42,.10)';ctx.fill();
-    drawPerson(guard.x,guard.y,guard.face,'#284c76');
+    ctx.closePath();ctx.fillStyle=guard.mode==='found'?'rgba(210,52,42,.23)':guard.mode==='suspect'?'rgba(238,195,54,.13)':'rgba(210,52,42,.10)';ctx.fill();
+    drawPerson(guard,false);
+    if(guard.stun>0||guard.mode==='suspect'||guard.mode==='found'){ctx.fillStyle=guard.stun>0?'#ffe3a0':guard.mode==='found'?'#ff5544':'#ffe187';ctx.font='bold 23px system-ui';ctx.textAlign='center';ctx.fillText(guard.stun>0?'★':guard.mode==='found'?'!':'?',guard.x,guard.y-19);ctx.textAlign='start';}
   }
   for(const item of f.intel){
     if(item.taken)continue;
@@ -246,7 +367,8 @@ function draw(){
   if(s.exposure>0){
     ctx.strokeStyle='#ff654c';ctx.lineWidth=4;ctx.beginPath();ctx.arc(s.x,s.y,21,-Math.PI/2,-Math.PI/2+Math.PI*2*s.exposure);ctx.stroke();
   }
-  drawPerson(s.x,s.y,-Math.PI/2,'#707a56',true);
+  if(s.bomb){ctx.fillStyle='#17191b';ctx.beginPath();ctx.arc(s.bomb.x,s.bomb.y,13,0,6.2832);ctx.fill();ctx.fillStyle='#e24e41';ctx.beginPath();ctx.arc(s.bomb.x,s.bomb.y,4,0,6.2832);ctx.fill();}
+  drawPerson(s,true);
   ctx.restore();
   const shade=ctx.createRadialGradient(cw/2,ch/2,Math.min(cw,ch)*.13,cw/2,ch/2,Math.max(cw,ch)*.75);
   shade.addColorStop(0,'rgba(0,0,0,0)');shade.addColorStop(1,'rgba(0,0,0,.58)');
@@ -254,41 +376,57 @@ function draw(){
 }
 function updateUI(now){
   const s=session;if(!s)return;const f=s.floors[s.floorIndex];
-  hud.textContent=(s.floorIndex+1)+'F  ｜ 情報 '+s.found+'/'+s.total+' ｜ 発見危険 '+Math.round(s.exposure*100)+'%';
+  hud.textContent=(s.floorIndex+1)+'F ｜ 情報 '+s.found+'/'+s.total+' ｜ HP '+s.hp+' ｜発見 '+s.detections;
   const near=distance(s,f.stair)<69;action.disabled=s.over||!near;
   action.textContent=near?'階段で '+(s.floorIndex===0?'2F':'1F')+' へ':'階段に近づく';
   hint.textContent=now<s.messageUntil?s.message:s.over?'作戦終了':s.found===s.total?'1Fの脱出地点に帰還しよう':s.exposure>.25?'警戒！ 部屋や家具の陰に隠れよう':'部屋を探索して情報を集めよう';
   screen.classList.toggle('infiltration-danger',s.exposure>.35);
   const sneak=document.getElementById('infiltrationSneak');sneak.setAttribute('aria-pressed',String(s.sneak));sneak.textContent=s.sneak?'忍び足 ON':'忍び足 OFF';
+  const skillLabel=document.getElementById('infiltrationSkillLabel');if(skillLabel)skillLabel.textContent='S：'+(typeof SKN!=='undefined'&&typeof selectedSkillId!=='undefined'?(SKN[selectedSkillId]||'遠投'):'遠投')+(s.skillCooldown>0?' '+Math.ceil(s.skillCooldown)+'s':'');
 }
 function tick(now){
   if(!session||!session.active)return;
   const dt=clamp((now-lastTime)/1000,0,.04);lastTime=now;
-  if(!document.hidden){update(dt);if(!isTouch||now-lastDraw>32){draw();lastDraw=now;}if(now-lastUI>115){updateUI(now);lastUI=now;}}
+  if(!document.hidden){syncMobileActions();update(dt);if(!isTouch||now-lastDraw>32){draw();lastDraw=now;}if(now-lastUI>115){updateUI(now);lastUI=now;}}
   animation=requestAnimationFrame(tick);
 }
 function keyHandler(event,pressed){
   if(!session||!session.active)return;
   const code=event.code;
-  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyA','KeyS','KeyD','KeyE','Enter','Space','ShiftLeft','ShiftRight','Escape'].includes(code)){
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyA','KeyS','KeyD','ShiftLeft','ShiftRight','Escape'].includes(code)){
     event.preventDefault();event.stopImmediatePropagation();
-    if(pressed&&event.repeat&&['KeyE','Enter','Space','Escape'].includes(code))return;
-    if(pressed)keys.add(code);else keys.delete(code);
-    if(pressed&&(code==='KeyE'||code==='Enter'||code==='Space'))climb();
-    if(pressed&&code==='Escape')close();
-    if(code==='ShiftLeft'||code==='ShiftRight')session.sneak=pressed;
+    const first=!sampleKeys.has(code);
+    if(pressed)sampleKeys.add(code);else sampleKeys.delete(code);
+    if(pressed&&first&&!event.repeat){
+      if(code==='KeyA')interactNear();
+      else if(code==='KeyS')useSkill();
+      else if(code==='KeyD')useBomb();
+      else if(code==='Escape')close();
+    }
   }
 }
 root.addEventListener('keydown',e=>keyHandler(e,true),true);
 root.addEventListener('keyup',e=>keyHandler(e,false),true);
-root.addEventListener('blur',()=>{keys.clear();arrows.clear();});
-document.addEventListener('visibilitychange',()=>{keys.clear();arrows.clear();lastTime=performance.now();});
+root.addEventListener('blur',()=>{sampleKeys.clear();arrows.clear();});
+document.addEventListener('visibilitychange',()=>{sampleKeys.clear();arrows.clear();lastTime=performance.now();});
 launch.addEventListener('click',begin);
 document.getElementById('infiltrationBack').addEventListener('click',close);
 document.getElementById('infiltrationRetry').addEventListener('click',()=>{if(session)session.active=false;begin();});
 document.getElementById('infiltrationEndBack').addEventListener('click',close);
-action.addEventListener('click',climb);
-document.getElementById('infiltrationSneak').addEventListener('click',()=>{if(session&&!session.over)session.sneak=!session.sneak;});
+action.addEventListener('click',interactNear);
+document.getElementById('infiltrationSneak').addEventListener('click',()=>{if(session&&!session.over)session.sneakToggle=!session.sneakToggle;});
+function syncMobileActions(){
+  if(!session||!session.active||session.over)return;
+  for(const code of Object.keys(mobileLast)){
+    const pressed=typeof keys!=='undefined'&&!!keys[code];
+    if(pressed&&!mobileLast[code]){
+      if(code==='KeyA')interactNear();
+      else if(code==='KeyS')useSkill();
+      else if(code==='KeyD')useBomb();
+    }
+    mobileLast[code]=pressed;
+  }
+}
 for(const button of screen.querySelectorAll('[data-inf-dir]')){
   const dir=button.dataset.infDir;
   button.addEventListener('pointerdown',e=>{e.preventDefault();button.setPointerCapture?.(e.pointerId);arrows.add(dir);},{passive:false});
