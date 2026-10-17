@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.17.1843</title>
+<title>こっそり戦車大作戦 2026.10.17.1900</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -804,35 +804,28 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
  .stage-back{margin-top:10px}
 }
 @media(max-height:620px) and (min-width:581px){.stage-options{padding-top:18px}.stage-card{min-height:95px;padding-top:10px;padding-bottom:10px}}
-/* 参照レイアウト：丸い番号／同じ大きさの2行タイトル／目標の画像。 */
-#stageScreen .stage-options{grid-template-columns:minmax(0,1fr);gap:12px;padding-top:26px}
-#stageScreen .stage-card{box-sizing:border-box;display:grid;grid-template-columns:76px minmax(0,1fr) 220px;align-items:center;gap:28px;min-height:152px;padding:14px 28px 14px 24px}
+/* Compact operation cards leave the war-room background visible. */
+#stageScreen .stage-options{grid-template-columns:minmax(0,1fr);gap:8px;padding-top:24px;width:min(100%,740px);align-self:center}
+#stageScreen .stage-card{box-sizing:border-box;display:grid;grid-template-columns:42px minmax(0,1fr) 108px;align-items:center;gap:18px;min-height:88px;padding:6px 10px 6px 14px;border-left-width:5px}
 #stageScreen .stage-card:before{content:none}
-#stageScreen .stage-number{display:flex;align-items:center;justify-content:center;width:76px;height:76px;box-sizing:border-box;border:1px solid #b69c6a;border-radius:50%;font-size:32px;line-height:1;font-weight:800;color:#ffe0a1;letter-spacing:.02em}
-#stageScreen .stage-copy{display:flex;flex-direction:column;justify-content:space-between;gap:18px;min-width:0;text-align:left}
-#stageScreen .stage-copy strong,#stageScreen .stage-target{display:block;font-size:26px;font-weight:800;line-height:1.35;letter-spacing:.02em;overflow-wrap:anywhere}
-#stageScreen .stage-art{display:flex;align-items:center;justify-content:center;align-self:stretch;min-width:0;border:1px solid #ac936441;border-radius:5px;background:radial-gradient(ellipse,#9d845d26,transparent 72%)}
-#stageScreen .stage-art img{display:block;width:100%;height:122px;object-fit:contain;box-sizing:border-box;padding:5px;image-rendering:auto}
-@media(max-width:760px){
- #stageScreen .stage-card{grid-template-columns:52px minmax(0,1fr) 130px;gap:18px;padding:12px 16px;min-height:132px}
- #stageScreen .stage-number{width:52px;height:52px;font-size:25px}
- #stageScreen .stage-copy{gap:16px}
- #stageScreen .stage-copy strong,#stageScreen .stage-target{font-size:24px}
- #stageScreen .stage-art img{height:106px}
-}
+#stageScreen .stage-number{display:flex;align-items:center;justify-content:center;width:40px;height:40px;box-sizing:border-box;border:1px solid #b69c6a;border-radius:50%;font-size:20px;line-height:1;font-weight:800;color:#ffe0a1;letter-spacing:.02em}
+#stageScreen .stage-copy{display:flex;flex-direction:column;justify-content:center;gap:7px;min-width:0;text-align:left}
+#stageScreen .stage-copy strong,#stageScreen .stage-target{display:block;font-size:20px;font-weight:800;line-height:1.35;letter-spacing:.02em;overflow-wrap:anywhere}
+#stageScreen .stage-art{display:flex;align-items:center;justify-content:center;min-width:0;overflow:hidden;border:1px solid #ac936460;border-radius:3px;background:#242c1d}
+#stageScreen .stage-art img{display:block;width:100%;height:72px;object-fit:contain;image-rendering:auto}
+#stageScreen .stage-back{margin-top:10px}
 @media(max-width:580px){
- #stageScreen .stage-options{gap:10px;padding-top:18px}
- #stageScreen .stage-card{grid-template-columns:42px minmax(0,1fr) 80px;gap:12px;padding:10px 12px;min-height:116px}
- #stageScreen .stage-number{width:42px;height:42px;font-size:23px}
- #stageScreen .stage-copy{gap:13px}
- #stageScreen .stage-copy strong,#stageScreen .stage-target{font-size:22px}
- #stageScreen .stage-art img{height:90px;padding:3px}
+ #stageScreen .stage-options{gap:7px;padding-top:18px}
+ #stageScreen .stage-card{grid-template-columns:32px minmax(0,1fr) 90px;gap:10px;padding:5px 7px 5px 9px;min-height:76px}
+ #stageScreen .stage-number{width:32px;height:32px;font-size:17px}
+ #stageScreen .stage-copy{gap:5px}
+ #stageScreen .stage-copy strong,#stageScreen .stage-target{font-size:17px;letter-spacing:0}
+ #stageScreen .stage-art img{height:62px}
 }
 @media(max-width:360px){
- #stageScreen .stage-card{grid-template-columns:32px minmax(0,1fr) 60px;gap:8px;padding:9px 10px;min-height:106px}
- #stageScreen .stage-number{width:32px;height:32px;font-size:19px}
- #stageScreen .stage-copy strong,#stageScreen .stage-target{font-size:19px}
- #stageScreen .stage-art img{height:82px;padding:2px}
+ #stageScreen .stage-card{grid-template-columns:26px minmax(0,1fr) 72px;gap:7px;padding-left:7px}
+ #stageScreen .stage-number{width:26px;height:26px;font-size:14px}
+ #stageScreen .stage-copy strong,#stageScreen .stage-target{font-size:15px}
 }
 </style>
 <div id="missionSuccess" role="dialog" aria-modal="true" aria-labelledby="missionSuccessTitle"><div class="mission-fireworks" aria-hidden="true"><i class="mission-firework" style="left:18%;top:24%;--burst-delay:0.15s"></i><i class="mission-firework" style="left:78%;top:20%;--burst-delay:0.45s"></i><i class="mission-firework" style="left:48%;top:12%;--burst-delay:0.75s"></i><i class="mission-firework" style="left:22%;top:60%;--burst-delay:1.05s"></i><i class="mission-firework" style="left:81%;top:55%;--burst-delay:1.35s"></i></div><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_success.webp?v=2026.10.14.1653" alt="笑顔でジャンプする主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionSuccessTitle">ミッション 成功</h1><button type="button" id="missionSuccessEvaluate">作戦評価</button></div></div></div>
@@ -843,10 +836,10 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 <div id="stageScreen" role="region" aria-label="ステージ選択"><div class="stage-shell">
 <div class="stage-kicker">CHOOSE YOUR MISSION</div><h1>ステージ選択</h1><p id="stageSkill"></p>
 <div class="stage-options">
-<button type="button" class="stage-card" data-stage="beginner"><span class="stage-number" aria-hidden="true">01</span><span class="stage-copy"><strong>拠点破壊（初級）</strong><span class="stage-target">軍事衛星施設</span></span><span class="stage-art"><img src="assets/cover/radio_facility.webp" alt="" width="220" height="132" loading="lazy" decoding="async"></span></button>
-<button type="button" class="stage-card" data-stage="base"><span class="stage-number" aria-hidden="true">02</span><span class="stage-copy"><strong>拠点破壊（上級）</strong><span class="stage-target">軍司令施設</span></span><span class="stage-art"><img src="assets/cover/command_building_1.webp" alt="" width="220" height="132" loading="lazy" decoding="async"></span></button>
-<button type="button" class="stage-card" data-stage="frontBeginner"><span class="stage-number" aria-hidden="true">03</span><span class="stage-copy"><strong>前線制圧（初級）</strong><span class="stage-target">軍需物資</span></span><span class="stage-art"><img src="assets/objectives/frontline_cargo_large.webp" alt="" width="220" height="132" loading="lazy" decoding="async"></span></button>
-<button type="button" class="stage-card" data-stage="front"><span class="stage-number" aria-hidden="true">04</span><span class="stage-copy"><strong>前線制圧（上級）</strong><span class="stage-target">戦術アンテナ</span></span><span class="stage-art"><img src="assets/objectives/frontline_antenna_large.webp" alt="" width="220" height="132" loading="lazy" decoding="async"></span></button>
+<button type="button" class="stage-card" data-stage="beginner"><span class="stage-number" aria-hidden="true">01</span><span class="stage-copy"><strong>拠点破壊（初級）</strong><span class="stage-target">軍事衛星施設</span></span><span class="stage-art"><img src="assets/ui/stages/satellite.webp" alt="" width="144" height="96" loading="lazy" decoding="async"></span></button>
+<button type="button" class="stage-card" data-stage="base"><span class="stage-number" aria-hidden="true">02</span><span class="stage-copy"><strong>拠点破壊（上級）</strong><span class="stage-target">軍司令施設</span></span><span class="stage-art"><img src="assets/ui/stages/headquarters.webp" alt="" width="144" height="96" loading="lazy" decoding="async"></span></button>
+<button type="button" class="stage-card" data-stage="frontBeginner"><span class="stage-number" aria-hidden="true">03</span><span class="stage-copy"><strong>前線制圧（初級）</strong><span class="stage-target">軍需物資</span></span><span class="stage-art"><img src="assets/ui/stages/supplies.webp" alt="" width="144" height="96" loading="lazy" decoding="async"></span></button>
+<button type="button" class="stage-card" data-stage="front"><span class="stage-number" aria-hidden="true">04</span><span class="stage-copy"><strong>前線制圧（上級）</strong><span class="stage-target">戦術アンテナ</span></span><span class="stage-art"><img src="assets/ui/stages/antenna.webp" alt="" width="144" height="96" loading="lazy" decoding="async"></span></button>
 </div><button type="button" class="stage-back" id="stageBack">← スキル選択へ戻る</button></div></div><div id="missionHud" role="status"></div>
 
 <script>
@@ -859,7 +852,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.17.1843',FILE_CREATED_AT='2026/10/17 18:43',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.17.1900',FILE_CREATED_AT='2026/10/17 19:00',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -7873,7 +7866,7 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/frontline.js?v=2026.10.17.1843"></script>
+<script src="js/frontline.js?v=2026.10.17.1900"></script>
 <script src="js/award-icons.js?v=2026.10.17.0743"></script>
 <script src="js/characters.js?v=2026.10.17.1319"></script>
 <script src="js/enemy-dogs.js?v=2026.10.17.0811"></script>
