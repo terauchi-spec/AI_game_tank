@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.17.1750</title>
+<title>こっそり戦車大作戦 2026.10.17.1805</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -812,10 +812,10 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 <div id="stageScreen" role="region" aria-label="ステージ選択"><div class="stage-shell">
 <div class="stage-kicker">CHOOSE YOUR MISSION</div><h1>ステージ選択</h1><p id="stageSkill"></p>
 <div class="stage-options">
-<button type="button" class="stage-card" data-stage="beginner"><strong>01　初級ステージ</strong><span>3つのランダムエリアを進み、電波施設を破壊する</span><small>全5エリア ／ 青兵・青兵指揮官 ／ 敵戦車は最大2台</small></button>
-<button type="button" class="stage-card" data-stage="base"><strong>02　上級ステージ</strong><span>敵部隊を突破し、司令本部を破壊する</span><small>全7エリア ／ 白兵・指揮官・犬兵が登場</small></button>
-<button type="button" class="stage-card" data-stage="frontBeginner"><strong>03　最前線初級</strong><span>味方と協力し、2つの拠点を順番に制圧する</span><small>開始草原＋ランダム3エリア ／ 敵戦車は最大2台・指揮官は少なめ</small></button>
-<button type="button" class="stage-card" data-stage="front"><strong>04　最前線上級</strong><span>味方と協力し、3つの拠点を順番に制圧する</span><small>従来の最前線 ／ 南部 → 中央 → 北部</small></button>
+<button type="button" class="stage-card" data-stage="beginner"><strong>01　拠点破壊（初級）</strong><span>軍事衛星施設</span><small>全5エリア ／ 青兵・青兵指揮官 ／ 敵戦車は最大2台</small></button>
+<button type="button" class="stage-card" data-stage="base"><strong>02　拠点破壊（上級）</strong><span>軍司令施設</span><small>全7エリア ／ 白兵・指揮官・犬兵が登場</small></button>
+<button type="button" class="stage-card" data-stage="frontBeginner"><strong>03　前線制圧（初級）</strong><span>軍需物資</span><small>開始草原＋ランダム3エリア ／ 敵戦車は最大2台・指揮官は少なめ</small></button>
+<button type="button" class="stage-card" data-stage="front"><strong>04　前線制圧（上級）</strong><span>戦術アンテナ</span><small>従来の最前線 ／ 南部 → 中央 → 北部</small></button>
 </div><button type="button" class="stage-back" id="stageBack">← スキル選択へ戻る</button></div></div><div id="missionHud" role="status"></div>
 
 <script>
@@ -828,7 +828,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.17.1750',FILE_CREATED_AT='2026/10/17 17:50',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.17.1805',FILE_CREATED_AT='2026/10/17 18:05',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -7605,7 +7605,7 @@ document.getElementById('specVersion').textContent=GAME_VERSION;
 
 
 let stageMode='base',frontlineBeginner=false,mission=null;
-const STAGE_NAMES={beginner:'初級・電波施設破壊',base:'上級・拠点破壊',get front(){return frontlineBeginner?'最前線初級':'最前線上級';},stealth:'潜入'};
+const STAGE_NAMES={beginner:'拠点破壊（初級）：軍事衛星施設',base:'拠点破壊（上級）：軍司令施設',get front(){return frontlineBeginner?'前線制圧（初級）：軍需物資':'前線制圧（上級）：戦術アンテナ';},stealth:'潜入'};
 document.querySelectorAll('[data-stage]').forEach(b=>b.addEventListener('click',()=>{frontlineBeginner=b.dataset.stage==='frontBeginner';stageMode=frontlineBeginner?'front':b.dataset.stage;document.body.classList.remove('stage-open');selectSkillIndex(skillMenuList().findIndex(k=>k.id===selectedSkillId),true);}));
 document.getElementById('stageBack').onclick=()=>{state='skill';};
 let briefingFrameDrawn=false;
@@ -7638,8 +7638,8 @@ function syncMissionBriefing(){
    image.alt=front?'主人公と2人の味方兵が一緒に進軍する姿':'円形爆弾を抱えて走る主人公';
    screen.querySelector('.mission-hud-guide').hidden=front;
    document.getElementById('missionFrontlineRules').hidden=!front;
-   document.getElementById('missionBriefingTitle').textContent=front?STAGE_NAMES.front+'ミッション':stageMode==='beginner'?'初級ミッション':'上級ミッション';
-   document.getElementById('missionBriefingGoal').textContent=front?'味方と協力し、'+(isFrontlineBeginner()?2:3)+'つの拠点を制圧せよ':stageMode==='beginner'?'最後の草原にある電波施設を破壊せよ':'敵の司令本部にたどりつき、破壊せよ';
+   document.getElementById('missionBriefingTitle').textContent=front?(isFrontlineBeginner()?'前線制圧（初級）':'前線制圧（上級）'):stageMode==='beginner'?'拠点破壊（初級）':'拠点破壊（上級）';
+   document.getElementById('missionBriefingGoal').textContent=front?(isFrontlineBeginner()?'軍需物資':'戦術アンテナ')+'の'+(isFrontlineBeginner()?2:3)+'拠点を制圧せよ':stageMode==='beginner'?'軍事衛星施設を破壊せよ':'軍司令施設を破壊せよ';
    document.getElementById('missionBegin').focus({preventScroll:true});
   }}
 }
@@ -7840,7 +7840,7 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/frontline.js?v=2026.10.17.1750"></script>
+<script src="js/frontline.js?v=2026.10.17.1805"></script>
 <script src="js/award-icons.js?v=2026.10.17.0743"></script>
 <script src="js/characters.js?v=2026.10.17.1319"></script>
 <script src="js/enemy-dogs.js?v=2026.10.17.0811"></script>
