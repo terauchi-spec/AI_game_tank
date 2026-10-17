@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.17.1736</title>
+<title>こっそり戦車大作戦 2026.10.17.1750</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -616,12 +616,13 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <li><a href="#spec-save">スキル解放・保存・デバッグ</a></li>
 </ol></nav>
 <section class="spec-section" id="spec-goal"><h2>1. 目的とクリア条件</h2>
-<p>スキル選択後に<strong>初級・上級・最前線</strong>の3種類のステージから選びます。<strong>初級</strong>は最後の草原にある大型パラボラアンテナの電波施設、<strong>上級</strong>は敵司令本部を破壊するとクリアです。<strong>最前線</strong>は味方と協力し、南部・中央・北部の3つの戦線を順番に制圧するとクリアです。円内の敵を排除し、各制圧エリア（南部・中央は半径36m、北部は半径72m）へプレイヤーが地上で一度入ると、そのエリアの制圧が可能になります。進入後はプレイヤーが範囲を離れても、行動可能な味方兵が1人以上いると制圧が進みます。プレイヤー単独では進まず、味方兵との合流を待ちます。制圧中はプレイヤーと範囲内の味方兵の合計人数で制圧が加速します（1人48秒、2人24秒、3人16秒）。気絶中や降下中の兵士は制圧人数に含みません。制圧地点から60m以内（北部は96m以内）の敵戦車は、制圧に参加している味方兵に向きや遮蔽物に関係なく気付き、追跡・攻撃します。遮蔽物に射線を遮られた場合は既存の遮蔽物への砲撃処理を使用します。敵に倒されると任務失敗となり、結果画面へ移行します。</p>
+<p>スキル選択後に<strong>初級・上級・最前線初級・最前線上級</strong>の4種類のステージから選びます。<strong>初級</strong>は最後の草原にある大型パラボラアンテナの電波施設、<strong>上級</strong>は敵司令本部を破壊するとクリアです。<strong>最前線初級</strong>は南部・北部の2拠点、<strong>最前線上級</strong>は南部・中央・北部の3拠点を味方と順番に制圧するとクリアです。円内の敵を排除し、各制圧エリア（南部・中央は半径36m、北部は半径54m）へプレイヤーが地上で一度入ると、そのエリアの制圧が可能になります。進入後はプレイヤーが範囲を離れても、行動可能な味方兵が1人以上いると制圧が進みます。プレイヤー単独では進まず、味方兵との合流を待ちます。制圧中はプレイヤーと範囲内の味方兵の合計人数で制圧が加速します（1人48秒、2人24秒、3人16秒）。気絶中や降下中の兵士は制圧人数に含みません。制圧地点から60m以内（北部は78m以内）の敵戦車は、制圧に参加している味方兵に向きや遮蔽物に関係なく気付き、追跡・攻撃します。遮蔽物に射線を遮られた場合は既存の遮蔽物への砲撃処理を使用します。敵に倒されると任務失敗となり、結果画面へ移行します。</p>
 <p><strong>初級：</strong>開始草原→候補5エリアからランダムに3エリア→最後は草原（電波施設）の全5エリア。通常の青兵と青兵指揮官4体が必ず登場し、白兵・白兵指揮官・犬兵は出現しません。敵戦車は最大2台です。<strong>上級：</strong>従来の全7エリア、敵AI、敵配置、敵司令本部破壊のルールを維持します。</p>
 <p>歩兵の潜入に加え、戦車などの乗り物を利用した戦闘や、出撃前に選ぶスキルによる攻略ができます。</p><a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-map"><h2>2. ステージ構成とランダム生成</h2>
 <p><strong>初級：</strong>全5エリア。開始草原→草原・森林・丘陵・村・湿地から重複なしでランダムに3エリア→電波施設のある草原。<strong>上級：</strong>全7エリア。最初は草原、最後は敵司令本部で、その間の5エリアは従来の候補から重複なしでランダムに選ばれます。</p>
-<p><strong>最前線：</strong>既存の戦場を舞台に、味方部隊と3つの戦線を押し上げる制圧作戦です。開始地点の味方兵の後方にはトラック2台・装甲車2台を追加配置し、最初から搭乗できます。敵兵は原則6秒ごとに2人、周辺の敵が少ないと約3秒間隔で補充します。同時出現の上限16人を維持し、離れた画面外の敵は戦果に数えず整理します。最前線のみ敵戦車の視野角・索敵距離・追跡距離は通常の2倍です。味方の補充があり、各戦線の制圧時にライフが回復し、味方の増援が到着します。搭乗車両の弾薬・燃料は補充されません。南部の制圧地点は橋や水際を避けて前後・左右に変化します。南部・中央の制圧目標は小型アンテナ、北部は大型アンテナです。制圧範囲の半径は南部・中央360px、北部540pxです。いずれも破壊できず、足元の台座だけが移動・射線を遮ります。マストの裏側は通行できます。目的地の矢印は右上のエリア名の下に表示し、制圧中は水色の円周ゲージと残り秒数で進み具合がわかります。制圧を始めた拠点の円内に敵が入ると、円とゲージがオレンジに変わり、敵を排除すると水色に戻ります。3拠点を制圧すると戦闘が止まり、大型アンテナから電波を発した後、「ミッション成功」画面の「作戦評価」ボタンから評価画面に進みます。開始直後は味方部隊が待機し、プレイヤーが開始地点から北へ240px（24m）前進すると一斉に進軍します。味方部隊と増援は個体ごとに左右の進路・制圧範囲内の到着位置・前進限界付近の待機位置が異なります。移動速度は従来の50〜100%の範囲で、3〜8秒ごとに緩やかに変化します。通常の進軍中は4〜10秒ごとに0.3〜0.9秒立ち止まり、前進限界では2〜4.5秒以上待機します。敵の発見時は短い立ち止まりを中断して戦闘を優先します。最前線の迷路は広い南北の通路を3本残し、その間に壁を配置します。最前線の味方兵は前方120度・300px（雨天75%、砂嵐55%）の視界で、遮蔽物の向こうや背後の敵には反応しません。敵を発見すると水色の「!」を表示し、通常の1.5倍の速さで接近します。発見済みの敵は420pxまで追跡し、見失うと最後に見た地点を最大2秒探してから通常の前進に戻ります。射撃前は0.5秒静止して狙いを定めます。最前線で気絶した味方兵は10秒経過するか、徒歩のプレイヤーが触れると復帰します。制圧エリア内では敵味方とも発見モードとなり、同じ円内の相手を向きや遮蔽物に関係なく警戒します。射撃には視線が通る必要があります。各制圧エリアにプレイヤーが初めて入ると、青兵指揮官2人を含む敵6人が画面上部から反撃に向かいます。敵兵の同時上限に達した場合は、空きができ次第出現します。通常増援にも約4人に1人の割合で青兵指揮官が含まれます。最前線の敵味方の歩兵は建物の間で進めない状態が続くと、迂回経路を探し、必要なら後退して回り込みます。味方は画面上端の80px先で最低2秒待機し、プレイヤーが近づくと前進を再開します。味方兵は初期部隊・補充兵・増援スキルを通じて5人に1人が無線機とバズーカを持つ指揮官です。敵を発見すると2.5秒停止して水色の電波を発し、1秒後に半径2000px以内の活動中の味方へ敵の最終確認位置を共有します。共有を受けた味方は6秒間発見モードとなり、射線の通る敵には交戦し、見えない敵には確認位置へ接近します。指揮官は敵戦車を優先し、0.5秒狙って4秒間隔でバズーカを発射します。敵戦車は1発で撃破可能です。味方のバズーカは味方部隊やプレイヤーを傷つけません。開始時の敵歩兵はプレイヤーが80m前進するまで待機し、その後は画面上側の外から出現し、非交戦時は下へ進軍します。迷路エリアは壁を大幅に減らし、木箱や防護壁を置かない幅154pxの南北通路を3本確保します。同時に活動する敵兵は最大16人で、画面下へ通過した兵士は撃破扱いにせず退場します。</p>
+<p><strong>最前線初級：</strong>開始草原の後、草原・森林・村・丘陵・湿地から重複なしで3エリアを選ぶ全4エリアです。南部・北部の2拠点を順番に制圧します。敵戦車は最大2台、敵歩兵は同時最大10人、通常増援の青兵指揮官は8人に1人です。白兵指揮官・犬兵は出現しません。初回進入時の反撃は青兵指揮官1人を含む4人です。制圧・味方兵・車両・画面表示の基本ルールは上級と共通です。</p>
+<p><strong>最前線上級：</strong>既存の戦場を舞台に、味方部隊と3つの戦線を押し上げる制圧作戦です。開始地点の味方兵の後方にはトラック2台・装甲車2台を追加配置し、最初から搭乗できます。敵兵は原則6秒ごとに2人、周辺の敵が少ないと約3秒間隔で補充します。同時出現の上限16人を維持し、離れた画面外の敵は戦果に数えず整理します。最前線のみ敵戦車の視野角・索敵距離・追跡距離は通常の2倍です。味方の補充があり、各戦線の制圧時にライフが回復し、味方の増援が到着します。搭乗車両の弾薬・燃料は補充されません。南部の制圧地点は橋や水際を避けて前後・左右に変化します。南部・中央の制圧目標は小型アンテナ、北部は大型アンテナです。制圧範囲の半径は南部・中央360px、北部540pxです。いずれも破壊できず、足元の台座だけが移動・射線を遮ります。マストの裏側は通行できます。目的地の矢印は右上のエリア名の下に表示し、制圧中は水色の円周ゲージと残り秒数で進み具合がわかります。制圧を始めた拠点の円内に敵が入ると、円とゲージがオレンジに変わり、敵を排除すると水色に戻ります。3拠点を制圧すると戦闘が止まり、大型アンテナから電波を発した後、「ミッション成功」画面の「作戦評価」ボタンから評価画面に進みます。開始直後は味方部隊が待機し、プレイヤーが開始地点から北へ240px（24m）前進すると一斉に進軍します。味方部隊と増援は個体ごとに左右の進路・制圧範囲内の到着位置・前進限界付近の待機位置が異なります。移動速度は従来の50〜100%の範囲で、3〜8秒ごとに緩やかに変化します。通常の進軍中は4〜10秒ごとに0.3〜0.9秒立ち止まり、前進限界では2〜4.5秒以上待機します。敵の発見時は短い立ち止まりを中断して戦闘を優先します。最前線の迷路は広い南北の通路を3本残し、その間に壁を配置します。最前線の味方兵は前方120度・300px（雨天75%、砂嵐55%）の視界で、遮蔽物の向こうや背後の敵には反応しません。敵を発見すると水色の「!」を表示し、通常の1.5倍の速さで接近します。発見済みの敵は420pxまで追跡し、見失うと最後に見た地点を最大2秒探してから通常の前進に戻ります。射撃前は0.5秒静止して狙いを定めます。最前線で気絶した味方兵は10秒経過するか、徒歩のプレイヤーが触れると復帰します。制圧エリア内では敵味方とも発見モードとなり、同じ円内の相手を向きや遮蔽物に関係なく警戒します。射撃には視線が通る必要があります。各制圧エリアにプレイヤーが初めて入ると、青兵指揮官2人を含む敵6人が画面上部から反撃に向かいます。敵兵の同時上限に達した場合は、空きができ次第出現します。通常増援にも約4人に1人の割合で青兵指揮官が含まれます。最前線の敵味方の歩兵は建物の間で進めない状態が続くと、迂回経路を探し、必要なら後退して回り込みます。味方は画面上端の80px先で最低2秒待機し、プレイヤーが近づくと前進を再開します。味方兵は初期部隊・補充兵・増援スキルを通じて5人に1人が無線機とバズーカを持つ指揮官です。敵を発見すると2.5秒停止して水色の電波を発し、1秒後に半径2000px以内の活動中の味方へ敵の最終確認位置を共有します。共有を受けた味方は6秒間発見モードとなり、射線の通る敵には交戦し、見えない敵には確認位置へ接近します。指揮官は敵戦車を優先し、0.5秒狙って4秒間隔でバズーカを発射します。敵戦車は1発で撃破可能です。味方のバズーカは味方部隊やプレイヤーを傷つけません。開始時の敵歩兵はプレイヤーが80m前進するまで待機し、その後は画面上側の外から出現し、非交戦時は下へ進軍します。迷路エリアは壁を大幅に減らし、木箱や防護壁を置かない幅154pxの南北通路を3本確保します。同時に活動する敵兵は最大16人で、画面下へ通過した兵士は撃破扱いにせず退場します。</p>
 <p>上級の中間エリア候補：草原／森林／村／丘陵／敵前線基地／街／敵迷路基地／湿地／荒野。</p>
 <ul><li>エリアごとに地形や建物、木、岩、草むら、障害物などの配置が異なります。作戦1回の通常車両は合計2〜5台で、トラック・装甲車・戦車からランダムに選ばれ、戦車が最低1台出現します。戦闘機は通常配置の対象外です。橋幅は64〜256px、川ごとの流速は6〜30px/秒です。</li><li>左右端の危険度は<strong>左重点・右重点・両側重点</strong>から毎回抽選され、巡回兵の配置や遮蔽物が変化します。</li><li>荒野は赤茶色の砂地・ひび割れた粘土質の地面・風化した岩山・残丘で構成されます。時折砂嵐が起き、視界と索敵距離が低下します。オアシスは毎回出現するとは限らず、出現時は従来の50〜150%の大きさにランダム変化し、中央や画面端に生成され、池へ入ると川と同様に減速します。草むらは少なめですが、オアシス周辺に多く、まれに赤や白の小花が混じります。地面と池の描画はキャッシュします。迷路基地には広い会議室と幅の広い廊下、空きスペースの木箱があります。青の通常兵はつながった通路を広く探索します。迷路壁は256px高の区画単位で描画をキャッシュし、破壊された区画だけ再描画します。描画キャッシュは最大8区画です。迷路壁はプレイヤー戦車の接触で破壊できます。接触による破壊範囲は少し抑えており、押し込み続けると広がります。トラック・装甲車の接触では破壊できません。木箱等の爆風では破壊できます。敵司令本部にも固有の構造があります。</li><li>道路は川と同様に2か所の候補それぞれで独立して75%の出現抽選を行います。アスファルト舗装・乾いた締め固め土を各50%、土の道路は1車線（96px）・対面2車線（176px）を各50%、舗装道路は対面2車線（176px）・対面4車線（320px）を各50%で選択します。川・橋と司令本部を避けて配置し、土の道路は迷路基地も避けます。舗装道路は迷路基地にも出現し、道幅の壁を除去します。場所が確保できない場合は出現しません。対面車線の中央は白い実線です。路面には汚れ・補修跡・ひび、白線には濃い汚れと不規則な塗装欠けを表現します。敵の障害物迂回探索は複数フレームへ分割し、全敵合計で約2msを目安に処理します。道路の描画は初回にキャッシュし、画面内だけ表示します。土の道路は横筋を抑えた専用タイルを使用し、不規則な路肩が周囲の地面になじみます。中央付近には、太めで濃い雑草を不規則に配置しています。道路上には建物・木・岩・塀・草むら・泥を配置しません。舗装道路と重なる木箱・ドラム缶は路肩の安全な空き場所へ移動し、空き場所がなければ除去します。土の道路は明るさと彩度を抑えて周囲になじませます。道路自体による速度変更はありません。マップ・敵・障害物の配置は出撃ごとに再生成されます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
@@ -788,8 +789,8 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 .stage-card span{color:#f3e8ce}.stage-card small{color:#d2c4a8}
 .stage-card:hover,.stage-card:focus-visible{background:linear-gradient(135deg,rgba(90,68,41,.98),rgba(32,39,29,.98));border-color:#f4cc7a;border-left-color:#e2583a;transform:translateY(-3px)}
 .stage-card:active{transform:translateY(1px)}
-/* 初級・上級の従来のカード幅を維持し、最前線は次の行に置く。 */
-.stage-card[data-stage="front"]{grid-column:1/-1}
+/* 最前線の初級・上級を対にして、2行目へ配置する。 */
+
 .stage-back{border-radius:3px;background:rgba(28,24,18,.84);border-color:#b59b6c}
 @media(max-width:580px){
  #stageScreen{background-position:center 40%;padding: max(14px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
@@ -806,14 +807,15 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 <div id="missionSuccess" role="dialog" aria-modal="true" aria-labelledby="missionSuccessTitle"><div class="mission-fireworks" aria-hidden="true"><i class="mission-firework" style="left:18%;top:24%;--burst-delay:0.15s"></i><i class="mission-firework" style="left:78%;top:20%;--burst-delay:0.45s"></i><i class="mission-firework" style="left:48%;top:12%;--burst-delay:0.75s"></i><i class="mission-firework" style="left:22%;top:60%;--burst-delay:1.05s"></i><i class="mission-firework" style="left:81%;top:55%;--burst-delay:1.35s"></i></div><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_success.webp?v=2026.10.14.1653" alt="笑顔でジャンプする主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionSuccessTitle">ミッション 成功</h1><button type="button" id="missionSuccessEvaluate">作戦評価</button></div></div></div>
 <div id="missionFailure" role="dialog" aria-modal="true" aria-labelledby="missionFailureTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_failed.webp?v=2026.10.14.1653" alt="倒れてふらつく主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionFailureTitle">ミッション 失敗</h1><button type="button" id="missionEvaluate">作戦評価</button></div></div></div>
 <section id="areaDebugPicker" aria-labelledby="areaDebugHeading"><div class="area-debug-panel"><h1 id="areaDebugHeading">テストするエリア</h1><p>無敵で地形や遮蔽物を確認できます。<br>開始地点の戦車は弾数・燃料無制限です。</p><div id="areaDebugList"></div><button id="areaDebugBack" type="button">スキル選択に戻る</button></div></section>
-<div id="missionBriefing" role="dialog" aria-modal="true" aria-labelledby="missionBriefingTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_hero.webp?v=2026.10.14.1653" alt="円形爆弾を抱えて走る主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionBriefingTitle">ミッション</h1><p id="missionBriefingGoal">敵の拠点にたどりつき、破壊せよ</p><ul class="mission-hud-guide" aria-label="ゲーム画面のアイコン説明"><li><img src="assets/ui/ui_heart_full.png" alt="ハート" decoding="async"><span>残りライフ</span></li><li><img src="assets/ui/ui_bomb_normal.png" alt="爆弾" decoding="async"><span>爆弾の設置状態</span></li><li><svg viewBox="-18 -18 36 36" role="img" aria-label="目に斜線"><path d="M-14 0 C-7-11 7-11 14 0 C7 11-7 11-14 0Z" fill="white" stroke="black" stroke-width="3"/><circle r="5" fill="black"/><path d="M-12 11 12-11" stroke="black" stroke-width="3.5"/><path d="M-12 11 12-11" stroke="#ef3434" stroke-width="2"/></svg><span>敵から隠れている状態</span></li></ul><div id="missionFrontlineRules" hidden><ul class="mission-front-rules" aria-label="最前線の制圧ルール"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V3m0 1c5-4 8 4 14 0v10c-6 4-9-4-14 0"/></svg><span>3拠点を順番に制圧</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 1v4m0 14v4M1 12h4m14 0h4"/></svg><span>円に入り、敵を排除</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><circle cx="4" cy="10" r="2"/><circle cx="20" cy="10" r="2"/><path d="M6 22v-4a6 6 0 0 1 12 0v4M1 21v-5a3 3 0 0 1 4-3m18 8v-5a3 3 0 0 0-4-3"/></svg><span>味方兵と制圧！人数で加速</span></li></ul></div><button type="button" id="missionBegin">作戦開始</button></div></div></div>
+<div id="missionBriefing" role="dialog" aria-modal="true" aria-labelledby="missionBriefingTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_hero.webp?v=2026.10.14.1653" alt="円形爆弾を抱えて走る主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionBriefingTitle">ミッション</h1><p id="missionBriefingGoal">敵の拠点にたどりつき、破壊せよ</p><ul class="mission-hud-guide" aria-label="ゲーム画面のアイコン説明"><li><img src="assets/ui/ui_heart_full.png" alt="ハート" decoding="async"><span>残りライフ</span></li><li><img src="assets/ui/ui_bomb_normal.png" alt="爆弾" decoding="async"><span>爆弾の設置状態</span></li><li><svg viewBox="-18 -18 36 36" role="img" aria-label="目に斜線"><path d="M-14 0 C-7-11 7-11 14 0 C7 11-7 11-14 0Z" fill="white" stroke="black" stroke-width="3"/><circle r="5" fill="black"/><path d="M-12 11 12-11" stroke="black" stroke-width="3.5"/><path d="M-12 11 12-11" stroke="#ef3434" stroke-width="2"/></svg><span>敵から隠れている状態</span></li></ul><div id="missionFrontlineRules" hidden><ul class="mission-front-rules" aria-label="最前線の制圧ルール"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V3m0 1c5-4 8 4 14 0v10c-6 4-9-4-14 0"/></svg><span id="missionFrontlineOrder">3拠点を順番に制圧</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 1v4m0 14v4M1 12h4m14 0h4"/></svg><span>円に入り、敵を排除</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><circle cx="4" cy="10" r="2"/><circle cx="20" cy="10" r="2"/><path d="M6 22v-4a6 6 0 0 1 12 0v4M1 21v-5a3 3 0 0 1 4-3m18 8v-5a3 3 0 0 0-4-3"/></svg><span>味方兵と制圧！人数で加速</span></li></ul></div><button type="button" id="missionBegin">作戦開始</button></div></div></div>
 <div id="stageLoadingScreen" role="status" aria-live="polite" aria-label="ステージを準備中"><div class="stage-loading-content"><div class="stage-loading-kicker">MISSION BRIEFING</div><div class="stage-loading-title">作戦準備中…</div><div class="stage-loading-sub">戦場を生成しています</div><div class="stage-loading-track"><span></span></div></div></div>
 <div id="stageScreen" role="region" aria-label="ステージ選択"><div class="stage-shell">
 <div class="stage-kicker">CHOOSE YOUR MISSION</div><h1>ステージ選択</h1><p id="stageSkill"></p>
 <div class="stage-options">
 <button type="button" class="stage-card" data-stage="beginner"><strong>01　初級ステージ</strong><span>3つのランダムエリアを進み、電波施設を破壊する</span><small>全5エリア ／ 青兵・青兵指揮官 ／ 敵戦車は最大2台</small></button>
 <button type="button" class="stage-card" data-stage="base"><strong>02　上級ステージ</strong><span>敵部隊を突破し、司令本部を破壊する</span><small>全7エリア ／ 白兵・指揮官・犬兵が登場</small></button>
-<button type="button" class="stage-card" data-stage="front"><strong>03　最前線</strong><span>味方と協力し、3つの戦線を順番に制圧する</span><small>南部 → 中央 → 北部 ／ 各エリアに一度進入し、円内の敵を排除して味方兵と制圧</small></button>
+<button type="button" class="stage-card" data-stage="frontBeginner"><strong>03　最前線初級</strong><span>味方と協力し、2つの拠点を順番に制圧する</span><small>開始草原＋ランダム3エリア ／ 敵戦車は最大2台・指揮官は少なめ</small></button>
+<button type="button" class="stage-card" data-stage="front"><strong>04　最前線上級</strong><span>味方と協力し、3つの拠点を順番に制圧する</span><small>従来の最前線 ／ 南部 → 中央 → 北部</small></button>
 </div><button type="button" class="stage-back" id="stageBack">← スキル選択へ戻る</button></div></div><div id="missionHud" role="status"></div>
 
 <script>
@@ -826,7 +828,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.17.1736',FILE_CREATED_AT='2026/10/17 17:36',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.17.1750',FILE_CREATED_AT='2026/10/17 17:50',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -1672,13 +1674,13 @@ function drawBridgeFancy(b){
 let ZONES=[];
 function setupZones(){
  // 初級は開始草原→3エリア→電波施設のある草原、上級は従来の全7エリア。
- const beginner=stageMode==='beginner'&&!areaDebugEnabled;
- const pool=beginner?['草原','森林','丘陵','村','湿地']:['草原','森林','村','丘陵','敵前線基地','街','敵迷路基地','湿地'];
+ const beginner=stageMode==='beginner'&&!areaDebugEnabled,frontEasy=isFrontlineBeginner();
+ const pool=beginner||frontEasy?['草原','森林','丘陵','村','湿地']:['草原','森林','村','丘陵','敵前線基地','街','敵迷路基地','湿地'];
  if(!beginner&&stageMode==='base')pool.push('荒野');
  for(let i=pool.length-1;i>0;i--){const j=R()*(i+1)|0;[pool[i],pool[j]]=[pool[j],pool[i]];}
- const mid=pool.slice(0,beginner?3:5);
- const names=beginner?['草原',...mid,'草原']:['草原',...mid,'敵司令本部'];
- const edges=beginner?[13200,10800,8100,5400,2700,-400]:[13200,10800,9040,7280,5520,3760,2000,-400];
+ const mid=pool.slice(0,beginner||frontEasy?3:5);
+ const names=frontEasy?['草原',...mid]:beginner?['草原',...mid,'草原']:['草原',...mid,'敵司令本部'];
+ const edges=frontEasy?[13200,10800,7200,3600,-400]:beginner?[13200,10800,8100,5400,2700,-400]:[13200,10800,9040,7280,5520,3760,2000,-400];
  ZONES=names.map((n,i)=>({n,y0:edges[i],y1:edges[i+1],g:ZONE_STYLE[n].g,p:ZONE_STYLE[n].p.slice()}));
  // Every run rerolls flank risk for each stage, rather than binding it to zone type.
  // Discourage the same dominant side across three consecutive areas.
@@ -2948,7 +2950,7 @@ function reset(rerollSkills=true){
   etanks.length=Math.min(2,etanks.length);
  }
  if(skill==='hound')spawnHound();setupMission();
- spawnCommanderClasses(beginner?['blue']:['blue','white']);if(!beginner)spawnEnemyDogs();
+ if(!isFrontlineBeginner()){spawnCommanderClasses(beginner?['blue']:['blue','white']);if(!beginner)spawnEnemyDogs();}
  // The radio is independent of commanders and dog pairs.
  // Both coordinates and the zone change on each mission.
  const radioSpot=randomSpecialSpawn(12,null,specialSpawnZones(),420);
@@ -7416,7 +7418,7 @@ function renderResultScreen(){const s=scoreStats,r=s&&s.final;if(!r)return;
  const metrics=resultMetrics(s,r),levels=metrics.map(resLevel),sty=resultStyle(levels,s);
  el('resStatus').textContent=r.cleared?'MISSION COMPLETE':'MISSION FAILED';el('resStatus').style.color=r.cleared?'#dff3b0':'#ffb0a0';
  const zone=(ZONES||[]).find(z=>p&&p.y>=z.y0&&p.y<=z.y1);
- el('resArea').textContent='作戦：'+STAGE_NAMES[stageMode]+' ／ '+(mission?(stageMode==='front'?'戦線制圧 '+mission.index+'/3':'情報回収 '+mission.index+'/3'+(r.cleared?'・帰還完了':'')):'到達エリア：'+zoneAt(p.y).n);
+ el('resArea').textContent='作戦：'+STAGE_NAMES[stageMode]+' ／ '+(mission?(stageMode==='front'?'戦線制圧 '+mission.index+'/'+mission.points.length:'情報回収 '+mission.index+'/3'+(r.cleared?'・帰還完了':'')):'到達エリア：'+zoneAt(p.y).n);
  el('resScore').textContent=Math.round(r.total).toLocaleString('ja-JP');el('resHigh').textContent=s.newHigh?'★ NEW HIGH SCORE':'HIGH SCORE  '+(highScoreData?highScoreData.score.toLocaleString('ja-JP'):'—');
  const unlock=el('resUnlock');
  unlock.hidden=!s.unlockedSkill;el('resUnlockName').textContent=s.unlockedSkill?'「'+(SK.find(k=>k.id===s.unlockedSkill)?.n||'')+'」':'';
@@ -7602,9 +7604,9 @@ document.getElementById('titleUpdated').textContent=FILE_CREATED_AT;
 document.getElementById('specVersion').textContent=GAME_VERSION;
 
 
-let stageMode='base',mission=null;
-const STAGE_NAMES={beginner:'初級・電波施設破壊',base:'上級・拠点破壊',front:'最前線',stealth:'潜入'};
-document.querySelectorAll('[data-stage]').forEach(b=>b.addEventListener('click',()=>{stageMode=b.dataset.stage;document.body.classList.remove('stage-open');selectSkillIndex(skillMenuList().findIndex(k=>k.id===selectedSkillId),true);}));
+let stageMode='base',frontlineBeginner=false,mission=null;
+const STAGE_NAMES={beginner:'初級・電波施設破壊',base:'上級・拠点破壊',get front(){return frontlineBeginner?'最前線初級':'最前線上級';},stealth:'潜入'};
+document.querySelectorAll('[data-stage]').forEach(b=>b.addEventListener('click',()=>{frontlineBeginner=b.dataset.stage==='frontBeginner';stageMode=frontlineBeginner?'front':b.dataset.stage;document.body.classList.remove('stage-open');selectSkillIndex(skillMenuList().findIndex(k=>k.id===selectedSkillId),true);}));
 document.getElementById('stageBack').onclick=()=>{state='skill';};
 let briefingFrameDrawn=false;
 let successFrameDrawn=false;
@@ -7630,13 +7632,14 @@ function syncMissionBriefing(){
  if(active!==wasOpen){document.body.classList.toggle('briefing-open',active);if(active){
    const front=stageMode==='front',screen=document.getElementById('missionBriefing'),image=screen.querySelector('.mission-briefing-image');
    screen.classList.toggle('front-briefing',front);
+   document.getElementById('missionFrontlineOrder').textContent=(isFrontlineBeginner()?2:3)+'拠点を順番に制圧';
    const imageSrc=front?'assets/ui/mission_frontline.webp?v=2026.10.17':'assets/ui/mission_hero.webp?v=2026.10.14.1653';
    if(image.getAttribute('src')!==imageSrc)image.src=imageSrc;
    image.alt=front?'主人公と2人の味方兵が一緒に進軍する姿':'円形爆弾を抱えて走る主人公';
    screen.querySelector('.mission-hud-guide').hidden=front;
    document.getElementById('missionFrontlineRules').hidden=!front;
-   document.getElementById('missionBriefingTitle').textContent=front?'最前線ミッション':stageMode==='beginner'?'初級ミッション':'上級ミッション';
-   document.getElementById('missionBriefingGoal').textContent=front?'味方と協力し、3つの拠点を制圧せよ':stageMode==='beginner'?'最後の草原にある電波施設を破壊せよ':'敵の司令本部にたどりつき、破壊せよ';
+   document.getElementById('missionBriefingTitle').textContent=front?STAGE_NAMES.front+'ミッション':stageMode==='beginner'?'初級ミッション':'上級ミッション';
+   document.getElementById('missionBriefingGoal').textContent=front?'味方と協力し、'+(isFrontlineBeginner()?2:3)+'つの拠点を制圧せよ':stageMode==='beginner'?'最後の草原にある電波施設を破壊せよ':'敵の司令本部にたどりつき、破壊せよ';
    document.getElementById('missionBegin').focus({preventScroll:true});
   }}
 }
@@ -7674,7 +7677,8 @@ function setupMission(){
  mission={index:0,progress:0,alarm:0,waveT:15,reinforceT:20,detected:false,points:[],exit:{x:p.x,y:p.y},alertCount:0};
  if(stageMode==='front'){
   mission.advanceStartY=p.y;mission.advanceReleased=false;
-  mission.points=[10000,6500,3000].map((y,i)=>({...(i===0?frontlineFirstObjectiveSpot():missionSpot(WW/2,y,i===2?75:35)),name:['南部戦線','中央戦線','北部戦線'][i],captureRadius:i===2?540:360,done:false}));
+  const easy=isFrontlineBeginner(),locations=easy?[10000,3500]:[10000,6500,3000];
+  mission.points=locations.map((y,i)=>({...(i===0?frontlineFirstObjectiveSpot():missionSpot(WW/2,y,i===(easy?1:2)?75:35)),name:(easy?['南部戦線','北部戦線']:['南部戦線','中央戦線','北部戦線'])[i],largeAntenna:easy&&i===1,captureRadius:i===(easy?1:2)?540:360,done:false}));
   missionAllies(p.y-100);setupFrontlineAntennas();
   say('最前線：24m前進すると味方部隊が進軍！');
  }else{
@@ -7707,7 +7711,7 @@ function updateMission(dt){
   if(m.capturing&&m.progress>0)q.captureStarted=true;
   updateFrontlineWaves(dt);m.reinforceT-=dt;
   if(m.reinforceT<=0){m.reinforceT=18;if(allies.filter(a=>a.alive&&a.frontline).length<4)missionAllies(Math.max(q.y+250,Math.min(p.y+120,WH-200)));}
-  if(m.progress>=FRONTLINE_CAPTURE_SECONDS){q.done=true;m.index++;m.progress=0;p.hp=3;say(q.name+' 制圧！');if(m.index===3){completeMission();return;}missionAllies(q.y);}
+  if(m.progress>=FRONTLINE_CAPTURE_SECONDS){q.done=true;m.index++;m.progress=0;p.hp=3;say(q.name+' 制圧！');if(m.index===m.points.length){completeMission();return;}missionAllies(q.y);}
  }else{
   m.alarm=Math.max(0,Math.min(100,m.alarm+dt*(detected?12:-5)));m.waveT-=dt;
   if(m.alarm>=65&&m.waveT<=0){m.waveT=24;m.alertCount++;if(humans.filter(h=>h.alive&&D(h,p)<650).length<12)for(let i=0;i<3;i++)missionEnemy(p.x+(i-1)*110,p.y-340,true);say('警戒部隊が接近！ 草むらや遮蔽物へ');}
@@ -7836,7 +7840,7 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/frontline.js?v=2026.10.17.1736"></script>
+<script src="js/frontline.js?v=2026.10.17.1750"></script>
 <script src="js/award-icons.js?v=2026.10.17.0743"></script>
 <script src="js/characters.js?v=2026.10.17.1319"></script>
 <script src="js/enemy-dogs.js?v=2026.10.17.0811"></script>

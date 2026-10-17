@@ -569,3 +569,32 @@ test('first objective uses a bounded dry-land fallback if random candidates are 
  const c=harness();c.bridges=[];c.R=()=>.5;c.hitsM=(x,y)=>!(x===180&&y===10100);const q=c.frontlineFirstObjectiveSpot();assert.equal(q.x,180);assert.equal(q.y,10100);
  c.hitsM=()=>true;let fallback=0;c.missionSpot=(x,y,r)=>{fallback++;assert.equal(r,75);return{x:480,y:11000};};assert.equal(c.frontlineFirstObjectiveSpot().y,11000);assert.equal(fallback,1);
 });
+
+
+test('beginner Frontline selects three distinct permitted areas after the starting grassland; other maps retain their lengths',()=>{
+ const c=harness(),allowed=['草原','森林','村','丘陵','湿地'];c.frontlineBeginner=true;c.ZONE_STYLE=Object.fromEntries([...allowed,'敵前線基地','街','敵迷路基地','敵司令本部','荒野'].map(n=>[n,{g:'green',p:[]} ]));
+ vm.runInContext(html.slice(html.indexOf('function setupZones('),html.indexOf('const zoneAt=')),c);const combinations=new Set();
+ for(let i=0;i<30;i++){c.setupZones();assert.equal(c.ZONES.length,4);assert.equal(c.ZONES[0].n,'草原');const mid=c.ZONES.slice(1).map(z=>z.n);assert.ok(mid.every(n=>allowed.includes(n)));assert.equal(new Set(mid).size,3);combinations.add(mid.join(','));for(let j=1;j<c.ZONES.length;j++)assert.equal(c.ZONES[j].y0,c.ZONES[j-1].y1);}
+ assert.ok(combinations.size>10);c.frontlineBeginner=false;c.setupZones();assert.equal(c.ZONES.length,7);c.stageMode='beginner';c.setupZones();assert.equal(c.ZONES.length,5);
+});
+test('beginner Frontline builds two objectives ending at a large antenna and completes after the second capture',()=>{
+ const c=harness();c.frontlineBeginner=true;
+ vm.runInContext(html.slice(html.indexOf('function setupMission('),html.indexOf('function completeMission(')),c);c.setupMission();
+ assert.equal(c.mission.points.length,2);assert.deepEqual(Array.from(c.mission.points,q=>q.antenna.asset),['frontline_antenna_small','frontline_antenna_large']);assert.deepEqual(Array.from(c.mission.points,q=>q.captureRadius),[360,540]);
+ const q=c.mission.points[1];c.mission.index=1;c.mission.points[0].done=true;q.playerEntered=true;q.counterTriggered=true;c.mission.progress=47.99;c.mission.waveT=999;c.mission.reinforceT=999;c.p.x=q.x;c.p.y=q.y;c.allies=[{x:q.x,y:q.y,alive:true,frontline:true}];let finished=0;c.completeMission=()=>finished++;
+ vm.runInContext(html.slice(html.indexOf('function updateMission('),html.indexOf('let missionHudNextAt=')),c);c.updateMission(.02);assert.equal(finished,1);assert.equal(c.mission.index,2);
+ c.state='play';c.camX=0;c.cam=0;assert.equal(c.beginFrontlineVictory(),true);assert.equal(c.state,'frontVictory');assert.equal(c.mission.victory.point,q);c.successFrameDrawn=true;c.updateFrontlineVictory(3);assert.equal(c.state,'succeeded');
+});
+test('beginner Frontline army caps enemy tanks at two and removes reserve commanders, elites and dogs',()=>{
+ const c=harness();c.frontlineBeginner=true;c.etanks=Array.from({length:8},(_,i)=>({x:100,y:2000+i*1200,alive:true}));c.humans=[{alive:true,commander:'white',elite:true,dog:{},dogHandler:true},{alive:true,commander:'blue'}];c.setupFrontlineArmy();
+ assert.equal(c.etanks.length,2);assert.ok(c.etanks.every(e=>e.y<10800));assert.ok(c.mission.enemyRoster.every(h=>!h.commander&&!h.elite&&!h.dog&&!h.dogHandler));assert.equal(c.enemyDogs.length,0);
+});
+test('beginner regular reinforcements use one blue commander per eight soldiers and cap active infantry at ten',()=>{
+ const c=harness();c.frontlineBeginner=true;c.frontlineSpawnSpot=()=>({x:480,y:9000});
+ c.spawnFrontlineWave(8);assert.equal(c.humans.filter(h=>h.commander==='blue').length,1);assert.equal(c.humans[7].commander,'blue');c.spawnFrontlineWave(8);assert.equal(c.humans.length,10);
+ c.humans=[];c.spawnFrontlineWave(6);assert.equal(c.humans.filter(h=>h.commander==='blue').length,1);
+});
+test('beginner first entry sends four attackers including exactly one blue commander',()=>{
+ const c=harness();c.frontlineBeginner=true;c.frontlineSpawnSpot=()=>({x:480,y:9000});const q={...c.p};c.mission.points=[q];c.mission.enemySpawned=7;c.updateFrontlineCounterattack(q,.1);
+ assert.equal(c.humans.length,4);assert.equal(c.humans.filter(h=>h.commander==='blue').length,1);assert.equal(q.counterPending,0);c.updateFrontlineCounterattack(q,10);assert.equal(c.humans.length,4);
+});

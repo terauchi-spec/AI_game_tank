@@ -1,5 +1,6 @@
 // Frontline-only presentation and infantry waves. Reuse existing combat and obstacle AI.
 const FRONTLINE_ENEMY_LIMIT=16,FRONTLINE_CAPTURE_SECONDS=48,FRONTLINE_CAPTURE_RADIUS=360;
+function isFrontlineBeginner(){return stageMode==='front'&&typeof frontlineBeginner!=='undefined'&&frontlineBeginner&&!areaDebugEnabled;}
 function frontlineCaptureRadius(point){return point?.captureRadius||FRONTLINE_CAPTURE_RADIUS;}
 function frontlineTankSightScale(unit){return stageMode==='front'&&(etanks||[]).includes(unit)?2:1;}
 function frontlineView(){
@@ -22,11 +23,11 @@ function frontlineSpawnSpot(hasDog=false){
 }
 function spawnFrontlineWave(count=3,counterPoint=null){
  if(stageMode!=='front'||!mission||areaDebugEnabled||mission.enemyWavesStarted===false)return 0;
- const m=mission,active=humans.reduce((n,h)=>n+Number(!!h.alive),0),available=Math.min(count,FRONTLINE_ENEMY_LIMIT-active);
+ const m=mission,active=humans.reduce((n,h)=>n+Number(!!h.alive),0),available=Math.min(count,(isFrontlineBeginner()?10:FRONTLINE_ENEMY_LIMIT)-active);
  let spawned=0;
  for(let i=0;i<available;i++){
   const roster=m.enemyRoster||[],index=m.enemyRosterIndex||0;
-  const wantBlue=(counterPoint?.counterBluePending||0)>0||(m.enemySpawned||0)%4===0;
+  const wantBlue=(counterPoint?.counterBluePending||0)>0||(isFrontlineBeginner()?(!counterPoint&&((m.enemySpawned||0)+1)%8===0):(m.enemySpawned||0)%4===0);
   let candidate=roster[index];
   if(wantBlue){
    const blueIndex=roster.findIndex((h,i)=>i>=index&&h.commander==='blue');
@@ -52,6 +53,12 @@ function spawnFrontlineWave(count=3,counterPoint=null){
 function setupFrontlineArmy(){
  if(stageMode!=='front'||!mission||areaDebugEnabled)return;
  // Keep the generated infantry classes in reserve, rather than updating an entire map of patrols.
+ if(isFrontlineBeginner()){
+  for(const h of humans){h.commander=null;h.elite=false;h.dog=null;h.dogHandler=false;}
+  etanks=etanks.filter(e=>e.alive&&e.y<10800);
+  for(let i=etanks.length-1;i>0;i--){const j=R()*(i+1)|0;[etanks[i],etanks[j]]=[etanks[j],etanks[i]];}
+  etanks.length=Math.min(2,etanks.length);
+ }
  mission.enemyRoster=humans.slice();mission.enemyRosterIndex=0;
  for(const h of mission.enemyRoster){h.path=[];h.chatT=0;h.chatMate=null;}
  for(let i=mission.enemyRoster.length-1;i>0;i--){const j=R()*(i+1)|0;[mission.enemyRoster[i],mission.enemyRoster[j]]=[mission.enemyRoster[j],mission.enemyRoster[i]];}
@@ -73,7 +80,7 @@ function frontlineFirstObjectiveSpot(){
  return missionSpot(WW/2,10000,75);
 }
 function frontlineAntennaGeometry(point,index){
- const large=index===2,height=large?480:280,width=height/2;
+ const large=index===2||!!point.largeAntenna,height=large?480:280,width=height/2;
  return{large,width,height,x:point.x-width/2,y:point.y-height*(large?.92:.89),cutY:point.y-(large?30:20),
   base:{x:point.x-(large?52:17),y:point.y-(large?22:10),w:large?104:34,h:large?44:20}};
 }
@@ -81,7 +88,7 @@ function setupFrontlineAntennas(){
  if(stageMode!=='front'||!mission||areaDebugEnabled)return;
  for(let i=0;i<mission.points.length;i++){
   const point=mission.points[i];if(point.antenna)continue;
-  const radius=i===2?75:35,clear=spot=>!cars.some(v=>D(v,spot)<radius+50)&&!etanks.some(e=>e.alive&&D(e,spot)<radius+45);
+  const radius=i===2||point.largeAntenna?75:35,clear=spot=>!cars.some(v=>D(v,spot)<radius+50)&&!etanks.some(e=>e.alive&&D(e,spot)<radius+45);
   if(!clear(point)){
    let free=null;
    for(let ring=1;ring<=8&&!free;ring++)for(let n=0;n<12;n++){
@@ -164,8 +171,8 @@ function frontlineCaptureColors(point,m){
  return active&&(point.captureStarted||m.progress>0)&&(m.enemiesInside??m.contested)?FRONTLINE_CAPTURE_COLORS.contested:FRONTLINE_CAPTURE_COLORS.ready;
 }
 function beginFrontlineVictory(){
- if(stageMode!=='front'||!mission||mission.index!==3||!mission.points.every(q=>q.done))return false;
- mission.victory={elapsed:0,duration:3,point:mission.points[2],fromX:camX,fromY:cam};
+ if(stageMode!=='front'||!mission||!mission.points.length||mission.index!==mission.points.length||!mission.points.every(q=>q.done))return false;
+ mission.victory={elapsed:0,duration:3,point:mission.points[mission.points.length-1],fromX:camX,fromY:cam};
  state='frontVictory';return true;
 }
 function updateFrontlineVictory(dt){
@@ -370,7 +377,7 @@ function rescueFrontlineAlly(a){
 function updateFrontlineCounterattack(point,dt){
  if(!point||point.done)return;
  if(!point.counterTriggered&&D(p,point)<frontlineCaptureRadius(point)){
-  point.counterTriggered=true;point.counterPending=6;point.counterBluePending=2;point.counterRetry=0;
+  point.counterTriggered=true;point.counterPending=isFrontlineBeginner()?4:6;point.counterBluePending=isFrontlineBeginner()?1:2;point.counterRetry=0;
   mission.waveT=Math.max(mission.waveT||0,6);say('敵の反撃部隊が接近！');
  }
  if(!(point.counterPending>0))return;
@@ -456,7 +463,7 @@ function updateFrontlineAdvance(){
 
 function updateFrontlineEnemyEntry(){
  if(stageMode!=='front'||!mission||mission.enemyWavesStarted!==false||p.y>mission.enemyEntryY)return;
- mission.enemyWavesStarted=true;spawnFrontlineWave(6);mission.waveT=6;mission.waveCheckT=1;
+ mission.enemyWavesStarted=true;spawnFrontlineWave(isFrontlineBeginner()?4:6);mission.waveT=6;mission.waveCheckT=1;
 }
 function updateFrontlineWaves(dt){
  const m=mission;if(stageMode!=='front'||!m||m.enemyWavesStarted!==true||areaDebugEnabled)return;
