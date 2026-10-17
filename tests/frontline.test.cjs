@@ -79,7 +79,7 @@ test('allies cannot shoot through cover or while approaching a distant enemy',()
 });
 test('allied advance stops at the viewport limit and waits at least two seconds for the player',()=>{
  const c=harness(),limit=c.frontlineAllyLimit(),a={x:480,y:limit+5};assert.equal(c.frontlineAllyWaiting(a,.1),true);
- c.p.y-=200;assert.equal(c.frontlineAllyWaiting(a,.5),true);assert.equal(c.frontlineAllyWaiting(a,1),true);assert.equal(c.frontlineAllyWaiting(a,.6),false);
+ c.p.y-=200;assert.equal(c.frontlineAllyWaiting(a,.5),true);assert.equal(c.frontlineAllyWaiting(a,1),true);assert.equal(c.frontlineAllyWaiting(a,5),false);
  c.p.y+=1000;assert.equal(c.frontlineAllyWaiting(a,3),true);
 });
 test('detours cannot cross the allied advance limit and speed randomization still applies',()=>{
@@ -101,7 +101,7 @@ test('the settled advance position enters waiting instead of getting stuck just 
  const c=harness(),a={x:480,y:10000,shotCd:0,burstLeft:3,speedScale:1,frontline:true};c.mission.points=[{x:480,y:3000}];
  for(let i=0;i<600;i++)c.updateFrontlineAlly(a,null,.1);
  assert.ok(a.y>=c.frontlineAllyLimit());assert.equal(a.frontHolding,true);
- const y=a.y;c.p.y-=200;c.updateFrontlineAlly(a,null,.5);assert.equal(a.y,y);c.updateFrontlineAlly(a,null,1.6);assert.ok(a.y<y);
+ const y=a.y;c.p.y-=200;c.updateFrontlineAlly(a,null,.5);assert.equal(a.y,y);for(let i=0;i<50;i++)c.updateFrontlineAlly(a,null,.1);assert.ok(a.y<y);
 });
 test('allies left at a distant objective cannot capture it without the player advancing',()=>{
  const c=harness();vm.runInContext(html.slice(html.indexOf('function updateMission('),html.indexOf('let missionHudNextAt=')),c);
@@ -166,7 +166,7 @@ test('allies acquire only visible enemies, retain a visible target and lose it b
 });
 test('found mode runs faster, searches last known position without tracking hidden movement, then returns to patrol',()=>{
  const c=harness(),a={x:480,y:10000,face:-Math.PI/2,speedScale:1},t={x:480,y:9700,alive:true};c.los=()=>true;
- c.updateFrontlineAlly(a,t,.1);assert.equal(a.frontMode,'found');assert.ok(Math.abs(a.y-(10000-20.25))<1e-6);assert.equal(a.frontMoving,true);
+ c.updateFrontlineAlly(a,t,.1);assert.equal(a.frontMode,'found');assert.ok(Math.abs(Math.hypot(a.x-480,a.y-10000)-20.25)<1e-6);assert.ok(a.y<10000);assert.equal(a.frontMoving,true);
  t.x=800;c.updateFrontlineAlly(a,null,.1);assert.equal(a.frontLastSeen.x,480);assert.equal(a.frontLastSeen.y,9700);assert.equal(a.frontMode,'found');
  c.updateFrontlineAlly(a,null,2);assert.equal(a.frontMode,'patrol');assert.equal(a.frontLastSeen,null);
 });
@@ -357,4 +357,22 @@ test('Frontline blue and white commanders and ordinary pursuers share the bounde
  vm.runInContext(html.slice(html.indexOf('function moveHumanChase('),html.indexOf('function moveAllySmart(')),c);
  for(const type of ['blue','white'])c.commanderMove({frontMarch:true,commander:type},{x:480,y:9000},.1,95);
  c.moveHumanChase({frontMarch:true},0,95,.1);assert.equal(calls,3);
+});
+
+test('a squad keeps distinct routes and waiting positions instead of merging at the objective center',()=>{
+ const c=harness(),q={x:480,y:3000};c.mission.points=[q];
+ const squad=Array.from({length:6},(_,i)=>({id:i+1,x:480,y:10000,alive:true,frontline:true,speedScale:.75}));
+ for(let frame=0;frame<1200;frame++)for(const a of squad){c.updateFrontlineAlly(a,null,.05);assert.ok(a.y>=c.frontlineAllyLimit());}
+ assert.ok(new Set(squad.map(a=>Math.round(a.x))).size>=4);assert.ok(new Set(squad.map(a=>Math.round(a.y))).size>=4);assert.ok(squad.every(a=>a.frontHolding));
+ const goals=squad.map(a=>c.frontlineAllyObjective(a,q));assert.ok(new Set(goals.map(g=>Math.round(g.x))).size>=4);
+ for(let i=0;i<squad.length;i++)assert.equal(c.frontlineAllyObjective(squad[i],q),goals[i]);
+ c.p.y=3000;for(const a of squad){a.x=480;a.y=3300;a.frontHolding=false;a.frontWaitT=0;}
+ for(let frame=0;frame<900;frame++)for(const a of squad)c.updateFrontlineAlly(a,null,.05);
+ assert.ok(squad.every(a=>c.D(a,q)<c.get('FRONTLINE_CAPTURE_RADIUS')));assert.ok(new Set(squad.map(a=>Math.round(a.x))).size>=4);
+});
+test('pace changes smoothly inside the 50–100% band and resting never prevents reacting to a target',()=>{
+ const c=harness(),a={id:1,x:480,y:10000,frontline:true,speedScale:.75};c.mission.points=[{x:480,y:3000}];const seen=new Set();
+ for(let i=0;i<500;i++){const previous=a.frontStyle?.pace??.75;c.updateFrontlineAlly(a,null,.05);const pace=a.frontStyle.pace;assert.ok(pace>=.5&&pace<=1);assert.ok(Math.abs(pace-previous)<=.00500001);seen.add(pace.toFixed(2));}
+ assert.ok(seen.size>=5);
+ c.p.y=9000;a.x=480;a.y=9200;a.frontHolding=false;a.frontWaitT=0;a.frontStyle.rest=.8;const old={x:a.x,y:a.y};c.updateFrontlineAlly(a,{x:480,y:8800,alive:true},.1);assert.equal(a.frontStyle.rest,0);assert.equal(a.frontMode,'found');assert.ok(c.D(a,old)>0);
 });

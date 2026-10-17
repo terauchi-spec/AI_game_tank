@@ -106,22 +106,42 @@ function frontlineSpawnExitClear(q,hasDog=false){
  return true;
 }
 function frontlineAllyLimit(){return Math.max(24,frontlineView().y-80);}
+function frontlineAllyStyle(a){
+ if(!a.frontStyle){
+  const base=a.speedScale??1;
+  a.frontStyle={lane:((a.id??a.slot??0)%3-1)*120+(R()-.5)*80,offsetY:(R()-.5)*220,
+   depth:R()*100,hold:2+R()*2.5,stop:24+R()*24,pace:base,paceTarget:base,paceT:1+R()*4,marchT:4+R()*6,rest:0};
+ }
+ return a.frontStyle;
+}
+function frontlineAllyObjective(a,point){
+ const style=frontlineAllyStyle(a);
+ if(style.objective!==point){
+  style.objective=point;style.goal={x:point.x,y:point.y};
+  // Choose once per objective. Stable destinations keep the existing detour cache useful.
+  for(const scale of [1,.75,.5,.25]){
+   const x=Math.max(24,Math.min(WW-24,point.x+style.lane*scale)),y=point.y+style.offsetY*scale;
+   if(y>24&&y<WH-24&&!hitsM(x,y,14)){style.goal={x,y};break;}
+  }
+ }
+ return style.goal;
+}
 function frontlineAllyWaiting(a,dt){
  if(mission?.advanceReleased===false)return true;
- const limit=frontlineAllyLimit();
- if(a.y<=limit+24){a.frontHolding=true;a.frontWaitT=Math.max(a.frontWaitT||0,2);}
+ const style=frontlineAllyStyle(a),limit=frontlineAllyLimit();
+ if(a.y<=limit+24+style.depth){a.frontHolding=true;a.frontWaitT=Math.max(a.frontWaitT||0,style.hold);}
  if(a.frontHolding){
   a.frontWaitT=Math.max(0,(a.frontWaitT||0)-dt);
-  if(a.frontWaitT>0||a.y<limit+48)return true;
+  if(a.frontWaitT>0||a.y<limit+48+style.depth)return true;
   a.frontHolding=false;
  }
  return false;
 }
 function moveFrontlineAlly(a,target,sp,dt){
  a.frontAllyNav=true;
- const limit=frontlineAllyLimit(),goal={x:target.x,y:Math.max(limit+12,target.y)},ox=a.x,oy=a.y;
+ const limit=frontlineAllyLimit(),goal={x:target.x,y:Math.max(limit+12+(a.frontStyle?.depth||0),target.y)},ox=a.x,oy=a.y;
  if(oy<=limit+8)return;
- const speed=sp*(a.speedScale??1);
+ const speed=sp*(a.frontStyle?.pace??a.speedScale??1);
  moveFrontlineInfantry(a,goal,speed,dt,target);
  // A detour must obey the advance limit as well; never teleport a unit out of cover.
  if(a.y<limit){a.x=ox;a.y=oy;a.dogWall=null;a.dogEscape=null;}
@@ -129,6 +149,9 @@ function moveFrontlineAlly(a,target,sp,dt){
 }
 function updateFrontlineAlly(a,target,dt){
  if(stageMode!=='front')return false;
+ const style=frontlineAllyStyle(a);style.paceT-=dt;
+ if(style.paceT<=0){style.paceT=3+R()*5;style.paceTarget=Math.max(.5,Math.min(1,(a.speedScale??1)+(R()-.5)*.4));}
+ const paceStep=dt*.1;style.pace+=Math.max(-paceStep,Math.min(paceStep,style.paceTarget-style.pace));
  a.frontMoving=false;
  if(target){a.frontMode='found';a.frontLostT=2;if(!a.frontLastSeen)a.frontLastSeen={x:target.x,y:target.y};else{a.frontLastSeen.x=target.x;a.frontLastSeen.y=target.y;}a.frontTrackedEnemy=target;}
  else{
@@ -139,6 +162,11 @@ function updateFrontlineAlly(a,target,dt){
  }
  if(frontlineCombatPoint(a))a.frontMode='found';
  const waiting=frontlineAllyWaiting(a,dt),distance=target?D(a,target):Infinity;
+ if(target||a.frontLastSeen||a.frontMode==='found')style.rest=0;
+ else if(!waiting){
+  if(style.rest>0)style.rest=Math.max(0,style.rest-dt);
+  else{style.marchT-=dt;if(style.marchT<=0){style.marchT=4+R()*6;style.rest=.3+R()*.6;}}
+ }
  if(target&&distance<176&&a.frontTargetVisible!==false){
   a.face=Math.atan2(target.y-a.y,target.x-a.x);
   if(a.frontAimTarget!==target){a.frontAimTarget=target;a.frontAimT=0;}
@@ -149,10 +177,12 @@ function updateFrontlineAlly(a,target,dt){
   }
  }else{
   a.frontAimTarget=null;a.frontAimT=0;
-  if(!waiting){
+  if(!waiting&&!(style.rest>0)){
    const rank=(a.slot||0)-2,q=a.frontline&&mission?mission.points[mission.index]:null;
-   const pursuit=target||a.frontLastSeen,goal=pursuit||q||{x:p.x+rank*30,y:p.y+36+Math.abs(rank)*14};
-   if(D(a,goal)>(pursuit?18:62))moveFrontlineAlly(a,goal,a.frontMode==='found'?202.5:135,dt);
+   const pursuit=target||a.frontLastSeen;let goal;
+   if(pursuit){goal=style.combatGoal||(style.combatGoal={x:0,y:0});goal.x=Math.max(24,Math.min(WW-24,pursuit.x+style.lane*.45));goal.y=pursuit.y+style.offsetY*.3;}
+   else goal=q?frontlineAllyObjective(a,q):{x:p.x+rank*30+style.lane*.4,y:p.y+36+Math.abs(rank)*14+style.depth*.4};
+   if(D(a,goal)>(pursuit?18:style.stop))moveFrontlineAlly(a,goal,a.frontMode==='found'?202.5:135,dt);
   }
  }
  return true;
