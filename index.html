@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.17.0948</title>
+<title>こっそり戦車大作戦 2026.10.17.0957</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -621,7 +621,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <li><a href="#spec-save">スキル解放・保存・デバッグ</a></li>
 </ol></nav>
 <section class="spec-section" id="spec-goal"><h2>1. 目的とクリア条件</h2>
-<p>スキル選択後に<strong>初級・上級・最前線</strong>の3種類のステージから選びます。<strong>初級</strong>は最後の草原にある大型パラボラアンテナの電波施設、<strong>上級</strong>は敵司令本部を破壊するとクリアです。<strong>最前線</strong>は味方と協力し、南部・中央・北部の3つの戦線を順番に制圧するとクリアです。円内の敵を排除し、プレイヤーと範囲内の味方兵の人数で制圧が加速します（1人12秒、2人6秒、3人4秒）。気絶中や降下中の兵士は制圧人数に含みません。敵に倒されると任務失敗となり、結果画面へ移行します。</p>
+<p>スキル選択後に<strong>初級・上級・最前線</strong>の3種類のステージから選びます。<strong>初級</strong>は最後の草原にある大型パラボラアンテナの電波施設、<strong>上級</strong>は敵司令本部を破壊するとクリアです。<strong>最前線</strong>は味方と協力し、南部・中央・北部の3つの戦線を順番に制圧するとクリアです。円内の敵を排除し、プレイヤーと範囲内の味方兵の人数で制圧が加速します（1人24秒、2人12秒、3人8秒）。気絶中や降下中の兵士は制圧人数に含みません。敵に倒されると任務失敗となり、結果画面へ移行します。</p>
 <p><strong>初級：</strong>開始草原→候補5エリアからランダムに3エリア→最後は草原（電波施設）の全5エリア。通常の青兵と青兵指揮官4体が必ず登場し、白兵・白兵指揮官・犬兵は出現しません。敵戦車は最大2台です。<strong>上級：</strong>従来の全7エリア、敵AI、敵配置、敵司令本部破壊のルールを維持します。</p>
 <p>歩兵の潜入に加え、戦車などの乗り物を利用した戦闘や、出撃前に選ぶスキルによる攻略ができます。</p><a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-map"><h2>2. ステージ構成とランダム生成</h2>
@@ -829,7 +829,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.17.0948',FILE_CREATED_AT='2026/10/17 09:48',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.17.0957',FILE_CREATED_AT='2026/10/17 09:57',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -7672,11 +7672,11 @@ function updateMission(dt){
   const foes=humans.filter(h=>h.alive&&!(h.stun>0)&&D(h,q)<210).length+etanks.filter(e=>e.alive&&D(e,q)<210).length;
   m.captureCount=frontlineCaptureCount(q);m.captureRate=m.captureCount;
   m.capturing=m.captureCount>0&&!foes;m.contested=foes>0;
-  if(m.capturing)m.progress=Math.min(12,m.progress+dt*m.captureRate);else if(foes)m.progress=Math.max(0,m.progress-dt*.35);
+  if(m.capturing)m.progress=Math.min(FRONTLINE_CAPTURE_SECONDS,m.progress+dt*m.captureRate);else if(foes)m.progress=Math.max(0,m.progress-dt*.35);
   if(m.enemyWavesStarted!==false)m.waveT-=dt;m.reinforceT-=dt;
   if(m.waveT<=0){m.waveT=spawnFrontlineWave(3)>0?24:1;}
   if(m.reinforceT<=0){m.reinforceT=18;if(allies.filter(a=>a.alive&&a.frontline).length<4)missionAllies(Math.max(q.y+250,Math.min(p.y+120,WH-200)));}
-  if(m.progress>=12){q.done=true;m.index++;m.progress=0;p.hp=3;if(p.tank){p.tank.c=p.tank.t.cmax;p.tank.v=p.tank.t.vmax;p.tank.f=p.tank.t.fmax;}say(q.name+' 制圧！ 補給・増援到着');if(m.index===3){completeMission();return;}missionAllies(q.y);}
+  if(m.progress>=FRONTLINE_CAPTURE_SECONDS){q.done=true;m.index++;m.progress=0;p.hp=3;if(p.tank){p.tank.c=p.tank.t.cmax;p.tank.v=p.tank.t.vmax;p.tank.f=p.tank.t.fmax;}say(q.name+' 制圧！ 補給・増援到着');if(m.index===3){completeMission();return;}missionAllies(q.y);}
  }else{
   m.alarm=Math.max(0,Math.min(100,m.alarm+dt*(detected?12:-5)));m.waveT-=dt;
   if(m.alarm>=65&&m.waveT<=0){m.waveT=24;m.alertCount++;if(humans.filter(h=>h.alive&&D(h,p)<650).length<12)for(let i=0;i<3;i++)missionEnemy(p.x+(i-1)*110,p.y-340,true);say('警戒部隊が接近！ 草むらや遮蔽物へ');}
@@ -7691,7 +7691,7 @@ function drawMission(){
  const m=mission,q=stageMode==='front'?m.points[m.index]:m.index===3?m.exit:m.points.filter(q=>!q.done).sort((a,b)=>D(a,p)-D(b,p))[0];
  const dist=q?distanceMeters(D(p,q)):0;
  if(performance.now()>=missionHudNextAt){missionHudNextAt=performance.now()+100;
- const hudText=stageMode==='front'?'<b>最前線　戦線 '+m.index+'/3 制圧</b><progress max="12" value="'+m.progress+'"></progress><small>'+(m.advanceReleased===false?'あと '+Math.max(1,distanceMeters(Math.max(0,240-(m.advanceStartY-p.y))))+'m前進で部隊進軍 ／ ':'')+q.name+'まで '+dist+'m ／ '+(m.captureCount||0)+'人で制圧・人数で加速</small>':'<b>潜入　機密情報 '+m.index+'/3　警戒 '+Math.round(m.alarm)+'%</b><progress max="4" value="'+m.progress+'"></progress><small>'+(m.detected?'発見中：隠れて追跡を振り切れ':m.index===3?'脱出地点へ帰還（徒歩）':q.name+'まで '+dist+'m ／ 徒歩で4秒解析')+'</small>';
+ const hudText=stageMode==='front'?'<b>最前線　戦線 '+m.index+'/3 制圧</b><progress max="'+FRONTLINE_CAPTURE_SECONDS+'" value="'+m.progress+'"></progress><small>'+(m.advanceReleased===false?'あと '+Math.max(1,distanceMeters(Math.max(0,240-(m.advanceStartY-p.y))))+'m前進で部隊進軍 ／ ':'')+q.name+'まで '+dist+'m ／ '+(m.captureCount||0)+'人で制圧・人数で加速</small>':'<b>潜入　機密情報 '+m.index+'/3　警戒 '+Math.round(m.alarm)+'%</b><progress max="4" value="'+m.progress+'"></progress><small>'+(m.detected?'発見中：隠れて追跡を振り切れ':m.index===3?'脱出地点へ帰還（徒歩）':q.name+'まで '+dist+'m ／ 徒歩で4秒解析')+'</small>';
  if(hudText!==missionHudText){el.innerHTML=hudText;missionHudText=hudText;}
  }
  gm.save();gm.setTransform(1,0,0,1,0,0);
@@ -7801,7 +7801,7 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/frontline.js?v=2026.10.17.0948"></script>
+<script src="js/frontline.js?v=2026.10.17.0957"></script>
 <script src="js/award-icons.js?v=2026.10.17.0743"></script>
 <script src="js/characters.js?v=2026.10.17.0811"></script>
 <script src="js/enemy-dogs.js?v=2026.10.17.0811"></script>

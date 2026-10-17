@@ -1,5 +1,5 @@
 // Frontline-only presentation and infantry waves. Reuse existing combat and obstacle AI.
-const FRONTLINE_ENEMY_LIMIT=16,FRONTLINE_CAPTURE_SECONDS=12;
+const FRONTLINE_ENEMY_LIMIT=16,FRONTLINE_CAPTURE_SECONDS=24;
 function frontlineView(){
  return{x:Math.max(0,Math.min(WW-W,p.x-W/2)),y:Math.max(0,Math.min(WH-H,p.y-H*.6)),w:W,h:H};
 }

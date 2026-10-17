@@ -40,10 +40,10 @@ test('50% and 100% soldiers actually cover half and full baseline distance, with
  const c=harness();for(const scale of [.5,1]){const a={x:0,y:0,speedScale:scale};c.moveAllySmart(a,{x:0,y:1000},135,1);assert.ok(Math.abs(a.y-135*scale)<1e-6);}const partner={x:0,y:0};c.moveAllySmart(partner,{x:0,y:1000},135,1);assert.equal(partner.y,135);
 });
 test('capture gauge has correct fraction, countdown and contested/paused labels',()=>{
- const c=harness();let v=c.frontlineCaptureVisual({progress:3,capturing:true});assert.equal(v.fraction,.25);assert.equal(v.remaining,9);assert.equal(v.label,'制圧まで 9.0秒');assert.ok(c.frontlineCaptureVisual({progress:6,contested:true}).label.includes('敵が範囲内'));assert.ok(c.frontlineCaptureVisual({progress:6}).label.includes('一時停止'));assert.equal(c.frontlineCaptureVisual({progress:99}).fraction,1);
+ const c=harness();let v=c.frontlineCaptureVisual({progress:6,capturing:true});assert.equal(v.fraction,.25);assert.equal(v.remaining,18);assert.equal(v.label,'制圧まで 18.0秒');assert.ok(c.frontlineCaptureVisual({progress:6,contested:true}).label.includes('敵が範囲内'));assert.ok(c.frontlineCaptureVisual({progress:6}).label.includes('一時停止'));assert.equal(c.frontlineCaptureVisual({progress:99}).fraction,1);
 });
 test('capture ring is drawn only on the active circle, and quarter time draws a quarter arc',()=>{
- const c=harness(),q={},m={index:0,points:[q],progress:3,capturing:true};c.drawFrontlineCaptureRing(q,100,200,m);const arcs=c.calls.filter(x=>x[0]==='arc');assert.equal(arcs.length,2);assert.ok(Math.abs(arcs[1][5]-arcs[1][4]-Math.PI/2)<1e-6);const count=c.calls.length;c.drawFrontlineCaptureRing({},100,200,m);assert.equal(c.calls.length,count);
+ const c=harness(),q={},m={index:0,points:[q],progress:6,capturing:true};c.drawFrontlineCaptureRing(q,100,200,m);const arcs=c.calls.filter(x=>x[0]==='arc');assert.equal(arcs.length,2);assert.ok(Math.abs(arcs[1][5]-arcs[1][4]-Math.PI/2)<1e-6);const count=c.calls.length;c.drawFrontlineCaptureRing({},100,200,m);assert.equal(c.calls.length,count);
 });
 test('navigation anchor stays below the top-right area label at different viewport widths',()=>{
  const c=harness();for(const width of [480,840]){c.W=width;const q=c.frontlineArrowPosition();assert.equal(q.x,width-26);assert.ok(q.y>40);assert.ok(q.y+13<100);}
@@ -229,7 +229,15 @@ test('capture progress scales with one, two and three active friendly people ins
   const c=harness(),q={x:480,y:10000,counterTriggered:true};c.mission={points:[q],index:0,progress:0,waveT:999,reinforceT:999};c.allies=Array.from({length:count-1},()=>({x:480,y:10000,alive:true,frontline:true}));
   vm.runInContext(html.slice(html.indexOf('function updateMission('),html.indexOf('let missionHudNextAt=')),c);c.updateMission(1);
   assert.equal(c.mission.captureCount,count);assert.equal(c.mission.captureRate,count);assert.equal(c.mission.progress,count);
-  assert.equal(c.frontlineCaptureVisual(c.mission).remaining,(12-count)/count);
+  assert.equal(c.frontlineCaptureVisual(c.mission).remaining,(24-count)/count);
+ }
+});
+test('capture completes after 24, 12 and 8 seconds for one, two and three people',()=>{
+ for(const count of [1,2,3]){
+  const c=harness(),q={x:480,y:10000,counterTriggered:true};c.mission={points:[q,{x:480,y:6500},{x:480,y:3000}],index:0,progress:0,waveT:999,reinforceT:999};c.allies=Array.from({length:count-1},()=>({x:480,y:10000,alive:true,frontline:true}));
+  vm.runInContext(html.slice(html.indexOf('function updateMission('),html.indexOf('let missionHudNextAt=')),c);
+  c.updateMission(24/count-.01);assert.equal(c.mission.index,0);assert.ok(c.mission.progress<24);assert.notEqual(q.done,true);
+  c.updateMission(.02);assert.equal(c.mission.index,1);assert.equal(q.done,true);assert.equal(c.mission.progress,0);
  }
 });
 test('capture counts exclude stunned, recovering, descending, airborne and out-of-circle troops',()=>{
