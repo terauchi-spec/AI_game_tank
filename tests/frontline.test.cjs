@@ -538,3 +538,22 @@ test('victory camera keeps the large antenna tip visible and signal rings stop o
   c.state='succeeded';const count=c.calls.length;c.drawFrontlineVictorySignal();assert.equal(c.calls.length,count);
  }
 });
+
+
+test('capturing each Frontline objective preserves vehicle fuel and both ammo stores while restoring player health',()=>{
+ for(const index of [0,1,2])for(const kind of ['tank','truck','armored']){
+  const c=harness(),q={x:480,y:10000,counterTriggered:true,playerEntered:true};
+  c.mission={points:Array.from({length:3},(_,i)=>i===index?q:{x:480,y:6500}),index,progress:47.99,waveT:999,reinforceT:999};
+  c.p.hp=1;c.p.tank={kind,c:2,v:7,f:13,t:{cmax:20,vmax:100,fmax:100}};
+  c.allies=[{x:480,y:10000,alive:true,frontline:true}];let completed=0;c.completeMission=()=>completed++;
+  vm.runInContext(html.slice(html.indexOf('function updateMission('),html.indexOf('let missionHudNextAt=')),c);
+  c.updateMission(.02);assert.equal(q.done,true);assert.equal(c.mission.index,index+1);
+  assert.equal(c.p.tank.c,2);assert.equal(c.p.tank.v,7);assert.equal(c.p.tank.f,13);assert.equal(c.p.hp,3);assert.equal(completed,index===2?1:0);
+ }
+});
+
+test('antenna upper pass follows every bush foreground pass while the ground pass stays behind people',()=>{
+ const start=html.indexOf(' drawFrontlineAntennas(cx,cy);'),end=html.indexOf(' drawFrontlineAntennas(cx,cy,true);',start);
+ assert.ok(start>=0&&end>start);const between=html.slice(start,end);
+ for(const pass of ['drawGrassBushChunks(cx,cy);','drawBushCached(b);','drawSpinifexTopLayer(cx,cy);','drawPartner();'])assert.ok(between.includes(pass),pass);
+});
