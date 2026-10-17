@@ -226,7 +226,7 @@ test('initial advance gating does not affect other stages or missions without a 
 
 test('capture progress scales with one, two and three active friendly people inside the circle',()=>{
  for(const count of [1,2,3]){
-  const c=harness(),q={x:480,y:10000,counterTriggered:true};c.mission={points:[q],index:0,progress:0,waveT:999,reinforceT:999};c.allies=Array.from({length:count-1},()=>({x:480,y:10000,alive:true,frontline:true}));
+  const c=harness(),q={x:480,y:10000,counterTriggered:true};c.mission={points:[q],index:0,progress:0,waveT:999,reinforceT:999};c.p.y=10200;c.allies=Array.from({length:count},()=>({x:480,y:10000,alive:true,frontline:true}));
   vm.runInContext(html.slice(html.indexOf('function updateMission('),html.indexOf('let missionHudNextAt=')),c);c.updateMission(1);
   assert.equal(c.mission.captureCount,count);assert.equal(c.mission.captureRate,count);assert.equal(c.mission.progress,count);
   assert.equal(c.frontlineCaptureVisual(c.mission).remaining,(24-count)/count);
@@ -234,11 +234,34 @@ test('capture progress scales with one, two and three active friendly people ins
 });
 test('capture completes after 24, 12 and 8 seconds for one, two and three people',()=>{
  for(const count of [1,2,3]){
-  const c=harness(),q={x:480,y:10000,counterTriggered:true};c.mission={points:[q,{x:480,y:6500},{x:480,y:3000}],index:0,progress:0,waveT:999,reinforceT:999};c.allies=Array.from({length:count-1},()=>({x:480,y:10000,alive:true,frontline:true}));
+  const c=harness(),q={x:480,y:10000,counterTriggered:true};c.mission={points:[q,{x:480,y:6500},{x:480,y:3000}],index:0,progress:0,waveT:999,reinforceT:999};c.p.y=10200;c.allies=Array.from({length:count},()=>({x:480,y:10000,alive:true,frontline:true}));
   vm.runInContext(html.slice(html.indexOf('function updateMission('),html.indexOf('let missionHudNextAt=')),c);
   c.updateMission(24/count-.01);assert.equal(c.mission.index,0);assert.ok(c.mission.progress<24);assert.notEqual(q.done,true);
   c.updateMission(.02);assert.equal(c.mission.index,1);assert.equal(q.done,true);assert.equal(c.mission.progress,0);
  }
+});
+test('a lone player cannot capture, and the gauge pauses when the last active ally leaves or is stunned',()=>{
+ const c=harness(),q={x:480,y:10000,counterTriggered:true};c.mission={points:[q],index:0,progress:5,waveT:999,reinforceT:999};
+ vm.runInContext(html.slice(html.indexOf('function updateMission('),html.indexOf('let missionHudNextAt=')),c);
+ for(const dig of [0,1]){c.p.dig=dig;c.updateMission(1);assert.equal(c.mission.captureCount,0);assert.equal(c.mission.progress,5);assert.equal(c.mission.capturing,false);}
+ assert.match(c.frontlineCaptureVisual(c.mission).label,/味方兵の合流待ち/);
+ c.p.dig=0;const a={x:480,y:10000,alive:true,id:1};c.allies=[a];c.updateMission(1);assert.equal(c.mission.captureCount,2);assert.equal(c.mission.progress,7);
+ a.stun=1;c.updateMission(1);assert.equal(c.mission.progress,7);assert.equal(c.mission.captureCount,0);
+ a.stun=0;a.y=10200;c.updateMission(1);assert.equal(c.mission.progress,7);
+ a.y=10000;c.updateMission(1);assert.equal(c.mission.progress,9);
+});
+test('the active capture circle explains the allied requirement before any progress is earned',()=>{
+ const c=harness(),q={x:480,y:10000},m={points:[q],index:0,progress:0,captureCount:0,capturing:false};
+ c.drawFrontlineCaptureRing(q,100,200,m);assert.ok(c.calls.some(call=>call[0]==='fillText'&&call[1]==='味方兵の合流待ち'));
+ const count=c.calls.length;c.p.y=10200;c.drawFrontlineCaptureRing(q,100,200,m);assert.equal(c.calls.length,count);
+});
+test('nearby tanks receive capture alarms from active allied soldiers only, including across cover and behind them',()=>{
+ const c=harness(),q={x:480,y:10000},a={...q,alive:true,id:7},e={x:480,y:9450,ang:-Math.PI/2};c.mission.points=[q];c.los=()=>false;
+ assert.equal(c.frontlineTankAreaTarget(e),null);c.allies=[a];assert.equal(c.frontlineTankAreaTarget(e).key,'ally:7');
+ const b={x:480,y:9900,alive:true,id:8};c.allies.push(b);assert.equal(c.frontlineTankAreaTarget(e).key,'ally:8');
+ for(const flag of ['stun','stunRecover','chute','blastAirT']){a[flag]=1;b[flag]=1;assert.equal(c.frontlineTankAreaTarget(e),null);a[flag]=b[flag]=0;}
+ e.y=9399;assert.equal(c.frontlineTankAreaTarget(e),null);e.y=9400;assert.ok(c.frontlineTankAreaTarget(e));
+ q.done=true;assert.equal(c.frontlineTankAreaTarget(e),null);q.done=false;c.stageMode='base';assert.equal(c.frontlineTankAreaTarget(e),null);c.stageMode='front';c.areaDebugEnabled=true;assert.equal(c.frontlineTankAreaTarget(e),null);
 });
 test('capture counts exclude stunned, recovering, descending, airborne and out-of-circle troops',()=>{
  const c=harness(),q={x:480,y:10000};c.allies=[{...q,alive:true},{...q,alive:true,stun:1},{...q,alive:true,stunRecover:1},{...q,alive:true,chute:1},{...q,alive:true,blastAirT:1},{...q,alive:false},{x:480,y:10190,alive:true}];

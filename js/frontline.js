@@ -80,10 +80,10 @@ function moveFrontlineEnemy(h,dt,speed){
 function frontlineCaptureVisual(m){
  const fraction=Math.max(0,Math.min(1,(m.progress||0)/FRONTLINE_CAPTURE_SECONDS));
  const remaining=Math.max(0,FRONTLINE_CAPTURE_SECONDS-(m.progress||0))/Math.max(1,m.captureRate||1);
- return{fraction,remaining,label:(m.contested?'敵が範囲内 ／ ':m.capturing?'制圧まで ':'制圧一時停止 ／ 残り ')+remaining.toFixed(1)+'秒'+(m.capturing&&m.captureCount>1?'（'+m.captureCount+'人）':'')};
+ return{fraction,remaining,label:m.captureCount===0&&!m.contested?'味方兵の合流待ち':(m.contested?'敵が範囲内 ／ ':m.capturing?'制圧まで ':'制圧一時停止 ／ 残り ')+remaining.toFixed(1)+'秒'+(m.capturing&&m.captureCount>1?'（'+m.captureCount+'人）':'')};
 }
 function drawFrontlineCaptureRing(point,x,y,m){
- const active=m.points[m.index]===point;if(!active||(!(m.progress>0)&&!m.capturing))return;
+ const active=m.points[m.index]===point,waiting=m.captureCount===0&&D(p,point)<180;if(!active||(!(m.progress>0)&&!m.capturing&&!waiting))return;
  const status=frontlineCaptureVisual(m);
  gm.save();gm.lineWidth=7;gm.strokeStyle='rgba(141,211,255,.24)';gm.beginPath();gm.arc(x,y,180,0,Math.PI*2);gm.stroke();
  if(status.fraction>0){gm.strokeStyle='#8dd3ff';gm.lineCap='round';gm.beginPath();gm.arc(x,y,180,-Math.PI/2,-Math.PI/2+Math.PI*2*status.fraction);gm.stroke();}
@@ -254,10 +254,26 @@ function frontlineCombatPoint(unit){
  if(stageMode!=='front'||!mission)return null;
  return mission.points.find(q=>D(unit,q)<180)||null;
 }
+function frontlineAllyCanCapture(a,point){
+ return a.alive&&!(a.stun>0)&&!(a.stunRecover>0)&&!(a.chute>0)&&!(a.blastAirT>0)&&D(a,point)<180;
+}
 function frontlineCaptureCount(point){
- let count=D(p,point)<180&&!(p.tank&&p.tank.kind==='fighter')&&!(p.dig>0)?1:0;
- if(point.y>=frontlineAllyLimit())for(const a of allies)if(a.alive&&!(a.stun>0)&&!(a.stunRecover>0)&&!(a.chute>0)&&!(a.blastAirT>0)&&D(a,point)<180)count++;
- return count;
+ let count=0;
+ if(point.y>=frontlineAllyLimit())for(const a of allies)if(frontlineAllyCanCapture(a,point))count++;
+ // A player can help the squad, but cannot capture a frontline alone.
+ if(!count)return 0;
+ return count+(D(p,point)<180&&!(p.tank&&p.tank.kind==='fighter')&&!(p.dig>0)?1:0);
+}
+function frontlineTankAreaTarget(e){
+ if(stageMode!=='front'||!mission||areaDebugEnabled)return null;
+ const point=mission.points[mission.index];
+ if(!point||point.done||D(e,point)>600||point.y<frontlineAllyLimit())return null;
+ // The capture alarm reveals participating soldiers, not a hidden lone player.
+ let best=null;
+ for(const a of allies)if(frontlineAllyCanCapture(a,point)){
+  const d=D(e,a);if(!best||d<best.d)best={key:'ally:'+a.id,obj:a,d};
+ }
+ return best;
 }
 function frontlineEnemyAreaTarget(o){
  const area=frontlineCombatPoint(o);if(!area)return null;
