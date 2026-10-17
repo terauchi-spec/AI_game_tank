@@ -205,3 +205,21 @@ test('base maze generation is identical with and without Frontline hooks',()=>{
  for(const c of [current,baseline]){c.genCovers();c.genObjects();}
  assert.equal(JSON.stringify(current.covers),JSON.stringify(baseline.covers));assert.equal(JSON.stringify(current.objects),JSON.stringify(baseline.objects));assert.equal(current.ZONES[0].frontlineMazeLanes,undefined);
 });
+
+test('the whole Frontline formation waits until the player advances 240px north',()=>{
+ const c=harness();c.mission.advanceStartY=c.p.y;c.mission.advanceReleased=false;c.mission.points=[{x:480,y:3000}];c.missionAllies(c.p.y-100);
+ const start=c.allies.map(a=>({x:a.x,y:a.y}));for(let i=0;i<100;i++){c.updateFrontlineAdvance();for(const a of c.allies)c.updateFrontlineAlly(a,null,.1);}
+ assert.deepEqual(c.allies.map(a=>({x:a.x,y:a.y})),start);c.p.x+=400;c.updateFrontlineAdvance();assert.equal(c.mission.advanceReleased,false);
+ c.p.y+=500;c.updateFrontlineAdvance();assert.equal(c.mission.advanceReleased,false);c.p.y=c.mission.advanceStartY-239;c.updateFrontlineAdvance();assert.equal(c.mission.advanceReleased,false);
+ c.p.y--;c.updateFrontlineAdvance();assert.equal(c.mission.advanceReleased,true);for(const a of c.allies)c.updateFrontlineAlly(a,null,.1);
+ assert.ok(c.allies.every((a,i)=>a.y<start[i].y));c.p.y+=1000;c.updateFrontlineAdvance();assert.equal(c.mission.advanceReleased,true);
+});
+test('waiting troops can defend in place but cannot pursue before the shared start signal',()=>{
+ const c=harness();c.mission.advanceReleased=false;c.los=()=>true;let shots=0;c.fire=()=>shots++;
+ const a={x:480,y:10000,shotCd:0,burstLeft:3,speedScale:1},near={x:480,y:9900,alive:true};c.updateFrontlineAlly(a,near,.5);assert.equal(shots,1);assert.equal(a.y,10000);
+ c.updateFrontlineAlly(a,{x:480,y:9700,alive:true},.1);assert.equal(a.y,10000);
+});
+test('initial advance gating does not affect other stages or missions without a gate',()=>{
+ const c=harness();c.stageMode='base';c.mission.advanceReleased=false;c.mission.advanceStartY=c.p.y+500;c.updateFrontlineAdvance();assert.equal(c.mission.advanceReleased,false);
+ c.stageMode='front';delete c.mission.advanceReleased;assert.equal(c.frontlineAllyWaiting({x:480,y:10000},.1),false);
+});

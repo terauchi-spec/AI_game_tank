@@ -104,6 +104,7 @@ function frontlineSpawnExitClear(q,hasDog=false){
 }
 function frontlineAllyLimit(){return Math.max(24,frontlineView().y-80);}
 function frontlineAllyWaiting(a,dt){
+ if(mission?.advanceReleased===false)return true;
  const limit=frontlineAllyLimit();
  if(a.y<=limit+24){a.frontHolding=true;a.frontWaitT=Math.max(a.frontWaitT||0,2);}
  if(a.frontHolding){
@@ -229,4 +230,11 @@ function openFrontlineMaze(V,Hh,zone,mx0,csx,wt){
 function frontlineMazeLaneBlocked(rect){
  if(stageMode!=='front')return false;
  return ZONES.some(z=>(z.frontlineMazeLanes||[]).some(lane=>rect.x<lane.x+lane.w&&rect.x+rect.w>lane.x&&rect.y<lane.y+lane.h&&rect.y+rect.h>lane.y));
+}
+
+function updateFrontlineAdvance(){
+ if(stageMode!=='front'||!mission||mission.advanceReleased!==false)return;
+ if(p.y<=mission.advanceStartY-240){
+  mission.advanceReleased=true;say('味方部隊、一斉に進軍！');
+ }
 }
