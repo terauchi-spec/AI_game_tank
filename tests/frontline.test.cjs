@@ -43,7 +43,7 @@ test('capture gauge has correct fraction, countdown and contested/paused labels'
  const c=harness();let v=c.frontlineCaptureVisual({progress:12,capturing:true});assert.equal(v.fraction,.25);assert.equal(v.remaining,36);assert.equal(v.label,'制圧まで 36.0秒');assert.ok(c.frontlineCaptureVisual({progress:6,contested:true}).label.includes('敵が範囲内'));assert.ok(c.frontlineCaptureVisual({progress:6}).label.includes('一時停止'));assert.equal(c.frontlineCaptureVisual({progress:99}).fraction,1);
 });
 test('capture ring is drawn only on the active circle, and quarter time draws a quarter arc',()=>{
- const c=harness(),q={},m={index:0,points:[q],progress:12,capturing:true};c.drawFrontlineCaptureRing(q,100,200,m);const arcs=c.calls.filter(x=>x[0]==='arc');assert.equal(arcs.length,2);assert.ok(Math.abs(arcs[1][5]-arcs[1][4]-Math.PI/2)<1e-6);const count=c.calls.length;c.drawFrontlineCaptureRing({},100,200,m);assert.equal(c.calls.length,count);
+ const c=harness(),q={},m={index:0,points:[q],progress:12,capturing:true};c.drawFrontlineCaptureRing(q,100,200,m);const arcs=c.calls.filter(x=>x[0]==='arc');assert.equal(arcs.length,2);assert.ok(arcs.every(arc=>arc[3]===360));assert.ok(Math.abs(arcs[1][5]-arcs[1][4]-Math.PI/2)<1e-6);const count=c.calls.length;c.drawFrontlineCaptureRing({},100,200,m);assert.equal(c.calls.length,count);
 });
 test('navigation anchor stays below the top-right area label at different viewport widths',()=>{
  const c=harness();for(const width of [480,840]){c.W=width;const q=c.frontlineArrowPosition();assert.equal(q.x,width-26);assert.ok(q.y>40);assert.ok(q.y+13<100);}
@@ -117,7 +117,7 @@ test('a stunned Frontline ally needs on-foot contact and line of sight to recove
  a.stun=5;c.stageMode='base';assert.equal(c.rescueFrontlineAlly(a),false);a.alive=false;c.stageMode='front';assert.equal(c.rescueFrontlineAlly(a),false);
 });
 test('each objective triggers a six-person counterattack only on the player’s first entry',()=>{
- const c=harness(),q={x:c.p.x,y:c.p.y-200};let calls=0,total=0;c.spawnFrontlineWave=(n,point)=>{calls++;total+=n;assert.equal(point,q);return n;};
+ const c=harness(),q={x:c.p.x,y:c.p.y-400};let calls=0,total=0;c.spawnFrontlineWave=(n,point)=>{calls++;total+=n;assert.equal(point,q);return n;};
  c.updateFrontlineCounterattack(q,.1);assert.equal(calls,0);c.p.y-=50;c.updateFrontlineCounterattack(q,.1);assert.equal(total,6);assert.equal(q.counterTriggered,true);assert.equal(q.counterBluePending,2);
  c.p.y+=500;c.updateFrontlineCounterattack(q,2);c.p.y-=500;c.updateFrontlineCounterattack(q,2);assert.equal(calls,1);
 });
@@ -226,7 +226,7 @@ test('initial advance gating does not affect other stages or missions without a 
 
 test('capture progress scales with one, two and three active friendly people inside the circle',()=>{
  for(const count of [1,2,3]){
-  const c=harness(),q={x:480,y:10000,counterTriggered:true,playerEntered:true};c.mission={points:[q],index:0,progress:0,waveT:999,reinforceT:999};c.p.y=10200;c.allies=Array.from({length:count},()=>({x:480,y:10000,alive:true,frontline:true}));
+  const c=harness(),q={x:480,y:10000,counterTriggered:true,playerEntered:true};c.mission={points:[q],index:0,progress:0,waveT:999,reinforceT:999};c.p.y=10400;c.allies=Array.from({length:count},()=>({x:480,y:10000,alive:true,frontline:true}));
   vm.runInContext(html.slice(html.indexOf('function updateMission('),html.indexOf('let missionHudNextAt=')),c);c.updateMission(1);
   assert.equal(c.mission.captureCount,count);assert.equal(c.mission.captureRate,count);assert.equal(c.mission.progress,count);
   assert.equal(c.frontlineCaptureVisual(c.mission).remaining,(48-count)/count);
@@ -234,23 +234,23 @@ test('capture progress scales with one, two and three active friendly people ins
 });
 test('capture completes after 48, 24 and 16 seconds for one, two and three people',()=>{
  for(const count of [1,2,3]){
-  const c=harness(),q={x:480,y:10000,counterTriggered:true,playerEntered:true};c.mission={points:[q,{x:480,y:6500},{x:480,y:3000}],index:0,progress:0,waveT:999,reinforceT:999};c.p.y=10200;c.allies=Array.from({length:count},()=>({x:480,y:10000,alive:true,frontline:true}));
+  const c=harness(),q={x:480,y:10000,counterTriggered:true,playerEntered:true};c.mission={points:[q,{x:480,y:6500},{x:480,y:3000}],index:0,progress:0,waveT:999,reinforceT:999};c.p.y=10400;c.allies=Array.from({length:count},()=>({x:480,y:10000,alive:true,frontline:true}));
   vm.runInContext(html.slice(html.indexOf('function updateMission('),html.indexOf('let missionHudNextAt=')),c);
   c.updateMission(48/count-.01);assert.equal(c.mission.index,0);assert.ok(c.mission.progress<48);assert.notEqual(q.done,true);
   c.updateMission(.02);assert.equal(c.mission.index,1);assert.equal(q.done,true);assert.equal(c.mission.progress,0);
  }
 });
 test('each capture area requires its own first ground player entry; leaving afterwards keeps it unlocked',()=>{
- const c=harness(),q={x:480,y:10000,counterTriggered:true},next={x:480,y:9800,counterTriggered:true};c.mission={points:[q,next,{x:480,y:3000}],index:0,progress:0,waveT:999,reinforceT:999};c.p.y=10200;c.allies=[{x:480,y:10000,alive:true,id:1}];
+ const c=harness(),q={x:480,y:10000,counterTriggered:true},next={x:480,y:9600,counterTriggered:true};c.mission={points:[q,next,{x:480,y:3000}],index:0,progress:0,waveT:999,reinforceT:999};c.p.y=10400;c.allies=[{x:480,y:10000,alive:true,id:1}];
  vm.runInContext(html.slice(html.indexOf('function updateMission('),html.indexOf('let missionHudNextAt=')),c);
  c.updateMission(1);assert.equal(c.mission.progress,0);assert.equal(c.mission.capturing,false);assert.equal(c.mission.captureReady,false);assert.match(c.frontlineCaptureVisual(c.mission).label,/プレイヤーの進入待ち/);
- c.p.y=10180;c.updateMission(1);assert.equal(c.mission.captureReady,false);
+ c.p.y=10360;c.updateMission(1);assert.equal(c.mission.captureReady,false);
  c.p.y=10000;c.p.tank={kind:'fighter'};c.updateMission(1);assert.equal(c.mission.captureReady,false);assert.equal(c.mission.progress,0);
  c.p.tank=null;c.updateMission(1);assert.equal(q.playerEntered,true);assert.equal(c.mission.progress,2);
- c.p.y=10200;c.updateMission(1);assert.equal(c.mission.captureReady,true);assert.equal(c.mission.progress,3);
+ c.p.y=10400;c.updateMission(1);assert.equal(c.mission.captureReady,true);assert.equal(c.mission.progress,3);
  c.mission.progress=47.99;c.updateMission(.02);assert.equal(c.mission.index,1);
- c.allies=[{x:480,y:9800,alive:true,id:2}];c.p.y=10000;c.updateMission(1);assert.equal(c.mission.progress,0);assert.equal(c.mission.captureReady,false);assert.notEqual(next.playerEntered,true);
- c.p.y=9800;c.updateMission(1);assert.equal(next.playerEntered,true);assert.equal(c.mission.progress,2);
+ c.allies=[{x:480,y:9600,alive:true,id:2}];c.p.y=10000;c.updateMission(1);assert.equal(c.mission.progress,0);assert.equal(c.mission.captureReady,false);assert.notEqual(next.playerEntered,true);
+ c.p.y=9600;c.updateMission(1);assert.equal(next.playerEntered,true);assert.equal(c.mission.progress,2);
 });
 test('a lone player cannot capture, and the gauge pauses when the last active ally leaves or is stunned',()=>{
  const c=harness(),q={x:480,y:10000,counterTriggered:true,playerEntered:true};c.mission={points:[q],index:0,progress:5,waveT:999,reinforceT:999};
@@ -259,13 +259,13 @@ test('a lone player cannot capture, and the gauge pauses when the last active al
  assert.match(c.frontlineCaptureVisual(c.mission).label,/味方兵の合流待ち/);
  c.p.dig=0;const a={x:480,y:10000,alive:true,id:1};c.allies=[a];c.updateMission(1);assert.equal(c.mission.captureCount,2);assert.equal(c.mission.progress,7);
  a.stun=1;c.updateMission(1);assert.equal(c.mission.progress,7);assert.equal(c.mission.captureCount,0);
- a.stun=0;a.y=10200;c.updateMission(1);assert.equal(c.mission.progress,7);
+ a.stun=0;a.y=10400;c.updateMission(1);assert.equal(c.mission.progress,7);
  a.y=10000;c.updateMission(1);assert.equal(c.mission.progress,9);
 });
 test('the active capture circle explains the allied requirement before any progress is earned',()=>{
  const c=harness(),q={x:480,y:10000},m={points:[q],index:0,progress:0,captureCount:0,capturing:false};
  c.drawFrontlineCaptureRing(q,100,200,m);assert.ok(c.calls.some(call=>call[0]==='fillText'&&call[1]==='味方兵の合流待ち'));
- const count=c.calls.length;c.p.y=10200;c.drawFrontlineCaptureRing(q,100,200,m);assert.equal(c.calls.length,count);
+ const count=c.calls.length;c.p.y=10400;c.drawFrontlineCaptureRing(q,100,200,m);assert.equal(c.calls.length,count);
 });
 test('nearby tanks receive capture alarms from active allied soldiers only, including across cover and behind them',()=>{
  const c=harness(),q={x:480,y:10000},a={...q,alive:true,id:7},e={x:480,y:9450,ang:-Math.PI/2};c.mission.points=[q];c.los=()=>false;
@@ -276,9 +276,19 @@ test('nearby tanks receive capture alarms from active allied soldiers only, incl
  q.done=true;assert.equal(c.frontlineTankAreaTarget(e),null);q.done=false;c.stageMode='base';assert.equal(c.frontlineTankAreaTarget(e),null);c.stageMode='front';c.areaDebugEnabled=true;assert.equal(c.frontlineTankAreaTarget(e),null);
 });
 test('capture counts exclude stunned, recovering, descending, airborne and out-of-circle troops',()=>{
- const c=harness(),q={x:480,y:10000};c.allies=[{...q,alive:true},{...q,alive:true,stun:1},{...q,alive:true,stunRecover:1},{...q,alive:true,chute:1},{...q,alive:true,blastAirT:1},{...q,alive:false},{x:480,y:10190,alive:true}];
+ const c=harness(),q={x:480,y:10000};c.allies=[{...q,alive:true},{...q,alive:true,stun:1},{...q,alive:true,stunRecover:1},{...q,alive:true,chute:1},{...q,alive:true,blastAirT:1},{...q,alive:false},{x:480,y:10370,alive:true}];
  assert.equal(c.frontlineCaptureCount(q),2);c.p.tank={kind:'fighter'};assert.equal(c.frontlineCaptureCount(q),1);
  c.p.tank=null;c.p.dig=1;assert.equal(c.frontlineCaptureCount(q),1);
+});
+test('the expanded 360px circle shares entry, capture, awareness and contest boundaries',()=>{
+ const c=harness(),q={x:480,y:10000,counterTriggered:true};c.mission={points:[q],index:0,progress:0,waveT:999,reinforceT:999};c.p.y=10360;
+ const a={x:839,y:10000,alive:true,id:1};c.allies=[a];
+ vm.runInContext(html.slice(html.indexOf('function updateMission('),html.indexOf('let missionHudNextAt=')),c);
+ c.updateMission(1);assert.equal(c.mission.captureReady,false);assert.equal(c.mission.progress,0);assert.equal(c.frontlineCombatPoint(a),q);
+ c.p.y=10359;c.updateMission(1);assert.equal(c.mission.captureReady,true);assert.equal(c.mission.progress,2);
+ a.x=840;assert.equal(c.frontlineAllyCanCapture(a,q),false);assert.equal(c.frontlineCombatPoint(a),null);
+ a.x=839;c.humans=[{x:480,y:10389,alive:true}];c.updateMission(1);assert.equal(c.mission.contested,true);assert.equal(c.mission.capturing,false);
+ c.humans[0].y=10390;c.updateMission(1);assert.equal(c.mission.contested,false);assert.equal(c.mission.capturing,true);
 });
 test('capture area grants all-around alert even across cover, while shooting still waits for line of sight',()=>{
  const c=harness(),q={x:480,y:10000},a={...q,alive:true,face:-Math.PI/2,shotCd:0,burstLeft:3},h={x:480,y:10100,alive:true};c.mission.points=[q];c.humans=[h];c.allies=[a];c.los=()=>false;let shots=0;c.fire=()=>shots++;
