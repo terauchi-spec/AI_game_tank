@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.17.1245</title>
+<title>こっそり戦車大作戦 2026.10.17.1252</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -17,7 +17,7 @@ p{font-size:12px;opacity:.75;margin:8px 0 0;text-align:center;line-height:1.6}
 /* PCは内部描画840×720の縦横比を保ち、画面内に収める。 */
 @media (pointer:fine){
  body{box-sizing:border-box;height:100dvh;overflow:hidden;}
- #c{box-sizing:border-box;flex:none;width:min(840px,calc((100dvh - 20px)*7/6));max-width:100%;height:auto;}
+ #c{box-sizing:content-box;flex:none;width:min(840px,calc((100dvh - 22px)*7/6));max-width:calc(100% - 2px);height:auto;aspect-ratio:7/6;}
 }
 #pad{display:none}
 #stick{position:relative;width:160px;height:160px;border-radius:50%;background:rgba(10,12,8,.28);border:2px solid rgba(230,233,216,.42);box-shadow:0 3px 18px rgba(0,0,0,.2);touch-action:none;pointer-events:auto;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
@@ -392,73 +392,24 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
  body.gameplay-active #c{transform:translateZ(0);will-change:transform;contain:paint}
 }
 
+/* 従来の構成: PCは横長の全体画像、タッチ端末は正方形。サイズ指定を一本化。 */
 #titleDiagnostics{display:none!important}
-@media(pointer:fine){
- .title-cta{min-height:72px;font-size:25px;}
- .title-secondaries{display:flex;justify-content:center;gap:10px;}
- .title-secondary{min-height:36px;padding:6px 18px;font-size:13px;}
-}
-
-/* 全体を切り取らず、画像下にタイトルを配置。 */
-.title-hero{height:auto;overflow:visible;}
-.title-art{height:auto;width:100%;object-fit:contain;filter:none;}
-.title-hero:after{display:none;}
-.title-hero-text{position:relative;left:auto;right:auto;bottom:auto;padding:16px 24px;background:#101710;}
-@media(pointer:fine){.title-art{max-height:55dvh;width:100%;object-fit:contain;}}
-
-/* 大きな全体表示と、文字サイズを揃えたボタン。 */
-.title-wrap{max-width:1100px;}
-.title-hero{height:auto;overflow:hidden;}
-.title-art{width:100%;height:auto;max-height:none;object-fit:contain;}
-.title-hero-text{position:absolute;left:24px;right:18px;bottom:15px;padding:0;background:none;}
-.title-hero:after{display:block;background:linear-gradient(180deg,transparent 60%,rgba(8,14,9,.85));}
-.title-cta{font-size:16px;min-height:64px;}
-.title-secondaries{display:flex;justify-content:center;gap:10px;}
-.title-secondary{flex:0 1 150px;min-height:38px;padding:6px 12px;font-size:16px;}
-@media(pointer:fine){
- .title-art{width:100%;height:auto;max-height:none;object-fit:contain;}
- .title-cta{min-height:68px;font-size:16px;}
- .title-secondary{min-height:38px;font-size:16px;}
-}
-
-/* 既存の縦並び指定より優先して幅と配置を統一。 */
-#titleScreen .title-actions .title-cta{width:50%;align-self:center;margin:0 auto;box-sizing:border-box;font-size:16px;}
-#titleScreen .title-actions .title-secondaries{width:50%;align-self:center;margin:0 auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;}
-#titleScreen .title-actions .title-secondary{grid-column:auto;width:100%;min-width:0;min-height:38px;padding:6px 3px;font-size:16px;box-sizing:border-box;}
-
+#titleScreen .title-wrap{max-width:1100px}
+#titleScreen .title-hero{height:auto;overflow:hidden}
+#titleScreen .title-art{display:block;width:100%;height:auto;max-height:none;object-fit:contain;filter:none}
+#titleScreen .title-hero:after{display:block;background:linear-gradient(180deg,transparent 60%,rgba(8,14,9,.85))}
+#titleScreen .title-hero-text{position:absolute;left:3%;right:auto;bottom:5%;width:44%;padding:0;background:none}
+#titleScreen .title-main{margin:0;line-height:1}
+#titleScreen .title-logo{display:block;width:100%;height:auto;filter:drop-shadow(0 3px 5px rgba(0,0,0,.55))}
+#titleScreen .title-tag{display:none}
+#titleScreen .title-actions .title-cta{width:100%;align-self:stretch;margin:0;min-height:56px;box-sizing:border-box;font-size:20px}
+#titleScreen .title-actions .title-secondaries{width:100%;align-self:stretch;margin:0;display:grid;grid-template-columns:1fr;gap:9px}
+#titleScreen .title-actions .title-secondary{grid-column:1;width:100%;min-width:0;min-height:51px;padding:2px 6px;box-sizing:border-box;font:850 15px system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif}
 @media(pointer:coarse){
- #titleScreen .title-hero{height:auto;aspect-ratio:1/1;overflow:hidden;}
- #titleScreen .title-art{width:100%;height:100%;max-height:none;object-fit:cover;object-position:center;}
-}
-
-/* ボタンはサイズ変更前の全幅・縦並びへ復帰。 */
-#titleScreen .title-actions .title-cta{width:100%;align-self:stretch;margin:0;min-height:56px;font-size:20px;}
-#titleScreen .title-actions .title-secondaries{width:100%;align-self:stretch;margin:0;display:grid;grid-template-columns:1fr;gap:9px;}
-#titleScreen .title-actions .title-secondary{grid-column:1;width:100%;min-height:51px;padding:2px 6px;font:850 15px system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;}
-#titleDiagnostics{display:none!important}
-
-#titleScreen .title-hero-text{left:3%;right:auto;bottom:4%;width:44%;}
-#titleScreen .title-main{margin:0 0 8px;line-height:1;}
-#titleScreen .title-logo{display:block;width:100%;height:auto;filter:drop-shadow(0 3px 5px rgba(0,0,0,.55));}
-#titleScreen .title-tag{display:none;}
-@media(pointer:coarse){
- #titleScreen .title-hero-text{left:4%;right:4%;bottom:3%;width:92%;}
- #titleScreen .title-sub{font-size:11px;line-height:1.4;max-width:none;text-align:center;}
- #titleScreen .title-logo{max-width:500px;margin:auto;}
-}
-
-#titleScreen .title-hero-text{bottom:0;}
-#titleScreen .title-main{margin-bottom:0;}
-@media(pointer:coarse){
- /* 画像下に少し余白を確保し、爆弾より下へロゴをずらす。 */
- #titleScreen .title-hero{overflow:visible;margin-bottom:38px;}
- #titleScreen .title-hero-text{bottom:-34px;}
-}
-
-@media(pointer:fine){#titleScreen .title-hero-text{bottom:5%;}}
-@media(pointer:coarse){
- #titleScreen .title-hero-text{bottom:calc(-34px - 10%);}
- #titleScreen .title-hero{margin-bottom:calc(38px + 10vw);}
+ #titleScreen .title-hero{aspect-ratio:1/1;overflow:visible;margin-bottom:calc(38px + 10vw)}
+ #titleScreen .title-art{height:100%;object-fit:cover;object-position:center}
+ #titleScreen .title-hero-text{left:4%;right:4%;width:92%;bottom:calc(-34px - 10%)}
+ #titleScreen .title-logo{max-width:500px;margin:auto}
 }
 #areaDebugPicker{display:none;position:fixed;inset:0;z-index:74;overflow:auto;box-sizing:border-box;padding:max(24px,env(safe-area-inset-top)) 20px max(24px,env(safe-area-inset-bottom));background:#17201b;color:#f5efdb;font-family:system-ui;text-align:center}
 body.area-picker-open #areaDebugPicker{display:block}
@@ -744,7 +695,7 @@ body.stage-open #stageScreen{display:block}
 .stage-kicker{font-size:11px;font-weight:850;letter-spacing:.23em;color:#e4c58a;text-shadow:0 2px 9px #000}
 .stage-shell h1{font-size:clamp(28px,5vw,42px);letter-spacing:.09em;margin:7px 0 0;text-shadow:0 3px 14px #000}
 #stageSkill{font-size:13px;line-height:1.6;color:#e9e8d7;text-shadow:0 2px 10px #000;margin:6px 0}
-.stage-options{margin-top:auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding-top:32px}
+.stage-options{margin-top:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding-top:32px}
 .stage-card{min-width:0;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:5px;
  padding:15px 18px;border:1px solid rgba(241,215,156,.65);border-radius:10px;
  background:rgba(12,22,18,.80);-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);
@@ -786,13 +737,15 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 .stage-shell{max-width:1060px}
 .stage-kicker{color:#ffe0a1;letter-spacing:.28em}
 .stage-shell h1{color:#fff4d5}
-.stage-options{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding-top:clamp(26px,10vh,120px)}
+.stage-options{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;padding-top:clamp(26px,10vh,120px)}
 .stage-card{position:relative;overflow:hidden;min-height:132px;padding:18px 20px 18px 25px;border:2px solid #9b794a;border-left:7px solid #b03f2e;border-radius:4px;background:linear-gradient(135deg,rgba(55,45,31,.94),rgba(24,27,22,.95));box-shadow:0 4px 0 #322719,0 12px 30px #000a;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
 .stage-card:before{content:'✦';position:absolute;right:15px;top:10px;font-size:19px;color:#d3a867;opacity:.7}
 .stage-card strong{font-size:clamp(18px,2.5vw,24px);color:#ffdfa0;letter-spacing:.03em}
 .stage-card span{color:#f3e8ce}.stage-card small{color:#d2c4a8}
 .stage-card:hover,.stage-card:focus-visible{background:linear-gradient(135deg,rgba(90,68,41,.98),rgba(32,39,29,.98));border-color:#f4cc7a;border-left-color:#e2583a;transform:translateY(-3px)}
 .stage-card:active{transform:translateY(1px)}
+/* 初級・上級の従来のカード幅を維持し、最前線は次の行に置く。 */
+.stage-card[data-stage="front"]{grid-column:1/-1}
 .stage-back{border-radius:3px;background:rgba(28,24,18,.84);border-color:#b59b6c}
 @media(max-width:580px){
  #stageScreen{background-position:center 40%;padding: max(14px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
@@ -829,7 +782,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.17.1245',FILE_CREATED_AT='2026/10/17 12:45',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.17.1252',FILE_CREATED_AT='2026/10/17 12:52',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
