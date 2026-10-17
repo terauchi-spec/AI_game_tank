@@ -25,3 +25,23 @@ test('result chips retain readable names and NEW state alongside an icon, with e
 test('icons are static and self contained, and cached rather than regenerated for result re-renders',()=>{
  const svg=c.awardIcon(titles[0]);assert.equal(svg,c.awardIcon(titles[0]));assert.ok(!/animate|filter=|<image|<use|href=|<script|style=|url\(/i.test(svg));const size=read('awardIconCache.size');for(let i=0;i<100;i++)c.awardIcon(titles[0]);assert.equal(read('awardIconCache.size'),size);assert.equal(c.awardIcon(null),'');assert.equal(c.awardIcon({id:'missing'}),'');
 });
+
+function resultAwards(awards){
+ const nodes=new Map();c.document={getElementById:id=>{if(!nodes.has(id))nodes.set(id,{});return nodes.get(id);}};
+ vm.runInContext(html.slice(html.indexOf('function renderAwardResult('),html.indexOf("let trophyTab='title';")),c);c.renderAwardResult({awards});return id=>nodes.get(id);
+}
+test('result shows three medals with first acquisitions first, without losing other awards or duplicating the primary title',()=>{
+ const aw={primary:titles[0].id,titles:titles.slice(0,6).map(t=>t.id),medals:medals.slice(0,7).map(m=>m.id),newTitles:[titles[1].id],newMedals:[medals[5].id],disabled:false};
+ const el=resultAwards(aw),main=el('resMedals').innerHTML;
+ assert.equal((main.match(/class="res-award/g)||[]).length,3);assert.ok(main.indexOf(medals[5].name)<main.indexOf(medals[0].name));
+ assert.ok(!el('resNewTitles').innerHTML.includes(titles[0].name));
+ for(const t of titles.slice(1,6))assert.ok(el('resNewTitles').innerHTML.includes(t.name));
+ for(const m of medals.slice(0,7))assert.ok((main+el('resOtherMedals').innerHTML).includes(m.name));
+ assert.equal(el('resOtherAwards').hidden,false);assert.match(el('resOtherAwardsLabel').textContent,/9件/);
+});
+test('empty result hides extra awards and preserves debug and save-failure notices',()=>{
+ for(const flag of ['disabled','saveFailed']){
+  const el=resultAwards({titles:[],medals:[],newTitles:[],newMedals:[],[flag]:true});
+  assert.equal(el('resOtherAwards').hidden,true);assert.match(el('resMedals').innerHTML,/獲得なし/);assert.match(el('resMedalNote').textContent,flag==='disabled'?/デバッグ/:/保存できません/);
+ }
+});
