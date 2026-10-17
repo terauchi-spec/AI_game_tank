@@ -19,7 +19,7 @@ function frontlineSpawnSpot(hasDog=false){
  return null;
 }
 function spawnFrontlineWave(count=3,counterPoint=null){
- if(stageMode!=='front'||!mission||areaDebugEnabled)return 0;
+ if(stageMode!=='front'||!mission||areaDebugEnabled||mission.enemyWavesStarted===false)return 0;
  const m=mission,active=humans.reduce((n,h)=>n+Number(!!h.alive),0),available=Math.min(count,FRONTLINE_ENEMY_LIMIT-active);
  let spawned=0;
  for(let i=0;i<available;i++){
@@ -53,7 +53,7 @@ function setupFrontlineArmy(){
  mission.enemyRoster=humans.slice();mission.enemyRosterIndex=0;
  for(const h of mission.enemyRoster){h.path=[];h.chatT=0;h.chatMate=null;}
  for(let i=mission.enemyRoster.length-1;i>0;i--){const j=R()*(i+1)|0;[mission.enemyRoster[i],mission.enemyRoster[j]]=[mission.enemyRoster[j],mission.enemyRoster[i]];}
- humans=[];enemyDogs=[];mission.cleanupT=1;spawnFrontlineWave(6);
+ humans=[];enemyDogs=[];mission.cleanupT=1;mission.enemyEntryY=p.y-800;mission.enemyWavesStarted=false;
 }
 function cleanupFrontlineArmy(dt){
  if(!mission)return;
@@ -67,6 +67,7 @@ function cleanupFrontlineArmy(dt){
  enemyDogs=enemyDogs.filter(d=>!d.handler?.frontRetired);
 }
 function moveFrontlineEnemy(h,dt,speed){
+ if(h.frontAreaAlert)speed=Math.max(speed,h.commander==='white'?142.5:h.elite?114:95);
  const ox=h.x,oy=h.y,goal=h.frontObjective||{x:h.frontLaneX??h.x,y:Math.min(WH-16,h.y+180)};
  dogMoveAround(h,goal,speed,dt,8,false);
  const moved=Math.hypot(h.x-ox,h.y-oy);h.frontStuck=moved<.02?(h.frontStuck||0)+dt:0;
@@ -76,8 +77,8 @@ function moveFrontlineEnemy(h,dt,speed){
 }
 function frontlineCaptureVisual(m){
  const fraction=Math.max(0,Math.min(1,(m.progress||0)/FRONTLINE_CAPTURE_SECONDS));
- const remaining=Math.max(0,FRONTLINE_CAPTURE_SECONDS-(m.progress||0));
- return{fraction,remaining,label:(m.contested?'敵が範囲内 ／ ':m.capturing?'制圧まで ':'制圧一時停止 ／ 残り ')+remaining.toFixed(1)+'秒'};
+ const remaining=Math.max(0,FRONTLINE_CAPTURE_SECONDS-(m.progress||0))/Math.max(1,m.captureRate||1);
+ return{fraction,remaining,label:(m.contested?'敵が範囲内 ／ ':m.capturing?'制圧まで ':'制圧一時停止 ／ 残り ')+remaining.toFixed(1)+'秒'+(m.capturing&&m.captureCount>1?'（'+m.captureCount+'人）':'')};
 }
 function drawFrontlineCaptureRing(point,x,y,m){
  const active=m.points[m.index]===point;if(!active||(!(m.progress>0)&&!m.capturing))return;
@@ -133,8 +134,9 @@ function updateFrontlineAlly(a,target,dt){
   a.frontMode=a.frontLostT>0&&a.frontLastSeen?'found':'patrol';
   if(a.frontMode==='patrol'){a.frontLastSeen=null;a.frontTrackedEnemy=null;}
  }
+ if(frontlineCombatPoint(a))a.frontMode='found';
  const waiting=frontlineAllyWaiting(a,dt),distance=target?D(a,target):Infinity;
- if(target&&distance<176){
+ if(target&&distance<176&&a.frontTargetVisible!==false){
   a.face=Math.atan2(target.y-a.y,target.x-a.x);
   if(a.frontAimTarget!==target){a.frontAimTarget=target;a.frontAimT=0;}
   a.frontAimT=(a.frontAimT||0)+dt;
@@ -181,8 +183,9 @@ function updateFrontlineAllyStun(a,dt){
 function frontlineAllySightRange(known=false){
  return(known?420:300)*(weather==='sandstorm'?.55:weather==='rain'?.75:1);
 }
-function frontlineAllyCanSee(a,h,known=false){
+function frontlineAllyCanSee(a,h,known=false,area=frontlineCombatPoint(a)){
  if(!h.alive)return false;
+ if(area&&D(h,area)<180)return true;
  const dx=h.x-a.x,dy=h.y-a.y,range=frontlineAllySightRange(known);
  if(dx*dx+dy*dy>range*range)return false;
  const angle=Math.atan2(dy,dx)-(a.face??-Math.PI/2);
@@ -192,16 +195,17 @@ function frontlineAllyCanSee(a,h,known=false){
 function refreshFrontlineAllyTargets(ready){
  const assigned=new Map();
  for(const a of ready){
+  const area=frontlineCombatPoint(a);
   let best=a._combatTarget,bestScore=Infinity;
-  if(!best||!frontlineAllyCanSee(a,best,true)){
+  if(!best||!frontlineAllyCanSee(a,best,true,area)){
    best=null;
    for(const h of humans){
-    if(!frontlineAllyCanSee(a,h))continue;
+    if(!frontlineAllyCanSee(a,h,false,area))continue;
     const score=(assigned.get(h)||0)*10000+D(a,h);
     if(score<bestScore){bestScore=score;best=h;}
    }
   }
-  a._combatTarget=best;
+  a._combatTarget=best;a.frontTargetVisible=best?(!(area&&D(best,area)<180)||los(a,best)):false;
   if(best)assigned.set(best,(assigned.get(best)||0)+1);
  }
 }
@@ -237,4 +241,26 @@ function updateFrontlineAdvance(){
  if(p.y<=mission.advanceStartY-240){
   mission.advanceReleased=true;say('味方部隊、一斉に進軍！');
  }
+}
+
+function updateFrontlineEnemyEntry(){
+ if(stageMode!=='front'||!mission||mission.enemyWavesStarted!==false||p.y>mission.enemyEntryY)return;
+ mission.enemyWavesStarted=true;spawnFrontlineWave(6);mission.waveT=24;
+}
+function frontlineCombatPoint(unit){
+ if(stageMode!=='front'||!mission)return null;
+ return mission.points.find(q=>D(unit,q)<180)||null;
+}
+function frontlineCaptureCount(point){
+ let count=D(p,point)<180&&!(p.tank&&p.tank.kind==='fighter')&&!(p.dig>0)?1:0;
+ if(point.y>=frontlineAllyLimit())for(const a of allies)if(a.alive&&!(a.stun>0)&&!(a.stunRecover>0)&&!(a.chute>0)&&!(a.blastAirT>0)&&D(a,point)<180)count++;
+ return count;
+}
+function frontlineEnemyAreaTarget(o){
+ const area=frontlineCombatPoint(o);if(!area)return null;
+ let best=null;
+ const consider=(unit,key)=>{if(D(unit,area)>=180)return;const d=D(o,unit);if(!best||d<best.d)best={key,obj:unit,d};};
+ if(debugMode<2&&!(p.dig>0)&&!(p.tank&&p.tank.kind==='fighter'))consider(p,'p');
+ for(const a of allies)if(a.alive&&!(a.chute>0))consider(a,'ally:'+a.id);
+ return best;
 }

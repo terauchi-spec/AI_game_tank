@@ -3,7 +3,7 @@ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
 function harness(){
  let seed=3;const calls=[];
  const gm=new Proxy({}, {get:(o,k)=>o[k]||((...args)=>calls.push([k,...args])),set:(o,k,v)=>(o[k]=v,true)});
- const c={WW:960,WH:12800,W:480,H:800,TANK_HIT:28,cars:[],etanks:[],p:{x:480,y:10000,body:0},stageMode:'front',weather:'clear',areaDebugEnabled:false,mission:{points:[],index:0,enemyRoster:[],enemyRosterIndex:0},humans:[],enemyDogs:[],allies:[],allySeq:0,covers:[],gm,
+ const c={WW:960,WH:12800,W:480,H:800,TANK_HIT:28,cars:[],etanks:[],p:{x:480,y:10000,body:0},stageMode:'front',debugMode:0,weather:'clear',areaDebugEnabled:false,mission:{points:[],index:0,enemyRoster:[],enemyRosterIndex:0},humans:[],enemyDogs:[],allies:[],allySeq:0,covers:[],gm,
  R:()=>((seed=(seed*1664525+1013904223)>>>0)/2**32),D:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),hitsM:()=>false,hitsC:()=>false,inWaterAt:()=>false,inBase:()=>false,patrolLineClear:()=>true,missionSpot:(x,y)=>({x,y}),setSkillCooldown(){},sfx(){},say(){},
  mv:(a,dx,dy)=>{a.x+=dx;a.y+=dy;},dogMoveAround:(h,q,sp,dt)=>{const angle=Math.atan2(q.y-h.y,q.x-h.x);h.x+=Math.cos(angle)*sp*dt;h.y+=Math.sin(angle)*sp*dt;}};
  vm.createContext(c);vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/frontline.js'),'utf8'),c);
@@ -22,7 +22,7 @@ test('waves stop at 16 live infantry and spawn without a detected target or a pa
  const c=harness();for(let i=0;i<20;i++)c.spawnFrontlineWave(6);assert.equal(c.humans.length,16);assert.ok(c.humans.every(h=>h.frontMarch&&h.face===Math.PI/2&&h.st===0&&h.path.length===0));
 });
 test('reserve infantry classes are retained; dogs enter only with their handler',()=>{
- const c=harness(),dog={},handler={alive:true,dogHandler:true,dog},blue={alive:true,commander:'blue'},white={alive:true,commander:'white',elite:true};dog.handler=handler;c.humans=[handler,blue,white];c.enemyDogs=[dog];c.setupFrontlineArmy();assert.ok(c.humans.includes(handler)&&c.humans.includes(blue)&&c.humans.includes(white));assert.equal(c.enemyDogs.length,1);assert.equal(c.enemyDogs[0].handler,handler);assert.equal(dog.y-handler.y,75);
+ const c=harness(),dog={},handler={alive:true,dogHandler:true,dog},blue={alive:true,commander:'blue'},white={alive:true,commander:'white',elite:true};dog.handler=handler;c.humans=[handler,blue,white];c.enemyDogs=[dog];c.setupFrontlineArmy();c.p.y-=800;c.updateFrontlineEnemyEntry();assert.ok(c.humans.includes(handler)&&c.humans.includes(blue)&&c.humans.includes(white));assert.equal(c.enemyDogs.length,1);assert.equal(c.enemyDogs[0].handler,handler);assert.equal(dog.y-handler.y,75);
 });
 test('southbound movement does not reverse into a patrol loop',()=>{
  const c=harness(),h={x:400,y:9000,frontLaneX:400,frontMarch:true};for(let i=0;i<100;i++)c.moveFrontlineEnemy(h,.1,30);assert.ok(Math.abs(h.y-9300)<1e-6);assert.equal(h.frontLaneX,400);
@@ -107,7 +107,7 @@ test('allies left at a distant objective cannot capture it without the player ad
  const c=harness();vm.runInContext(html.slice(html.indexOf('function updateMission('),html.indexOf('let missionHudNextAt=')),c);
  const q={x:480,y:3000};c.mission={points:[q],index:0,progress:0,waveT:999,reinforceT:999};c.allies=[{...q,alive:true,frontline:true}];
  c.updateMission(10);assert.equal(c.mission.progress,0);assert.equal(c.mission.capturing,false);
- c.p.y=q.y+100;c.updateMission(1);assert.equal(c.mission.progress,1);assert.equal(c.mission.capturing,true);
+ c.p.y=q.y+100;c.updateMission(1);assert.equal(c.mission.progress,2);assert.equal(c.mission.capturing,true);
 });
 
 test('a stunned Frontline ally needs on-foot contact and line of sight to recover',()=>{
@@ -222,4 +222,33 @@ test('waiting troops can defend in place but cannot pursue before the shared sta
 test('initial advance gating does not affect other stages or missions without a gate',()=>{
  const c=harness();c.stageMode='base';c.mission.advanceReleased=false;c.mission.advanceStartY=c.p.y+500;c.updateFrontlineAdvance();assert.equal(c.mission.advanceReleased,false);
  c.stageMode='front';delete c.mission.advanceReleased;assert.equal(c.frontlineAllyWaiting({x:480,y:10000},.1),false);
+});
+
+test('capture progress scales with one, two and three active friendly people inside the circle',()=>{
+ for(const count of [1,2,3]){
+  const c=harness(),q={x:480,y:10000,counterTriggered:true};c.mission={points:[q],index:0,progress:0,waveT:999,reinforceT:999};c.allies=Array.from({length:count-1},()=>({x:480,y:10000,alive:true,frontline:true}));
+  vm.runInContext(html.slice(html.indexOf('function updateMission('),html.indexOf('let missionHudNextAt=')),c);c.updateMission(1);
+  assert.equal(c.mission.captureCount,count);assert.equal(c.mission.captureRate,count);assert.equal(c.mission.progress,count);
+  assert.equal(c.frontlineCaptureVisual(c.mission).remaining,(12-count)/count);
+ }
+});
+test('capture counts exclude stunned, recovering, descending, airborne and out-of-circle troops',()=>{
+ const c=harness(),q={x:480,y:10000};c.allies=[{...q,alive:true},{...q,alive:true,stun:1},{...q,alive:true,stunRecover:1},{...q,alive:true,chute:1},{...q,alive:true,blastAirT:1},{...q,alive:false},{x:480,y:10190,alive:true}];
+ assert.equal(c.frontlineCaptureCount(q),2);c.p.tank={kind:'fighter'};assert.equal(c.frontlineCaptureCount(q),1);
+ c.p.tank=null;c.p.dig=1;assert.equal(c.frontlineCaptureCount(q),1);
+});
+test('capture area grants all-around alert even across cover, while shooting still waits for line of sight',()=>{
+ const c=harness(),q={x:480,y:10000},a={...q,alive:true,face:-Math.PI/2,shotCd:0,burstLeft:3},h={x:480,y:10100,alive:true};c.mission.points=[q];c.humans=[h];c.allies=[a];c.los=()=>false;let shots=0;c.fire=()=>shots++;
+ assert.equal(c.frontlineAllyCanSee(a,h),true);c.refreshFrontlineAllyTargets([a]);assert.equal(a._combatTarget,h);assert.equal(a.frontTargetVisible,false);c.updateFrontlineAlly(a,h,1);assert.equal(a.frontMode,'found');assert.equal(shots,0);
+ c.updateFrontlineAlly(a,null,.1);assert.equal(a.frontMode,'found');c.p.y=9000;a.y=9000;c.updateFrontlineAlly(a,null,3);assert.equal(a.frontMode,'patrol');
+});
+test('enemies inside a capture area detect opponents there from any direction and across cover',()=>{
+ const c=harness(),q={x:480,y:10000},h={x:480,y:9900,alive:true,face:-Math.PI/2};c.mission.points=[q];c.los=()=>false;
+ assert.equal(c.frontlineEnemyAreaTarget(h).key,'p');c.p.y=9000;assert.equal(c.frontlineEnemyAreaTarget(h),null);
+ c.allies=[{x:480,y:10000,alive:true,id:7}];assert.equal(c.frontlineEnemyAreaTarget(h).key,'ally:7');c.stageMode='base';assert.equal(c.frontlineEnemyAreaTarget(h),null);
+});
+test('opening infantry wait for 800px of player advance; waves cannot leak out early',()=>{
+ const c=harness();c.humans=[{alive:true}];c.setupFrontlineArmy();const start=c.p.y;assert.equal(c.humans.length,0);assert.equal(c.spawnFrontlineWave(6),0);
+ c.p.y=start-799;c.updateFrontlineEnemyEntry();assert.equal(c.humans.length,0);c.p.y--;c.updateFrontlineEnemyEntry();assert.equal(c.humans.length,6);assert.equal(c.mission.enemyWavesStarted,true);
+ c.updateFrontlineEnemyEntry();assert.equal(c.humans.length,6);assert.equal(c.mission.waveT,24);
 });
