@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.17.1818</title>
+<title>こっそり戦車大作戦 2026.10.17.1831</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -785,7 +785,8 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 .stage-options{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;padding-top:clamp(26px,10vh,120px)}
 .stage-card{position:relative;overflow:hidden;min-height:132px;padding:18px 20px 18px 25px;border:2px solid #9b794a;border-left:7px solid #b03f2e;border-radius:4px;background:linear-gradient(135deg,rgba(55,45,31,.94),rgba(24,27,22,.95));box-shadow:0 4px 0 #322719,0 12px 30px #000a;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
 .stage-card:before{content:'✦';position:absolute;right:15px;top:10px;font-size:19px;color:#d3a867;opacity:.7}
-.stage-card strong{font-size:clamp(18px,2.5vw,24px);color:#ffdfa0;letter-spacing:.03em}
+.stage-card strong,.stage-card>span{font-size:clamp(22px,2.5vw,26px);font-weight:800;line-height:1.4;letter-spacing:.03em}
+.stage-card strong{color:#ffdfa0}
 .stage-card span{color:#f3e8ce}.stage-card small{color:#d2c4a8}
 .stage-card:hover,.stage-card:focus-visible{background:linear-gradient(135deg,rgba(90,68,41,.98),rgba(32,39,29,.98));border-color:#f4cc7a;border-left-color:#e2583a;transform:translateY(-3px)}
 .stage-card:active{transform:translateY(1px)}
@@ -798,7 +799,7 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
  .stage-shell{min-height:calc(100dvh - 30px - env(safe-area-inset-top) - env(safe-area-inset-bottom))}
  .stage-options{grid-template-columns:1fr;gap:10px;padding-top:18px}
  .stage-card{min-height:90px;padding:10px 14px 10px 17px;border-left-width:5px}
- .stage-card strong{font-size:19px}.stage-card span{font-size:12px}.stage-card small{font-size:10px}
+ .stage-card strong,.stage-card>span{font-size:22px}
  .stage-shell h1{font-size:29px}
  .stage-back{margin-top:10px}
 }
@@ -812,10 +813,10 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 <div id="stageScreen" role="region" aria-label="ステージ選択"><div class="stage-shell">
 <div class="stage-kicker">CHOOSE YOUR MISSION</div><h1>ステージ選択</h1><p id="stageSkill"></p>
 <div class="stage-options">
-<button type="button" class="stage-card" data-stage="beginner"><strong>01　拠点破壊（初級）</strong><span>軍事衛星施設</span><small>全5エリア ／ 青兵・青兵指揮官 ／ 敵戦車は最大2台</small></button>
-<button type="button" class="stage-card" data-stage="base"><strong>02　拠点破壊（上級）</strong><span>軍司令施設</span><small>全7エリア ／ 白兵・指揮官・犬兵が登場</small></button>
-<button type="button" class="stage-card" data-stage="frontBeginner"><strong>03　前線制圧（初級）</strong><span>軍需物資</span><small>開始草原＋ランダム3エリア ／ 敵戦車は最大2台・指揮官は少なめ</small></button>
-<button type="button" class="stage-card" data-stage="front"><strong>04　前線制圧（上級）</strong><span>戦術アンテナ</span><small>従来の最前線 ／ 南部 → 中央 → 北部</small></button>
+<button type="button" class="stage-card" data-stage="beginner"><strong>01　拠点破壊（初級）</strong><span>軍事衛星施設</span></button>
+<button type="button" class="stage-card" data-stage="base"><strong>02　拠点破壊（上級）</strong><span>軍司令施設</span></button>
+<button type="button" class="stage-card" data-stage="frontBeginner"><strong>03　前線制圧（初級）</strong><span>軍需物資</span></button>
+<button type="button" class="stage-card" data-stage="front"><strong>04　前線制圧（上級）</strong><span>戦術アンテナ</span></button>
 </div><button type="button" class="stage-back" id="stageBack">← スキル選択へ戻る</button></div></div><div id="missionHud" role="status"></div>
 
 <script>
@@ -828,7 +829,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.17.1818',FILE_CREATED_AT='2026/10/17 18:18',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.17.1831',FILE_CREATED_AT='2026/10/17 18:31',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -7842,7 +7843,7 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/frontline.js?v=2026.10.17.1818"></script>
+<script src="js/frontline.js?v=2026.10.17.1831"></script>
 <script src="js/award-icons.js?v=2026.10.17.0743"></script>
 <script src="js/characters.js?v=2026.10.17.1319"></script>
 <script src="js/enemy-dogs.js?v=2026.10.17.0811"></script>
