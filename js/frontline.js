@@ -57,6 +57,41 @@ function setupFrontlineArmy(){
  for(let i=mission.enemyRoster.length-1;i>0;i--){const j=R()*(i+1)|0;[mission.enemyRoster[i],mission.enemyRoster[j]]=[mission.enemyRoster[j],mission.enemyRoster[i]];}
  humans=[];enemyDogs=[];mission.cleanupT=1;mission.enemyEntryY=p.y-800;mission.enemyWavesStarted=false;
 }
+function frontlineAntennaGeometry(point,index){
+ const large=index===2,height=large?480:280,width=height/2;
+ return{large,width,height,x:point.x-width/2,y:point.y-height*(large?.92:.89),cutY:point.y-(large?30:20),
+  base:{x:point.x-(large?52:17),y:point.y-(large?22:10),w:large?104:34,h:large?44:20}};
+}
+function setupFrontlineAntennas(){
+ if(stageMode!=='front'||!mission||areaDebugEnabled)return;
+ for(let i=0;i<mission.points.length;i++){
+  const point=mission.points[i];if(point.antenna)continue;
+  const radius=i===2?75:35,clear=spot=>!cars.some(v=>D(v,spot)<radius+50)&&!etanks.some(e=>e.alive&&D(e,spot)<radius+45);
+  if(!clear(point)){
+   let free=null;
+   for(let ring=1;ring<=8&&!free;ring++)for(let n=0;n<12;n++){
+    const angle=n*Math.PI/6,spot=missionSpot(point.x+Math.cos(angle)*ring*60,point.y+Math.sin(angle)*ring*60,radius);
+    if(clear(spot)){free=spot;break;}
+   }
+   if(free){point.x=free.x;point.y=free.y;}
+  }
+  const shape=frontlineAntennaGeometry(point,i);
+  const collider={...shape.base,kd:1,frontAntenna:true};
+  point.antenna={...shape,collider,asset:shape.large?'frontline_antenna_large':'frontline_antenna_small'};covers.push(collider);
+ }
+ rebuildSpatialGrid();
+}
+function drawFrontlineAntennas(cx,cy,upper=false){
+ if(stageMode!=='front'||!mission)return;
+ for(const point of mission.points){
+  const a=point.antenna;if(!a||a.x+a.width<cx||a.x>cx+W||a.y+a.height<cy||a.y>cy+H)continue;
+  const im=COVER_IMG[a.asset];if(!assetOK(im))continue;
+  if(upper){
+   const fraction=Math.max(0,Math.min(1,(a.cutY-a.y)/a.height));
+   g.drawImage(im,0,0,im.naturalWidth,im.naturalHeight*fraction,a.x,a.y,a.width,a.height*fraction);
+  }else g.drawImage(im,a.x,a.y,a.width,a.height);
+ }
+}
 function setupFrontlineVehicles(){
  if(stageMode!=='front'||!mission||areaDebugEnabled||mission.startVehiclesAdded)return 0;
  const rear=allies.reduce((y,a)=>a.alive&&a.frontline?Math.max(y,a.y):y,p.y)+90;
@@ -113,7 +148,7 @@ function drawFrontlineCaptureRing(point,x,y,m){
  const status=frontlineCaptureVisual(m),radius=frontlineCaptureRadius(point);
  gm.save();gm.lineWidth=7;gm.strokeStyle='rgba(141,211,255,.24)';gm.beginPath();gm.arc(x,y,radius,0,Math.PI*2);gm.stroke();
  if(status.fraction>0){gm.strokeStyle='#8dd3ff';gm.lineCap='round';gm.beginPath();gm.arc(x,y,radius,-Math.PI/2,-Math.PI/2+Math.PI*2*status.fraction);gm.stroke();}
- gm.textAlign='center';gm.font='bold 16px system-ui';gm.lineWidth=4;gm.strokeStyle='rgba(0,0,0,.8)';gm.strokeText(status.label,x,y-35);gm.fillStyle='#d5f0ff';gm.fillText(status.label,x,y-35);gm.restore();
+ gm.textAlign='center';gm.font='bold 16px system-ui';gm.lineWidth=4;gm.strokeStyle='rgba(0,0,0,.8)';const labelY=y+(point.antenna?86:-35);gm.strokeText(status.label,x,labelY);gm.fillStyle='#d5f0ff';gm.fillText(status.label,x,labelY);gm.restore();
 }
 function frontlineArrowPosition(){return{x:W-26,y:68};}
 function drawFrontlineArrow(point){

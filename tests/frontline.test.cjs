@@ -4,7 +4,7 @@ function harness(){
  let seed=3;const calls=[];
  const gm=new Proxy({}, {get:(o,k)=>o[k]||((...args)=>calls.push([k,...args])),set:(o,k,v)=>(o[k]=v,true)});
  const c={WW:960,WH:12800,W:480,H:800,TANK_HIT:28,cars:[],etanks:[],p:{x:480,y:10000,body:0},stageMode:'front',debugMode:0,weather:'clear',areaDebugEnabled:false,mission:{points:[],index:0,enemyRoster:[],enemyRosterIndex:0},humans:[],enemyDogs:[],allies:[],allySeq:0,covers:[],gm,
- performance:{now:()=>1000},patrolRoutePlanAt:0,PATROL_SEARCH_PENDING:Symbol('pending'),findPatrolReturnPath:()=>null,R:()=>((seed=(seed*1664525+1013904223)>>>0)/2**32),D:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),hitsM:()=>false,hitsC:()=>false,inWaterAt:()=>false,inBase:()=>false,patrolLineClear:()=>true,missionSpot:(x,y)=>({x,y}),setSkillCooldown(){},sfx(){},say(){},
+ performance:{now:()=>1000},patrolRoutePlanAt:0,PATROL_SEARCH_PENDING:Symbol('pending'),findPatrolReturnPath:()=>null,R:()=>((seed=(seed*1664525+1013904223)>>>0)/2**32),D:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),hitsM:()=>false,hitsC:()=>false,inWaterAt:()=>false,inBase:()=>false,patrolLineClear:()=>true,missionSpot:(x,y)=>({x,y}),rebuildSpatialGrid(){},setSkillCooldown(){},sfx(){},say(){},
  mv:(a,dx,dy)=>{a.x+=dx;a.y+=dy;},dogMoveAround:(h,q,sp,dt)=>{const angle=Math.atan2(q.y-h.y,q.x-h.x);h.x+=Math.cos(angle)*sp*dt;h.y+=Math.sin(angle)*sp*dt;}};
  vm.createContext(c);vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/frontline.js'),'utf8'),c);
  vm.runInContext(html.slice(html.indexOf('function missionAllies('),html.indexOf('function setupMission(')),c);
@@ -428,4 +428,30 @@ test('starting vehicles search for clear positions and never overlap cover or a 
 test('starting vehicle additions are exclusive to the standard Frontline stage',()=>{
  for(const mode of ['beginner','base','stealth']){const c=startingVehiclesHarness();c.stageMode=mode;assert.equal(c.setupFrontlineVehicles(),0);assert.equal(c.cars.length,0);}
  const c=startingVehiclesHarness();c.areaDebugEnabled=true;assert.equal(c.setupFrontlineVehicles(),0);assert.equal(c.cars.length,0);
+});
+
+test('Frontline objective antennas use two small sprites and one large sprite with base-only colliders',()=>{
+ const c=harness();c.mission.points=[{x:480,y:10000},{x:480,y:6500},{x:480,y:3000}];c.setupFrontlineAntennas();
+ assert.deepEqual(Array.from(c.mission.points,q=>q.antenna.asset),['frontline_antenna_small','frontline_antenna_small','frontline_antenna_large']);assert.equal(c.covers.length,3);
+ for(const q of c.mission.points){const a=q.antenna;assert.equal(a.collider.frontAntenna,true);assert.ok(a.collider.h<a.height*.12);assert.equal(a.collider.x+a.collider.w/2,q.x);assert.equal(a.collider.y+a.collider.h/2,q.y);}
+ assert.ok(c.mission.points[2].antenna.height>c.mission.points[0].antenna.height);c.setupFrontlineAntennas();assert.equal(c.covers.length,3);
+});
+test('antenna colliders survive cannon, blast and crushing damage without fragmenting or awarding destruction points',()=>{
+ const c=harness();c.mission.points=[{x:480,y:10000},{x:480,y:6500},{x:480,y:3000}];c.setupFrontlineAntennas();const original=c.covers;
+ c.damageObjectsInRadius=()=>{};c.scoreStats={coverDestroyed:0,styleDestroyed:0};
+ vm.runInContext(html.slice(html.indexOf('function carve('),html.indexOf('function useSkill(')),c);
+ for(const source of ['cannonBlast','bombBlast','impact',null])for(const q of c.mission.points)assert.equal(c.carve(q.x,q.y,300,true,source),0);
+ assert.equal(c.covers,original);assert.equal(c.covers.length,3);assert.ok(c.covers.every(o=>!o.fr));assert.equal(c.scoreStats.coverDestroyed,0);assert.equal(c.scoreStats.styleDestroyed,0);
+});
+test('antenna rendering splits a static upper sprite from the ground pass and culls distant objectives',()=>{
+ const c=harness();c.g=c.gm;c.COVER_IMG={frontline_antenna_small:{naturalWidth:320,naturalHeight:640},frontline_antenna_large:{naturalWidth:480,naturalHeight:960}};c.assetOK=()=>true;
+ c.mission.points=[{x:480,y:10000},{x:480,y:6500},{x:480,y:3000}];c.setupFrontlineAntennas();c.drawFrontlineAntennas(0,9700);c.drawFrontlineAntennas(0,9700,true);
+ const calls=c.calls.filter(x=>x[0]==='drawImage');assert.equal(calls.length,2);assert.equal(calls[0][1],c.COVER_IMG.frontline_antenna_small);assert.equal(calls[0].length,6);assert.equal(calls[1].length,10);assert.ok(calls[1][5]<640);
+ c.stageMode='base';const count=c.calls.length;c.drawFrontlineAntennas(0,9700);assert.equal(c.calls.length,count);
+});
+
+test('antenna placement avoids parked vehicles and is disabled outside standard Frontline',()=>{
+ const c=harness(),q={x:480,y:10000};c.mission.points=[q];c.cars=[{...q}];c.setupFrontlineAntennas();assert.ok(c.D(q,c.cars[0])>=85);assert.equal(c.covers.length,1);
+ for(const mode of ['base','beginner','stealth']){const other=harness();other.stageMode=mode;other.mission.points=[{x:480,y:10000}];other.setupFrontlineAntennas();assert.equal(other.covers.length,0);}
+ const debug=harness();debug.areaDebugEnabled=true;debug.mission.points=[{x:480,y:10000}];debug.setupFrontlineAntennas();assert.equal(debug.covers.length,0);
 });

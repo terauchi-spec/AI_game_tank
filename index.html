@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.17.1213</title>
+<title>こっそり戦車大作戦 2026.10.17.1232</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -626,7 +626,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <p>歩兵の潜入に加え、戦車などの乗り物を利用した戦闘や、出撃前に選ぶスキルによる攻略ができます。</p><a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-map"><h2>2. ステージ構成とランダム生成</h2>
 <p><strong>初級：</strong>全5エリア。開始草原→草原・森林・丘陵・村・湿地から重複なしでランダムに3エリア→電波施設のある草原。<strong>上級：</strong>全7エリア。最初は草原、最後は敵司令本部で、その間の5エリアは従来の候補から重複なしでランダムに選ばれます。</p>
-<p><strong>最前線：</strong>既存の戦場を舞台に、味方部隊と3つの戦線を押し上げる制圧作戦です。開始地点の味方兵の後方にはトラック2台・装甲車2台を追加配置し、最初から搭乗できます。敵兵は原則6秒ごとに2人、周辺の敵が少ないと約3秒間隔で補充します。同時出現の上限16人を維持し、離れた画面外の敵は戦果に数えず整理します。最前線のみ敵戦車の視野角・索敵距離・追跡距離は通常の2倍です。味方の補充があり、各戦線の制圧時にライフ・搭乗車両の弾薬と燃料を補給します。目的地の矢印は右上のエリア名の下に表示し、制圧中は水色の円周ゲージと残り秒数で進み具合がわかります。開始直後は味方部隊が待機し、プレイヤーが開始地点から北へ240px（24m）前進すると一斉に進軍します。味方部隊と増援は個体ごとに左右の進路・制圧範囲内の到着位置・前進限界付近の待機位置が異なります。移動速度は従来の50〜100%の範囲で、3〜8秒ごとに緩やかに変化します。通常の進軍中は4〜10秒ごとに0.3〜0.9秒立ち止まり、前進限界では2〜4.5秒以上待機します。敵の発見時は短い立ち止まりを中断して戦闘を優先します。最前線の迷路は広い南北の通路を3本残し、その間に壁を配置します。最前線の味方兵は前方120度・300px（雨天75%、砂嵐55%）の視界で、遮蔽物の向こうや背後の敵には反応しません。敵を発見すると水色の「!」を表示し、通常の1.5倍の速さで接近します。発見済みの敵は420pxまで追跡し、見失うと最後に見た地点を最大2秒探してから通常の前進に戻ります。射撃前は0.5秒静止して狙いを定めます。最前線で気絶した味方兵は10秒経過するか、徒歩のプレイヤーが触れると復帰します。制圧エリア内では敵味方とも発見モードとなり、同じ円内の相手を向きや遮蔽物に関係なく警戒します。射撃には視線が通る必要があります。各制圧エリアにプレイヤーが初めて入ると、青兵指揮官2人を含む敵6人が画面上部から反撃に向かいます。敵兵の同時上限に達した場合は、空きができ次第出現します。通常増援にも約4人に1人の割合で青兵指揮官が含まれます。最前線の敵味方の歩兵は建物の間で進めない状態が続くと、迂回経路を探し、必要なら後退して回り込みます。味方は画面上端の80px先で最低2秒待機し、プレイヤーが近づくと前進を再開します。開始時の敵歩兵はプレイヤーが80m前進するまで待機し、その後は画面上側の外から出現し、非交戦時は下へ進軍します。迷路エリアは壁を大幅に減らし、木箱や防護壁を置かない幅154pxの南北通路を3本確保します。同時に活動する敵兵は最大16人で、画面下へ通過した兵士は撃破扱いにせず退場します。</p>
+<p><strong>最前線：</strong>既存の戦場を舞台に、味方部隊と3つの戦線を押し上げる制圧作戦です。開始地点の味方兵の後方にはトラック2台・装甲車2台を追加配置し、最初から搭乗できます。敵兵は原則6秒ごとに2人、周辺の敵が少ないと約3秒間隔で補充します。同時出現の上限16人を維持し、離れた画面外の敵は戦果に数えず整理します。最前線のみ敵戦車の視野角・索敵距離・追跡距離は通常の2倍です。味方の補充があり、各戦線の制圧時にライフ・搭乗車両の弾薬と燃料を補給します。南部・中央の制圧目標は小型アンテナ、北部は大型アンテナです。いずれも破壊できず、足元の台座だけが移動・射線を遮ります。マストの裏側は通行できます。目的地の矢印は右上のエリア名の下に表示し、制圧中は水色の円周ゲージと残り秒数で進み具合がわかります。開始直後は味方部隊が待機し、プレイヤーが開始地点から北へ240px（24m）前進すると一斉に進軍します。味方部隊と増援は個体ごとに左右の進路・制圧範囲内の到着位置・前進限界付近の待機位置が異なります。移動速度は従来の50〜100%の範囲で、3〜8秒ごとに緩やかに変化します。通常の進軍中は4〜10秒ごとに0.3〜0.9秒立ち止まり、前進限界では2〜4.5秒以上待機します。敵の発見時は短い立ち止まりを中断して戦闘を優先します。最前線の迷路は広い南北の通路を3本残し、その間に壁を配置します。最前線の味方兵は前方120度・300px（雨天75%、砂嵐55%）の視界で、遮蔽物の向こうや背後の敵には反応しません。敵を発見すると水色の「!」を表示し、通常の1.5倍の速さで接近します。発見済みの敵は420pxまで追跡し、見失うと最後に見た地点を最大2秒探してから通常の前進に戻ります。射撃前は0.5秒静止して狙いを定めます。最前線で気絶した味方兵は10秒経過するか、徒歩のプレイヤーが触れると復帰します。制圧エリア内では敵味方とも発見モードとなり、同じ円内の相手を向きや遮蔽物に関係なく警戒します。射撃には視線が通る必要があります。各制圧エリアにプレイヤーが初めて入ると、青兵指揮官2人を含む敵6人が画面上部から反撃に向かいます。敵兵の同時上限に達した場合は、空きができ次第出現します。通常増援にも約4人に1人の割合で青兵指揮官が含まれます。最前線の敵味方の歩兵は建物の間で進めない状態が続くと、迂回経路を探し、必要なら後退して回り込みます。味方は画面上端の80px先で最低2秒待機し、プレイヤーが近づくと前進を再開します。開始時の敵歩兵はプレイヤーが80m前進するまで待機し、その後は画面上側の外から出現し、非交戦時は下へ進軍します。迷路エリアは壁を大幅に減らし、木箱や防護壁を置かない幅154pxの南北通路を3本確保します。同時に活動する敵兵は最大16人で、画面下へ通過した兵士は撃破扱いにせず退場します。</p>
 <p>上級の中間エリア候補：草原／森林／村／丘陵／敵前線基地／街／敵迷路基地／湿地／荒野。</p>
 <ul><li>エリアごとに地形や建物、木、岩、草むら、障害物などの配置が異なります。作戦1回の通常車両は合計2〜5台で、トラック・装甲車・戦車からランダムに選ばれ、戦車が最低1台出現します。戦闘機は通常配置の対象外です。橋幅は64〜256px、川ごとの流速は6〜30px/秒です。</li><li>左右端の危険度は<strong>左重点・右重点・両側重点</strong>から毎回抽選され、巡回兵の配置や遮蔽物が変化します。</li><li>荒野は赤茶色の砂地・ひび割れた粘土質の地面・風化した岩山・残丘で構成されます。時折砂嵐が起き、視界と索敵距離が低下します。オアシスは毎回出現するとは限らず、出現時は従来の50〜150%の大きさにランダム変化し、中央や画面端に生成され、池へ入ると川と同様に減速します。草むらは少なめですが、オアシス周辺に多く、まれに赤や白の小花が混じります。地面と池の描画はキャッシュします。迷路基地には広い会議室と幅の広い廊下、空きスペースの木箱があります。青の通常兵はつながった通路を広く探索します。迷路壁は256px高の区画単位で描画をキャッシュし、破壊された区画だけ再描画します。描画キャッシュは最大8区画です。迷路壁はプレイヤー戦車の接触で破壊できます。接触による破壊範囲は少し抑えており、押し込み続けると広がります。トラック・装甲車の接触では破壊できません。木箱等の爆風では破壊できます。敵司令本部にも固有の構造があります。</li><li>道路は川と同様に2か所の候補それぞれで独立して75%の出現抽選を行います。アスファルト舗装・乾いた締め固め土を各50%、土の道路は1車線（96px）・対面2車線（176px）を各50%、舗装道路は対面2車線（176px）・対面4車線（320px）を各50%で選択します。川・橋と司令本部を避けて配置し、土の道路は迷路基地も避けます。舗装道路は迷路基地にも出現し、道幅の壁を除去します。場所が確保できない場合は出現しません。対面車線の中央は白い実線です。路面には汚れ・補修跡・ひび、白線には濃い汚れと不規則な塗装欠けを表現します。敵の障害物迂回探索は複数フレームへ分割し、全敵合計で約2msを目安に処理します。道路の描画は初回にキャッシュし、画面内だけ表示します。土の道路は横筋を抑えた専用タイルを使用し、不規則な路肩が周囲の地面になじみます。中央付近には、太めで濃い雑草を不規則に配置しています。道路上には建物・木・岩・塀・草むら・泥を配置しません。舗装道路と重なる木箱・ドラム缶は路肩の安全な空き場所へ移動し、空き場所がなければ除去します。土の道路は明るさと彩度を抑えて周囲になじませます。道路自体による速度変更はありません。マップ・敵・障害物の配置は出撃ごとに再生成されます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
@@ -829,7 +829,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.17.1213',FILE_CREATED_AT='2026/10/17 12:13',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.17.1232',FILE_CREATED_AT='2026/10/17 12:32',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -946,6 +946,8 @@ const TERRAIN_ASSET_SRC={
  "川":ASSET_DIR+'terrain/river_surface.webp'
 };
 const COVER_ASSET_SRC={
+ "frontline_antenna_small":ASSET_DIR+'objectives/frontline_antenna_small.webp',
+ "frontline_antenna_large":ASSET_DIR+'objectives/frontline_antenna_large.webp',
  "logs":ASSET_DIR+'cover/logs.webp',
  "concrete_block":ASSET_DIR+'cover/concrete_block.webp',
  "crate":ASSET_DIR+'cover/crate.webp',
@@ -1236,7 +1238,7 @@ function coverVisualRect(c){
  if(c.kd===8)return centerRect(cx,cy+c.h*.03,c.w*.84,c.h*.80);
  return{x:c.x,y:c.y,w:c.w,h:c.h};
 }
-function coverHitRect(c){return coverVisualRect(c);}
+function coverHitRect(c){return c?.frontAntenna?{x:c.x,y:c.y,w:c.w,h:c.h}:coverVisualRect(c);}
 
 // Full rendered sprite bounds. Destruction is split over this rectangle so the
 // sprite's outer edges do not disappear just because the collision is smaller.
@@ -1450,6 +1452,7 @@ function naturalCoverImage(c,key){
  return stableRand(c,key==='tree'?61:81)<.5&&assetOK(variant)?variant:original;
 }
 function drawCoverAsset(c){
+ if(c.frontAntenna)return true;
  const cx=c.x+c.w/2,cy=c.y+c.h/2,hor=c.w>=c.h;
  if(c.playerBuilt)return drawBuiltConcrete(c);
  if(c.kd===0){
@@ -5558,6 +5561,7 @@ function carve(x,y,r,credit=false,objectDamageSource='impact'){
  if(objectDamageSource)damageObjectsInRadius(x,y,r,objectDamageSource);
  const out=[];let removedArea=0,styleRemoved=0,cannonDebris=[],coverChanged=false;
  for(const c of covers){
+  if(c.frontAntenna){out.push(c);continue;}
   // Damage checks use the visible fragment/sprite bounds; collision is handled separately below.
   const visual=c.fr?{x:c.x,y:c.y,w:c.w,h:c.h}:coverFragmentRect(c);
   if(!visual||visual.x>x+r||visual.x+visual.w<x-r||visual.y>y+r||visual.y+visual.h<y-r){out.push(c);continue;}
@@ -6943,6 +6947,7 @@ function draw(near){
    g.restore();continue;
   }const cl=CC[c.kd];g.fillStyle=cl[0];g.fillRect(c.x,c.y,c.w,c.h);g.strokeStyle='#14140f';g.lineWidth=2;g.strokeRect(c.x,c.y,c.w,c.h);g.fillStyle=cl[1];g.fillRect(c.x,c.y+c.h*.7,c.w,c.h*.3);if(c.kd===2){g.strokeStyle=cl[1];g.lineWidth=2;g.strokeRect(c.x+2,c.y+2,c.w-4,c.h-4);}if(c.kd===3){g.fillStyle=cl[1];for(let i=6;i<c.w-8;i+=18)g.fillRect(c.x+i,c.y+6,8,10);}if(c.kd===4||c.kd===10){g.fillStyle='#8a4a3a';g.fillRect(c.x-3,c.y-3,c.w+6,c.h*.55);g.fillStyle='#5a2e24';g.fillRect(c.x+c.w/2-8,c.y+c.h*.7,16,c.h*.3);}if(c.kd===9){g.fillStyle=cl[1];for(let i=6;i<c.w-8;i+=18)g.fillRect(c.x+i,c.y+6,8,10);}if(c.kd===7){const hor=c.w>=c.h;g.fillStyle='#d1d3cf';g.fillRect(c.x+3,c.y+3,c.w-6,c.h-6);g.fillStyle='#a1a6a2';if(hor){g.fillRect(c.x+5,c.y+c.h*.67,c.w-10,c.h*.2);g.fillStyle='#e5e7e2';g.fillRect(c.x+8,c.y+6,c.w-16,Math.max(4,c.h*.2));}else{g.fillRect(c.x+c.w*.67,c.y+5,c.w*.2,c.h-10);g.fillStyle='#e5e7e2';g.fillRect(c.x+6,c.y+8,Math.max(4,c.w*.2),c.h-16);}g.strokeStyle='#555b58';g.lineWidth=2;g.strokeRect(c.x+2,c.y+2,c.w-4,c.h-4);g.fillStyle='#f3c83f';const band=hor?Math.min(20,c.w*.18):Math.min(20,c.h*.18);if(hor){for(const xx of [c.x+4,c.x+c.w-band-4]){g.fillStyle='#f3c83f';g.fillRect(xx,c.y+5,band,c.h-10);g.fillStyle='#272727';for(let q=-c.h;q<band+c.h;q+=12){g.save();g.beginPath();g.rect(xx,c.y+5,band,c.h-10);g.clip();g.translate(xx+q,c.y+5);g.rotate(-.65);g.fillRect(0,0,5,c.h*2);g.restore();}}}else{for(const yy of [c.y+4,c.y+c.h-band-4]){g.fillStyle='#f3c83f';g.fillRect(c.x+5,yy,c.w-10,band);g.fillStyle='#272727';for(let q=-c.w;q<band+c.w;q+=12){g.save();g.beginPath();g.rect(c.x+5,yy,c.w-10,band);g.clip();g.translate(c.x+5,yy+q);g.rotate(.65);g.fillRect(0,0,c.w*2,5);g.restore();}}}}if(c.kd===5){g.fillStyle=cl[1];if(c.w>=c.h)for(let i=0;i<c.w;i+=14)g.fillRect(c.x+i,c.y-3,4,c.h+6);else for(let i=0;i<c.h;i+=14)g.fillRect(c.x-3,c.y+i,c.w+6,4);}}
  for(const o of objectsInBox(cx-80,cy-80,cx+W+80,cy+H+80)){if(o.x+o.w<cx-70||o.x>cx+W+70||o.y+o.h<cy-70||o.y>cy+H+70)continue;drawObject(o);}
+ drawFrontlineAntennas(cx,cy);
  drawPatrolRoutes(cx,cy);
  for(const it of items)if((p.tank||it.areaDebug)&&!it.got&&drawPointInView(it.x,it.y,cx,cy,100))drawFuelPickup(it.x,it.y);
  if(radio&&!radio.got&&drawPointInView(radio.x,radio.y,cx,cy,100))drawRadioPickup(radio.x,radio.y);
@@ -6981,6 +6986,7 @@ function draw(near){
  else if(p.digPrep>0)drawDigPreparation();
  else{drawBlastShadow(p);soldier(p.x,p.y-blastLift(p),p.body,true,false,!!(keys.ArrowUp||keys.ArrowDown||keys.ArrowLeft||keys.ArrowRight),false,'',false,true,p);}
  if(!p.tank&&p.drill>0){const a=p.body,t=performance.now()/90;g.save();g.translate(p.x,p.y);g.rotate(a);g.fillStyle='#30343a';g.beginPath();g.moveTo(10,-10);g.lineTo(48,0);g.lineTo(10,10);g.closePath();g.fill();g.strokeStyle='#d6d9dd';g.lineWidth=2;for(let q=0;q<4;q++){const xx=14+q*8,yy=Math.sin(t+q*1.7)*6;g.beginPath();g.moveTo(xx,-8+yy*.25);g.lineTo(xx+6,8-yy*.25);g.stroke();}g.fillStyle='#ffd27a';g.beginPath();g.arc(49,0,3+Math.sin(t)*1.2,0,6.28);g.fill();g.restore();if(p.drillTarget){g.fillStyle='rgba(0,0,0,.58)';g.fillRect(p.x-22,p.y-31,44,5);g.fillStyle='#ffd27a';g.fillRect(p.x-22,p.y-31,44*Math.min(1,p.drillHit/.5),5);}}
+ drawFrontlineAntennas(cx,cy,true);
  drawGrassBushChunks(cx,cy);
  for(const b of nearbyBushes(cx+W/2,cy+H/2,Math.max(W,H)*.8+100)){if(b.spinifex||isGrassBush(b)||b.x+b.w<cx-40||b.x>cx+W+40||b.y+b.h<cy-40||b.y>cy+H+40)continue;drawBushCached(b);}
  drawSpinifexTopLayer(cx,cy);
@@ -7648,8 +7654,8 @@ function setupMission(){
  mission={index:0,progress:0,alarm:0,waveT:15,reinforceT:20,detected:false,points:[],exit:{x:p.x,y:p.y},alertCount:0};
  if(stageMode==='front'){
   mission.advanceStartY=p.y;mission.advanceReleased=false;
-  mission.points=[10000,6500,3000].map((y,i)=>({...missionSpot(WW/2,y,30),name:['南部戦線','中央戦線','北部戦線'][i],captureRadius:i===2?720:360,done:false}));
-  missionAllies(p.y-100);
+  mission.points=[10000,6500,3000].map((y,i)=>({...missionSpot(WW/2,y,i===2?75:35),name:['南部戦線','中央戦線','北部戦線'][i],captureRadius:i===2?720:360,done:false}));
+  missionAllies(p.y-100);setupFrontlineAntennas();
   say('最前線：24m前進すると味方部隊が進軍！');
  }else{
   mission.points=[8500,4300,1100].map((y,i)=>({...missionSpot(i%2?740:220,y,25),name:'機密端末 '+(i+1),done:false}));
@@ -7698,7 +7704,7 @@ function drawMission(){
  gm.save();gm.setTransform(1,0,0,1,0,0);
  for(const point of [...m.points,...(stageMode==='stealth'&&m.index===3?[{...m.exit,name:'脱出地点',done:false}]:[])]){
   const x=point.x-camX,y=point.y-cam,margin=stageMode==='front'?frontlineCaptureRadius(point)+20:200;if(y < -margin||y>H+margin)continue;
-  gm.strokeStyle=point.done?'#9de7ae':stageMode==='front'?'#8dd3ff':'#efd28b';gm.fillStyle=point.done?'rgba(75,170,100,.15)':'rgba(95,185,210,.13)';gm.lineWidth=3;gm.beginPath();gm.arc(x,y,stageMode==='front'?frontlineCaptureRadius(point):55,0,Math.PI*2);gm.fill();gm.stroke();gm.font='bold 15px system-ui';gm.textAlign='center';gm.fillStyle='#fff3ce';gm.fillText(point.name+(point.done?' ✓':''),x,y-62);
+  gm.strokeStyle=point.done?'#9de7ae':stageMode==='front'?'#8dd3ff':'#efd28b';gm.fillStyle=point.done?'rgba(75,170,100,.15)':'rgba(95,185,210,.13)';gm.lineWidth=3;gm.beginPath();gm.arc(x,y,stageMode==='front'?frontlineCaptureRadius(point):55,0,Math.PI*2);gm.fill();gm.stroke();gm.font='bold 15px system-ui';gm.textAlign='center';gm.fillStyle='#fff3ce';gm.fillText(point.name+(point.done?' ✓':''),x,y+(point.antenna?60:-62));
   if(stageMode==='front')drawFrontlineCaptureRing(point,x,y,m);
  }
  if(q&&stageMode==='front')drawFrontlineArrow(q);
@@ -7802,7 +7808,7 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/frontline.js?v=2026.10.17.1213"></script>
+<script src="js/frontline.js?v=2026.10.17.1232"></script>
 <script src="js/award-icons.js?v=2026.10.17.0743"></script>
 <script src="js/characters.js?v=2026.10.17.0811"></script>
 <script src="js/enemy-dogs.js?v=2026.10.17.0811"></script>
