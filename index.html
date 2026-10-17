@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.17.2332</title>
+<title>こっそり戦車大作戦 2026.10.17.2334</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -856,7 +856,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.17.2332',FILE_CREATED_AT='2026/10/17 23:32',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.17.2334',FILE_CREATED_AT='2026/10/17 23:34',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -896,7 +896,7 @@ addEventListener('keydown',e=>{
  if(code==='KeyO'&&state==='play'&&first&&!e.repeat)spawnAreaDebugTankAhead();
  if(code==='KeyL'&&state==='play'&&first&&!e.repeat){patrolRoutesVisible=!patrolRoutesVisible;if(patrolRoutesVisible&&scoreStats)scoreStats.debugUsed=true;say('巡回ルート表示：'+(patrolRoutesVisible?'ON（青＝建物周回）':'OFF'));}
  if(e.repeat)return;
- if(code==='Escape'&&document.body.classList.contains('trophy-open')){closeTrophyArchive();return;}
+ if(code==='Escape'&&document.body.classList.contains('trophy-open')){closeTrophyArchive();if(trophyReturnToResult){trophyReturnToResult=false;document.getElementById('trophyBack').textContent='タイトル';syncResultScreen();}return;}
   if(code==='Enter'&&document.body.classList.contains('trophy-open'))return;
   if(code==='Enter'){
   if(state==='title'){rollSkillChoices();state='skill';}
@@ -7447,6 +7447,7 @@ function renderTrophyStats(){
   renderTrophyArchive();
  });
 }
+let trophyReturnToResult=false;
 function openTrophyArchive(){trophyTab='title';renderTrophyArchive();document.body.classList.add('trophy-open');document.getElementById('trophyScreen').scrollTop=0;}
 function closeTrophyArchive(){if(document.body.classList.contains('trophy-open'))document.body.classList.remove('trophy-open');}
 function resultRadar(levels){
@@ -7511,7 +7512,7 @@ function syncResultScreen(){
  else if(!show&&open){resultScoreAnimId++;document.body.classList.remove('result-open');}
 }
 document.getElementById('resRetry').addEventListener('click',()=>{rollSkillChoices();state='skill';bombReq=false;cannonReq=false;interact=false;skillReq=false;syncResultScreen();sfx('skill');});
-document.getElementById('resHome').addEventListener('click',()=>{state='title';bombReq=false;cannonReq=false;interact=false;skillReq=false;syncResultScreen();openTrophyArchive();sfx('skill');});
+document.getElementById('resHome').addEventListener('click',()=>{trophyReturnToResult=true;openTrophyArchive();document.getElementById('trophyBack').textContent='評価画面に戻る';sfx('skill');});
 highScoreData=loadHighScore();
 // 初回起動ではマップ生成を行わない。タイトル描画に必要な最小状態だけ用意する。
 
@@ -7544,8 +7545,8 @@ document.getElementById('titleDiagnostics').addEventListener('click',()=>{locati
 document.getElementById('specHome').addEventListener('click',()=>{state='title';sfx('skill');});
 document.getElementById('specScreen').querySelectorAll('a[href^="#spec-"]').forEach(a=>{a.addEventListener('click',e=>{const target=document.getElementById(a.getAttribute('href').slice(1));if(!target)return;e.preventDefault();const page=document.getElementById('specScreen'),top=page.scrollTop+target.getBoundingClientRect().top-page.getBoundingClientRect().top-90;page.scrollTo({top:Math.max(0,top),behavior:'auto'});});});
 document.getElementById('helpHome').addEventListener('click',()=>{state='title';sfx('skill');});
-document.getElementById('titleAwards').addEventListener('click',()=>{openTrophyArchive();sfx('skill');});
-document.getElementById('trophyBack').addEventListener('click',()=>{closeTrophyArchive();sfx('skill');});
+document.getElementById('titleAwards').addEventListener('click',()=>{trophyReturnToResult=false;document.getElementById('trophyBack').textContent='タイトル';openTrophyArchive();sfx('skill');});
+document.getElementById('trophyBack').addEventListener('click',()=>{closeTrophyArchive();if(trophyReturnToResult){trophyReturnToResult=false;document.getElementById('trophyBack').textContent='タイトル';syncResultScreen();}sfx('skill');});
 document.getElementById('trophyTabTitles').addEventListener('click',()=>{trophyTab='title';renderTrophyArchive();});
 document.getElementById('trophyTabMedals').addEventListener('click',()=>{trophyTab='medals';renderTrophyArchive();});
 document.getElementById('trophyTabStats').addEventListener('click',()=>{trophyTab='stats';renderTrophyArchive();});
