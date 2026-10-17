@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.17.2030</title>
+<title>こっそり戦車大作戦 2026.10.17.2116</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -855,7 +855,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.17.2030',FILE_CREATED_AT='2026/10/17 20:30',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.17.2116',FILE_CREATED_AT='2026/10/17 21:16',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -3187,7 +3187,9 @@ function separateEnemyUnits(force=false){
  const now=performance.now();if(!force&&now-lastEnemySeparationAt<100)return;lastEnemySeparationAt=now;
  const u=[];for(const h of humans||[])if(h.alive)u.push({o:h,r:8,static:!!(h.areaDebugStatic||h.modeFrozen||mazeComparisonEnemyFrozen(h))});for(const e of etanks||[])if(e.alive)u.push({o:e,r:TANK_HIT,static:!!(e.static||e.areaDebugStatic||e.modeFrozen||mazeComparisonEnemyFrozen(e))});
  for(let pass=0;pass<3;pass++)for(let i=0;i<u.length;i++)for(let j=i+1;j<u.length;j++){
-  const a=u[i],b=u[j],dx=b.o.x-a.o.x,dy=b.o.y-a.o.y,d=Math.hypot(dx,dy),bothHuman=a.r===8&&b.r===8,min=a.r+b.r+(bothHuman?12:8);if(d>=min)continue;
+  const a=u[i],b=u[j],dx=b.o.x-a.o.x,dy=b.o.y-a.o.y,bothHuman=a.r===8&&b.r===8,min=a.r+b.r+(bothHuman?12:8);
+   if(Math.abs(dx)>=min||Math.abs(dy)>=min)continue;
+   const d=Math.hypot(dx,dy);if(d>=min)continue;
   const ang=d>.001?Math.atan2(dy,dx):((i*2.17+j*1.31)%6.28318),ux=Math.cos(ang),uy=Math.sin(ang),need=min-Math.max(.001,d)+.2;
   let ma=a.static?0:(b.static?need:need*.5),mb=b.static?0:(a.static?need:need*.5);
   const trySet=(q,nx,ny)=>{if(nx<=q.r||nx>=WW-q.r||ny<=q.r||ny>=WH-q.r||hitsC(nx,ny,q.r))return false;q.o.x=nx;q.o.y=ny;return true;};
@@ -5323,7 +5325,8 @@ function drawSniperScope(){
 
 function update(dt){
  patrolSearchBudgetMs=2;
- for(const o of [...humans,...etanks]){o.modeStartX=o.x;o.modeStartY=o.y;o.modeFrozen=false;}
+ for(const o of humans){o.modeStartX=o.x;o.modeStartY=o.y;o.modeFrozen=false;}
+  for(const o of etanks){o.modeStartX=o.x;o.modeStartY=o.y;o.modeFrozen=false;}
  for(const h of humans){h.walkStartX=h.x;h.walkStartY=h.y;}
  updateWeather(dt);updateHQSpawn(dt);updateDrill(dt);updatePartnerOrder(dt);
  const sniperLocked=updateSniperState(dt);
@@ -5562,7 +5565,8 @@ function update(dt){
  updateAlly(dt);updatePartner(dt);syncPartnerDriverPassenger();updateAirstrike(dt);
  // 水面アニメーションと同じ向きの流れを地上ユニットへ反映する。
  applyRiverCurrents(dt);
- for(const o of [...humans,...etanks])holdEnemyModePosition(o);
+ for(const o of humans)holdEnemyModePosition(o);
+  for(const o of etanks)holdEnemyModePosition(o);
  updateEnemyDogs(dt);
  separateFootPlayerEnemyTanks();enforceFrontlineBoundary();
  for(const f of fx)f.l-=dt;fx=fx.filter(f=>f.l>0);
@@ -6910,6 +6914,7 @@ function drawVehicleBottomHud(){
  }
  g.restore();
 }
+const STATIC_COVER_DRAW_COLORS=[['#8a7a55','#6a5d40'],['#8c8c86','#6a6a66'],['#7a5f3a','#4e3c24'],['#55504a','#35322e'],['#b9ab8a','#8f8263'],['#7a5f3a','#4e3c24'],['#2f6b34','#1d4a22'],['#4a5a4a','#33403a'],['#7a7468','#57534a'],['#666865','#4e514e'],['#b9ab8a','#8f8263']];
 function draw(near){
  if(drawMenuOnlyState())return;
  // タッチ端末は表示Canvasへ直接描画し、動的な画面外Canvasの毎フレーム転写を避ける。
@@ -6953,7 +6958,6 @@ function draw(near){
  for(const b of bridges)if(drawBoundsInView(b.x,b.y,b.w||100,b.h||100,cx,cy,80))drawBridgeFancy(b);
  // 背景と建物の間に薄い建物跡を置く。建物破壊後も同じ位置に残る。
  drawBuildingGroundMarks(cx,cy);
- const CC=[['#8a7a55','#6a5d40'],['#8c8c86','#6a6a66'],['#7a5f3a','#4e3c24'],['#55504a','#35322e'],['#b9ab8a','#8f8263'],['#7a5f3a','#4e3c24'],['#2f6b34','#1d4a22'],['#4a5a4a','#33403a'],['#7a7468','#57534a'],['#666865','#4e514e'],['#b9ab8a','#8f8263']];
  const mazeWallsCached=drawMazeWallChunks(cx,cy);
  for(const c of coversInBox(cx-100,cy-100,cx+W+100,cy+H+100)){
   if(c.mazeWall&&mazeWallsCached)continue;
@@ -6995,7 +6999,7 @@ function draw(near){
    g.fillStyle='rgba(196,236,170,.14)';
    for(const [bx,by,br] of blobs){g.beginPath();g.ellipse(bx-br*.10,by-br*.22,br*.24,br*.14,-.35,0,6.28);g.fill();}
    g.restore();continue;
-  }const cl=CC[c.kd];g.fillStyle=cl[0];g.fillRect(c.x,c.y,c.w,c.h);g.strokeStyle='#14140f';g.lineWidth=2;g.strokeRect(c.x,c.y,c.w,c.h);g.fillStyle=cl[1];g.fillRect(c.x,c.y+c.h*.7,c.w,c.h*.3);if(c.kd===2){g.strokeStyle=cl[1];g.lineWidth=2;g.strokeRect(c.x+2,c.y+2,c.w-4,c.h-4);}if(c.kd===3){g.fillStyle=cl[1];for(let i=6;i<c.w-8;i+=18)g.fillRect(c.x+i,c.y+6,8,10);}if(c.kd===4||c.kd===10){g.fillStyle='#8a4a3a';g.fillRect(c.x-3,c.y-3,c.w+6,c.h*.55);g.fillStyle='#5a2e24';g.fillRect(c.x+c.w/2-8,c.y+c.h*.7,16,c.h*.3);}if(c.kd===9){g.fillStyle=cl[1];for(let i=6;i<c.w-8;i+=18)g.fillRect(c.x+i,c.y+6,8,10);}if(c.kd===7){const hor=c.w>=c.h;g.fillStyle='#d1d3cf';g.fillRect(c.x+3,c.y+3,c.w-6,c.h-6);g.fillStyle='#a1a6a2';if(hor){g.fillRect(c.x+5,c.y+c.h*.67,c.w-10,c.h*.2);g.fillStyle='#e5e7e2';g.fillRect(c.x+8,c.y+6,c.w-16,Math.max(4,c.h*.2));}else{g.fillRect(c.x+c.w*.67,c.y+5,c.w*.2,c.h-10);g.fillStyle='#e5e7e2';g.fillRect(c.x+6,c.y+8,Math.max(4,c.w*.2),c.h-16);}g.strokeStyle='#555b58';g.lineWidth=2;g.strokeRect(c.x+2,c.y+2,c.w-4,c.h-4);g.fillStyle='#f3c83f';const band=hor?Math.min(20,c.w*.18):Math.min(20,c.h*.18);if(hor){for(const xx of [c.x+4,c.x+c.w-band-4]){g.fillStyle='#f3c83f';g.fillRect(xx,c.y+5,band,c.h-10);g.fillStyle='#272727';for(let q=-c.h;q<band+c.h;q+=12){g.save();g.beginPath();g.rect(xx,c.y+5,band,c.h-10);g.clip();g.translate(xx+q,c.y+5);g.rotate(-.65);g.fillRect(0,0,5,c.h*2);g.restore();}}}else{for(const yy of [c.y+4,c.y+c.h-band-4]){g.fillStyle='#f3c83f';g.fillRect(c.x+5,yy,c.w-10,band);g.fillStyle='#272727';for(let q=-c.w;q<band+c.w;q+=12){g.save();g.beginPath();g.rect(c.x+5,yy,c.w-10,band);g.clip();g.translate(c.x+5,yy+q);g.rotate(.65);g.fillRect(0,0,c.w*2,5);g.restore();}}}}if(c.kd===5){g.fillStyle=cl[1];if(c.w>=c.h)for(let i=0;i<c.w;i+=14)g.fillRect(c.x+i,c.y-3,4,c.h+6);else for(let i=0;i<c.h;i+=14)g.fillRect(c.x-3,c.y+i,c.w+6,4);}}
+  }const cl=STATIC_COVER_DRAW_COLORS[c.kd];g.fillStyle=cl[0];g.fillRect(c.x,c.y,c.w,c.h);g.strokeStyle='#14140f';g.lineWidth=2;g.strokeRect(c.x,c.y,c.w,c.h);g.fillStyle=cl[1];g.fillRect(c.x,c.y+c.h*.7,c.w,c.h*.3);if(c.kd===2){g.strokeStyle=cl[1];g.lineWidth=2;g.strokeRect(c.x+2,c.y+2,c.w-4,c.h-4);}if(c.kd===3){g.fillStyle=cl[1];for(let i=6;i<c.w-8;i+=18)g.fillRect(c.x+i,c.y+6,8,10);}if(c.kd===4||c.kd===10){g.fillStyle='#8a4a3a';g.fillRect(c.x-3,c.y-3,c.w+6,c.h*.55);g.fillStyle='#5a2e24';g.fillRect(c.x+c.w/2-8,c.y+c.h*.7,16,c.h*.3);}if(c.kd===9){g.fillStyle=cl[1];for(let i=6;i<c.w-8;i+=18)g.fillRect(c.x+i,c.y+6,8,10);}if(c.kd===7){const hor=c.w>=c.h;g.fillStyle='#d1d3cf';g.fillRect(c.x+3,c.y+3,c.w-6,c.h-6);g.fillStyle='#a1a6a2';if(hor){g.fillRect(c.x+5,c.y+c.h*.67,c.w-10,c.h*.2);g.fillStyle='#e5e7e2';g.fillRect(c.x+8,c.y+6,c.w-16,Math.max(4,c.h*.2));}else{g.fillRect(c.x+c.w*.67,c.y+5,c.w*.2,c.h-10);g.fillStyle='#e5e7e2';g.fillRect(c.x+6,c.y+8,Math.max(4,c.w*.2),c.h-16);}g.strokeStyle='#555b58';g.lineWidth=2;g.strokeRect(c.x+2,c.y+2,c.w-4,c.h-4);g.fillStyle='#f3c83f';const band=hor?Math.min(20,c.w*.18):Math.min(20,c.h*.18);if(hor){for(const xx of [c.x+4,c.x+c.w-band-4]){g.fillStyle='#f3c83f';g.fillRect(xx,c.y+5,band,c.h-10);g.fillStyle='#272727';for(let q=-c.h;q<band+c.h;q+=12){g.save();g.beginPath();g.rect(xx,c.y+5,band,c.h-10);g.clip();g.translate(xx+q,c.y+5);g.rotate(-.65);g.fillRect(0,0,5,c.h*2);g.restore();}}}else{for(const yy of [c.y+4,c.y+c.h-band-4]){g.fillStyle='#f3c83f';g.fillRect(c.x+5,yy,c.w-10,band);g.fillStyle='#272727';for(let q=-c.w;q<band+c.w;q+=12){g.save();g.beginPath();g.rect(c.x+5,yy,c.w-10,band);g.clip();g.translate(c.x+5,yy+q);g.rotate(.65);g.fillRect(0,0,c.w*2,5);g.restore();}}}}if(c.kd===5){g.fillStyle=cl[1];if(c.w>=c.h)for(let i=0;i<c.w;i+=14)g.fillRect(c.x+i,c.y-3,4,c.h+6);else for(let i=0;i<c.h;i+=14)g.fillRect(c.x-3,c.y+i,c.w+6,4);}}
  for(const o of objectsInBox(cx-80,cy-80,cx+W+80,cy+H+80)){if(o.x+o.w<cx-70||o.x>cx+W+70||o.y+o.h<cy-70||o.y>cy+H+70)continue;drawObject(o);}
  drawFrontlineAntennas(cx,cy);
  drawPatrolRoutes(cx,cy);
