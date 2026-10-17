@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.17.1616</title>
+<title>こっそり戦車大作戦 2026.10.17.1647</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -17,6 +17,8 @@ p{font-size:12px;opacity:.75;margin:8px 0 0;text-align:center;line-height:1.6}
 /* PCは内部描画840×720の縦横比を保ち、画面内に収める。 */
 @media (pointer:fine){
  body{box-sizing:border-box;height:100dvh;overflow:hidden;}
+ body.front-battle{padding:0;justify-content:center}
+ body.front-battle #c{width:min(calc((100dvh - 2px)*7/6),calc(100vw - 2px));max-width:calc(100% - 2px)}
  #c{box-sizing:content-box;flex:none;width:min(840px,calc((100dvh - 22px)*7/6));max-width:calc(100% - 2px);height:auto;aspect-ratio:7/6;}
 }
 #pad{display:none}
@@ -824,7 +826,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.17.1616',FILE_CREATED_AT='2026/10/17 16:16',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.17.1647',FILE_CREATED_AT='2026/10/17 16:47',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -7716,11 +7718,13 @@ function updateMission(dt){
 }
 let missionHudNextAt=0,missionHudText="";
 function drawMission(){
- const el=document.getElementById('missionHud'),display=state==='play'&&mission?'block':'none';if(el.style.display!==display)el.style.display=display;if(state!=='play'||!mission)return;
+ const frontBattle=stageMode==='front'&&!!mission&&(state==='play'||state==='frontVictory');
+ if(document.body.classList.contains('front-battle')!==frontBattle)document.body.classList.toggle('front-battle',frontBattle);
+ const el=document.getElementById('missionHud'),display=state==='play'&&mission&&stageMode!=='front'?'block':'none';if(el.style.display!==display)el.style.display=display;if(state!=='play'||!mission)return;
  const m=mission,q=stageMode==='front'?m.points[m.index]:m.index===3?m.exit:m.points.filter(q=>!q.done).sort((a,b)=>D(a,p)-D(b,p))[0];
  const dist=q?distanceMeters(D(p,q)):0;
- if(performance.now()>=missionHudNextAt){missionHudNextAt=performance.now()+100;
- const hudText=stageMode==='front'?'<b>最前線　戦線 '+m.index+'/3 制圧</b><progress style="accent-color:'+frontlineCaptureColors(q,m).stroke+'" max="'+FRONTLINE_CAPTURE_SECONDS+'" value="'+m.progress+'"></progress><small>'+(m.advanceReleased===false?'あと '+Math.max(1,distanceMeters(Math.max(0,240-(m.advanceStartY-p.y))))+'m前進で部隊進軍 ／ ':'')+q.name+'まで '+dist+'m ／ '+(m.captureReady===false?'プレイヤーの進入待ち':!m.captureCount?'味方兵の合流待ち':m.captureCount+'人で制圧・人数で加速')+'</small>':'<b>潜入　機密情報 '+m.index+'/3　警戒 '+Math.round(m.alarm)+'%</b><progress max="4" value="'+m.progress+'"></progress><small>'+(m.detected?'発見中：隠れて追跡を振り切れ':m.index===3?'脱出地点へ帰還（徒歩）':q.name+'まで '+dist+'m ／ 徒歩で4秒解析')+'</small>';
+ if(stageMode!=='front'&&performance.now()>=missionHudNextAt){missionHudNextAt=performance.now()+100;
+ const hudText='<b>潜入　機密情報 '+m.index+'/3　警戒 '+Math.round(m.alarm)+'%</b><progress max="4" value="'+m.progress+'"></progress><small>'+(m.detected?'発見中：隠れて追跡を振り切れ':m.index===3?'脱出地点へ帰還（徒歩）':q.name+'まで '+dist+'m ／ 徒歩で4秒解析')+'</small>';
  if(hudText!==missionHudText){el.innerHTML=hudText;missionHudText=hudText;}
  }
  gm.save();gm.setTransform(1,0,0,1,0,0);
