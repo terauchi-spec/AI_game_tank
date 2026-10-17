@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.17.2334</title>
+<title>こっそり戦車大作戦 2026.10.17.2336</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -165,6 +165,7 @@ body.skill-open #skillScreen,body.skill-open #skillScreen .sk-scroll,body.skill-
 /* 称号と操作説明は同じデザインを適用する */
 #trophyScreen{display:none;position:fixed;inset:0;z-index:76;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;box-sizing:border-box;padding:max(18px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(32px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));background:radial-gradient(ellipse at top,#33412d,#0e1510 78%);color:#edf1e4}
 body.trophy-open #trophyScreen{display:block}
+body.trophy-open.result-open #resultScreen{display:none}
 body.trophy-open #pad,body.trophy-open #resetBtn{display:none!important}
 .trophy-shell{max-width:810px;margin:auto}
 .trophy-nav{position:sticky;top:-18px;z-index:2;display:flex;align-items:center;gap:12px;justify-content:space-between;background:#1d291eea;border:1px solid #52624d;border-radius:10px;padding:10px 12px;backdrop-filter:blur(6px)}
@@ -856,7 +857,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.17.2334',FILE_CREATED_AT='2026/10/17 23:34',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.17.2336',FILE_CREATED_AT='2026/10/17 23:36',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
