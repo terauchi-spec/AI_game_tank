@@ -204,14 +204,14 @@ function drawCharacterWebP(x,y,face,isPlayer,alert,moving,elite,commander,weapon
  const now=performance.now(),stunned=actor&&(actor.stun>0||actor.stunT>0||actor.down);
  const stride=characterGait(actor,x,y,moving&&!stunned,now);
  const flame=!!(isPlayer&&actor===p&&p.flameActive);
- const armed=(isPlayer&&actor?.frontCommander&&weaponVisible)||(!isPlayer&&weaponVisible)||(isPlayer&&playerStripe==='blue'&&weaponVisible)||flame;
+ const armed=(isPlayer&&actor&&actor!==p&&weaponVisible)||(!isPlayer&&weaponVisible)||(isPlayer&&playerStripe==='blue'&&weaponVisible)||flame;
  const shot=actor?Math.max(0,.09-(now-(actor.characterShotAt||-1e9))/1000):0;
  g.save();g.imageSmoothingEnabled=true;g.translate(x,y);g.scale(CHARACTER_GRAPHICS_SCALE,CHARACTER_GRAPHICS_SCALE);
  g.fillStyle='rgba(8,12,9,.30)';g.beginPath();g.ellipse(1,3,11,7,0,0,Math.PI*2);g.fill();
  // The overhead artwork points right, exactly like world angle zero.
  g.rotate(face);
  // Weapons sit beneath the body/helmet; the muzzle remains forward of the hands.
- if(armed&&!stunned)drawCharacterWeapon(commander,shot,flame,isPlayer,elite,!isPlayer&&!elite&&!commander?1.5:1);
+ if(armed&&!stunned)drawCharacterWeapon(commander,shot,flame,isPlayer,elite,!elite&&!commander&&(!isPlayer||(actor&&actor!==p&&playerStripe===false))?1.5:1);
  if(stunned){g.save();g.rotate(.8);g.scale(1,.68);}
  // Normalize blue commander body height to the regular blue soldier; the radio/antenna keeps its silhouette.
  // blue.webp is 175×192; use its aspect even before it finishes loading.

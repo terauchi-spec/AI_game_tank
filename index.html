@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.17.1920</title>
+<title>こっそり戦車大作戦 2026.10.17.1924</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -852,7 +852,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.17.1920',FILE_CREATED_AT='2026/10/17 19:20',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.17.1924',FILE_CREATED_AT='2026/10/17 19:24',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -4248,7 +4248,7 @@ function explode(x,y,rad,big,source='',actionId=0,humanKillRadius=rad){scatterSp
 function summonAlly(){
  const active=(allies||[]).filter(a=>a.alive&&!a.frontline).length;if(active>=5){say('増援は最大5人まで');return;}
  const used=new Set((allies||[]).filter(a=>a.alive&&!a.frontline).map(a=>a.slot)),slot=[0,1,2,3,4].find(n=>!used.has(n))??0,rank=slot-2,ax=Math.max(40,Math.min(WW-40,p.x+rank*38+(R()-.5)*34)),landY=Math.max(45,Math.min(WH-45,p.y-48-Math.abs(rank)*14));
- const startY=Math.max(45,landY-320);allies.push({id:++allySeq,x:ax,y:startY,startY,landY,alive:true,chute:3,chuteTotal:3,shotCd:.2,burstLeft:3,face:p.body,slot,speedScale:stageMode==='front'?.5+R()*.5:1});assignFrontlineAllyRole(allies[allies.length-1]);setSkillCooldown(6);sfx('ally');say('増援を要請! '+(active+1)+'/5');
+ const startY=Math.max(45,landY-320);allies.push({id:++allySeq,x:ax,y:startY,startY,landY,alive:true,chute:3,chuteTotal:3,shotCd:.2,burstLeft:3,face:p.body,slot,speedScale:stageMode==='front'?.5+R()*.5:1});assignFrontlineAllyRole(allies[allies.length-1],true);setSkillCooldown(6);sfx('ally');say('増援を要請! '+(active+1)+'/5');
 }
 let partner=null;
 // Companion behavior is in js/partner.js; shared partner state remains here.
@@ -4268,16 +4268,19 @@ function updateAlly(dt){
   if(updateBlastFlight(ally,dt)){ally.frontAimT=0;ally.frontAimTarget=null;continue;}
   if((ally.stun||0)>0){if(stageMode==='front')updateFrontlineAllyStun(ally,dt);else ally.stun=Math.max(0,ally.stun-dt);ally._combatTarget=null;ally.frontMode='patrol';ally.frontLostT=0;ally.frontLastSeen=null;ally.frontTrackedEnemy=null;ally.frontMoving=false;ally.frontAimT=0;ally.frontAimTarget=null;ally.burstLeft=3;continue;}
   if((ally.stunRecover||0)>0){ally.stunRecover=Math.max(0,ally.stunRecover-dt);continue;}
-  if(!ally.frontline&&D(ally,p)>900){ally.alive=false;continue;}ally.shotCd-=dt;ready.push(ally);
+  if(!ally.frontline&&D(ally,p)>900){ally.alive=false;continue;}ally.shotCd-=dt;if(stageMode!=='front')ally.frontRadioT=Math.max(0,(ally.frontRadioT||0)-dt);ready.push(ally);
  }
  const range=264,now=performance.now(),refresh=now>=allyTargetRefreshAt;
  if(refresh){
   allyTargetRefreshAt=now+100;const assigned=new Map();
   if(stageMode==='front')refreshFrontlineAllyTargets(ready);else for(const ally of ready){let best=null,bestScore=Infinity;for(const h of humans){if(!h.alive)continue;const dx=h.x-ally.x,dy=h.y-ally.y,d2=dx*dx+dy*dy;if(d2>=range*range)continue;if(!los(ally,h))continue;const d=Math.sqrt(d2),n=assigned.get(h)||0,score=n*10000+d;if(score<bestScore){bestScore=score;best=h;}}
+   if(ally.frontCommander)for(const e of etanks)if(e.alive&&D(ally,e)<480&&los(ally,e)){best=e;break;}
+   if(!best&&ally.frontRadioT>0&&ally.frontTrackedEnemy?.alive&&los(ally,ally.frontTrackedEnemy))best=ally.frontTrackedEnemy;
    ally._combatTarget=best;if(best)assigned.set(best,(assigned.get(best)||0)+1);
   }
  }
  for(const ally of ready){let target=ally._combatTarget;if(target&&!target.alive){target=null;ally._combatTarget=null;}const bd=target?D(ally,target):1e9;if(updateFrontlineAlly(ally,target,dt))continue;
+  if(updateFrontlineCommander(ally,target,dt))continue;
   if(target&&bd<range+40){ally.face=Math.atan2(target.y-ally.y,target.x-ally.x);if(bd>176)moveAllySmart(ally,target,135,dt);else if(ally.shotCd<=0){fire(ally.x+Math.cos(ally.face)*12,ally.y+Math.sin(ally.face)*12,ally.face+(R()-.5)*.08,'ally','v',480,205);ally.burstLeft--;if(ally.burstLeft<=0){ally.burstLeft=3;ally.shotCd=3;}else ally.shotCd=.16;}}
   else{ally._combatTarget=null;const rank=(ally.slot||0)-2,followX=ally.frontline&&mission?mission.points[mission.index]?.x??p.x:p.x+rank*30,followY=ally.frontline&&mission?mission.points[mission.index]?.y??p.y:p.y+36+Math.abs(rank)*14,d=Math.hypot(followX-ally.x,followY-ally.y);if(d>62)moveAllySmart(ally,{x:followX,y:followY},135,dt);}
  }
@@ -6431,7 +6434,7 @@ function soldier(x,y,face,isP,alert,moving,elite=false,commander='',weaponVisibl
   g.strokeStyle='#bac4af';g.lineWidth=1;g.beginPath();g.moveTo(-12,-5);g.lineTo(-15,-19);g.stroke();
  }
  g.fillStyle='#0c0c0c';g.beginPath();g.ellipse(0,0,6.5,9.5,0,0,6.28);g.fill();g.fillStyle=uni;g.beginPath();g.ellipse(0,0,5.3,8.3,0,0,6.28);g.fill();
- if(!isP||actor?.frontCommander){
+ if(!isP||actor?.frontCommander||(actor&&actor!==p&&weaponVisible)){
   if(weaponVisible){if(commander==='blue'){g.fillStyle='#0c0c0c';g.fillRect(-4,-4,31,8);g.fillStyle='#6f7853';g.fillRect(-3,-3,29,6);g.fillStyle='#1c2419';g.fillRect(22,-4,5,8);g.fillStyle='#d2c79e';g.fillRect(1,-3,4,6);}else{g.fillStyle='#0c0c0c';g.fillRect(2,-2.5,commander==='white'?32:18,5);g.fillStyle='#3a3a42';g.fillRect(4,-1.5,commander==='white'?29:15,3);g.fillStyle='#7a5a3a';g.fillRect(2,-2,6,4);if(commander==='white'){g.fillStyle='#b5bcbd';g.fillRect(11,-4.5,6,2);}}}
   g.fillStyle='#0c0c0c';g.fillRect(-2+armSw,-9,11,4.5);g.fillRect(-2-armSw,4.5,9,4.5);g.fillStyle=uni;g.fillRect(-1+armSw,-8,9,2.5);g.fillRect(-1-armSw,5.5,7,2.5);
   g.fillStyle='#e0b890';g.fillRect(7+armSw,-3.5,3,2);g.fillRect(5-armSw,3,3,2);
@@ -7003,7 +7006,7 @@ function draw(near){
   g.restore();}
  if(decoy){g.globalAlpha=.7;soldier(decoy.x,decoy.y,decoy.face,true,false,false);g.globalAlpha=1;drawDecoySignalPulse(decoy.x,decoy.y,(5-decoy.t));}
  drawPartner();
- for(const ally of (allies||[]))if(ally.alive&&!(ally.chute>0)){drawBlastShadow(ally);soldier(ally.x,ally.y-blastLift(ally),ally.face,true,false,stageMode==='front'&&!!ally.frontMoving,false,ally.frontCommander?'blue':'',!!ally.frontCommander&&ally.frontMode==='found'&&!(ally.whistleT>0),false,stageMode==='front'?ally:null);drawAllyStun(ally);}
+ for(const ally of (allies||[]))if(ally.alive&&!(ally.chute>0)){drawBlastShadow(ally);soldier(ally.x,ally.y-blastLift(ally),ally.face,true,false,stageMode==='front'&&!!ally.frontMoving,false,ally.frontCommander?'blue':'',allyWeaponVisible(ally),false,ally);drawAllyStun(ally);}
  drawHound();drawEnemyDogs();
  for(const ab of airbombs){const mt=ab.maxT||.48,k=Math.max(0,Math.min(1,1-ab.t/mt));g.fillStyle=ab.fighter?'#252b31':'#171717';g.beginPath();g.ellipse(ab.x,ab.y,ab.fighter?7:5,ab.fighter?13:10,0,0,6.28);g.fill();g.strokeStyle=ab.fighter?'rgba(180,220,255,.65)':'rgba(255,190,80,.55)';g.beginPath();g.arc(ab.x,ab.y,(ab.fighter?20:14)*k,0,6.28);g.stroke();}
  if(!p.tank&&p.grappleT>0&&p.grappleTarget&&p.grappleTarget.alive){const h=p.grappleTarget,a=Math.atan2(h.y-p.y,h.x-p.x),k=1-p.grappleT/.3;g.save();g.strokeStyle='rgba(255,230,170,'+(1-k*.25)+')';g.lineWidth=3;g.beginPath();g.moveTo(p.x+Math.cos(a+.55)*8,p.y+Math.sin(a+.55)*8);g.lineTo(h.x-Math.cos(a)*5,h.y-Math.sin(a)*5);g.moveTo(p.x+Math.cos(a-.55)*8,p.y+Math.sin(a-.55)*8);g.lineTo(h.x-Math.cos(a)*5,h.y-Math.sin(a)*5);g.stroke();g.strokeStyle='rgba(255,255,255,'+(0.7-k*.4)+')';g.lineWidth=2;for(let q=0;q<3;q++){const off=(q-1)*7;g.beginPath();g.moveTo(p.x-Math.cos(a)*10+Math.cos(a+1.57)*off,p.y-Math.sin(a)*10+Math.sin(a+1.57)*off);g.lineTo(p.x-Math.cos(a)*20+Math.cos(a+1.57)*off,p.y-Math.sin(a)*20+Math.sin(a+1.57)*off);g.stroke();}g.restore();}
@@ -7866,9 +7869,9 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/frontline.js?v=2026.10.17.1920"></script>
+<script src="js/frontline.js?v=2026.10.17.1924"></script>
 <script src="js/award-icons.js?v=2026.10.17.0743"></script>
-<script src="js/characters.js?v=2026.10.17.1319"></script>
+<script src="js/characters.js?v=2026.10.17.1924"></script>
 <script src="js/enemy-dogs.js?v=2026.10.17.0811"></script>
 <script src="js/partner.js?v=2026.10.17.0743"></script>
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>

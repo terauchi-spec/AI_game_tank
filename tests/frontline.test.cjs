@@ -461,11 +461,11 @@ function commanderHarness(){
  vm.runInContext(html.slice(html.indexOf('function commanderWhistle('),html.indexOf('function commanderMove(')),c);
  return c;
 }
-test('frontline commanders appear exactly once per five allied spawns across initial, replacement and skill troops',()=>{
+test('frontline stage commanders appear once per five initial and replacement troops',()=>{
  const c=commanderHarness();c.missionAllies(10000);assert.equal(c.allies.length,6);assert.equal(c.allies.filter(a=>a.frontCommander).length,1);assert.equal(c.allies[4].frontCommander,true);
- for(const a of c.allies)a.alive=false;c.missionAllies(10000);c.summonAlly();
- assert.equal(c.mission.allySpawnCount,13);assert.equal(c.allies.filter(a=>a.frontCommander).length,2);
- for(let i=13;i<25;i++)c.assignFrontlineAllyRole({});assert.equal(c.mission.allySpawnCount,25);
+ for(const a of c.allies)a.alive=false;c.missionAllies(10000);
+ assert.equal(c.mission.allySpawnCount,12);assert.equal(c.allies.filter(a=>a.frontCommander).length,2);
+ for(let i=12;i<25;i++)c.assignFrontlineAllyRole({});assert.equal(c.mission.allySpawnCount,25);
  c.stageMode='base';const normal=c.assignFrontlineAllyRole({});assert.equal(normal.frontCommander,undefined);assert.equal(c.mission.allySpawnCount,25);
 });
 test('allied radio notifies active nearby allies after one second, without alerting enemies, and completes after source loss',()=>{
@@ -662,4 +662,22 @@ test('north boundary allows sideways movement, clamps large forward steps and le
  c.mission.northEdge=2300;c.p.y=2320;c.mv(c.p,25,-500,10);assert.equal(c.p.y,2310);assert.equal(c.p.x,505);
  c.mv(c.p,0,50,10);assert.equal(c.p.y,2360);
  const enemy={x:100,y:2200};c.mv(enemy,0,25,14);assert.equal(enemy.y,2225);
+});
+
+test('skill reinforcements roll commanders at the 20 percent threshold in every stage',()=>{
+ const c=harness();for(const mode of ['front','base','beginner'])for(const roll of [0,.199999,.2,.9999]){
+  c.stageMode=mode;c.allies=[];c.R=()=>roll;c.summonAlly();assert.equal(c.allies[0].frontCommander,roll<.2);
+ }
+});
+test('allied soldiers raise weapons throughout discovery and lower them while stunned or radioing',()=>{
+ const c=harness(),a={frontMode:'found'};assert.equal(c.allyWeaponVisible(a),true);
+ for(const key of ['stun','stunRecover','whistleT']){a[key]=1;assert.equal(c.allyWeaponVisible(a),false);a[key]=0;}
+ a.frontMode='patrol';assert.equal(c.allyWeaponVisible(a),false);
+ c.stageMode='base';a._combatTarget={alive:true};assert.equal(c.allyWeaponVisible(a),true);
+ a._combatTarget=null;a.frontRadioT=2;assert.equal(c.allyWeaponVisible(a),true);
+});
+test('skill commanders can broadcast to allies outside frontline stages',()=>{
+ const c=commanderHarness();c.stageMode='base';const enemy={x:480,y:9900,alive:true},a={x:480,y:10000,alive:true,frontCommander:true,shotCd:0},friend={x:500,y:10000,alive:true};c.allies=[a,friend];
+ c.updateFrontlineCommander(a,enemy,.1);c.updateCommanderSignals(1);assert.equal(friend.frontMode,'found');assert.equal(friend._combatTarget,enemy);
+ c.updateCommanderSignals(1.5);a.frontRadioCooldown=5;c.updateFrontlineCommander(a,enemy,.5);assert.equal(c.bullets.length,1);assert.equal(c.bullets[0].commanderRocket,true);
 });

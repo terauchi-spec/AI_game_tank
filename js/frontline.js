@@ -374,8 +374,9 @@ function moveFrontlineAlly(a,target,sp,dt){
  if(a.y<limit){a.x=ox;a.y=oy;a.dogWall=null;a.dogEscape=null;}
  a.frontMoving=Math.hypot(a.x-ox,a.y-oy)>.02;
 }
-// Roles are assigned across the whole mission, including replacement and skill troops.
-function assignFrontlineAllyRole(a){
+// Stage troops keep one commander per five; skill drops roll independently.
+function assignFrontlineAllyRole(a,skillDrop=false){
+ if(skillDrop){a.frontCommander=R()<.2;return a;}
  if(stageMode!=='front'||!mission)return a;
  mission.allySpawnCount=(mission.allySpawnCount||0)+1;
  a.frontCommander=mission.allySpawnCount%5===0;
@@ -387,10 +388,10 @@ function frontlineCommanderRadio(a,target){
  commanderSignals.push({source:a,x:a.x,y:a.y,remaining:1,visualRemaining:2.5,notified:false,team:'ally',target,seen:{x:target.x,y:target.y}});
 }
 function notifyFrontlineAllies(signal){
- if(stageMode!=='front')return;
  for(const a of allies)if(a.alive&&!(a.chute>0)&&!(a.stun>0)&&!(a.stunRecover>0)&&D(a,signal)<=2000){
   a.frontMode='found';a.frontLostT=6;a.frontRadioT=6;
   a.frontLastSeen={...signal.seen};a.frontTrackedEnemy=signal.target;
+  if(stageMode!=='front'&&signal.target?.alive)a._combatTarget=signal.target;
   if(a.frontStyle)a.frontStyle.rest=0;
  }
 }
@@ -667,4 +668,9 @@ function frontlineInfantryDetourGoal(a,goal){
 
 function moveFrontlineInfantry(unit,goal,speed,dt,target=goal){
  if(!moveFrontlineInfantryDetour(unit,goal,speed,dt,target))dogMoveAround(unit,goal,speed,dt,8,false);
+}
+
+function allyWeaponVisible(a){
+ return !(a.stun>0||a.stunRecover>0||a.whistleT>0)&&
+  (stageMode==='front'?a.frontMode==='found':!!a._combatTarget||a.frontRadioT>0);
 }
