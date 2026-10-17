@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.18.0800</title>
-<link rel="stylesheet" href="css/infiltration-sample.css?v=2026.10.18.0800">
+<title>こっそり戦車大作戦 2026.10.18.0820</title>
+<link rel="stylesheet" href="css/infiltration-sample.css?v=2026.10.18.0820">
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -892,7 +892,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.18.0800',FILE_CREATED_AT='2026/10/18 08:00',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.18.0820',FILE_CREATED_AT='2026/10/18 08:20',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -7868,6 +7868,8 @@ if(MOBILE_VIEW)requestAnimationFrame(monitorPresentationFrame);
 const MOBILE_DRAW_FPS=60,MOBILE_DRAW_INTERVAL=1000/MOBILE_DRAW_FPS;
 let lastGameDrawAt=null;
 function shouldDrawGameFrame(now){
+ // 屋内サンプル稼働中は背景の本編Canvasを描かず、二重描画の負荷を避ける。
+ if(document.body.classList.contains('infiltration-open'))return false;
  if(state==='succeeded'){if(successFrameDrawn)return false;successFrameDrawn=true;return true;}
  if(state==='failed'){if(failureFrameDrawn)return false;failureFrameDrawn=true;return true;}
  if(state==='briefing'){if(briefingFrameDrawn)return false;briefingFrameDrawn=true;return true;}
@@ -8089,6 +8091,6 @@ document.addEventListener('contextmenu',e=>e.preventDefault());
 // Start only after every external game script and input handler has loaded.
 requestAnimationFrame(loop);
 </script>
-<script src="js/infiltration-sample.js?v=2026.10.18.0800"></script>
+<script src="js/infiltration-sample.js?v=2026.10.18.0820"></script>
 </body>
 </html>
