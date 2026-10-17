@@ -1,5 +1,5 @@
 // Frontline-only presentation and infantry waves. Reuse existing combat and obstacle AI.
-const FRONTLINE_ENEMY_LIMIT=16,FRONTLINE_CAPTURE_SECONDS=24;
+const FRONTLINE_ENEMY_LIMIT=16,FRONTLINE_CAPTURE_SECONDS=48;
 function frontlineView(){
  return{x:Math.max(0,Math.min(WW-W,p.x-W/2)),y:Math.max(0,Math.min(WH-H,p.y-H*.6)),w:W,h:H};
 }
@@ -80,7 +80,7 @@ function moveFrontlineEnemy(h,dt,speed){
 function frontlineCaptureVisual(m){
  const fraction=Math.max(0,Math.min(1,(m.progress||0)/FRONTLINE_CAPTURE_SECONDS));
  const remaining=Math.max(0,FRONTLINE_CAPTURE_SECONDS-(m.progress||0))/Math.max(1,m.captureRate||1);
- return{fraction,remaining,label:m.captureCount===0&&!m.contested?'味方兵の合流待ち':(m.contested?'敵が範囲内 ／ ':m.capturing?'制圧まで ':'制圧一時停止 ／ 残り ')+remaining.toFixed(1)+'秒'+(m.capturing&&m.captureCount>1?'（'+m.captureCount+'人）':'')};
+ return{fraction,remaining,label:m.captureReady===false&&!m.contested?'プレイヤーの進入待ち':m.captureCount===0&&!m.contested?'味方兵の合流待ち':(m.contested?'敵が範囲内 ／ ':m.capturing?'制圧まで ':'制圧一時停止 ／ 残り ')+remaining.toFixed(1)+'秒'+(m.capturing&&m.captureCount>1?'（'+m.captureCount+'人）':'')};
 }
 function drawFrontlineCaptureRing(point,x,y,m){
  const active=m.points[m.index]===point,waiting=m.captureCount===0&&D(p,point)<180;if(!active||(!(m.progress>0)&&!m.capturing&&!waiting))return;
