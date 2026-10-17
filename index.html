@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.17.1442</title>
+<title>こっそり戦車大作戦 2026.10.17.1454</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -529,6 +529,13 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 #resultScreen .res-rank-badge{display:block;width:176px;height:176px;object-fit:contain;margin:0}
 #resultScreen .res-rank-label{display:flex;align-items:baseline;gap:8px;white-space:nowrap}
 #resultScreen .res-medal-rank{font-size:48px;line-height:1;margin:0}
+@media(min-width:581px){
+ #resultScreen .res-summary{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;padding-block:22px}
+ #resultScreen .res-summary>div:first-child{text-align:center;min-width:0}
+ #resultScreen .res-medal{border-left:1px solid #52634e;gap:12px}
+ #resultScreen .res-rank-badge{width:clamp(120px,17vw,176px);height:clamp(120px,17vw,176px)}
+ #resultScreen .res-medal-rank{font-size:clamp(32px,4vw,48px)}
+}
 @media(max-width:580px){
  #resultScreen .res-summary{flex-direction:column;align-items:stretch;gap:4px}
  #resultScreen .res-rank-badge{width:160px;height:160px}
@@ -812,7 +819,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.17.1442',FILE_CREATED_AT='2026/10/17 14:42',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.17.1454',FILE_CREATED_AT='2026/10/17 14:54',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
