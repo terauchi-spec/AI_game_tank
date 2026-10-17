@@ -273,7 +273,7 @@ test('an ally can back out of a U-shaped building pocket and reach the far side'
 });
 test('a temporary advance-limit goal inside cover uses a free waiting point',()=>{
  const c=harness(),goal={x:480,y:9600};c.hitsC=(x,y)=>Math.abs(x-480)<90&&Math.abs(y-9600)<70;
- const q=c.frontlineAllyDetourGoal({x:480,y:9800},goal);assert.ok(q);assert.equal(c.hitsC(q.x,q.y,12),false);assert.ok(q.y>=c.frontlineAllyLimit()+12);
+ const q=c.frontlineInfantryDetourGoal({x:480,y:9800},goal);assert.ok(q);assert.equal(c.hitsC(q.x,q.y,12),false);assert.ok(q.y>=c.frontlineAllyLimit()+12);
 });
 test('changed destinations and rebuilt cover invalidate an ally’s cached detour',()=>{
  const c=harness(),a={x:480,y:10000,speedScale:1};c.moveFrontlineAlly(a,{x:480,y:9700},135,.1);const first=a.frontNav;
@@ -282,4 +282,26 @@ test('changed destinations and rebuilt cover invalidate an ally’s cached detou
 test('camera movement alone does not discard a useful detour toward the same objective',()=>{
  const c=harness(),a={x:480,y:10000,speedScale:1},goal={x:480,y:3000};c.moveFrontlineAlly(a,goal,135,.1);const nav=a.frontNav;
  c.p.y-=150;c.moveFrontlineAlly(a,goal,135,.1);assert.equal(a.frontNav,nav);
+});
+
+test('Frontline infantry clearance is larger than separation distance, preventing repeated pushes',()=>{
+ const c=harness();vm.runInContext(html.slice(html.indexOf('function enemyUnitBlocked('),html.indexOf('// 敵戦車は描画')),c);
+ const mover={x:480,y:9900,alive:true,frontMarch:true},other={x:480,y:10000,alive:true};c.humans=[mover,other];
+ assert.equal(c.enemyUnitBlocked(mover,480,9972,8),true);assert.equal(c.enemyUnitBlocked(mover,480,9971,8),false);
+ mover.frontMarch=false;assert.equal(c.enemyUnitBlocked(mover,480,9972,8),false);
+});
+test('enemy marching keeps a stable forward waypoint and does not reset detours every frame',()=>{
+ const c=harness(),h={x:480,y:9000,alive:true,frontMarch:true,frontLaneX:480};c.moveFrontlineEnemy(h,.1,30);const nav=h.frontNav,goalY=h.frontMarchGoalY;
+ c.moveFrontlineEnemy(h,.1,30);assert.equal(h.frontNav,nav);assert.equal(h.frontMarchGoalY,goalY);assert.ok(h.y>9000);
+});
+test('an enemy holding behind an obstacle keeps its unmodified movement heading',()=>{
+ const c=harness(),h={x:480,y:9000,alive:true,frontMarch:true,frontMoveFace:.4,face:1.7};c.dogMoveAround=()=>{};
+ assert.equal(c.moveFrontlineEnemy(h,.1,30),.4);h.face=2.1;assert.equal(c.moveFrontlineEnemy(h,.1,30),.4);
+});
+test('Frontline blue and white commanders and ordinary pursuers share the bounded detour mover',()=>{
+ const c=harness();c.moveEliteBombAvoidance=()=>false;c.mazeComparisonEnemyFrozen=()=>false;c.targetObj=()=>({x:480,y:9000});let calls=0;c.moveFrontlineInfantry=()=>calls++;
+ vm.runInContext(html.slice(html.indexOf('function commanderMove('),html.indexOf('function cancelCommanderAttack(')),c);
+ vm.runInContext(html.slice(html.indexOf('function moveHumanChase('),html.indexOf('function moveAllySmart(')),c);
+ for(const type of ['blue','white'])c.commanderMove({frontMarch:true,commander:type},{x:480,y:9000},.1,95);
+ c.moveHumanChase({frontMarch:true},0,95,.1);assert.equal(calls,3);
 });
