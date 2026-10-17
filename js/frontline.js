@@ -57,6 +57,21 @@ function setupFrontlineArmy(){
  for(let i=mission.enemyRoster.length-1;i>0;i--){const j=R()*(i+1)|0;[mission.enemyRoster[i],mission.enemyRoster[j]]=[mission.enemyRoster[j],mission.enemyRoster[i]];}
  humans=[];enemyDogs=[];mission.cleanupT=1;mission.enemyEntryY=p.y-800;mission.enemyWavesStarted=false;
 }
+function frontlineFirstObjectiveSpot(){
+ // 初期配置時だけ探索する。橋と水際を避け、南部の陸上に前後・左右の変化をつける。
+ const clear=(x,y)=>!hitsM(x,y,75)&&!inWaterAt(x,y,90)&&!inBase(x,y)&&
+  !bridges.some(b=>x+120>b.x&&x-120<b.x+b.w&&y+120>b.y&&y-120<b.y+b.h)&&
+  !cars.some(v=>D(v,{x,y})<100)&&!etanks.some(e=>e.alive&&D(e,{x,y})<100);
+ for(let i=0;i<48;i++){
+  const x=180+R()*(WW-360),y=9300+R()*1400;
+  if(clear(x,y))return{x,y};
+ }
+ // 候補が障害物に重なり続けても、探索回数を制限した陸上走査で補う。
+ for(let offset=0;offset<=900;offset+=100)for(const sign of offset?[1,-1]:[1])for(let x=180;x<=WW-180;x+=100){
+  const y=10000+offset*sign;if(clear(x,y))return{x,y};
+ }
+ return missionSpot(WW/2,10000,75);
+}
 function frontlineAntennaGeometry(point,index){
  const large=index===2,height=large?480:280,width=height/2;
  return{large,width,height,x:point.x-width/2,y:point.y-height*(large?.92:.89),cutY:point.y-(large?30:20),

@@ -3,7 +3,7 @@ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
 function harness(){
  let seed=3;const calls=[];
  const gm=new Proxy({}, {get:(o,k)=>o[k]||((...args)=>calls.push([k,...args])),set:(o,k,v)=>(o[k]=v,true)});
- const c={WW:960,WH:12800,W:480,H:800,TANK_HIT:28,cars:[],etanks:[],p:{x:480,y:10000,body:0},stageMode:'front',debugMode:0,weather:'clear',areaDebugEnabled:false,mission:{points:[],index:0,enemyRoster:[],enemyRosterIndex:0},humans:[],enemyDogs:[],allies:[],allySeq:0,covers:[],gm,
+ const c={WW:960,WH:12800,W:480,H:800,TANK_HIT:28,cars:[],etanks:[],p:{x:480,y:10000,body:0},stageMode:'front',debugMode:0,weather:'clear',areaDebugEnabled:false,mission:{points:[],index:0,enemyRoster:[],enemyRosterIndex:0},humans:[],enemyDogs:[],allies:[],allySeq:0,covers:[],bridges:[],gm,
  performance:{now:()=>1000},patrolRoutePlanAt:0,PATROL_SEARCH_PENDING:Symbol('pending'),findPatrolReturnPath:()=>null,R:()=>((seed=(seed*1664525+1013904223)>>>0)/2**32),D:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),hitsM:()=>false,hitsC:()=>false,inWaterAt:()=>false,inBase:()=>false,patrolLineClear:()=>true,missionSpot:(x,y)=>({x,y}),rebuildSpatialGrid(){},setSkillCooldown(){},sfx(){},say(){},
  mv:(a,dx,dy)=>{a.x+=dx;a.y+=dy;},dogMoveAround:(h,q,sp,dt)=>{const angle=Math.atan2(q.y-h.y,q.x-h.x);h.x+=Math.cos(angle)*sp*dt;h.y+=Math.sin(angle)*sp*dt;}};
  vm.createContext(c);vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/frontline.js'),'utf8'),c);
@@ -556,4 +556,16 @@ test('antenna upper pass follows every bush foreground pass while the ground pas
  const start=html.indexOf(' drawFrontlineAntennas(cx,cy);'),end=html.indexOf(' drawFrontlineAntennas(cx,cy,true);',start);
  assert.ok(start>=0&&end>start);const between=html.slice(start,end);
  for(const pass of ['drawGrassBushChunks(cx,cy);','drawBushCached(b);','drawSpinifexTopLayer(cx,cy);','drawPartner();'])assert.ok(between.includes(pass),pass);
+});
+
+
+test('first Frontline objective varies north/south and sideways while avoiding bridges, water, cover and parked vehicles',()=>{
+ const c=harness();c.bridges=[{x:300,y:9800,w:360,h:400}];c.cars=[{x:200,y:9400}];c.etanks=[{x:700,y:10600,alive:true}];c.inWaterAt=(x,y,r)=>y+r>9800&&y-r<10200;c.hitsM=(x,y)=>x<240&&y>10300;
+ const spots=Array.from({length:100},()=>c.frontlineFirstObjectiveSpot());
+ assert.ok(spots.some(q=>q.y<9800));assert.ok(spots.some(q=>q.y>10200));assert.ok(new Set(spots.map(q=>Math.round(q.x))).size>30);
+ for(const q of spots){assert.ok(q.x>=180&&q.x<=780&&q.y>=9300&&q.y<=10700);assert.equal(c.inWaterAt(q.x,q.y,90),false);assert.equal(c.hitsM(q.x,q.y),false);assert.ok(c.D(q,c.cars[0])>=100&&c.D(q,c.etanks[0])>=100);assert.ok(q.y+120<=9800||q.y-120>=10200);}
+});
+test('first objective uses a bounded dry-land fallback if random candidates are blocked',()=>{
+ const c=harness();c.bridges=[];c.R=()=>.5;c.hitsM=(x,y)=>!(x===180&&y===10100);const q=c.frontlineFirstObjectiveSpot();assert.equal(q.x,180);assert.equal(q.y,10100);
+ c.hitsM=()=>true;let fallback=0;c.missionSpot=(x,y,r)=>{fallback++;assert.equal(r,75);return{x:480,y:11000};};assert.equal(c.frontlineFirstObjectiveSpot().y,11000);assert.equal(fallback,1);
 });
