@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.17.1319</title>
+<title>こっそり戦車大作戦 2026.10.17.1322</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -614,7 +614,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <h3>青兵指揮官：無線機とアンテナ</h3>
 <ul><li>通常の出撃では2体を別エリアに分散配置し、青の通常兵と同様に定期ルートを巡回します。背面の無線機と長いアンテナが目印です。</li>
 <li>プレイヤーを新たに発見すると笛を吹き、偽装スキルと同じ単色の赤い電波リングを半径300pxまで2回（各1.25秒）広げます。2回の電波が終わるまで武器をしまってその場で停止します。一度発した電波は指揮官が気絶・撃破されても発信地点から最後まで広がります。1秒後、2000px以内の活動可能な敵歩兵を発見モードへ移行させます。笛の再使用には8秒の間隔があります。</li>
-<li>武器は射程480pxのバズーカ。標的が120pxより遠く、射線が通ると、0.5秒間停止して構えた時点の方向へ発射します。発射まで標的の動きに追従して照準を変えることはありません。発射準備は頭上の直線型チャージバーで表示します。</li>
+<li>武器は射程480pxのバズーカ。標的が120pxより遠く、射線が通ると、0.5秒間停止して構えた時点の方向へ発射します。発射まで標的の動きに追従して照準を変えることはありません。最前線では、徒歩プレイヤーへの爆風ダメージは0.5（ハート半分）です。発射準備は頭上の直線型チャージバーで表示します。</li>
 <li>被弾威力は戦車砲の約半分、爆破範囲は110px（設置爆弾は95px）。射撃後は約1.2秒、横方向へ移動し、次の射撃までの待ち時間は4秒です。</li></ul>
 <h3>犬兵：黒い犬を連れた青兵</h3>
 <ul><li>通常の1ゲームに2組を別エリアへ分散配置。指揮官から独立して出現位置を決めます。出現時は青兵の周囲を回る周回型と、出現地点から開始草原の手前まで青兵を引いて南下する南下型の2種類です。犬は50〜150pxのリードで青兵につながれ、遮蔽物・オブジェクトに接触すると回り込みます。犬と青兵が地形に詰まった場合は、一定時間後に別方向への迂回を試みます。</li><li>徒歩のプレイヤーと相棒スキルの相棒を、潜伏や草むらに関係なく250px以内で追跡します。デバッグモードの索敵解除中やプレイヤーの乗り物搭乗中は反応しません。標的の100px以内で吠え、半径200pxの赤い電波を3回表示し、500px以内の敵兵にその標的の発見を伝えます。発見モード開始から8秒間は距離によって解除されず、8秒経過後に犬と標的が100px以上、または青兵と標的が250px以上離れると解除します。距離による解除後は、いったん250pxの索敵範囲外に出た標的が再接近した際に再発見します。</li><li>爆風や火炎スキルの直撃で犬は5秒気絶し、その後は再び発見モードになりません。猟犬スキルの犬が100px以内に近づくと猟犬が吠え、文字表示ではなく犬兵と同じ赤い電波を3回表示します。犬兵の犬の発見モードは解除され、以降も再発見しません。青兵が倒れるとリードが外れ、半速のS字移動で迷子になります。</li></ul>
@@ -782,7 +782,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.17.1319',FILE_CREATED_AT='2026/10/17 13:19',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.17.1322',FILE_CREATED_AT='2026/10/17 13:22',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -3601,7 +3601,7 @@ function commanderRocketBlast(x,y){
   p.tank.ch=(p.tank.ch||0)+.55;sfx('vehicleHit');shake=Math.max(shake,7);if(p.tank.ch>=(p.tank.t.armor||3))wreck();
  }else{
   if(debugInvincible){shake=Math.max(shake,3);return;}
-  if(scoreStats)scoreStats.damageHits++;p.hp-=1;beginBlastFlight(p,x,y,COMMANDER_BLAST_RADIUS,82,8,0);if(p.hp<=0)triggerPlayerDeath();
+  if(scoreStats)scoreStats.damageHits++;p.hp-=stageMode==='front'?.5:1;beginBlastFlight(p,x,y,COMMANDER_BLAST_RADIUS,82,8,0);if(p.hp<=0)triggerPlayerDeath();
  }
 }
 function updateCommanderRocket(b,ox,oy,expired){
