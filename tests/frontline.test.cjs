@@ -387,14 +387,14 @@ test('only Frontline enemy tanks double their range, field of view and known-tar
  e.st=1;e.target='ally:1';target.x=900;target.y=10000;assert.equal(c.canDetect(e,target,0,'ally:1'),true);target.x=945;assert.equal(c.canDetect(e,target,0,'ally:1'),false);
  c.los=()=>false;target.x=600;assert.equal(c.canDetect(e,target,0,'ally:1'),false);
 });
-test('the third objective alone uses a 720px capture circle for progress, awareness and rendering',()=>{
+test('the third objective alone uses a 540px capture circle for progress, awareness and rendering',()=>{
  const c=harness();vm.runInContext(html.slice(html.indexOf('function setupMission('),html.indexOf('function completeMission(')),c);c.setupMission();
- assert.deepEqual(Array.from(c.mission.points,q=>c.frontlineCaptureRadius(q)),[360,360,720]);const q=c.mission.points[2];q.counterTriggered=true;c.mission.index=2;c.mission.waveT=999;c.mission.reinforceT=999;
+ assert.deepEqual(Array.from(c.mission.points,q=>c.frontlineCaptureRadius(q)),[360,360,540]);const q=c.mission.points[2];q.counterTriggered=true;c.mission.index=2;c.mission.waveT=999;c.mission.reinforceT=999;
  c.p.x=q.x;c.p.y=q.y+500;const a={x:q.x,y:q.y+500,alive:true,id:7};c.allies=[a];assert.equal(c.frontlineCaptureCount(q),2);assert.equal(c.frontlineCombatPoint(a),q);
  vm.runInContext(html.slice(html.indexOf('function updateMission('),html.indexOf('let missionHudNextAt=')),c);c.updateMission(1);assert.equal(c.mission.progress,2);assert.equal(q.playerEntered,true);
  const h={x:q.x,y:q.y-400,alive:true};c.los=()=>false;assert.equal(c.frontlineAllyCanSee(a,h),true);assert.ok(c.frontlineEnemyAreaTarget(h));
- c.drawFrontlineCaptureRing(q,100,200,c.mission);assert.ok(c.calls.filter(call=>call[0]==='arc').every(call=>call[3]===720));
- a.y=q.y+720;assert.equal(c.frontlineAllyCanCapture(a,q),false);
+ c.drawFrontlineCaptureRing(q,100,200,c.mission);assert.ok(c.calls.filter(call=>call[0]==='arc').every(call=>call[3]===540));
+ a.y=q.y+540;assert.equal(c.frontlineAllyCanCapture(a,q),false);
 });
 test('regular waves use six-second spacing and accelerate to three seconds when nearby enemies are scarce',()=>{
  for(const nearby of [0,4]){
