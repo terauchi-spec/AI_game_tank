@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.17.1232</title>
+<title>こっそり戦車大作戦 2026.10.17.1245</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -14,10 +14,10 @@ body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-
 html,body{height:100%;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 canvas{touch-action:none;-webkit-tap-highlight-color:transparent;max-width:100%;height:auto;border:1px solid #3a4030;border-radius:6px;cursor:crosshair}
 p{font-size:12px;opacity:.75;margin:8px 0 0;text-align:center;line-height:1.6}
-/* PCは内部描画840×720を維持し、表示だけ利用可能な高さへ拡張。 */
+/* PCは内部描画840×720の縦横比を保ち、画面内に収める。 */
 @media (pointer:fine){
  body{box-sizing:border-box;height:100dvh;overflow:hidden;}
- #c{box-sizing:border-box;flex:none;width:840px;max-width:100%;height:calc(100dvh - 20px);}
+ #c{box-sizing:border-box;flex:none;width:min(840px,calc((100dvh - 20px)*7/6));max-width:100%;height:auto;}
 }
 #pad{display:none}
 #stick{position:relative;width:160px;height:160px;border-radius:50%;background:rgba(10,12,8,.28);border:2px solid rgba(230,233,216,.42);box-shadow:0 3px 18px rgba(0,0,0,.2);touch-action:none;pointer-events:auto;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
@@ -416,7 +416,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open #debugToggleBtn,body
 .title-secondaries{display:flex;justify-content:center;gap:10px;}
 .title-secondary{flex:0 1 150px;min-height:38px;padding:6px 12px;font-size:16px;}
 @media(pointer:fine){
- .title-art{width:100%;height:calc(100dvh - 210px);max-height:none;object-fit:contain;}
+ .title-art{width:100%;height:auto;max-height:none;object-fit:contain;}
  .title-cta{min-height:68px;font-size:16px;}
  .title-secondary{min-height:38px;font-size:16px;}
 }
@@ -829,7 +829,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.17.1232',FILE_CREATED_AT='2026/10/17 12:32',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.17.1245',FILE_CREATED_AT='2026/10/17 12:45',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
