@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.17.1140</title>
+<title>こっそり戦車大作戦 2026.10.17.1202</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -621,12 +621,12 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <li><a href="#spec-save">スキル解放・保存・デバッグ</a></li>
 </ol></nav>
 <section class="spec-section" id="spec-goal"><h2>1. 目的とクリア条件</h2>
-<p>スキル選択後に<strong>初級・上級・最前線</strong>の3種類のステージから選びます。<strong>初級</strong>は最後の草原にある大型パラボラアンテナの電波施設、<strong>上級</strong>は敵司令本部を破壊するとクリアです。<strong>最前線</strong>は味方と協力し、南部・中央・北部の3つの戦線を順番に制圧するとクリアです。円内の敵を排除し、各制圧エリア（半径36m）へプレイヤーが地上で一度入ると、そのエリアの制圧が可能になります。進入後はプレイヤーが範囲を離れても、行動可能な味方兵が1人以上いると制圧が進みます。プレイヤー単独では進まず、味方兵との合流を待ちます。制圧中はプレイヤーと範囲内の味方兵の合計人数で制圧が加速します（1人48秒、2人24秒、3人16秒）。気絶中や降下中の兵士は制圧人数に含みません。制圧地点から60m以内の敵戦車は、制圧に参加している味方兵に向きや遮蔽物に関係なく気付き、追跡・攻撃します。遮蔽物に射線を遮られた場合は既存の遮蔽物への砲撃処理を使用します。敵に倒されると任務失敗となり、結果画面へ移行します。</p>
+<p>スキル選択後に<strong>初級・上級・最前線</strong>の3種類のステージから選びます。<strong>初級</strong>は最後の草原にある大型パラボラアンテナの電波施設、<strong>上級</strong>は敵司令本部を破壊するとクリアです。<strong>最前線</strong>は味方と協力し、南部・中央・北部の3つの戦線を順番に制圧するとクリアです。円内の敵を排除し、各制圧エリア（南部・中央は半径36m、北部は半径72m）へプレイヤーが地上で一度入ると、そのエリアの制圧が可能になります。進入後はプレイヤーが範囲を離れても、行動可能な味方兵が1人以上いると制圧が進みます。プレイヤー単独では進まず、味方兵との合流を待ちます。制圧中はプレイヤーと範囲内の味方兵の合計人数で制圧が加速します（1人48秒、2人24秒、3人16秒）。気絶中や降下中の兵士は制圧人数に含みません。制圧地点から60m以内（北部は96m以内）の敵戦車は、制圧に参加している味方兵に向きや遮蔽物に関係なく気付き、追跡・攻撃します。遮蔽物に射線を遮られた場合は既存の遮蔽物への砲撃処理を使用します。敵に倒されると任務失敗となり、結果画面へ移行します。</p>
 <p><strong>初級：</strong>開始草原→候補5エリアからランダムに3エリア→最後は草原（電波施設）の全5エリア。通常の青兵と青兵指揮官4体が必ず登場し、白兵・白兵指揮官・犬兵は出現しません。敵戦車は最大2台です。<strong>上級：</strong>従来の全7エリア、敵AI、敵配置、敵司令本部破壊のルールを維持します。</p>
 <p>歩兵の潜入に加え、戦車などの乗り物を利用した戦闘や、出撃前に選ぶスキルによる攻略ができます。</p><a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-map"><h2>2. ステージ構成とランダム生成</h2>
 <p><strong>初級：</strong>全5エリア。開始草原→草原・森林・丘陵・村・湿地から重複なしでランダムに3エリア→電波施設のある草原。<strong>上級：</strong>全7エリア。最初は草原、最後は敵司令本部で、その間の5エリアは従来の候補から重複なしでランダムに選ばれます。</p>
-<p><strong>最前線：</strong>既存の戦場を舞台に、味方部隊と3つの戦線を押し上げる制圧作戦です。敵の増援と味方の補充があり、各戦線の制圧時にライフ・搭乗車両の弾薬と燃料を補給します。目的地の矢印は右上のエリア名の下に表示し、制圧中は水色の円周ゲージと残り秒数で進み具合がわかります。開始直後は味方部隊が待機し、プレイヤーが開始地点から北へ240px（24m）前進すると一斉に進軍します。味方部隊と増援は個体ごとに左右の進路・制圧範囲内の到着位置・前進限界付近の待機位置が異なります。移動速度は従来の50〜100%の範囲で、3〜8秒ごとに緩やかに変化します。通常の進軍中は4〜10秒ごとに0.3〜0.9秒立ち止まり、前進限界では2〜4.5秒以上待機します。敵の発見時は短い立ち止まりを中断して戦闘を優先します。最前線の味方兵は前方120度・300px（雨天75%、砂嵐55%）の視界で、遮蔽物の向こうや背後の敵には反応しません。敵を発見すると水色の「!」を表示し、通常の1.5倍の速さで接近します。発見済みの敵は420pxまで追跡し、見失うと最後に見た地点を最大2秒探してから通常の前進に戻ります。射撃前は0.5秒静止して狙いを定めます。最前線で気絶した味方兵は10秒経過するか、徒歩のプレイヤーが触れると復帰します。制圧エリア内では敵味方とも発見モードとなり、同じ円内の相手を向きや遮蔽物に関係なく警戒します。射撃には視線が通る必要があります。各制圧エリアにプレイヤーが初めて入ると、青兵指揮官2人を含む敵6人が画面上部から反撃に向かいます。敵兵の同時上限に達した場合は、空きができ次第出現します。通常増援にも約4人に1人の割合で青兵指揮官が含まれます。最前線の敵味方の歩兵は建物の間で進めない状態が続くと、迂回経路を探し、必要なら後退して回り込みます。味方は画面上端の80px先で最低2秒待機し、プレイヤーが近づくと前進を再開します。開始時の敵歩兵はプレイヤーが80m前進するまで待機し、その後は画面上側の外から出現し、非交戦時は下へ進軍します。迷路エリアは壁を大幅に減らし、木箱や防護壁を置かない幅154pxの南北通路を3本確保します。同時に活動する敵兵は最大16人で、画面下へ通過した兵士は撃破扱いにせず退場します。</p>
+<p><strong>最前線：</strong>既存の戦場を舞台に、味方部隊と3つの戦線を押し上げる制圧作戦です。敵兵は原則6秒ごとに2人、周辺の敵が少ないと約3秒間隔で補充します。同時出現の上限16人を維持し、離れた画面外の敵は戦果に数えず整理します。最前線のみ敵戦車の視野角・索敵距離・追跡距離は通常の2倍です。味方の補充があり、各戦線の制圧時にライフ・搭乗車両の弾薬と燃料を補給します。目的地の矢印は右上のエリア名の下に表示し、制圧中は水色の円周ゲージと残り秒数で進み具合がわかります。開始直後は味方部隊が待機し、プレイヤーが開始地点から北へ240px（24m）前進すると一斉に進軍します。味方部隊と増援は個体ごとに左右の進路・制圧範囲内の到着位置・前進限界付近の待機位置が異なります。移動速度は従来の50〜100%の範囲で、3〜8秒ごとに緩やかに変化します。通常の進軍中は4〜10秒ごとに0.3〜0.9秒立ち止まり、前進限界では2〜4.5秒以上待機します。敵の発見時は短い立ち止まりを中断して戦闘を優先します。最前線の迷路は広い南北の通路を3本残し、その間に壁を配置します。最前線の味方兵は前方120度・300px（雨天75%、砂嵐55%）の視界で、遮蔽物の向こうや背後の敵には反応しません。敵を発見すると水色の「!」を表示し、通常の1.5倍の速さで接近します。発見済みの敵は420pxまで追跡し、見失うと最後に見た地点を最大2秒探してから通常の前進に戻ります。射撃前は0.5秒静止して狙いを定めます。最前線で気絶した味方兵は10秒経過するか、徒歩のプレイヤーが触れると復帰します。制圧エリア内では敵味方とも発見モードとなり、同じ円内の相手を向きや遮蔽物に関係なく警戒します。射撃には視線が通る必要があります。各制圧エリアにプレイヤーが初めて入ると、青兵指揮官2人を含む敵6人が画面上部から反撃に向かいます。敵兵の同時上限に達した場合は、空きができ次第出現します。通常増援にも約4人に1人の割合で青兵指揮官が含まれます。最前線の敵味方の歩兵は建物の間で進めない状態が続くと、迂回経路を探し、必要なら後退して回り込みます。味方は画面上端の80px先で最低2秒待機し、プレイヤーが近づくと前進を再開します。開始時の敵歩兵はプレイヤーが80m前進するまで待機し、その後は画面上側の外から出現し、非交戦時は下へ進軍します。迷路エリアは壁を大幅に減らし、木箱や防護壁を置かない幅154pxの南北通路を3本確保します。同時に活動する敵兵は最大16人で、画面下へ通過した兵士は撃破扱いにせず退場します。</p>
 <p>上級の中間エリア候補：草原／森林／村／丘陵／敵前線基地／街／敵迷路基地／湿地／荒野。</p>
 <ul><li>エリアごとに地形や建物、木、岩、草むら、障害物などの配置が異なります。作戦1回の通常車両は合計2〜5台で、トラック・装甲車・戦車からランダムに選ばれ、戦車が最低1台出現します。戦闘機は通常配置の対象外です。橋幅は64〜256px、川ごとの流速は6〜30px/秒です。</li><li>左右端の危険度は<strong>左重点・右重点・両側重点</strong>から毎回抽選され、巡回兵の配置や遮蔽物が変化します。</li><li>荒野は赤茶色の砂地・ひび割れた粘土質の地面・風化した岩山・残丘で構成されます。時折砂嵐が起き、視界と索敵距離が低下します。オアシスは毎回出現するとは限らず、出現時は従来の50〜150%の大きさにランダム変化し、中央や画面端に生成され、池へ入ると川と同様に減速します。草むらは少なめですが、オアシス周辺に多く、まれに赤や白の小花が混じります。地面と池の描画はキャッシュします。迷路基地には広い会議室と幅の広い廊下、空きスペースの木箱があります。青の通常兵はつながった通路を広く探索します。迷路壁は256px高の区画単位で描画をキャッシュし、破壊された区画だけ再描画します。描画キャッシュは最大8区画です。迷路壁はプレイヤー戦車の接触で破壊できます。接触による破壊範囲は少し抑えており、押し込み続けると広がります。トラック・装甲車の接触では破壊できません。木箱等の爆風では破壊できます。敵司令本部にも固有の構造があります。</li><li>道路は川と同様に2か所の候補それぞれで独立して75%の出現抽選を行います。アスファルト舗装・乾いた締め固め土を各50%、土の道路は1車線（96px）・対面2車線（176px）を各50%、舗装道路は対面2車線（176px）・対面4車線（320px）を各50%で選択します。川・橋と司令本部を避けて配置し、土の道路は迷路基地も避けます。舗装道路は迷路基地にも出現し、道幅の壁を除去します。場所が確保できない場合は出現しません。対面車線の中央は白い実線です。路面には汚れ・補修跡・ひび、白線には濃い汚れと不規則な塗装欠けを表現します。敵の障害物迂回探索は複数フレームへ分割し、全敵合計で約2msを目安に処理します。道路の描画は初回にキャッシュし、画面内だけ表示します。土の道路は横筋を抑えた専用タイルを使用し、不規則な路肩が周囲の地面になじみます。中央付近には、太めで濃い雑草を不規則に配置しています。道路上には建物・木・岩・塀・草むら・泥を配置しません。舗装道路と重なる木箱・ドラム缶は路肩の安全な空き場所へ移動し、空き場所がなければ除去します。土の道路は明るさと彩度を抑えて周囲になじませます。道路自体による速度変更はありません。マップ・敵・障害物の配置は出撃ごとに再生成されます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
@@ -829,7 +829,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.17.1140',FILE_CREATED_AT='2026/10/17 11:40',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.17.1202',FILE_CREATED_AT='2026/10/17 12:02',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -3220,12 +3220,12 @@ function cachedLos(o,target,ms=90){
 function targetObj(key){if(key==='partner')return partner&&!partner.down?partner:null;if(key&&key.startsWith('ally:')){const id=+key.slice(5);return (allies||[]).find(a=>a.alive&&a.id===id)||null;}if(key==='decoy')return decoy;return key==='p'?p:null;}
 function canDetect(o,target,face,key){
  if(!target)return false;const d=D(o,target),known=o.st&&o.target===key,searchBoost=(o&&o.sus>0&&!o.st)?1.5:1,eliteRange=o&&o.commander==='white'?1.6:o&&o.elite?1.2:1,eliteFov=o&&o.commander==='white'?1.3:o&&o.elite?1.2:1,humanFov=(humans||[]).includes(o)?1.2:1,fovBoost=eliteFov*humanFov;
- const chatSight=(o&&o.chatT>0)?.5:1;
+ const chatSight=(o&&o.chatT>0)?.5:1,tankSight=frontlineTankSightScale(o);
  const hiddenPlayer=(key==='partner'&&(partner?.down||inBush(partner)))||(key==='p'&&(debugMode>=2||inTumbleweed(p)||p.dig>0||(!p.tank&&inBush(p))||(weather==='rain'&&inWaterAt(p.x,p.y,0))));if(hiddenPlayer)return false;
- if(known){if(d>=(o&&o.commander==='white'?WHITE_CHASE_DROP:detectDropRange(key)*eliteRange))return false;return los(o,target);}
+ if(known){if(d>=(o&&o.commander==='white'?WHITE_CHASE_DROP:detectDropRange(key)*eliteRange*tankSight))return false;return los(o,target);}
  const da=Math.abs(angD(Math.atan2(target.y-o.y,target.x-o.x),face));
- const inCenter=da<=DETECT_CENTER_HALF*fovBoost&&d<detectRange(key)*searchBoost*eliteRange*chatSight;
- const inOuter=da<=DETECT_OUTER_HALF*fovBoost&&d<detectOuterRange(key)*searchBoost*eliteRange*chatSight;
+ const inCenter=da<=DETECT_CENTER_HALF*fovBoost*tankSight&&d<detectRange(key)*searchBoost*eliteRange*chatSight*tankSight;
+ const inOuter=da<=DETECT_OUTER_HALF*fovBoost*tankSight&&d<detectOuterRange(key)*searchBoost*eliteRange*chatSight*tankSight;
  if(!inCenter&&!inOuter)return false;
  return los(o,target);
 }
@@ -5406,7 +5406,7 @@ function update(dt){
   const detected=frontlineTankAreaTarget(e)||(silentDrill?null:findDetectedTarget(e,e.ang));if(detected)enterTankFound(e,detected.key,.5);
   let tg=targetObj(e.target);if(e.st&&!tg){e.st=0;e.target=null;e.foundPause=0;pauseAfterEnemyDetection(e);}tg=targetObj(e.target);
   if(e.st&&tg){const d=D(e,tg),toT=Math.atan2(tg.y-e.y,tg.x-e.x),vis=cachedLos(e,tg);
-   if(!detected){e.lost-=dt;if(e.lost<=0||d>detectDropRange(e.target)){e.st=0;e.target=null;e.foundPause=0;pauseAfterEnemyDetection(e);}}
+   if(!detected){e.lost-=dt;if(e.lost<=0||d>detectDropRange(e.target)*frontlineTankSightScale(e)){e.st=0;e.target=null;e.foundPause=0;pauseAfterEnemyDetection(e);}}
    if(e.st){e.cc-=dt;e.vc-=dt;e.firePause=Math.max(0,(e.firePause||0)-dt);const foundPause=(e.foundPause||0)>0;if(foundPause)e.foundPause=Math.max(0,e.foundPause-dt);e.ang=(foundPause&&p)?Math.atan2(p.y-e.y,p.x-e.x):toT;if(!foundPause&&!e.static&&d>190){mv(e,Math.cos(toT)*55*dt,Math.sin(toT)*55*dt,TANK_HIT);e.body=toT;}else if(!foundPause&&!e.static&&d<120){mv(e,-Math.cos(toT)*40*dt,-Math.sin(toT)*40*dt,TANK_HIT);}
     const canFire=(e.firePause||0)<=0;
     if(canFire&&!vis&&e.cc<=0){const block=firstBlockingCover(e,tg,300);if(block){const bx=block.x+block.w/2,by=block.y+block.h/2,ba=Math.atan2(by-e.y,bx-e.x);e.cc=2.8;fire(e.x+Math.cos(ba)*38,e.y+Math.sin(ba)*38,ba+(R()-.5)*.035,'e','c',enemyCannonSpeed(),340);}}
@@ -6952,7 +6952,7 @@ function draw(near){
  for(const w of waves){const k=1-w.r/w.max;g.strokeStyle='rgba(255,170,60,'+k+')';g.lineWidth=6;g.beginPath();g.arc(w.x,w.y,w.r,0,6.28);g.stroke();g.fillStyle='rgba(255,200,100,'+.35*k+')';g.fill();}
  for(const c of cars){if(!drawPointInView(c.x,c.y,cx,cy,160))continue;const foregroundVehicle=c.kind==='truck'||(c.kind==='tank'&&inBush(c));if(!foregroundVehicle)drawVehicle(c,c.x,c.y,c.body??-1.57,c.body??-1.57);const iy=c.y-(c.kind==='fighter'?66:c.kind==='truck'?42:50);markVehicle(c.x,iy,c.f<=0?'fuel':'ride');if(near===c)lab(c.t.n,c.x,iy-24,c.kind==='tank'?'bold 17px system-ui':'bold 14px system-ui','#fff');}
  if(stageMode==='front')for(const ally of allies||[])if(ally.alive&&enemyInView(ally,cx,cy,430))drawFrontlineAllyVision(ally);
- const enemyAlpha=digEnemyAlpha()*(1-sandIntensity);if(enemyAlpha>.001)for(const e of etanks){if(!enemyInView(e,cx,cy,140))continue;g.save();g.globalAlpha*=enemyAlpha;if(e.alive){if(!e.st){g.fillStyle='rgba(255,80,80,.035)';g.beginPath();g.moveTo(e.x,e.y);g.arc(e.x,e.y,detectOuterRange('p'),e.ang-DETECT_OUTER_HALF,e.ang+DETECT_OUTER_HALF);g.closePath();g.fill();g.fillStyle='rgba(255,80,80,.055)';g.beginPath();g.moveTo(e.x,e.y);g.arc(e.x,e.y,detectRange('p'),e.ang-DETECT_CENTER_HALF,e.ang+DETECT_CENTER_HALF);g.closePath();g.fill();}if(!inBush(e))tankShape(e.x,e.y,e.body,e.ang,{id:'enemy',col:'#4b5f9e'},TANK_DRAW);}else if(!e.wreckSpawned){g.fillStyle='#1c1a18';g.beginPath();g.arc(e.x,e.y,14,0,6.28);g.fill();}g.restore();if(e.alive&&enemyAlpha>.18){if(e.st)lab('!',e.x,e.y-38,'bold 18px system-ui','#ff5a5a');else if(e.sus>0)lab('?',e.x,e.y-38,'bold 18px system-ui','#ffd27a');}}
+ const enemyAlpha=digEnemyAlpha()*(1-sandIntensity);if(enemyAlpha>.001)for(const e of etanks){if(!enemyInView(e,cx,cy,stageMode==='front'?detectRange('p')*2:140))continue;g.save();g.globalAlpha*=enemyAlpha;if(e.alive){if(!e.st){const sightScale=frontlineTankSightScale(e);g.fillStyle='rgba(255,80,80,.035)';g.beginPath();g.moveTo(e.x,e.y);g.arc(e.x,e.y,detectOuterRange('p')*sightScale,e.ang-DETECT_OUTER_HALF*sightScale,e.ang+DETECT_OUTER_HALF*sightScale);g.closePath();g.fill();g.fillStyle='rgba(255,80,80,.055)';g.beginPath();g.moveTo(e.x,e.y);g.arc(e.x,e.y,detectRange('p')*sightScale,e.ang-DETECT_CENTER_HALF*sightScale,e.ang+DETECT_CENTER_HALF*sightScale);g.closePath();g.fill();}if(!inBush(e))tankShape(e.x,e.y,e.body,e.ang,{id:'enemy',col:'#4b5f9e'},TANK_DRAW);}else if(!e.wreckSpawned){g.fillStyle='#1c1a18';g.beginPath();g.arc(e.x,e.y,14,0,6.28);g.fill();}g.restore();if(e.alive&&enemyAlpha>.18){if(e.st)lab('!',e.x,e.y-38,'bold 18px system-ui','#ff5a5a');else if(e.sus>0)lab('?',e.x,e.y-38,'bold 18px system-ui','#ffd27a');}}
  if(enemyAlpha>.001)for(const h of humans){const sniperFalling=!h.alive&&h.sniperFallT>0;if((!h.alive&&!sniperFalling)||!enemyInView(h,cx,cy,100))continue;const lift=sniperFalling?0:blastLift(h);if(!sniperFalling)drawBlastShadow(h);g.save();g.translate(0,-lift);g.globalAlpha*=enemyAlpha;if(sniperFalling){const fk=Math.max(0,Math.min(1,1-h.sniperFallT/Math.max(.01,h.sniperFallMax||.72))),side=(h.sniperFallA&&Math.sin(h.sniperFallA)<0?-1:1);g.translate(h.x,h.y);g.rotate(side*fk*1.18);g.translate(-h.x,-h.y);g.globalAlpha*=Math.max(.35,1-fk*.38);}soldier(h.x,h.y,h.face,false,sniperFalling?false:h.st,!sniperFalling&&!!h.walking,!!h.elite,h.commander||'',!sniperFalling&&!(h.commander==='blue'&&h.whistleT>0)&&(h.commander==='white'?h.commanderCharge>0||h.commanderShotT>0:!!h.st),false,h);drawCommanderOverlay(h);
  if(!sniperFalling&&h.humanBurnT>0){const tt=performance.now()*.018;g.save();g.globalCompositeOperation='lighter';flameBlob(h.x-4+Math.sin(tt)*2,h.y+2,7+Math.sin(tt*1.3)*1.5,tt,.42);flameBlob(h.x+4+Math.cos(tt*.8)*2,h.y-5,9+Math.sin(tt*.9+1)*2,tt+1.7,.7);flameBlob(h.x+Math.sin(tt*.65)*3,h.y-12,6+Math.sin(tt*1.6+2)*1.5,tt+3.1,.9);g.restore();}
  if(!sniperFalling&&h.stun>0){drawStunStars(h.x,h.y);if(h.grapple>0){g.strokeStyle='rgba(230,233,216,.85)';g.lineWidth=2;g.beginPath();g.arc(h.x,h.y,13,-2.5,.7);g.stroke();}}g.restore();if(!sniperFalling&&enemyAlpha>.18){if(h.st||h.frontAreaAlert)lab('!',h.x,h.y-lift-18,'bold 16px system-ui','#ff5a5a');else if(h.sus>0)lab('?',h.x,h.y-lift-18,'bold 16px system-ui','#ffd27a');}}
@@ -7648,7 +7648,7 @@ function setupMission(){
  mission={index:0,progress:0,alarm:0,waveT:15,reinforceT:20,detected:false,points:[],exit:{x:p.x,y:p.y},alertCount:0};
  if(stageMode==='front'){
   mission.advanceStartY=p.y;mission.advanceReleased=false;
-  mission.points=[10000,6500,3000].map((y,i)=>({...missionSpot(WW/2,y,30),name:['南部戦線','中央戦線','北部戦線'][i],done:false}));
+  mission.points=[10000,6500,3000].map((y,i)=>({...missionSpot(WW/2,y,30),name:['南部戦線','中央戦線','北部戦線'][i],captureRadius:i===2?720:360,done:false}));
   missionAllies(p.y-100);
   say('最前線：24m前進すると味方部隊が進軍！');
  }else{
@@ -7668,15 +7668,14 @@ function updateMission(dt){
   updateFrontlineEnemyEntry();
   cleanupFrontlineArmy(dt);
   const q=m.points[m.index];if(!q)return;
-  if(!q.playerEntered&&!(p.tank&&p.tank.kind==='fighter')&&D(p,q)<FRONTLINE_CAPTURE_RADIUS)q.playerEntered=true;
+  if(!q.playerEntered&&!(p.tank&&p.tank.kind==='fighter')&&D(p,q)<frontlineCaptureRadius(q))q.playerEntered=true;
   m.captureReady=!!q.playerEntered;
   updateFrontlineCounterattack(q,dt);
-  const foes=humans.filter(h=>h.alive&&!(h.stun>0)&&D(h,q)<FRONTLINE_CAPTURE_RADIUS+30).length+etanks.filter(e=>e.alive&&D(e,q)<FRONTLINE_CAPTURE_RADIUS+30).length;
+  const foes=humans.filter(h=>h.alive&&!(h.stun>0)&&D(h,q)<frontlineCaptureRadius(q)+30).length+etanks.filter(e=>e.alive&&D(e,q)<frontlineCaptureRadius(q)+30).length;
   m.captureCount=frontlineCaptureCount(q);m.captureRate=m.captureCount;
   m.capturing=m.captureReady&&m.captureCount>0&&!foes;m.contested=foes>0;
   if(m.capturing)m.progress=Math.min(FRONTLINE_CAPTURE_SECONDS,m.progress+dt*m.captureRate);else if(foes)m.progress=Math.max(0,m.progress-dt*.35);
-  if(m.enemyWavesStarted!==false)m.waveT-=dt;m.reinforceT-=dt;
-  if(m.waveT<=0){m.waveT=spawnFrontlineWave(3)>0?24:1;}
+  updateFrontlineWaves(dt);m.reinforceT-=dt;
   if(m.reinforceT<=0){m.reinforceT=18;if(allies.filter(a=>a.alive&&a.frontline).length<4)missionAllies(Math.max(q.y+250,Math.min(p.y+120,WH-200)));}
   if(m.progress>=FRONTLINE_CAPTURE_SECONDS){q.done=true;m.index++;m.progress=0;p.hp=3;if(p.tank){p.tank.c=p.tank.t.cmax;p.tank.v=p.tank.t.vmax;p.tank.f=p.tank.t.fmax;}say(q.name+' 制圧！ 補給・増援到着');if(m.index===3){completeMission();return;}missionAllies(q.y);}
  }else{
@@ -7698,8 +7697,8 @@ function drawMission(){
  }
  gm.save();gm.setTransform(1,0,0,1,0,0);
  for(const point of [...m.points,...(stageMode==='stealth'&&m.index===3?[{...m.exit,name:'脱出地点',done:false}]:[])]){
-  const x=point.x-camX,y=point.y-cam,margin=stageMode==='front'?FRONTLINE_CAPTURE_RADIUS+20:200;if(y < -margin||y>H+margin)continue;
-  gm.strokeStyle=point.done?'#9de7ae':stageMode==='front'?'#8dd3ff':'#efd28b';gm.fillStyle=point.done?'rgba(75,170,100,.15)':'rgba(95,185,210,.13)';gm.lineWidth=3;gm.beginPath();gm.arc(x,y,stageMode==='front'?FRONTLINE_CAPTURE_RADIUS:55,0,Math.PI*2);gm.fill();gm.stroke();gm.font='bold 15px system-ui';gm.textAlign='center';gm.fillStyle='#fff3ce';gm.fillText(point.name+(point.done?' ✓':''),x,y-62);
+  const x=point.x-camX,y=point.y-cam,margin=stageMode==='front'?frontlineCaptureRadius(point)+20:200;if(y < -margin||y>H+margin)continue;
+  gm.strokeStyle=point.done?'#9de7ae':stageMode==='front'?'#8dd3ff':'#efd28b';gm.fillStyle=point.done?'rgba(75,170,100,.15)':'rgba(95,185,210,.13)';gm.lineWidth=3;gm.beginPath();gm.arc(x,y,stageMode==='front'?frontlineCaptureRadius(point):55,0,Math.PI*2);gm.fill();gm.stroke();gm.font='bold 15px system-ui';gm.textAlign='center';gm.fillStyle='#fff3ce';gm.fillText(point.name+(point.done?' ✓':''),x,y-62);
   if(stageMode==='front')drawFrontlineCaptureRing(point,x,y,m);
  }
  if(q&&stageMode==='front')drawFrontlineArrow(q);
@@ -7803,7 +7802,7 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/frontline.js?v=2026.10.17.1140"></script>
+<script src="js/frontline.js?v=2026.10.17.1202"></script>
 <script src="js/award-icons.js?v=2026.10.17.0743"></script>
 <script src="js/characters.js?v=2026.10.17.0811"></script>
 <script src="js/enemy-dogs.js?v=2026.10.17.0811"></script>

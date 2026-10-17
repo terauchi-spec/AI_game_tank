@@ -1,5 +1,7 @@
 // Frontline-only presentation and infantry waves. Reuse existing combat and obstacle AI.
 const FRONTLINE_ENEMY_LIMIT=16,FRONTLINE_CAPTURE_SECONDS=48,FRONTLINE_CAPTURE_RADIUS=360;
+function frontlineCaptureRadius(point){return point?.captureRadius||FRONTLINE_CAPTURE_RADIUS;}
+function frontlineTankSightScale(unit){return stageMode==='front'&&(etanks||[]).includes(unit)?2:1;}
 function frontlineView(){
  return{x:Math.max(0,Math.min(WW-W,p.x-W/2)),y:Math.max(0,Math.min(WH-H,p.y-H*.6)),w:W,h:H};
 }
@@ -58,8 +60,8 @@ function setupFrontlineArmy(){
 function cleanupFrontlineArmy(dt){
  if(!mission)return;
  mission.cleanupT=(mission.cleanupT||0)-dt;if(mission.cleanupT>0)return;mission.cleanupT=1;
- const bottom=frontlineView().y+H+200;
- for(const h of humans)if(h.frontMarch&&h.alive&&(h.y>bottom||h.y>WH-28)){
+ const view=frontlineView(),bottom=view.y+H+200;
+ for(const h of humans)if(h.frontMarch&&h.alive&&(h.y>bottom||h.y>WH-28||h.y<view.y-700||h.x<view.x-160||h.x>view.x+view.w+160)){
   // Walking out is not a kill. Never award score or a title for despawning infantry.
   h.frontRetired=true;h.alive=false;h.scoreCounted=true;
  }
@@ -83,10 +85,10 @@ function frontlineCaptureVisual(m){
  return{fraction,remaining,label:m.captureReady===false&&!m.contested?'プレイヤーの進入待ち':m.captureCount===0&&!m.contested?'味方兵の合流待ち':(m.contested?'敵が範囲内 ／ ':m.capturing?'制圧まで ':'制圧一時停止 ／ 残り ')+remaining.toFixed(1)+'秒'+(m.capturing&&m.captureCount>1?'（'+m.captureCount+'人）':'')};
 }
 function drawFrontlineCaptureRing(point,x,y,m){
- const active=m.points[m.index]===point,waiting=m.captureCount===0&&D(p,point)<FRONTLINE_CAPTURE_RADIUS;if(!active||(!(m.progress>0)&&!m.capturing&&!waiting))return;
- const status=frontlineCaptureVisual(m);
- gm.save();gm.lineWidth=7;gm.strokeStyle='rgba(141,211,255,.24)';gm.beginPath();gm.arc(x,y,FRONTLINE_CAPTURE_RADIUS,0,Math.PI*2);gm.stroke();
- if(status.fraction>0){gm.strokeStyle='#8dd3ff';gm.lineCap='round';gm.beginPath();gm.arc(x,y,FRONTLINE_CAPTURE_RADIUS,-Math.PI/2,-Math.PI/2+Math.PI*2*status.fraction);gm.stroke();}
+ const active=m.points[m.index]===point,waiting=m.captureCount===0&&D(p,point)<frontlineCaptureRadius(point);if(!active||(!(m.progress>0)&&!m.capturing&&!waiting))return;
+ const status=frontlineCaptureVisual(m),radius=frontlineCaptureRadius(point);
+ gm.save();gm.lineWidth=7;gm.strokeStyle='rgba(141,211,255,.24)';gm.beginPath();gm.arc(x,y,radius,0,Math.PI*2);gm.stroke();
+ if(status.fraction>0){gm.strokeStyle='#8dd3ff';gm.lineCap='round';gm.beginPath();gm.arc(x,y,radius,-Math.PI/2,-Math.PI/2+Math.PI*2*status.fraction);gm.stroke();}
  gm.textAlign='center';gm.font='bold 16px system-ui';gm.lineWidth=4;gm.strokeStyle='rgba(0,0,0,.8)';gm.strokeText(status.label,x,y-35);gm.fillStyle='#d5f0ff';gm.fillText(status.label,x,y-35);gm.restore();
 }
 function frontlineArrowPosition(){return{x:W-26,y:68};}
@@ -196,9 +198,9 @@ function rescueFrontlineAlly(a){
 }
 function updateFrontlineCounterattack(point,dt){
  if(!point||point.done)return;
- if(!point.counterTriggered&&D(p,point)<FRONTLINE_CAPTURE_RADIUS){
+ if(!point.counterTriggered&&D(p,point)<frontlineCaptureRadius(point)){
   point.counterTriggered=true;point.counterPending=6;point.counterBluePending=2;point.counterRetry=0;
-  mission.waveT=Math.max(mission.waveT||0,12);say('敵の反撃部隊が接近！');
+  mission.waveT=Math.max(mission.waveT||0,6);say('敵の反撃部隊が接近！');
  }
  if(!(point.counterPending>0))return;
  point.counterRetry=(point.counterRetry||0)-dt;
@@ -218,7 +220,7 @@ function frontlineAllySightRange(known=false){
 }
 function frontlineAllyCanSee(a,h,known=false,area=frontlineCombatPoint(a)){
  if(!h.alive)return false;
- if(area&&D(h,area)<FRONTLINE_CAPTURE_RADIUS)return true;
+ if(area&&D(h,area)<frontlineCaptureRadius(area))return true;
  const dx=h.x-a.x,dy=h.y-a.y,range=frontlineAllySightRange(known);
  if(dx*dx+dy*dy>range*range)return false;
  const angle=Math.atan2(dy,dx)-(a.face??-Math.PI/2);
@@ -238,7 +240,7 @@ function refreshFrontlineAllyTargets(ready){
     if(score<bestScore){bestScore=score;best=h;}
    }
   }
-  a._combatTarget=best;a.frontTargetVisible=best?(!(area&&D(best,area)<FRONTLINE_CAPTURE_RADIUS)||los(a,best)):false;
+  a._combatTarget=best;a.frontTargetVisible=best?(!(area&&D(best,area)<frontlineCaptureRadius(area))||los(a,best)):false;
   if(best)assigned.set(best,(assigned.get(best)||0)+1);
  }
 }
@@ -256,7 +258,7 @@ function openFrontlineMaze(V,Hh,zone,mx0,csx,wt){
  const walls=[];
  for(const grid of [V,Hh])for(const column of grid)for(let j=0;j<column.length;j++)if(column[j])walls.push([column,j]);
  for(let i=walls.length-1;i>0;i--){const j=R()*(i+1)|0;[walls[i],walls[j]]=[walls[j],walls[i]];}
- for(let i=Math.floor(walls.length*.15);i<walls.length;i++){const [column,j]=walls[i];column[j]=0;}
+ for(let i=Math.floor(walls.length*.55);i<walls.length;i++){const [column,j]=walls[i];column[j]=0;}
  const C=Hh.length;zone.frontlineMazeLanes=[];
  for(const start of [1,Math.floor(C/2)-1,C-4]){
   for(let i=start;i<start+3;i++)Hh[i].fill(0);
@@ -278,26 +280,36 @@ function updateFrontlineAdvance(){
 
 function updateFrontlineEnemyEntry(){
  if(stageMode!=='front'||!mission||mission.enemyWavesStarted!==false||p.y>mission.enemyEntryY)return;
- mission.enemyWavesStarted=true;spawnFrontlineWave(6);mission.waveT=24;
+ mission.enemyWavesStarted=true;spawnFrontlineWave(6);mission.waveT=6;mission.waveCheckT=1;
+}
+function updateFrontlineWaves(dt){
+ const m=mission;if(stageMode!=='front'||!m||m.enemyWavesStarted!==true||areaDebugEnabled)return;
+ m.waveT-=dt;m.waveCheckT=(m.waveCheckT||0)-dt;
+ if(m.waveCheckT<=0){
+  m.waveCheckT=1;const view=frontlineView();let nearby=0;
+  for(const h of humans)if(h.alive&&h.x>=view.x-80&&h.x<=view.x+view.w+80&&h.y>=view.y-160&&h.y<=view.y+view.h+80)nearby++;
+  m.nearbyEnemies=nearby;if(nearby<4)m.waveT=Math.min(m.waveT,3);
+ }
+ if(m.waveT<=0)m.waveT=spawnFrontlineWave(2)>0?((m.nearbyEnemies??4)<4?3:6):1;
 }
 function frontlineCombatPoint(unit){
  if(stageMode!=='front'||!mission)return null;
- return mission.points.find(q=>D(unit,q)<FRONTLINE_CAPTURE_RADIUS)||null;
+ return mission.points.find(q=>D(unit,q)<frontlineCaptureRadius(q))||null;
 }
 function frontlineAllyCanCapture(a,point){
- return a.alive&&!(a.stun>0)&&!(a.stunRecover>0)&&!(a.chute>0)&&!(a.blastAirT>0)&&D(a,point)<FRONTLINE_CAPTURE_RADIUS;
+ return a.alive&&!(a.stun>0)&&!(a.stunRecover>0)&&!(a.chute>0)&&!(a.blastAirT>0)&&D(a,point)<frontlineCaptureRadius(point);
 }
 function frontlineCaptureCount(point){
  let count=0;
  if(point.y>=frontlineAllyLimit())for(const a of allies)if(frontlineAllyCanCapture(a,point))count++;
  // A player can help the squad, but cannot capture a frontline alone.
  if(!count)return 0;
- return count+(D(p,point)<FRONTLINE_CAPTURE_RADIUS&&!(p.tank&&p.tank.kind==='fighter')&&!(p.dig>0)?1:0);
+ return count+(D(p,point)<frontlineCaptureRadius(point)&&!(p.tank&&p.tank.kind==='fighter')&&!(p.dig>0)?1:0);
 }
 function frontlineTankAreaTarget(e){
  if(stageMode!=='front'||!mission||areaDebugEnabled)return null;
  const point=mission.points[mission.index];
- if(!point||point.done||D(e,point)>600||point.y<frontlineAllyLimit())return null;
+ if(!point||point.done||D(e,point)>Math.max(600,frontlineCaptureRadius(point)+240)||point.y<frontlineAllyLimit())return null;
  // The capture alarm reveals participating soldiers, not a hidden lone player.
  let best=null;
  for(const a of allies)if(frontlineAllyCanCapture(a,point)){
@@ -308,7 +320,7 @@ function frontlineTankAreaTarget(e){
 function frontlineEnemyAreaTarget(o){
  const area=frontlineCombatPoint(o);if(!area)return null;
  let best=null;
- const consider=(unit,key)=>{if(D(unit,area)>=FRONTLINE_CAPTURE_RADIUS)return;const d=D(o,unit);if(!best||d<best.d)best={key,obj:unit,d};};
+ const consider=(unit,key)=>{if(D(unit,area)>=frontlineCaptureRadius(area))return;const d=D(o,unit);if(!best||d<best.d)best={key,obj:unit,d};};
  if(debugMode<2&&!(p.dig>0)&&!(p.tank&&p.tank.kind==='fighter'))consider(p,'p');
  for(const a of allies)if(a.alive&&!(a.chute>0))consider(a,'ally:'+a.id);
  return best;

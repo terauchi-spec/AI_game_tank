@@ -185,11 +185,11 @@ function mazeHarness(mode,seed=3){
  c.R=()=>((seed=(seed*1664525+1013904223)>>>0)/2**32);
  vm.runInContext(html.slice(html.indexOf('function genCovers('),html.indexOf('const AREA_DEBUG_ORDER=')),c);return c;
 }
-test('Frontline maze wall count falls by at least 75% across twenty map seeds',()=>{
+test('Frontline maze restores at least 2.5 times the sparse wall count across twenty seeds',()=>{
  for(let seed=1;seed<=20;seed++){
-  const base=mazeHarness('base',seed),front=mazeHarness('front',seed);base.genCovers();front.genCovers();
+  const base=mazeHarness('base',seed),front=mazeHarness('front',seed),sparse=mazeHarness('front',seed);vm.runInContext('openFrontlineMaze='+front.openFrontlineMaze.toString().replace('walls.length*.55','walls.length*.15'),sparse);base.genCovers();front.genCovers();sparse.genCovers();
   const normal=base.covers.filter(c=>c.mazeWall).length,reduced=front.covers.filter(c=>c.mazeWall).length;
-  assert.ok(normal>400);assert.ok(reduced<=normal*.25,`${seed}: ${reduced}/${normal}`);
+  assert.ok(normal>400);assert.ok(reduced>=sparse.covers.filter(c=>c.mazeWall).length*2.5,`${seed}: restored ${reduced}`);assert.ok(reduced<=normal*.7,`${seed}: ${reduced}/${normal}`);
  }
 });
 test('all three Frontline maze lanes remain clear of walls, defense barriers and crate colliders',()=>{
@@ -303,7 +303,7 @@ test('enemies inside a capture area detect opponents there from any direction an
 test('opening infantry wait for 800px of player advance; waves cannot leak out early',()=>{
  const c=harness();c.humans=[{alive:true}];c.setupFrontlineArmy();const start=c.p.y;assert.equal(c.humans.length,0);assert.equal(c.spawnFrontlineWave(6),0);
  c.p.y=start-799;c.updateFrontlineEnemyEntry();assert.equal(c.humans.length,0);c.p.y--;c.updateFrontlineEnemyEntry();assert.equal(c.humans.length,6);assert.equal(c.mission.enemyWavesStarted,true);
- c.updateFrontlineEnemyEntry();assert.equal(c.humans.length,6);assert.equal(c.mission.waveT,24);
+ c.updateFrontlineEnemyEntry();assert.equal(c.humans.length,6);assert.equal(c.mission.waveT,6);
 });
 
 test('a stalled ally requests the shared incremental search and stays still while it is pending',()=>{
@@ -375,4 +375,38 @@ test('pace changes smoothly inside the 50–100% band and resting never prevents
  for(let i=0;i<500;i++){const previous=a.frontStyle?.pace??.75;c.updateFrontlineAlly(a,null,.05);const pace=a.frontStyle.pace;assert.ok(pace>=.5&&pace<=1);assert.ok(Math.abs(pace-previous)<=.00500001);seen.add(pace.toFixed(2));}
  assert.ok(seen.size>=5);
  c.p.y=9000;a.x=480;a.y=9200;a.frontHolding=false;a.frontWaitT=0;a.frontStyle.rest=.8;const old={x:a.x,y:a.y};c.updateFrontlineAlly(a,{x:480,y:8800,alive:true},.1);assert.equal(a.frontStyle.rest,0);assert.equal(a.frontMode,'found');assert.ok(c.D(a,old)>0);
+});
+
+test('only Frontline enemy tanks double their range, field of view and known-target range',()=>{
+ const c=harness(),e={x:0,y:10000,alive:true},h={x:0,y:10000,alive:true},target={x:600,y:10000};c.etanks=[e];c.humans=[h];
+ Object.assign(c,{DETECT_CENTER_HALF:7.5*Math.PI/180,DETECT_OUTER_HALF:52.5*Math.PI/180,WHITE_CHASE_DROP:2000,partner:null,inBush:()=>false,inTumbleweed:()=>false,los:()=>true,detectRange:()=>315,detectOuterRange:()=>220.5,detectDropRange:()=>472.5,angD:(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b))});
+ vm.runInContext(html.slice(html.indexOf('function canDetect('),html.indexOf('function findDetectedTarget(')),c);
+ assert.equal(c.canDetect(e,target,0,'ally:1'),true);assert.equal(c.canDetect(h,target,0,'ally:1'),false);c.stageMode='base';assert.equal(c.canDetect(e,target,0,'ally:1'),false);c.stageMode='front';
+ target.x=630;assert.equal(c.canDetect(e,target,0,'ally:1'),false);
+ for(const angle of [100,106]){target.x=400*Math.cos(angle*Math.PI/180);target.y=10000+400*Math.sin(angle*Math.PI/180);assert.equal(c.canDetect(e,target,0,'ally:1'),angle===100);}
+ e.st=1;e.target='ally:1';target.x=900;target.y=10000;assert.equal(c.canDetect(e,target,0,'ally:1'),true);target.x=945;assert.equal(c.canDetect(e,target,0,'ally:1'),false);
+ c.los=()=>false;target.x=600;assert.equal(c.canDetect(e,target,0,'ally:1'),false);
+});
+test('the third objective alone uses a 720px capture circle for progress, awareness and rendering',()=>{
+ const c=harness();vm.runInContext(html.slice(html.indexOf('function setupMission('),html.indexOf('function completeMission(')),c);c.setupMission();
+ assert.deepEqual(Array.from(c.mission.points,q=>c.frontlineCaptureRadius(q)),[360,360,720]);const q=c.mission.points[2];q.counterTriggered=true;c.mission.index=2;c.mission.waveT=999;c.mission.reinforceT=999;
+ c.p.x=q.x;c.p.y=q.y+500;const a={x:q.x,y:q.y+500,alive:true,id:7};c.allies=[a];assert.equal(c.frontlineCaptureCount(q),2);assert.equal(c.frontlineCombatPoint(a),q);
+ vm.runInContext(html.slice(html.indexOf('function updateMission('),html.indexOf('let missionHudNextAt=')),c);c.updateMission(1);assert.equal(c.mission.progress,2);assert.equal(q.playerEntered,true);
+ const h={x:q.x,y:q.y-400,alive:true};c.los=()=>false;assert.equal(c.frontlineAllyCanSee(a,h),true);assert.ok(c.frontlineEnemyAreaTarget(h));
+ c.drawFrontlineCaptureRing(q,100,200,c.mission);assert.ok(c.calls.filter(call=>call[0]==='arc').every(call=>call[3]===720));
+ a.y=q.y+720;assert.equal(c.frontlineAllyCanCapture(a,q),false);
+});
+test('regular waves use six-second spacing and accelerate to three seconds when nearby enemies are scarce',()=>{
+ for(const nearby of [0,4]){
+  const c=harness(),view=c.frontlineView(),times=[];let clock=0;c.mission.enemyWavesStarted=true;c.mission.waveT=6;c.mission.waveCheckT=1;
+  c.humans=Array.from({length:nearby},()=>({x:view.x+50,y:view.y+50,alive:true}));c.spawnFrontlineWave=n=>{assert.equal(n,2);times.push(clock);return n;};
+  for(let i=0;i<200;i++){clock+=.1;c.updateFrontlineWaves(.1);}
+  assert.ok(times.length>=(nearby?3:6));for(let i=1;i<times.length;i++)assert.ok(times[i]-times[i-1]<=(nearby?6.11:3.11));
+  c.mission.enemyWavesStarted=false;const count=times.length;c.mission.waveT=0;c.updateFrontlineWaves(10);assert.equal(times.length,count);
+ }
+});
+test('remote off-screen infantry release spawn slots without awarding kills',()=>{
+ const c=harness(),view=c.frontlineView();c.humans=Array.from({length:16},()=>({x:view.x-200,y:view.y+100,alive:true,frontMarch:true}));const retired=c.humans.slice();
+ c.cleanupFrontlineArmy(1);assert.equal(c.humans.length,0);assert.ok(retired.every(h=>h.frontRetired&&h.scoreCounted&&!h.alive));
+ c.mission.enemyWavesStarted=true;c.mission.waveT=0;c.updateFrontlineWaves(.1);assert.equal(c.humans.length,2);assert.ok(c.humans.every(h=>h.y<c.frontlineView().y));
 });
