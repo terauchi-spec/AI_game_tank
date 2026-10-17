@@ -119,7 +119,8 @@ function moveFrontlineAlly(a,target,sp,dt){
  a.frontAllyNav=true;
  const limit=frontlineAllyLimit(),goal={x:target.x,y:Math.max(limit+12,target.y)},ox=a.x,oy=a.y;
  if(oy<=limit+8)return;
- dogMoveAround(a,goal,sp*(a.speedScale??1),dt,8,false);
+ const speed=sp*(a.speedScale??1);
+ if(!moveFrontlineAllyDetour(a,goal,speed,dt,target))dogMoveAround(a,goal,speed,dt,8,false);
  // A detour must obey the advance limit as well; never teleport a unit out of cover.
  if(a.y<limit){a.x=ox;a.y=oy;a.dogWall=null;a.dogEscape=null;}
  a.frontMoving=Math.hypot(a.x-ox,a.y-oy)>.02;
@@ -263,4 +264,54 @@ function frontlineEnemyAreaTarget(o){
  if(debugMode<2&&!(p.dig>0)&&!(p.tank&&p.tank.kind==='fighter'))consider(p,'p');
  for(const a of allies)if(a.alive&&!(a.chute>0))consider(a,'ally:'+a.id);
  return best;
+}
+
+// Use the existing shared, incremental search only after local avoidance stops making progress.
+function moveFrontlineAllyDetour(a,goal,speed,dt,target=goal){
+ let nav=a.frontNav;
+ if(!nav||Math.hypot(target.x-nav.tx,target.y-nav.ty)>90||nav.covers!==covers||nav.coverLen!==covers.length){
+  a.patrolSearch=null;nav=a.frontNav={gx:goal.x,gy:goal.y,tx:target.x,ty:target.y,best:D(a,target),still:0,retry:0,covers,coverLen:covers.length,route:null,index:0};
+ }
+ nav.retry=Math.max(0,nav.retry-dt);
+ const distance=D(a,target);
+ if(distance<nav.best-10){nav.best=distance;nav.still=0;}else nav.still+=dt;
+ if(nav.arrived){if(D(a,nav.arrived)<18&&Math.hypot(goal.x-nav.gx,goal.y-nav.gy)<=64&&hitsC(goal.x,goal.y,12))return true;nav.arrived=null;nav.still=3;nav.retry=0;}
+ if(!nav.route&&(a.patrolSearch||nav.still>=3&&nav.retry<=0&&performance.now()>=patrolRoutePlanAt)){
+  if(!a.patrolSearch){
+   patrolRoutePlanAt=performance.now()+100;nav.retry=1.5;nav.gx=goal.x;nav.gy=goal.y;
+   nav.safeGoal=frontlineAllyDetourGoal(a,{x:nav.gx,y:nav.gy});
+   a.dogWall=null;a.dogEscape=null;
+  }
+  if(nav.safeGoal){
+   const route=findPatrolReturnPath(a,nav.safeGoal,10,a);
+   if(route===PATROL_SEARCH_PENDING)return true;
+   nav.route=route;nav.index=0;nav.blocked=0;
+  }
+ }
+ if(!nav.route)return false;
+ while(nav.index<nav.route.length&&D(a,nav.route[nav.index])<5)nav.index++;
+ if(nav.index===nav.route.length){
+  nav.route=null;nav.still=0;nav.best=distance;
+  if(D(nav.safeGoal,goal)>8){nav.arrived=nav.safeGoal;return true;}
+  return false;
+ }
+ const q=nav.route[nav.index],angle=Math.atan2(q.y-a.y,q.x-a.x),step=Math.min(speed*dt,D(a,q)),x=a.x,y=a.y;
+ mv(a,Math.cos(angle)*step,Math.sin(angle)*step,8);a.face=angle;
+ nav.blocked=Math.hypot(a.x-x,a.y-y)<step*.1?(nav.blocked||0)+dt:0;
+ if(nav.blocked>.5){nav.route=null;nav.still=3;nav.retry=0;}
+ return true;
+}
+function frontlineAllyDetourGoal(a,goal){
+ if(!hitsC(goal.x,goal.y,12))return goal;
+ const limit=frontlineAllyLimit()+12;
+ for(const radius of [32,64,128,192]){
+  let best=null,score=Infinity;
+  for(let i=0;i<12;i++){
+   const angle=i*Math.PI/6,q={x:goal.x+Math.cos(angle)*radius,y:goal.y+Math.sin(angle)*radius};
+   if(q.x<14||q.x>WW-14||q.y<limit||q.y>WH-14||hitsC(q.x,q.y,12))continue;
+   const d=D(a,q);if(d<score){best=q;score=d;}
+  }
+  if(best)return best;
+ }
+ return null;
 }

@@ -4,7 +4,7 @@ function harness(){
  let seed=3;const calls=[];
  const gm=new Proxy({}, {get:(o,k)=>o[k]||((...args)=>calls.push([k,...args])),set:(o,k,v)=>(o[k]=v,true)});
  const c={WW:960,WH:12800,W:480,H:800,TANK_HIT:28,cars:[],etanks:[],p:{x:480,y:10000,body:0},stageMode:'front',debugMode:0,weather:'clear',areaDebugEnabled:false,mission:{points:[],index:0,enemyRoster:[],enemyRosterIndex:0},humans:[],enemyDogs:[],allies:[],allySeq:0,covers:[],gm,
- R:()=>((seed=(seed*1664525+1013904223)>>>0)/2**32),D:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),hitsM:()=>false,hitsC:()=>false,inWaterAt:()=>false,inBase:()=>false,patrolLineClear:()=>true,missionSpot:(x,y)=>({x,y}),setSkillCooldown(){},sfx(){},say(){},
+ performance:{now:()=>1000},patrolRoutePlanAt:0,PATROL_SEARCH_PENDING:Symbol('pending'),findPatrolReturnPath:()=>null,R:()=>((seed=(seed*1664525+1013904223)>>>0)/2**32),D:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),hitsM:()=>false,hitsC:()=>false,inWaterAt:()=>false,inBase:()=>false,patrolLineClear:()=>true,missionSpot:(x,y)=>({x,y}),setSkillCooldown(){},sfx(){},say(){},
  mv:(a,dx,dy)=>{a.x+=dx;a.y+=dy;},dogMoveAround:(h,q,sp,dt)=>{const angle=Math.atan2(q.y-h.y,q.x-h.x);h.x+=Math.cos(angle)*sp*dt;h.y+=Math.sin(angle)*sp*dt;}};
  vm.createContext(c);vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/frontline.js'),'utf8'),c);
  vm.runInContext(html.slice(html.indexOf('function missionAllies('),html.indexOf('function setupMission(')),c);
@@ -251,4 +251,35 @@ test('opening infantry wait for 800px of player advance; waves cannot leak out e
  const c=harness();c.humans=[{alive:true}];c.setupFrontlineArmy();const start=c.p.y;assert.equal(c.humans.length,0);assert.equal(c.spawnFrontlineWave(6),0);
  c.p.y=start-799;c.updateFrontlineEnemyEntry();assert.equal(c.humans.length,0);c.p.y--;c.updateFrontlineEnemyEntry();assert.equal(c.humans.length,6);assert.equal(c.mission.enemyWavesStarted,true);
  c.updateFrontlineEnemyEntry();assert.equal(c.humans.length,6);assert.equal(c.mission.waveT,24);
+});
+
+test('a stalled ally requests the shared incremental search and stays still while it is pending',()=>{
+ const c=harness(),a={x:480,y:10000,speedScale:1},goal={x:480,y:9700};let requests=0;c.dogMoveAround=()=>{};
+ c.findPatrolReturnPath=(start,end,r,owner)=>{requests++;assert.equal(owner,a);assert.equal(r,10);return c.PATROL_SEARCH_PENDING;};
+ for(let i=0;i<29;i++)c.moveFrontlineAlly(a,goal,135,.1);assert.equal(requests,0);c.moveFrontlineAlly(a,goal,135,.2);assert.equal(requests,1);assert.equal(a.y,10000);
+});
+test('an ally can back out of a U-shaped building pocket and reach the far side',()=>{
+ const c=harness();let clock=1000;c.performance.now=()=>clock;c.p.y=9000;
+ c.covers=[{x:360,y:9000,w:240,h:180},{x:330,y:9160,w:40,h:220},{x:590,y:9160,w:40,h:220}];
+ c.hitsC=(x,y,r)=>c.covers.some(b=>x+r>b.x&&x-r<b.x+b.w&&y+r>b.y&&y-r<b.y+b.h);
+ c.mv=(a,dx,dy)=>{if(!c.hitsC(a.x+dx,a.y,8))a.x+=dx;if(!c.hitsC(a.x,a.y+dy,8))a.y+=dy;};
+ c.dogMoveAround=(a,q,sp,dt)=>{const angle=Math.atan2(q.y-a.y,q.x-a.x);c.mv(a,Math.cos(angle)*sp*dt,Math.sin(angle)*sp*dt);};
+ vm.runInContext(html.slice(html.indexOf('function patrolLineClear('),html.indexOf('function movePatrolReturn(')),c);
+ for(const scale of [.5,1]){
+  const a={x:480,y:9192,speedScale:scale},goal={x:480,y:8800};let maxY=a.y;
+  for(let i=0;i<800;i++){clock+=50;c.patrolSearchBudgetMs=2;c.moveFrontlineAlly(a,goal,135,.05);maxY=Math.max(maxY,a.y);assert.equal(c.hitsC(a.x,a.y,8),false);if(c.D(a,goal)<8)break;}
+  assert.ok(maxY>9380);assert.ok(c.D(a,goal)<8,JSON.stringify(a));
+ }
+});
+test('a temporary advance-limit goal inside cover uses a free waiting point',()=>{
+ const c=harness(),goal={x:480,y:9600};c.hitsC=(x,y)=>Math.abs(x-480)<90&&Math.abs(y-9600)<70;
+ const q=c.frontlineAllyDetourGoal({x:480,y:9800},goal);assert.ok(q);assert.equal(c.hitsC(q.x,q.y,12),false);assert.ok(q.y>=c.frontlineAllyLimit()+12);
+});
+test('changed destinations and rebuilt cover invalidate an ally’s cached detour',()=>{
+ const c=harness(),a={x:480,y:10000,speedScale:1};c.moveFrontlineAlly(a,{x:480,y:9700},135,.1);const first=a.frontNav;
+ c.moveFrontlineAlly(a,{x:680,y:9700},135,.1);assert.notEqual(a.frontNav,first);const second=a.frontNav;c.covers=[];c.moveFrontlineAlly(a,{x:680,y:9700},135,.1);assert.notEqual(a.frontNav,second);
+});
+test('camera movement alone does not discard a useful detour toward the same objective',()=>{
+ const c=harness(),a={x:480,y:10000,speedScale:1},goal={x:480,y:3000};c.moveFrontlineAlly(a,goal,135,.1);const nav=a.frontNav;
+ c.p.y-=150;c.moveFrontlineAlly(a,goal,135,.1);assert.equal(a.frontNav,nav);
 });
