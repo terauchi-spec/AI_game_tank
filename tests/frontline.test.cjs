@@ -624,3 +624,19 @@ test('beginner victory sparkles on both cargo sprites instead of drawing antenna
  c.drawFrontlineVictorySignal();assert.ok(c.calls.some(a=>a[0]==='fill'));assert.equal(c.calls.filter(a=>a[0]==='arc').length,0);
  const xs=c.calls.filter(a=>a[0]==='moveTo').map(a=>a[1]);assert.ok(xs.some(x=>x<480)&&xs.some(x=>x>480));const before=c.calls.length;c.state='play';c.drawFrontlineVictorySignal();assert.equal(c.calls.length,before);
 });
+
+test('cargo rendering enables high-quality interpolation locally and restores other sprite settings',()=>{
+ const c=harness(),cargo=c.frontlineCargoLayout({x:480,y:10000},0)[0],draws=[];
+ c.COVER_IMG={frontline_cargo_small:{}};c.assetOK=()=>true;
+ c.g={imageSmoothingEnabled:false,imageSmoothingQuality:'low',drawImage(){draws.push([this.imageSmoothingEnabled,this.imageSmoothingQuality]);}};
+ c.drawFrontlineCargo(cargo);assert.deepEqual(draws,[[true,'high']]);assert.equal(c.g.imageSmoothingEnabled,false);assert.equal(c.g.imageSmoothingQuality,'low');
+});
+test('desktop cargo bypasses the half-resolution pass, draws visible sprites once at native resolution, and leaves mobile and advanced alone',()=>{
+ const c=harness();c.frontlineBeginner=true;c.MOBILE_VIEW=false;c.W=960;c.mission.points=[{x:480,y:10000},{x:480,y:10200}];c.setupFrontlineAntennas();
+ c.COVER_IMG={frontline_cargo_small:{},frontline_cargo_large:{}};c.assetOK=()=>true;const original={};c.g=original;
+ c.drawFrontlineAntennas(0,9700,true);assert.equal(c.calls.filter(q=>q[0]==='drawImage').length,0);
+ c.drawFrontlineCargoNative(0,9700);assert.equal(c.calls.filter(q=>q[0]==='drawImage').length,3);assert.equal(c.g,original);assert.ok(c.calls.some(q=>q[0]==='setTransform'&&q[1]===1&&q[6]===-9700));
+ const count=c.calls.length;c.drawFrontlineCargoNative(0,0);assert.equal(c.calls.filter(q=>q[0]==='drawImage').length,3);
+ c.MOBILE_VIEW=true;const mobile=c.calls.length;c.drawFrontlineCargoNative(0,9700);assert.equal(c.calls.length,mobile);
+ c.MOBILE_VIEW=false;c.frontlineBeginner=false;c.drawFrontlineCargoNative(0,9700);assert.equal(c.calls.length,mobile);
+});

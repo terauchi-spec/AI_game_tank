@@ -4,6 +4,7 @@
 - `frontline_cargo_large.webp`: objective 2, two side-by-side instances, 640×427, 83,250 bytes.
 - Inputs: user attachments `最前線_コンテナ小.png` and `最前線_コンテナ大.png`.
 - Processing: built-in image_gen background extraction, then Pillow downscaling and WebP encoding (quality 84, method 6), preserving alpha. Original uploads are unchanged.
+- Rendering: high-quality image interpolation is scoped to cargo sprites. Desktop cargo is drawn directly to the native display canvas instead of the half-resolution world buffer; mobile keeps its existing native canvas path. Other sprites and world resolution are unchanged.
 - Runtime damage: at most six 4.5px nicks per sprite, cached only when damage changes. Sprite body colliders remain intact; damage grants no destruction points.
 - Victory: a three-second transition with 12 simple sparkle shapes on each of the two large sprites. Advanced Frontline retains its antenna signal.
 

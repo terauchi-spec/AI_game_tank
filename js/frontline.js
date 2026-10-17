@@ -135,7 +135,7 @@ function drawFrontlineCargo(cargo){
  if(cargo.damage.length){
   if(cargo.rasterVersion!==cargo.damage.length){
    const canvas=cargo.raster||(cargo.raster=document.createElement('canvas'));canvas.width=cargo.width*2;canvas.height=cargo.height*2;
-   const ctx=gameCanvasContext(canvas);ctx.scale(2,2);ctx.drawImage(im,0,0,cargo.width,cargo.height);
+   const ctx=gameCanvasContext(canvas);ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.scale(2,2);ctx.drawImage(im,0,0,cargo.width,cargo.height);
    // 小さな欠けは最大6か所。コリジョンと大部分の外形は壊さない。
    ctx.globalCompositeOperation='destination-out';for(const d of cargo.damage){ctx.beginPath();ctx.arc(d.x,d.y,4.5,0,Math.PI*2);ctx.fill();}
    ctx.globalCompositeOperation='source-over';ctx.strokeStyle='rgba(27,25,19,.85)';ctx.lineWidth=2;
@@ -144,7 +144,20 @@ function drawFrontlineCargo(cargo){
   }
   sprite=cargo.raster;
  }
+ const smooth=g.imageSmoothingEnabled,quality=g.imageSmoothingQuality;
+ g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
  g.drawImage(sprite,cargo.x,cargo.y,cargo.width,cargo.height);
+ g.imageSmoothingEnabled=smooth;g.imageSmoothingQuality=quality;
+}
+function drawFrontlineCargoNative(cx,cy){
+ if(MOBILE_VIEW||!isFrontlineBeginner()||!mission)return;
+ // PCの低解像度転写を避け、画面内の最大3枚だけ表示Canvasへ直接描く。
+ const previous=g;g=gm;gm.save();gm.setTransform(1,0,0,1,-cx,-cy);
+ for(const point of mission.points)for(const cargo of point.cargo||[]){
+  if(cargo.x+cargo.width<cx||cargo.x>cx+W||cargo.y+cargo.height<cy||cargo.y>cy+H)continue;
+  drawFrontlineCargo(cargo);
+ }
+ gm.restore();g=previous;
 }
 function drawFrontlineCargoVictory(v){
  const cx=Math.round(camX/2)*2,cy=Math.round(cam/2)*2,t=v.elapsed-.5;
@@ -179,7 +192,7 @@ function setupFrontlineAntennas(){
 function drawFrontlineAntennas(cx,cy,upper=false){
  if(stageMode!=='front'||!mission)return;
  for(const point of mission.points){
-  if(point.cargo){if(upper)for(const cargo of point.cargo)if(cargo.x+cargo.width>=cx&&cargo.x<=cx+W&&cargo.y+cargo.height>=cy&&cargo.y<=cy+H)drawFrontlineCargo(cargo);continue;}
+  if(point.cargo){if(upper&&(typeof MOBILE_VIEW==='undefined'||MOBILE_VIEW))for(const cargo of point.cargo)if(cargo.x+cargo.width>=cx&&cargo.x<=cx+W&&cargo.y+cargo.height>=cy&&cargo.y<=cy+H)drawFrontlineCargo(cargo);continue;}
   const a=point.antenna;if(!a||a.x+a.width<cx||a.x>cx+W||a.y+a.height<cy||a.y>cy+H)continue;
   const im=COVER_IMG[a.asset];if(!assetOK(im))continue;
   if(upper){
