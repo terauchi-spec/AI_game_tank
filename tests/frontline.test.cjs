@@ -603,7 +603,7 @@ test('beginner first entry sends four attackers including exactly one blue comma
 test('beginner cargo has one small sprite and three paired sprites showing six containers with stable body colliders',()=>{
  const c=harness();c.frontlineBeginner=true;c.mission.points=[{x:480,y:10000},{x:480,y:3500}];c.setupFrontlineAntennas();
  assert.equal(c.covers.length,4);assert.ok(c.covers.every(v=>v.frontCargo&&v.frontAntenna));assert.ok(c.mission.points.every(q=>!q.antenna));
- const [left,middle,right]=c.mission.points[1].cargo;assert.equal(left.y,right.y);assert.ok(left.x+left.width<middle.x&&middle.x+middle.width<right.x);assert.ok(right.x+right.width-left.x<=480);for(const cargo of [left,middle,right])assert.ok(cargo.collider.w<cargo.width&&cargo.collider.h<cargo.height);
+ const [left,middle,right]=c.mission.points[1].cargo;assert.equal(left.y,right.y);assert.ok(left.x+left.width<middle.x&&middle.x+middle.width<right.x);assert.equal(right.x+right.width-left.x,880);assert.equal(left.width,280);assert.equal(left.height,188);assert.ok(left.x>=12&&right.x+right.width<=c.WW-12);for(const cargo of [left,middle,right])assert.ok(cargo.collider.w<cargo.width&&cargo.collider.h<cargo.height);
  c.setupFrontlineAntennas();assert.equal(c.covers.length,4);
 });
 test('cargo rejects distant damage, keeps at most six small nicks, and survives repeated cannon, bomb and ram damage',()=>{

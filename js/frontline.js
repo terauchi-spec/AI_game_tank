@@ -104,7 +104,7 @@ function frontlineAntennaGeometry(point,index){
 }
 function frontlineCargoLayout(point,index){
  // The large asset contains a connected pair: three pairs make six containers.
- const large=index===1,width=large?140:280,height=large?94:140,offsets=large?[-150,0,150]:[0];
+ const large=index===1,width=280,height=large?188:140,offsets=large?[-300,0,300]:[0];
  return offsets.map(offset=>{
   const x=point.x+offset-width/2,y=point.y-height*.6;
   const cargo={x,y,width,height,asset:large?'frontline_cargo_large':'frontline_cargo_small',damage:[]};
@@ -129,13 +129,14 @@ function setupFrontlineCargo(){
   let chosen=null;
   // 配置時のみ探索し、人物の通路とコンテナ本体に余白を確保する。
   for(let ring=0;ring<=16&&!chosen;ring++)for(let n=0;n<(ring?12:1);n++){
-   const angle=n*Math.PI/6,spot={x:Math.max(index?272:160,Math.min(WW-(index?272:160),point.x+Math.cos(angle)*ring*60)),y:Math.max(500,Math.min(WH-900,point.y+Math.sin(angle)*ring*60))};
+   const angle=n*Math.PI/6,spot={x:Math.max(index?452:160,Math.min(WW-(index?452:160),point.x+Math.cos(angle)*ring*60)),y:Math.max(500,Math.min(WH-900,point.y+Math.sin(angle)*ring*60))};
    if(clearance(spot)){chosen=spot;break;}
   }
   if(!chosen){
-   for(let y=point.y-1400;y<=point.y+1400&&!chosen;y+=80)for(let x=index?272:160;x<=WW-(index?272:160);x+=80){const spot={x,y};if(y>500&&y<WH-900&&clearance(spot)){chosen=spot;break;}}
+   for(let y=point.y-1400;y<=point.y+1400&&!chosen;y+=80)for(let x=index?452:160;x<=WW-(index?452:160);x+=80){const spot={x,y};if(y>500&&y<WH-900&&clearance(spot)){chosen=spot;break;}}
   }
   if(chosen){point.x=chosen.x;point.y=chosen.y;}
+  else if(index===1)point.x=Math.max(452,Math.min(WW-452,point.x));
   point.cargo=frontlineCargoLayout(point,index);for(const cargo of point.cargo)covers.push(cargo.collider);
  }
  rebuildSpatialGrid();
