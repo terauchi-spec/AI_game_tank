@@ -410,3 +410,22 @@ test('remote off-screen infantry release spawn slots without awarding kills',()=
  c.cleanupFrontlineArmy(1);assert.equal(c.humans.length,0);assert.ok(retired.every(h=>h.frontRetired&&h.scoreCounted&&!h.alive));
  c.mission.enemyWavesStarted=true;c.mission.waveT=0;c.updateFrontlineWaves(.1);assert.equal(c.humans.length,2);assert.ok(c.humans.every(h=>h.y<c.frontlineView().y));
 });
+
+function startingVehiclesHarness(){
+ const c=harness();Object.assign(c,{TRUCK_TYPE:{id:'truck',hp:5,fmax:100},ARMORED_TYPE:{id:'armored',hp:7.5,cmax:0,vmax:120,fmax:95}});c.p.y=12400;c.missionAllies(c.p.y-100);return c;
+}
+test('Frontline starts with two fueled trucks and two armed armored cars behind the squad, without duplicating them',()=>{
+ const c=startingVehiclesHarness(),existing={x:100,y:5000};c.cars=[existing];assert.equal(c.setupFrontlineVehicles(),4);assert.equal(c.cars.length,5);assert.equal(c.cars[0],existing);
+ const added=c.cars.slice(1),back=Math.max(...c.allies.map(a=>a.y));assert.equal(added.filter(v=>v.kind==='truck').length,2);assert.equal(added.filter(v=>v.t.id==='armored').length,2);
+ for(let i=0;i<added.length;i++){const v=added[i];assert.ok(v.y>back);assert.ok(v.x>=52&&v.x<=c.WW-52&&v.y<=c.WH-52);assert.equal(v.f,v.t.fmax);assert.equal(v.v,v.t.vmax||0);assert.equal(v.hp,v.t.hp);for(let j=0;j<i;j++)assert.ok(c.D(v,added[j])>=108);}
+ assert.equal(c.setupFrontlineVehicles(),0);assert.equal(c.cars.length,5);
+});
+test('starting vehicles search for clear positions and never overlap cover or a blocked exit',()=>{
+ const c=startingVehiclesHarness();c.hitsM=(x,y)=>x>330&&x<630&&y<12580;c.patrolLineClear=q=>q.x<300||q.x>660;
+ assert.equal(c.setupFrontlineVehicles(),4);assert.ok(c.cars.every(v=>!c.hitsM(v.x,v.y,44)&&c.patrolLineClear(v)));
+ const blocked=startingVehiclesHarness();blocked.hitsM=()=>true;assert.equal(blocked.setupFrontlineVehicles(),0);assert.equal(blocked.cars.length,0);assert.equal(blocked.mission.startVehiclesAdded,false);
+});
+test('starting vehicle additions are exclusive to the standard Frontline stage',()=>{
+ for(const mode of ['beginner','base','stealth']){const c=startingVehiclesHarness();c.stageMode=mode;assert.equal(c.setupFrontlineVehicles(),0);assert.equal(c.cars.length,0);}
+ const c=startingVehiclesHarness();c.areaDebugEnabled=true;assert.equal(c.setupFrontlineVehicles(),0);assert.equal(c.cars.length,0);
+});

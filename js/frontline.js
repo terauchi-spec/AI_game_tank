@@ -57,6 +57,30 @@ function setupFrontlineArmy(){
  for(let i=mission.enemyRoster.length-1;i>0;i--){const j=R()*(i+1)|0;[mission.enemyRoster[i],mission.enemyRoster[j]]=[mission.enemyRoster[j],mission.enemyRoster[i]];}
  humans=[];enemyDogs=[];mission.cleanupT=1;mission.enemyEntryY=p.y-800;mission.enemyWavesStarted=false;
 }
+function setupFrontlineVehicles(){
+ if(stageMode!=='front'||!mission||areaDebugEnabled||mission.startVehiclesAdded)return 0;
+ const rear=allies.reduce((y,a)=>a.alive&&a.frontline?Math.max(y,a.y):y,p.y)+90;
+ const specs=[{t:TRUCK_TYPE,dx:-80,dy:0},{t:TRUCK_TYPE,dx:80,dy:0},{t:ARMORED_TYPE,dx:-80,dy:120},{t:ARMORED_TYPE,dx:80,dy:120}];
+ const clear=(x,y)=>{
+  const q={x,y};
+  return x>=52&&x<=WW-52&&y>=rear&&y<=WH-52&&!hitsM(x,y,44)&&!inWaterAt(x,y,44)&&!inBase(x,y)&&D(q,p)>=80
+   &&!cars.some(v=>D(v,q)<108)&&!etanks.some(e=>e.alive&&D(e,q)<90)&&!allies.some(a=>a.alive&&D(a,q)<68)
+   &&patrolLineClear(q,{x,y:y-100},24);
+ };
+ let added=0;
+ for(let i=0;i<specs.length;i++){
+  if(cars.some(v=>v.frontStartSlot===i))continue;
+  const spec=specs[i];let spot=null;
+  const x=p.x+spec.dx,y=rear+spec.dy;
+  if(clear(x,y))spot={x,y};
+  // Startup-only bounded search: stay behind the formation and leave room to board and drive.
+  for(let yy=rear;!spot&&yy<=WH-52;yy+=32)for(let xx=52;xx<=WW-52;xx+=32)if(clear(xx,yy)){spot={x:xx,y:yy};break;}
+  if(!spot)continue;
+  const t=spec.t;cars.push({...spot,t,kind:t.id==='truck'?'truck':'tank',hp:t.hp,c:t.cmax||0,v:t.vmax||0,f:t.fmax,ch:0,mgHits:0,body:-Math.PI/2,frontStartSlot:i});added++;
+ }
+ mission.startVehiclesAdded=cars.filter(v=>Number.isInteger(v.frontStartSlot)).length===4;
+ return added;
+}
 function cleanupFrontlineArmy(dt){
  if(!mission)return;
  mission.cleanupT=(mission.cleanupT||0)-dt;if(mission.cleanupT>0)return;mission.cleanupT=1;
