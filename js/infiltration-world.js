@@ -983,8 +983,10 @@ function updateInfiltrationGuardAI(h,dt){
   }
  }
  h.lost=state.remaining;
- while(state.trail.length&&D(h,state.trail[0])<26)state.trail.shift();
- const next=state.trail[0]||state.lastSeen;
+ // While visible, pursue the player's CURRENT position, not the original discovery point.
+ // While hidden, pursue the last actually seen position; never infer an unseen trajectory.
+ if(visible)state.trail.length=0;
+ const next=visible?{x:p.x,y:p.y}:state.lastSeen;
  h.cd-=dt;h.ct=(h.ct||0)+dt;
  const pause=(h.modePause||0)>0||(h.foundPause||0)>0||
    (h.sharePause||0)>0||(h.chatResumeT||0)>0;

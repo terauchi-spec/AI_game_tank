@@ -580,29 +580,28 @@ test('indoor pursuit holds 5-10 seconds and transitions through investigation to
  guard.indoorAlert.remaining=.01;update(guard,.02);
  assert.equal(guard.indoorAlert.phase,'found');assert.equal(guard.indoorAlert.remaining,7.5);
 });
-test('indoor guards trace sampled footsteps instead of following unseen teleportation',()=>{
+test('indoor guards follow current visible player and last seen position if hidden',()=>{
  const fs=require('node:fs'),path=require('node:path');
  const src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
  const piece=(a,b)=>src.slice(src.indexOf(a),src.indexOf(b,src.indexOf(a)+a.length));
  const code=piece('function indoorStartGuardPursuit(h){','function indoorGuardSeesPlayer(h){')+
   piece('function updateInfiltrationGuardAI(h,dt){','function updateInfiltrationDoors(dt){');
- const avatar={x:180,y:110},destinations=[];let seen=true;
+ const avatar={x:180,y:110},destinations=[];let visible=true;
  const [begin,update]=new Function('p','R','D','indoorGuardSeesPlayer','indoorMoveGuardTo',
   'pauseAfterEnemyDetection','enterHumanFound','enemyBombPoint','bombs','fire',
   'performance','INDOOR_TRAIL_LIMIT',code+'\nreturn [indoorStartGuardPursuit,updateInfiltrationGuardAI];')(
-  avatar,()=>.6,(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),()=>seen,
+  avatar,()=>.6,(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),()=>visible,
   (h,p)=>{destinations.push({...p});return true;},()=>{},()=>{},()=>({x:0,y:0}),
   [],()=>{}, {now:()=>0},48);
  const h={indoorGuard:true,x:0,y:110,st:1,target:'p',cd:100,bu:true};
- begin(h);
- avatar.x=240;update(h,.1);
- assert.equal(h.indoorAlert.trail.length,2);
- assert.equal(destinations.at(-1).x,180,'first visit initial detection point');
- h.x=180;update(h,.1);
- assert.equal(destinations.at(-1).x,240,'then follow the next seen footstep');
- seen=false;avatar.x=900;update(h,.1);
- assert.equal(h.indoorAlert.lastSeen.x,240,'never learn unseen player position');
- assert.ok(h.indoorAlert.trail.length<=48,'capped trail memory');
+ begin(h);avatar.x=240;update(h,.1);
+ assert.equal(destinations.at(-1).x,240,'immediately chase current visible position');
+ assert.equal(h.indoorAlert.trail.length,0,'discard stale points while player stays visible');
+ h.x=180;avatar.x=320;update(h,.14);
+ assert.equal(destinations.at(-1).x,320,'keep steering forward, not back to original spot');
+ visible=false;avatar.x=900;update(h,.14);
+ assert.equal(h.indoorAlert.lastSeen.x,320,'do not reveal unseen player location');
+ assert.equal(destinations.at(-1).x,320,'pursue last seen position while hidden');
 });
 test('infiltration pursuit follows stable door midpoints and keeps short sight loss',()=>{
  const fs=require('node:fs'),path=require('node:path'),src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
