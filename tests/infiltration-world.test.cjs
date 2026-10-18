@@ -341,23 +341,45 @@ test('clustered wooden crates, barrels and shell pallets stay in groups of four 
   assert.equal(loc.size,f.lightFixtures.length,'no duplicate light fixtures');
  }
 });
-test('dark places shorten guard sight while flashlight cone reveals players',()=>{
+test('indoor darkness reduces sight without guard flashlights',()=>{
  const fs=require('node:fs'),path=require('node:path');
  const src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
- const helper=name=>{
-  const a=src.indexOf('function '+name+'('),b=src.indexOf('\n}\n',a);
-  assert.ok(a>=0&&b>a,name+' exists');
-  return src.slice(a,b+2);
- };
- const mk=new Function('indoorWorld','INDOOR_LIGHT_RADIUS',helper('indoorLightLevel')+'\nreturn indoorLightLevel;');
- const light=mk({floors:[{footprint:{y:0,h:1800},lightFixtures:[{x:200,y:200}]}]},185);
- assert.ok(light(200,200)>.90);
- assert.ok(light(400,500)<.30,'dark corner makes enemy sight harder');
- const inside=new Function('INDOOR_TORCH_RADIUS','INDOOR_TORCH_HALF',helper('indoorFlashlightInside')+'\nreturn indoorFlashlightInside;')(245,.40);
- const guard={x:100,y:100,alive:true,stun:0};
- assert.equal(inside(guard,{x:270,y:100},0),true,'front beam sees target');
- assert.equal(inside(guard,{x:100,y:270},0),false,'beam does not reveal behind/outside its cone');
- assert.equal(inside(guard,{x:390,y:100},0),false,'beam has a defined maximum range');
+ const a=src.indexOf('function indoorLightLevel('),b=src.indexOf('\n}\n',a);
+ assert.ok(a>=0&&b>a,'light level helper exists');
+ const light=new Function('indoorWorld','INDOOR_LIGHT_RADIUS',
+   src.slice(a,b+2)+'\nreturn indoorLightLevel;')({
+     floors:[{footprint:{y:0,h:1800},lightFixtures:[{x:200,y:200}]}]},185);
+ assert.ok(light(200,200)>.90,'within the lit zone visibility remains high');
+ assert.ok(light(400,500)<.30,'outside a ceiling light, detection is much harder');
+ assert.ok(!src.includes('function indoorFlashlightInside('),'no guard flashlight mechanics');
+ assert.ok(!src.includes('INDOOR_TORCH_RADIUS'),'no guard spotlight overlay');
+ assert.ok(!src.includes("gm.arc(x,y,5,0,Math.PI*2)"),'no fixture dots');
+});
+test('all advertised indoor door apertures remain wall-free and cargo clusters are homogeneous',()=>{
+ const cross=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
+ for(let seed=1;seed<=200;seed++)for(let n=1;n<=2;n++){
+  const f=indoorGenerateFloor(n,random(seed*17+n));
+  const kinds=new Map();
+  for(const o of f.explosiveObjects){
+   assert.equal(o.w,o.kind==='crate'?60:o.kind==='shellPallet'?120:30);
+   assert.equal(o.h,o.w,'enlarged objects have matching physical bounds');
+   const previous=kinds.get(o.group);
+   if(previous)assert.equal(previous,o.kind,'cluster must not mix kinds');
+   kinds.set(o.group,o.kind);
+  }
+  for(const d of f.doors.filter(d=>!d.outer)){
+    const gap=d.vertical?{x:d.x-11,y:d.y-42,w:22,h:84}:{x:d.x-42,y:d.y-11,w:84,h:22};
+    assert.ok(!f.walls.some(w=>cross(gap,w)),'visible door gap must be clear of solid walls');
+  }
+  for(const tile of f.corridors){
+   const mid=tile.x+tile.w/2;
+   for(const o of f.explosiveObjects.filter(o=>o.zone==='hallway')){
+    if(o.x>=tile.x&&o.x<tile.x+tile.w&&o.y>=tile.y&&o.y<tile.y+tile.h){
+     assert.ok(o.x+o.w+10<mid||o.x-10>mid,'keep center hallway lane free of explosives');
+    }
+   }
+  }
+ }
 });
 test('two gun hits instantly detonate only the new shell-pallet kind',()=>{
  const fs=require('node:fs'),path=require('node:path');

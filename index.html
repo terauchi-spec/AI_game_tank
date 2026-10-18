@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.18.1844</title>
+<title>こっそり戦車大作戦 2026.10.18.2011</title>
 
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
@@ -864,7 +864,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.18.1844',FILE_CREATED_AT='2026/10/18 18:44',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.18.2011',FILE_CREATED_AT='2026/10/18 20:11',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -3289,7 +3289,7 @@ function canDetect(o,target,face,key){
  // 潜入専用: 暗所は視認距離が短くなるが、兵士のライト照射中は発見される。
  // 視線遮蔽は本編と共通のlos()を必ず通す。
  const indoorTarget=stageMode==='indoor'&&o?.indoorGuard&&key==='p';
- if(indoorTarget&&indoorFlashlightInside(o,target,face))return los(o,target);
+ // Indoor guards rely on fixed room lighting, with no flashlight detection override.
  const indoorSight=indoorTarget?(.36+.64*indoorLightLevel(target.x,target.y)):1;
  const da=Math.abs(angD(Math.atan2(target.y-o.y,target.x-o.x),face));
  const inCenter=da<=DETECT_CENTER_HALF*fovBoost*tankSight&&d<detectRange(key)*searchBoost*eliteRange*chatSight*tankSight*indoorSight;
@@ -7951,7 +7951,7 @@ function reportGameError(error){
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/canyon.js?v=2026.10.14.1836"></script>
 <script src="js/vegetation.js?v=2026.10.14.1653"></script>
-<script src="js/infiltration-world.js?v=2026.10.18.1844"></script>
+<script src="js/infiltration-world.js?v=2026.10.18.2011"></script>
 <script>
 (function(){
 // iPhone Chrome/Safari: synthetic KeyboardEvent に依存せず、ゲーム内部の入力状態を直接更新する。

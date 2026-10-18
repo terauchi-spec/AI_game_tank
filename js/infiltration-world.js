@@ -255,7 +255,26 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
       edgeWall(i,n,side);
     }
   }
-  // 最大の部屋を詰所にしてテーブルを囲む青兵4～8体を用意。
+  // A visible doorway must also be a physical gap, including overlapping wall joins.
+  // Limited to the indoor generator; outdoor collision stays unchanged.
+  for(const door of doorMarks){
+    const aperture=door.vertical
+      ?{x:door.x-11,y:door.y-42,w:22,h:84}
+      :{x:door.x-42,y:door.y-11,w:84,h:22};
+    for(let i=walls.length-1;i>=0;i--){
+      const w=walls[i],x=Math.max(w.x,aperture.x),y=Math.max(w.y,aperture.y);
+      const right=Math.min(w.x+w.w,aperture.x+aperture.w),bottom=Math.min(w.y+w.h,aperture.y+aperture.h);
+      if(right<=x||bottom<=y)continue;
+      walls.splice(i,1);
+      for(const part of [
+        {x:w.x,y:w.y,w:w.w,h:y-w.y},
+        {x:w.x,y:bottom,w:w.w,h:w.y+w.h-bottom},
+        {x:w.x,y,w:x-w.x,h:bottom-y},
+        {x:right,y,w:w.x+w.w-right,h:bottom-y}
+      ])if(part.w>1&&part.h>1)walls.push(part);
+    }
+  }
+  // 最大の部屋を詰所にしてテーブルを囲む青兵4～8体を用意.
   const largest=Math.max(...rooms.map(r=>r.size));
   const postCandidates=rooms.filter(r=>r.size===largest);
   const postRoom=postCandidates[Math.floor(rng()*postCandidates.length)];
@@ -310,51 +329,126 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     addFurniture(kind,X0+c*SIZE+(left?SIZE-76:20),
       Y0+r*SIZE+(top?SIZE-66:20),52,40,'hallway');
   }
-  // 爆発オブジェクト: 最大4個の小グループ。通路中央・階段・ドア正面は確保。
-  // 木箱・ドラム缶は従来のオブジェクト処理、砲弾ケースのみ専用の二発爆発扱い。
-  const explosiveObjects=[],explosiveKinds=['crate','barrel','shellPallet'];
+  // Stage-exclusive cargo: each cluster contains one kind; collisions match visual scale.
+  // Crates are 2x and shell pallets 4x along BOTH axes. Barrels keep their size.
+  const explosiveObjects=[];
   const clusterCells=indoorShuffle(halls.filter(i=>!lobbyIds.includes(i)&&i!==stairIndex&&i!==index(2,0)),rng);
   const roomCells=indoorShuffle(rooms.filter(r=>r!==postRoom).flatMap(r=>r.cellIds),rng);
-  const addCluster=(cellId,zone,groupIndex)=>{
-    const {c,r}=coord(cellId),offsetX=X0+c*SIZE,offsetY=Y0+r*SIZE;
-    const count=groupIndex===0?4:groupIndex===1?3:2,side=groupIndex%2===0?0:1;
-    // どのまとまりも同一方向の壁際に置くため、通路を塞ぐ列を作らない。
-    const x=offsetX+(side?SIZE-71:15),y=offsetY+(rng()<.5?17:SIZE-92);
-    for(let i=0;i<count;i++){
-      const kind=explosiveKinds[(groupIndex+i)%explosiveKinds.length];
-      const px=x+(i%2)*33,py=y+Math.floor(i/2)*35;
-      const item={x:px,y:py,w:30,h:30,kind,zone,group:zone+'-'+groupIndex};
-      // 屋内の固定家具や他の軍用物資、階段付近に重ねない。
-      if(furniture.some(o=>px<o.x+o.w+2&&px+30>o.x-2&&py<o.y+o.h+2&&py+30>o.y-2))continue;
-      if(distance({x:px+15,y:py+15},stair)<88)continue;
-      const nearDoor=doorMarks.some(d=>distance({x:px+15,y:py+15},d)<66);
-      if(nearDoor)continue;
-      explosiveObjects.push(item);
+  const overlap=(a,b,pad=0)=>a.x<b.x+b.w+pad&&a.x+a.w>b.x-pad&&a.y<b.y+b.h+pad&&a.y+a.h>b.y-pad;
+  const doorLane=d=>d.vertical
+    ?{x:d.x-35,y:d.y-30,w:70,h:60}
+    :{x:d.x-24,y:d.y-35,w:48,h:70};
+  const doorLanes=doorMarks.map(doorLane);
+  // Static furniture must leave the actual doorway approach open.
+  for(let i=furniture.length-1;i>=0;i--){
+    const item=furniture[i];
+    if(!doorLanes.some(d=>overlap(item,d)))continue;
+    const tx=X0+Math.floor((item.x-X0)/SIZE)*SIZE,ty=Y0+Math.floor((item.y-Y0)/SIZE)*SIZE;
+    const corners=[[16,16],[SIZE-item.w-16,16],[16,SIZE-item.h-16],[SIZE-item.w-16,SIZE-item.h-16]];
+    const alternate=corners.map(([dx,dy])=>({...item,x:tx+dx,y:ty+dy})).find(o=>
+      !doorLanes.some(d=>overlap(o,d))&&
+      !furniture.some((f,j)=>j!==i&&overlap(o,f,3))&&
+      distance({x:o.x+o.w/2,y:o.y+o.h/2},stair)>78);
+    if(alternate){item.x=alternate.x;item.y=alternate.y;}
+    else furniture.splice(i,1);
+  }
+  // Replenish military hall props after clearing any doorways; preserve their variety and number.
+  const targetHallCount=supplyCount;
+  const hallKinds=['ammo','supply','barrel','sandbag','kit'];
+  let addIndex=0;
+  for(const cell of safeHalls){
+    if(furniture.filter(o=>o.zone==='hallway').length>=targetHallCount)break;
+    const {c,r}=coord(cell),tx=X0+c*SIZE,ty=Y0+r*SIZE;
+    for(const [dx,dy] of [[20,20],[SIZE-76,20],[20,SIZE-66],[SIZE-76,SIZE-66]]){
+      if(furniture.filter(o=>o.zone==='hallway').length>=targetHallCount)break;
+      const q={kind:hallKinds[addIndex++%hallKinds.length],x:tx+dx,y:ty+dy,w:52,h:40,zone:'hallway'};
+      if(doorLanes.some(d=>overlap(q,d))||furniture.some(o=>overlap(q,o,5))||
+        distance({x:q.x+26,y:q.y+20},stair)<88)continue;
+      furniture.push(q);
     }
+  }
+  // A compact reserve supply guarantees minimum corridor cover without blocking the lane.
+  if(furniture.filter(o=>o.zone==='hallway').length<10){
+    for(const cell of safeHalls){
+      if(furniture.filter(o=>o.zone==='hallway').length>=10)break;
+      const {c,r}=coord(cell),tx=X0+c*SIZE,ty=Y0+r*SIZE;
+      for(const [dx,dy] of [[16,16],[SIZE-48,16],[16,SIZE-48],[SIZE-48,SIZE-48]]){
+        const q={kind:hallKinds[addIndex++%hallKinds.length],x:tx+dx,y:ty+dy,w:32,h:32,zone:'hallway'};
+        if(doorLanes.some(d=>overlap(q,d))||furniture.some(o=>overlap(q,o,2))||
+          distance({x:q.x+16,y:q.y+16},stair)<75)continue;
+        furniture.push(q);break;
+      }
+    }
+  }
+  const isFree=o=>{
+    const cx=o.x+o.w/2,cy=o.y+o.h/2;
+    if(distance({x:cx,y:cy},stair)<98)return false;
+    if(doorLanes.some(d=>overlap(o,d,5)))return false;
+    if(walls.some(w=>overlap(o,w,3)))return false;
+    if(furniture.some(f=>overlap(o,f,6)))return false;
+    if(explosiveObjects.some(f=>overlap(o,f,7)))return false;
+    return true;
   };
-  for(let k=0;k<Math.min(5,clusterCells.length);k++)addCluster(clusterCells[k],'hallway',k);
-  for(let k=0;k<Math.min(4,roomCells.length);k++)addCluster(roomCells[k],'room',k+1);
-  // 部屋・廊下のそれぞれに設置物を保証。初期配置で余白が少ない場合は空き隅を再探索。
-  const reserve=(zone,kind)=>{
-    const cells=zone==='hallway'?clusterCells:roomCells;
-    for(const cell of cells){
-      const {c,r}=coord(cell),baseX=X0+c*SIZE,baseY=Y0+r*SIZE;
-      const safe=[{x:baseX+16,y:baseY+18},{x:baseX+SIZE-48,y:baseY+18},
-                  {x:baseX+16,y:baseY+SIZE-49},{x:baseX+SIZE-48,y:baseY+SIZE-49}];
-      for(const q of safe){
-        const target={x:q.x+16,y:q.y+16};
-        if(distance(target,stair)<95)continue;
-        if(doorMarks.some(d=>distance(target,d)<67))continue;
-        if([...furniture,...explosiveObjects].some(o=>q.x<o.x+o.w+3&&q.x+32>o.x-3&&q.y<o.y+o.h+3&&q.y+32>o.y-3))continue;
-        explosiveObjects.push({...q,w:32,h:32,kind,zone,group:'reserve-'+zone});
-        return true;
+  const placeCluster=(cell,zone,kind,groupId)=>{
+    const {c,r}=coord(cell),xx=X0+c*SIZE,yy=Y0+r*SIZE;
+    const size=kind==='shellPallet'?120:kind==='crate'?60:30;
+    const count=kind==='shellPallet'?1:kind==='crate'?2:zone==='hallway'?3:4;
+    const columns=zone==='hallway'||kind==='shellPallet'||kind==='crate'?1:2;
+    const gap=kind==='shellPallet'?0:7;
+    const rows=Math.ceil(count/columns),width=columns*size+(columns-1)*gap,height=rows*size+(rows-1)*gap;
+    const positions=zone==='hallway'
+      ?[[14,16],[SIZE-width-14,16],[14,SIZE-height-16],[SIZE-width-14,SIZE-height-16]]
+      :[[14,14],[SIZE-width-14,14],[14,SIZE-height-14],[SIZE-width-14,SIZE-height-14]];
+    for(const [dx,dy] of positions){
+      const items=Array.from({length:count},(_,i)=>({
+        x:xx+dx+(i%columns)*(size+gap),y:yy+dy+Math.floor(i/columns)*(size+gap),
+        w:size,h:size,kind,zone,group:zone+'-'+groupId}));
+      if(dx<10||dy<10||dx+width>SIZE-10||dy+height>SIZE-10)continue;
+      if(items.every(o=>isFree(o))){
+        explosiveObjects.push(...items);return true;
       }
     }
     return false;
   };
-  if(!explosiveObjects.some(o=>o.kind==='shellPallet'))reserve('hallway','shellPallet')||reserve('room','shellPallet');
+  // Guarantee a large shell pallet even when all free room corners contain furniture.
+  // Prefer an undisturbed tile; as a fallback, replace only overlapping indoor decoration.
+  const reserveLargePallet=()=>{
+    let best=null;
+    for(const cell of roomCells){
+      const {c,r}=coord(cell),xx=X0+c*SIZE,yy=Y0+r*SIZE;
+      for(const dx of [14,46])for(const dy of [14,46]){
+        const o={x:xx+dx,y:yy+dy,w:120,h:120,kind:'shellPallet',zone:'room',group:'room-shell-large'};
+        if(distance({x:o.x+60,y:o.y+60},stair)<98||
+           doorLanes.some(d=>overlap(o,d,5))||
+           walls.some(w=>overlap(o,w,3))||
+           explosiveObjects.some(v=>overlap(o,v,7)))continue;
+        const displaced=furniture.filter(v=>overlap(o,v,6));
+        if(!best||displaced.length<best.displaced.length)best={o,displaced};
+        if(!displaced.length)break;
+      }
+      if(best&&!best.displaced.length)break;
+    }
+    if(!best)return false;
+    for(const o of best.displaced)furniture.splice(furniture.indexOf(o),1);
+    explosiveObjects.push(best.o);return true;
+  };
+  reserveLargePallet();
+  // Large pallets live inside rooms so they cannot block the hall center lane.
+  for(let k=0;k<Math.min(7,clusterCells.length);k++)
+    placeCluster(clusterCells[k],'hallway',k%2?'barrel':'crate',k);
+  for(let k=0;k<Math.min(7,roomCells.length);k++)
+    placeCluster(roomCells[k],'room',['crate','barrel','shellPallet'][k%3],k);
+  // Ensure each floor has every key kind and cargo in both rooms and corridors.
+  const reserve=(zone,kind)=>{
+    const cells=zone==='hallway'?clusterCells:roomCells;
+    for(let i=0;i<cells.length;i++)if(placeCluster(cells[i],zone,kind,'reserve-'+kind+'-'+i))return true;
+    return false;
+  };
+  if(!explosiveObjects.some(o=>o.kind==='shellPallet'))reserve('room','shellPallet');
   if(!explosiveObjects.some(o=>o.zone==='hallway'))reserve('hallway','crate');
   if(!explosiveObjects.some(o=>o.zone==='room'))reserve('room','barrel');
+  if(!explosiveObjects.some(o=>o.kind==='crate'))reserve('room','crate')||reserve('hallway','crate');
+  if(!explosiveObjects.some(o=>o.kind==='barrel'))reserve('room','barrel')||reserve('hallway','barrel');
   // 各室・廊下には天井照明を規則的に配置。隅には意図的な薄暗い領域を残す。
   const lightFixtures=[];
   for(let i=0;i<halls.length;i++){
@@ -368,11 +462,24 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
       lightFixtures.push({...center(ids[i]),zone:'room'});
     }
   }
-  const order=indoorShuffle(rooms.map(r=>r.id).filter(id=>id!==postRoom.id),rng);
-  const intel=order.slice(0,INDOOR_FILES_TOTAL).map((id,i)=>{
-    const room=rooms[id],tile=room.tiles[Math.floor(rng()*room.tiles.length)];
-    return{x:tile.x+SIZE/2,y:tile.y+SIZE/2,room:room.name,id:number+'-'+i,taken:false};
-  });
+  // Select only rooms with a genuine walkable document position.
+  const obstacles=[...walls,...furniture,...explosiveObjects];
+  const intelCandidates=rooms.filter(r=>r!==postRoom).map(room=>{
+    const tiles=indoorShuffle(room.tiles.slice(),rng);
+    const doorsForRoom=room.doors;
+    const candidates=tiles.flatMap(t=>[
+      [90,90],[40,90],[140,90],[90,40],[90,140],
+      [40,40],[140,40],[40,140],[140,140]
+    ].map(([dx,dy])=>({x:t.x+dx,y:t.y+dy})));
+    candidates.sort((a,b)=>Math.min(...doorsForRoom.map(d=>distance(a,d)))-
+      Math.min(...doorsForRoom.map(d=>distance(b,d))));
+    const point=candidates.find(p=>obstacles.every(o=>p.x<=o.x-15||p.x>=o.x+o.w+15||
+      p.y<=o.y-15||p.y>=o.y+o.h+15));
+    return point?{room,point}:null;
+  }).filter(Boolean);
+  if(intelCandidates.length<INDOOR_FILES_TOTAL)throw Error('資料への通行可能な配置が不足');
+  const intel=indoorShuffle(intelCandidates,rng).slice(0,INDOOR_FILES_TOTAL).map(({room,point},i)=>
+    ({...point,room:room.name,id:number+'-'+i,taken:false}));
   // 既存AIのpatrol()へ渡す巡回経路を、建物全体の通行グラフから探索。
   // 同じ部屋の区画と廊下内、およびドア部分だけを通行可能な辺とする。
   const walkNeighbors=i=>neighbors(i).filter(n=>owner[i]===owner[n]||
@@ -452,7 +559,7 @@ let indoorWorld=null,indoorHudSnapshot='',indoorHudRefresh=0;
 
 let indoorShadeCanvas=null,indoorShadeCtx=null;
 // 天井灯は床に落ちる固定光。暗所は視認性を落とすが、完全な真っ暗にはしない。
-const INDOOR_LIGHT_RADIUS=185,INDOOR_TORCH_RADIUS=245,INDOOR_TORCH_HALF=.40;
+const INDOOR_LIGHT_RADIUS=185;
 function indoorLightLevel(x,y){
   if(!indoorWorld)return 1;
   let near=Infinity;
@@ -460,12 +567,7 @@ function indoorLightLevel(x,y){
     if(y<f.footprint.y-80||y>f.footprint.y+f.footprint.h+80)continue;
     for(const lamp of f.lightFixtures)near=Math.min(near,Math.hypot(lamp.x-x,lamp.y-y));
   }
-  return near===Infinity?1:.17+.83*Math.max(0,1-near/INDOOR_LIGHT_RADIUS);
-}
-function indoorFlashlightInside(h,target,face){
-  if(!h||!target||!h.alive||h.stun>0)return false;
-  const dx=target.x-h.x,dy=target.y-h.y,d=Math.hypot(dx,dy);
-  return d<INDOOR_TORCH_RADIUS&&Math.abs(Math.atan2(Math.sin(Math.atan2(dy,dx)-face),Math.cos(Math.atan2(dy,dx)-face)))<INDOOR_TORCH_HALF;
+  return near===Infinity?1:near<=INDOOR_LIGHT_RADIUS*.88?.97:.17;
 }
 function drawInfiltrationLighting(cx,cy){
   if(!indoorWorld||!gm)return;
@@ -474,42 +576,23 @@ function drawInfiltrationLighting(cx,cy){
   const mask=indoorShadeCanvas,q=indoorShadeCtx;
   if(mask.width!==Math.ceil(W)||mask.height!==Math.ceil(H)){mask.width=Math.ceil(W);mask.height=Math.ceil(H);}
   q.setTransform(1,0,0,1,0,0);q.clearRect(0,0,W,H);
-  q.fillStyle='rgba(7,13,15,.57)';q.fillRect(0,0,W,H);
+  q.fillStyle='rgba(7,13,15,.72)';q.fillRect(0,0,W,H);
   q.globalCompositeOperation='destination-out';
   for(const f of indoorWorld.floors){
     if(f.footprint.y>cy+H+INDOOR_LIGHT_RADIUS||f.footprint.y+f.footprint.h<cy-INDOOR_LIGHT_RADIUS)continue;
     for(const lamp of f.lightFixtures){
       const x=lamp.x-cx,y=lamp.y-cy;
       if(x<-INDOOR_LIGHT_RADIUS||x>W+INDOOR_LIGHT_RADIUS||y<-INDOOR_LIGHT_RADIUS||y>H+INDOOR_LIGHT_RADIUS)continue;
-      const gr=q.createRadialGradient(x,y,12,x,y,INDOOR_LIGHT_RADIUS);
-      gr.addColorStop(0,'rgba(0,0,0,.94)');
-      gr.addColorStop(.58,'rgba(0,0,0,.55)');
+      const gr=q.createRadialGradient(x,y,0,x,y,INDOOR_LIGHT_RADIUS);
+      gr.addColorStop(0,'rgba(0,0,0,.96)');
+      gr.addColorStop(.87,'rgba(0,0,0,.96)');
       gr.addColorStop(1,'rgba(0,0,0,0)');
       q.fillStyle=gr;q.fillRect(x-INDOOR_LIGHT_RADIUS,y-INDOOR_LIGHT_RADIUS,INDOOR_LIGHT_RADIUS*2,INDOOR_LIGHT_RADIUS*2);
     }
   }
   q.globalCompositeOperation='source-over';
   gm.save();gm.drawImage(mask,0,0);
-  // 固定ライトは明るく、ライトを持つ青兵は扇状の淡い光で視野を伝える。
-  for(const f of indoorWorld.floors){
-    if(f.footprint.y>cy+H+120||f.footprint.y+f.footprint.h<cy-120)continue;
-    for(const lamp of f.lightFixtures){
-      const x=lamp.x-cx,y=lamp.y-cy;
-      if(x<-20||x>W+20||y<-20||y>H+20)continue;
-      gm.fillStyle='rgba(255,235,162,.40)';gm.beginPath();gm.arc(x,y,5,0,Math.PI*2);gm.fill();
-    }
-    for(const h of f.guards){
-      if(!h.alive||h.stun>0||h.x<cx-INDOOR_TORCH_RADIUS||h.x>cx+W+INDOOR_TORCH_RADIUS||h.y<cy-INDOOR_TORCH_RADIUS||h.y>cy+H+INDOOR_TORCH_RADIUS)continue;
-      const face=Number.isFinite(h.face)?h.face:0,x=h.x-cx,y=h.y-cy;
-      const gr=gm.createRadialGradient(x,y,8,x,y,INDOOR_TORCH_RADIUS);
-      gr.addColorStop(0,'rgba(255,243,187,.21)');
-      gr.addColorStop(1,'rgba(255,239,160,.005)');
-      gm.fillStyle=gr;gm.beginPath();gm.moveTo(x,y);
-      gm.arc(x,y,INDOOR_TORCH_RADIUS,face-INDOOR_TORCH_HALF,face+INDOOR_TORCH_HALF);
-      gm.closePath();gm.fill();
-      gm.strokeStyle='rgba(255,244,178,.11)';gm.lineWidth=1;gm.stroke();
-    }
-  }
+  // No fixture dots or enemy-held beams: illumination is visible only on the floor.
   gm.restore();
 }
 
