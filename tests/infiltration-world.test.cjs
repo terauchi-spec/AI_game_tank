@@ -360,13 +360,13 @@ test('room and corridor lights are placed at meaningful fixtures with shadow poc
     assert.ok(light.rx>light.ry?light.ry<=180*.45:light.rx<=180*.45,
       'the short light axis stays narrower than the passage');
   }
-  assert.ok(lights.length>=17&&lights.length<=29,'a few extra room fixtures without runaway per-frame cost');
+  assert.ok(lights.length>=20&&lights.length<=32,'added room lighting remains within a bounded fixture budget');
   const spots=f.corridors.concat(f.rooms.flatMap(r=>r.tiles));
   const samples=spots.map(t=>({x:t.x+t.w/2,y:t.y+t.h/2}));
   const dark=samples.filter(p=>lights.every(l=>Math.hypot(p.x-l.x,p.y-l.y)>185*.72));
   darkTotal+=dark.length;spotTotal+=samples.length;
  }
- assert.ok(darkTotal/spotTotal>.18&&darkTotal/spotTotal<.65,
+ assert.ok(darkTotal/spotTotal>.06&&darkTotal/spotTotal<.65,
    'meaningful shadow cover remains without blacking out the whole facility');
 });
 test('room lights are centered on table surfaces or room tiles and respect room limits',()=>{

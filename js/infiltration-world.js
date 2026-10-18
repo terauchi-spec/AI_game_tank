@@ -533,7 +533,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
       roomLight(point,'table',room,table);
     }
     // Larger rooms need separate, broadly spaced lamps rather than an oversized central beam.
-    const total=room.size>=5?3:room.size>=3?2:1;
+    const total=room.size>=5?4:room.size>=3?3:1;
     const installed=[primary];
     while(installed.length<total){
       const p=centers.filter(pt=>installed.every(q=>distance(pt,q)>=SIZE*.7))
