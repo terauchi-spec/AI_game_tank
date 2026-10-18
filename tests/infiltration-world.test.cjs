@@ -167,3 +167,33 @@ test('smaller doors have multiple routes between rooms, corridors, and exterior 
   }
  }
 });
+
+test('indoor wall artwork covers the full collision wall length without visible seams',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const source=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+ const begin=source.indexOf('function drawCoverAsset(c){');
+ const end=source.indexOf('\n}\n\n',begin);
+ assert.ok(begin>=0&&end>begin,'find actual canvas cover rendering function');
+ const sourceFunction=source.slice(begin,end+2);
+ const calls=[],g={
+   save(){},restore(){},imageSmoothingEnabled:true,
+   drawImage(...a){calls.push(a);}
+ };
+ const image={naturalWidth:100,naturalHeight:200};
+ let sprite=null;
+ const renderer=new Function('g','COVER_IMG','assetOK','drawAssetSprite',
+   sourceFunction+'\nreturn drawCoverAsset;')(
+   g,{maze_wall_vertical:image,maze_wall:image},()=>true,(...a)=>{sprite=a;return true;}
+ );
+ const height=(wall)=>{
+   calls.length=0;renderer({kd:1,x:100,y:200,w:22,h:315,...wall});
+   assert.equal(calls.length,2,'render vertical wall from two image slices');
+   return calls[1][6]+calls[1][8]-calls[0][6];
+ };
+ const indoorHeight=height({indoorWall:true});
+ const normalHeight=height({});
+ assert.ok(indoorHeight>=315,'indoor visual length must cover physical wall from end to end');
+ assert.ok(normalHeight<315,'other stages keep their original 20 percent shrink');
+ sprite=null;renderer({kd:1,x:100,y:200,w:315,h:22,indoorWall:true});
+ assert.ok(sprite&&sprite[3]>=315,'horizontal indoor wall also covers the whole span');
+});

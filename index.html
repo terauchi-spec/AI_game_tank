@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.18.1245</title>
+<title>こっそり戦車大作戦 2026.10.18.1256</title>
 
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
@@ -864,7 +864,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.18.1245',FILE_CREATED_AT='2026/10/18 12:45',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.18.1256',FILE_CREATED_AT='2026/10/18 12:56',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -1509,11 +1509,11 @@ function drawCoverAsset(c){
   const long=hor?c.w:c.h,short=Math.max(hor?c.h:c.w,14);
   // 縦壁は専用の上面・陰影を描いた画像。横壁画像の90度回転は使わない。
   if(!hor){
-   // 通常壁は全体を20%縮小。迷路壁は接続を保つため長さと判定を維持し、幅だけ縮小。
+   // 通常壁は20%縮小。ただし迷路壁と潜入の縦壁は長さを維持し、部材間に空白を作らない。
    const scale=.8;
    const im=COVER_IMG.maze_wall_vertical;
    if(!assetOK(im))return false;
-   const dw=short*1.02*scale*.9,dh=long*1.03*(c.mazeWall?1:scale);
+   const dw=short*1.02*scale*.9,dh=long*1.03*((c.mazeWall||c.indoorWall)?1:scale);
    // 横壁の正面は画像高の約65%。縦壁の端面にも同じ表示高を使う。
    const faceH=Math.min(dh*.45,short*1.18*.65),split=Math.round(im.naturalHeight*.84);
    g.save();g.globalAlpha*=.98;
@@ -7926,7 +7926,7 @@ function reportGameError(error){
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/canyon.js?v=2026.10.14.1836"></script>
 <script src="js/vegetation.js?v=2026.10.14.1653"></script>
-<script src="js/infiltration-world.js?v=2026.10.18.1245"></script>
+<script src="js/infiltration-world.js?v=2026.10.18.1256"></script>
 <script>
 (function(){
 // iPhone Chrome/Safari: synthetic KeyboardEvent に依存せず、ゲーム内部の入力状態を直接更新する。
