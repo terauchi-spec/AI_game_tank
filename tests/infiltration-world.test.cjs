@@ -608,7 +608,7 @@ test('infiltration pursuit follows stable door midpoints and keeps short sight l
  const fs=require('node:fs'),path=require('node:path'),src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
  assert.ok(src.includes("(target.x-nav.centers[from].x)*.78"),'door waypoint crosses to next cell');
  assert.ok(src.includes("a.stuck>.44"),'avoid reacting to a single blocked movement frame');
- assert.ok(src.includes("indoorGridDetour(nav,h,desired,850)"),'use an obstacle-aware cached detour');
+ assert.ok(src.includes("indoorGridDetour(nav,h,desired,1700)"),'use an obstacle-aware cached detour');
  assert.ok(src.includes("state.sightGrace=1.35"),'transient loss has grace period');
  assert.ok(src.includes("if(seen){state.duration=5+R()*5"),'fresh sight renews the timed alert');
  assert.ok(src.includes("if(visible){h.st=1;h.target='p';h.sus=0;indoorStartGuardPursuit(h)"),'reacquisition transitions to found');
@@ -649,14 +649,14 @@ test('guard detours are bounded and avoid fixed walls, furniture, and cargo',()=
   }
   const doors=new Set(f.doors.filter(d=>d.cells)
    .map(d=>[Math.min(...d.cells),Math.max(...d.cells)].join(':')));
-  assert.ok(grid.solid.length<=4000,'grid memory is bounded');
+  assert.ok(grid.solid.length<=9000,'fine grid memory is bounded');
   for(const a of owner.keys())for(const [dx,dy] of [[1,0],[0,1]]){
    const c=a%5+dx,r=Math.floor(a/5)+dy;if(c>=5||r>=7)continue;
    const b=r*5+c;
    if(!owner.has(b)||owner.get(a)!==owner.get(b)&&!doors.has(a+':'+b))continue;
    const pa=indoorAt(70+(a%5+.5)*180,80+(Math.floor(a/5)+.5)*180,9300);
    const pb=indoorAt(70+(b%5+.5)*180,80+(Math.floor(b/5)+.5)*180,9300);
-   const points=indoorGridDetour({grid},pa,pb,850);
+   const points=indoorGridDetour({grid},pa,pb,1700);
    total++;if(!points){missing++;continue;}
    assert.ok(points.length<=30,'bounded waypoint allocation');
    for(const point of points){
@@ -666,6 +666,76 @@ test('guard detours are bounded and avoid fixed walls, furniture, and cargo',()=
   }
  }
  assert.ok(missing/total<.015,'98.5%+ of adjacent room paths have a safe detour');
+});
+test('indoor pursuing guards cross automatic doors and skirt cargo in simulated movement',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
+ const d=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+ const angleDiff=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
+ let blocks=[],doors=[];
+ const hit=(p,r,q)=>p.x+r>q.x&&p.x-r<q.x+q.w&&p.y+r>q.y&&p.y-r<q.y+q.h;
+ const mv=(o,dx,dy,r)=>{
+   if(!blocks.some(q=>hit({x:o.x+dx,y:o.y},r,q))&&
+      !doors.some(q=>!q.noHit&&hit({x:o.x+dx,y:o.y},r,q)))o.x+=dx;
+   if(!blocks.some(q=>hit({x:o.x,y:o.y+dy},r,q))&&
+      !doors.some(q=>!q.noHit&&hit({x:o.x,y:o.y+dy},r,q)))o.y+=dy;
+ };
+ const sim=new Function('mv','D','R','angD',
+   "const module={exports:{}};"+src+
+   "\nreturn {gen:indoorGenerateFloor,grid:indoorMakeGuardGrid,move:indoorMoveGuardTo,at:indoorAt,setWorld:w=>{indoorWorld=w;}};"
+ )(mv,d,()=>.55,angleDiff);
+ for(const [seed,guardIndex] of [[3,3],[5,1],[11,0],[12,3],[14,1],[14,4],[15,0],[16,1]]){
+  const raw=sim.gen(1,random(seed*13+1)),off=9300;
+  const owners=new Map(raw.rooms.flatMap(r=>r.cellIds.map(i=>[i,r.id])));
+  for(const tile of raw.corridors){
+   const c=Math.round((tile.x-70)/180),row=Math.round((tile.y-80)/180);
+   owners.set(row*5+c,-1);
+  }
+  const joins=new Set(raw.doors.filter(o=>o.cells).map(o=>
+    [Math.min(...o.cells),Math.max(...o.cells)].join(':')));
+  const nav={
+   origin:sim.at(70,80,off),stepX:180,stepY:315,
+   centers:Array.from({length:35},(_,i)=>sim.at(70+(i%5+.5)*180,80+(Math.floor(i/5)+.5)*180,off)),
+   neighbors:Array.from({length:35},(_,i)=>{
+    if(!owners.has(i))return[];
+    return[i%5?i-1:-1,i%5<4?i+1:-1,i>=5?i-5:-1,i<30?i+5:-1]
+     .filter(j=>owners.has(j)&&(owners.get(i)===owners.get(j)||
+       joins.has([Math.min(i,j),Math.max(i,j)].join(':'))));
+   }),
+   grid:sim.grid(raw,off)
+  };
+  sim.setWorld({floors:[{navigation:nav}]});
+  blocks=[...raw.walls,...raw.furniture,...raw.explosiveObjects].map(q=>({
+    x:q.x-40,y:q.y*1.75+off,w:q.w,h:q.h*1.75
+  }));
+  doors=raw.doors.filter(o=>o.cells).map(q=>({
+    x:q.vertical?q.x-46:q.x-82,
+    y:q.vertical?q.y*1.75+off-73.5:q.y*1.75+off-6,
+    w:q.vertical?12:84,h:q.vertical?147:12,noHit:false,original:q
+  }));
+  const guard=raw.guards[guardIndex];
+  const actor={...sim.at(guard.x,guard.y,off),face:guard.face,indoorFloor:1,indoorAlert:{},alive:true};
+  const intel=raw.intel[guardIndex%raw.intel.length],goal=sim.at(intel.x,intel.y,off);
+  for(let tick=0;tick<1000&&d(actor,goal)>=35;tick++){
+   for(const door of doors){
+    const q=door.original,x=q.x-40,y=q.y*1.75+off;
+    door.noHit=Math.abs(q.vertical?actor.x-x:actor.y-y)<=22&&
+      Math.abs(q.vertical?actor.y-y:actor.x-x)<=80;
+   }
+   sim.move(actor,goal,.05,95);
+  }
+  assert.ok(d(actor,goal)<35,'guard stalled before reaching last known position, map '+seed+' guard '+guardIndex);
+ }
+});
+test('infiltration expensive recovery is limited to genuinely stalled pursuits',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
+ assert.ok(src.includes('a.noGoalProgressT>4.5&&a.rescueCooldown<=0'),
+   'long-distance rescue only starts after no approach progress');
+ assert.ok(src.includes('a.rescueCooldown=7'),'rescue has a strict per-guard cooldown');
+ assert.ok(src.includes('indoorGridDetour(nav,h,goal,5200)'),
+   'rare recovery searches a wider area and does not just repeat a blocked door edge');
+ assert.ok(src.includes('a.detourGoalCell!==to'),'do not keep obsolete paths when target changes rooms');
 });
 test('indoor guards search the last credible direction without tracking unseen position',()=>{
  const fs=require('node:fs'),path=require('node:path'),

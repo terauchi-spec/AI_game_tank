@@ -858,10 +858,10 @@ function setupInfiltrationMission(){
 function indoorMakeGuardGrid(raw,off){
  // Immutable room/wall/prop occupancy, built once per floor. Dynamic doors are open
  // to planning because a nearby guard opens them; collision still handles actual doors.
- const step=24,origin=indoorAt(70,80,off),cols=Math.ceil(900/step),rows=Math.ceil(1260*INDOOR_SCALE_Y/step);
+ const step=16,origin=indoorAt(70,80,off),cols=Math.ceil(900/step),rows=Math.ceil(1260*INDOOR_SCALE_Y/step);
  const solid=new Uint8Array(cols*rows),rects=[...raw.walls,...raw.furniture,...raw.explosiveObjects]
    .map(o=>indoorRect(o,off));
- const margin=8;
+ const margin=10;
  for(const rect of rects){
   const minX=Math.max(0,Math.ceil((rect.x-margin-origin.x)/step-.5));
   const maxX=Math.min(cols-1,Math.floor((rect.x+rect.w+margin-origin.x)/step-.5));
@@ -958,6 +958,7 @@ function indoorStartGuardPursuit(h){
  h.indoorAlert={phase:'found',duration,remaining:duration,trail:[spot],lastSeen:spot,
   searchLeft:0,scanT:0,route:null,routeKey:'',waypoint:null,stuck:0,blockedT:0,
   replanT:0,detour:null,detourKey:'',lastDir:null,estimate:null,searchTravelLeft:0,
+  progressGoalCell:-1,bestGoalDistance:Infinity,noGoalProgressT:0,rescueCooldown:0,
   sightGrace:0,sightCheckT:0,visible:false};
  h.lost=duration;h._detectCache=null;h._nextDetectAt=0;
 }
@@ -980,11 +981,23 @@ function indoorMoveGuardTo(h,goal,dt,sp){
  if(!nav||!goal||!a)return false;
  const from=indoorGuardCell(nav,h),to=indoorGuardCell(nav,goal);
  if(from<0||to<0)return false;
+ // Separate the quick local detours from a rare, capped full-room recovery.
+ // Otherwise a blocked doorway can send a soldier around the same 3 cells forever.
+ if(a.progressGoalCell!==to){
+  a.progressGoalCell=to;a.bestGoalDistance=D(h,goal);a.noGoalProgressT=0;
+ }else{
+  const dist=D(h,goal);
+  if(dist<a.bestGoalDistance-28){a.bestGoalDistance=dist;a.noGoalProgressT=0;}
+  else a.noGoalProgressT=(a.noGoalProgressT||0)+dt;
+ }
+ a.rescueCooldown=Math.max(0,(a.rescueCooldown||0)-dt);
  // Hierarchical room graph: doors are real edges, never shortcuts through walls.
  const key=from+':'+to;
  if(!a.route||a.routeKey!==key){
   a.route=indoorGuardCellRoute(nav,from,to);a.routeKey=key;
-  a.waypoint=null;a.detour=null;a.detourKey='';
+  // Do not discard a valid furniture detour when crossing a cell boundary.
+  // That caused guards to reverse on door thresholds and become trapped.
+  a.waypoint=null;
  }
  if(!a.route)return false;
  const target=a.route.length>1?nav.centers[a.route[1]]:goal;
@@ -995,7 +1008,15 @@ function indoorMoveGuardTo(h,goal,dt,sp){
   x:nav.centers[from].x+(target.x-nav.centers[from].x)*.78,
   y:nav.centers[from].y+(target.y-nav.centers[from].y)*.78
  }:target;
- if(a.detour&&a.detourKey!==routeKey){a.detour=null;}
+ if(a.detour&&a.detourGoalCell!==to)a.detour=null;
+ if(a.noGoalProgressT>4.5&&a.rescueCooldown<=0){
+  a.rescueCooldown=7;a.noGoalProgressT=0;
+  const rescue=indoorGridDetour(nav,h,goal,5200);
+  if(rescue?.length){
+   a.detour=rescue;a.detourGoalCell=to;a.detourKey='recovery';
+   a.replanT=1.7;
+  }
+ }
  let dest=desired;
  if(a.detour?.length){
   while(a.detour.length&&D(h,a.detour[0])<15)a.detour.shift();
@@ -1015,9 +1036,9 @@ function indoorMoveGuardTo(h,goal,dt,sp){
   a.replanT=Math.max(0,(a.replanT||0)-dt);
   if(a.stuck>.44&&a.replanT<=0){
    // Obstacle-aware short path, calculated only on collision and cached.
-   const detour=indoorGridDetour(nav,h,desired,850);
+   const detour=indoorGridDetour(nav,h,desired,1700);
    a.replanT=.85+R()*.2;a.stuck=0;
-   if(detour?.length){a.detour=detour;a.detourKey=routeKey;}
+   if(detour?.length){a.detour=detour;a.detourKey=routeKey;a.detourGoalCell=to;}
    else a.detour=null;
   }
  }
