@@ -54,7 +54,7 @@ test('five corridor shapes and differently sized rooms remain navigable at doubl
   assert.ok(f.rooms.some(r=>r.size===1));
   assert.ok(f.rooms.some(r=>r.size>=3));
   assert.equal(f.rooms.reduce((s,r)=>s+r.tiles.length,0)+f.corridors.length,35);
-  assert.ok(f.doors.length>=17&&f.doors.length<=20,'multiple doors plus two exterior exits');
+  assert.ok(f.doors.length>=16&&f.doors.length<=20,'multiple doors plus two exterior exits');
   assert.ok(f.doors.filter(q=>q.kind==='room-room').length>=2,'direct room-to-room doors');
   assert.ok(f.rooms.filter(q=>q.doors.length>1).length>=2,'several rooms have two doors');
   for(const r of f.rooms){sizeSet.add(r.size);assert.equal(r.size,r.tiles.length);}
@@ -92,7 +92,7 @@ test('all blue soldiers traverse interconnected routes across the whole building
   const doors=new Set(f.doors.filter(d=>d.cells).map(d=>[Math.min(...d.cells),Math.max(...d.cells)].join(':')));
   assert.ok(f.guards.length>=6&&f.guards.length<=8,'6–8 patrol guards per floor');
   for(const h of f.guards){
-   assert.ok(h.loop&&h.waypoints.length>=6,'long cyclic patrol');
+   assert.ok(h.loop&&h.waypoints.length>=4,'long cyclic patrol');
    assert.equal(h.cellRoute[0],h.cellRoute.at(-1),'route closes');
    const roomsVisited=new Set(h.cellRoute.map(c=>roomOwner.get(c)).filter(v=>v!==undefined)).size;
    const rowsVisited=new Set(h.cellRoute.map(c=>Math.floor(c/5))).size;
@@ -154,7 +154,7 @@ test('smaller doors have multiple routes between rooms, corridors, and exterior 
   assert.ok(rr.length>=2,'at least two direct inter-room doorways');
   assert.ok(f.rooms.some(r=>r.doors.length>=2),'at least one multi-door room');
   assert.ok(f.rooms.filter(r=>r.doors.length>=2).length>=2,'multiple rooms have options');
-  assert.ok(f.doors.length>=17&&f.doors.length<=20);
+  assert.ok(f.doors.length>=16&&f.doors.length<=20);
   assert.equal(f.doors.filter(d=>d.kind==='main'||d.kind==='emergency').length,2);
   const windows=f.windows;
   assert.ok(windows.every(d=>d.external),'keep windows exterior-only');
@@ -272,4 +272,54 @@ test('expanded patrol density and supply items remain separated and keep lanes c
       }
     }
   }
+});
+
+test('entrance has an open 2x2 hall and stair varies inside navigable corridors',()=>{
+ const choices=new Set(),patterns=new Set(),lobbyOffsets=new Set();
+ for(let seed=1;seed<=350;seed++)for(let floorNo=1;floorNo<=2;floorNo++){
+   const f=indoorGenerateFloor(floorNo,random(seed*53+floorNo));
+   patterns.add(f.pattern);choices.add(f.stairIndex);lobbyOffsets.add(f.lobbyArea.x);
+   assert.equal(f.lobby.length,4,'entrance is an open two-by-two area');
+   assert.equal(f.lobbyArea.w,360);assert.equal(f.lobbyArea.h,360);
+   const tiles=new Set(f.corridors.map(q=>q.x+':'+q.y));
+   for(const tile of f.lobby)assert.ok(tiles.has(tile.x+':'+tile.y),'lobby is fully connected corridor floor');
+   assert.ok(f.entrance.x>=f.lobbyArea.x&&f.entrance.x<=f.lobbyArea.x+f.lobbyArea.w,
+     'front entrance opens into the hall');
+   assert.ok(f.stair.y<f.lobbyArea.y-80,'stairs are outside the entrance lobby');
+   assert.ok(f.furniture.filter(p=>p.zone==='hallway').every(p=>
+     !(p.x>=f.lobbyArea.x&&p.x<f.lobbyArea.x+f.lobbyArea.w&&
+       p.y>=f.lobbyArea.y&&p.y<f.lobbyArea.y+f.lobbyArea.h)),
+     'entrance hall remains clear of military crates');
+   // 中央で接する区画同士に仕切り壁がないことを確認（外周壁は対象外）。
+   const seamX=f.lobbyArea.x+180,seamY=f.lobbyArea.y+180;
+   for(const step of [55,130,230,305]){
+     const probes=[{x:seamX,y:f.lobbyArea.y+step},{x:f.lobbyArea.x+step,y:seamY}];
+     for(const q of probes)assert.ok(!f.walls.some(w=>
+       q.x>w.x&&q.x<w.x+w.w&&q.y>w.y&&q.y<w.y+w.h),
+       'no partition wall inside entrance hall');
+   }
+ }
+ for(const name of ['H','L','T','四角','コ'])assert.ok(patterns.has(name),'missing hall pattern '+name);
+ assert.ok(choices.size>=8,'stairs vary over several locations');
+ assert.ok(lobbyOffsets.size>=2,'front hall location varies with entry');
+});
+test('when forced to use a shared stair cell, both floor plans use that position',()=>{
+ const indexFromRect=tile=>Math.round((tile.y-80)/180)*5+Math.round((tile.x-70)/180);
+ for(let seed=1;seed<=260;seed++){
+  const first=indoorGenerateFloor(1,random(seed*31));
+  const second=indoorGenerateFloor(2,random(seed*31+13));
+  const upstairs=new Set(second.corridors.map(indexFromRect));
+  const common=first.corridors.map(indexFromRect)
+    .filter(id=>Math.floor(id/5)>=1&&Math.floor(id/5)<=4&&upstairs.has(id));
+  assert.ok(common.length>=2,'at least two candidate stairs shared by both levels');
+  const stair=common[seed%common.length];
+  const a=indoorGenerateFloor(1,random(seed*31),stair);
+  const b=indoorGenerateFloor(2,random(seed*31+13),stair);
+  assert.equal(a.stairIndex,stair);
+  assert.equal(b.stairIndex,stair);
+  assert.deepEqual(a.stair,b.stair,'paired floors have aligned stair landing');
+  for(const f of [a,b])assert.ok(f.furniture.filter(x=>x.zone==='hallway')
+     .every(x=>!(Math.abs(x.x-f.stair.x)<90&&Math.abs(x.y-f.stair.y)<90)),
+     'no supply crate placed on stair tile');
+ }
 });

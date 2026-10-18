@@ -4,7 +4,7 @@ const indoorRand=(rng,a,b)=>a+(b-a)*rng();
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const indoorShuffle=(arr,rng)=>{for(let i=arr.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr;};
-function indoorGenerateFloor(number,rng=Math.random){
+function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
   // 5×7の180px区画を接続。廊下の形だけ先に確定し、残りを10室に分割する。
   // 同じ部屋に割り当てた区画間は壁を作らず、大小さまざまな連結部屋にする。
   const COLS=5,ROWS=7,SIZE=180,X0=70,Y0=80,ROOM_COUNT=10;
@@ -35,21 +35,24 @@ function indoorGenerateFloor(number,rng=Math.random){
     for(let r=1;r<=5;r++){add(1,r);add(3,r);}
     for(let c=1;c<=3;c++)add(c,5);
   }
-  // 全パターン共通の階段位置。廊下と連結するよう短い上側の枝を延ばす。
-  add(2,1);add(1,1);add(2,0); // 北側の非常口から階段へ通じる
-  // 南端に正面玄関を作る。必ず既存廊下から分岐し、建物外周で開口する。
+  // 施設上側の非常口は維持し、南側には広いエントランスホールを追加。
+  add(2,1);add(1,1);add(2,0);
   const south=[1,2,3].filter(c=>hall.has(index(c,5)));
   const entranceCol=south.length?south[Math.floor(rng()*south.length)]:1;
-  if(!south.length)add(entranceCol,5);
-  add(entranceCol,6);
+  // 南端の縦2×横2区画をつなぎ、ゆったりした玄関ホールとする。
+  const lobbyIds=[],lobbyLeft=entranceCol===3?2:entranceCol;
+  for(let r=5;r<=6;r++)for(let c=lobbyLeft;c<=lobbyLeft+1;c++){add(c,r);lobbyIds.push(index(c,r));}
   const mainDoor={x:center(index(entranceCol,6)).x,y:Y0+ROWS*SIZE,side:'bottom'};
   const entrance={x:mainDoor.x,y:mainDoor.y+54};
   const emergencyDoor={x:center(index(2,0)).x,y:Y0,side:'top'};
   const emergency={x:emergencyDoor.x,y:emergencyDoor.y-54};
-  const stair=center(index(2,1));
-  // H/L/T/四角それぞれの廊下の末端側を入口・出口にする。
+  // 固定(2,1)を廃止し、生成された廊下の中から階段を抽選する。
   const halls=Array.from(hall);
-  const distToStair=new Map([[index(2,1),0]]),queue=[index(2,1)];
+  const stairOptions=halls.filter(i=>{const {r}=coord(i);return r>=1&&r<=4;});
+  const stairDraw=stairOptions[Math.floor(rng()*stairOptions.length)];
+  const stairIndex=Number.isInteger(sharedStairIndex)&&hall.has(sharedStairIndex)?sharedStairIndex:stairDraw;
+  const stair=center(stairIndex);
+  const distToStair=new Map([[stairIndex,0]]),queue=[stairIndex];
   for(let at=0;at<queue.length;at++){
     const i=queue[at],d=distToStair.get(i);
     for(const n of neighbors(i))if(hall.has(n)&&!distToStair.has(n)){distToStair.set(n,d+1);queue.push(n);}
@@ -111,6 +114,25 @@ function indoorGenerateFloor(number,rng=Math.random){
   }
   if(frozen>=0){const other=targets.indexOf(1);[targets[frozen],targets[other]]=[targets[other],targets[frozen]];}
   let remaining=free.length-seeds.length,rounds=0;
+  // 広いホールを確保しても、少なくとも1室は3区画以上の大部屋にする。
+  // 成長可能な部屋を一つ選び、空き区画を2つ先に取り込む。
+  let lead=-1,planned=[];
+  const leadOptions=indoorShuffle(seeds.map((cell,k)=>k).filter(k=>k!==frozen&&targets[k]>=3),rng);
+  for(const k of leadOptions){
+    const seen2=new Set([seeds[k]]),todo=[seeds[k]],freeCells=[];
+    for(let at=0;at<todo.length&&freeCells.length<2;at++){
+      for(const n of adjacency.get(todo[at])){
+        if(seen2.has(n)||owner[n]!==-2)continue;
+        seen2.add(n);todo.push(n);freeCells.push(n);
+      }
+    }
+    if(freeCells.length>=2){lead=k;planned=freeCells.slice(0,2);break;}
+  }
+  if(lead>=0){
+    for(const cell of planned){
+      owner[cell]=lead;grouped[lead].push(cell);remaining--;
+    }
+  }
   while(remaining>0){
     const candidates=[];
     for(let k=0;k<ROOM_COUNT;k++)if(k!==frozen)for(const cell of grouped[k])for(const n of adjacency.get(cell))if(owner[n]===-2){
@@ -270,7 +292,7 @@ function indoorGenerateFloor(number,rng=Math.random){
   // 通路の軍用物資は10～13個へ増量。壁際の対角コーナーに寄せて
   // 通路中央(幅約26px以上)・階段・ドアの通行帯は塞がない。
   const supplies=indoorShuffle(['ammo','supply','barrel','sandbag','kit'],rng);
-  const safeHalls=indoorShuffle(halls.filter(i=>i!==index(2,1)&&i!==index(2,0)&&i!==index(entranceCol,6)),rng);
+  const safeHalls=indoorShuffle(halls.filter(i=>i!==stairIndex&&i!==index(2,0)&&!lobbyIds.includes(i)),rng);
   const supplyCount=Math.min(13,Math.max(10,Math.round(halls.length*.95)));
   const corners=[];
   for(let k=0;k<safeHalls.length;k++){
@@ -359,6 +381,8 @@ function indoorGenerateFloor(number,rng=Math.random){
     roomRoomDoors:connectingRooms,extraHallDoors:moreHallDoors,
     doors:doorMarks,windows,
     footprint:{x:X0,y:Y0,w:COLS*SIZE,h:ROWS*SIZE},
+    stairIndex,entranceCol,lobbyArea:{x:X0+lobbyLeft*SIZE,y:Y0+5*SIZE,w:2*SIZE,h:2*SIZE},
+    lobby:lobbyIds.map(i=>{const {c,r}=coord(i);return{x:X0+c*SIZE,y:Y0+r*SIZE,w:SIZE,h:SIZE};}),
     corridors:halls.map(i=>{const {c,r}=coord(i);return{x:X0+c*SIZE,y:Y0+r*SIZE,w:SIZE,h:SIZE};}),
     center:stair.x};
 }
@@ -390,9 +414,22 @@ function setupInfiltrationWorld(){
   base={x:-5000,y:-5000,w:100,h:100,hp:30,maxHp:30,deadAt:0};
   document.body.classList.remove('front-battle');
   indoorWorld={floors:[],intel:[],currentFloor:0,stairArmed:true,stairsCooldown:0,exit:null,emergency:null,entrance:null};
+  // 同じ階段位置を1F/2Fで共有させる。間取りは各階別々のランダムシード。
+  const indoorSeedRng=seed=>{let x=seed>>>0;return()=>{x=(Math.imul(x,1664525)+1013904223)>>>0;return x/4294967296;};};
+  const seeds=[Math.floor(R()*4294967296),Math.floor(R()*4294967296)];
+  const trial=[1,2].map((n,i)=>indoorGenerateFloor(n,indoorSeedRng(seeds[i])));
+  const cellId=tile=>Math.round((tile.y-80)/180)*5+Math.round((tile.x-70)/180);
+  const onSecond=new Set(trial[1].corridors.map(cellId));
+  const sharedOptions=trial[0].corridors.map(cellId).filter(id=>{
+    const row=Math.floor(id/5);
+    return row>=1&&row<=4&&onSecond.has(id);
+  });
+  const sharedStair=sharedOptions[Math.floor(R()*sharedOptions.length)];
+  if(!Number.isInteger(sharedStair))throw Error('共通階段の設置候補がありません');
+  const rawFloors=[1,2].map((n,i)=>indoorGenerateFloor(n,indoorSeedRng(seeds[i]),sharedStair));
   const shuffled=[1,2];
   for(const n of shuffled){
-    const raw=indoorGenerateFloor(n),off=INDOOR_FLOOR_OFFSETS[n-1];
+    const raw=rawFloors[n-1],off=INDOOR_FLOOR_OFFSETS[n-1];
     const to=pt=>indoorAt(pt.x,pt.y,off);
     const rooms=raw.rooms.map(r=>{const rect=indoorRect(r,off);
       return{...rect,id:r.id,name:r.name,size:r.size,isGuardPost:!!r.isGuardPost,tiles:r.tiles.map(tile=>indoorRect(tile,off))};
@@ -442,7 +479,7 @@ function setupInfiltrationWorld(){
       covers.push(door.cover);return door;
     });
     indoorWorld.floors.push({number:n,offset:off,pattern:raw.pattern,
-      corridors:raw.corridors.map(tile=>indoorRect(tile,off)),rooms,stair,
+      corridors:raw.corridors.map(tile=>indoorRect(tile,off)),lobbyArea:indoorRect(raw.lobbyArea,off),rooms,stair,
       entrance,exit:entrance,emergency,
       footprint:indoorRect(raw.footprint,off),
       doors,windows:raw.windows.map(openingPoint),guards,postGuards,
@@ -545,6 +582,15 @@ function drawInfiltrationFloors(cx,cy){
     for(const tile of f.corridors){
       if(tile.y+tile.h<cy-30||tile.y>cy+H+30)continue;
       g.fillRect(tile.x,tile.y,tile.w,tile.h);
+    }
+    // エントランスホールは廊下より明るい広い共用床として描き、家具は置かない。
+    const lobby=f.lobbyArea;
+    if(lobby&&lobby.y+lobby.h>=cy-40&&lobby.y<=cy+H+40){
+      g.fillStyle='#74796b';g.fillRect(lobby.x+2,lobby.y+2,lobby.w-4,lobby.h-4);
+      g.strokeStyle='rgba(210,212,181,.28)';g.lineWidth=2;g.strokeRect(lobby.x+14,lobby.y+16,lobby.w-28,lobby.h-32);
+      g.fillStyle='rgba(56,71,59,.35)';g.fillRect(lobby.x+lobby.w*.22,lobby.y+lobby.h*.38,lobby.w*.56,lobby.h*.17);
+      g.font='bold 17px system-ui';g.textAlign='center';g.fillStyle='#f0eacb';
+      g.fillText('エントランスホール',lobby.x+lobby.w*.5,lobby.y+lobby.h*.52);
     }
     for(const room of f.rooms){
       if(room.y+room.h<cy-40||room.y>cy+H+40)continue;
