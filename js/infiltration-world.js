@@ -457,10 +457,22 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     lightFixtures.push({x:pt.x,y:pt.y,zone,anchor,rx,ry,roomId});return true;
   };
   const roomLight=(point,anchor,room,table=null)=>{
-    // Smaller pools around desks/tables; otherwise each lamp lights its room center.
-    const rx=table?Math.min(SIZE*.43,table.w/2+34):SIZE*.42;
-    const ry=table?Math.min(SIZE*.43,table.h/2+38):SIZE*.42;
-    addLight(point,'room',anchor,rx,ry,room.id);
+    // Ceiling lights cover the center of a room; table task lights stay smaller.
+    // No light may spill into a neighboring room because the renderer clips to room tiles.
+    const longRoom=room.size===2,wide=room.w>room.h,tall=room.h>room.w;
+    const rx=table?Math.min(SIZE*.43,table.w/2+34):
+      longRoom&&wide?SIZE*.96:SIZE*.69;
+    const ry=table?Math.min(SIZE*.43,table.h/2+38):
+      longRoom&&tall?SIZE*.96:SIZE*.69;
+    // Keep a separate, more focused table light even near the central fixture.
+    const near=anchor==='table';
+    if(near&&lightFixtures.some(l=>l.zone==='room'&&l.roomId===room.id&&
+      distance(l,point)<5))return false;
+    if(near){
+      lightFixtures.push({x:point.x,y:point.y,zone:'room',anchor,rx,ry,roomId:room.id});
+      return true;
+    }
+    return addLight(point,'room',anchor,rx,ry,room.id);
   };
   // Broad lobby is deliberately a separate light region.
   addLight({x:X0+(lobbyLeft+1)*SIZE,y:Y0+6*SIZE},
@@ -511,10 +523,16 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
       roomFurniture.filter(o=>o.kind==='table'||o.kind==='desk')
         .sort((a,b)=>distance({x:a.x+a.w/2,y:a.y+a.h/2},mid)-
           distance({x:b.x+b.w/2,y:b.y+b.h/2},mid))[0];
-    // A table fixture stays immediately above the furniture; otherwise closest tile to the center.
-    const primary=table?{x:table.x+table.w/2,y:table.y+table.h/2}:
-      centers.slice().sort((a,b)=>distance(a,mid)-distance(b,mid))[0];
-    roomLight(primary,table?'table':'room-center',room,table);
+    const inRoom=room.tiles.some(t=>mid.x>=t.x&&mid.x<=t.x+t.w&&
+      mid.y>=t.y&&mid.y<=t.y+t.h);
+    const primary=inRoom?mid:centers.slice().sort((a,b)=>distance(a,mid)-distance(b,mid))[0];
+    roomLight(primary,'room-center',room);
+    // A ceiling task light highlights the nearby table while general room lighting remains central.
+    if(table){
+      const point={x:table.x+table.w/2,y:table.y+table.h/2};
+      roomLight(point,'table',room,table);
+    }
+    // Larger rooms need separate, broadly spaced lamps rather than an oversized central beam.
     const total=room.size>=5?3:room.size>=3?2:1;
     const installed=[primary];
     while(installed.length<total){

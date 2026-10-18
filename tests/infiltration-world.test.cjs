@@ -360,7 +360,7 @@ test('room and corridor lights are placed at meaningful fixtures with shadow poc
     assert.ok(light.rx>light.ry?light.ry<=180*.45:light.rx<=180*.45,
       'the short light axis stays narrower than the passage');
   }
-  assert.ok(lights.length>=14&&lights.length<=26,'limited fixtures for performance and dark space');
+  assert.ok(lights.length>=17&&lights.length<=29,'a few extra room fixtures without runaway per-frame cost');
   const spots=f.corridors.concat(f.rooms.flatMap(r=>r.tiles));
   const samples=spots.map(t=>({x:t.x+t.w/2,y:t.y+t.h/2}));
   const dark=samples.filter(p=>lights.every(l=>Math.hypot(p.x-l.x,p.y-l.y)>185*.72));
@@ -377,8 +377,10 @@ test('room lights are centered on table surfaces or room tiles and respect room 
    const room=f.rooms[lamp.roomId];
    assert.ok(room&&room.tiles.some(t=>rectInside(lamp,t)),
      'room light must be inside its own room');
-   assert.ok(lamp.rx<=180*.45&&lamp.ry<=180*.45,
-     'room light pool is smaller than a room tile');
+   assert.ok(lamp.rx<=180*.97&&lamp.ry<=180*.97,
+     'room light is bounded and cannot cover unlimited floor area');
+   if(lamp.anchor==='table')assert.ok(lamp.rx<=180*.45&&lamp.ry<=180*.45,
+     'table task light is still compact');
    if(lamp.anchor==='table'){
     const tables=f.furniture.filter(o=>o.kind==='table'||o.kind==='desk'||o.kind==='postTable');
     assert.ok(tables.some(o=>Math.abs(lamp.x-(o.x+o.w/2))<.01&&
@@ -386,6 +388,44 @@ test('room lights are centered on table surfaces or room tiles and respect room 
    }
   }
  }
+});
+test('each room has central lighting independently from furniture task lights',()=>{
+ const random=seed=>{let x=Math.imul(seed,2654435761)>>>0;return()=>{x=(Math.imul(x,1664525)+1013904223)>>>0;return x/4294967296;};};
+ let litCenters=0,roomCenters=0,shadowCorners=0,totalCorners=0;
+ for(let seed=1;seed<=180;seed++)for(let n=1;n<=2;n++){
+  const f=indoorGenerateFloor(n,random(seed*41+n)),lights=f.lightFixtures;
+  for(const room of f.rooms){
+   const own=lights.filter(l=>l.roomId===room.id&&l.zone==='room');
+   assert.ok(own.some(l=>l.anchor==='room-center'),'each room gets a central ceiling lamp');
+   const center=room.tiles.reduce((p,t)=>({x:p.x+t.x+t.w/2,y:p.y+t.y+t.h/2}),{x:0,y:0});
+   center.x/=room.tiles.length;center.y/=room.tiles.length;
+   const main=own.find(l=>l.anchor==='room-center');
+   const inRoom=room.tiles.some(tile=>center.x>=tile.x&&center.x<=tile.x+tile.w&&
+     center.y>=tile.y&&center.y<=tile.y+tile.h);
+   const tileCenters=room.tiles.map(tile=>({x:tile.x+tile.w/2,y:tile.y+tile.h/2}));
+   const closest=tileCenters.sort((a,b)=>Math.hypot(a.x-center.x,a.y-center.y)-
+     Math.hypot(b.x-center.x,b.y-center.y))[0];
+   const desired=inRoom?center:closest;
+   assert.ok(Math.hypot(desired.x-main.x,desired.y-main.y)<.01,
+     'room light at center, or nearest indoor tile for irregular geometry');
+   const tables=f.furniture.filter(o=>(o.kind==='table'||o.kind==='desk'||o.kind==='postTable')&&
+     room.tiles.some(tile=>o.x>=tile.x&&o.x<tile.x+tile.w&&o.y>=tile.y&&o.y<tile.y+tile.h));
+   if(tables.some(o=>Math.hypot(o.x+o.w/2-main.x,o.y+o.h/2-main.y)>5))
+      assert.ok(own.some(l=>l.anchor==='table'),'furniture may have a separate task lamp');
+   for(const tile of room.tiles){
+    const x=tile.x+tile.w/2,y=tile.y+tile.h/2;
+    const v=Math.max(0,...own.map(l=>1-Math.hypot((x-l.x)/l.rx,(y-l.y)/l.ry)));
+    roomCenters++;if(v>.30)litCenters++;
+    for(const [dx,dy] of [[12,12],[168,12],[12,168],[168,168]]){
+     const px=tile.x+dx,py=tile.y+dy;
+     const q=Math.max(0,...own.map(l=>1-Math.hypot((px-l.x)/l.rx,(py-l.y)/l.ry)));
+     totalCorners++;if(q<.12)shadowCorners++;
+    }
+   }
+  }
+ }
+ assert.ok(litCenters/roomCenters>.70,'more than 70% of room tile centers receive direct light');
+ assert.ok(shadowCorners/totalCorners>.10,'wall edges and furniture areas retain stealth shadows');
 });
 test('lighting draws only inside matching floor regions with no overflowing mask',()=>{
  const fs=require('node:fs'),path=require('node:path');
