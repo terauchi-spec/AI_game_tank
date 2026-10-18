@@ -323,3 +323,57 @@ test('when forced to use a shared stair cell, both floor plans use that position
      'no supply crate placed on stair tile');
  }
 });
+
+test('clustered wooden crates, barrels and shell pallets stay in groups of four or fewer',()=>{
+ for(let seed=1;seed<=250;seed++)for(let number=1;number<=2;number++){
+  const f=indoorGenerateFloor(number,random(seed*147+number));
+  const g=new Map(),types=new Set(f.explosiveObjects.map(o=>o.kind));
+  assert.ok(types.has('shellPallet'),'at least one shell crate per floor');
+  assert.ok(f.explosiveObjects.length>=2&&f.explosiveObjects.length<=36,'moderate explosive cargo count');
+  for(const obj of f.explosiveObjects){
+   assert.ok(obj.zone==='hallway'||obj.zone==='room');
+   assert.ok(obj.w>0&&obj.h>0);
+   g.set(obj.group,(g.get(obj.group)||0)+1);
+  }
+  assert.ok([...g.values()].every(v=>v>=1&&v<=4),'maximum of four crates in a group');
+  assert.ok(f.lightFixtures.length>=15,'ceiling lights regularly distributed');
+  const loc=new Set(f.lightFixtures.map(p=>p.x+':'+p.y));
+  assert.equal(loc.size,f.lightFixtures.length,'no duplicate light fixtures');
+ }
+});
+test('dark places shorten guard sight while flashlight cone reveals players',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
+ const helper=name=>{
+  const a=src.indexOf('function '+name+'('),b=src.indexOf('\n}\n',a);
+  assert.ok(a>=0&&b>a,name+' exists');
+  return src.slice(a,b+2);
+ };
+ const mk=new Function('indoorWorld','INDOOR_LIGHT_RADIUS',helper('indoorLightLevel')+'\nreturn indoorLightLevel;');
+ const light=mk({floors:[{footprint:{y:0,h:1800},lightFixtures:[{x:200,y:200}]}]},185);
+ assert.ok(light(200,200)>.90);
+ assert.ok(light(400,500)<.30,'dark corner makes enemy sight harder');
+ const inside=new Function('INDOOR_TORCH_RADIUS','INDOOR_TORCH_HALF',helper('indoorFlashlightInside')+'\nreturn indoorFlashlightInside;')(245,.40);
+ const guard={x:100,y:100,alive:true,stun:0};
+ assert.equal(inside(guard,{x:270,y:100},0),true,'front beam sees target');
+ assert.equal(inside(guard,{x:100,y:270},0),false,'beam does not reveal behind/outside its cone');
+ assert.equal(inside(guard,{x:390,y:100},0),false,'beam has a defined maximum range');
+});
+test('two gun hits instantly detonate only the new shell-pallet kind',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const src=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+ const a=src.indexOf("function damageObject(o,source='impact'){"),b=src.indexOf('\n}\n',a);
+ assert.ok(a>=0&&b>a);
+ const body=src.slice(a,b+2);
+ const shell={kind:'shellPallet',x:0,y:0,w:30,h:30},other={kind:'crate',x:100,y:0,w:30,h:30};
+ const objs=[shell,other];
+ let exploded=0;
+ const fn=new Function('objects','explodeObject','radioStrikeKillContext','performance','burst','destroyObject',
+ body+'\nreturn damageObject;')(objs,o=>{exploded++;objs.splice(objs.indexOf(o),1);return true;},0,{now:()=>0},()=>{},()=>true);
+ assert.equal(fn(shell,'mg'),true);
+ assert.equal(exploded,0,'one hit must not explode');
+ assert.equal(fn(shell,'mg'),true);
+ assert.equal(exploded,1,'second hit explodes immediately');
+ assert.equal(fn(other,'mg'),true);
+ assert.equal(exploded,1,'existing crates keep their own damage behavior');
+});

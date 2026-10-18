@@ -310,6 +310,64 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     addFurniture(kind,X0+c*SIZE+(left?SIZE-76:20),
       Y0+r*SIZE+(top?SIZE-66:20),52,40,'hallway');
   }
+  // 爆発オブジェクト: 最大4個の小グループ。通路中央・階段・ドア正面は確保。
+  // 木箱・ドラム缶は従来のオブジェクト処理、砲弾ケースのみ専用の二発爆発扱い。
+  const explosiveObjects=[],explosiveKinds=['crate','barrel','shellPallet'];
+  const clusterCells=indoorShuffle(halls.filter(i=>!lobbyIds.includes(i)&&i!==stairIndex&&i!==index(2,0)),rng);
+  const roomCells=indoorShuffle(rooms.filter(r=>r!==postRoom).flatMap(r=>r.cellIds),rng);
+  const addCluster=(cellId,zone,groupIndex)=>{
+    const {c,r}=coord(cellId),offsetX=X0+c*SIZE,offsetY=Y0+r*SIZE;
+    const count=groupIndex===0?4:groupIndex===1?3:2,side=groupIndex%2===0?0:1;
+    // どのまとまりも同一方向の壁際に置くため、通路を塞ぐ列を作らない。
+    const x=offsetX+(side?SIZE-71:15),y=offsetY+(rng()<.5?17:SIZE-92);
+    for(let i=0;i<count;i++){
+      const kind=explosiveKinds[(groupIndex+i)%explosiveKinds.length];
+      const px=x+(i%2)*33,py=y+Math.floor(i/2)*35;
+      const item={x:px,y:py,w:30,h:30,kind,zone,group:zone+'-'+groupIndex};
+      // 屋内の固定家具や他の軍用物資、階段付近に重ねない。
+      if(furniture.some(o=>px<o.x+o.w+2&&px+30>o.x-2&&py<o.y+o.h+2&&py+30>o.y-2))continue;
+      if(distance({x:px+15,y:py+15},stair)<88)continue;
+      const nearDoor=doorMarks.some(d=>distance({x:px+15,y:py+15},d)<66);
+      if(nearDoor)continue;
+      explosiveObjects.push(item);
+    }
+  };
+  for(let k=0;k<Math.min(5,clusterCells.length);k++)addCluster(clusterCells[k],'hallway',k);
+  for(let k=0;k<Math.min(4,roomCells.length);k++)addCluster(roomCells[k],'room',k+1);
+  // 部屋・廊下のそれぞれに設置物を保証。初期配置で余白が少ない場合は空き隅を再探索。
+  const reserve=(zone,kind)=>{
+    const cells=zone==='hallway'?clusterCells:roomCells;
+    for(const cell of cells){
+      const {c,r}=coord(cell),baseX=X0+c*SIZE,baseY=Y0+r*SIZE;
+      const safe=[{x:baseX+16,y:baseY+18},{x:baseX+SIZE-48,y:baseY+18},
+                  {x:baseX+16,y:baseY+SIZE-49},{x:baseX+SIZE-48,y:baseY+SIZE-49}];
+      for(const q of safe){
+        const target={x:q.x+16,y:q.y+16};
+        if(distance(target,stair)<95)continue;
+        if(doorMarks.some(d=>distance(target,d)<67))continue;
+        if([...furniture,...explosiveObjects].some(o=>q.x<o.x+o.w+3&&q.x+32>o.x-3&&q.y<o.y+o.h+3&&q.y+32>o.y-3))continue;
+        explosiveObjects.push({...q,w:32,h:32,kind,zone,group:'reserve-'+zone});
+        return true;
+      }
+    }
+    return false;
+  };
+  if(!explosiveObjects.some(o=>o.kind==='shellPallet'))reserve('hallway','shellPallet')||reserve('room','shellPallet');
+  if(!explosiveObjects.some(o=>o.zone==='hallway'))reserve('hallway','crate');
+  if(!explosiveObjects.some(o=>o.zone==='room'))reserve('room','barrel');
+  // 各室・廊下には天井照明を規則的に配置。隅には意図的な薄暗い領域を残す。
+  const lightFixtures=[];
+  for(let i=0;i<halls.length;i++){
+    const cell=halls[i],{c,r}=coord(cell);
+    if((c+r)%2===0||lobbyIds.includes(cell))
+      lightFixtures.push({...center(cell),zone:lobbyIds.includes(cell)?'lobby':'hall'});
+  }
+  for(const room of rooms){
+    const ids=room.cellIds;
+    for(let i=0;i<ids.length;i+=Math.max(1,Math.ceil(ids.length/2))){
+      lightFixtures.push({...center(ids[i]),zone:'room'});
+    }
+  }
   const order=indoorShuffle(rooms.map(r=>r.id).filter(id=>id!==postRoom.id),rng);
   const intel=order.slice(0,INDOOR_FILES_TOTAL).map((id,i)=>{
     const room=rooms[id],tile=room.tiles[Math.floor(rng()*room.tiles.length)];
@@ -377,7 +435,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
   }
   doorMarks.push({...mainDoor,vertical:false,outer:true,kind:'main'});
   doorMarks.push({...emergencyDoor,vertical:false,outer:true,kind:'emergency'});
-  return{number,pattern,rooms,walls,furniture,guards,postGuards,postCount,postRoomId:postRoom.id,intel,stair,exit,entrance,emergency,
+  return{number,pattern,rooms,walls,furniture,explosiveObjects,lightFixtures,guards,postGuards,postCount,postRoomId:postRoom.id,intel,stair,exit,entrance,emergency,
     roomRoomDoors:connectingRooms,extraHallDoors:moreHallDoors,
     doors:doorMarks,windows,
     footprint:{x:X0,y:Y0,w:COLS*SIZE,h:ROWS*SIZE},
@@ -391,6 +449,70 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
 // 屋内専用の縦長座標変換。幅は画面内に収め、奥行きを広げて総床面積を約2倍にする。
 const INDOOR_FLOOR_OFFSETS=[9300,5500],INDOOR_SCALE_X=1,INDOOR_SCALE_Y=1.75,INDOOR_OFFSET_X=-40;
 let indoorWorld=null,indoorHudSnapshot='',indoorHudRefresh=0;
+
+let indoorShadeCanvas=null,indoorShadeCtx=null;
+// 天井灯は床に落ちる固定光。暗所は視認性を落とすが、完全な真っ暗にはしない。
+const INDOOR_LIGHT_RADIUS=185,INDOOR_TORCH_RADIUS=245,INDOOR_TORCH_HALF=.40;
+function indoorLightLevel(x,y){
+  if(!indoorWorld)return 1;
+  let near=Infinity;
+  for(const f of indoorWorld.floors){
+    if(y<f.footprint.y-80||y>f.footprint.y+f.footprint.h+80)continue;
+    for(const lamp of f.lightFixtures)near=Math.min(near,Math.hypot(lamp.x-x,lamp.y-y));
+  }
+  return near===Infinity?1:.17+.83*Math.max(0,1-near/INDOOR_LIGHT_RADIUS);
+}
+function indoorFlashlightInside(h,target,face){
+  if(!h||!target||!h.alive||h.stun>0)return false;
+  const dx=target.x-h.x,dy=target.y-h.y,d=Math.hypot(dx,dy);
+  return d<INDOOR_TORCH_RADIUS&&Math.abs(Math.atan2(Math.sin(Math.atan2(dy,dx)-face),Math.cos(Math.atan2(dy,dx)-face)))<INDOOR_TORCH_HALF;
+}
+function drawInfiltrationLighting(cx,cy){
+  if(!indoorWorld||!gm)return;
+  // メイン描画後・HUD前の一回だけ合成。Canvasを再利用しモバイルの再生成を防ぐ。
+  if(!indoorShadeCanvas){indoorShadeCanvas=document.createElement('canvas');indoorShadeCtx=indoorShadeCanvas.getContext('2d');}
+  const mask=indoorShadeCanvas,q=indoorShadeCtx;
+  if(mask.width!==Math.ceil(W)||mask.height!==Math.ceil(H)){mask.width=Math.ceil(W);mask.height=Math.ceil(H);}
+  q.setTransform(1,0,0,1,0,0);q.clearRect(0,0,W,H);
+  q.fillStyle='rgba(7,13,15,.57)';q.fillRect(0,0,W,H);
+  q.globalCompositeOperation='destination-out';
+  for(const f of indoorWorld.floors){
+    if(f.footprint.y>cy+H+INDOOR_LIGHT_RADIUS||f.footprint.y+f.footprint.h<cy-INDOOR_LIGHT_RADIUS)continue;
+    for(const lamp of f.lightFixtures){
+      const x=lamp.x-cx,y=lamp.y-cy;
+      if(x<-INDOOR_LIGHT_RADIUS||x>W+INDOOR_LIGHT_RADIUS||y<-INDOOR_LIGHT_RADIUS||y>H+INDOOR_LIGHT_RADIUS)continue;
+      const gr=q.createRadialGradient(x,y,12,x,y,INDOOR_LIGHT_RADIUS);
+      gr.addColorStop(0,'rgba(0,0,0,.94)');
+      gr.addColorStop(.58,'rgba(0,0,0,.55)');
+      gr.addColorStop(1,'rgba(0,0,0,0)');
+      q.fillStyle=gr;q.fillRect(x-INDOOR_LIGHT_RADIUS,y-INDOOR_LIGHT_RADIUS,INDOOR_LIGHT_RADIUS*2,INDOOR_LIGHT_RADIUS*2);
+    }
+  }
+  q.globalCompositeOperation='source-over';
+  gm.save();gm.drawImage(mask,0,0);
+  // 固定ライトは明るく、ライトを持つ青兵は扇状の淡い光で視野を伝える。
+  for(const f of indoorWorld.floors){
+    if(f.footprint.y>cy+H+120||f.footprint.y+f.footprint.h<cy-120)continue;
+    for(const lamp of f.lightFixtures){
+      const x=lamp.x-cx,y=lamp.y-cy;
+      if(x<-20||x>W+20||y<-20||y>H+20)continue;
+      gm.fillStyle='rgba(255,235,162,.40)';gm.beginPath();gm.arc(x,y,5,0,Math.PI*2);gm.fill();
+    }
+    for(const h of f.guards){
+      if(!h.alive||h.stun>0||h.x<cx-INDOOR_TORCH_RADIUS||h.x>cx+W+INDOOR_TORCH_RADIUS||h.y<cy-INDOOR_TORCH_RADIUS||h.y>cy+H+INDOOR_TORCH_RADIUS)continue;
+      const face=Number.isFinite(h.face)?h.face:0,x=h.x-cx,y=h.y-cy;
+      const gr=gm.createRadialGradient(x,y,8,x,y,INDOOR_TORCH_RADIUS);
+      gr.addColorStop(0,'rgba(255,243,187,.21)');
+      gr.addColorStop(1,'rgba(255,239,160,.005)');
+      gm.fillStyle=gr;gm.beginPath();gm.moveTo(x,y);
+      gm.arc(x,y,INDOOR_TORCH_RADIUS,face-INDOOR_TORCH_HALF,face+INDOOR_TORCH_HALF);
+      gm.closePath();gm.fill();
+      gm.strokeStyle='rgba(255,244,178,.11)';gm.lineWidth=1;gm.stroke();
+    }
+  }
+  gm.restore();
+}
+
 const INDOOR_DOOR_WIDTH=84,INDOOR_DOOR_THICKNESS=12,INDOOR_DOOR_SPEED=5.2;
 function indoorDoorCollisionRect(q){
   // 縦横とも世界座標で12pxの薄型パネル。当たり判定も描画と一致させる。
@@ -447,6 +569,13 @@ function setupInfiltrationWorld(){
       const prop={...q,kd:1,indoorProp:true,propKind:piece.kind,propZone:piece.zone,hp:999999};
       covers.push(prop);props.push(prop);
     }
+    // 共通の木箱/ドラム缶/砲弾ケースを通常の爆発オブジェクトとして登録。
+    for(const item of raw.explosiveObjects){
+      const q=indoorRect(item,off);
+      objects.push({...q,kind:item.kind==='shellPallet'?'shellPallet':item.kind,
+        indoorExplosive:true,indoorGroup:item.group,mgHits:0});
+    }
+    const lightFixtures=raw.lightFixtures.map(p=>({...to(p),zone:p.zone}));
     const guards=[];
     for(const h of raw.guards){
       const pos=to(h),path=h.waypoints.map(to);
@@ -483,7 +612,7 @@ function setupInfiltrationWorld(){
       entrance,exit:entrance,emergency,
       footprint:indoorRect(raw.footprint,off),
       doors,windows:raw.windows.map(openingPoint),guards,postGuards,
-      guardPostId:raw.postRoomId,props});
+      guardPostId:raw.postRoomId,props,lightFixtures});
   }
   const entrance=indoorWorld.floors[0];
   p.x=entrance.entrance.x;p.y=entrance.entrance.y;p.hp=3;p.tank=null;p.body=-Math.PI/2;p.ang=-Math.PI/2;

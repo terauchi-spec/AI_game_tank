@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.18.1610</title>
+<title>こっそり戦車大作戦 2026.10.18.1844</title>
 
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
@@ -864,7 +864,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.18.1610',FILE_CREATED_AT='2026/10/18 16:10',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.18.1844',FILE_CREATED_AT='2026/10/18 18:44',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -1003,6 +1003,7 @@ const COVER_ASSET_SRC={
  "maze_wall":ASSET_DIR+'cover/maze_wall.webp',
  "maze_wall_vertical":ASSET_DIR+'cover/maze_wall_vertical.webp?v=2026.10.14.1653',
  "barrel":ASSET_DIR+'cover/barrel.webp?v=2026.10.14.1653',
+ "shell_pallet":ASSET_DIR+'cover/shell_pallet.webp',
  "command_building_1":ASSET_DIR+'cover/command_building_1.webp',
  "radio_facility":ASSET_DIR+'cover/radio_facility.webp?v=2026.10.14.1930',
  "wood_bridge":ASSET_DIR+'terrain/wood_bridge.webp'
@@ -1418,6 +1419,12 @@ function destroyObject(o,fxOn=true){return explodeObject(o,fxOn);}
 function damageObject(o,source='impact'){
  if(!objects||!o||!objects.includes(o))return false;
  if(radioStrikeKillContext>0)o.radioStrikeOrigin=true;
+ // 潜入の砲弾ケースは銃撃2発で即爆発。通常の木箱・ドラム缶には影響させない。
+ if(o.kind==='shellPallet'&&(source==='mg'||source==='sniper')){
+  o.mgHits=(o.mgHits||0)+1;
+  if(o.mgHits>=2)return explodeObject(o,true);
+  return true;
+ }
  // 直撃・衝突系は即爆発。爆風・火炎・銃撃は3秒炎上してから爆発する。
  const instant=source==='cannonDirect'||source==='bombDirect'||source==='drill'||source==='vehicle'||source==='impact'||source==='sniper';
  const burn=source==='cannonBlast'||source==='bombBlast'||source==='objectBlast'||source==='flame'||source==='mg'||source==='cannon'||source==='bomb';
@@ -1449,6 +1456,18 @@ function updateBurningObjects(dt){
 }
 function drawObject(o){
  const cx=o.x+o.w/2,cy=o.y+o.h/2;
+ if(o.kind==='shellPallet'){
+  const im=COVER_IMG.shell_pallet;
+  if(drawAssetSprite(im,cx,cy,o.w*1.12,o.h*1.12,0,1))return;
+  // 素材読み込み前も識別できる軽量な代替グラフィック。
+  g.fillStyle='#795333';g.fillRect(o.x,o.y,o.w,o.h);
+  g.strokeStyle='#3e3021';g.lineWidth=3;g.strokeRect(o.x+1,o.y+1,o.w-2,o.h-2);
+  for(let i=0;i<3;i++)for(let j=0;j<3;j++){
+    g.fillStyle='#596247';g.beginPath();g.arc(o.x+o.w*(j+.5)/3,o.y+o.h*(i+.5)/3,Math.max(2,o.w*.105),0,6.28);g.fill();
+    g.fillStyle='#d0ae68';g.beginPath();g.arc(o.x+o.w*(j+.5)/3,o.y+o.h*(i+.5)/3,Math.max(1,o.w*.035),0,6.28);g.fill();
+  }
+  return;
+ }
  if(o.kind==='civilCar'){g.save();g.translate(cx,cy);if(o.h>o.w)g.rotate(Math.PI/2);drawStaticRaster(civilCarSprite(o.color||0),-41,-22,82,44);g.restore();return;}
  if(o.kind==='crate'){/* 木箱は敵前線基地で使用していた素材・向きに統一 */const im=COVER_IMG.crate;if(drawAssetSprite(im,cx,cy,o.w*1.02,o.h*1.02,0,1))return;g.fillStyle='#7a5f3a';g.fillRect(o.x,o.y,o.w,o.h);g.strokeStyle='#4e3c24';g.lineWidth=3;g.strokeRect(o.x+2,o.y+2,o.w-4,o.h-4);return;}
  if(o.kind==='barrel'){
@@ -3267,9 +3286,14 @@ function canDetect(o,target,face,key){
  const chatSight=(o&&o.chatT>0)?.5:1,tankSight=frontlineTankSightScale(o);
  const hiddenPlayer=(key==='partner'&&(partner?.down||inBush(partner)))||(key==='p'&&(debugMode>=2||inTumbleweed(p)||p.dig>0||(!p.tank&&inBush(p))||(weather==='rain'&&inWaterAt(p.x,p.y,0))));if(hiddenPlayer)return false;
  if(known){if(d>=(o&&o.commander==='white'?WHITE_CHASE_DROP:detectDropRange(key)*eliteRange*tankSight))return false;return los(o,target);}
+ // 潜入専用: 暗所は視認距離が短くなるが、兵士のライト照射中は発見される。
+ // 視線遮蔽は本編と共通のlos()を必ず通す。
+ const indoorTarget=stageMode==='indoor'&&o?.indoorGuard&&key==='p';
+ if(indoorTarget&&indoorFlashlightInside(o,target,face))return los(o,target);
+ const indoorSight=indoorTarget?(.36+.64*indoorLightLevel(target.x,target.y)):1;
  const da=Math.abs(angD(Math.atan2(target.y-o.y,target.x-o.x),face));
- const inCenter=da<=DETECT_CENTER_HALF*fovBoost*tankSight&&d<detectRange(key)*searchBoost*eliteRange*chatSight*tankSight;
- const inOuter=da<=DETECT_OUTER_HALF*fovBoost*tankSight&&d<detectOuterRange(key)*searchBoost*eliteRange*chatSight*tankSight;
+ const inCenter=da<=DETECT_CENTER_HALF*fovBoost*tankSight&&d<detectRange(key)*searchBoost*eliteRange*chatSight*tankSight*indoorSight;
+ const inOuter=da<=DETECT_OUTER_HALF*fovBoost*tankSight&&d<detectOuterRange(key)*searchBoost*eliteRange*chatSight*tankSight*indoorSight;
  if(!inCenter&&!inOuter)return false;
  return los(o,target);
 }
@@ -7082,6 +7106,7 @@ function draw(near){
  drawSpinifexScatters(cx,cy);drawPartnerOrderSignal();
  g.restore();
  g=gm;gm.imageSmoothingEnabled=false;if(!MOBILE_VIEW)gm.drawImage(oc,0,0,W,H);drawFrontlineCargoNative(cx,cy);drawWeatherOverlay();
+  if(stageMode==='indoor')drawInfiltrationLighting(cx,cy);
  // 潜伏中：画面全体を徐々に暗くする。HUDはこの後に描画して可読性を維持。
  if(p.dig>0){
   const t=Math.max(0,Math.min(1,p.digElapsed||0)),swim=digUsesWaterFx(p.x,p.y);
@@ -7926,7 +7951,7 @@ function reportGameError(error){
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/canyon.js?v=2026.10.14.1836"></script>
 <script src="js/vegetation.js?v=2026.10.14.1653"></script>
-<script src="js/infiltration-world.js?v=2026.10.18.1610"></script>
+<script src="js/infiltration-world.js?v=2026.10.18.1844"></script>
 <script>
 (function(){
 // iPhone Chrome/Safari: synthetic KeyboardEvent に依存せず、ゲーム内部の入力状態を直接更新する。
