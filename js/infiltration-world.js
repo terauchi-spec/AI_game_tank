@@ -955,16 +955,9 @@ function updateInfiltrationGuardAI(h,dt){
  h.modePause=Math.max(0,(h.modePause||0)-dt);
  h.foundPause=Math.max(0,(h.foundPause||0)-dt);h.sharePause=Math.max(0,(h.sharePause||0)-dt);
  if(!pause){
-  if(!h.bu&&!h.plantT&&h.ct>(h.bombAt??1.5)){
-   h.bu=true;h.plantT=.35+R()*.4;h.plantA=Math.atan2(p.y-h.y,p.x-h.x);
-  }
-  if(h.plantT>0){
-   h.plantT=Math.max(0,h.plantT-dt);
-   if(h.plantT<=0){
-    const bp=enemyBombPoint(h,h.plantA??h.face,100);
-    bombs.push({x:bp.x,y:bp.y,own:'e',armed:true,t:4});h.plantA=null;
-   }
-  }else if(D(h,next)>20)indoorMoveGuardTo(h,next,dt,95);
+  // Infiltration soldiers never plant explosives; preserve the outdoor enemy bomb behavior.
+  h.plantT=0;h.plantA=null;
+  if(D(h,next)>20)indoorMoveGuardTo(h,next,dt,95);
   else if(seen)h.face=Math.atan2(p.y-h.y,p.x-h.x);
  }
  if(!pause&&seen&&D(h,p)<150&&h.cd<=0){
