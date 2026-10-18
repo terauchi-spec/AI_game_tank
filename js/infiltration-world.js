@@ -134,21 +134,27 @@ function indoorGenerateFloor(number,rng=Math.random){
     return{id,name:names[id],size:cells.length,cellIds:cells.slice(),tiles,
       x:X0+minC*SIZE,y:Y0+minR*SIZE,w:(maxC-minC+1)*SIZE,h:(maxR-minR+1)*SIZE};
   });
-  // 区画境界の壁を共通のカバー物として作る。選ばれた扉には80pxの開口を設ける。
+  // 区画境界の壁を既存カバー物として作り、部屋間・廊下側の扉には84pxの開口を設ける。
   const doors=new Map(),doorMarks=[],windows=[];
+  const doorKey=(a,b)=>[Math.min(a,b),Math.max(a,b)].join(':');
+  const addDoor=(a,b,kind='room')=>{
+    const key=doorKey(a,b);
+    if(doors.has(key))return false;
+    doors.set(key,kind);
+    const ca=coord(a),cb=coord(b),vertical=ca.c!==cb.c;
+    const pt={x:vertical?X0+Math.max(ca.c,cb.c)*SIZE:X0+(ca.c+.5)*SIZE,
+      y:vertical?Y0+(ca.r+.5)*SIZE:Y0+Math.max(ca.r,cb.r)*SIZE};
+    doorMarks.push({...pt,vertical,outer:false,kind,cells:[a,b]});
+    return true;
+  };
   for(const room of rooms){
     const edges=[];
     for(const cell of room.cellIds)for(const other of neighbors(cell))if(hall.has(other))edges.push([cell,other]);
     if(!edges.length)throw Error('廊下に面していない部屋');
-    // 入口の数は1。大部屋も内部の区画を開放するので、入口から隅々まで進める。
+    // まず各部屋に最低1つの廊下側ドアを設置。後で部屋同士・廊下側の追加ドアを置く。
     const chosen=edges[Math.floor(rng()*edges.length)];
-    doors.set([Math.min(...chosen),Math.max(...chosen)].join(':'),room.id);
-    const a=coord(chosen[0]),b=coord(chosen[1]);
-    const vertical=a.c!==b.c;
-    const doorPoint={x:vertical?X0+Math.max(a.c,b.c)*SIZE:X0+(a.c+.5)*SIZE,
-      y:vertical?Y0+(a.r+.5)*SIZE:Y0+Math.max(a.r,b.r)*SIZE};
-    room.door={inside:chosen[0],outside:chosen[1],point:doorPoint};
-    doorMarks.push({...doorPoint,vertical,outer:false});
+    addDoor(chosen[0],chosen[1],'room-hall');
+    room.door={inside:chosen[0],outside:chosen[1],point:{...doorMarks[doorMarks.length-1]}};
     // 窓は外壁のみ。廊下側や部屋間の間仕切りには作らない。
     const outside=[];
     for(const i of room.cellIds){
@@ -159,6 +165,44 @@ function indoorGenerateFloor(number,rng=Math.random){
       if(r===ROWS-1)outside.push({x:X0+(c+.5)*SIZE,y:Y0+ROWS*SIZE,vertical:false,external:true});
     }
     if(outside.length)windows.push(outside[Math.floor(rng()*outside.length)]);
+  }
+  // 大きめの部屋や隣接する部屋には、2つ目・3つ目の出入口を追加。
+  // 直接部屋同士をつなぐ扉と、廊下への予備扉を混ぜて、回り道を減らす。
+  const extraEdges=[];
+  for(const cell of all)for(const other of neighbors(cell)){
+    if(other<=cell||owner[cell]===owner[other])continue;
+    const a=owner[cell],b=owner[other];
+    if(a===-1&&b===-1)continue;
+    if(doors.has(doorKey(cell,other)))continue;
+    extraEdges.push({a:cell,b:other,kind:a>=0&&b>=0?'room-room':'room-hall',
+      size:Math.max(a>=0?rooms[a].size:0,b>=0?rooms[b].size:0),
+      rooms:[a,b].filter(v=>v>=0)});
+  }
+  const extraCounts=Array(ROOM_COUNT).fill(0);
+  const candidates=indoorShuffle(extraEdges.slice(),rng);
+  const roomRoom=candidates.filter(e=>e.kind==='room-room')
+    .sort((a,b)=>b.size-a.size);
+  const roomHall=candidates.filter(e=>e.kind==='room-hall')
+    .sort((a,b)=>b.size-a.size);
+  let connectingRooms=0,moreHallDoors=0;
+  const takeEdges=(pool,max,kind)=>{
+    for(const edge of pool){
+      if(kind==='room-room'&&connectingRooms>=max)break;
+      if(kind==='room-hall'&&moreHallDoors>=max)break;
+      if(edge.rooms.some(id=>extraCounts[id]>=(rooms[id].size>=4?2:1)))continue;
+      if(addDoor(edge.a,edge.b,kind)){
+        edge.rooms.forEach(id=>extraCounts[id]++);
+        if(kind==='room-room')connectingRooms++;else moreHallDoors++;
+      }
+    }
+  };
+  // 直接つながる室間扉を優先し、必ず複数箇所（候補がある場合）。
+  takeEdges(roomRoom,4,'room-room');
+  takeEdges(roomHall,4,'room-hall');
+  // 室間の候補が少ない間取りでは、廊下に接する別扉を補充。
+  if(connectingRooms<2)takeEdges(roomHall,5,'room-hall');
+  for(const room of rooms){
+    room.doors=doorMarks.filter(q=>q.cells&&q.cells.some(cell=>room.cellIds.includes(cell)));
   }
   const walls=[];
   const put=(x,y,w,h)=>{if(w>1&&h>1)walls.push({x,y,w,h});};
@@ -173,7 +217,7 @@ function indoorGenerateFloor(number,rng=Math.random){
       (side==='top'&&c===2&&r===0)
     );
     if(doors.has(key)||externalEntry){
-      const gap=110,shift=(SIZE-gap)/2,thick=22;
+      const gap=84,shift=(SIZE-gap)/2,thick=22;
       if(vertical){put(wx-thick/2,wy,thick,shift);put(wx-thick/2,wy+shift+gap,thick,length-shift-gap);}
       else{put(wx,wy-thick/2,shift,thick);put(wx+shift+gap,wy-thick/2,length-shift-gap,thick);}
     }else if(vertical)put(wx-11,wy,22,length);
@@ -299,6 +343,7 @@ function indoorGenerateFloor(number,rng=Math.random){
   doorMarks.push({...mainDoor,vertical:false,outer:true,kind:'main'});
   doorMarks.push({...emergencyDoor,vertical:false,outer:true,kind:'emergency'});
   return{number,pattern,rooms,walls,furniture,guards,postGuards,postCount,postRoomId:postRoom.id,intel,stair,exit,entrance,emergency,
+    roomRoomDoors:connectingRooms,extraHallDoors:moreHallDoors,
     doors:doorMarks,windows,
     footprint:{x:X0,y:Y0,w:COLS*SIZE,h:ROWS*SIZE},
     corridors:halls.map(i=>{const {c,r}=coord(i);return{x:X0+c*SIZE,y:Y0+r*SIZE,w:SIZE,h:SIZE};}),
@@ -309,13 +354,14 @@ function indoorGenerateFloor(number,rng=Math.random){
 // 屋内専用の縦長座標変換。幅は画面内に収め、奥行きを広げて総床面積を約2倍にする。
 const INDOOR_FLOOR_OFFSETS=[9300,5500],INDOOR_SCALE_X=1,INDOOR_SCALE_Y=1.75,INDOOR_OFFSET_X=-40;
 let indoorWorld=null,indoorHudSnapshot='',indoorHudRefresh=0;
-const INDOOR_DOOR_NEAR=140,INDOOR_DOOR_SPEED=4.8;
+const INDOOR_DOOR_WIDTH=84,INDOOR_DOOR_SPEED=5.2;
 function indoorDoorCollisionRect(q){
-  // 厚い壁の隙間（開口幅110px）にぴったり入れる。通常壁の判定方式を流用。
+  // 小型化した84pxの開口に合わせる。既存のcover判定をそのまま利用。
+  const half=INDOOR_DOOR_WIDTH/2;
   return q.vertical
-    ?{x:q.x-10,y:q.y-55*INDOOR_SCALE_Y,w:20,h:110*INDOOR_SCALE_Y}
-    :{x:q.x-55*INDOOR_SCALE_X,y:q.y-11*INDOOR_SCALE_Y,
-      w:110*INDOOR_SCALE_X,h:22*INDOOR_SCALE_Y};
+    ?{x:q.x-11,y:q.y-half*INDOOR_SCALE_Y,w:22,h:INDOOR_DOOR_WIDTH*INDOOR_SCALE_Y}
+    :{x:q.x-half*INDOOR_SCALE_X,y:q.y-11*INDOOR_SCALE_Y,
+      w:INDOOR_DOOR_WIDTH*INDOOR_SCALE_X,h:22*INDOOR_SCALE_Y};
 }
 const indoorAt=(x,y,offset)=>({x:INDOOR_OFFSET_X+x*INDOOR_SCALE_X,y:y*INDOOR_SCALE_Y+offset});
 const indoorRect=(rect,offset)=>({x:INDOOR_OFFSET_X+rect.x*INDOOR_SCALE_X,y:rect.y*INDOOR_SCALE_Y+offset,
@@ -418,9 +464,13 @@ function updateInfiltrationDoors(dt){
         if(!a||a.alive===false||a.down||a.stun>0)continue;
         // 詰所で待機中の兵士が、近くの扉を開きっぱなしにしない。
         if(a.indoorPost&&!a.st&&!(a.sus>0))continue;
-        const dx=Math.abs(a.x-door.x),dy=Math.abs(a.y-door.y);
-        if(dx>INDOOR_DOOR_NEAR||dy>INDOOR_DOOR_NEAR)continue;
-        if(dx*dx+dy*dy<INDOOR_DOOR_NEAR*INDOOR_DOOR_NEAR){near=true;break;}
+        // 扉パネルの当たり判定近傍に触れたときだけ反応する。
+        // 従来の半径140pxセンサーと違い、付近を通り過ぎても開かない。
+        const perpendicular=door.vertical?Math.abs(a.x-door.x):Math.abs(a.y-door.y);
+        const along=door.vertical?Math.abs(a.y-door.y):Math.abs(a.x-door.x);
+        const contact=door.vertical?29:(11*INDOOR_SCALE_Y+15);
+        const half=INDOOR_DOOR_WIDTH/2*(door.vertical?INDOOR_SCALE_Y:INDOOR_SCALE_X);
+        if(perpendicular<=contact&&along<=half+12){near=true;break;}
       }
       door.open=Math.max(0,Math.min(1,door.open+(near?1:-1)*INDOOR_DOOR_SPEED*dt));
       // 開扉中は当たり判定・視線遮蔽ともに解除。閉扉時は再び遮る。
@@ -620,14 +670,14 @@ function drawInfiltrationOpenings(cx,cy){
       }
       g.restore();
     }
-    // 室内扉・正面玄関・非常口は近接すると二枚のパネルが左右にスライドして開く。
+    // 室内扉・正面玄関・非常口はパネルへの接触で左右にスライドして開く。
     for(const q of f.doors){
       if(q.x<cx-130||q.x>cx+W+130||q.y<cy-150||q.y>cy+H+150)continue;
       g.save();
       const panel=q.kind==='emergency'?'#6eac8c':q.kind==='main'?'#aa8452':'#968572';
       const border=q.kind==='emergency'?'#b0f5d1':'#d5c0a0';
       g.fillStyle=panel;g.strokeStyle=border;g.lineWidth=2;
-      const open=Math.max(0,Math.min(1,q.open||0)),half=55*(q.vertical?INDOOR_SCALE_Y:INDOOR_SCALE_X);
+      const open=Math.max(0,Math.min(1,q.open||0)),half=INDOOR_DOOR_WIDTH/2*(q.vertical?INDOOR_SCALE_Y:INDOOR_SCALE_X);
       const part=half*(1-open);
       if(q.vertical){
         const top=q.y-half,bottom=q.y+half;

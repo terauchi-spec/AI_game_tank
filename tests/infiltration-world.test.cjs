@@ -54,7 +54,9 @@ test('five corridor shapes and differently sized rooms remain navigable at doubl
   assert.ok(f.rooms.some(r=>r.size===1));
   assert.ok(f.rooms.some(r=>r.size>=3));
   assert.equal(f.rooms.reduce((s,r)=>s+r.tiles.length,0)+f.corridors.length,35);
-  assert.equal(f.doors.length,12,'ten rooms and two exterior exits');
+  assert.ok(f.doors.length>=17&&f.doors.length<=20,'multiple doors plus two exterior exits');
+  assert.ok(f.doors.filter(q=>q.kind==='room-room').length>=2,'direct room-to-room doors');
+  assert.ok(f.rooms.filter(q=>q.doors.length>1).length>=2,'several rooms have two doors');
   for(const r of f.rooms){sizeSet.add(r.size);assert.equal(r.size,r.tiles.length);}
   const nw=indoorRect(f.footprint,offset);assert.ok(nw.x>=0&&nw.x+nw.w<=960);
   assert.ok(Math.abs((1/.86)*1.75-2)<.04,'floor area should be approximately double');
@@ -87,7 +89,7 @@ test('all blue soldiers traverse interconnected routes across the whole building
   const f=indoorGenerateFloor(fno,random(seed*29+fno));
   const roomOwner=new Map(f.rooms.flatMap(r=>r.cellIds.map(id=>[id,r.id])));
   const halls=new Set(f.corridors.map(t=>Math.round((t.y-80)/180)*5+Math.round((t.x-70)/180)));
-  const doors=new Set(f.rooms.map(r=>[Math.min(r.door.inside,r.door.outside),Math.max(r.door.inside,r.door.outside)].join(':')));
+  const doors=new Set(f.doors.filter(d=>d.cells).map(d=>[Math.min(...d.cells),Math.max(...d.cells)].join(':')));
   assert.equal(f.guards.length,4);
   for(const h of f.guards){
    assert.ok(h.loop&&h.waypoints.length>=6,'long cyclic patrol');
@@ -141,6 +143,27 @@ test('large barracks has four to eight stationary guards arranged outside the ta
    const nearestX=Math.max(table.x,Math.min(x,table.x+table.w));
    const nearestY=Math.max(table.y,Math.min(y,table.y+table.h));
    assert.ok(Math.hypot(x-nearestX,y-nearestY)>8,'guard must not spawn inside the table');
+  }
+ }
+});
+
+test('smaller doors have multiple routes between rooms, corridors, and exterior entrances',()=>{
+ for(let seed=1;seed<=180;seed++)for(let floorNo=1;floorNo<=2;floorNo++){
+  const f=indoorGenerateFloor(floorNo,random(seed*97+floorNo));
+  const interior=f.doors.filter(d=>!d.outer),rr=interior.filter(d=>d.kind==='room-room');
+  assert.ok(rr.length>=2,'at least two direct inter-room doorways');
+  assert.ok(f.rooms.some(r=>r.doors.length>=2),'at least one multi-door room');
+  assert.ok(f.rooms.filter(r=>r.doors.length>=2).length>=2,'multiple rooms have options');
+  assert.ok(f.doors.length>=17&&f.doors.length<=20);
+  assert.equal(f.doors.filter(d=>d.kind==='main'||d.kind==='emergency').length,2);
+  const windows=f.windows;
+  assert.ok(windows.every(d=>d.external),'keep windows exterior-only');
+  for(const d of interior){
+   const gap=84,wallWidth=22;
+   const at=d.vertical
+    ?f.walls.some(w=>Math.abs(w.x+w.w/2-d.x)<1&&Math.abs(w.y+w.h-d.y+gap/2)<1)
+    :f.walls.some(w=>Math.abs(w.y+w.h/2-d.y)<1&&Math.abs(w.x+w.w-d.x+gap/2)<1);
+   assert.ok(at,'door frame must have two wall sections with 84px opening');
   }
  }
 });
