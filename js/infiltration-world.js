@@ -867,7 +867,7 @@ function indoorStartGuardPursuit(h){
  if(!h||!h.indoorGuard||!p)return;
  const spot={x:p.x,y:p.y},duration=5+R()*5;
  h.indoorAlert={phase:'found',duration,remaining:duration,trail:[spot],lastSeen:spot,
-  searchLeft:0,scanT:0,route:null,routeKey:''};
+  searchLeft:0,scanT:0,route:null,routeKey:'',waypoint:null,stuck:0,blockedT:0,sightGrace:0};
  h.lost=duration;h._detectCache=null;h._nextDetectAt=0;
 }
 function indoorGuardSeesPlayer(h){
@@ -881,28 +881,44 @@ function indoorGuardSeesPlayer(h){
  return cachedLos(h,p);
 }
 function indoorMoveGuardTo(h,goal,dt,sp){
- const nav=indoorWorld?.floors[h.indoorFloor-1]?.navigation;
- if(!nav||!goal)return false;
- const from=indoorGuardCell(nav,h),to=indoorGuardCell(nav,goal),a=h.indoorAlert;
- if(from<0||to<0||!a)return false;
+ const nav=indoorWorld?.floors[h.indoorFloor-1]?.navigation,a=h.indoorAlert;
+ if(!nav||!goal||!a)return false;
+ const from=indoorGuardCell(nav,h),to=indoorGuardCell(nav,goal);
+ if(from<0||to<0)return false;
+ // Keep the next doorway waypoint until it is reached; no per-frame left/right replanning.
  const key=from+':'+to;
- if(a.routeKey!==key){a.route=indoorGuardCellRoute(nav,from,to);a.routeKey=key;}
- if(!a.route)return false; // Do not move straight through rooms separated by walls.
- let dest=a.route.length>1?nav.centers[a.route[1]]:goal;
- if(a.route.length>1&&D(h,nav.centers[from])>30&&
-    !patrolLineClear(h,dest,8)&&patrolLineClear(h,nav.centers[from],8))
-   dest=nav.centers[from];
- const a0=Math.atan2(dest.y-h.y,dest.x-h.x),step=Math.min(sp*dt,D(h,dest));
+ if(!a.route||a.routeKey!==key){
+  a.route=indoorGuardCellRoute(nav,from,to);a.routeKey=key;a.waypoint=null;
+ }
+ if(!a.route)return false;
+ let dest;
+ if(a.route.length>1){
+  const current=nav.centers[from],next=nav.centers[a.route[1]];
+  // When a door is on a wall boundary, its midpoint is the safe crossing point.
+  const doorway={x:(current.x+next.x)/2,y:(current.y+next.y)/2};
+  if(!a.waypoint||a.waypoint.from!==from||a.waypoint.to!==a.route[1])
+   a.waypoint={...doorway,from,to:a.route[1]};
+  dest=a.waypoint;
+ }else dest=goal;
+ const angle=Math.atan2(dest.y-h.y,dest.x-h.x),step=Math.min(sp*dt,D(h,dest));
  if(step<=0)return true;
- const x=h.x,y=h.y;
- mv(h,Math.cos(a0)*step,Math.sin(a0)*step,8);
- if(D(h,{x,y})<step*.12){
-  for(const turn of [.5,-.5,1,-1,1.57,-1.57]){
-   const xx=h.x,yy=h.y,angle=a0+turn;
-   mv(h,Math.cos(angle)*step*.85,Math.sin(angle)*step*.85,8);
-   if(D(h,{x:xx,y:yy})>step*.12){h.face=angle;break;}
+ const ox=h.x,oy=h.y;
+ mv(h,Math.cos(angle)*step,Math.sin(angle)*step,8);
+ const moved=Math.hypot(h.x-ox,h.y-oy);
+ if(moved>=step*.15){
+  a.stuck=0;a.blockedT=0;
+  // Turn gradually; retain a stable forward direction for visibility checks.
+  h.face+=Math.max(-dt*4,Math.min(dt*4,angD(angle,h.face)));
+ }else{
+  a.stuck+=dt;
+  if(a.stuck>.35){
+   // Limited deterministic detour: no alternating turn direction every frame.
+   const side=(a.detourSide||1),perp=angle+side*Math.PI/2;
+   mv(h,Math.cos(perp)*step,Math.sin(perp)*step,8);
+   a.blockedT+=dt;
+   if(a.blockedT>1.2){a.detourSide=-side;a.blockedT=0;}
   }
- }else h.face=a0;
+ }
  return true;
 }
 function updateInfiltrationGuardAI(h,dt){
@@ -915,9 +931,12 @@ function updateInfiltrationGuardAI(h,dt){
  if(state.phase==='found'&&(!h.st||h.target!=='p')){
   h.indoorAlert=null;return false; // Stun and forced reset cancel the dedicated chase.
  }
- const seen=indoorGuardSeesPlayer(h);
+ const visible=indoorGuardSeesPlayer(h);
+ if(visible)state.sightGrace=.55;
+ else state.sightGrace=Math.max(0,(state.sightGrace||0)-dt);
+ const seen=visible||(state.sightGrace>0);
  if(state.phase==='search'){
-  if(seen){enterHumanFound(h,'p',.5);return true;}
+  if(visible){h.st=1;h.target='p';h.sus=0;indoorStartGuardPursuit(h);return true;}
   state.searchLeft=Math.max(0,state.searchLeft-dt);
   h.sus=Math.max(.01,state.searchLeft);h.susMax=4;
   if(D(h,state.lastSeen)>24)indoorMoveGuardTo(h,state.lastSeen,dt,48);
@@ -930,7 +949,7 @@ function updateInfiltrationGuardAI(h,dt){
  }
  // The found state lasts at least a randomized 5–10 seconds, regardless of distance.
  state.remaining=Math.max(0,state.remaining-dt);
- if(seen){
+ if(visible){
   const previous=state.trail[state.trail.length-1]||state.lastSeen;
   if(D(previous,p)>28){
    state.trail.push({x:p.x,y:p.y});
@@ -939,7 +958,7 @@ function updateInfiltrationGuardAI(h,dt){
   state.lastSeen={x:p.x,y:p.y};
  }
  if(state.remaining<=0){
-  if(seen){state.duration=5+R()*5;state.remaining=state.duration;}
+  if(visible){state.duration=5+R()*5;state.remaining=state.duration;}
   else{
    state.phase='search';state.searchLeft=2.5+R()*1.5;state.scanT=0;
    h.st=0;h.target=null;h.sus=state.searchLeft;h.susMax=4;
@@ -958,9 +977,9 @@ function updateInfiltrationGuardAI(h,dt){
   // Infiltration soldiers never plant explosives; preserve the outdoor enemy bomb behavior.
   h.plantT=0;h.plantA=null;
   if(D(h,next)>20)indoorMoveGuardTo(h,next,dt,95);
-  else if(seen)h.face=Math.atan2(p.y-h.y,p.x-h.x);
+  else if(visible)h.face+=Math.max(-dt*4,Math.min(dt*4,angD(Math.atan2(p.y-h.y,p.x-h.x),h.face)));
  }
- if(!pause&&seen&&D(h,p)<150&&h.cd<=0){
+ if(!pause&&visible&&D(h,p)<150&&h.cd<=0){
   const angle=Math.atan2(p.y-h.y,p.x-h.x);
   if(!(h.burstLeft>0))h.burstLeft=3;
   h.characterShotAt=performance.now();

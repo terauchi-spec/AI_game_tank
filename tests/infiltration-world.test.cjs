@@ -574,7 +574,7 @@ test('indoor pursuit holds 5-10 seconds and transitions through investigation to
  seen=false;update(guard,7.51);
  assert.equal(guard.indoorAlert.phase,'search');
  seen=true;update(guard,.1);
- assert.equal(reacquired,1);assert.equal(guard.indoorAlert.phase,'found');
+ assert.equal(reacquired,0);assert.equal(guard.indoorAlert.phase,'found');
  assert.equal(guard.st,1);
  // Seeing the player when the timer expires renews it, not drops the alert.
  guard.indoorAlert.remaining=.01;update(guard,.02);
@@ -603,6 +603,15 @@ test('indoor guards trace sampled footsteps instead of following unseen teleport
  seen=false;avatar.x=900;update(h,.1);
  assert.equal(h.indoorAlert.lastSeen.x,240,'never learn unseen player position');
  assert.ok(h.indoorAlert.trail.length<=48,'capped trail memory');
+});
+test('infiltration pursuit follows stable door midpoints and keeps short sight loss',()=>{
+ const fs=require('node:fs'),path=require('node:path'),src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
+ assert.ok(src.includes("a.waypoint={...doorway,from,to:a.route[1]}"),'door midpoint locked as waypoint');
+ assert.ok(src.includes("a.stuck>.35"),'avoid reacting to a single blocked movement frame');
+ assert.ok(src.includes("a.blockedT>1.2"),'do not flip detour direction each frame');
+ assert.ok(src.includes("state.sightGrace=.55"),'transient loss has grace period');
+ assert.ok(src.includes("if(visible){state.duration=5+R()*5"),'fresh sight renews the timed alert');
+ assert.ok(src.includes("if(visible){h.st=1;h.target='p';h.sus=0;indoorStartGuardPursuit(h)"),'reacquisition transitions to found');
 });
 test('two gun hits instantly detonate only the new shell-pallet kind',()=>{
  const fs=require('node:fs'),path=require('node:path');
