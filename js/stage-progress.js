@@ -15,6 +15,7 @@ function readStageProgress(){
  return{cleared};
 }
 function stageSelectable(id,progress=readStageProgress()){
+ if(id==='indoor')return true; // 試作のみ常時解放。既存4ステージの進行には干渉しない。
  const index=STAGE_ORDER.findIndex(s=>s.id===id);return index>=0&&index<=progress.cleared.length;
 }
 function unlockStageOnClear(s){
@@ -28,6 +29,7 @@ function unlockStageOnClear(s){
 function renderStageLocks(){
  const progress=readStageProgress();
  document.querySelectorAll('[data-stage]').forEach(button=>{
+  if(button.dataset.stage==='indoor'){button.disabled=false;button.classList.remove('locked');button.title='屋内マップのサンプル';return;}
   const index=STAGE_ORDER.findIndex(s=>s.id===button.dataset.stage),stage=STAGE_ORDER[index],locked=!stageSelectable(stage.id,progress);
   button.disabled=locked;button.classList.toggle('locked',locked);
   button.querySelector('.stage-number').textContent=String(index+1).padStart(2,'0');
