@@ -149,26 +149,16 @@ function indoorGenerateFloor(number,rng=Math.random){
       y:vertical?Y0+(a.r+.5)*SIZE:Y0+Math.max(a.r,b.r)*SIZE};
     room.door={inside:chosen[0],outside:chosen[1],point:doorPoint};
     doorMarks.push({...doorPoint,vertical,outer:false});
-    // 窓は通路または屋外に面した別の壁に置く（見た目だけ。壁のコリジョンは維持）。
-    const windowEdges=[];
-    for(const i of room.cellIds){
-      const cell=coord(i);
-      for(const n of neighbors(i))if((hall.has(n)||owner[n]!==room.id)&&
-        [Math.min(i,n),Math.max(i,n)].join(':')!==[Math.min(...chosen),Math.max(...chosen)].join(':')){
-        const nb=coord(n),vert=nb.c!==cell.c;
-        windowEdges.push({x:vert?X0+Math.max(nb.c,cell.c)*SIZE:X0+(cell.c+.5)*SIZE,
-          y:vert?Y0+(cell.r+.5)*SIZE:Y0+Math.max(nb.r,cell.r)*SIZE,vertical:vert});
-      }
-    }
-    // 外壁も窓の候補。ドアしか廊下に面さない小部屋にも採光窓を配置できる。
+    // 窓は外壁のみ。廊下側や部屋間の間仕切りには作らない。
+    const outside=[];
     for(const i of room.cellIds){
       const {c,r}=coord(i);
-      if(c===0)windowEdges.push({x:X0,y:Y0+(r+.5)*SIZE,vertical:true});
-      if(c===COLS-1)windowEdges.push({x:X0+COLS*SIZE,y:Y0+(r+.5)*SIZE,vertical:true});
-      if(r===0)windowEdges.push({x:X0+(c+.5)*SIZE,y:Y0,vertical:false});
-      if(r===ROWS-1)windowEdges.push({x:X0+(c+.5)*SIZE,y:Y0+ROWS*SIZE,vertical:false});
+      if(c===0)outside.push({x:X0,y:Y0+(r+.5)*SIZE,vertical:true,external:true});
+      if(c===COLS-1)outside.push({x:X0+COLS*SIZE,y:Y0+(r+.5)*SIZE,vertical:true,external:true});
+      if(r===0)outside.push({x:X0+(c+.5)*SIZE,y:Y0,vertical:false,external:true});
+      if(r===ROWS-1)outside.push({x:X0+(c+.5)*SIZE,y:Y0+ROWS*SIZE,vertical:false,external:true});
     }
-    if(windowEdges.length)windows.push(windowEdges[Math.floor(rng()*windowEdges.length)]);
+    if(outside.length)windows.push(outside[Math.floor(rng()*outside.length)]);
   }
   const walls=[];
   const put=(x,y,w,h)=>{if(w>1&&h>1)walls.push({x,y,w,h});};
@@ -199,17 +189,51 @@ function indoorGenerateFloor(number,rng=Math.random){
       edgeWall(i,n,side);
     }
   }
-  // 家具は各区画の隅だけに置き、80pxの扉と部屋の中央動線を確保する。
+  // 最大の部屋を詰所にしてテーブルを囲む青兵4～8体を用意。
+  const largest=Math.max(...rooms.map(r=>r.size));
+  const postCandidates=rooms.filter(r=>r.size===largest);
+  const postRoom=postCandidates[Math.floor(rng()*postCandidates.length)];
+  postRoom.name='青兵詰所';postRoom.isGuardPost=true;
+  // 部屋の奥を詰所中心にして、扉を塞がず待機できる位置を優先。
+  const doorCell=coord(postRoom.door.inside);
+  const postCell=postRoom.cellIds.slice().sort((a,b)=>{
+    const aa=coord(a),bb=coord(b);
+    const da=Math.abs(aa.c-doorCell.c)+Math.abs(aa.r-doorCell.r);
+    const db=Math.abs(bb.c-doorCell.c)+Math.abs(bb.r-doorCell.r);
+    return db-da;
+  })[0];
+  const postTile=postRoom.tiles[postRoom.cellIds.indexOf(postCell)];
+  const postCenter={x:postTile.x+SIZE/2,y:postTile.y+SIZE/2};
+  const postCount=Math.max(4,Math.min(8,postRoom.size+1)),postGuards=[];
+  for(let k=0;k<postCount;k++){
+    const a=-Math.PI/2+Math.PI*2*k/postCount;
+    const pos={x:postCenter.x+Math.cos(a)*66,y:postCenter.y+Math.sin(a)*63};
+    postGuards.push({...pos,waypoints:[pos],face:Math.atan2(postCenter.y-pos.y,postCenter.x-pos.x),post:true});
+  }
   const furniture=[];
+  const addFurniture=(kind,x,y,w,h,zone)=>furniture.push({kind,x,y,w,h,zone});
   for(const room of rooms){
-    const cells=indoorShuffle(room.tiles.slice(),rng);
-    const count=Math.min(room.size>=3?2:1,cells.length);
-    for(let k=0;k<count;k++){
-      const tile=cells[k],left=rng()<.5;
-      furniture.push({x:tile.x+(left?22:SIZE-72),y:tile.y+(rng()<.5?23:SIZE-56),w:50,h:33});
+    const tiles=indoorShuffle(room.tiles.slice(),rng);
+    for(let k=0;k<Math.min(room.size>=3?3:2,tiles.length);k++){
+      const tile=tiles[k];
+      if(room===postRoom&&tile===postTile)continue;
+      const kind=k===0?'cabinet':k===1?'table':'desk';
+      addFurniture(kind,tile.x+(rng()<.5?22:SIZE-78),
+        tile.y+(k%2?SIZE-68:22),kind==='cabinet'?50:56,kind==='cabinet'?44:40,'room');
     }
   }
-  const order=indoorShuffle([...rooms.keys()],rng);
+  addFurniture('postTable',postCenter.x-47,postCenter.y-28,94,56,'post');
+  // 軍用物資は通路の隅に寄せ、ドアと中央巡回経路は塞がない。
+  const supplies=indoorShuffle(['ammo','supply','barrel','sandbag','kit'],rng);
+  const safeHalls=indoorShuffle(halls.filter(i=>i!==index(2,1)&&i!==index(2,0)&&i!==index(entranceCol,6)),rng);
+  const supplyCount=Math.min(7,Math.max(4,Math.floor(safeHalls.length*.57)));
+  for(let k=0;k<supplyCount;k++){
+    const {c,r}=coord(safeHalls[k]);
+    const kind=supplies[k%supplies.length];
+    addFurniture(kind,X0+c*SIZE+(rng()<.5?22:SIZE-78),
+      Y0+r*SIZE+(rng()<.5?22:SIZE-68),54,42,'hallway');
+  }
+  const order=indoorShuffle(rooms.map(r=>r.id).filter(id=>id!==postRoom.id),rng);
   const intel=order.slice(0,INDOOR_FILES_TOTAL).map((id,i)=>{
     const room=rooms[id],tile=room.tiles[Math.floor(rng()*room.tiles.length)];
     return{x:tile.x+SIZE/2,y:tile.y+SIZE/2,room:room.name,id:number+'-'+i,taken:false};
@@ -229,14 +253,14 @@ function indoorGenerateFloor(number,rng=Math.random){
   };
   // 各兵士が廊下と複数の部屋を行き来する閉路を持つ。
   // 個別の短い往復巡回ではなく、異なる区画を通り抜ける長距離の巡回ルートにする。
-  const guards=[],roomCenters=indoorShuffle(rooms.map(r=>r.cellIds[0]),rng);
+  const guards=[],roomCenters=indoorShuffle(rooms.filter(r=>r!==postRoom).map(r=>r.cellIds[0]),rng);
   const hallStarts=indoorShuffle(halls.filter(i=>distance(center(i),stair)>SIZE),rng);
   for(let guardIndex=0;guardIndex<4;guardIndex++){
     const start=hallStarts[guardIndex%hallStarts.length]??halls[0];
     const visitRooms=[],goals=[];
     // 施設の上端・中央・下端を必ず経由。大部屋は対象の区画へ入る位置を選ぶ。
     for(const band of [[0,1],[2,3,4],[5,6]]){
-      const options=rooms.filter(room=>room.cellIds.some(i=>band.includes(coord(i).r)));
+      const options=rooms.filter(room=>room!==postRoom&&room.cellIds.some(i=>band.includes(coord(i).r)));
       const choice=options[(guardIndex*3+Math.floor(rng()*Math.max(1,options.length)))%Math.max(1,options.length)];
       if(choice){
         const cells=choice.cellIds.filter(i=>band.includes(coord(i).r));
@@ -274,7 +298,7 @@ function indoorGenerateFloor(number,rng=Math.random){
   }
   doorMarks.push({...mainDoor,vertical:false,outer:true,kind:'main'});
   doorMarks.push({...emergencyDoor,vertical:false,outer:true,kind:'emergency'});
-  return{number,pattern,rooms,walls,furniture,guards,intel,stair,exit,entrance,emergency,
+  return{number,pattern,rooms,walls,furniture,guards,postGuards,postCount,postRoomId:postRoom.id,intel,stair,exit,entrance,emergency,
     doors:doorMarks,windows,
     footprint:{x:X0,y:Y0,w:COLS*SIZE,h:ROWS*SIZE},
     corridors:halls.map(i=>{const {c,r}=coord(i);return{x:X0+c*SIZE,y:Y0+r*SIZE,w:SIZE,h:SIZE};}),
@@ -312,17 +336,20 @@ function setupInfiltrationWorld(){
     const raw=indoorGenerateFloor(n),off=INDOOR_FLOOR_OFFSETS[n-1];
     const to=pt=>indoorAt(pt.x,pt.y,off);
     const rooms=raw.rooms.map(r=>{const rect=indoorRect(r,off);
-      return{...rect,id:r.id,name:r.name,size:r.size,tiles:r.tiles.map(tile=>indoorRect(tile,off))};
+      return{...rect,id:r.id,name:r.name,size:r.size,isGuardPost:!!r.isGuardPost,tiles:r.tiles.map(tile=>indoorRect(tile,off))};
     });
     // Walls use the existing concrete wall cover kind. Doors remain actual gaps in the core collision grid.
     for(const wall of raw.walls){
       const q=indoorRect(wall,off);
       covers.push({...q,kd:1,indoorWall:true,hp:999999});
     }
-    // Same dynamic crate object format as existing outdoor stages.
+    // 補給物資と室内家具は既存遮蔽判定を利用。描画だけ屋内用に区別。
+    // 固定家具なので、砲撃などがあっても配置グリッドを再生成しない。
+    const props=[];
     for(const piece of raw.furniture){
       const q=indoorRect(piece,off);
-      objects.push({...q,kind:'crate',indoorFurniture:true});
+      const prop={...q,kd:1,indoorProp:true,propKind:piece.kind,propZone:piece.zone,hp:999999};
+      covers.push(prop);props.push(prop);
     }
     const guards=[];
     for(const h of raw.guards){
@@ -331,6 +358,16 @@ function setupInfiltrationWorld(){
         alive:true,elite:false,commander:null,st:0,sus:0,lost:0,cd:R()*1.2,burstLeft:0,face:h.face,
         target:null,patrolMode:'axis',zoneHeavy:'indoor',indoorGuard:true};
       humans.push(guard);guards.push(guard);
+    }
+    // 待機兵にも本編の発見・追跡・射撃AIをそのまま適用。通常時だけ動かない。
+    const postGuards=[];
+    for(const h of raw.postGuards){
+      const pos=to(h);
+      const guard={...pos,path:[{...pos}],loop:false,wi:0,dir:1,stk:0,
+        alive:true,elite:false,commander:null,st:0,sus:0,lost:0,cd:R()*1.2,
+        burstLeft:0,face:h.face,target:null,patrolMode:'post',
+        zoneHeavy:'indoor',indoorGuard:true,indoorPost:true};
+      humans.push(guard);guards.push(guard);postGuards.push(guard);
     }
     // 施設全体で3箇所。1階1箇所・2階2箇所に分ける。
     const count=n===1?1:2;
@@ -349,7 +386,8 @@ function setupInfiltrationWorld(){
       corridors:raw.corridors.map(tile=>indoorRect(tile,off)),rooms,stair,
       entrance,exit:entrance,emergency,
       footprint:indoorRect(raw.footprint,off),
-      doors,windows:raw.windows.map(openingPoint),guards});
+      doors,windows:raw.windows.map(openingPoint),guards,postGuards,
+      guardPostId:raw.postRoomId,props});
   }
   const entrance=indoorWorld.floors[0];
   p.x=entrance.entrance.x;p.y=entrance.entrance.y;p.hp=3;p.tank=null;p.body=-Math.PI/2;p.ang=-Math.PI/2;
@@ -360,7 +398,7 @@ function setupInfiltrationWorld(){
   indoorWorld.currentFloor=0;
   patrolRoutesVisible=false;
   rebuildSpatialGrid();
-  say('拠点潜入：青兵を避けて各階の重要情報を入手せよ');
+  say('拠点潜入：廊下の物資に身を隠し、重要資料3箇所を回収せよ');
 }
 function setupInfiltrationMission(){
   mission={index:0,progress:0,points:indoorWorld.intel,exit:indoorWorld.exit,detected:false,
@@ -378,6 +416,8 @@ function updateInfiltrationDoors(dt){
       let near=false;
       for(const a of players){
         if(!a||a.alive===false||a.down||a.stun>0)continue;
+        // 詰所で待機中の兵士が、近くの扉を開きっぱなしにしない。
+        if(a.indoorPost&&!a.st&&!(a.sus>0))continue;
         const dx=Math.abs(a.x-door.x),dy=Math.abs(a.y-door.y);
         if(dx>INDOOR_DOOR_NEAR||dy>INDOOR_DOOR_NEAR)continue;
         if(dx*dx+dy*dy<INDOOR_DOOR_NEAR*INDOOR_DOOR_NEAR){near=true;break;}
@@ -493,8 +533,76 @@ function drawInfiltrationFloors(cx,cy){
   }
 }
 
+function drawInfiltrationProps(cx,cy){
+  // 背景の上・兵士の下に描画する軽量な俯瞰家具。コリジョンと視線遮蔽は同じcover。
+  if(!indoorWorld)return;
+  for(const floor of indoorWorld.floors){
+    if(floor.footprint.y>cy+H+90||floor.footprint.y+floor.footprint.h<cy-90)continue;
+    for(const o of floor.props){
+      const {x,y,w,h}=o;
+      if(x>cx+W+50||x+w<cx-50||y>cy+H+50||y+h<cy-50)continue;
+      const type=o.propKind;
+      g.save();
+      g.fillStyle='rgba(0,0,0,.26)';g.fillRect(x+4,y+5,w,h);
+      if(type==='barrel'){
+        g.fillStyle='#283c40';g.fillRect(x+5,y+3,w-10,h-6);
+        for(const ax of [.28,.72]){
+          const bx=x+w*ax,by=y+h*.5,rad=Math.min(w*.19,h*.34);
+          g.fillStyle='#426169';g.beginPath();g.arc(bx,by,rad+2,0,Math.PI*2);g.fill();
+          g.strokeStyle='#a3b9ad';g.lineWidth=2;g.stroke();
+          g.fillStyle='#17272b';g.beginPath();g.arc(bx,by,rad*.42,0,Math.PI*2);g.fill();
+        }
+      }else if(type==='sandbag'){
+        g.fillStyle='#766e4c';g.fillRect(x,y,w,h);
+        for(let k=0;k<3;k++){
+          const yy=y+5+k*(h-9)/3;
+          g.fillStyle=k%2?'#9d9064':'#b2a278';g.fillRect(x+4,yy,w-8,(h-12)/3);
+          g.strokeStyle='rgba(53,47,34,.7)';g.strokeRect(x+4,yy,w-8,(h-12)/3);
+        }
+      }else if(type==='ammo'||type==='supply'||type==='kit'){
+        g.fillStyle=type==='ammo'?'#4a6348':type==='supply'?'#76664b':'#55616a';
+        g.fillRect(x,y,w,h);
+        g.strokeStyle='#1e2a26';g.lineWidth=3;g.strokeRect(x+1.5,y+1.5,w-3,h-3);
+        g.fillStyle='rgba(196,190,136,.35)';g.fillRect(x+5,y+5,w-10,5);
+        g.strokeStyle='#c9c8aa';g.lineWidth=2;
+        g.beginPath();g.moveTo(x+9,y+10);g.lineTo(x+w-9,y+h-9);
+        g.moveTo(x+w-9,y+10);g.lineTo(x+9,y+h-9);g.stroke();
+        g.textAlign='center';g.font='bold 10px system-ui';g.fillStyle='#e2e8c5';
+        g.fillText(type==='ammo'?'弾薬':type==='kit'?'補給':'物資',x+w/2,y+h/2+4);
+      }else if(type==='cabinet'){
+        g.fillStyle='#66777b';g.fillRect(x,y,w,h);
+        g.fillStyle='#899699';g.fillRect(x+3,y+4,w-6,h-8);
+        for(let k=1;k<=3;k++){
+          g.strokeStyle='#374c4f';g.lineWidth=2;g.beginPath();
+          g.moveTo(x+5,y+k*h/4);g.lineTo(x+w-5,y+k*h/4);g.stroke();
+          g.fillStyle='#d5ded6';g.fillRect(x+w/2-7,y+k*h/4-5,14,2);
+        }
+      }else if(type==='postTable'||type==='table'||type==='desk'){
+        g.fillStyle=type==='postTable'?'#67593e':type==='desk'?'#6a6550':'#827158';
+        g.fillRect(x,y,w,h);g.strokeStyle='#37362d';g.lineWidth=3;g.strokeRect(x+1,y+1,w-2,h-2);
+        g.fillStyle='#a59775';g.fillRect(x+7,y+6,w-14,Math.max(6,h-12));
+        if(type==='postTable'){
+          g.fillStyle='#c1c9b0';g.fillRect(x+11,y+12,Math.min(24,w/3),Math.min(18,h/2));
+          g.fillStyle='#3c584f';g.fillRect(x+w-34,y+10,25,18);
+          g.strokeStyle='#d3d3ad';g.lineWidth=1;g.strokeRect(x+w-34,y+10,25,18);
+        }else if(type==='desk'){
+          g.fillStyle='#d2d3b8';g.fillRect(x+11,y+9,17,13);
+          g.fillStyle='#4e585a';g.fillRect(x+w-26,y+8,17,18);
+        }else{
+          g.fillStyle='#d1c9a7';g.fillRect(x+8,y+8,18,12);
+          g.fillStyle='#615944';g.fillRect(x+w-17,y+8,9,11);
+        }
+      }else{
+        g.fillStyle='#696d63';g.fillRect(x,y,w,h);
+      }
+      g.restore();
+    }
+  }
+}
+
 function drawInfiltrationOpenings(cx,cy){
   if(!indoorWorld)return;
+  drawInfiltrationProps(cx,cy);
   for(const f of indoorWorld.floors){
     if(f.footprint.y+f.footprint.h<cy-130||f.footprint.y>cy+H+130)continue;
     // 壁上に窓を描く。壁と当たり判定を除去しないため、窓からは通り抜けない。

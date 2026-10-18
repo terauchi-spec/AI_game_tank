@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.18.1130</title>
+<title>こっそり戦車大作戦 2026.10.18.1233</title>
 
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
@@ -864,7 +864,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.18.1130',FILE_CREATED_AT='2026/10/18 11:30',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.18.1233',FILE_CREATED_AT='2026/10/18 12:33',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -1228,6 +1228,7 @@ function fitAspect(im,maxW,maxH){
 function centerRect(cx,cy,w,h){return{x:cx-w/2,y:cy-h/2,w,h};}
 function coverVisualRect(c){
  if(!c)return c;
+ if(c.indoorProp)return{x:c.x,y:c.y,w:c.w,h:c.h}; // 屋内固定家具の当たり判定
  // NOTE: historical name. This function represents the intact cover collision bounds,
  // not necessarily the complete rendered sprite bounds.
  if(c.fr){
@@ -6974,7 +6975,7 @@ function draw(near){
   if(c.mazeWall&&mazeWallsCached)continue;
   // 空間グリッドで画面周辺の遮蔽物だけ描画する。
   if(c.x+c.w<cx-90||c.x>cx+W+90||c.y+c.h<cy-90||c.y>cy+H+90)continue;
-  if(c.indoorDoor)continue; // 屋内専用ドアは屋内描画レイヤーで開閉を描く。
+  if(c.indoorDoor||c.indoorProp)continue; // 屋内ドア・室内家具は屋内描画レイヤーで描く。
   if(c.fr){drawCoverFragmentGroup(c);continue;}
   if(drawCoverAsset(c))continue;
   if(c.kd===8){
@@ -7925,7 +7926,7 @@ function reportGameError(error){
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/canyon.js?v=2026.10.14.1836"></script>
 <script src="js/vegetation.js?v=2026.10.14.1653"></script>
-<script src="js/infiltration-world.js?v=2026.10.18.1130"></script>
+<script src="js/infiltration-world.js?v=2026.10.18.1233"></script>
 <script>
 (function(){
 // iPhone Chrome/Safari: synthetic KeyboardEvent に依存せず、ゲーム内部の入力状態を直接更新する。

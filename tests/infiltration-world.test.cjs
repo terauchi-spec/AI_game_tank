@@ -34,9 +34,15 @@ function reachablePoints(f){
      const xx=x+dx,yy=y+dy;return xx>=0&&xx<COLS&&yy>=0&&yy<ROWS&&seen[yy*COLS+xx];
    });
  };
- for(const p of [f.stair,f.entrance,f.emergency,...f.intel,
-    ...f.rooms.flatMap(r=>r.tiles.map(t=>({x:t.x+t.w/2,y:t.y+t.h/2})))])
-   assert.ok(accessible(p),'unreachable room, document, staircase or exit');
+ for(const p of [f.stair,f.entrance,f.emergency,...f.intel])
+   assert.ok(accessible(p),'unreachable document, staircase or exit');
+ // 詰所テーブル・家具の真上は歩けないが、各部屋には歩けるスペースを残す。
+ for(const room of f.rooms)for(const tile of room.tiles){
+  const samples=[.23,.5,.77];
+  assert.ok(samples.some(u=>samples.some(v=>accessible({
+    x:tile.x+tile.w*u,y:tile.y+tile.h*v
+  }))), 'room tile has no reachable walking space');
+ }
 }
 test('five corridor shapes and differently sized rooms remain navigable at double floor area',()=>{
  const patterns=new Set(),sizeSet=new Set();
@@ -94,6 +100,47 @@ test('all blue soldiers traverse interconnected routes across the whole building
     assert.equal(Math.abs(a%5-b%5)+Math.abs(Math.floor(a/5)-Math.floor(b/5)),1);
     assert.ok(roomOwner.get(a)===roomOwner.get(b)||(halls.has(a)&&halls.has(b))||doors.has(key),'no solid wall crossing');
    }
+  }
+ }
+});
+
+test('windows only on exterior walls, rooms furnished, corridors contain military cover',()=>{
+ for(let seed=1;seed<=180;seed++)for(let floorNo=1;floorNo<=2;floorNo++){
+   const f=indoorGenerateFloor(floorNo,random(seed*71+floorNo));
+   const bounds=f.footprint;
+   for(const w of f.windows){
+     assert.equal(w.external,true,'windows are exterior-only');
+     assert.ok(w.x===bounds.x||w.x===bounds.x+bounds.w||w.y===bounds.y||w.y===bounds.y+bounds.h,
+       'window must be located on the building perimeter');
+   }
+   const hallway=f.furniture.filter(x=>x.zone==='hallway');
+   const interior=f.furniture.filter(x=>x.zone==='room');
+   assert.ok(hallway.length>=4&&hallway.length<=7,'military props in corridor');
+   assert.ok(hallway.every(x=>['ammo','supply','barrel','sandbag','kit'].includes(x.kind)));
+   assert.ok(new Set(hallway.map(x=>x.kind)).size>=4,'corridor supplies include four different military props');
+   assert.ok(interior.some(x=>x.kind==='cabinet'),'cabinet in rooms');
+   assert.ok(interior.some(x=>x.kind==='table')||f.furniture.some(x=>x.kind==='postTable'),'tables in rooms');
+   assert.ok(f.furniture.some(x=>x.kind==='postTable'));
+ }
+});
+test('large barracks has four to eight stationary guards arranged outside the table',()=>{
+ for(let seed=1;seed<=180;seed++){
+  const f=indoorGenerateFloor(1,random(seed*31));
+  const post=f.rooms.find(x=>x.isGuardPost);
+  assert.ok(post&&post.name==='青兵詰所');
+  assert.equal(f.postRoomId,post.id);
+  assert.ok(f.postCount>=4&&f.postCount<=8);
+  assert.equal(f.postGuards.length,f.postCount);
+  assert.equal(f.guards.length,4,'keep original four full-building patrol guards');
+  assert.ok(f.intel.every(q=>q.room!==post.name),'documents are outside the guard post');
+  const table=f.furniture.find(x=>x.kind==='postTable');
+  assert.ok(table);
+  for(const guard of f.postGuards){
+   assert.equal(guard.waypoints.length,1,'guards wait instead of patrolling');
+   const x=guard.x,y=guard.y;
+   const nearestX=Math.max(table.x,Math.min(x,table.x+table.w));
+   const nearestY=Math.max(table.y,Math.min(y,table.y+table.h));
+   assert.ok(Math.hypot(x-nearestX,y-nearestY)>8,'guard must not spawn inside the table');
   }
  }
 });
