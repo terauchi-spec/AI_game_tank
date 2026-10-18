@@ -354,14 +354,14 @@ function indoorGenerateFloor(number,rng=Math.random){
 // 屋内専用の縦長座標変換。幅は画面内に収め、奥行きを広げて総床面積を約2倍にする。
 const INDOOR_FLOOR_OFFSETS=[9300,5500],INDOOR_SCALE_X=1,INDOOR_SCALE_Y=1.75,INDOOR_OFFSET_X=-40;
 let indoorWorld=null,indoorHudSnapshot='',indoorHudRefresh=0;
-const INDOOR_DOOR_WIDTH=84,INDOOR_DOOR_SPEED=5.2;
+const INDOOR_DOOR_WIDTH=84,INDOOR_DOOR_THICKNESS=12,INDOOR_DOOR_SPEED=5.2;
 function indoorDoorCollisionRect(q){
-  // 小型化した84pxの開口に合わせる。既存のcover判定をそのまま利用。
-  const half=INDOOR_DOOR_WIDTH/2;
+  // 縦横とも世界座標で12pxの薄型パネル。当たり判定も描画と一致させる。
+  const half=INDOOR_DOOR_WIDTH/2,thick=INDOOR_DOOR_THICKNESS;
   return q.vertical
-    ?{x:q.x-11,y:q.y-half*INDOOR_SCALE_Y,w:22,h:INDOOR_DOOR_WIDTH*INDOOR_SCALE_Y}
-    :{x:q.x-half*INDOOR_SCALE_X,y:q.y-11*INDOOR_SCALE_Y,
-      w:INDOOR_DOOR_WIDTH*INDOOR_SCALE_X,h:22*INDOOR_SCALE_Y};
+    ?{x:q.x-thick/2,y:q.y-half*INDOOR_SCALE_Y,w:thick,h:INDOOR_DOOR_WIDTH*INDOOR_SCALE_Y}
+    :{x:q.x-half*INDOOR_SCALE_X,y:q.y-thick/2,
+      w:INDOOR_DOOR_WIDTH*INDOOR_SCALE_X,h:thick};
 }
 const indoorAt=(x,y,offset)=>({x:INDOOR_OFFSET_X+x*INDOOR_SCALE_X,y:y*INDOOR_SCALE_Y+offset});
 const indoorRect=(rect,offset)=>({x:INDOOR_OFFSET_X+rect.x*INDOOR_SCALE_X,y:rect.y*INDOOR_SCALE_Y+offset,
@@ -468,7 +468,7 @@ function updateInfiltrationDoors(dt){
         // 従来の半径140pxセンサーと違い、付近を通り過ぎても開かない。
         const perpendicular=door.vertical?Math.abs(a.x-door.x):Math.abs(a.y-door.y);
         const along=door.vertical?Math.abs(a.y-door.y):Math.abs(a.x-door.x);
-        const contact=door.vertical?29:(11*INDOOR_SCALE_Y+15);
+        const contact=INDOOR_DOOR_THICKNESS/2+16; // 同一厚みのパネル接触半径
         const half=INDOOR_DOOR_WIDTH/2*(door.vertical?INDOOR_SCALE_Y:INDOOR_SCALE_X);
         if(perpendicular<=contact&&along<=half+12){near=true;break;}
       }
@@ -678,22 +678,22 @@ function drawInfiltrationOpenings(cx,cy){
       const border=q.kind==='emergency'?'#b0f5d1':'#d5c0a0';
       g.fillStyle=panel;g.strokeStyle=border;g.lineWidth=2;
       const open=Math.max(0,Math.min(1,q.open||0)),half=INDOOR_DOOR_WIDTH/2*(q.vertical?INDOOR_SCALE_Y:INDOOR_SCALE_X);
-      const part=half*(1-open);
+      const part=half*(1-open),thick=INDOOR_DOOR_THICKNESS,frame=thick/2+4;
       if(q.vertical){
         const top=q.y-half,bottom=q.y+half;
         if(part>1){
-          g.fillRect(q.x-10,top,20,part);
-          g.fillRect(q.x-10,bottom-part,20,part);
+          g.fillRect(q.x-thick/2,top,thick,part);
+          g.fillRect(q.x-thick/2,bottom-part,thick,part);
         }
-        g.beginPath();g.moveTo(q.x-15,top);g.lineTo(q.x-15,bottom);
-        g.moveTo(q.x+15,top);g.lineTo(q.x+15,bottom);g.stroke();
+        g.beginPath();g.moveTo(q.x-frame,top);g.lineTo(q.x-frame,bottom);
+        g.moveTo(q.x+frame,top);g.lineTo(q.x+frame,bottom);g.stroke();
       }else{
         if(part>1){
-          g.fillRect(q.x-half,q.y-11*INDOOR_SCALE_Y,part,22*INDOOR_SCALE_Y);
-          g.fillRect(q.x+half-part,q.y-11*INDOOR_SCALE_Y,part,22*INDOOR_SCALE_Y);
+          g.fillRect(q.x-half,q.y-thick/2,part,thick);
+          g.fillRect(q.x+half-part,q.y-thick/2,part,thick);
         }
-        g.beginPath();g.moveTo(q.x-half,q.y-15*INDOOR_SCALE_Y);g.lineTo(q.x+half,q.y-15*INDOOR_SCALE_Y);
-        g.moveTo(q.x-half,q.y+15*INDOOR_SCALE_Y);g.lineTo(q.x+half,q.y+15*INDOOR_SCALE_Y);g.stroke();
+        g.beginPath();g.moveTo(q.x-half,q.y-frame);g.lineTo(q.x+half,q.y-frame);
+        g.moveTo(q.x-half,q.y+frame);g.lineTo(q.x+half,q.y+frame);g.stroke();
       }
       g.restore();
     }
