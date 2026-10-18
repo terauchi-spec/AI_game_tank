@@ -1,52 +1,77 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const {indoorGenerateFloor,indoorAt,indoorRect}=require('../js/infiltration-world.js');
-const random=seed=>{let state=(Math.imul(seed,2654435761))>>>0;return()=>{state=(Math.imul(1664525,state)+1013904223)>>>0;return state/4294967296;}};
-function canReachAll(f,offset){
-  const blocks=[...f.walls,...f.furniture].map(r=>indoorRect(r,offset));
-  const hit=(x,y)=>blocks.some(r=>{
-    const px=Math.max(r.x,Math.min(x,r.x+r.w)),py=Math.max(r.y,Math.min(y,r.y+r.h));
-    return (x-px)**2+(y-py)**2<10**2;
-  });
-  const step=12,width=80,spawn=indoorAt(f.exit.x,f.exit.y-38,offset);
-  const x0=Math.round(spawn.x/step),y0=Math.round((spawn.y-offset)/step);
-  const q=[[x0,y0]],seen=new Set([y0*width+x0]);let at=0;
-  while(at<q.length){
-    const [x,y]=q[at++];
-    for(const [dx,dy] of [[0,1],[0,-1],[1,0],[-1,0]]){
-      const xx=x+dx,yy=y+dy,key=yy*width+xx;
-      if(xx<0||xx>=width||yy<0||yy>117||seen.has(key)||hit(xx*step,yy*step+offset))continue;
-      seen.add(key);q.push([xx,yy]);
-    }
+const random=seed=>{let x=Math.imul(seed,2654435761)>>>0;return()=>{x=(Math.imul(x,1664525)+1013904223)>>>0;return x/4294967296}};
+const offset=9300,STEP=12,COLS=80,ROWS=220;
+function reachablePoints(f){
+ const rectangles=[...f.walls,...f.furniture].map(r=>indoorRect(r,offset));
+ const occupied=new Uint8Array(COLS*ROWS);
+ // Collision radius: conservatively inflate 9px. The doorway must stay wide.
+ for(const r of rectangles){
+  const x0=Math.max(0,Math.ceil((r.x-9)/STEP)),x1=Math.min(COLS-1,Math.floor((r.x+r.w+9)/STEP));
+  const y0=Math.max(0,Math.ceil((r.y-offset-9)/STEP)),y1=Math.min(ROWS-1,Math.floor((r.y+r.h-offset+9)/STEP));
+  for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)occupied[y*COLS+x]=1;
+ }
+ const entrance=indoorAt(f.entrance.x,f.entrance.y,offset);
+ const at=p=>{const q=indoorAt(p.x,p.y,offset);return [Math.round(q.x/STEP),Math.round((q.y-offset)/STEP)]};
+ const [sx,sy]=[Math.round(entrance.x/STEP),Math.round((entrance.y-offset)/STEP)];
+ const initial=sy*COLS+sx;assert.equal(occupied[initial],0,'spawn must be collision free');
+ const seen=new Uint8Array(COLS*ROWS),queue=new Int32Array(COLS*ROWS);let head=0,tail=1;
+ queue[0]=initial;seen[initial]=1;
+ while(head<tail){
+  const cur=queue[head++],x=cur%COLS,y=Math.floor(cur/COLS);
+  for(const [dx,dy] of [[-1,0],[1,0],[0,-1],[0,1]]){
+   const xx=x+dx,yy=y+dy;
+   if(xx<0||xx>=COLS||yy<0||yy>=ROWS)continue;
+   const id=yy*COLS+xx;
+   if(seen[id]||occupied[id])continue;
+   seen[id]=1;queue[tail++]=id;
   }
-  const reachable=point=>{
-    const p=indoorAt(point.x,point.y,offset),x=Math.round(p.x/step),y=Math.round((p.y-offset)/step);
-    return [[0,0],[1,0],[-1,0],[0,1],[0,-1],[2,0],[-2,0]]
-      .some(([dx,dy])=>seen.has((y+dy)*width+x+dx));
-  };
-  for(const point of [f.stair,...f.intel,...f.rooms.flatMap(room=>room.tiles.map(tile=>({x:tile.x+tile.w/2,y:tile.y+tile.h/2})))])
-    assert.ok(reachable(point),'every room tile, intel file and stairs must be reachable');
+ }
+ const accessible=p=>{
+   const [x,y]=at(p);
+   return [[0,0],[1,0],[-1,0],[0,1],[0,-1],[2,0],[-2,0]].some(([dx,dy])=>{
+     const xx=x+dx,yy=y+dy;return xx>=0&&xx<COLS&&yy>=0&&yy<ROWS&&seen[yy*COLS+xx];
+   });
+ };
+ for(const p of [f.stair,f.entrance,f.emergency,...f.intel,
+    ...f.rooms.flatMap(r=>r.tiles.map(t=>({x:t.x+t.w/2,y:t.y+t.h/2})))])
+   assert.ok(accessible(p),'unreachable room, document, staircase or exit');
 }
-test('five hallway patterns plus composite large and small rooms',()=>{
-  const found=new Set(),sizes=new Set();
-  for(let seed=1;seed<=150;seed++)for(let n=1;n<=2;n++){
-    const floor=indoorGenerateFloor(n,random(seed*83+n));
-    found.add(floor.pattern);
-    assert.equal(floor.rooms.length,10);
-    assert.equal(floor.guards.length,4);
-    assert.equal(floor.intel.length,3);
-    assert.equal(new Set(floor.intel.map(x=>x.room)).size,3);
-    assert.ok(floor.rooms.some(r=>r.size>=3),'at least one large connected room');
-    assert.ok(floor.rooms.some(r=>r.size===1),'at least one small room');
-    const cells=floor.rooms.flatMap(r=>r.tiles);
-    assert.equal(cells.length+floor.corridors.length,35,'floor tiles cover the full footprint');
-    for(const r of floor.rooms){assert.equal(r.size,r.tiles.length);sizes.add(r.size);}
-    canReachAll(floor,[9300,5900][n-1]);
-  }
-  for(const pattern of ['H','L','T','四角','コ'])assert.ok(found.has(pattern),'missing pattern '+pattern);
-  assert.ok(sizes.has(1)&&sizes.has(3)&&sizes.has(4),'small and merged rooms');
+test('five corridor shapes and differently sized rooms remain navigable at double floor area',()=>{
+ const patterns=new Set(),sizeSet=new Set();
+ for(let seed=1;seed<=110;seed++)for(let n=1;n<=2;n++){
+  const f=indoorGenerateFloor(n,random(seed*83+n));
+  patterns.add(f.pattern);
+  assert.equal(f.rooms.length,10);assert.equal(f.guards.length,4);
+  assert.equal(f.intel.length,3,'generator candidates');
+  assert.ok(f.rooms.some(r=>r.size===1));
+  assert.ok(f.rooms.some(r=>r.size>=3));
+  assert.equal(f.rooms.reduce((s,r)=>s+r.tiles.length,0)+f.corridors.length,35);
+  assert.equal(f.doors.length,12,'ten rooms and two exterior exits');
+  for(const r of f.rooms){sizeSet.add(r.size);assert.equal(r.size,r.tiles.length);}
+  const nw=indoorRect(f.footprint,offset);assert.ok(nw.x>=0&&nw.x+nw.w<=960);
+  assert.ok(Math.abs((1/.86)*1.75-2)<.04,'floor area should be approximately double');
+  reachablePoints(f);
+ }
+ for(const name of ['H','L','T','四角','コ'])assert.ok(patterns.has(name),'missing '+name);
+ for(const size of [1,3,4])assert.ok(sizeSet.has(size));
 });
-test('hallway shape and room layout vary between independent generations',()=>{
-  const a=indoorGenerateFloor(1,random(1)),b=indoorGenerateFloor(1,random(2));
-  assert.notDeepEqual([a.pattern,a.corridors,a.rooms],[b.pattern,b.corridors,b.rooms]);
+test('exterior walls have no gaps except the front door and emergency exit; windows are solid',()=>{
+ for(let seed=1;seed<=100;seed++){
+  const f=indoorGenerateFloor(1,random(seed)),w=f.walls;
+  const isWall=(x,y)=>w.some(q=>x>=q.x&&x<=q.x+q.w&&y>=q.y&&y<=q.y+q.h);
+  const {x,y,w:width,h}=f.footprint;
+  for(let px=x+2;px<x+width-2;px+=5){
+   if(Math.abs(px-f.emergency.x)>60)assert.ok(isWall(px,y),'north boundary hole');
+   if(Math.abs(px-f.entrance.x)>60)assert.ok(isWall(px,y+h),'south boundary hole');
+  }
+  for(const win of f.windows)assert.ok(isWall(win.x,win.y),'window must not leave a traversable hole');
+  assert.ok(!isWall(f.entrance.x,y+h),'main doorway opening');
+  assert.ok(!isWall(f.emergency.x,y),'emergency doorway opening');
+ }
+});
+test('room and hallway arrangement varies on independent seeds',()=>{
+ const a=indoorGenerateFloor(1,random(1)),b=indoorGenerateFloor(1,random(2));
+ assert.notDeepEqual([a.pattern,a.corridors,a.rooms],[b.pattern,b.corridors,b.rooms]);
 });

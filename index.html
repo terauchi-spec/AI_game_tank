@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.18.1042</title>
+<title>こっそり戦車大作戦 2026.10.18.1043</title>
 
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
@@ -850,7 +850,7 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 <button type="button" class="stage-card" data-stage="frontBeginner"><span class="stage-number" aria-hidden="true">02</span><span class="stage-copy"><strong>前線制圧（初級）</strong><span class="stage-target">軍需物資</span></span><span class="stage-art"><img src="assets/ui/stages/supplies.webp" alt="" width="144" height="96" loading="lazy" decoding="async"></span></button>
 <button type="button" class="stage-card" data-stage="base"><span class="stage-number" aria-hidden="true">03</span><span class="stage-copy"><strong>拠点破壊（上級）</strong><span class="stage-target">軍司令施設</span></span><span class="stage-art"><img src="assets/ui/stages/headquarters.webp" alt="" width="144" height="96" loading="lazy" decoding="async"></span></button>
 <button type="button" class="stage-card" data-stage="front"><span class="stage-number" aria-hidden="true">04</span><span class="stage-copy"><strong>前線制圧（上級）</strong><span class="stage-target">戦術アンテナ</span></span><span class="stage-art"><img src="assets/ui/stages/antenna.webp" alt="" width="144" height="96" loading="lazy" decoding="async"></span></button>
-<button type="button" class="stage-card" data-stage="indoor" id="stageInfiltrationSample"><span class="stage-number" aria-hidden="true">05</span><span class="stage-copy"><strong>拠点潜入（サンプル）</strong><span class="stage-target">2階建て施設・機密情報奪取</span></span><span class="stage-art"><svg width="144" height="84" viewBox="0 0 144 84" role="img" aria-label="部屋と廊下の見取り図"><rect width="144" height="84" fill="#24382f"/><path d="M18 9h45v23H18zM81 9h45v23H81zM18 43h45v32H18zM81 43h45v32H81z" fill="#526b56" stroke="#b6bea6" stroke-width="2"/><path d="M64 4h16v76H64z" fill="#aaa987"/><path d="M60 21h25M60 58h25" stroke="#f4d17d" stroke-width="5"/><circle cx="71" cy="63" r="5" fill="#e8b65a"/><circle cx="30" cy="19" r="4" fill="#c3503a"/></svg></span></button>
+<button type="button" class="stage-card" data-stage="indoor" id="stageInfiltrationSample"><span class="stage-number" aria-hidden="true">05</span><span class="stage-copy"><strong>拠点潜入（サンプル）</strong><span class="stage-target">2階建て施設・重要資料3箇所を回収</span></span><span class="stage-art"><svg width="144" height="84" viewBox="0 0 144 84" role="img" aria-label="部屋と廊下の見取り図"><rect width="144" height="84" fill="#24382f"/><path d="M18 9h45v23H18zM81 9h45v23H81zM18 43h45v32H18zM81 43h45v32H81z" fill="#526b56" stroke="#b6bea6" stroke-width="2"/><path d="M64 4h16v76H64z" fill="#aaa987"/><path d="M60 21h25M60 58h25" stroke="#f4d17d" stroke-width="5"/><circle cx="71" cy="63" r="5" fill="#e8b65a"/><circle cx="30" cy="19" r="4" fill="#c3503a"/></svg></span></button>
 </div><button type="button" class="stage-back" id="stageBack">← スキル選択へ戻る</button></div></div>
 <div id="missionHud" role="status"></div>
 
@@ -864,7 +864,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.18.1042',FILE_CREATED_AT='2026/10/18 10:42',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.18.1043',FILE_CREATED_AT='2026/10/18 10:43',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -7011,6 +7011,7 @@ function draw(near){
    for(const [bx,by,br] of blobs){g.beginPath();g.ellipse(bx-br*.10,by-br*.22,br*.24,br*.14,-.35,0,6.28);g.fill();}
    g.restore();continue;
   }const cl=STATIC_COVER_DRAW_COLORS[c.kd];g.fillStyle=cl[0];g.fillRect(c.x,c.y,c.w,c.h);g.strokeStyle='#14140f';g.lineWidth=2;g.strokeRect(c.x,c.y,c.w,c.h);g.fillStyle=cl[1];g.fillRect(c.x,c.y+c.h*.7,c.w,c.h*.3);if(c.kd===2){g.strokeStyle=cl[1];g.lineWidth=2;g.strokeRect(c.x+2,c.y+2,c.w-4,c.h-4);}if(c.kd===3){g.fillStyle=cl[1];for(let i=6;i<c.w-8;i+=18)g.fillRect(c.x+i,c.y+6,8,10);}if(c.kd===4||c.kd===10){g.fillStyle='#8a4a3a';g.fillRect(c.x-3,c.y-3,c.w+6,c.h*.55);g.fillStyle='#5a2e24';g.fillRect(c.x+c.w/2-8,c.y+c.h*.7,16,c.h*.3);}if(c.kd===9){g.fillStyle=cl[1];for(let i=6;i<c.w-8;i+=18)g.fillRect(c.x+i,c.y+6,8,10);}if(c.kd===7){const hor=c.w>=c.h;g.fillStyle='#d1d3cf';g.fillRect(c.x+3,c.y+3,c.w-6,c.h-6);g.fillStyle='#a1a6a2';if(hor){g.fillRect(c.x+5,c.y+c.h*.67,c.w-10,c.h*.2);g.fillStyle='#e5e7e2';g.fillRect(c.x+8,c.y+6,c.w-16,Math.max(4,c.h*.2));}else{g.fillRect(c.x+c.w*.67,c.y+5,c.w*.2,c.h-10);g.fillStyle='#e5e7e2';g.fillRect(c.x+6,c.y+8,Math.max(4,c.w*.2),c.h-16);}g.strokeStyle='#555b58';g.lineWidth=2;g.strokeRect(c.x+2,c.y+2,c.w-4,c.h-4);g.fillStyle='#f3c83f';const band=hor?Math.min(20,c.w*.18):Math.min(20,c.h*.18);if(hor){for(const xx of [c.x+4,c.x+c.w-band-4]){g.fillStyle='#f3c83f';g.fillRect(xx,c.y+5,band,c.h-10);g.fillStyle='#272727';for(let q=-c.h;q<band+c.h;q+=12){g.save();g.beginPath();g.rect(xx,c.y+5,band,c.h-10);g.clip();g.translate(xx+q,c.y+5);g.rotate(-.65);g.fillRect(0,0,5,c.h*2);g.restore();}}}else{for(const yy of [c.y+4,c.y+c.h-band-4]){g.fillStyle='#f3c83f';g.fillRect(c.x+5,yy,c.w-10,band);g.fillStyle='#272727';for(let q=-c.w;q<band+c.w;q+=12){g.save();g.beginPath();g.rect(c.x+5,yy,c.w-10,band);g.clip();g.translate(c.x+5,yy+q);g.rotate(.65);g.fillRect(0,0,c.w*2,5);g.restore();}}}}if(c.kd===5){g.fillStyle=cl[1];if(c.w>=c.h)for(let i=0;i<c.w;i+=14)g.fillRect(c.x+i,c.y-3,4,c.h+6);else for(let i=0;i<c.h;i+=14)g.fillRect(c.x-3,c.y+i,c.w+6,4);}}
+ if(stageMode==='indoor')drawInfiltrationOpenings(cx,cy);
  for(const o of objectsInBox(cx-80,cy-80,cx+W+80,cy+H+80)){if(o.x+o.w<cx-70||o.x>cx+W+70||o.y+o.h<cy-70||o.y>cy+H+70)continue;drawObject(o);}
  drawFrontlineAntennas(cx,cy);
  drawPatrolRoutes(cx,cy);
@@ -7674,7 +7675,7 @@ document.getElementById('specVersion').textContent=GAME_VERSION;
 
 
 let stageMode='beginner',frontlineBeginner=false,mission=null;
-const STAGE_NAMES={beginner:'拠点破壊（初級）：軍事衛星施設',base:'拠点破壊（上級）：軍司令施設',get front(){return frontlineBeginner?'前線制圧（初級）：軍需物資':'前線制圧（上級）：戦術アンテナ';},stealth:'潜入',indoor:'拠点潜入（サンプル）：重要情報奪取'};
+const STAGE_NAMES={beginner:'拠点破壊（初級）：軍事衛星施設',base:'拠点破壊（上級）：軍司令施設',get front(){return frontlineBeginner?'前線制圧（初級）：軍需物資':'前線制圧（上級）：戦術アンテナ';},stealth:'潜入',indoor:'拠点潜入（サンプル）：重要資料3箇所'};
 document.querySelectorAll('[data-stage]').forEach(b=>b.addEventListener('click',()=>{if(!stageSelectable(b.dataset.stage))return;frontlineBeginner=b.dataset.stage==='frontBeginner';stageMode=frontlineBeginner?'front':b.dataset.stage;document.body.classList.remove('stage-open');selectSkillIndex(skillMenuList().findIndex(k=>k.id===selectedSkillId),true);}));
 document.getElementById('stageBack').onclick=()=>{state='skill';};
 let briefingFrameDrawn=false;
@@ -7708,7 +7709,7 @@ function syncMissionBriefing(){
    screen.querySelector('.mission-hud-guide').hidden=front;
    document.getElementById('missionFrontlineRules').hidden=!front;
    document.getElementById('missionBriefingTitle').textContent=stageMode==='indoor'?'拠点潜入（サンプル）':front?(isFrontlineBeginner()?'前線制圧（初級）':'前線制圧（上級）'):stageMode==='beginner'?'拠点破壊（初級）':'拠点破壊（上級）';
-   document.getElementById('missionBriefingGoal').textContent=stageMode==='indoor'?'敵に見つからず建物内の重要情報を奪取せよ':front?(isFrontlineBeginner()?'軍需物資':'戦術アンテナ')+'の'+(isFrontlineBeginner()?2:3)+'拠点を制圧せよ':stageMode==='beginner'?'軍事衛星施設を破壊せよ':'軍司令施設を破壊せよ';
+   document.getElementById('missionBriefingGoal').textContent=stageMode==='indoor'?'重要資料3箇所を各8秒で回収し、玄関か非常口から脱出せよ':front?(isFrontlineBeginner()?'軍需物資':'戦術アンテナ')+'の'+(isFrontlineBeginner()?2:3)+'拠点を制圧せよ':stageMode==='beginner'?'軍事衛星施設を破壊せよ':'軍司令施設を破壊せよ';
    document.getElementById('missionBegin').focus({preventScroll:true});
   }}
 }
@@ -7923,7 +7924,7 @@ function reportGameError(error){
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/canyon.js?v=2026.10.14.1836"></script>
 <script src="js/vegetation.js?v=2026.10.14.1653"></script>
-<script src="js/infiltration-world.js?v=2026.10.18.1042"></script>
+<script src="js/infiltration-world.js?v=2026.10.18.1043"></script>
 <script>
 (function(){
 // iPhone Chrome/Safari: synthetic KeyboardEvent に依存せず、ゲーム内部の入力状態を直接更新する。
