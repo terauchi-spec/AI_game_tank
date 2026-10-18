@@ -214,22 +214,63 @@ function indoorGenerateFloor(number,rng=Math.random){
     const room=rooms[id],tile=room.tiles[Math.floor(rng()*room.tiles.length)];
     return{x:tile.x+SIZE/2,y:tile.y+SIZE/2,room:room.name,id:number+'-'+i,taken:false};
   });
-  const guards=[];
-  const hallPairs=[];
-  for(const i of halls)for(const n of neighbors(i))if(hall.has(n)&&n>i){
-    const a=center(i),b=center(n),mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
-    if(distance(mid,stair)>230&&distance(mid,exit)>185)hallPairs.push([a,b]);
-  }
-  indoorShuffle(hallPairs,rng);
-  for(const [a,b] of hallPairs.slice(0,2)){
-    const dx=b.x-a.x,dy=b.y-a.y;
-    const first={x:a.x+dx*.20,y:a.y+dy*.20},last={x:a.x+dx*.80,y:a.y+dy*.80};
-    guards.push({...first,waypoints:[first,last],index:1,face:Math.atan2(dy,dx),wait:indoorRand(rng,0,1),speed:65,sight:245});
-  }
-  for(const id of order.slice(3,3+(4-guards.length))){
-    const room=rooms[id],tile=room.tiles[Math.floor(rng()*room.tiles.length)];
-    const a={x:tile.x+SIZE*.38,y:tile.y+SIZE*.48},b={x:tile.x+SIZE*.65,y:tile.y+SIZE*.48};
-    guards.push({...a,waypoints:[a,b],index:1,face:0,wait:indoorRand(rng,0,1),speed:60,sight:215});
+  // 既存AIのpatrol()へ渡す巡回経路を、建物全体の通行グラフから探索。
+  // 同じ部屋の区画と廊下内、およびドア部分だけを通行可能な辺とする。
+  const walkNeighbors=i=>neighbors(i).filter(n=>owner[i]===owner[n]||
+    doors.has([Math.min(i,n),Math.max(i,n)].join(':')));
+  const shortest=(start,goal)=>{
+    const parent=new Map([[start,-1]]),todo=[start];
+    for(let k=0;k<todo.length&&!parent.has(goal);k++)for(const n of walkNeighbors(todo[k])){
+      if(parent.has(n))continue;parent.set(n,todo[k]);todo.push(n);
+    }
+    if(!parent.has(goal))throw Error('巡回経路の探索に失敗');
+    const route=[];for(let n=goal;n!==-1;n=parent.get(n))route.push(n);
+    return route.reverse();
+  };
+  // 各兵士が廊下と複数の部屋を行き来する閉路を持つ。
+  // 個別の短い往復巡回ではなく、異なる区画を通り抜ける長距離の巡回ルートにする。
+  const guards=[],roomCenters=indoorShuffle(rooms.map(r=>r.cellIds[0]),rng);
+  const hallStarts=indoorShuffle(halls.filter(i=>distance(center(i),stair)>SIZE),rng);
+  for(let guardIndex=0;guardIndex<4;guardIndex++){
+    const start=hallStarts[guardIndex%hallStarts.length]??halls[0];
+    const visitRooms=[],goals=[];
+    // 施設の上端・中央・下端を必ず経由。大部屋は対象の区画へ入る位置を選ぶ。
+    for(const band of [[0,1],[2,3,4],[5,6]]){
+      const options=rooms.filter(room=>room.cellIds.some(i=>band.includes(coord(i).r)));
+      const choice=options[(guardIndex*3+Math.floor(rng()*Math.max(1,options.length)))%Math.max(1,options.length)];
+      if(choice){
+        const cells=choice.cellIds.filter(i=>band.includes(coord(i).r));
+        goals.push(cells[Math.floor(rng()*cells.length)]);
+        if(!visitRooms.includes(choice))visitRooms.push(choice);
+      }
+    }
+    for(let shift=0;visitRooms.length<5&&shift<roomCenters.length;shift++){
+      const id=owner[roomCenters[(shift+guardIndex*3)%roomCenters.length]];
+      if(id>=0&&!visitRooms.includes(rooms[id])){
+        visitRooms.push(rooms[id]);
+        const cells=rooms[id].cellIds;
+        goals.push(cells[Math.floor(rng()*cells.length)]);
+      }
+    }
+    let cell=start;const route=[start];
+    for(const target of [...goals,start]){
+      const path=shortest(cell,target);
+      for(const n of path.slice(1))route.push(n);
+      cell=target;
+    }
+    // 連続した直線の中間区画だけを省略し、曲がり角・扉は残す。
+    // 既存patrol()の各ウェイポイントに2秒停止があるため経路を短縮。
+    const compact=[route[0]];
+    for(let j=1;j<route.length-1;j++){
+      const a=coord(route[j-1]),b=coord(route[j]),c=coord(route[j+1]);
+      if((a.c===b.c&&b.c===c.c)||(a.r===b.r&&b.r===c.r))continue;
+      compact.push(route[j]);
+    }
+    compact.push(route[route.length-1]);
+    const path=compact.map(center),next=path[1];
+    guards.push({...path[0],waypoints:path,cellRoute:route,loop:true,
+      index:1,face:Math.atan2(next.y-path[0].y,next.x-path[0].x),
+      wait:indoorRand(rng,0,1),speed:65,sight:245});
   }
   doorMarks.push({...mainDoor,vertical:false,outer:true,kind:'main'});
   doorMarks.push({...emergencyDoor,vertical:false,outer:true,kind:'emergency'});
@@ -244,6 +285,14 @@ function indoorGenerateFloor(number,rng=Math.random){
 // 屋内専用の縦長座標変換。幅は画面内に収め、奥行きを広げて総床面積を約2倍にする。
 const INDOOR_FLOOR_OFFSETS=[9300,5500],INDOOR_SCALE_X=1,INDOOR_SCALE_Y=1.75,INDOOR_OFFSET_X=-40;
 let indoorWorld=null,indoorHudSnapshot='',indoorHudRefresh=0;
+const INDOOR_DOOR_NEAR=140,INDOOR_DOOR_SPEED=4.8;
+function indoorDoorCollisionRect(q){
+  // 厚い壁の隙間（開口幅110px）にぴったり入れる。通常壁の判定方式を流用。
+  return q.vertical
+    ?{x:q.x-10,y:q.y-55*INDOOR_SCALE_Y,w:20,h:110*INDOOR_SCALE_Y}
+    :{x:q.x-55*INDOOR_SCALE_X,y:q.y-11*INDOOR_SCALE_Y,
+      w:110*INDOOR_SCALE_X,h:22*INDOOR_SCALE_Y};
+}
 const indoorAt=(x,y,offset)=>({x:INDOOR_OFFSET_X+x*INDOOR_SCALE_X,y:y*INDOOR_SCALE_Y+offset});
 const indoorRect=(rect,offset)=>({x:INDOOR_OFFSET_X+rect.x*INDOOR_SCALE_X,y:rect.y*INDOOR_SCALE_Y+offset,
  w:rect.w*INDOOR_SCALE_X,h:rect.h*INDOOR_SCALE_Y});
@@ -278,7 +327,7 @@ function setupInfiltrationWorld(){
     const guards=[];
     for(const h of raw.guards){
       const pos=to(h),path=h.waypoints.map(to);
-      const guard={...pos,path,loop:false,wi:1,dir:1,stk:0,
+      const guard={...pos,path,loop:!!h.loop,wi:1,dir:1,stk:0,
         alive:true,elite:false,commander:null,st:0,sus:0,lost:0,cd:R()*1.2,burstLeft:0,face:h.face,
         target:null,patrolMode:'axis',zoneHeavy:'indoor',indoorGuard:true};
       humans.push(guard);guards.push(guard);
@@ -289,11 +338,18 @@ function setupInfiltrationWorld(){
     indoorWorld.intel.push(...intel);
     const stair=to(raw.stair),entrance=to(raw.entrance),emergency=to(raw.emergency);
     const openingPoint=q=>({...to(q),vertical:q.vertical,kind:q.kind,outer:!!q.outer});
+    const doors=raw.doors.map(q=>{
+      const door={...openingPoint(q),open:0};
+      // 動的ドアは既存の壁コリジョン配列へ追加。開いた時はnoHitを切り替えるだけ。
+      // 配列や空間グリッドを毎フレーム作り直さないため処理負荷を抑える。
+      door.cover={...indoorDoorCollisionRect(door),kd:1,indoorDoor:true,noHit:false,hp:999999};
+      covers.push(door.cover);return door;
+    });
     indoorWorld.floors.push({number:n,offset:off,pattern:raw.pattern,
       corridors:raw.corridors.map(tile=>indoorRect(tile,off)),rooms,stair,
       entrance,exit:entrance,emergency,
       footprint:indoorRect(raw.footprint,off),
-      doors:raw.doors.map(openingPoint),windows:raw.windows.map(openingPoint),guards});
+      doors,windows:raw.windows.map(openingPoint),guards});
   }
   const entrance=indoorWorld.floors[0];
   p.x=entrance.entrance.x;p.y=entrance.entrance.y;p.hp=3;p.tank=null;p.body=-Math.PI/2;p.ang=-Math.PI/2;
@@ -310,11 +366,34 @@ function setupInfiltrationMission(){
   mission={index:0,progress:0,points:indoorWorld.intel,exit:indoorWorld.exit,detected:false,
     current:null,alarm:0};
 }
+function updateInfiltrationDoors(dt){
+  if(!indoorWorld)return;
+  // PC、味方、敵兵の誰でも近づけば自動で開く。離れたら自然に閉じる。
+  // AIの移動・発見・戦闘ルールには介入しない。
+  for(const floor of indoorWorld.floors){
+    const players=[p,...floor.guards,...(allies||[])];
+    if(partner)players.push(partner);
+    if(hound)players.push(hound);
+    for(const door of floor.doors){
+      let near=false;
+      for(const a of players){
+        if(!a||a.alive===false||a.down||a.stun>0)continue;
+        const dx=Math.abs(a.x-door.x),dy=Math.abs(a.y-door.y);
+        if(dx>INDOOR_DOOR_NEAR||dy>INDOOR_DOOR_NEAR)continue;
+        if(dx*dx+dy*dy<INDOOR_DOOR_NEAR*INDOOR_DOOR_NEAR){near=true;break;}
+      }
+      door.open=Math.max(0,Math.min(1,door.open+(near?1:-1)*INDOOR_DOOR_SPEED*dt));
+      // 開扉中は当たり判定・視線遮蔽ともに解除。閉扉時は再び遮る。
+      door.cover.noHit=near||door.open>.65;
+    }
+  }
+}
 function updateInfiltrationMission(dt){
   if(!indoorWorld||!mission||state!=='play')return;
   const w=indoorWorld,m=mission;
   const detected=playerDetectedNow();
   m.detected=detected;
+  updateInfiltrationDoors(dt);
   // Stealth is the objective. The game's existing AI determines when detection occurs.
   // 発見だけでは終了させず、本編の青兵AIによる追跡と攻撃を継続する。
   w.stairsCooldown=Math.max(0,w.stairsCooldown-dt);
@@ -380,10 +459,27 @@ function drawInfiltrationFloors(cx,cy){
         g.fillText(room.name+(room.size>=3?' ▣':''),label.x+13,label.y+45);
       }
     }
-    g.fillStyle='#52776c';g.fillRect(f.stair.x-30,f.stair.y-26,60,52);
-    g.strokeStyle='#b1d8be';g.lineWidth=2;g.strokeRect(f.stair.x-30,f.stair.y-26,60,52);
-    g.font='bold 12px system-ui';g.fillStyle='#e1fff1';g.textAlign='center';
-    g.fillText('階段',f.stair.x,f.stair.y+5);
+    // 俯瞰の階段。段板・影・手すりを軽量Canvas図形だけで描く。
+    if(f.stair.y>cy-130&&f.stair.y<cy+H+130){
+      const x=f.stair.x,y=f.stair.y;
+      g.save();g.translate(x,y);
+      g.fillStyle='#283c37';g.fillRect(-44,-58,88,116);
+      g.fillStyle='#8a9684';g.fillRect(-36,-52,72,103);
+      g.fillStyle='#354740';g.fillRect(-36,-52,72,10);
+      for(let step=0;step<7;step++){
+        const yy=-40+step*13;
+        g.fillStyle=step%2?'#718477':'#9aa79a';
+        g.fillRect(-33,yy,66,12);
+        g.strokeStyle='rgba(22,35,30,.42)';g.lineWidth=1.5;
+        g.beginPath();g.moveTo(-33,yy+12);g.lineTo(33,yy+12);g.stroke();
+      }
+      g.fillStyle='#ced7bc';g.fillRect(-42,-50,5,96);g.fillRect(37,-50,5,96);
+      g.strokeStyle='#e1f5dd';g.lineWidth=2;g.beginPath();
+      g.moveTo(0,20);g.lineTo(0,-24);g.lineTo(-11,-12);g.moveTo(0,-24);g.lineTo(11,-12);g.stroke();
+      g.font='bold 12px system-ui';g.fillStyle='#f1efcf';g.textAlign='center';
+      g.fillText(f.number===1?'2F ▲':'1F ▼',0,67);
+      g.restore();
+    }
     // 玄関・非常口の看板と足元の案内（壁の切れ目には出入口以外の隙間はない）。
     for(const gateway of [{point:f.entrance,label:'正面玄関',color:'#d0a75d'},
                            {point:f.emergency,label:'非常口',color:'#82dcb4'}]){
@@ -416,17 +512,32 @@ function drawInfiltrationOpenings(cx,cy){
       }
       g.restore();
     }
-    // 玄関・室内扉・非常口は開口部分だけにドア枠を設ける。
+    // 室内扉・正面玄関・非常口は近接すると二枚のパネルが左右にスライドして開く。
     for(const q of f.doors){
-      if(q.x<cx-85||q.x>cx+W+85||q.y<cy-85||q.y>cy+H+85)continue;
-      g.save();g.strokeStyle=q.kind==='emergency'?'#90e1b0':q.kind==='main'?'#c6ab75':'#c5ab80';
-      g.lineWidth=4;g.beginPath();
+      if(q.x<cx-130||q.x>cx+W+130||q.y<cy-150||q.y>cy+H+150)continue;
+      g.save();
+      const panel=q.kind==='emergency'?'#6eac8c':q.kind==='main'?'#aa8452':'#968572';
+      const border=q.kind==='emergency'?'#b0f5d1':'#d5c0a0';
+      g.fillStyle=panel;g.strokeStyle=border;g.lineWidth=2;
+      const open=Math.max(0,Math.min(1,q.open||0)),half=55*(q.vertical?INDOOR_SCALE_Y:INDOOR_SCALE_X);
+      const part=half*(1-open);
       if(q.vertical){
-        g.moveTo(q.x-15,q.y-55*INDOOR_SCALE_Y);g.lineTo(q.x-15,q.y+55*INDOOR_SCALE_Y);
+        const top=q.y-half,bottom=q.y+half;
+        if(part>1){
+          g.fillRect(q.x-10,top,20,part);
+          g.fillRect(q.x-10,bottom-part,20,part);
+        }
+        g.beginPath();g.moveTo(q.x-15,top);g.lineTo(q.x-15,bottom);
+        g.moveTo(q.x+15,top);g.lineTo(q.x+15,bottom);g.stroke();
       }else{
-        g.moveTo(q.x-55,q.y-16);g.lineTo(q.x+55,q.y-16);
+        if(part>1){
+          g.fillRect(q.x-half,q.y-11*INDOOR_SCALE_Y,part,22*INDOOR_SCALE_Y);
+          g.fillRect(q.x+half-part,q.y-11*INDOOR_SCALE_Y,part,22*INDOOR_SCALE_Y);
+        }
+        g.beginPath();g.moveTo(q.x-half,q.y-15*INDOOR_SCALE_Y);g.lineTo(q.x+half,q.y-15*INDOOR_SCALE_Y);
+        g.moveTo(q.x-half,q.y+15*INDOOR_SCALE_Y);g.lineTo(q.x+half,q.y+15*INDOOR_SCALE_Y);g.stroke();
       }
-      g.stroke();g.restore();
+      g.restore();
     }
   }
 }
@@ -469,13 +580,11 @@ function drawInfiltrationMission(){
   }
   if(target){
     const angle=Math.atan2(target.y-p.y,target.x-p.x),cx=W-115,cy=84,distancePx=Math.round(D(target,p));
-    gm.save();gm.fillStyle='rgba(16,24,20,.83)';gm.fillRect(W-232,48,222,84);
-    gm.translate(cx,cy);gm.rotate(angle);
-    gm.fillStyle='#ffe1a0';gm.beginPath();gm.moveTo(22,0);gm.lineTo(-15,-14);gm.lineTo(-7,0);gm.lineTo(-15,14);gm.closePath();gm.fill();
-    gm.restore();
-    gm.fillStyle='#fff0c6';gm.textAlign='right';gm.font='bold 12px system-ui';
-    gm.fillText(mission.index===INDOOR_FILES_TOTAL?'出口':mission.points.some(q=>!q.done&&q.floor===indoorWorld.currentFloor+1)?'重要資料':'階段へ',W-15,116);
-    gm.font='11px system-ui';gm.fillText(distanceMeters(distancePx)+'m先',W-15,129);
+    // 黒背景・ラベルを使わない、右上のシンプルな方向矢印のみ。
+    gm.save();gm.translate(W-37,85);gm.rotate(angle);
+    gm.fillStyle='#ffe1a0';gm.strokeStyle='rgba(51,45,26,.65)';gm.lineWidth=2;
+    gm.beginPath();gm.moveTo(20,0);gm.lineTo(-12,-11);gm.lineTo(-5,0);gm.lineTo(-12,11);gm.closePath();
+    gm.fill();gm.stroke();gm.restore();
   }
   gm.restore();
 }

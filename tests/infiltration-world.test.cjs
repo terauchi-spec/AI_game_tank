@@ -75,3 +75,25 @@ test('room and hallway arrangement varies on independent seeds',()=>{
  const a=indoorGenerateFloor(1,random(1)),b=indoorGenerateFloor(1,random(2));
  assert.notDeepEqual([a.pattern,a.corridors,a.rooms],[b.pattern,b.corridors,b.rooms]);
 });
+
+test('all blue soldiers traverse interconnected routes across the whole building',()=>{
+ for(let seed=1;seed<=150;seed++)for(let fno=1;fno<=2;fno++){
+  const f=indoorGenerateFloor(fno,random(seed*29+fno));
+  const roomOwner=new Map(f.rooms.flatMap(r=>r.cellIds.map(id=>[id,r.id])));
+  const halls=new Set(f.corridors.map(t=>Math.round((t.y-80)/180)*5+Math.round((t.x-70)/180)));
+  const doors=new Set(f.rooms.map(r=>[Math.min(r.door.inside,r.door.outside),Math.max(r.door.inside,r.door.outside)].join(':')));
+  assert.equal(f.guards.length,4);
+  for(const h of f.guards){
+   assert.ok(h.loop&&h.waypoints.length>=6,'long cyclic patrol');
+   assert.equal(h.cellRoute[0],h.cellRoute.at(-1),'route closes');
+   const roomsVisited=new Set(h.cellRoute.map(c=>roomOwner.get(c)).filter(v=>v!==undefined)).size;
+   const rowsVisited=new Set(h.cellRoute.map(c=>Math.floor(c/5))).size;
+   assert.ok(roomsVisited>=5&&rowsVisited>=4,'whole-building route');
+   for(let i=1;i<h.cellRoute.length;i++){
+    const a=h.cellRoute[i-1],b=h.cellRoute[i],key=[Math.min(a,b),Math.max(a,b)].join(':');
+    assert.equal(Math.abs(a%5-b%5)+Math.abs(Math.floor(a/5)-Math.floor(b/5)),1);
+    assert.ok(roomOwner.get(a)===roomOwner.get(b)||(halls.has(a)&&halls.has(b))||doors.has(key),'no solid wall crossing');
+   }
+  }
+ }
+});
