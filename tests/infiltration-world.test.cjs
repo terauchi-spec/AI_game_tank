@@ -49,7 +49,7 @@ test('five corridor shapes and differently sized rooms remain navigable at doubl
  for(let seed=1;seed<=110;seed++)for(let n=1;n<=2;n++){
   const f=indoorGenerateFloor(n,random(seed*83+n));
   patterns.add(f.pattern);
-  assert.equal(f.rooms.length,10);assert.equal(f.guards.length,4);
+  assert.equal(f.rooms.length,10);assert.ok(f.guards.length>=6&&f.guards.length<=8,'6–8 patrol guards per floor');
   assert.equal(f.intel.length,3,'generator candidates');
   assert.ok(f.rooms.some(r=>r.size===1));
   assert.ok(f.rooms.some(r=>r.size>=3));
@@ -90,7 +90,7 @@ test('all blue soldiers traverse interconnected routes across the whole building
   const roomOwner=new Map(f.rooms.flatMap(r=>r.cellIds.map(id=>[id,r.id])));
   const halls=new Set(f.corridors.map(t=>Math.round((t.y-80)/180)*5+Math.round((t.x-70)/180)));
   const doors=new Set(f.doors.filter(d=>d.cells).map(d=>[Math.min(...d.cells),Math.max(...d.cells)].join(':')));
-  assert.equal(f.guards.length,4);
+  assert.ok(f.guards.length>=6&&f.guards.length<=8,'6–8 patrol guards per floor');
   for(const h of f.guards){
    assert.ok(h.loop&&h.waypoints.length>=6,'long cyclic patrol');
    assert.equal(h.cellRoute[0],h.cellRoute.at(-1),'route closes');
@@ -117,7 +117,7 @@ test('windows only on exterior walls, rooms furnished, corridors contain militar
    }
    const hallway=f.furniture.filter(x=>x.zone==='hallway');
    const interior=f.furniture.filter(x=>x.zone==='room');
-   assert.ok(hallway.length>=4&&hallway.length<=7,'military props in corridor');
+   assert.ok(hallway.length>=10&&hallway.length<=13,'10–13 military props per floor');
    assert.ok(hallway.every(x=>['ammo','supply','barrel','sandbag','kit'].includes(x.kind)));
    assert.ok(new Set(hallway.map(x=>x.kind)).size>=4,'corridor supplies include four different military props');
    assert.ok(interior.some(x=>x.kind==='cabinet'),'cabinet in rooms');
@@ -133,7 +133,7 @@ test('large barracks has four to eight stationary guards arranged outside the ta
   assert.equal(f.postRoomId,post.id);
   assert.ok(f.postCount>=4&&f.postCount<=8);
   assert.equal(f.postGuards.length,f.postCount);
-  assert.equal(f.guards.length,4,'keep original four full-building patrol guards');
+  assert.ok(f.guards.length>=6&&f.guards.length<=8,'increased full-building patrol guards');
   assert.ok(f.intel.every(q=>q.room!==post.name),'documents are outside the guard post');
   const table=f.furniture.find(x=>x.kind==='postTable');
   assert.ok(table);
@@ -241,4 +241,35 @@ test('automatic doors have identical slim 12px thickness in both orientations',(
  updater(.2);assert.equal(cover.noHit,false,'stays shut away from the panel');
  entities[0].x=419;updater(.2);assert.equal(cover.noHit,true,'opens on contact');
  entities[0].x=470;updater(.3);assert.equal(cover.noHit,false,'closes on departure');
+});
+
+test('expanded patrol density and supply items remain separated and keep lanes clear',()=>{
+  for(let seed=1;seed<=250;seed++)for(let floorNo=1;floorNo<=2;floorNo++){
+    const f=indoorGenerateFloor(floorNo,random(seed*131+floorNo));
+    const props=f.furniture.filter(q=>q.zone==='hallway');
+    assert.ok(props.length>=10&&props.length<=13,'expanded hallway cover count');
+    assert.ok(f.guards.length>=6&&f.guards.length<=8,'expanded mobile soldiers');
+    assert.ok(f.postGuards.length>=4&&f.postGuards.length<=8,'keep barracks soldiers');
+    assert.ok(f.guards.length+f.postGuards.length<=16,'cap soldiers per floor for performance');
+    const seen=new Set();
+    for(const h of f.guards){
+      const key=Math.round(h.x)+':'+Math.round(h.y);
+      assert.ok(!seen.has(key),'two patrol guards cannot start on the same position');
+      seen.add(key);
+      assert.ok(props.every(q=>!(
+        h.x>q.x-10&&h.x<q.x+q.w+10&&h.y>q.y-10&&h.y<q.y+q.h+10
+      )),'patrol guard cannot start inside hallway cargo');
+    }
+    // Hallway cell center line remains passable even when two supplies share one cell.
+    for(const tile of f.corridors){
+      const lineX=tile.x+tile.w/2;
+      for(const prop of props){
+        if(prop.x>=tile.x&&prop.x<tile.x+tile.w&&
+          prop.y>=tile.y&&prop.y<tile.y+tile.h){
+          assert.ok(lineX<prop.x-10||lineX>prop.x+prop.w+10,
+            'keep central vertical lane at least 20px wider than props');
+        }
+      }
+    }
+  }
 });

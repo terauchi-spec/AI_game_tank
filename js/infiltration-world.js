@@ -267,15 +267,26 @@ function indoorGenerateFloor(number,rng=Math.random){
     }
   }
   addFurniture('postTable',postCenter.x-47,postCenter.y-28,94,56,'post');
-  // 軍用物資は通路の隅に寄せ、ドアと中央巡回経路は塞がない。
+  // 通路の軍用物資は10～13個へ増量。壁際の対角コーナーに寄せて
+  // 通路中央(幅約26px以上)・階段・ドアの通行帯は塞がない。
   const supplies=indoorShuffle(['ammo','supply','barrel','sandbag','kit'],rng);
   const safeHalls=indoorShuffle(halls.filter(i=>i!==index(2,1)&&i!==index(2,0)&&i!==index(entranceCol,6)),rng);
-  const supplyCount=Math.min(7,Math.max(4,Math.floor(safeHalls.length*.57)));
-  for(let k=0;k<supplyCount;k++){
+  const supplyCount=Math.min(13,Math.max(10,Math.round(halls.length*.95)));
+  const corners=[];
+  for(let k=0;k<safeHalls.length;k++){
     const {c,r}=coord(safeHalls[k]);
+    const left=rng()<.5,top=rng()<.5;
+    corners.push({c,r,left,top});
     const kind=supplies[k%supplies.length];
-    addFurniture(kind,X0+c*SIZE+(rng()<.5?22:SIZE-78),
-      Y0+r*SIZE+(rng()<.5?22:SIZE-68),54,42,'hallway');
+    addFurniture(kind,X0+c*SIZE+(left?20:SIZE-76),
+      Y0+r*SIZE+(top?20:SIZE-66),52,40,'hallway');
+  }
+  // 十分な区画のない短い廊下でも、同一区画の反対角へ追加して多様な遮蔽を作る。
+  for(let k=safeHalls.length;k<supplyCount;k++){
+    const {c,r,left,top}=corners[(k-safeHalls.length)%corners.length];
+    const kind=supplies[k%supplies.length];
+    addFurniture(kind,X0+c*SIZE+(left?SIZE-76:20),
+      Y0+r*SIZE+(top?SIZE-66:20),52,40,'hallway');
   }
   const order=indoorShuffle(rooms.map(r=>r.id).filter(id=>id!==postRoom.id),rng);
   const intel=order.slice(0,INDOOR_FILES_TOTAL).map((id,i)=>{
@@ -299,8 +310,10 @@ function indoorGenerateFloor(number,rng=Math.random){
   // 個別の短い往復巡回ではなく、異なる区画を通り抜ける長距離の巡回ルートにする。
   const guards=[],roomCenters=indoorShuffle(rooms.filter(r=>r!==postRoom).map(r=>r.cellIds[0]),rng);
   const hallStarts=indoorShuffle(halls.filter(i=>distance(center(i),stair)>SIZE),rng);
-  for(let guardIndex=0;guardIndex<4;guardIndex++){
-    const start=hallStarts[guardIndex%hallStarts.length]??halls[0];
+  // 廊下の複雑さに応じて巡回兵を6～8体に増員。出発地点は異なる区画へ分散。
+  const patrolCount=Math.min(8,hallStarts.length);
+  for(let guardIndex=0;guardIndex<patrolCount;guardIndex++){
+    const start=hallStarts[guardIndex];
     const visitRooms=[],goals=[];
     // 施設の上端・中央・下端を必ず経由。大部屋は対象の区画へ入る位置を選ぶ。
     for(const band of [[0,1],[2,3,4],[5,6]]){
