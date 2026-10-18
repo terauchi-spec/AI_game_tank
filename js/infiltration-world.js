@@ -772,12 +772,34 @@ function setupInfiltrationWorld(){
       return{...to(item),zone:item.zone,anchor:item.anchor,
         rx:item.rx*INDOOR_SCALE_X,ry:item.ry*INDOOR_SCALE_Y,clipTiles};
     });
+    // Stage-specific passage graph: a room boundary is traversable only at a real door.
+    const owners=new Map(raw.rooms.flatMap(room=>room.cellIds.map(i=>[i,room.id])));
+    for(const tile of raw.corridors){
+      const c=Math.round((tile.x-70)/180),r=Math.round((tile.y-80)/180);
+      owners.set(r*5+c,-1);
+    }
+    const edges=new Set(raw.doors.filter(d=>d.cells).map(d=>
+      [Math.min(...d.cells),Math.max(...d.cells)].join(':')));
+    const navigation={
+      origin:to({x:70,y:80}),stepX:180*INDOOR_SCALE_X,stepY:180*INDOOR_SCALE_Y,
+      centers:Array.from({length:35},(_,i)=>to({x:70+(i%5+.5)*180,y:80+(Math.floor(i/5)+.5)*180})),
+      neighbors:Array.from({length:35},(_,i)=>{
+        if(!owners.has(i))return[];
+        const c=i%5,r=Math.floor(i/5),out=[];
+        for(const [dx,dy] of [[0,-1],[1,0],[0,1],[-1,0]]){
+          const nc=c+dx,nr=r+dy;if(nc<0||nc>=5||nr<0||nr>=7)continue;
+          const j=nr*5+nc;if(!owners.has(j))continue;
+          if(owners.get(i)===owners.get(j)||edges.has([Math.min(i,j),Math.max(i,j)].join(':')))out.push(j);
+        }
+        return out;
+      })
+    };
     const guards=[];
     for(const h of raw.guards){
       const pos=to(h),path=h.waypoints.map(to);
       const guard={...pos,path,loop:!!h.loop,wi:1,dir:1,stk:0,
         alive:true,elite:false,commander:null,st:0,sus:0,lost:0,cd:R()*1.2,burstLeft:0,face:h.face,
-        target:null,patrolMode:'axis',zoneHeavy:'indoor',indoorGuard:true};
+        target:null,patrolMode:'axis',zoneHeavy:'indoor',indoorGuard:true,indoorFloor:n};
       humans.push(guard);guards.push(guard);
     }
     // 待機兵にも本編の発見・追跡・射撃AIをそのまま適用。通常時だけ動かない。
@@ -787,7 +809,7 @@ function setupInfiltrationWorld(){
       const guard={...pos,path:[{...pos}],loop:false,wi:0,dir:1,stk:0,
         alive:true,elite:false,commander:null,st:0,sus:0,lost:0,cd:R()*1.2,
         burstLeft:0,face:h.face,target:null,patrolMode:'post',
-        zoneHeavy:'indoor',indoorGuard:true,indoorPost:true};
+        zoneHeavy:'indoor',indoorGuard:true,indoorPost:true,indoorFloor:n};
       humans.push(guard);guards.push(guard);postGuards.push(guard);
     }
     // 施設全体で3箇所。1階1箇所・2階2箇所に分ける。
@@ -808,7 +830,7 @@ function setupInfiltrationWorld(){
       entrance,exit:entrance,emergency,
       footprint:indoorRect(raw.footprint,off),
       doors,windows:raw.windows.map(openingPoint),guards,postGuards,
-      guardPostId:raw.postRoomId,props,lightFixtures});
+      guardPostId:raw.postRoomId,props,lightFixtures,navigation});
   }
   const entrance=indoorWorld.floors[0];
   p.x=entrance.entrance.x;p.y=entrance.entrance.y;p.hp=3;p.tank=null;p.body=-Math.PI/2;p.ang=-Math.PI/2;
@@ -824,6 +846,135 @@ function setupInfiltrationWorld(){
 function setupInfiltrationMission(){
   mission={index:0,progress:0,points:indoorWorld.intel,exit:indoorWorld.exit,detected:false,
     current:null,alarm:0};
+}
+
+const INDOOR_TRAIL_LIMIT=48;
+function indoorGuardCell(nav,q){
+ const c=Math.floor((q.x-nav.origin.x)/nav.stepX),r=Math.floor((q.y-nav.origin.y)/nav.stepY);
+ return c>=0&&c<5&&r>=0&&r<7?r*5+c:-1;
+}
+function indoorGuardCellRoute(nav,from,to){
+ if(from<0||to<0||!nav.neighbors[from]||!nav.neighbors[to])return null;
+ const parent=Array(35).fill(-1),seen=new Set([from]),queue=[from];
+ for(let i=0;i<queue.length&&!seen.has(to);i++)for(const j of nav.neighbors[queue[i]]){
+  if(seen.has(j))continue;seen.add(j);parent[j]=queue[i];queue.push(j);
+ }
+ if(!seen.has(to))return null;
+ const path=[];for(let n=to;n!==-1;n=parent[n])path.push(n);
+ return path.reverse();
+}
+function indoorStartGuardPursuit(h){
+ if(!h||!h.indoorGuard||!p)return;
+ const spot={x:p.x,y:p.y},duration=5+R()*5;
+ h.indoorAlert={phase:'found',duration,remaining:duration,trail:[spot],lastSeen:spot,
+  searchLeft:0,scanT:0,route:null,routeKey:''};
+ h.lost=duration;h._detectCache=null;h._nextDetectAt=0;
+}
+function indoorGuardSeesPlayer(h){
+ if(!p||debugMode>=2||p.dig>0||inTumbleweed(p)||(!p.tank&&inBush(p))||
+   (weather==='rain'&&inWaterAt(p.x,p.y,0))||
+   h.indoorFloor!==indoorWorld?.currentFloor+1)return false;
+ const d=D(h,p),a=Math.abs(angD(Math.atan2(p.y-h.y,p.x-h.x),h.face));
+ const range=detectRange('p')*1.2*(.36+.64*indoorLightLevel(p.x,p.y));
+ if(!((a<=DETECT_CENTER_HALF*1.2&&d<range)||
+       (a<=DETECT_OUTER_HALF*1.2&&d<range*DETECT_OUTER_SCALE)))return false;
+ return cachedLos(h,p);
+}
+function indoorMoveGuardTo(h,goal,dt,sp){
+ const nav=indoorWorld?.floors[h.indoorFloor-1]?.navigation;
+ if(!nav||!goal)return false;
+ const from=indoorGuardCell(nav,h),to=indoorGuardCell(nav,goal),a=h.indoorAlert;
+ if(from<0||to<0||!a)return false;
+ const key=from+':'+to;
+ if(a.routeKey!==key){a.route=indoorGuardCellRoute(nav,from,to);a.routeKey=key;}
+ if(!a.route)return false; // Do not move straight through rooms separated by walls.
+ let dest=a.route.length>1?nav.centers[a.route[1]]:goal;
+ if(a.route.length>1&&D(h,nav.centers[from])>30&&
+    !patrolLineClear(h,dest,8)&&patrolLineClear(h,nav.centers[from],8))
+   dest=nav.centers[from];
+ const a0=Math.atan2(dest.y-h.y,dest.x-h.x),step=Math.min(sp*dt,D(h,dest));
+ if(step<=0)return true;
+ const x=h.x,y=h.y;
+ mv(h,Math.cos(a0)*step,Math.sin(a0)*step,8);
+ if(D(h,{x,y})<step*.12){
+  for(const turn of [.5,-.5,1,-1,1.57,-1.57]){
+   const xx=h.x,yy=h.y,angle=a0+turn;
+   mv(h,Math.cos(angle)*step*.85,Math.sin(angle)*step*.85,8);
+   if(D(h,{x:xx,y:yy})>step*.12){h.face=angle;break;}
+  }
+ }else h.face=a0;
+ return true;
+}
+function updateInfiltrationGuardAI(h,dt){
+ if(!h.indoorGuard)return false;
+ if(!h.indoorAlert){
+  if(h.st&&h.target==='p')indoorStartGuardPursuit(h);
+  else return false;
+ }
+ const state=h.indoorAlert;
+ if(state.phase==='found'&&(!h.st||h.target!=='p')){
+  h.indoorAlert=null;return false; // Stun and forced reset cancel the dedicated chase.
+ }
+ const seen=indoorGuardSeesPlayer(h);
+ if(state.phase==='search'){
+  if(seen){enterHumanFound(h,'p',.5);return true;}
+  state.searchLeft=Math.max(0,state.searchLeft-dt);
+  h.sus=Math.max(.01,state.searchLeft);h.susMax=4;
+  if(D(h,state.lastSeen)>24)indoorMoveGuardTo(h,state.lastSeen,dt,48);
+  else{state.scanT+=dt;h.face+=Math.sin(state.scanT*1.5)*dt*.65;}
+  if(state.searchLeft<=0){
+   h.indoorAlert=null;h.st=0;h.target=null;h.sus=0;h.susMax=0;
+   h.susPause=0;h.burstLeft=0;pauseAfterEnemyDetection(h);
+  }
+  return true;
+ }
+ // The found state lasts at least a randomized 5–10 seconds, regardless of distance.
+ state.remaining=Math.max(0,state.remaining-dt);
+ if(seen){
+  const previous=state.trail[state.trail.length-1]||state.lastSeen;
+  if(D(previous,p)>28){
+   state.trail.push({x:p.x,y:p.y});
+   if(state.trail.length>INDOOR_TRAIL_LIMIT)state.trail.shift();
+  }
+  state.lastSeen={x:p.x,y:p.y};
+ }
+ if(state.remaining<=0){
+  if(seen){state.duration=5+R()*5;state.remaining=state.duration;}
+  else{
+   state.phase='search';state.searchLeft=2.5+R()*1.5;state.scanT=0;
+   h.st=0;h.target=null;h.sus=state.searchLeft;h.susMax=4;
+   h.foundPause=0;h.burstLeft=0;h.lost=0;return true;
+  }
+ }
+ h.lost=state.remaining;
+ while(state.trail.length&&D(h,state.trail[0])<26)state.trail.shift();
+ const next=state.trail[0]||state.lastSeen;
+ h.cd-=dt;h.ct=(h.ct||0)+dt;
+ const pause=(h.modePause||0)>0||(h.foundPause||0)>0||
+   (h.sharePause||0)>0||(h.chatResumeT||0)>0;
+ h.modePause=Math.max(0,(h.modePause||0)-dt);
+ h.foundPause=Math.max(0,(h.foundPause||0)-dt);h.sharePause=Math.max(0,(h.sharePause||0)-dt);
+ if(!pause){
+  if(!h.bu&&!h.plantT&&h.ct>(h.bombAt??1.5)){
+   h.bu=true;h.plantT=.35+R()*.4;h.plantA=Math.atan2(p.y-h.y,p.x-h.x);
+  }
+  if(h.plantT>0){
+   h.plantT=Math.max(0,h.plantT-dt);
+   if(h.plantT<=0){
+    const bp=enemyBombPoint(h,h.plantA??h.face,100);
+    bombs.push({x:bp.x,y:bp.y,own:'e',armed:true,t:4});h.plantA=null;
+   }
+  }else if(D(h,next)>20)indoorMoveGuardTo(h,next,dt,95);
+  else if(seen)h.face=Math.atan2(p.y-h.y,p.x-h.x);
+ }
+ if(!pause&&seen&&D(h,p)<150&&h.cd<=0){
+  const angle=Math.atan2(p.y-h.y,p.x-h.x);
+  if(!(h.burstLeft>0))h.burstLeft=3;
+  h.characterShotAt=performance.now();
+  fire(h.x,h.y,angle+(R()-.5)*.15,'e','r',330,150);
+  h.burstLeft--;h.cd=h.burstLeft>0?.14:2;
+ }
+ return true;
 }
 function updateInfiltrationDoors(dt){
   if(!indoorWorld)return;
@@ -1130,4 +1281,4 @@ function drawInfiltrationMission(){
   }
   gm.restore();
 }
-if(typeof module!=='undefined'&&module.exports)module.exports={indoorGenerateFloor,indoorAt,indoorRect};
+if(typeof module!=='undefined'&&module.exports)module.exports={indoorGenerateFloor,indoorAt,indoorRect,indoorGuardCell,indoorGuardCellRoute};

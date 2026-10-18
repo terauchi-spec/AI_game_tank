@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.18.2146</title>
+<title>こっそり戦車大作戦 2026.10.18.2202</title>
 
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
@@ -864,7 +864,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.18.2146',FILE_CREATED_AT='2026/10/18 21:46',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.18.2202',FILE_CREATED_AT='2026/10/18 22:02',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -3814,6 +3814,8 @@ function enterHumanFound(h,key,pause=null,ignoreStealth=false){
   if(!h.elite&&!h.bu)h.bombAt=.8+R()*3.7;
   if(key==='p'&&scoreStats&&!scoreStats.finalized)scoreStats.foundEntries++;
  }
+ if(stageMode==='indoor'&&h.indoorGuard&&key==='p'&&(fresh||!h.indoorAlert))
+  indoorStartGuardPursuit(h);
  return fresh;
 }
 function activateStaticTank(e){
@@ -5435,7 +5437,7 @@ function update(dt){
  updateHound(dt);
  const tumbleCover=updateTumbleweedStealth();
  const stealthCover=tumbleCover||(!p.tank&&inBush(p))||(weather==='rain'&&inWaterAt(p.x,p.y,0))||(p.dig>0);
- if(stealthCover){const wasFound=humans.some(h=>h.alive&&h.st&&h.target==='p')||etanks.some(e=>e.alive&&e.st&&e.target==='p');p.bushHide=(p.bushHide||0)+dt;if(!wasFound||p.bushHide>=1){for(const h of humans)if(h.alive&&h.target==='p'&&!(h.sniperForcedFoundT>0)){h.st=0;h.target=null;h.lost=0;h.foundPause=0;pauseAfterEnemyDetection(h);}for(const e of etanks)if(e.alive&&e.target==='p'&&!(e.sniperForcedFoundT>0)){e.st=0;e.target=null;e.lost=0;e.foundPause=0;pauseAfterEnemyDetection(e);}}}else p.bushHide=0;
+ if(stealthCover){const wasFound=humans.some(h=>h.alive&&h.st&&h.target==='p')||etanks.some(e=>e.alive&&e.st&&e.target==='p');p.bushHide=(p.bushHide||0)+dt;if(!wasFound||p.bushHide>=1){for(const h of humans)if(h.alive&&h.target==='p'&&!(stageMode==='indoor'&&h.indoorGuard)&&!(h.sniperForcedFoundT>0)){h.st=0;h.target=null;h.lost=0;h.foundPause=0;pauseAfterEnemyDetection(h);}for(const e of etanks)if(e.alive&&e.target==='p'&&!(e.sniperForcedFoundT>0)){e.st=0;e.target=null;e.lost=0;e.foundPause=0;pauseAfterEnemyDetection(e);}}}else p.bushHide=0;
  updateCommanderSignals(dt);updateCommanderMotion(dt);
  // 敵人間：プレイヤー・相棒・偽装を個別に索敵。遮蔽物があれば発見しない。
  for(const h of humans){if(!h.alive)continue;
@@ -5459,8 +5461,11 @@ function update(dt){
   if(h.stunRecover>0){
    h.stunRecover=Math.max(0,h.stunRecover-dt);h.sus=0;h.st=0;h.target=null;h.lost=0;h.wallFollow=null;h.burstLeft=0;h.cd=0;continue;
   }
+  // A previously alerted indoor guard ticks its 5–10s timer even during mode transitions.
+  if(stageMode==='indoor'&&h.indoorGuard&&h.indoorAlert&&updateInfiltrationGuardAI(h,dt))continue;
   if(enemyModePaused(h,dt))continue;
   if(updateCommanderAI(h,dt))continue;
+  if(stageMode==='indoor'&&h.indoorGuard&&updateInfiltrationGuardAI(h,dt))continue;
   // 疑惑モード：開始時に0.5〜1秒停止し、その後2秒間の円形索敵。索敵距離は通常の1.5倍。
   // エリートは最初の2秒、プレイヤー方向へ接近してから2秒間の円形索敵を行う。
   if(h.sus>0&&!h.st){
@@ -7962,7 +7967,7 @@ function reportGameError(error){
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/canyon.js?v=2026.10.14.1836"></script>
 <script src="js/vegetation.js?v=2026.10.14.1653"></script>
-<script src="js/infiltration-world.js?v=2026.10.18.2146"></script>
+<script src="js/infiltration-world.js?v=2026.10.18.2202"></script>
 <script>
 (function(){
 // iPhone Chrome/Safari: synthetic KeyboardEvent に依存せず、ゲーム内部の入力状態を直接更新する。

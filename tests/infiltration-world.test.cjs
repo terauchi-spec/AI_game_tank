@@ -517,6 +517,93 @@ test('all advertised indoor door apertures remain wall-free and cargo clusters a
   }
  }
 });
+test('indoor graph routes through actual passages and never through an unwalled cell edge',()=>{
+ const {indoorGuardCellRoute}=require('../js/infiltration-world.js');
+ for(let seed=1;seed<=120;seed++)for(let floorNo=1;floorNo<=2;floorNo++){
+  const f=indoorGenerateFloor(floorNo,random(seed*53+floorNo));
+  const owner=new Map(f.rooms.flatMap(room=>room.cellIds.map(id=>[id,room.id])));
+  for(const tile of f.corridors)owner.set(Math.round((tile.y-80)/180)*5+Math.round((tile.x-70)/180),-1);
+  const doors=new Set(f.doors.filter(d=>d.cells).map(d=>[Math.min(...d.cells),Math.max(...d.cells)].join(':')));
+  const nav={neighbors:Array.from({length:35},(_,id)=>{
+    if(!owner.has(id))return[];
+    return [id%5>0?id-1:-1,id%5<4?id+1:-1,id>=5?id-5:-1,id<30?id+5:-1]
+     .filter(j=>owner.has(j)&&(owner.get(id)===owner.get(j)||
+       doors.has([Math.min(id,j),Math.max(id,j)].join(':'))));
+  })};
+  const valid=[...owner.keys()];
+  for(const target of valid){
+   const route=indoorGuardCellRoute(nav,valid[0],target);
+   assert.ok(route&&route.length,'every navigable cell has a route');
+   for(let i=1;i<route.length;i++)
+    assert.ok(nav.neighbors[route[i-1]].includes(route[i]),
+      'each route leg passes through an open room or a doorway');
+  }
+  assert.equal(indoorGuardCellRoute(nav,-1,valid[0]),null);
+ }
+});
+test('indoor pursuit holds 5-10 seconds and transitions through investigation to patrol',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
+ const between=(a,b)=>{const i=src.indexOf(a),j=src.indexOf(b,i+a.length);
+  assert.ok(i>=0&&j>i);return src.slice(i,j);};
+ const body=between('function indoorStartGuardPursuit(h){','function indoorGuardSeesPlayer(h){')+
+  between('function updateInfiltrationGuardAI(h,dt){','function updateInfiltrationDoors(dt){');
+ const avatar={x:200,y:100};
+ let seen=false,patrol=0,reacquired=0;
+ let begin;
+ const enter=h=>{reacquired++;h.st=1;h.target='p';begin(h);};
+ const [start,update]=new Function('p','R','D','indoorGuardSeesPlayer',
+  'indoorMoveGuardTo','pauseAfterEnemyDetection','enterHumanFound','enemyBombPoint',
+  'bombs','fire','performance','INDOOR_TRAIL_LIMIT',
+  body+'\nreturn [indoorStartGuardPursuit,updateInfiltrationGuardAI];')(
+  avatar,()=>.5,(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),
+  ()=>seen,()=>true,()=>{patrol++;},enter,()=>({x:0,y:0}),
+  [],()=>{}, {now:()=>0},48);
+ begin=start;
+ const guard={indoorGuard:true,st:1,target:'p',x:0,y:100,face:0,
+  cd:100,ct:0,bu:true,foundPause:0,modePause:0};
+ begin(guard);
+ assert.equal(guard.indoorAlert.duration,7.5);
+ update(guard,7.49);assert.equal(guard.indoorAlert.phase,'found');
+ update(guard,.02);assert.equal(guard.indoorAlert.phase,'search');
+ assert.ok(!guard.st&&guard.sus>0,'search replaces found state');
+ update(guard,3.26);assert.equal(guard.indoorAlert,null);
+ assert.equal(guard.sus,0);assert.equal(patrol,1);
+ // A search phase reacquires immediately if the player is sighted again.
+ guard.st=1;guard.target='p';begin(guard);
+ seen=false;update(guard,7.51);
+ assert.equal(guard.indoorAlert.phase,'search');
+ seen=true;update(guard,.1);
+ assert.equal(reacquired,1);assert.equal(guard.indoorAlert.phase,'found');
+ assert.equal(guard.st,1);
+ // Seeing the player when the timer expires renews it, not drops the alert.
+ guard.indoorAlert.remaining=.01;update(guard,.02);
+ assert.equal(guard.indoorAlert.phase,'found');assert.equal(guard.indoorAlert.remaining,7.5);
+});
+test('indoor guards trace sampled footsteps instead of following unseen teleportation',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
+ const piece=(a,b)=>src.slice(src.indexOf(a),src.indexOf(b,src.indexOf(a)+a.length));
+ const code=piece('function indoorStartGuardPursuit(h){','function indoorGuardSeesPlayer(h){')+
+  piece('function updateInfiltrationGuardAI(h,dt){','function updateInfiltrationDoors(dt){');
+ const avatar={x:180,y:110},destinations=[];let seen=true;
+ const [begin,update]=new Function('p','R','D','indoorGuardSeesPlayer','indoorMoveGuardTo',
+  'pauseAfterEnemyDetection','enterHumanFound','enemyBombPoint','bombs','fire',
+  'performance','INDOOR_TRAIL_LIMIT',code+'\nreturn [indoorStartGuardPursuit,updateInfiltrationGuardAI];')(
+  avatar,()=>.6,(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),()=>seen,
+  (h,p)=>{destinations.push({...p});return true;},()=>{},()=>{},()=>({x:0,y:0}),
+  [],()=>{}, {now:()=>0},48);
+ const h={indoorGuard:true,x:0,y:110,st:1,target:'p',cd:100,bu:true};
+ begin(h);
+ avatar.x=240;update(h,.1);
+ assert.equal(h.indoorAlert.trail.length,2);
+ assert.equal(destinations.at(-1).x,180,'first visit initial detection point');
+ h.x=180;update(h,.1);
+ assert.equal(destinations.at(-1).x,240,'then follow the next seen footstep');
+ seen=false;avatar.x=900;update(h,.1);
+ assert.equal(h.indoorAlert.lastSeen.x,240,'never learn unseen player position');
+ assert.ok(h.indoorAlert.trail.length<=48,'capped trail memory');
+});
 test('two gun hits instantly detonate only the new shell-pallet kind',()=>{
  const fs=require('node:fs'),path=require('node:path');
  const src=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
