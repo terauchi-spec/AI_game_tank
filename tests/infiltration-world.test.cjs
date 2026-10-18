@@ -341,6 +341,66 @@ test('clustered wooden crates, barrels and shell pallets stay in groups of four 
   assert.equal(loc.size,f.lightFixtures.length,'no duplicate light fixtures');
  }
 });
+test('room and corridor lights are placed at meaningful fixtures with shadow pockets',()=>{
+ let darkTotal=0,spotTotal=0;
+ for(let seed=1;seed<=150;seed++)for(let n=1;n<=2;n++){
+  const f=indoorGenerateFloor(n,random(seed*199+n)),lights=f.lightFixtures;
+  const table=f.furniture.find(o=>o.kind==='postTable');
+  assert.ok(lights.some(l=>l.zone==='room'&&l.anchor==='table'&&
+    Math.abs(l.x-table.x-table.w/2)<.01&&Math.abs(l.y-table.y-table.h/2)<.01),
+    'barracks lamp must hang over the central table');
+  assert.equal(lights.filter(l=>l.zone==='lobby').length,1,'entrance has one central light');
+  assert.ok(lights.some(l=>l.zone==='hall'&&l.anchor==='hall-junction')||
+    lights.some(l=>l.zone==='hall'&&l.anchor==='hall-run')||
+    lights.some(l=>l.zone==='hall'&&l.anchor==='hall-turn'),'corridors have distinct fixture locations');
+  assert.ok(lights.length>=14&&lights.length<=26,'limited fixtures for performance and dark space');
+  const spots=f.corridors.concat(f.rooms.flatMap(r=>r.tiles));
+  const samples=spots.map(t=>({x:t.x+t.w/2,y:t.y+t.h/2}));
+  const dark=samples.filter(p=>lights.every(l=>Math.hypot(p.x-l.x,p.y-l.y)>185*.72));
+  darkTotal+=dark.length;spotTotal+=samples.length;
+ }
+ assert.ok(darkTotal/spotTotal>.18&&darkTotal/spotTotal<.65,
+   'meaningful shadow cover remains without blacking out the whole facility');
+});
+test('ceiling lighting transitions smoothly rather than switching abruptly',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
+ const start=src.indexOf('function indoorLightLevel('),end=src.indexOf('\n}\n',start);
+ assert.ok(start>=0&&end>start);
+ const fn=new Function('indoorWorld','INDOOR_LIGHT_RADIUS',
+   src.slice(start,end+2)+'\nreturn indoorLightLevel;')({
+     floors:[{footprint:{y:0,h:1800},lightFixtures:[{x:200,y:200}]}]},185);
+ const levels=[0,45,90,135,180,260].map(d=>fn(200+d,200));
+ for(let i=1;i<levels.length;i++)assert.ok(levels[i]<=levels[i-1],'light must fade with distance');
+ assert.ok(levels[0]>.90&&levels[2]>.40&&levels[2]<.80&&levels[4]<.25);
+ assert.ok(levels[1]<levels[0]&&levels[3]>levels[4],'intermediate gradient zones exist');
+ assert.ok(src.includes('indoorLightStamp'),'gradient texture is cached for mobile');
+});
+test('indoor cargo artwork retains image aspect ratios without altering outdoor sprites',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const src=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+ const extract=(start,end)=>{
+  const a=src.indexOf(start),b=src.indexOf(end,a+start.length);
+  assert.ok(a>=0&&b>a,'function found: '+start);return src.slice(a,b);
+ };
+ const fitFn=new Function('assetOK',
+   extract('function fitAspect(', '\nfunction centerRect(')+'\nreturn fitAspect;')(
+      im=>!!im&&im.naturalWidth>0&&im.naturalHeight>0);
+ const crate={naturalWidth:80,naturalHeight:120},shell={naturalWidth:200,naturalHeight:100};
+ const draws=[],drawSprite=(im,x,y,w,h)=>{draws.push({im,w,h});return true;};
+ const drawFn=new Function('COVER_IMG','fitAspect','drawAssetSprite',
+   extract('function drawObject(o){','\nfunction drawBuiltConcrete(')+'\nreturn drawObject;')(
+   {crate,shell_pallet:shell},fitFn,drawSprite);
+ drawFn({x:0,y:0,w:60,h:60,kind:'crate',indoorExplosive:true});
+ drawFn({x:0,y:0,w:120,h:120,kind:'shellPallet',indoorExplosive:true});
+ assert.ok(Math.abs(draws[0].w/draws[0].h-80/120)<.0001,'wooden crate source ratio');
+ assert.ok(Math.abs(draws[1].w/draws[1].h-200/100)<.0001,'pallet source ratio');
+ drawFn({x:0,y:0,w:60,h:60,kind:'crate'});
+ assert.equal(draws[2].w,60*1.02,'outdoor crate size remains unchanged');
+ assert.equal(draws[2].h,60*1.02,'outdoor crate keeps original rendering behavior');
+ assert.ok(src.includes('const [dw,dh]=fitAspect(im,o.w*1.30,o.h*1.76)'),
+  'barrel artwork preserves native aspect ratio');
+});
 test('indoor darkness reduces sight without guard flashlights',()=>{
  const fs=require('node:fs'),path=require('node:path');
  const src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');

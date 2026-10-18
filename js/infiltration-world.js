@@ -449,17 +449,55 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
   if(!explosiveObjects.some(o=>o.zone==='room'))reserve('room','barrel');
   if(!explosiveObjects.some(o=>o.kind==='crate'))reserve('room','crate')||reserve('hallway','crate');
   if(!explosiveObjects.some(o=>o.kind==='barrel'))reserve('room','barrel')||reserve('hallway','barrel');
-  // 各室・廊下には天井照明を規則的に配置。隅には意図的な薄暗い領域を残す。
+  // Lights follow real room use: work tables, room centers and corridor junctions.
+  // Do not illuminate every tile; leave edge and corridor pockets for stealth.
   const lightFixtures=[];
-  for(let i=0;i<halls.length;i++){
-    const cell=halls[i],{c,r}=coord(cell);
-    if((c+r)%2===0||lobbyIds.includes(cell))
-      lightFixtures.push({...center(cell),zone:lobbyIds.includes(cell)?'lobby':'hall'});
+  const addLight=(pt,zone,anchor)=>{
+    if(lightFixtures.some(q=>distance(q,pt)<SIZE*.38))return;
+    lightFixtures.push({x:pt.x,y:pt.y,zone,anchor});
+  };
+  // The broad entrance has one central ceiling fixture, not four grid lamps.
+  addLight({x:X0+(lobbyLeft+1)*SIZE,y:Y0+6*SIZE},'lobby','lobby-center');
+  const hallSet=new Set(halls),hallCandidates=halls.filter(i=>!lobbyIds.includes(i)&&i!==index(2,0)).map(i=>{
+    const pt=center(i),{c,r}=coord(i),links=neighbors(i).filter(n=>hallSet.has(n));
+    const turn=links.length===2&&
+      Math.abs(coord(links[0]).c-coord(links[1]).c)===1&&
+      Math.abs(coord(links[0]).r-coord(links[1]).r)===1;
+    const cargo=furniture.some(o=>o.zone==='hallway'&&o.x>=pt.x-SIZE/2&&
+      o.x<pt.x+SIZE/2&&o.y>=pt.y-SIZE/2&&o.y<pt.y+SIZE/2);
+    return{pt,anchor:links.length>=3?'hall-junction':turn?'hall-turn':'hall-run',
+      priority:(links.length>=3?3:turn?2:1)+(cargo?.7:0)+rng()*.8};
+  }).sort((a,b)=>b.priority-a.priority);
+  const hallQuota=Math.max(4,Math.min(7,Math.round(hallCandidates.length/2.5)));
+  for(const minGap of [SIZE*1.4,SIZE*.85]){
+    for(const c of hallCandidates){
+      if(lightFixtures.filter(q=>q.zone==='hall').length>=hallQuota)break;
+      if(lightFixtures.some(q=>distance(q,c.pt)<minGap))continue;
+      addLight(c.pt,'hall',c.anchor);
+    }
   }
   for(const room of rooms){
-    const ids=room.cellIds;
-    for(let i=0;i<ids.length;i+=Math.max(1,Math.ceil(ids.length/2))){
-      lightFixtures.push({...center(ids[i]),zone:'room'});
+    const centers=room.tiles.map(t=>({x:t.x+SIZE/2,y:t.y+SIZE/2}));
+    const mid={x:centers.reduce((sum,p)=>sum+p.x,0)/centers.length,
+      y:centers.reduce((sum,p)=>sum+p.y,0)/centers.length};
+    const roomFurniture=furniture.filter(o=>o.zone==='room'&&
+      room.tiles.some(t=>o.x>=t.x&&o.x<t.x+SIZE&&o.y>=t.y&&o.y<t.y+SIZE));
+    const table=room===postRoom?furniture.find(o=>o.kind==='postTable'):
+      roomFurniture.filter(o=>o.kind==='table'||o.kind==='desk')
+        .sort((a,b)=>distance({x:a.x+a.w/2,y:a.y+a.h/2},mid)-
+          distance({x:b.x+b.w/2,y:b.y+b.h/2},mid))[0];
+    const primary=table?{x:table.x+table.w/2,y:table.y+table.h/2}:
+      centers.slice().sort((a,b)=>distance(a,mid)-distance(b,mid))[0];
+    addLight(primary,'room',table?'table':'room-center');
+    // Large or winding rooms receive another ceiling light over a distinct tile.
+    const target=room.size>=5?3:room.size>=3?2:1;
+    const installed=[primary];
+    while(installed.length<target){
+      const p=centers.filter(pt=>installed.every(q=>distance(pt,q)>=SIZE*.7))
+        .sort((a,b)=>Math.min(...installed.map(q=>distance(b,q)))-
+          Math.min(...installed.map(q=>distance(a,q))))[0];
+      if(!p)break;
+      addLight(p,'room','room-wing');installed.push(p);
     }
   }
   // Select only rooms with a genuine walkable document position.
@@ -557,7 +595,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
 const INDOOR_FLOOR_OFFSETS=[9300,5500],INDOOR_SCALE_X=1,INDOOR_SCALE_Y=1.75,INDOOR_OFFSET_X=-40;
 let indoorWorld=null,indoorHudSnapshot='',indoorHudRefresh=0;
 
-let indoorShadeCanvas=null,indoorShadeCtx=null;
+let indoorShadeCanvas=null,indoorShadeCtx=null,indoorLightStamp=null;
 // 天井灯は床に落ちる固定光。暗所は視認性を落とすが、完全な真っ暗にはしない。
 const INDOOR_LIGHT_RADIUS=185;
 function indoorLightLevel(x,y){
@@ -567,33 +605,44 @@ function indoorLightLevel(x,y){
     if(y<f.footprint.y-80||y>f.footprint.y+f.footprint.h+80)continue;
     for(const lamp of f.lightFixtures)near=Math.min(near,Math.hypot(lamp.x-x,lamp.y-y));
   }
-  return near===Infinity?1:near<=INDOOR_LIGHT_RADIUS*.88?.97:.17;
+  if(near===Infinity)return 1;
+  const t=Math.max(0,1-near/INDOOR_LIGHT_RADIUS);
+  return .17+.80*t*t*(3-2*t);
+}
+function indoorLightingStamp(){
+  // Cache a single translucent beam texture; avoid building many gradients per frame.
+  if(indoorLightStamp)return indoorLightStamp;
+  const r=INDOOR_LIGHT_RADIUS,c=document.createElement('canvas');
+  c.width=c.height=Math.ceil(2*r);
+  const q=c.getContext('2d'),gr=q.createRadialGradient(r,r,0,r,r,r);
+  gr.addColorStop(0,'rgba(0,0,0,.96)');
+  gr.addColorStop(.20,'rgba(0,0,0,.91)');
+  gr.addColorStop(.47,'rgba(0,0,0,.70)');
+  gr.addColorStop(.73,'rgba(0,0,0,.34)');
+  gr.addColorStop(.91,'rgba(0,0,0,.08)');
+  gr.addColorStop(1,'rgba(0,0,0,0)');
+  q.fillStyle=gr;q.fillRect(0,0,c.width,c.height);
+  indoorLightStamp=c;return c;
 }
 function drawInfiltrationLighting(cx,cy){
   if(!indoorWorld||!gm)return;
-  // メイン描画後・HUD前の一回だけ合成。Canvasを再利用しモバイルの再生成を防ぐ。
+  // Reuse the shadow mask and the cached radial texture on mobile.
   if(!indoorShadeCanvas){indoorShadeCanvas=document.createElement('canvas');indoorShadeCtx=indoorShadeCanvas.getContext('2d');}
-  const mask=indoorShadeCanvas,q=indoorShadeCtx;
+  const mask=indoorShadeCanvas,q=indoorShadeCtx,r=INDOOR_LIGHT_RADIUS,stamp=indoorLightingStamp();
   if(mask.width!==Math.ceil(W)||mask.height!==Math.ceil(H)){mask.width=Math.ceil(W);mask.height=Math.ceil(H);}
   q.setTransform(1,0,0,1,0,0);q.clearRect(0,0,W,H);
   q.fillStyle='rgba(7,13,15,.72)';q.fillRect(0,0,W,H);
   q.globalCompositeOperation='destination-out';
   for(const f of indoorWorld.floors){
-    if(f.footprint.y>cy+H+INDOOR_LIGHT_RADIUS||f.footprint.y+f.footprint.h<cy-INDOOR_LIGHT_RADIUS)continue;
+    if(f.footprint.y>cy+H+r||f.footprint.y+f.footprint.h<cy-r)continue;
     for(const lamp of f.lightFixtures){
       const x=lamp.x-cx,y=lamp.y-cy;
-      if(x<-INDOOR_LIGHT_RADIUS||x>W+INDOOR_LIGHT_RADIUS||y<-INDOOR_LIGHT_RADIUS||y>H+INDOOR_LIGHT_RADIUS)continue;
-      const gr=q.createRadialGradient(x,y,0,x,y,INDOOR_LIGHT_RADIUS);
-      gr.addColorStop(0,'rgba(0,0,0,.96)');
-      gr.addColorStop(.87,'rgba(0,0,0,.96)');
-      gr.addColorStop(1,'rgba(0,0,0,0)');
-      q.fillStyle=gr;q.fillRect(x-INDOOR_LIGHT_RADIUS,y-INDOOR_LIGHT_RADIUS,INDOOR_LIGHT_RADIUS*2,INDOOR_LIGHT_RADIUS*2);
+      if(x<-r||x>W+r||y<-r||y>H+r)continue;
+      q.drawImage(stamp,x-r,y-r);
     }
   }
   q.globalCompositeOperation='source-over';
-  gm.save();gm.drawImage(mask,0,0);
-  // No fixture dots or enemy-held beams: illumination is visible only on the floor.
-  gm.restore();
+  gm.save();gm.drawImage(mask,0,0);gm.restore();
 }
 
 const INDOOR_DOOR_WIDTH=84,INDOOR_DOOR_THICKNESS=12,INDOOR_DOOR_SPEED=5.2;

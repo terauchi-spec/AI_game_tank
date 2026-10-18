@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.18.2011</title>
+<title>こっそり戦車大作戦 2026.10.18.2047</title>
 
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
@@ -864,7 +864,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.18.2011',FILE_CREATED_AT='2026/10/18 20:11',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.18.2047',FILE_CREATED_AT='2026/10/18 20:47',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -1353,7 +1353,13 @@ function objectHitRect(o){
   // Transparent edge/rim pixels are excluded, but the collider follows the full visible drum rather than the old small circle.
   return{x:vr.x+vr.w*.07,y:vr.y+vr.h*.035,w:vr.w*.86,h:vr.h*.93};
  }
- const cx=o.x+o.w/2,cy=o.y+o.h/2;return centerRect(cx,cy,o.w*.90,o.h*.90);
+ const cx=o.x+o.w/2,cy=o.y+o.h/2;
+ if(o.indoorExplosive&&(o.kind==='crate'||o.kind==='shellPallet')){
+  const im=o.kind==='crate'?COVER_IMG.crate:COVER_IMG.shell_pallet;
+  const [w,h]=fitAspect(im,o.w*(o.kind==='crate'?1.02:1.12),o.h*(o.kind==='crate'?1.02:1.12));
+  return centerRect(cx,cy,w*.90,h*.90);
+ }
+ return centerRect(cx,cy,o.w*.90,o.h*.90);
 }
 function objectHitCircle(o){return null;}
 function circleHitsObject(x,y,r,o){const cc=objectHitCircle(o);return cc?Math.hypot(x-cc.x,y-cc.y)<=r+cc.r:circleHitsRect(x,y,r,objectHitRect(o));}
@@ -1458,7 +1464,10 @@ function drawObject(o){
  const cx=o.x+o.w/2,cy=o.y+o.h/2;
  if(o.kind==='shellPallet'){
   const im=COVER_IMG.shell_pallet;
-  if(drawAssetSprite(im,cx,cy,o.w*1.12,o.h*1.12,0,1))return;
+  if(o.indoorExplosive){
+   const [w,h]=fitAspect(im,o.w*1.12,o.h*1.12);
+   if(drawAssetSprite(im,cx,cy,w,h,0,1))return;
+  }else if(drawAssetSprite(im,cx,cy,o.w*1.12,o.h*1.12,0,1))return;
   // 素材読み込み前も識別できる軽量な代替グラフィック。
   g.fillStyle='#795333';g.fillRect(o.x,o.y,o.w,o.h);
   g.strokeStyle='#3e3021';g.lineWidth=3;g.strokeRect(o.x+1,o.y+1,o.w-2,o.h-2);
@@ -1469,7 +1478,9 @@ function drawObject(o){
   return;
  }
  if(o.kind==='civilCar'){g.save();g.translate(cx,cy);if(o.h>o.w)g.rotate(Math.PI/2);drawStaticRaster(civilCarSprite(o.color||0),-41,-22,82,44);g.restore();return;}
- if(o.kind==='crate'){/* 木箱は敵前線基地で使用していた素材・向きに統一 */const im=COVER_IMG.crate;if(drawAssetSprite(im,cx,cy,o.w*1.02,o.h*1.02,0,1))return;g.fillStyle='#7a5f3a';g.fillRect(o.x,o.y,o.w,o.h);g.strokeStyle='#4e3c24';g.lineWidth=3;g.strokeRect(o.x+2,o.y+2,o.w-4,o.h-4);return;}
+ if(o.kind==='crate'){/* 木箱は敵前線基地で使用していた素材・向きに統一 */const im=COVER_IMG.crate;
+  if(o.indoorExplosive){const [w,h]=fitAspect(im,o.w*1.02,o.h*1.02);if(drawAssetSprite(im,cx,cy,w,h,0,1))return;}
+  else if(drawAssetSprite(im,cx,cy,o.w*1.02,o.h*1.02,0,1))return;g.fillStyle='#7a5f3a';g.fillRect(o.x,o.y,o.w,o.h);g.strokeStyle='#4e3c24';g.lineWidth=3;g.strokeRect(o.x+2,o.y+2,o.w-4,o.h-4);return;}
  if(o.kind==='barrel'){
   const im=COVER_IMG.barrel;
   if(assetOK(im)){
@@ -7951,7 +7962,7 @@ function reportGameError(error){
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/canyon.js?v=2026.10.14.1836"></script>
 <script src="js/vegetation.js?v=2026.10.14.1653"></script>
-<script src="js/infiltration-world.js?v=2026.10.18.2011"></script>
+<script src="js/infiltration-world.js?v=2026.10.18.2047"></script>
 <script>
 (function(){
 // iPhone Chrome/Safari: synthetic KeyboardEvent に依存せず、ゲーム内部の入力状態を直接更新する。
