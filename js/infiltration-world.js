@@ -122,7 +122,7 @@ function updateInfiltrationMission(dt){
   const detected=playerDetectedNow();
   m.detected=detected;
   // Stealth is the objective. The game's existing AI determines when detection occurs.
-  if(scoreStats?.foundEntries>0){state='failed';finalizeScore(false);return;}
+  // 発見だけでは終了させず、本編の青兵AIによる追跡と攻撃を継続する。
   w.stairsCooldown=Math.max(0,w.stairsCooldown-dt);
   const floor=w.floors[w.currentFloor],nearStair=D(p,floor.stair)<48;
   if(!nearStair)w.stairArmed=true;
