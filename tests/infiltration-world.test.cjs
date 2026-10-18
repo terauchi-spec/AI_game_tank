@@ -350,9 +350,16 @@ test('room and corridor lights are placed at meaningful fixtures with shadow poc
     Math.abs(l.x-table.x-table.w/2)<.01&&Math.abs(l.y-table.y-table.h/2)<.01),
     'barracks lamp must hang over the central table');
   assert.equal(lights.filter(l=>l.zone==='lobby').length,1,'entrance has one central light');
-  assert.ok(lights.some(l=>l.zone==='hall'&&l.anchor==='hall-junction')||
-    lights.some(l=>l.zone==='hall'&&l.anchor==='hall-run')||
-    lights.some(l=>l.zone==='hall'&&l.anchor==='hall-turn'),'corridors have distinct fixture locations');
+  const halls=lights.filter(l=>l.zone==='hall');
+  assert.ok(halls.length>=3&&halls.every(l=>l.anchor==='hall-regular'||l.anchor==='hall-terminal'),
+    'corridor lamps are placed at regular intervals and at short passage ends');
+  const tileCenters=new Set(f.corridors.map(c=>(c.x+c.w/2)+':'+(c.y+c.h/2)));
+  for(const light of halls){
+    assert.ok(tileCenters.has(light.x+':'+light.y),'every corridor light is on the passage centerline');
+    assert.ok(light.rx>0&&light.ry>0,'each lamp has a bounded pool of light');
+    assert.ok(light.rx>light.ry?light.ry<=180*.45:light.rx<=180*.45,
+      'the short light axis stays narrower than the passage');
+  }
   assert.ok(lights.length>=14&&lights.length<=26,'limited fixtures for performance and dark space');
   const spots=f.corridors.concat(f.rooms.flatMap(r=>r.tiles));
   const samples=spots.map(t=>({x:t.x+t.w/2,y:t.y+t.h/2}));
@@ -361,6 +368,35 @@ test('room and corridor lights are placed at meaningful fixtures with shadow poc
  }
  assert.ok(darkTotal/spotTotal>.18&&darkTotal/spotTotal<.65,
    'meaningful shadow cover remains without blacking out the whole facility');
+});
+test('room lights are centered on table surfaces or room tiles and respect room limits',()=>{
+ for(let seed=1;seed<=150;seed++)for(let n=1;n<=2;n++){
+  const f=indoorGenerateFloor(n,random(seed*97+n));
+  const rectInside=(p,r)=>p.x>=r.x&&p.x<=r.x+r.w&&p.y>=r.y&&p.y<=r.y+r.h;
+  for(const lamp of f.lightFixtures.filter(l=>l.zone==='room')){
+   const room=f.rooms[lamp.roomId];
+   assert.ok(room&&room.tiles.some(t=>rectInside(lamp,t)),
+     'room light must be inside its own room');
+   assert.ok(lamp.rx<=180*.45&&lamp.ry<=180*.45,
+     'room light pool is smaller than a room tile');
+   if(lamp.anchor==='table'){
+    const tables=f.furniture.filter(o=>o.kind==='table'||o.kind==='desk'||o.kind==='postTable');
+    assert.ok(tables.some(o=>Math.abs(lamp.x-(o.x+o.w/2))<.01&&
+      Math.abs(lamp.y-(o.y+o.h/2))<.01),'table light is centered over furniture');
+   }
+  }
+ }
+});
+test('lighting draws only inside matching floor regions with no overflowing mask',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
+ assert.ok(src.includes('const clipTiles=item.zone===\'room\'?rooms[item.roomId].tiles'),
+   'room lights clip to their exact floor plan');
+ assert.ok(src.includes('item.zone===\'lobby\'?[lobbyArea]:corridors'),
+   'hall lights clip to corridor tiles');
+ assert.ok(src.includes('q.clip();'),'lighting is clipped before drawing');
+ assert.ok(src.includes('ry:item.ry*INDOOR_SCALE_Y'),'light sizes follow floor scale');
+ assert.ok(src.includes('function indoorLightingStamp()'),'radial stamp is reused');
 });
 test('ceiling lighting transitions smoothly rather than switching abruptly',()=>{
  const fs=require('node:fs'),path=require('node:path');

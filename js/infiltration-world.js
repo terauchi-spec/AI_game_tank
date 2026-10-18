@@ -449,32 +449,57 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
   if(!explosiveObjects.some(o=>o.zone==='room'))reserve('room','barrel');
   if(!explosiveObjects.some(o=>o.kind==='crate'))reserve('room','crate')||reserve('hallway','crate');
   if(!explosiveObjects.some(o=>o.kind==='barrel'))reserve('room','barrel')||reserve('hallway','barrel');
-  // Lights follow real room use: work tables, room centers and corridor junctions.
-  // Do not illuminate every tile; leave edge and corridor pockets for stealth.
+  // Ceiling lights are centered on real room/table locations, never in the walls.
+  // All geometry and light strengths below are confined to the infiltration stage.
   const lightFixtures=[];
-  const addLight=(pt,zone,anchor)=>{
-    if(lightFixtures.some(q=>distance(q,pt)<SIZE*.38))return;
-    lightFixtures.push({x:pt.x,y:pt.y,zone,anchor});
+  const addLight=(pt,zone,anchor,rx,ry,roomId=null)=>{
+    if(lightFixtures.some(q=>distance(q,pt)<SIZE*.44&&q.zone===zone))return false;
+    lightFixtures.push({x:pt.x,y:pt.y,zone,anchor,rx,ry,roomId});return true;
   };
-  // The broad entrance has one central ceiling fixture, not four grid lamps.
-  addLight({x:X0+(lobbyLeft+1)*SIZE,y:Y0+6*SIZE},'lobby','lobby-center');
-  const hallSet=new Set(halls),hallCandidates=halls.filter(i=>!lobbyIds.includes(i)&&i!==index(2,0)).map(i=>{
-    const pt=center(i),{c,r}=coord(i),links=neighbors(i).filter(n=>hallSet.has(n));
-    const turn=links.length===2&&
-      Math.abs(coord(links[0]).c-coord(links[1]).c)===1&&
-      Math.abs(coord(links[0]).r-coord(links[1]).r)===1;
-    const cargo=furniture.some(o=>o.zone==='hallway'&&o.x>=pt.x-SIZE/2&&
-      o.x<pt.x+SIZE/2&&o.y>=pt.y-SIZE/2&&o.y<pt.y+SIZE/2);
-    return{pt,anchor:links.length>=3?'hall-junction':turn?'hall-turn':'hall-run',
-      priority:(links.length>=3?3:turn?2:1)+(cargo?.7:0)+rng()*.8};
-  }).sort((a,b)=>b.priority-a.priority);
-  const hallQuota=Math.max(4,Math.min(7,Math.round(hallCandidates.length/2.5)));
-  for(const minGap of [SIZE*1.4,SIZE*.85]){
-    for(const c of hallCandidates){
-      if(lightFixtures.filter(q=>q.zone==='hall').length>=hallQuota)break;
-      if(lightFixtures.some(q=>distance(q,c.pt)<minGap))continue;
-      addLight(c.pt,'hall',c.anchor);
+  const roomLight=(point,anchor,room,table=null)=>{
+    // Smaller pools around desks/tables; otherwise each lamp lights its room center.
+    const rx=table?Math.min(SIZE*.43,table.w/2+34):SIZE*.42;
+    const ry=table?Math.min(SIZE*.43,table.h/2+38):SIZE*.42;
+    addLight(point,'room',anchor,rx,ry,room.id);
+  };
+  // Broad lobby is deliberately a separate light region.
+  addLight({x:X0+(lobbyLeft+1)*SIZE,y:Y0+6*SIZE},
+    'lobby','lobby-center',SIZE*.45,SIZE*.45);
+  // Straight corridor runs receive lamps exactly every two blocks, on the centerline.
+  // Vertical/horizontal beam shapes illuminate along the passage, not through its sides.
+  const corridorCells=new Set(halls.filter(i=>!lobbyIds.includes(i)&&i!==index(2,0)));
+  const corridorRuns=[];
+  for(const axis of ['vertical','horizontal']){
+    for(const cell of corridorCells){
+      const {c,r}=coord(cell),prev=axis==='vertical'?(r>0?index(c,r-1):-1):(c>0?index(c-1,r):-1);
+      if(corridorCells.has(prev))continue;
+      const run=[];let cc=c,rr=r;
+      while(cc<COLS&&rr<ROWS&&corridorCells.has(index(cc,rr))){
+        run.push(index(cc,rr));if(axis==='vertical')rr++;else cc++;
+      }
+      if(run.length>=2)corridorRuns.push({axis,run});
     }
+  }
+  // Runs of equal length use the same phase to keep the lights evenly spaced.
+  for(const {axis,run} of corridorRuns){
+    const start=run.length>=3?1:0;
+    for(let j=start;j<run.length;j+=2){
+      const pt=center(run[j]),vertical=axis==='vertical';
+      addLight(pt,'hall','hall-regular',
+        SIZE*(vertical?.41:.88),SIZE*(vertical?.88:.41));
+    }
+  }
+  // One-block branches and short corridor terminals still get a centered ceiling light.
+  for(const cell of corridorCells){
+    const pt=center(cell),near=lightFixtures.some(l=>l.zone==='hall'&&distance(l,pt)<SIZE*1.3);
+    if(near)continue;
+    const {c,r}=coord(cell),up=r>0&&corridorCells.has(index(c,r-1)),
+      down=r<ROWS-1&&corridorCells.has(index(c,r+1)),
+      left=c>0&&corridorCells.has(index(c-1,r)),
+      right=c<COLS-1&&corridorCells.has(index(c+1,r));
+    const vertical=up||down;
+    addLight(pt,'hall','hall-terminal',
+      SIZE*(vertical?.41:.85),SIZE*(vertical?.85:.41));
   }
   for(const room of rooms){
     const centers=room.tiles.map(t=>({x:t.x+SIZE/2,y:t.y+SIZE/2}));
@@ -486,18 +511,18 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
       roomFurniture.filter(o=>o.kind==='table'||o.kind==='desk')
         .sort((a,b)=>distance({x:a.x+a.w/2,y:a.y+a.h/2},mid)-
           distance({x:b.x+b.w/2,y:b.y+b.h/2},mid))[0];
+    // A table fixture stays immediately above the furniture; otherwise closest tile to the center.
     const primary=table?{x:table.x+table.w/2,y:table.y+table.h/2}:
       centers.slice().sort((a,b)=>distance(a,mid)-distance(b,mid))[0];
-    addLight(primary,'room',table?'table':'room-center');
-    // Large or winding rooms receive another ceiling light over a distinct tile.
-    const target=room.size>=5?3:room.size>=3?2:1;
+    roomLight(primary,table?'table':'room-center',room,table);
+    const total=room.size>=5?3:room.size>=3?2:1;
     const installed=[primary];
-    while(installed.length<target){
+    while(installed.length<total){
       const p=centers.filter(pt=>installed.every(q=>distance(pt,q)>=SIZE*.7))
         .sort((a,b)=>Math.min(...installed.map(q=>distance(b,q)))-
           Math.min(...installed.map(q=>distance(a,q))))[0];
       if(!p)break;
-      addLight(p,'room','room-wing');installed.push(p);
+      roomLight(p,'room-wing',room);installed.push(p);
     }
   }
   // Select only rooms with a genuine walkable document position.
@@ -600,13 +625,19 @@ let indoorShadeCanvas=null,indoorShadeCtx=null,indoorLightStamp=null;
 const INDOOR_LIGHT_RADIUS=185;
 function indoorLightLevel(x,y){
   if(!indoorWorld)return 1;
-  let near=Infinity;
+  let near=Infinity,withinFloor=false;
   for(const f of indoorWorld.floors){
     if(y<f.footprint.y-80||y>f.footprint.y+f.footprint.h+80)continue;
-    for(const lamp of f.lightFixtures)near=Math.min(near,Math.hypot(lamp.x-x,lamp.y-y));
+    withinFloor=true;
+    for(const lamp of f.lightFixtures){
+      const rx=lamp.rx||INDOOR_LIGHT_RADIUS,ry=lamp.ry||INDOOR_LIGHT_RADIUS;
+      if(Math.abs(x-lamp.x)>=rx||Math.abs(y-lamp.y)>=ry)continue;
+      if(lamp.clipTiles&&!lamp.clipTiles.some(t=>x>=t.x&&x<=t.x+t.w&&y>=t.y&&y<=t.y+t.h))continue;
+      near=Math.min(near,Math.hypot((x-lamp.x)/rx,(y-lamp.y)/ry));
+    }
   }
-  if(near===Infinity)return 1;
-  const t=Math.max(0,1-near/INDOOR_LIGHT_RADIUS);
+  if(near===Infinity)return withinFloor?.17:1;
+  const t=Math.max(0,1-near);
   return .17+.80*t*t*(3-2*t);
 }
 function indoorLightingStamp(){
@@ -636,9 +667,17 @@ function drawInfiltrationLighting(cx,cy){
   for(const f of indoorWorld.floors){
     if(f.footprint.y>cy+H+r||f.footprint.y+f.footprint.h<cy-r)continue;
     for(const lamp of f.lightFixtures){
-      const x=lamp.x-cx,y=lamp.y-cy;
-      if(x<-r||x>W+r||y<-r||y>H+r)continue;
-      q.drawImage(stamp,x-r,y-r);
+      const x=lamp.x-cx,y=lamp.y-cy,rx=lamp.rx||r,ry=lamp.ry||r;
+      if(x<-rx||x>W+rx||y<-ry||y>H+ry)continue;
+      q.save();q.beginPath();
+      for(const tile of lamp.clipTiles){
+        if(tile.x+tile.w<cx-rx||tile.x>cx+W+rx||
+          tile.y+tile.h<cy-ry||tile.y>cy+H+ry)continue;
+        q.rect(tile.x-cx,tile.y-cy,tile.w,tile.h);
+      }
+      q.clip();
+      q.drawImage(stamp,x-rx,y-ry,rx*2,ry*2);
+      q.restore();
     }
   }
   q.globalCompositeOperation='source-over';
@@ -707,7 +746,14 @@ function setupInfiltrationWorld(){
       objects.push({...q,kind:item.kind==='shellPallet'?'shellPallet':item.kind,
         indoorExplosive:true,indoorGroup:item.group,mgHits:0});
     }
-    const lightFixtures=raw.lightFixtures.map(p=>({...to(p),zone:p.zone}));
+    const corridors=raw.corridors.map(tile=>indoorRect(tile,off));
+    const lobbyArea=indoorRect(raw.lobbyArea,off);
+    const lightFixtures=raw.lightFixtures.map(item=>{
+      const clipTiles=item.zone==='room'?rooms[item.roomId].tiles:
+        item.zone==='lobby'?[lobbyArea]:corridors;
+      return{...to(item),zone:item.zone,anchor:item.anchor,
+        rx:item.rx*INDOOR_SCALE_X,ry:item.ry*INDOOR_SCALE_Y,clipTiles};
+    });
     const guards=[];
     for(const h of raw.guards){
       const pos=to(h),path=h.waypoints.map(to);
@@ -740,7 +786,7 @@ function setupInfiltrationWorld(){
       covers.push(door.cover);return door;
     });
     indoorWorld.floors.push({number:n,offset:off,pattern:raw.pattern,
-      corridors:raw.corridors.map(tile=>indoorRect(tile,off)),lobbyArea:indoorRect(raw.lobbyArea,off),rooms,stair,
+      corridors,lobbyArea,rooms,stair,
       entrance,exit:entrance,emergency,
       footprint:indoorRect(raw.footprint,off),
       doors,windows:raw.windows.map(openingPoint),guards,postGuards,
