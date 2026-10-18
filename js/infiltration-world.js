@@ -867,7 +867,8 @@ function indoorStartGuardPursuit(h){
  if(!h||!h.indoorGuard||!p)return;
  const spot={x:p.x,y:p.y},duration=5+R()*5;
  h.indoorAlert={phase:'found',duration,remaining:duration,trail:[spot],lastSeen:spot,
-  searchLeft:0,scanT:0,route:null,routeKey:'',waypoint:null,stuck:0,blockedT:0,sightGrace:0};
+  searchLeft:0,scanT:0,route:null,routeKey:'',waypoint:null,stuck:0,blockedT:0,
+  sightGrace:0,sightCheckT:0,visible:false};
  h.lost=duration;h._detectCache=null;h._nextDetectAt=0;
 }
 function indoorGuardSeesPlayer(h){
@@ -895,7 +896,9 @@ function indoorMoveGuardTo(h,goal,dt,sp){
  if(a.route.length>1){
   const current=nav.centers[from],next=nav.centers[a.route[1]];
   // When a door is on a wall boundary, its midpoint is the safe crossing point.
-  const doorway={x:(current.x+next.x)/2,y:(current.y+next.y)/2};
+  // Aim BEYOND the door threshold: targeting the wall boundary itself can stall.
+  const doorway={x:current.x+(next.x-current.x)*.64,
+    y:current.y+(next.y-current.y)*.64};
   if(!a.waypoint||a.waypoint.from!==from||a.waypoint.to!==a.route[1])
    a.waypoint={...doorway,from,to:a.route[1]};
   dest=a.waypoint;
@@ -931,7 +934,13 @@ function updateInfiltrationGuardAI(h,dt){
  if(state.phase==='found'&&(!h.st||h.target!=='p')){
   h.indoorAlert=null;return false; // Stun and forced reset cancel the dedicated chase.
  }
- const visible=indoorGuardSeesPlayer(h);
+ // Visibility rays are expensive on mobile; sample at 120ms intervals per guard.
+ state.sightCheckT=(state.sightCheckT||0)-dt;
+ if(state.sightCheckT<=0){
+  state.sightCheckT=.12+((h.indoorFloor||1)%3)*.01;
+  state.visible=indoorGuardSeesPlayer(h);
+ }
+ const visible=!!state.visible;
  if(visible)state.sightGrace=.55;
  else state.sightGrace=Math.max(0,(state.sightGrace||0)-dt);
  const seen=visible||(state.sightGrace>0);
@@ -960,7 +969,7 @@ function updateInfiltrationGuardAI(h,dt){
  if(state.remaining<=0){
   if(visible){state.duration=5+R()*5;state.remaining=state.duration;}
   else{
-   state.phase='search';state.searchLeft=2.5+R()*1.5;state.scanT=0;
+   state.phase='search';state.searchLeft=2.5+R()*1.5;state.scanT=0;state.sightCheckT=0;
    h.st=0;h.target=null;h.sus=state.searchLeft;h.susMax=4;
    h.foundPause=0;h.burstLeft=0;h.lost=0;return true;
   }

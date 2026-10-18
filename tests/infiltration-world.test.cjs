@@ -613,6 +613,15 @@ test('infiltration pursuit follows stable door midpoints and keeps short sight l
  assert.ok(src.includes("if(visible){state.duration=5+R()*5"),'fresh sight renews the timed alert');
  assert.ok(src.includes("if(visible){h.st=1;h.target='p';h.sus=0;indoorStartGuardPursuit(h)"),'reacquisition transitions to found');
 });
+test('indoor navigation crosses beyond door boundaries and throttles vision checks',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
+ assert.ok(src.includes('(next.x-current.x)*.64'),'door waypoint is beyond the wall boundary');
+ assert.ok(src.includes('(next.y-current.y)*.64'),'door target advances into the next room');
+ assert.ok(src.includes('state.sightCheckT=.12+'),'vision rays are throttled');
+ assert.ok(src.includes('state.sightCheckT=0;'),'search transition checks vision immediately');
+ assert.ok(src.includes('if(visible)state.sightGrace=.55'),'brief visibility loss remains tolerated');
+});
 test('two gun hits instantly detonate only the new shell-pallet kind',()=>{
  const fs=require('node:fs'),path=require('node:path');
  const src=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
