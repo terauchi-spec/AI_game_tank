@@ -799,6 +799,7 @@ function setupInfiltrationWorld(){
         return out;
       })
     };
+    navigation.grid=indoorMakeGuardGrid(raw,off);
     const guards=[];
     for(const h of raw.guards){
       const pos=to(h),path=h.waypoints.map(to);
@@ -853,6 +854,89 @@ function setupInfiltrationMission(){
     current:null,alarm:0};
 }
 
+
+function indoorMakeGuardGrid(raw,off){
+ // Immutable room/wall/prop occupancy, built once per floor. Dynamic doors are open
+ // to planning because a nearby guard opens them; collision still handles actual doors.
+ const step=24,origin=indoorAt(70,80,off),cols=Math.ceil(900/step),rows=Math.ceil(1260*INDOOR_SCALE_Y/step);
+ const solid=new Uint8Array(cols*rows),rects=[...raw.walls,...raw.furniture,...raw.explosiveObjects]
+   .map(o=>indoorRect(o,off));
+ const margin=8;
+ for(const rect of rects){
+  const minX=Math.max(0,Math.ceil((rect.x-margin-origin.x)/step-.5));
+  const maxX=Math.min(cols-1,Math.floor((rect.x+rect.w+margin-origin.x)/step-.5));
+  const minY=Math.max(0,Math.ceil((rect.y-margin-origin.y)/step-.5));
+  const maxY=Math.min(rows-1,Math.floor((rect.y+rect.h+margin-origin.y)/step-.5));
+  for(let y=minY;y<=maxY;y++)for(let x=minX;x<=maxX;x++)solid[y*cols+x]=1;
+ }
+ return{x:origin.x,y:origin.y,step,cols,rows,solid,
+   parents:new Int32Array(cols*rows),seen:new Uint16Array(cols*rows),
+   queue:new Int32Array(cols*rows),epoch:0};
+}
+function indoorGridPoint(grid,p){
+ const x=Math.floor((p.x-grid.x)/grid.step),y=Math.floor((p.y-grid.y)/grid.step);
+ return x>=0&&x<grid.cols&&y>=0&&y<grid.rows?y*grid.cols+x:-1;
+}
+function indoorGridFreeNearest(grid,id){
+ if(id<0)return-1;
+ if(!grid.solid[id])return id;
+ const x=id%grid.cols,y=(id/grid.cols)|0;
+ for(let r=1;r<=4;r++){
+  let candidate=-1,best=Infinity;
+  for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){
+   if(Math.max(Math.abs(dx),Math.abs(dy))!==r)continue;
+   const xx=x+dx,yy=y+dy;if(xx<0||xx>=grid.cols||yy<0||yy>=grid.rows)continue;
+   const n=yy*grid.cols+xx;
+   if(!grid.solid[n]&&dx*dx+dy*dy<best){best=dx*dx+dy*dy;candidate=n;}
+  }
+  if(candidate>=0)return candidate;
+ }
+ return-1;
+}
+function indoorGridDetour(nav,start,goal,maxVisits=850){
+ const g=nav?.grid;if(!g)return null;
+ const source=indoorGridFreeNearest(g,indoorGridPoint(g,start));
+ const dest=indoorGridFreeNearest(g,indoorGridPoint(g,goal));
+ if(source<0||dest<0)return null;
+ if(source===dest)return [{x:goal.x,y:goal.y}];
+ g.epoch=(g.epoch+1)&65535;
+ if(g.epoch===0){g.seen.fill(0);g.epoch=1;}
+ const mark=g.epoch,visited=g.seen,parent=g.parents,queue=g.queue;
+ let head=0,tail=1,found=false,closest=source,best=Infinity;
+ queue[0]=source;visited[source]=mark;parent[source]=-1;
+ for(let attempts=0;head<tail&&attempts<maxVisits;attempts++){
+  const u=queue[head++],x=u%g.cols,y=(u/g.cols)|0,
+    dx=(dest%g.cols)-x,dy=((dest/g.cols)|0)-y,dist=dx*dx+dy*dy;
+  if(dist<best){best=dist;closest=u;}
+  if(u===dest){found=true;closest=u;break;}
+  // Avoid allocating neighbor arrays inside the search hot loop.
+  for(let k=0;k<4;k++){
+   if((k===0&&y===0)||(k===1&&y===g.rows-1)||
+      (k===2&&x===0)||(k===3&&x===g.cols-1))continue;
+   const v=u+(k===0?-g.cols:k===1?g.cols:k===2?-1:1);
+   if(g.solid[v]||visited[v]===mark)continue;
+   visited[v]=mark;parent[v]=u;queue[tail++]=v;
+  }
+ }
+ if(closest===source)return null;
+ const cells=[];
+ for(let id=closest;id!==source&&id!==-1;id=parent[id])cells.push(id);
+ cells.reverse();
+ // Avoid hundreds of micro-targets. Keep corners and sample straight lines.
+ const points=[];
+ for(let i=0;i<cells.length;i++){
+  const prev=i===0?source:cells[i-1],next=cells[i+1],
+    before=cells[i]-prev,after=next===undefined?0:next-cells[i];
+  if(i===cells.length-1||before!==after||(i%3===2)){
+   const id=cells[i];
+   points.push({x:g.x+((id%g.cols)+.5)*g.step,
+     y:g.y+(((id/g.cols)|0)+.5)*g.step});
+  }
+ }
+ if(found&&dest===indoorGridPoint(g,goal))points.push({x:goal.x,y:goal.y});
+ return points.slice(0,30);
+}
+
 const INDOOR_TRAIL_LIMIT=48;
 function indoorGuardCell(nav,q){
  const c=Math.floor((q.x-nav.origin.x)/nav.stepX),r=Math.floor((q.y-nav.origin.y)/nav.stepY);
@@ -873,6 +957,7 @@ function indoorStartGuardPursuit(h){
  const spot={x:p.x,y:p.y},duration=5+R()*5;
  h.indoorAlert={phase:'found',duration,remaining:duration,trail:[spot],lastSeen:spot,
   searchLeft:0,scanT:0,route:null,routeKey:'',waypoint:null,stuck:0,blockedT:0,
+  replanT:0,detour:null,detourKey:'',lastDir:null,estimate:null,searchTravelLeft:0,
   sightGrace:0,sightCheckT:0,visible:false};
  h.lost=duration;h._detectCache=null;h._nextDetectAt=0;
 }
@@ -889,48 +974,72 @@ function indoorGuardSeesPlayer(h){
        (a<=DETECT_OUTER_HALF*1.2&&d<range*DETECT_OUTER_SCALE)))return false;
  return cachedLos(h,p);
 }
+
 function indoorMoveGuardTo(h,goal,dt,sp){
  const nav=indoorWorld?.floors[h.indoorFloor-1]?.navigation,a=h.indoorAlert;
  if(!nav||!goal||!a)return false;
  const from=indoorGuardCell(nav,h),to=indoorGuardCell(nav,goal);
  if(from<0||to<0)return false;
- // Keep the next doorway waypoint until it is reached; no per-frame left/right replanning.
+ // Hierarchical room graph: doors are real edges, never shortcuts through walls.
  const key=from+':'+to;
  if(!a.route||a.routeKey!==key){
-  a.route=indoorGuardCellRoute(nav,from,to);a.routeKey=key;a.waypoint=null;
+  a.route=indoorGuardCellRoute(nav,from,to);a.routeKey=key;
+  a.waypoint=null;a.detour=null;a.detourKey='';
  }
  if(!a.route)return false;
- let dest;
- if(a.route.length>1){
-  const current=nav.centers[from],next=nav.centers[a.route[1]];
-  // When a door is on a wall boundary, its midpoint is the safe crossing point.
-  // Aim BEYOND the door threshold: targeting the wall boundary itself can stall.
-  const doorway={x:current.x+(next.x-current.x)*.64,
-    y:current.y+(next.y-current.y)*.64};
-  if(!a.waypoint||a.waypoint.from!==from||a.waypoint.to!==a.route[1])
-   a.waypoint={...doorway,from,to:a.route[1]};
-  dest=a.waypoint;
- }else dest=goal;
- const angle=Math.atan2(dest.y-h.y,dest.x-h.x),step=Math.min(sp*dt,D(h,dest));
+ const target=a.route.length>1?nav.centers[a.route[1]]:goal;
+ const routeKey=key+':'+(a.route[1]??from);
+ const doorStep=a.route.length>1;
+ // A waypoint on the far side of a door guarantees it can finish crossing.
+ const desired=doorStep?{
+  x:nav.centers[from].x+(target.x-nav.centers[from].x)*.78,
+  y:nav.centers[from].y+(target.y-nav.centers[from].y)*.78
+ }:target;
+ if(a.detour&&a.detourKey!==routeKey){a.detour=null;}
+ let dest=desired;
+ if(a.detour?.length){
+  while(a.detour.length&&D(h,a.detour[0])<15)a.detour.shift();
+  if(a.detour.length)dest=a.detour[0];else a.detour=null;
+ }
+ const heading=Math.atan2(dest.y-h.y,dest.x-h.x);
+ const step=Math.min(sp*dt,D(h,dest));
  if(step<=0)return true;
- const ox=h.x,oy=h.y;
- mv(h,Math.cos(angle)*step,Math.sin(angle)*step,8);
- const moved=Math.hypot(h.x-ox,h.y-oy);
- if(moved>=step*.15){
-  a.stuck=0;a.blockedT=0;
-  // Turn gradually; retain a stable forward direction for visibility checks.
-  h.face+=Math.max(-dt*4,Math.min(dt*4,angD(angle,h.face)));
+ const oldX=h.x,oldY=h.y;
+ mv(h,Math.cos(heading)*step,Math.sin(heading)*step,8);
+ const moved=Math.hypot(h.x-oldX,h.y-oldY);
+ if(moved>=Math.max(.02,step*.19)){
+  a.stuck=0;
+  h.face+=Math.max(-dt*4.2,Math.min(dt*4.2,angD(heading,h.face)));
  }else{
-  a.stuck+=dt;
-  if(a.stuck>.35){
-   // Limited deterministic detour: no alternating turn direction every frame.
-   const side=(a.detourSide||1),perp=angle+side*Math.PI/2;
-   mv(h,Math.cos(perp)*step,Math.sin(perp)*step,8);
-   a.blockedT+=dt;
-   if(a.blockedT>1.2){a.detourSide=-side;a.blockedT=0;}
+  a.stuck=(a.stuck||0)+dt;
+  a.replanT=Math.max(0,(a.replanT||0)-dt);
+  if(a.stuck>.44&&a.replanT<=0){
+   // Obstacle-aware short path, calculated only on collision and cached.
+   const detour=indoorGridDetour(nav,h,desired,850);
+   a.replanT=.85+R()*.2;a.stuck=0;
+   if(detour?.length){a.detour=detour;a.detourKey=routeKey;}
+   else a.detour=null;
   }
  }
  return true;
+}
+function indoorEstimateEscape(h,state){
+ // The last observed movement gives a short, imperfect prediction (<= 112px).
+ // Once unseen the real player coordinates are NEVER used to make this estimate.
+ const nav=indoorWorld?.floors[h.indoorFloor-1]?.navigation,g=nav?.grid;
+ const q=state.lastSeen,dir=state.lastDir;
+ if(!g||!dir)return {...q};
+ let far={...q};
+ for(let i=1;i<=7;i++){
+  const pt={x:q.x+dir.x*i*16,y:q.y+dir.y*i*16},
+    id=indoorGridPoint(g,pt);
+  if(id<0||g.solid[id])break;
+  // Do not predict the player crossing a wall without a connected door.
+  const a=indoorGuardCell(nav,q),b=indoorGuardCell(nav,pt);
+  if(!indoorGuardCellRoute(nav,a,b))break;
+  far=pt;
+ }
+ return far;
 }
 function updateInfiltrationGuardAI(h,dt){
  if(!h.indoorGuard)return false;
@@ -954,39 +1063,54 @@ function updateInfiltrationGuardAI(h,dt){
  const seen=visible||(state.sightGrace>0);
  if(state.phase==='search'){
   if(visible){h.st=1;h.target='p';h.sus=0;indoorStartGuardPursuit(h);return true;}
-  state.searchLeft=Math.max(0,state.searchLeft-dt);
-  h.sus=Math.max(.01,state.searchLeft);h.susMax=4;
-  if(D(h,state.lastSeen)>24)indoorMoveGuardTo(h,state.lastSeen,dt,48);
-  else{state.scanT+=dt;h.face+=Math.sin(state.scanT*1.5)*dt*.65;}
-  if(state.searchLeft<=0){
-   h.indoorAlert=null;h.st=0;h.target=null;h.sus=0;h.susMax=0;
-   h.susPause=0;h.burstLeft=0;pauseAfterEnemyDetection(h);
+  const inspect=state.estimate||state.lastSeen;
+  const moving=state.searchTravelLeft>0&&D(h,inspect)>32;
+  if(moving){
+   state.searchTravelLeft=Math.max(0,state.searchTravelLeft-dt);
+   // Searching follows the same door-aware path at a slightly slower speed.
+   indoorMoveGuardTo(h,inspect,dt,72);
+   h.sus=Math.max(.01,state.searchLeft);h.susMax=5;
+  }else{
+   state.searchLeft=Math.max(0,state.searchLeft-dt);
+   h.sus=Math.max(.01,state.searchLeft);h.susMax=5;
+   state.scanT+=dt;
+   // Look around deliberately without rapidly spinning or oscillating.
+   h.face+=Math.sin(state.scanT*.9)*dt*.45;
+   if(state.searchLeft<=0){
+    h.indoorAlert=null;h.st=0;h.target=null;h.sus=0;h.susMax=0;
+    h.susPause=0;h.burstLeft=0;pauseAfterEnemyDetection(h);
+   }
   }
   return true;
  }
  // The found state lasts at least a randomized 5–10 seconds, regardless of distance.
  state.remaining=Math.max(0,state.remaining-dt);
  if(visible){
-  const previous=state.trail[state.trail.length-1]||state.lastSeen;
-  if(D(previous,p)>28){
-   state.trail.push({x:p.x,y:p.y});
-   if(state.trail.length>INDOOR_TRAIL_LIMIT)state.trail.shift();
+  state.trail.length=0; // Avoid replaying stale discovery positions.
+  const previous=state.lastSeen;
+  const distanceSeen=D(previous,p);
+  if(distanceSeen>18){
+   state.lastDir={x:(p.x-previous.x)/distanceSeen,y:(p.y-previous.y)/distanceSeen};
   }
   state.lastSeen={x:p.x,y:p.y};
+  state.estimate=null; // Clear predicted escape routes as soon as sight is restored.
+ }else if(!state.estimate){
+  state.estimate=indoorEstimateEscape(h,state);
  }
  if(state.remaining<=0){
   if(seen){state.duration=5+R()*5;state.remaining=state.duration;}
   else{
-   state.phase='search';state.searchLeft=3+R()*2;state.scanT=0;state.sightCheckT=0;
-   h.st=0;h.target=null;h.sus=state.searchLeft;h.susMax=4;
+   // Continue to the last credible trail endpoint BEFORE the search countdown.
+   state.phase='search';state.searchLeft=3+R()*2;state.searchTravelLeft=11;
+   state.scanT=0;state.sightCheckT=0;
+   h.st=0;h.target=null;h.sus=state.searchLeft;h.susMax=5;
    h.foundPause=0;h.burstLeft=0;h.lost=0;return true;
   }
  }
  h.lost=state.remaining;
- // While visible, pursue the player's CURRENT position, not the original discovery point.
- // While hidden, pursue the last actually seen position; never infer an unseen trajectory.
- if(visible)state.trail.length=0;
- const next=visible?{x:p.x,y:p.y}:state.lastSeen;
+ // Direct pursuit when visible; a short inferred continuation after line of sight breaks.
+ // The player can defeat this prediction by doubling back after a corner or a door.
+ const next=visible?{x:p.x,y:p.y}:(state.estimate||state.lastSeen);
  h.cd-=dt;h.ct=(h.ct||0)+dt;
  const pause=(h.modePause||0)>0||(h.foundPause||0)>0||
    (h.sharePause||0)>0||(h.chatResumeT||0)>0;
@@ -1312,4 +1436,4 @@ function drawInfiltrationMission(){
   }
   gm.restore();
 }
-if(typeof module!=='undefined'&&module.exports)module.exports={indoorGenerateFloor,indoorAt,indoorRect,indoorGuardCell,indoorGuardCellRoute};
+if(typeof module!=='undefined'&&module.exports)module.exports={indoorGenerateFloor,indoorAt,indoorRect,indoorGuardCell,indoorGuardCellRoute,indoorMakeGuardGrid,indoorGridDetour,indoorGridPoint};

@@ -553,11 +553,11 @@ test('indoor pursuit holds 5-10 seconds and transitions through investigation to
  let begin;
  const enter=h=>{reacquired++;h.st=1;h.target='p';begin(h);};
  const [start,update]=new Function('p','R','D','indoorGuardSeesPlayer',
-  'indoorMoveGuardTo','pauseAfterEnemyDetection','enterHumanFound','enemyBombPoint',
+  'indoorMoveGuardTo','indoorEstimateEscape','angD','pauseAfterEnemyDetection','enterHumanFound','enemyBombPoint',
   'bombs','fire','performance','INDOOR_TRAIL_LIMIT',
   body+'\nreturn [indoorStartGuardPursuit,updateInfiltrationGuardAI];')(
   avatar,()=>.5,(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),
-  ()=>seen,()=>true,()=>{patrol++;},enter,()=>({x:0,y:0}),
+  ()=>seen,()=>true,(_h,state)=>state.lastSeen,()=>0,()=>{patrol++;},enter,()=>({x:0,y:0}),
   [],()=>{}, {now:()=>0},48);
  begin=start;
  const guard={indoorGuard:true,st:1,target:'p',x:0,y:100,face:0,
@@ -567,6 +567,7 @@ test('indoor pursuit holds 5-10 seconds and transitions through investigation to
  update(guard,7.49);assert.equal(guard.indoorAlert.phase,'found');
  update(guard,.02);assert.equal(guard.indoorAlert.phase,'search');
  assert.ok(!guard.st&&guard.sus>0,'search replaces found state');
+ guard.x=avatar.x;guard.y=avatar.y; // The guard reaches the last sighting before scanning.
  update(guard,4.26);assert.equal(guard.indoorAlert,null);
  assert.equal(guard.sus,0);assert.equal(patrol,1);
  // A search phase reacquires immediately if the player is sighted again.
@@ -588,10 +589,10 @@ test('indoor guards follow current visible player and last seen position if hidd
   piece('function updateInfiltrationGuardAI(h,dt){','function updateInfiltrationDoors(dt){');
  const avatar={x:180,y:110},destinations=[];let visible=true;
  const [begin,update]=new Function('p','R','D','indoorGuardSeesPlayer','indoorMoveGuardTo',
-  'pauseAfterEnemyDetection','enterHumanFound','enemyBombPoint','bombs','fire',
+  'indoorEstimateEscape','angD','pauseAfterEnemyDetection','enterHumanFound','enemyBombPoint','bombs','fire',
   'performance','INDOOR_TRAIL_LIMIT',code+'\nreturn [indoorStartGuardPursuit,updateInfiltrationGuardAI];')(
   avatar,()=>.6,(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),()=>visible,
-  (h,p)=>{destinations.push({...p});return true;},()=>{},()=>{},()=>({x:0,y:0}),
+  (h,p)=>{destinations.push({...p});return true;},(_h,state)=>state.lastSeen,()=>0,()=>{},()=>{},()=>({x:0,y:0}),
   [],()=>{}, {now:()=>0},48);
  const h={indoorGuard:true,x:0,y:110,st:1,target:'p',cd:100,bu:true};
  begin(h);avatar.x=240;update(h,.1);
@@ -605,9 +606,9 @@ test('indoor guards follow current visible player and last seen position if hidd
 });
 test('infiltration pursuit follows stable door midpoints and keeps short sight loss',()=>{
  const fs=require('node:fs'),path=require('node:path'),src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
- assert.ok(src.includes("a.waypoint={...doorway,from,to:a.route[1]}"),'door midpoint locked as waypoint');
- assert.ok(src.includes("a.stuck>.35"),'avoid reacting to a single blocked movement frame');
- assert.ok(src.includes("a.blockedT>1.2"),'do not flip detour direction each frame');
+ assert.ok(src.includes("(target.x-nav.centers[from].x)*.78"),'door waypoint crosses to next cell');
+ assert.ok(src.includes("a.stuck>.44"),'avoid reacting to a single blocked movement frame');
+ assert.ok(src.includes("indoorGridDetour(nav,h,desired,850)"),'use an obstacle-aware cached detour');
  assert.ok(src.includes("state.sightGrace=1.35"),'transient loss has grace period');
  assert.ok(src.includes("if(seen){state.duration=5+R()*5"),'fresh sight renews the timed alert');
  assert.ok(src.includes("if(visible){h.st=1;h.target='p';h.sus=0;indoorStartGuardPursuit(h)"),'reacquisition transitions to found');
@@ -615,8 +616,8 @@ test('infiltration pursuit follows stable door midpoints and keeps short sight l
 test('indoor navigation crosses beyond door boundaries and throttles vision checks',()=>{
  const fs=require('node:fs'),path=require('node:path');
  const src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
- assert.ok(src.includes('(next.x-current.x)*.64'),'door waypoint is beyond the wall boundary');
- assert.ok(src.includes('(next.y-current.y)*.64'),'door target advances into the next room');
+ assert.ok(src.includes('(target.x-nav.centers[from].x)*.78'),'door waypoint crosses the doorway');
+ assert.ok(src.includes('(target.y-nav.centers[from].y)*.78'),'door waypoint advances beyond the door');
  assert.ok(src.includes('state.sightCheckT=.12+'),'vision rays are throttled');
  assert.ok(src.includes('state.sightCheckT=0;'),'search transition checks vision immediately');
  assert.ok(src.includes('if(visible)state.sightGrace=1.35'),'brief visibility loss remains tolerated');
@@ -634,6 +635,71 @@ test('entrance has three soft ceiling pools and indoor lighting retains a bright
   assert.ok(lobby.some(l=>l.anchor==='lobby-center'));
   assert.equal(lobby.filter(l=>l.anchor==='lobby-side').length,2);
  }
+});
+test('guard detours are bounded and avoid fixed walls, furniture, and cargo',()=>{
+ const {indoorMakeGuardGrid,indoorGridDetour,indoorAt,indoorGridPoint}=
+  require('../js/infiltration-world.js');
+ let total=0,missing=0;
+ for(let seed=1;seed<=55;seed++)for(let floorNo=1;floorNo<=2;floorNo++){
+  const f=indoorGenerateFloor(floorNo,random(seed*73+floorNo)),grid=indoorMakeGuardGrid(f,9300);
+  const owner=new Map(f.rooms.flatMap(r=>r.cellIds.map(i=>[i,r.id])));
+  for(const tile of f.corridors){
+   const c=Math.round((tile.x-70)/180),r=Math.round((tile.y-80)/180);
+   owner.set(r*5+c,-1);
+  }
+  const doors=new Set(f.doors.filter(d=>d.cells)
+   .map(d=>[Math.min(...d.cells),Math.max(...d.cells)].join(':')));
+  assert.ok(grid.solid.length<=4000,'grid memory is bounded');
+  for(const a of owner.keys())for(const [dx,dy] of [[1,0],[0,1]]){
+   const c=a%5+dx,r=Math.floor(a/5)+dy;if(c>=5||r>=7)continue;
+   const b=r*5+c;
+   if(!owner.has(b)||owner.get(a)!==owner.get(b)&&!doors.has(a+':'+b))continue;
+   const pa=indoorAt(70+(a%5+.5)*180,80+(Math.floor(a/5)+.5)*180,9300);
+   const pb=indoorAt(70+(b%5+.5)*180,80+(Math.floor(b/5)+.5)*180,9300);
+   const points=indoorGridDetour({grid},pa,pb,850);
+   total++;if(!points){missing++;continue;}
+   assert.ok(points.length<=30,'bounded waypoint allocation');
+   for(const point of points){
+    const id=indoorGridPoint(grid,point);
+    assert.ok(id>=0&&!grid.solid[id],'all waypoints must avoid static objects');
+   }
+  }
+ }
+ assert.ok(missing/total<.015,'98.5%+ of adjacent room paths have a safe detour');
+});
+test('indoor guards search the last credible direction without tracking unseen position',()=>{
+ const fs=require('node:fs'),path=require('node:path'),
+  src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
+ assert.ok(src.includes('state.estimate=indoorEstimateEscape(h,state)'));
+ assert.ok(src.includes('for(let i=1;i<=7;i++)'),'prediction ends after 112 pixels');
+ assert.ok(src.includes('if(id<0||g.solid[id])break'),'prediction stops at solid walls');
+ assert.ok(src.includes('const next=visible?{x:p.x,y:p.y}:(state.estimate||state.lastSeen)'));
+ assert.ok(src.includes('state.searchTravelLeft=11'),'finish traveling before searching');
+ assert.ok(src.includes('state.searchLeft=Math.max(0,state.searchLeft-dt)'),
+  'scanning timer is counted separately from travel');
+ assert.ok(src.includes('a.replanT=.85+R()*.2'),'avoid frame-by-frame pathfinding');
+});
+test('last-seen direction prediction stops at walls and is capped',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
+ const start=src.indexOf('function indoorEstimateEscape(h,state){');
+ const end=src.indexOf('function updateInfiltrationGuardAI(h,dt){',start);
+ assert.ok(start>=0&&end>start);
+ const {indoorGridPoint,indoorGuardCell,indoorGuardCellRoute}=
+   require('../js/infiltration-world.js');
+ const solid=new Uint8Array(20*10);
+ for(let row=0;row<10;row++)solid[row*20+10]=1; // A solid obstacle at x=160.
+ const nav={grid:{x:0,y:0,step:16,cols:20,rows:10,solid},
+   origin:{x:0,y:0},stepX:180,stepY:315,
+   neighbors:Array.from({length:35},(_,i)=>[i-1,i+1].filter(j=>j>=0&&j<35))};
+ const f=new Function('indoorWorld','indoorGridPoint','indoorGuardCell',
+   'indoorGuardCellRoute',src.slice(start,end)+'\nreturn indoorEstimateEscape;')(
+    {floors:[{navigation:nav}]},indoorGridPoint,indoorGuardCell,indoorGuardCellRoute);
+ const guard={indoorFloor:1},state={lastSeen:{x:80,y:64},lastDir:{x:1,y:0}};
+ const predicted=f(guard,state);
+ assert.ok(predicted.x>=80&&predicted.x<160,'predicted point must not cross wall');
+ assert.ok(predicted.x-state.lastSeen.x<=112,'prediction never exceeds 112px');
+ assert.equal(predicted.y,64,'prediction respects last visible travel direction');
 });
 test('two gun hits instantly detonate only the new shell-pallet kind',()=>{
  const fs=require('node:fs'),path=require('node:path');
