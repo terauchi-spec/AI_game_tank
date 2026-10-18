@@ -461,9 +461,9 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     // No light may spill into a neighboring room because the renderer clips to room tiles.
     const longRoom=room.size===2,wide=room.w>room.h,tall=room.h>room.w;
     const rx=table?Math.min(SIZE*.43,table.w/2+34):
-      longRoom&&wide?SIZE*.96:SIZE*.69;
+      longRoom&&wide?SIZE*.96:SIZE*.76;
     const ry=table?Math.min(SIZE*.43,table.h/2+38):
-      longRoom&&tall?SIZE*.96:SIZE*.69;
+      longRoom&&tall?SIZE*.96:SIZE*.76;
     // Keep a separate, more focused table light even near the central fixture.
     const near=anchor==='table';
     if(near&&lightFixtures.some(l=>l.zone==='room'&&l.roomId===room.id&&
@@ -476,7 +476,12 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
   };
   // Broad lobby is deliberately a separate light region.
   addLight({x:X0+(lobbyLeft+1)*SIZE,y:Y0+6*SIZE},
-    'lobby','lobby-center',SIZE*.45,SIZE*.45);
+    'lobby','lobby-center',SIZE*.74,SIZE*.74);
+  // Broad, overlapping ceiling pools illuminate the entrance without losing soft corners.
+  addLight({x:X0+(lobbyLeft+.35)*SIZE,y:Y0+6*SIZE},
+    'lobby','lobby-side',SIZE*.59,SIZE*.67);
+  addLight({x:X0+(lobbyLeft+1.65)*SIZE,y:Y0+6*SIZE},
+    'lobby','lobby-side',SIZE*.59,SIZE*.67);
   // Straight corridor runs receive lamps exactly every two blocks, on the centerline.
   // Vertical/horizontal beam shapes illuminate along the passage, not through its sides.
   const corridorCells=new Set(halls.filter(i=>!lobbyIds.includes(i)&&i!==index(2,0)));
@@ -654,9 +659,9 @@ function indoorLightLevel(x,y){
       near=Math.min(near,Math.hypot((x-lamp.x)/rx,(y-lamp.y)/ry));
     }
   }
-  if(near===Infinity)return withinFloor?.17:1;
+  if(near===Infinity)return withinFloor?.24:1;
   const t=Math.max(0,1-near);
-  return .17+.80*t*t*(3-2*t);
+  return .24+.72*t*t*(3-2*t);
 }
 function indoorLightingStamp(){
   // Cache a single translucent beam texture; avoid building many gradients per frame.
@@ -680,7 +685,7 @@ function drawInfiltrationLighting(cx,cy){
   const mask=indoorShadeCanvas,q=indoorShadeCtx,r=INDOOR_LIGHT_RADIUS,stamp=indoorLightingStamp();
   if(mask.width!==Math.ceil(W)||mask.height!==Math.ceil(H)){mask.width=Math.ceil(W);mask.height=Math.ceil(H);}
   q.setTransform(1,0,0,1,0,0);q.clearRect(0,0,W,H);
-  q.fillStyle='rgba(7,13,15,.72)';q.fillRect(0,0,W,H);
+  q.fillStyle='rgba(7,13,15,.58)';q.fillRect(0,0,W,H);
   q.globalCompositeOperation='destination-out';
   for(const f of indoorWorld.floors){
     if(f.footprint.y>cy+H+r||f.footprint.y+f.footprint.h<cy-r)continue;
@@ -876,7 +881,10 @@ function indoorGuardSeesPlayer(h){
    (weather==='rain'&&inWaterAt(p.x,p.y,0))||
    h.indoorFloor!==indoorWorld?.currentFloor+1)return false;
  const d=D(h,p),a=Math.abs(angD(Math.atan2(p.y-h.y,p.x-h.x),h.face));
- const range=detectRange('p')*1.2*(.36+.64*indoorLightLevel(p.x,p.y));
+ const illumination=indoorLightLevel(p.x,p.y);
+ const tracking=h.indoorAlert?.phase==='found';
+ const visibilityFactor=tracking?Math.max(.78,.5+.5*illumination):(.36+.64*illumination);
+ const range=detectRange('p')*1.2*visibilityFactor;
  if(!((a<=DETECT_CENTER_HALF*1.2&&d<range)||
        (a<=DETECT_OUTER_HALF*1.2&&d<range*DETECT_OUTER_SCALE)))return false;
  return cachedLos(h,p);
@@ -941,7 +949,7 @@ function updateInfiltrationGuardAI(h,dt){
   state.visible=indoorGuardSeesPlayer(h);
  }
  const visible=!!state.visible;
- if(visible)state.sightGrace=.55;
+ if(visible)state.sightGrace=1.35;
  else state.sightGrace=Math.max(0,(state.sightGrace||0)-dt);
  const seen=visible||(state.sightGrace>0);
  if(state.phase==='search'){
@@ -967,9 +975,9 @@ function updateInfiltrationGuardAI(h,dt){
   state.lastSeen={x:p.x,y:p.y};
  }
  if(state.remaining<=0){
-  if(visible){state.duration=5+R()*5;state.remaining=state.duration;}
+  if(seen){state.duration=5+R()*5;state.remaining=state.duration;}
   else{
-   state.phase='search';state.searchLeft=2.5+R()*1.5;state.scanT=0;state.sightCheckT=0;
+   state.phase='search';state.searchLeft=3+R()*2;state.scanT=0;state.sightCheckT=0;
    h.st=0;h.target=null;h.sus=state.searchLeft;h.susMax=4;
    h.foundPause=0;h.burstLeft=0;h.lost=0;return true;
   }

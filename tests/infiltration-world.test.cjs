@@ -349,7 +349,7 @@ test('room and corridor lights are placed at meaningful fixtures with shadow poc
   assert.ok(lights.some(l=>l.zone==='room'&&l.anchor==='table'&&
     Math.abs(l.x-table.x-table.w/2)<.01&&Math.abs(l.y-table.y-table.h/2)<.01),
     'barracks lamp must hang over the central table');
-  assert.equal(lights.filter(l=>l.zone==='lobby').length,1,'entrance has one central light');
+  assert.equal(lights.filter(l=>l.zone==='lobby').length,3,'entrance has three ceiling lights');
   const halls=lights.filter(l=>l.zone==='hall');
   assert.ok(halls.length>=3&&halls.every(l=>l.anchor==='hall-regular'||l.anchor==='hall-terminal'),
     'corridor lamps are placed at regular intervals and at short passage ends');
@@ -360,7 +360,7 @@ test('room and corridor lights are placed at meaningful fixtures with shadow poc
     assert.ok(light.rx>light.ry?light.ry<=180*.45:light.rx<=180*.45,
       'the short light axis stays narrower than the passage');
   }
-  assert.ok(lights.length>=20&&lights.length<=32,'added room lighting remains within a bounded fixture budget');
+  assert.ok(lights.length>=22&&lights.length<=35,'added room lighting remains within a bounded fixture budget');
   const spots=f.corridors.concat(f.rooms.flatMap(r=>r.tiles));
   const samples=spots.map(t=>({x:t.x+t.w/2,y:t.y+t.h/2}));
   const dark=samples.filter(p=>lights.every(l=>Math.hypot(p.x-l.x,p.y-l.y)>185*.72));
@@ -567,7 +567,7 @@ test('indoor pursuit holds 5-10 seconds and transitions through investigation to
  update(guard,7.49);assert.equal(guard.indoorAlert.phase,'found');
  update(guard,.02);assert.equal(guard.indoorAlert.phase,'search');
  assert.ok(!guard.st&&guard.sus>0,'search replaces found state');
- update(guard,3.26);assert.equal(guard.indoorAlert,null);
+ update(guard,4.26);assert.equal(guard.indoorAlert,null);
  assert.equal(guard.sus,0);assert.equal(patrol,1);
  // A search phase reacquires immediately if the player is sighted again.
  guard.st=1;guard.target='p';begin(guard);
@@ -609,8 +609,8 @@ test('infiltration pursuit follows stable door midpoints and keeps short sight l
  assert.ok(src.includes("a.waypoint={...doorway,from,to:a.route[1]}"),'door midpoint locked as waypoint');
  assert.ok(src.includes("a.stuck>.35"),'avoid reacting to a single blocked movement frame');
  assert.ok(src.includes("a.blockedT>1.2"),'do not flip detour direction each frame');
- assert.ok(src.includes("state.sightGrace=.55"),'transient loss has grace period');
- assert.ok(src.includes("if(visible){state.duration=5+R()*5"),'fresh sight renews the timed alert');
+ assert.ok(src.includes("state.sightGrace=1.35"),'transient loss has grace period');
+ assert.ok(src.includes("if(seen){state.duration=5+R()*5"),'fresh sight renews the timed alert');
  assert.ok(src.includes("if(visible){h.st=1;h.target='p';h.sus=0;indoorStartGuardPursuit(h)"),'reacquisition transitions to found');
 });
 test('indoor navigation crosses beyond door boundaries and throttles vision checks',()=>{
@@ -620,7 +620,21 @@ test('indoor navigation crosses beyond door boundaries and throttles vision chec
  assert.ok(src.includes('(next.y-current.y)*.64'),'door target advances into the next room');
  assert.ok(src.includes('state.sightCheckT=.12+'),'vision rays are throttled');
  assert.ok(src.includes('state.sightCheckT=0;'),'search transition checks vision immediately');
- assert.ok(src.includes('if(visible)state.sightGrace=.55'),'brief visibility loss remains tolerated');
+ assert.ok(src.includes('if(visible)state.sightGrace=1.35'),'brief visibility loss remains tolerated');
+});
+test('entrance has three soft ceiling pools and indoor lighting retains a brighter base',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
+ assert.ok(src.includes("q.fillStyle='rgba(7,13,15,.58)'"),'lighter rendered shadow overlay');
+ assert.ok(src.includes('return withinFloor?.24:1'),'indoor darkness floor is increased');
+ assert.ok(src.includes('Math.max(.78,.5+.5*illumination)'),'alerted guards remain able to see into shadow');
+ for(let seed=1;seed<=100;seed++){
+  const f=indoorGenerateFloor(1,random(seed*41));
+  const lobby=f.lightFixtures.filter(l=>l.zone==='lobby');
+  assert.equal(lobby.length,3);
+  assert.ok(lobby.some(l=>l.anchor==='lobby-center'));
+  assert.equal(lobby.filter(l=>l.anchor==='lobby-side').length,2);
+ }
 });
 test('two gun hits instantly detonate only the new shell-pallet kind',()=>{
  const fs=require('node:fs'),path=require('node:path');
