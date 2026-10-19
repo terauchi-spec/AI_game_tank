@@ -35,17 +35,18 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     for(let r=1;r<=5;r++){add(1,r);add(3,r);}
     for(let c=1;c<=3;c++)add(c,5);
   }
-  // 施設上側の非常口は維持し、南側には広いエントランスホールを追加。
-  add(2,1);add(1,1);add(2,0);
+  // Exterior entrances and the broad lobby belong only to the ground floor.
+  const hasExterior=number===1;
+  add(2,1);add(1,1);if(hasExterior)add(2,0);
   const south=[1,2,3].filter(c=>hall.has(index(c,5)));
   const entranceCol=south.length?south[Math.floor(rng()*south.length)]:1;
   // 南端の縦2×横2区画をつなぎ、ゆったりした玄関ホールとする。
   const lobbyIds=[],lobbyLeft=entranceCol===3?2:entranceCol;
-  for(let r=5;r<=6;r++)for(let c=lobbyLeft;c<=lobbyLeft+1;c++){add(c,r);lobbyIds.push(index(c,r));}
+  if(hasExterior)for(let r=5;r<=6;r++)for(let c=lobbyLeft;c<=lobbyLeft+1;c++){add(c,r);lobbyIds.push(index(c,r));}
   const mainDoor={x:center(index(entranceCol,6)).x,y:Y0+ROWS*SIZE,side:'bottom'};
-  const entrance={x:mainDoor.x,y:mainDoor.y+54};
+  const entrance=hasExterior?{x:mainDoor.x,y:mainDoor.y+54}:null;
   const emergencyDoor={x:center(index(2,0)).x,y:Y0,side:'top'};
-  const emergency={x:emergencyDoor.x,y:emergencyDoor.y-54};
+  const emergency=hasExterior?{x:emergencyDoor.x,y:emergencyDoor.y-54}:null;
   // 固定(2,1)を廃止し、生成された廊下の中から階段を抽選する。
   const halls=Array.from(hall);
   const stairOptions=halls.filter(i=>{const {r}=coord(i);return r>=1&&r<=4;});
@@ -234,7 +235,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     const length=SIZE,wx=vertical?(side==='left'?x:x+SIZE):x;
     const wy=vertical?y:(side==='top'?y:y+SIZE);
     const key=other===null?'':[Math.min(i,other),Math.max(i,other)].join(':');
-    const externalEntry=other===null&&(
+    const externalEntry=hasExterior&&other===null&&(
       (side==='bottom'&&c===entranceCol&&r===ROWS-1)||
       (side==='top'&&c===2&&r===0)
     );
@@ -453,7 +454,8 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     }
     return addLight(point,'room',anchor,rx,ry,room.id);
   };
-  // Broad lobby is deliberately a separate light region.
+  // Broad lobby is deliberately a separate light region on the ground floor.
+  if(hasExterior){
   addLight({x:X0+(lobbyLeft+1)*SIZE,y:Y0+6*SIZE},
     'lobby','lobby-center',SIZE*.74,SIZE*.74);
   // Broad, overlapping ceiling pools illuminate the entrance without losing soft corners.
@@ -461,6 +463,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     'lobby','lobby-side',SIZE*.59,SIZE*.67);
   addLight({x:X0+(lobbyLeft+1.65)*SIZE,y:Y0+6*SIZE},
     'lobby','lobby-side',SIZE*.59,SIZE*.67);
+  }
   // Straight corridor runs receive lamps exactly every two blocks, on the centerline.
   // Vertical/horizontal beam shapes illuminate along the passage, not through its sides.
   const corridorCells=new Set(halls.filter(i=>!lobbyIds.includes(i)&&i!==index(2,0)));
@@ -561,7 +564,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
   // 各兵士が廊下と複数の部屋を行き来する閉路を持つ。
   // 個別の短い往復巡回ではなく、異なる区画を通り抜ける長距離の巡回ルートにする。
   const guards=[],roomCenters=indoorShuffle(rooms.filter(r=>r!==postRoom).map(r=>r.cellIds[0]),rng);
-  const hallStarts=indoorShuffle(halls.filter(i=>distance(center(i),stair)>SIZE),rng);
+  const hallStarts=indoorShuffle(halls.filter(i=>distance(center(i),stair)>(hasExterior?SIZE:SIZE*.5)),rng);
   // 廊下の複雑さに応じて巡回兵を6～8体に増員。出発地点は異なる区画へ分散。
   const patrolCount=Math.min(8,hallStarts.length);
   for(let guardIndex=0;guardIndex<patrolCount;guardIndex++){
@@ -605,13 +608,15 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
       index:1,face:Math.atan2(next.y-path[0].y,next.x-path[0].x),
       wait:indoorRand(rng,0,1),speed:65,sight:245});
   }
-  doorMarks.push({...mainDoor,vertical:false,outer:true,kind:'main'});
-  doorMarks.push({...emergencyDoor,vertical:false,outer:true,kind:'emergency'});
+  if(hasExterior){
+    doorMarks.push({...mainDoor,vertical:false,outer:true,kind:'main'});
+    doorMarks.push({...emergencyDoor,vertical:false,outer:true,kind:'emergency'});
+  }
   return{number,pattern,rooms,walls,furniture,explosiveObjects,lightFixtures,guards,postGuards,postCount,postRoomId:postRoom.id,intel,stair,exit,entrance,emergency,
     roomRoomDoors:connectingRooms,extraHallDoors:moreHallDoors,
     doors:doorMarks,windows,
     footprint:{x:X0,y:Y0,w:COLS*SIZE,h:ROWS*SIZE},
-    stairIndex,entranceCol,lobbyArea:{x:X0+lobbyLeft*SIZE,y:Y0+5*SIZE,w:2*SIZE,h:2*SIZE},
+    stairIndex,entranceCol:hasExterior?entranceCol:null,lobbyArea:hasExterior?{x:X0+lobbyLeft*SIZE,y:Y0+5*SIZE,w:2*SIZE,h:2*SIZE}:null,
     lobby:lobbyIds.map(i=>{const {c,r}=coord(i);return{x:X0+c*SIZE,y:Y0+r*SIZE,w:SIZE,h:SIZE};}),
     corridors:halls.map(i=>{const {c,r}=coord(i);return{x:X0+c*SIZE,y:Y0+r*SIZE,w:SIZE,h:SIZE};}),
     center:stair.x};
@@ -749,7 +754,7 @@ function setupInfiltrationWorld(){
         indoorExplosive:true,indoorGroup:item.group,mgHits:0});
     }
     const corridors=raw.corridors.map(tile=>indoorRect(tile,off));
-    const lobbyArea=indoorRect(raw.lobbyArea,off);
+    const lobbyArea=raw.lobbyArea?indoorRect(raw.lobbyArea,off):null;
     const lightFixtures=raw.lightFixtures.map(item=>{
       const clipTiles=item.zone==='room'?rooms[item.roomId].tiles:
         item.zone==='lobby'?[lobbyArea]:corridors;
@@ -801,7 +806,8 @@ function setupInfiltrationWorld(){
     const count=n===1?1:2;
     const intel=raw.intel.slice(0,count).map((q,i)=>({...to(q),id:q.id,name:'重要資料 '+n+'F-'+(i+1),done:false,floor:n,progress:0}));
     indoorWorld.intel.push(...intel);
-    const stair=to(raw.stair),entrance=to(raw.entrance),emergency=to(raw.emergency);
+    const stair=to(raw.stair),entrance=raw.entrance?to(raw.entrance):null,
+      emergency=raw.emergency?to(raw.emergency):null;
     const openingPoint=q=>({...to(q),vertical:q.vertical,kind:q.kind,outer:!!q.outer});
     const doors=raw.doors.map(q=>{
       const door={...openingPoint(q),open:0};
@@ -1336,8 +1342,8 @@ function drawInfiltrationFloors(cx,cy){
     g.fillStyle='#171e1c';g.fillRect(0,minY-15,WW,maxY-minY+30);
     // 建物外側に玄関前の通路を設ける。二つの出入口の前は屋外地面。
     g.fillStyle='#777766';
-    g.fillRect(f.entrance.x-45,f.footprint.y+f.footprint.h,90,Math.max(0,f.entrance.y-f.footprint.y-f.footprint.h+30));
-    g.fillRect(f.emergency.x-45,f.emergency.y-30,90,Math.max(0,f.footprint.y-f.emergency.y+30));
+    if(f.entrance)g.fillRect(f.entrance.x-45,f.footprint.y+f.footprint.h,90,Math.max(0,f.entrance.y-f.footprint.y-f.footprint.h+30));
+    if(f.emergency)g.fillRect(f.emergency.x-45,f.emergency.y-30,90,Math.max(0,f.footprint.y-f.emergency.y+30));
     g.fillStyle='#626658';
     for(const tile of f.corridors){
       if(tile.y+tile.h<cy-30||tile.y>cy+H+30)continue;
@@ -1393,7 +1399,7 @@ function drawInfiltrationFloors(cx,cy){
     for(const gateway of [{point:f.entrance,label:'正面玄関',color:'#d0a75d'},
                            {point:f.emergency,label:'非常口',color:'#82dcb4'}]){
       const q=gateway.point;
-      if(q.y<cy-90||q.y>cy+H+90)continue;
+      if(!q||q.y<cy-90||q.y>cy+H+90)continue;
       g.fillStyle=gateway.color;g.fillRect(q.x-43,q.y-24,86,40);
       g.strokeStyle='#292b26';g.lineWidth=2;g.strokeRect(q.x-43,q.y-24,86,40);
       g.font='bold 13px system-ui';g.fillStyle='#1b211c';g.textAlign='center';

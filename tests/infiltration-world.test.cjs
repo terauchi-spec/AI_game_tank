@@ -12,7 +12,8 @@ function reachablePoints(f){
   const y0=Math.max(0,Math.ceil((r.y-offset-9)/STEP)),y1=Math.min(ROWS-1,Math.floor((r.y+r.h-offset+9)/STEP));
   for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)occupied[y*COLS+x]=1;
  }
- const entrance=indoorAt(f.entrance.x,f.entrance.y,offset);
+ const start=f.entrance||f.stair;
+ const entrance=indoorAt(start.x,start.y,offset);
  const at=p=>{const q=indoorAt(p.x,p.y,offset);return [Math.round(q.x/STEP),Math.round((q.y-offset)/STEP)]};
  const [sx,sy]=[Math.round(entrance.x/STEP),Math.round((entrance.y-offset)/STEP)];
  const initial=sy*COLS+sx;assert.equal(occupied[initial],0,'spawn must be collision free');
@@ -34,7 +35,7 @@ function reachablePoints(f){
      const xx=x+dx,yy=y+dy;return xx>=0&&xx<COLS&&yy>=0&&yy<ROWS&&seen[yy*COLS+xx];
    });
  };
- for(const p of [f.stair,f.entrance,f.emergency,...f.intel])
+ for(const p of [f.stair,f.entrance,f.emergency,...f.intel].filter(Boolean))
    assert.ok(accessible(p),'unreachable document, staircase or exit');
  // 詰所テーブル・家具の真上は歩けないが、各部屋には歩けるスペースを残す。
  for(const room of f.rooms)for(const tile of room.tiles){
@@ -54,7 +55,7 @@ test('five corridor shapes and differently sized rooms remain navigable at doubl
   assert.ok(f.rooms.some(r=>r.size===1));
   assert.ok(f.rooms.some(r=>r.size>=3));
   assert.equal(f.rooms.reduce((s,r)=>s+r.tiles.length,0)+f.corridors.length,35);
-  assert.ok(f.doors.length>=16&&f.doors.length<=20,'multiple doors plus two exterior exits');
+  assert.ok(f.doors.length>=(n===1?16:14)&&f.doors.length<=(n===1?20:18),'interior doors plus ground-floor exits');
   assert.ok(f.doors.filter(q=>q.kind==='room-room').length>=2,'direct room-to-room doors');
   assert.ok(f.rooms.filter(q=>q.doors.length>1).length>=2,'several rooms have two doors');
   for(const r of f.rooms){sizeSet.add(r.size);assert.equal(r.size,r.tiles.length);}
@@ -154,8 +155,8 @@ test('smaller doors have multiple routes between rooms, corridors, and exterior 
   assert.ok(rr.length>=2,'at least two direct inter-room doorways');
   assert.ok(f.rooms.some(r=>r.doors.length>=2),'at least one multi-door room');
   assert.ok(f.rooms.filter(r=>r.doors.length>=2).length>=2,'multiple rooms have options');
-  assert.ok(f.doors.length>=16&&f.doors.length<=20);
-  assert.equal(f.doors.filter(d=>d.kind==='main'||d.kind==='emergency').length,2);
+  assert.ok(f.doors.length>=(floorNo===1?16:14)&&f.doors.length<=(floorNo===1?20:18));
+  assert.equal(f.doors.filter(d=>d.kind==='main'||d.kind==='emergency').length,floorNo===1?2:0);
   const windows=f.windows;
   assert.ok(windows.every(d=>d.external),'keep windows exterior-only');
   for(const d of interior){
@@ -278,7 +279,9 @@ test('entrance has an open 2x2 hall and stair varies inside navigable corridors'
  const choices=new Set(),patterns=new Set(),lobbyOffsets=new Set();
  for(let seed=1;seed<=350;seed++)for(let floorNo=1;floorNo<=2;floorNo++){
    const f=indoorGenerateFloor(floorNo,random(seed*53+floorNo));
-   patterns.add(f.pattern);choices.add(f.stairIndex);lobbyOffsets.add(f.lobbyArea.x);
+   patterns.add(f.pattern);choices.add(f.stairIndex);
+   if(floorNo===2){assert.equal(f.lobbyArea,null);assert.deepEqual(f.lobby,[]);continue;}
+   lobbyOffsets.add(f.lobbyArea.x);
    assert.equal(f.lobby.length,4,'entrance is an open two-by-two area');
    assert.equal(f.lobbyArea.w,360);assert.equal(f.lobbyArea.h,360);
    const tiles=new Set(f.corridors.map(q=>q.x+':'+q.y));
@@ -349,7 +352,7 @@ test('room and corridor lights are placed at meaningful fixtures with shadow poc
   assert.ok(lights.some(l=>l.zone==='room'&&l.anchor==='table'&&
     Math.abs(l.x-table.x-table.w/2)<.01&&Math.abs(l.y-table.y-table.h/2)<.01),
     'barracks lamp must hang over the central table');
-  assert.equal(lights.filter(l=>l.zone==='lobby').length,3,'entrance has three ceiling lights');
+  assert.equal(lights.filter(l=>l.zone==='lobby').length,n===1?3:0,'only ground-floor entrance has lobby lights');
   const halls=lights.filter(l=>l.zone==='hall');
   assert.ok(halls.length>=3&&halls.every(l=>l.anchor==='hall-regular'||l.anchor==='hall-terminal'),
     'corridor lamps are placed at regular intervals and at short passage ends');
@@ -1008,4 +1011,57 @@ test('initial recognition retains only movement witnessed in successive visible 
  hidden.api.update(hidden.h,.13);hidden.avatar.x=800;hidden.setVisible(true);
  for(let i=0;i<5;i++)hidden.api.update(hidden.h,.13);
  assert.equal(hidden.h.indoorAlert.lastDir,null,'unseen displacement is not treated as observed direction');
+});
+
+
+test('upper floors have sealed exterior walls, no lobby or exterior exit, and reachable documents',()=>{
+ for(let seed=1;seed<=200;seed++){
+  const f=indoorGenerateFloor(2,random(seed*173));
+  assert.equal(f.entrance,null);assert.equal(f.emergency,null);assert.equal(f.exit,null);
+  assert.equal(f.lobbyArea,null);assert.deepEqual(f.lobby,[]);
+  assert.ok(!f.doors.some(d=>d.outer||d.kind==='main'||d.kind==='emergency'));
+  assert.ok(!f.lightFixtures.some(l=>l.zone==='lobby'));
+  const isWall=(x,y)=>f.walls.some(w=>x>=w.x&&x<=w.x+w.w&&y>=w.y&&y<=w.y+w.h);
+  const {x,y,w,h}=f.footprint;
+  for(let px=x+2;px<x+w-2;px+=5){assert.ok(isWall(px,y));assert.ok(isWall(px,y+h));}
+  for(let py=y+2;py<y+h-2;py+=5){assert.ok(isWall(x,py));assert.ok(isWall(x+w,py));}
+  reachablePoints(f);
+ }
+});
+test('upper-floor drawing omits exterior paths and entrance signs while preserving stairs',()=>{
+ const src=require('node:fs').readFileSync(require('node:path').join(__dirname,'../js/infiltration-world.js'),'utf8');
+ const from=src.indexOf('function drawInfiltrationFloors(cx,cy){'),to=src.indexOf('function drawInfiltrationProps(cx,cy){',from);
+ const labels=[],fills=[];
+ const g=new Proxy({fillText:t=>labels.push(t),fillRect:(...r)=>fills.push(r)},
+  {get:(o,k)=>k in o?o[k]:()=>{}});
+ for(const floorNo of [1,2]){
+  const f=indoorGenerateFloor(floorNo,random(313));
+  const draw=new Function('g','indoorWorld','WW','H',src.slice(from,to)+';return drawInfiltrationFloors;')(
+   g,{floors:[f]},960,2500);
+  labels.length=0;fills.length=0;draw(0,0);
+  if(floorNo===1){
+   for(const label of ['エントランスホール','正面玄関','非常口','2F ▲'])assert.ok(labels.includes(label));
+  }else{
+   assert.ok(labels.includes('1F ▼'));
+   for(const label of ['エントランスホール','正面玄関','非常口'])assert.ok(!labels.includes(label));
+   assert.ok(!fills.some(r=>r[1]>f.footprint.y+f.footprint.h),'no exterior entrance path');
+  }
+ }
+});
+test('world setup accepts upstairs null entry metadata and preserves paired stairs',()=>{
+ const vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
+ const source=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
+ const sandbox={ZONE_STYLE:{'敵迷路基地':{p:[]}},WH:14000,p:{},scoreStats:{},R:random(917),
+  document:{body:{classList:{remove(){}}}},rebuildSpatialGrid(){},say(){},module:{exports:{}}};
+ vm.createContext(sandbox);
+ vm.runInContext(source+';setupInfiltrationWorld();result=indoorWorld;',sandbox);
+ const [ground,upper]=sandbox.result.floors;
+ assert.ok(ground.entrance&&ground.emergency&&ground.lobbyArea);
+ assert.equal(upper.entrance,null);assert.equal(upper.exit,null);
+ assert.equal(upper.emergency,null);assert.equal(upper.lobbyArea,null);
+ assert.ok(upper.doors.every(d=>!d.outer));
+ assert.ok(upper.lightFixtures.every(l=>l.clipTiles.length>0&&l.clipTiles.every(Boolean)));
+ assert.equal(ground.stair.x,upper.stair.x);
+ assert.equal(ground.stair.y-ground.offset,upper.stair.y-upper.offset);
+ assert.equal(sandbox.result.intel.filter(q=>q.floor===2).length,2);
 });
