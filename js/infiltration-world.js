@@ -788,7 +788,7 @@ function setupInfiltrationWorld(){
   // Off-map base avoids outdoor destruction / HQ spawning while preserving core state shape.
   base={x:-5000,y:-5000,w:100,h:100,hp:30,maxHp:30,deadAt:0};
   document.body.classList.remove('front-battle');
-  indoorWorld={floors:[],intel:[],currentFloor:0,stairArmed:true,stairsCooldown:0,exit:null,emergency:null,entrance:null,
+  indoorWorld={floors:[],intel:[],currentFloor:0,stairEntryFloor:null,stairsCooldown:0,exit:null,emergency:null,entrance:null,
     alarm:{active:false,witnesses:new Set(),elapsed:0}};
   // 同じ階段位置を1F/2Fで共有させる。間取りは各階別々のランダムシード。
   const indoorSeedRng=seed=>{let x=seed>>>0;return()=>{x=(Math.imul(x,1664525)+1013904223)>>>0;return x/4294967296;};};
@@ -815,6 +815,11 @@ function setupInfiltrationWorld(){
     const wallRects=[];
     for(const wall of raw.walls){
       const q={...indoorRect(wall,off),kd:1,indoorWall:true,hp:999999};
+      covers.push(q);wallRects.push(q);
+    }
+    // 階段は南側だけを開口。壁は通常の衝突・視線遮蔽にも登録する。
+    for(const wall of indoorStairWalls(to(raw.stair),n)){
+      const q={...wall,kd:1,indoorWall:true,indoorStairWall:true,hp:999999};
       covers.push(q);wallRects.push(q);
     }
     // 補給物資と室内家具は既存遮蔽判定を利用。描画だけ屋内用に区別。
@@ -866,7 +871,7 @@ function setupInfiltrationWorld(){
       })
     };
     navigation.grid=indoorMakeGuardGrid(raw,off);
-    const stair=to(raw.stair),stairObstacle=indoorStairBounds(stair,n);
+    const stair=to(raw.stair),stairObstacle=indoorStairObstacleBounds(stair,n);
     const avoidStair=pt=>{
       if(!(pt.x>=stairObstacle.x-12&&pt.x<=stairObstacle.x+stairObstacle.w+12&&pt.y>=stairObstacle.y-12&&pt.y<=stairObstacle.y+stairObstacle.h+12))return pt;
       const grid=navigation.grid,id=indoorGridFreeNearest(grid,indoorGridPoint(grid,pt));
@@ -990,10 +995,32 @@ function indoorStairBounds(stair,number){
   const h=INDOOR_STAIR_WIDTH*(number===1?320/100:320/162);
   return{x:stair.x-INDOOR_STAIR_WIDTH/2,y:stair.y-h/2,w:INDOOR_STAIR_WIDTH,h};
 }
+function indoorStairWalls(stair,number){
+  const b=indoorStairBounds(stair,number),t=8;
+  return [{x:b.x-t,y:b.y-t,w:t,h:b.h+t},
+    {x:b.x+b.w,y:b.y-t,w:t,h:b.h+t},
+    {x:b.x,y:b.y-t,w:b.w,h:t}];
+}
+function indoorStairObstacleBounds(stair,number){
+  const b=indoorStairBounds(stair,number);
+  return{x:b.x-8,y:b.y-8,w:b.w+16,h:b.h+8};
+}
+function indoorStairLanding(floor){
+  const b=indoorStairBounds(floor.stair,floor.number);
+  return{x:floor.stair.x,y:b.y+b.h+20};
+}
+function indoorStairTravelReady(floor){
+  const b=indoorStairBounds(floor.stair,floor.number),w=indoorWorld;
+  const inside=p.x>=b.x+8&&p.x<=b.x+b.w-8&&p.y>=b.y+8&&p.y<=b.y+b.h+12;
+  if(!inside||p.tank){w.stairEntryFloor=null;return false;}
+  // 開口部を通った後だけ奥の踊り場を有効にする。
+  if(p.y>=b.y+b.h-28)w.stairEntryFloor=w.currentFloor;
+  return w.stairEntryFloor===w.currentFloor&&p.y<=b.y+28;
+}
 function indoorGuardStairBlocked(h,x,y,r=8){
   if(!h.indoorGuard)return false;
   const floor=indoorWorld?.floors[h.indoorFloor-1];if(!floor)return false;
-  const b=floor.stairObstacle||indoorStairBounds(floor.stair,floor.number);
+  const b=floor.stairObstacle||indoorStairObstacleBounds(floor.stair,floor.number);
   return x+r>b.x&&x-r<b.x+b.w&&y+r>b.y&&y-r<b.y+b.h;
 }
 function indoorPatrolAroundStairs(h,dt){
@@ -1013,7 +1040,7 @@ function indoorMakeGuardGrid(raw,off){
  const step=16,origin=indoorAt(70,80,off),cols=Math.ceil(900/step),rows=Math.ceil(1260*INDOOR_SCALE_Y/step);
  const solid=new Uint8Array(cols*rows),rects=[...raw.walls,...raw.furniture,...raw.explosiveObjects]
    .map(o=>indoorRect(o,off));
- rects.push(indoorStairBounds(indoorAt(raw.stair.x,raw.stair.y,off),raw.number));
+ rects.push(indoorStairObstacleBounds(indoorAt(raw.stair.x,raw.stair.y,off),raw.number));
  const margin=10;
  for(const rect of rects){
   const minX=Math.max(0,Math.ceil((rect.x-margin-origin.x)/step-.5));
@@ -1354,14 +1381,14 @@ function indoorUpdateAlarmSweep(h,a,dt){
  indoorSelectSweepGoal(h,a,floor,points);
 }
 
-const INDOOR_STAIR_GRACE_RADIUS=110;
+const INDOOR_STAIR_GRACE_RADIUS=100;
 function indoorStairProtected(){
   const area=indoorWorld?.stairSanctuary;
   return !!(area&&area.floor===indoorWorld.currentFloor&&
     Math.hypot(p.x-area.x,p.y-area.y)<=INDOOR_STAIR_GRACE_RADIUS);
 }
 function indoorBeginStairSanctuary(floor){
-  indoorWorld.stairSanctuary={x:floor.stair.x,y:floor.stair.y+38,
+  indoorWorld.stairSanctuary={...indoorStairLanding(floor),
     floor:indoorWorld.currentFloor};
   for(const h of floor.guards){
     h.indoorNotice=null;h._detectCache=null;h._nextDetectAt=0;h._nextVisAt=0;
@@ -1920,14 +1947,13 @@ function updateInfiltrationMission(dt){
   indoorScanStunnedGuards(dt);
   // 発見だけでは終了させず、潜入専用AIの追跡・最終目撃地点確認・捜索を継続する。
   w.stairsCooldown=Math.max(0,w.stairsCooldown-dt);
-  const floor=w.floors[w.currentFloor],nearStair=D(p,floor.stair)<48;
-  if(!nearStair)w.stairArmed=true;
-  if(nearStair&&w.stairArmed&&w.stairsCooldown<=0&&!p.tank){
+  const floor=w.floors[w.currentFloor];
+  if(indoorStairTravelReady(floor)&&w.stairsCooldown<=0){
     w.currentFloor=1-w.currentFloor;
     const target=w.floors[w.currentFloor];
-    p.x=target.stair.x;p.y=target.stair.y+38;
+    Object.assign(p,indoorStairLanding(target));
     indoorBeginStairSanctuary(target);
-    w.stairsCooldown=2;w.stairArmed=false;
+    w.stairsCooldown=2;w.stairEntryFloor=null;
     m.progress=0;m.current=null;
     cam=Math.max(0,Math.min(WH-H,p.y-H*.6));
     say((w.currentFloor+1)+'階へ移動');sfx('skill');

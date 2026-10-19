@@ -17,7 +17,7 @@ function harness(seed=1,width=480){
   api={get world(){return indoorWorld;},bounds:infiltrationFloorBounds,clamp:enforceInfiltrationBoundary,
     camera:infiltrationCamera,begin:beginInfiltrationExtraction,update:updateInfiltrationExtraction,
     mission:updateInfiltrationMission,draw:drawInfiltrationExtraction,sprite:infiltrationJeepSprite,
-    protected:indoorStairProtected,protect:indoorBeginStairSanctuary,tick:indoorTickStairSanctuary,sees:indoorGuardSeesPlayer,record:indoorRecordGuardDiscovery,stairBlocked:indoorGuardStairBlocked,move:indoorMoveGuardTo};`,c);
+    protected:indoorStairProtected,protect:indoorBeginStairSanctuary,tick:indoorTickStairSanctuary,sees:indoorGuardSeesPlayer,record:indoorRecordGuardDiscovery,stairBlocked:indoorGuardStairBlocked,move:indoorMoveGuardTo,stairBounds:indoorStairBounds};`,c);
  return{c,api:c.api,draws,get completed(){return completed;},get canvases(){return canvases;}};
 }
 
@@ -93,7 +93,9 @@ test('deployment EXIT and player start align with the wide entrance center',()=>
 
 test('stair transition grants sanctuary until the landing area is left and clears stale discovery',()=>{
  const h=harness(),c=h.c,w=h.api.world,target=w.floors[1],guard=target.guards[0];
- Object.assign(c.p,w.floors[0].stair);guard.st=1;guard.target='p';guard.indoorAlert={phase:'found'};
+ const b=h.api.stairBounds(w.floors[0].stair,1);
+ Object.assign(c.p,{x:w.floors[0].stair.x,y:b.y+b.h-12});h.api.mission(.01);
+ c.p.y=b.y+20;guard.st=1;guard.target='p';guard.indoorAlert={phase:'found'};
  guard.indoorNotice={visible:true,exposure:1};guard._detectCache={key:'p',obj:c.p};guard._nextDetectAt=9999;
  h.api.mission(.01);
  assert.equal(w.currentFloor,1);assert.equal(h.api.protected(),true);assert.ok(w.stairSanctuary);
@@ -126,7 +128,7 @@ test('guards route around the actual stair artwork and separation cannot push th
  };
  for(const floor of h.api.world.floors){
   const stair=floor.stair,b=floor.stairObstacle;
-  assert.equal(b.w,60);
+  assert.equal(b.w,76,'NPC obstacle includes both 8px enclosure walls');
   const guard={x:stair.x-70,y:stair.y,face:0,alive:true,indoorGuard:true,indoorFloor:floor.number,indoorAlert:{}};
   const goal={x:stair.x+70,y:stair.y};
   for(let i=0;i<1200&&c.D(guard,goal)>18;i++){
@@ -157,6 +159,36 @@ test('entrances are broad unobstructed openings and existing guards patrol acros
   for(const goal of [{x:gate.x,y:gate.y+gate.side*180},{x:gate.x,y:gate.y-gate.side*80}]){
    for(let i=0;i<600&&c.D(guard,goal)>18;i++)h.api.move(guard,goal,.05,78);
    assert.ok(c.D(guard,goal)<18,'pursuit can cross the open entrance in both directions');
+  }
+ }
+});
+
+
+test('stairs have three solid sides, require entering at the mouth, and switch only at the back',()=>{
+ for(let seed=1;seed<=30;seed++){
+  const h=harness(seed),c=h.c,w=h.api.world;
+  for(const f of w.floors){
+   const b=h.api.stairBounds(f.stair,f.number),walls=f.walls.filter(q=>q.indoorStairWall);
+   assert.equal(walls.length,3);
+   const blocked=(x,y)=>walls.some(q=>x+8>q.x&&x-8<q.x+q.w&&y+8>q.y&&y-8<q.y+q.h);
+   assert.equal(blocked(b.x-4,f.stair.y),true);
+   assert.equal(blocked(b.x+b.w+4,f.stair.y),true);
+   assert.equal(blocked(f.stair.x,b.y-4),true);
+   assert.equal(blocked(f.stair.x,b.y+b.h),false);
+  }
+  for(let trip=0;trip<2;trip++){
+   const before=w.currentFloor,f=w.floors[before],b=h.api.stairBounds(f.stair,f.number);
+   w.stairsCooldown=0;
+   Object.assign(c.p,{x:f.stair.x,y:b.y+20});h.api.mission(.01);
+   assert.equal(w.currentFloor,before,'side/back access cannot activate travel');
+   c.p.y=b.y+b.h-12;h.api.mission(.01);assert.equal(w.currentFloor,before);
+   c.p.y=f.stair.y;h.api.mission(.01);assert.equal(w.currentFloor,before,'middle is not the trigger');
+   c.p.y=b.y+20;h.api.mission(.01);assert.equal(w.currentFloor,1-before);
+   assert.equal(h.api.protected(),true);
+   const area=w.stairSanctuary;
+   c.p.x=area.x+100;assert.equal(h.api.protected(),true);
+   c.p.x=area.x+101;assert.equal(h.api.protected(),false);
+   c.p.x=area.x;h.api.mission(3);assert.equal(w.currentFloor,1-before,'landing never immediately bounces back');
   }
  }
 });

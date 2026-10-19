@@ -1438,7 +1438,9 @@ test('document charge accumulates across leaving, switching documents and changi
  s.api.updateMission(3);assert.equal(a.progress,3);assert.equal(a.done,false);
  s.sandbox.p.x=-1000;s.api.updateMission(1);assert.equal(a.progress,3);assert.equal(m.progress,0);
  Object.assign(s.sandbox.p,{x:b.x,y:b.y});s.api.updateMission(2);assert.equal(b.progress,2);
- Object.assign(s.sandbox.p,world.floors[0].stair);world.stairArmed=true;world.stairsCooldown=0;
+ const stair=world.floors[0].stair;world.stairsCooldown=0;
+ Object.assign(s.sandbox.p,{x:stair.x,y:stair.y+84});s.api.updateMission(.01);
+ s.sandbox.p.y=stair.y-76;
  s.api.updateMission(.01);assert.equal(world.currentFloor,1);assert.equal(b.progress,2);assert.equal(a.progress,3);
  world.currentFloor=0;Object.assign(s.sandbox.p,{x:a.x,y:a.y});
  s.api.updateMission(5);assert.equal(a.done,true);assert.equal(a.progress,8);assert.equal(m.index,1);
