@@ -1124,8 +1124,10 @@ test('a completed mission cannot escape from the upper floor through an emergenc
 function alarmWorld(){
  const vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
  const source=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
- const labels=[],rectangles=[],gradients=[],bubbles=[];
- const gm=new Proxy({fillText:t=>labels.push(t),fillRect(...r){rectangles.push({r,style:this.fillStyle});},
+ const labels=[],rectangles=[],gradients=[],bubbles=[],eyePupils=[];let currentArc=null;
+ const gm=new Proxy({beginPath(){currentArc=null;},arc(...args){currentArc=args;},
+  fill(){if(currentArc&&currentArc[1]===48&&currentArc[2]===3)eyePupils.push({x:currentArc[0],color:this.fillStyle});},
+  fillText:t=>labels.push(t),fillRect(...r){rectangles.push({r,style:this.fillStyle});},
   createLinearGradient(...args){const stops=[];const gradient={args,stops,addColorStop:(...s)=>stops.push(s)};gradients.push(gradient);return gradient;}},
   {get:(o,k)=>k in o?o[k]:()=>{}});
  const sandbox={ZONE_STYLE:{'敵迷路基地':{p:[]}},WH:14000,W:840,H:720,p:{},scoreStats:{},R:random(1771),
@@ -1133,6 +1135,8 @@ function alarmWorld(){
   rebuildSpatialGrid(){},say(){},sfx(){},module:{exports:{}},partner:null,hound:null,
   stageMode:'indoor',state:'play',playerDetectedNow:()=>false,performance:{now:()=>1000},
   los:()=>true,drawPatrolChatBubbleAt:(...args)=>bubbles.push(args),
+  DETECT_CENTER_HALF:7.5*Math.PI/180,DETECT_OUTER_HALF:52.5*Math.PI/180,DETECT_OUTER_SCALE:.7,
+  enemyCannonSpeed:()=>630,fire:(...args)=>sandbox.bullets.push({args}),
   D:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),angD:(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b)),
   mv:(h,dx,dy)=>{h.x+=dx;h.y+=dy;},pauseAfterEnemyDetection(){},gm,cam:0,camX:0};
  vm.createContext(sandbox);
@@ -1141,10 +1145,10 @@ function alarmWorld(){
   api={get world(){return indoorWorld;},record:indoorRecordGuardDiscovery,begin:indoorStartGuardPursuit,
    update:updateInfiltrationGuardAI,finish:indoorFinishGuardSearch,sweep:indoorBeginAlarmSweep,
    draw:drawInfiltrationMission,setup:setupInfiltrationWorld,chats:indoorUpdateAlarmChats,
-   cancelChat:indoorCancelAlarmChat,setVisible:h=>{indoorGuardSeesPlayer=q=>q===h;}};`,sandbox);
+   cancelChat:indoorCancelAlarmChat,scanBodies:indoorScanStunnedGuards,level:indoorAlarmLevel,weapon:indoorUpdateCommanderWeapon,setVisible:h=>{indoorGuardSeesPlayer=q=>q===h;}};`,sandbox);
  sandbox.enterHumanFound=h=>{h.st=1;h.target='p';sandbox.api.begin(h);};
  const sight=h=>{sandbox.api.world.currentFloor=h.indoorFloor-1;h.st=1;h.target='p';sandbox.api.begin(h);sandbox.api.record(h);};
- return {api:sandbox.api,sandbox,sight,labels,rectangles,gradients,bubbles};
+ return {api:sandbox.api,sandbox,sight,labels,rectangles,gradients,bubbles,eyePupils};
 }
 test('three distinct firsthand witnesses trigger one building alarm across both floors',()=>{
  const s=alarmWorld(),world=s.api.world,[a,b,c]=world.floors[0].guards;
@@ -1260,5 +1264,89 @@ test('alarm conversations require contact, a clear line and eligible search stat
   if(condition==='stunned')b.stun=1;
   if(condition==='no-alarm')s.api.world.alarm.active=false;
   s.api.chats(.1);assert.ok(!(a.indoorChatT>0)&&!(b.indoorChatT>0),condition);
+ }
+});
+
+
+function bodyDiscoveryPair(){
+ const s=alarmWorld(),floor=s.api.world.floors[0];
+ for(const f of s.api.world.floors)for(const h of f.guards)h.stunRecover=1;
+ const [observer,body,other]=floor.guards;
+ const y=floor.footprint.y+200;
+ Object.assign(observer,{x:200,y,face:0,stunRecover:0});
+ Object.assign(body,{x:250,y,stun:60,stunRecover:0});
+ return {...s,observer,body,other};
+}
+test('a visible stunned enemy adds one eye and duplicate observers do not add more',()=>{
+ const s=bodyDiscoveryPair();s.api.scanBodies(.21);
+ assert.equal(s.api.level(),1);assert.equal(s.api.world.alarm.bodyCount,1);
+ assert.equal(s.body.indoorBodyReported,true);
+ assert.equal(s.observer.indoorAlert.phase,'lastSeen');
+ assert.deepEqual({...s.observer.indoorAlert.lastSeen},{x:s.body.x,y:s.body.y});
+ Object.assign(s.other,{x:210,y:s.body.y,face:0,stunRecover:0});
+ s.api.scanBodies(.21);assert.equal(s.api.level(),1);
+ s.body.stun=0;s.api.scanBodies(.21);s.body.stun=60;s.api.scanBodies(.21);
+ assert.equal(s.api.level(),2,'a separate later stun can be discovered again');
+});
+test('body discovery requires line of sight, facing and a living observer',()=>{
+ for(const condition of ['wall','behind','stunned-observer','dead-body']){
+  const s=bodyDiscoveryPair();
+  if(condition==='wall')s.sandbox.los=()=>false;
+  if(condition==='behind')s.observer.face=Math.PI;
+  if(condition==='stunned-observer')s.observer.stun=60;
+  if(condition==='dead-body')s.body.alive=false;
+  s.api.scanBodies(.21);assert.equal(s.api.level(),0,condition);
+ }
+});
+test('two player witnesses plus one body discovery trigger the same three-eye alarm',()=>{
+ const s=bodyDiscoveryPair(),guards=s.api.world.floors[0].guards;
+ for(const h of guards.slice(3,5)){h.stunRecover=0;s.sight(h);}
+ assert.equal(s.api.level(),2);assert.equal(s.api.world.alarm.active,false);
+ Object.defineProperty(s.sandbox.p,'x',{get(){throw Error('hidden player position used by body discovery');}});
+ s.api.scanBodies(.21);
+ assert.equal(s.api.level(),3);assert.equal(s.api.world.alarm.active,true);
+});
+test('the upper-right eye slots fill red from zero through three warnings',()=>{
+ const s=alarmWorld(),guards=s.api.world.floors[0].guards;
+ for(let level=0;level<=3;level++){
+  if(level)s.sight(guards[level-1]);
+  s.eyePupils.length=0;s.api.draw();
+  assert.equal(s.eyePupils.length,3);
+  assert.equal(s.eyePupils.filter(q=>q.color==='#ff4b45').length,level);
+  assert.deepEqual(s.eyePupils.map(q=>q.x),[758,786,814]);
+ }
+});
+test('indoor commanders charge and fire bazooka rockets with no outdoor commander state',()=>{
+ const s=alarmWorld(),h=s.api.world.floors[0].guards.find(h=>h.indoorCommander);
+ const point={x:h.x+200,y:h.y};h.cd=0;
+ assert.equal(s.api.weapon(h,point,true,false,.1),true);
+ assert.equal(s.sandbox.bullets.length,0,'brief aim before firing');
+ for(let i=0;i<6;i++)s.api.weapon(h,point,true,false,.1);
+ assert.equal(s.sandbox.bullets.length,1);
+ const bullet=s.sandbox.bullets[0];
+ assert.equal(bullet.args[4],'c');assert.equal(bullet.args[5],630);assert.equal(bullet.args[6],480);
+ assert.equal(bullet.commanderRocket,true);assert.equal(bullet.commanderShooter,h);
+ assert.equal(h.cd,4);assert.equal(h.commander,null);assert.equal(h.whistleT,undefined);
+ h.cd=0;s.api.weapon(h,point,true,false,.1);s.api.weapon(h,point,false,false,.1);
+ assert.equal(h.indoorRocketCharge,0,'losing sight cancels the shot');
+ assert.equal(s.sandbox.bullets.length,1);
+});
+test('only indoor commander artwork selects the bazooka through the dedicated actor flag',()=>{
+ const src=require('node:fs').readFileSync(require('node:path').join(__dirname,'../js/characters.js'),'utf8');
+ const a=src.indexOf('function drawCharacterWebP('),b=src.indexOf('function drawCharacterProne(',a);
+ const weapons=[],bodies=[],art=Object.fromEntries(['player','player_plain','player_blue','blue','blue_commander','white','white_commander']
+  .map(id=>[id,{id,naturalWidth:175,naturalHeight:192}]));
+ const g=new Proxy({},{get:()=>()=>{}});
+ const draw=new Function('CHARACTER_GRAPHICS_MODE','CHARACTER_ART','assetOK','performance','characterGait',
+  'CHARACTER_GRAPHICS_SCALE','g','drawCharacterWeapon','drawOverheadCutout','characterArtKey','p',
+  src.slice(a,b)+';return drawCharacterWebP;')('webp',art,()=>true,{now:()=>1000},()=>0,.84,g,
+  (...v)=>weapons.push(v),im=>bodies.push(im.id),(_p,elite,c)=>c==='blue'?'blue_commander':elite?'white':'blue',{});
+ for(const [actor,commander,expectedWeapon,expectedBody] of [
+  [{indoorGuard:true,indoorCommander:true},'', 'blue','blue_commander'],
+  [{},'', '', 'blue'],
+  [{},'blue','blue','blue_commander'],
+  [{indoorCommander:true},'', '', 'blue']]){
+  weapons.length=0;bodies.length=0;draw(0,0,0,false,true,false,false,commander,true,false,actor);
+  assert.equal(weapons[0][0],expectedWeapon);assert.equal(bodies[0],expectedBody);
  }
 });

@@ -199,6 +199,7 @@ function drawCharacterWeapon(commander,shot=0,flame=false,player=false,elite=fal
 }
 function drawCharacterWebP(x,y,face,isPlayer,alert,moving,elite,commander,weaponVisible,playerStripe,actor=null){
  if(CHARACTER_GRAPHICS_MODE!=='webp')return false;
+ if(!isPlayer&&actor?.indoorGuard&&actor.indoorCommander)commander='blue';
  const key=isPlayer?(playerStripe==='blue'?'player_blue':playerStripe?'player':'player_plain'):characterArtKey(false,elite,commander);
  const im=CHARACTER_ART[key];if(!assetOK(im))return false;
  const now=performance.now(),stunned=actor&&(actor.stun>0||actor.stunT>0||actor.down);
