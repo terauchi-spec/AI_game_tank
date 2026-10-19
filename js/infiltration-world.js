@@ -651,7 +651,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
 const INDOOR_FLOOR_OFFSETS=[9300,5500],INDOOR_SCALE_X=1,INDOOR_SCALE_Y=1.75,INDOOR_OFFSET_X=-40,INDOOR_FORECOURT_DEPTH=900;
 let indoorWorld=null,indoorHudSnapshot='',indoorHudRefresh=0,indoorAlarmGradient=null;
 
-let indoorShadeCanvas=null,indoorShadeCtx=null,indoorLightStamp=null;
+let indoorShadeCanvas=null,indoorShadeCtx=null,indoorLightStamp=null,indoorShadeSnapshot=null;
 // 天井灯は床に落ちる固定光。暗所は視認性を落とすが、完全な真っ暗にはしない。
 const INDOOR_LIGHT_RADIUS=185;
 function indoorLightLevel(x,y){
@@ -676,7 +676,7 @@ function indoorLightingStamp(){
   if(indoorLightStamp)return indoorLightStamp;
   const r=INDOOR_LIGHT_RADIUS,c=document.createElement('canvas');
   c.width=c.height=Math.ceil(2*r);
-  const q=c.getContext('2d'),gr=q.createRadialGradient(r,r,0,r,r,r);
+  const q=gameCanvasContext(c),gr=q.createRadialGradient(r,r,0,r,r,r);
   gr.addColorStop(0,'rgba(0,0,0,.99)');
   gr.addColorStop(.20,'rgba(0,0,0,.97)');
   gr.addColorStop(.47,'rgba(0,0,0,.85)');
@@ -688,31 +688,40 @@ function indoorLightingStamp(){
 }
 function drawInfiltrationLighting(cx,cy){
   if(!indoorWorld||!gm)return;
-  // Reuse the shadow mask and the cached radial texture on mobile.
-  if(!indoorShadeCanvas){indoorShadeCanvas=document.createElement('canvas');indoorShadeCtx=indoorShadeCanvas.getContext('2d');}
-  const mask=indoorShadeCanvas,q=indoorShadeCtx,r=INDOOR_LIGHT_RADIUS,stamp=indoorLightingStamp();
-  if(mask.width!==Math.ceil(W)||mask.height!==Math.ceil(H)){mask.width=Math.ceil(W);mask.height=Math.ceil(H);}
-  q.setTransform(1,0,0,1,0,0);q.clearRect(0,0,W,H);
-  q.fillStyle='rgba(7,13,15,.70)';q.fillRect(0,0,W,H);
-  q.globalCompositeOperation='destination-out';
-  for(const f of indoorWorld.floors){
-    if(f.footprint.y>cy+H+260||f.footprint.y+f.footprint.h<cy-INDOOR_FORECOURT_DEPTH)continue;
-    for(const lamp of f.lightFixtures){
-      const x=lamp.x-cx,y=lamp.y-cy,rx=lamp.rx||r,ry=lamp.ry||r;
-      if(x<-rx||x>W+rx||y<-ry||y>H+ry)continue;
-      q.save();q.beginPath();
-      for(const tile of lamp.clipTiles){
-        if(tile.x+tile.w<cx-rx||tile.x>cx+W+rx||
-          tile.y+tile.h<cy-ry||tile.y>cy+H+ry)continue;
-        q.rect(tile.x-cx,tile.y-cy,tile.w,tile.h);
-      }
-      q.clip();
-      q.drawImage(stamp,x-rx,y-ry,rx*2,ry*2);
-      q.restore();
-    }
+  // One bounded, overscanned mask. Static lighting is rebuilt only when the
+  // viewport approaches its edge, rather than composited and transferred each frame.
+  // Match the main Canvas backing settings, especially on readback-first iPhones.
+  if(!indoorShadeCanvas){
+    indoorShadeCanvas=document.createElement('canvas');indoorShadeCtx=gameCanvasContext(indoorShadeCanvas);
   }
-  q.globalCompositeOperation='source-over';
-  gm.save();gm.drawImage(mask,0,0);gm.restore();
+  const mask=indoorShadeCanvas,q=indoorShadeCtx,mw=Math.ceil(W)+256,mh=Math.ceil(H)+256;
+  let cached=indoorShadeSnapshot;
+  if(!cached||cached.world!==indoorWorld||mask.width!==mw||mask.height!==mh||
+     cx<cached.x+32||cy<cached.y+32||cx+W>cached.x+mw-32||cy+H>cached.y+mh-32){
+    if(mask.width!==mw)mask.width=mw;if(mask.height!==mh)mask.height=mh;
+    const left=Math.floor(cx/64)*64-96,top=Math.floor(cy/64)*64-96;
+    const r=INDOOR_LIGHT_RADIUS,stamp=indoorLightingStamp();
+    q.setTransform(1,0,0,1,0,0);q.clearRect(0,0,mw,mh);
+    q.fillStyle='rgba(7,13,15,.70)';q.fillRect(0,0,mw,mh);
+    q.globalCompositeOperation='destination-out';
+    for(const f of indoorWorld.floors){
+      if(f.footprint.y>top+mh+260||f.footprint.y+f.footprint.h<top-INDOOR_FORECOURT_DEPTH)continue;
+      for(const lamp of f.lightFixtures){
+        const x=lamp.x-left,y=lamp.y-top,rx=lamp.rx||r,ry=lamp.ry||r;
+        if(x<-rx||x>mw+rx||y<-ry||y>mh+ry)continue;
+        q.save();q.beginPath();
+        for(const tile of lamp.clipTiles){
+          if(tile.x+tile.w<left-rx||tile.x>left+mw+rx||
+            tile.y+tile.h<top-ry||tile.y>top+mh+ry)continue;
+          q.rect(tile.x-left,tile.y-top,tile.w,tile.h);
+        }
+        q.clip();q.drawImage(stamp,x-rx,y-ry,rx*2,ry*2);q.restore();
+      }
+    }
+    q.globalCompositeOperation='source-over';
+    cached=indoorShadeSnapshot={world:indoorWorld,x:left,y:top};
+  }
+  gm.save();gm.drawImage(mask,cx-cached.x,cy-cached.y,W,H,0,0,W,H);gm.restore();
 }
 
 const INDOOR_DOOR_WIDTH=84,INDOOR_DOOR_THICKNESS=6,INDOOR_DOOR_SPEED=5.2;
@@ -1451,6 +1460,22 @@ function indoorBeginGuardSearch(h,state){
  h.st=0;h.target=null;h.sus=8;h.susMax=8;
  h.foundPause=0;h.burstLeft=0;h.lost=0;
 }
+// A prevalidated 20px post route never needs the outdoor patrol pathfinder.
+function indoorUpdatePostPatrol(h,dt){
+ if(!h.path||h.path.length<2)return h.face;
+ h.indoorPostWait=Math.max(0,(h.indoorPostWait||0)-dt);
+ if(h.indoorPostWait>0)return h.face;
+ h.wi=(h.wi||0)%h.path.length;
+ const point=h.path[h.wi],distance=D(h,point);
+ if(distance<2){h.wi=(h.wi+1)%h.path.length;h.indoorPostWait=.8;return h.face;}
+ const angle=Math.atan2(point.y-h.y,point.x-h.x),step=Math.min(distance,18*dt);
+ const oldX=h.x,oldY=h.y;mv(h,Math.cos(angle)*step,Math.sin(angle)*step,8);
+ if(Math.hypot(h.x-oldX,h.y-oldY)<step*.2){
+  // A temporary obstruction reverses this short walk instead of launching A*.
+  h.wi=(h.wi+1)%h.path.length;h.indoorPostWait=1;
+ }
+ return angle;
+}
 function indoorUpdateGuardNotice(h,dt){
  // Ordinary patrol still uses the established path and speed, but player
  // recognition and suspicion belong exclusively to this stage.
@@ -1505,7 +1530,7 @@ function indoorUpdateGuardNotice(h,dt){
   else indoorMoveGuardTo(h,back.goal,dt,30,back.nav);
   return true;
  }
- h.face=patrol(h,dt,(h.indoorPost?18:30)*(h.indoorWhite?1.2:1),8);return true;
+ h.face=h.indoorPost?indoorUpdatePostPatrol(h,dt):patrol(h,dt,30*(h.indoorWhite?1.2:1),8);return true;
 }
 // Visual alert relay is separate from the limited nearby voice report.
 function indoorObserveFoundGuard(h,dt){

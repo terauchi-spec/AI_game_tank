@@ -1144,7 +1144,7 @@ test('stationary post guards return to their original post after the search ends
  s.api.finish(s.h);assert.deepEqual(s.h.indoorReturn.goal,{x:20,y:100});
  for(let tick=0;tick<80;tick++)s.api.update(s.h,.1);
  assert.equal(s.h.indoorReturn,null);assert.ok(Math.abs(s.h.x-20)<=12);
- assert.equal(s.h.wi,0);assert.ok(s.patrols>0,'normal stationary patrol resumes');
+ assert.equal(s.h.wi,0);assert.equal(s.patrols,0,'post guard never invokes the general patrol pathfinder');
 });
 test('return planning prefers a nearby connected waypoint over one behind a long wall detour',()=>{
  const s=guardScenario(),nav={origin:{x:0,y:0},stepX:100,stepY:100,
@@ -1731,4 +1731,43 @@ test('post guards actually walk back and forth slowly within their short patrol 
   assert.ok(h.y>=Math.min(...h.path.map(q=>q.y))-.01&&h.y<=Math.max(...h.path.map(q=>q.y))+.01);
  }
  assert.ok(moved>=5&&travel>=20,'guard takes several small trips with the existing endpoint tolerance');
+});
+
+test('static indoor lighting reuses one mask across frames and preserves camera cropping',()=>{
+ const s=alarmWorld();const contexts=[],presentations=[];
+ s.sandbox.document.createElement=()=>({width:0,height:0});
+ s.sandbox.gameCanvasContext=canvas=>{
+  const context={canvas,clears:0,stamps:0,clearRect(){this.clears++;},drawImage(){this.stamps++;},
+   createRadialGradient(){return {addColorStop(){}};}};
+  contexts.push(context);return new Proxy(context,{get:(o,k)=>k in o?o[k]:()=>{}});
+ };
+ s.sandbox.gm.drawImage=(...args)=>presentations.push(args);
+ const vm=require('node:vm');
+ const y=s.api.world.floors[0].footprint.y;
+ const draw=(x,dy)=>vm.runInContext('drawInfiltrationLighting('+x+','+dy+');',s.sandbox);
+ draw(0,y);const first=contexts[0].clears,stamps=contexts[0].stamps;
+ assert.ok(stamps>0);assert.equal(contexts.length,2,'one mask and one light texture');
+ for(let i=0;i<120;i++)draw(0,y);
+ assert.equal(contexts[0].clears,first,'stationary frames do no lighting recomposition');
+ assert.equal(contexts[0].stamps,stamps,'light stamps are not redrawn on every frame');
+ for(let i=0;i<60;i++)draw(i,y+i);
+ assert.equal(contexts[0].clears,first,'camera scrolls inside cached overscan');
+ draw(300,y+300);assert.equal(contexts[0].clears,first+1,'moving beyond coverage rebuilds once');
+ const after=contexts[0].clears;
+ for(let i=0;i<20;i++)draw(300+(i%2),y+300);
+ assert.equal(contexts[0].clears,after,'small camera oscillations cannot thrash the cache');
+ for(const args of presentations){
+  assert.equal(args.length,9);const [canvas,sx,sy,w,h]=args;
+  assert.ok(sx>=0&&sy>=0&&sx+w<=canvas.width&&sy+h<=canvas.height,'crop stays inside cached mask');
+ }
+ s.api.setup();draw(300,y+300);assert.equal(contexts[0].clears,after+1,'new map invalidates old lighting');
+ assert.equal(contexts.length,2,'new runs reuse the bounded canvases');
+});
+test('post movement never calls the general patrol pathfinder, even when blocked',()=>{
+ const s=alarmWorld(),h=s.api.world.floors[0].postGuards[0];let moves=0;
+ s.sandbox.patrol=()=>{throw Error('general patrol pathfinder used for short post walk');};
+ s.sandbox.mv=()=>{moves++;};
+ for(let i=0;i<120;i++)s.api.update(h,.1);
+ assert.ok(moves>0&&moves<25,'blocked movement waits between retries instead of searching continuously');
+ assert.equal(h.patrolSearch,undefined);
 });
