@@ -55,7 +55,7 @@ test('five corridor shapes and differently sized rooms remain navigable at doubl
   assert.ok(f.rooms.some(r=>r.size===1));
   assert.ok(f.rooms.some(r=>r.size>=3));
   assert.equal(f.rooms.reduce((s,r)=>s+r.tiles.length,0)+f.corridors.length,35);
-  assert.ok(f.doors.length>=(n===1?16:14)&&f.doors.length<=(n===1?21:18),'interior doors plus ground-floor exits');
+  assert.ok(f.doors.length>=(n===1?15:14)&&f.doors.length<=(n===1?21:18),'interior doors plus ground-floor exits');
   assert.ok(f.doors.filter(q=>q.kind==='room-room').length>=2,'direct room-to-room doors');
   assert.ok(f.rooms.filter(q=>q.doors.length>1).length>=2,'several rooms have two doors');
   for(const r of f.rooms){sizeSet.add(r.size);assert.equal(r.size,r.tiles.length);}
@@ -72,12 +72,12 @@ test('exterior walls have no gaps except the front door and emergency exit; wind
   const isWall=(x,y)=>w.some(q=>x>=q.x&&x<=q.x+q.w&&y>=q.y&&y<=q.y+q.h);
   const {x,y,w:width,h}=f.footprint;
   for(let px=x+2;px<x+width-2;px+=5){
-   if(Math.abs(px-f.emergency.x)>60)assert.ok(isWall(px,y),'north boundary hole');
+   if(!f.emergency||Math.abs(px-f.emergency.x)>60)assert.ok(isWall(px,y),'north boundary hole');
    if(f.entrances.every(entry=>Math.abs(px-entry.x)>60))assert.ok(isWall(px,y+h),'south boundary hole');
   }
   for(const win of f.windows)assert.ok(isWall(win.x,win.y),'window must not leave a traversable hole');
   assert.ok(!isWall(f.entrance.x,y+h),'main doorway opening');
-  assert.ok(!isWall(f.emergency.x,y),'emergency doorway opening');
+  if(f.emergency)assert.ok(!isWall(f.emergency.x,y),'emergency doorway opening');
  }
 });
 test('room and hallway arrangement varies on independent seeds',()=>{
@@ -155,8 +155,8 @@ test('smaller doors have multiple routes between rooms, corridors, and exterior 
   assert.ok(rr.length>=2,'at least two direct inter-room doorways');
   assert.ok(f.rooms.some(r=>r.doors.length>=2),'at least one multi-door room');
   assert.ok(f.rooms.filter(r=>r.doors.length>=2).length>=2,'multiple rooms have options');
-  assert.ok(f.doors.length>=(floorNo===1?16:14)&&f.doors.length<=(floorNo===1?21:18));
-  assert.equal(f.doors.filter(d=>d.kind==='main'||d.kind==='emergency').length,floorNo===1?3:0);
+  assert.ok(f.doors.length>=(floorNo===1?15:14)&&f.doors.length<=(floorNo===1?21:18));
+  assert.equal(f.doors.filter(d=>d.kind==='main'||d.kind==='emergency').length,floorNo===1?2+Number(!!f.emergency):0);
   const windows=f.windows;
   assert.ok(windows.every(d=>d.external),'keep windows exterior-only');
   for(const d of interior){
@@ -468,9 +468,9 @@ test('indoor cargo artwork retains image aspect ratios without altering outdoor 
       im=>!!im&&im.naturalWidth>0&&im.naturalHeight>0);
  const crate={naturalWidth:80,naturalHeight:120},shell={naturalWidth:200,naturalHeight:100};
  const draws=[],drawSprite=(im,x,y,w,h)=>{draws.push({im,w,h});return true;};
- const drawFn=new Function('COVER_IMG','fitAspect','drawAssetSprite',
+ const drawFn=new Function('COVER_IMG','fitAspect','drawAssetSprite','drawInfiltrationShellPallet',
    extract('function drawObject(o){','\nfunction drawBuiltConcrete(')+'\nreturn drawObject;')(
-   {crate,shell_pallet:shell},fitFn,drawSprite);
+   {crate,shell_pallet:shell},fitFn,drawSprite,()=>false);
  drawFn({x:0,y:0,w:60,h:60,kind:'crate',indoorExplosive:true});
  drawFn({x:0,y:0,w:120,h:120,kind:'shellPallet',indoorExplosive:true});
  assert.ok(Math.abs(draws[0].w/draws[0].h-80/120)<.0001,'wooden crate source ratio');
@@ -1090,8 +1090,8 @@ test('upper-floor drawing omits exterior paths and entrance signs while preservi
   {get:(o,k)=>k in o?o[k]:()=>{}});
  for(const floorNo of [1,2]){
   const f=indoorGenerateFloor(floorNo,random(313));
-  const draw=new Function('g','indoorWorld','WW','H','INDOOR_FORECOURT_DEPTH','W','terrainSurfacePattern','indoorOutdoorTerrain','indoorConcretePattern',src.slice(from,to)+';return drawInfiltrationFloors;')(
-   g,{floors:[f]},960,2500,900,960,()=>null,{g:0},()=>null);
+  const draw=new Function('g','indoorWorld','WW','H','INDOOR_FORECOURT_DEPTH','W','terrainSurfacePattern','indoorOutdoorTerrain','indoorConcretePattern','INDOOR_EXIT_RADIUS','INDOOR_EXIT_SECONDS',src.slice(from,to)+';return drawInfiltrationFloors;')(
+   g,{floors:[f]},960,2500,900,960,()=>null,{g:0},()=>null,90,5);
   labels.length=0;fills.length=0;draw(0,0);
   if(floorNo===1){
    assert.ok(labels.includes('EXIT'));assert.ok(labels.includes('2F ▲'));
@@ -1111,7 +1111,8 @@ test('world setup accepts upstairs null entry metadata and preserves paired stai
  vm.createContext(sandbox);
  vm.runInContext(source+';setupInfiltrationWorld();result=indoorWorld;',sandbox);
  const [ground,upper]=sandbox.result.floors;
- assert.ok(ground.entrance&&ground.emergency&&ground.lobbyArea);
+ assert.ok(ground.entrance&&ground.lobbyArea);
+ assert.equal(ground.doors.some(q=>q.kind==='emergency'),!!ground.emergency);
  assert.equal(upper.entrance,null);assert.equal(upper.exit,null);
  assert.equal(upper.emergency,null);assert.equal(upper.lobbyArea,null);
  assert.ok(upper.doors.every(d=>!d.outer));
@@ -1164,15 +1165,16 @@ test('a completed mission cannot escape from the upper floor through an emergenc
  const sandbox={ZONE_STYLE:{'敵迷路基地':{p:[]}},WH:14000,p:{},scoreStats:{},R:random(1221),
   document:{body:{classList:{remove(){}}}},rebuildSpatialGrid(){},say(){},sfx(){},
   module:{exports:{}},partner:null,hound:null,stageMode:'indoor',state:'play',playerDetectedNow:()=>false,
-  D:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),completeMission(){completed++;},
+  D:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),los:()=>true,completeMission(){completed++;},
   mission:{index:3,points:[],progress:0,current:null}};
  vm.createContext(sandbox);
  vm.runInContext(source+`;setupInfiltrationWorld();
+  for(let i=0;i<30&&!indoorWorld.emergency;i++)setupInfiltrationWorld();
   indoorWorld.currentFloor=1;
   p.x=indoorWorld.emergency.x;p.y=indoorWorld.emergency.y;
   updateInfiltrationMission(.01);`,sandbox);
  assert.equal(completed,0,'upper-floor state cannot use any exterior exit');
- vm.runInContext('indoorWorld.currentFloor=0;updateInfiltrationMission(.01);',sandbox);
+ vm.runInContext('indoorWorld.currentFloor=0;for(let i=0;i<50;i++)updateInfiltrationMission(.1);',sandbox);
  assert.equal(completed,1,'ground-floor emergency exit remains usable');
 });
 
@@ -1667,7 +1669,7 @@ test('lighting is circular after world scaling, varies in size and lights the ou
   assert.equal(lamp.rx,lamp.ry,'world-coordinate light pools are 1:1');radii.add(Math.round(lamp.rx));
  }
  assert.ok(radii.size>=4,'different pool sizes');
- for(const entry of [...floor.entrances,floor.emergency])assert.ok(s.api.lightLevel(entry.x,entry.y)>.55,'outside entry is bright');
+ for(const entry of [...floor.entrances,floor.emergency].filter(Boolean))assert.ok(s.api.lightLevel(entry.x,entry.y)>.55,'outside entry is bright');
 });
 test('multiple front automatic doors are physically openable and all start and exit pads are outside',()=>{
  for(let seed=1;seed<=100;seed++){
@@ -1678,7 +1680,7 @@ test('multiple front automatic doors are physically openable and all start and e
    const aperture={x:entry.x-35,y:f.footprint.y+f.footprint.h-10,w:70,h:20};
    assert.ok(!f.walls.some(w=>w.x<aperture.x+aperture.w&&w.x+w.w>aperture.x&&w.y<aperture.y+aperture.h&&w.y+w.h>aperture.y));
   }
-  assert.ok(f.emergency.y<f.footprint.y-90);
+  if(f.emergency)assert.ok(f.emergency.y<f.footprint.y-90);
  }
 });
 test('escape completes outside any ground-floor exit, never from inside the entrance',()=>{
@@ -1687,9 +1689,10 @@ test('escape completes outside any ground-floor exit, never from inside the entr
  Object.assign(s.sandbox.p,{x:floor.entrance.x,y:floor.footprint.y+floor.footprint.h-20});
  s.api.updateMission(.01);assert.equal(completions,0);
  for(const exit of s.api.world.exits){
-  Object.assign(s.sandbox.p,exit);s.api.updateMission(.01);
+  s.sandbox.mission.escapeComplete=false;s.sandbox.mission.escapeProgress=0;s.sandbox.mission.escapeExit=null;
+  Object.assign(s.sandbox.p,exit);s.api.updateMission(4.9);assert.equal(completions,s.api.world.exits.indexOf(exit));s.api.updateMission(.1);
  }
- assert.equal(completions,3);
+ assert.equal(completions,s.api.world.exits.length);
 });
 
 test('front deployment and exit pads are deep in a lit forecourt',()=>{
@@ -1798,11 +1801,25 @@ test('infiltration floors use hills outdoors and concrete only within the buildi
  const fills=[],hill={},concrete={};let terrain;
  const g=new Proxy({fillRect(...rect){fills.push({style:this.fillStyle,rect});}},{get:(obj,key)=>key in obj?obj[key]:()=>{}});
  const f={footprint:{x:100,y:200,w:700,h:800},entrances:[],corridors:[],rooms:[],stair:{x:300,y:-1000}};
- const draw=new Function('g','indoorWorld','WW','W','H','INDOOR_FORECOURT_DEPTH','terrainSurfacePattern','indoorOutdoorTerrain','indoorConcretePattern',source.slice(start,end)+';return drawInfiltrationFloors;')(
-  g,{floors:[f]},960,480,720,900,z=>{terrain=z;return hill;},{n:'丘陵',g:'#6b7a3a'},()=>concrete);
+ const draw=new Function('g','indoorWorld','WW','W','H','INDOOR_FORECOURT_DEPTH','terrainSurfacePattern','indoorOutdoorTerrain','indoorConcretePattern','INDOOR_EXIT_RADIUS','INDOOR_EXIT_SECONDS',source.slice(start,end)+';return drawInfiltrationFloors;')(
+  g,{floors:[f]},960,480,720,900,z=>{terrain=z;return hill;},{n:'丘陵',g:'#6b7a3a'},()=>concrete,90,5);
  draw(50,100);
  assert.deepEqual(terrain,{n:'丘陵',g:'#6b7a3a'});
  assert.deepEqual(fills[0],{style:hill,rect:[26,76,528,768]});
  assert.deepEqual(fills[1],{style:concrete,rect:[100,200,454,644]});
  fills.length=0;draw(50,2000);assert.equal(fills.length,1,'outside view draws no indoor floor');
+});
+
+test('exit requires five continuous seconds, resets on leaving or switching exits and needs all files',()=>{
+ const s=alarmWorld(),m=s.sandbox.mission,w=s.api.world,p=s.sandbox.p;let completed=0;
+ s.sandbox.completeMission=()=>completed++;
+ Object.assign(p,w.exits[0]);m.index=2;s.api.updateMission(6);
+ assert.equal(completed,0);assert.equal(m.escapeProgress,0);
+ m.index=3;s.api.updateMission(3);assert.equal(m.escapeProgress,3);assert.equal(completed,0);
+ p.y+=110;s.api.updateMission(.1);assert.equal(m.escapeProgress,0);
+ Object.assign(p,w.exits[0]);s.api.updateMission(3);
+ Object.assign(p,w.exits[1]);s.api.updateMission(1);assert.equal(m.escapeProgress,1,'switching circles starts again');
+ p.tank={};s.api.updateMission(.1);assert.equal(m.escapeProgress,0);p.tank=null;
+ s.api.updateMission(4.9);assert.equal(completed,0);s.api.updateMission(.1);assert.equal(completed,1);
+ s.api.updateMission(1);assert.equal(completed,1,'finish only once');
 });
