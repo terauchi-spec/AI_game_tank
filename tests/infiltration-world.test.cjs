@@ -1187,7 +1187,7 @@ test('red alarm shading is drawn only when active and its gradient is cached',()
  for(const h of s.api.world.floors[0].guards.slice(0,3))s.sight(h);
  s.api.draw();s.api.draw();
  assert.ok(s.labels.includes('館内アラート'));assert.equal(s.gradients.length,1);
- assert.equal(s.gradients[0].stops[0][1],'rgba(190,22,18,.36)');
+ assert.equal(s.gradients[0].stops[0][1],'rgba(190,22,18,.48)');
  assert.ok(s.rectangles.some(q=>q.r[0]===0&&q.r[1]===0&&q.r[2]===840&&q.r[3]===144));
 });
 test('approximately one third of all building enemies are commanders without adding guards',()=>{

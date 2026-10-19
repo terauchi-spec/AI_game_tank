@@ -1709,8 +1709,8 @@ function drawInfiltrationOpenings(cx,cy){
     for(const q of f.doors){
       if(q.x<cx-130||q.x>cx+W+130||q.y<cy-150||q.y>cy+H+150)continue;
       g.save();
-      const panel=q.kind==='emergency'?'#6eac8c':q.kind==='main'?'#aa8452':'#968572';
-      const border=q.kind==='emergency'?'#b0f5d1':'#d5c0a0';
+      const panel='#59b9d0';
+      const border='#c5f5ff';
       g.fillStyle=panel;g.strokeStyle=border;g.lineWidth=2;
       const open=Math.max(0,Math.min(1,q.open||0)),half=INDOOR_DOOR_WIDTH/2*(q.vertical?INDOOR_SCALE_Y:INDOOR_SCALE_X);
       const part=half*(1-open),thick=INDOOR_DOOR_THICKNESS,frame=thick/2+4;
@@ -1768,7 +1768,7 @@ function drawInfiltrationMission(){
     const height=Math.min(150,H*.2);
     if(!indoorAlarmGradient){
       indoorAlarmGradient=gm.createLinearGradient(0,0,0,height);
-      indoorAlarmGradient.addColorStop(0,'rgba(190,22,18,.36)');
+      indoorAlarmGradient.addColorStop(0,'rgba(190,22,18,.48)');
       indoorAlarmGradient.addColorStop(1,'rgba(190,22,18,0)');
     }
     gm.fillStyle=indoorAlarmGradient;gm.fillRect(0,0,W,height);
