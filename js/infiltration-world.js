@@ -933,7 +933,10 @@ function indoorGuardCellRoute(nav,from,to){
 }
 function indoorStartGuardPursuit(h){
  if(!h||!h.indoorGuard||!p)return;
- const spot={x:p.x,y:p.y},duration=1.35;
+ indoorGuardAlertAt(h,p);
+}
+function indoorGuardAlertAt(h,observed){
+ const spot={x:observed.x,y:observed.y},duration=1.35;
  h.indoorAlert={phase:'found',duration,remaining:duration,trail:[spot],lastSeen:spot,
   searchLeft:0,scanT:0,route:null,routeKey:'',waypoint:null,stuck:0,blockedT:0,
   replanT:0,detour:null,detourKey:'',lastDir:null,estimate:null,searchTravelLeft:0,
@@ -1069,11 +1072,49 @@ function indoorSearchPoints(h,state){
  }
  const points=[],predicted=indoorEstimateEscape(h,state);
  if(candidates.length){
-  candidates.sort((a,b)=>D(a,predicted)-D(b,predicted));points.push(candidates[0]);
+  let preferred=candidates;
+  const direction=state.lastDir||state.reportDirection;
+  if(state.searchSide&&direction){
+   const sector=candidates.filter(q=>
+    (direction.x*(q.y-state.lastSeen.y)-direction.y*(q.x-state.lastSeen.x))*state.searchSide>16);
+   if(sector.length)preferred=sector;
+  }
+  preferred.sort((a,b)=>D(a,predicted)-D(b,predicted));points.push(preferred[0]);
   const other=candidates.filter(q=>D(q,points[0])>=96);
   if(other.length)points.push(other[Math.floor(R()*other.length)]);
  }
  return points.length?points:[{...state.lastSeen}];
+}
+// One firsthand report may enlist at most two nearby idle guards. A floor-wide
+// cooldown prevents a shout from turning into an instant building-wide alarm.
+function indoorShareGuardSighting(h,state,now=performance.now()){
+ if(!h.indoorGuard||state.phase!=='found'||!state.visible||state.reported)return 0;
+ state.reported=true;
+ const floor=indoorWorld?.floors[h.indoorFloor-1];
+ if(!floor?.guards||h.indoorFloor!==indoorWorld.currentFloor+1||
+    !h.alive||h.stun>0||h.stunRecover>0||h.houndPinned||h.blastAirT>0||
+    now<(floor.nextGuardReportAt||0))return 0;
+ const nearby=floor.guards.filter(other=>other!==h&&other.indoorGuard&&
+  other.indoorFloor===h.indoorFloor&&other.alive&&!other.st&&!other.indoorAlert&&
+  !(other.stun>0)&&!(other.stunRecover>0)&&!other.houndPinned&&!(other.blastAirT>0)&&D(h,other)<=240)
+  .sort((a,b)=>D(h,a)-D(h,b));
+ let count=0;
+ for(const other of nearby){
+  if(count>=2)break;
+  if(!los(h,other))continue; // Closed walls/doors block this local voice report.
+  indoorGuardAlertAt(other,state.lastSeen);
+  const alert=other.indoorAlert;
+  alert.phase='lastSeen';alert.remaining=0;alert.travelLeft=6;
+  alert.lastDir=state.lastDir?{...state.lastDir}:null;
+  alert.reportDirection={x:Math.cos(h.face),y:Math.sin(h.face)};
+  alert.searchSide=count===0?-1:1;alert.reported=true;
+  other.indoorNotice=null;other.st=0;other.target=null;
+  other.sus=6;other.susMax=6;other.lost=0;other.burstLeft=0;
+  other.foundPause=0;other.sharePause=.35;
+  count++;
+ }
+ if(count)floor.nextGuardReportAt=now+4000;
+ return count;
 }
 function indoorBeginGuardSearch(h,state){
  state.phase='search';state.searchLeft=8;state.searchTravelLeft=0;
@@ -1146,6 +1187,7 @@ function updateInfiltrationGuardAI(h,dt){
    const previous=state.lastSeen,distanceSeen=D(previous,p);
    if(distanceSeen>18)state.lastDir={x:(p.x-previous.x)/distanceSeen,y:(p.y-previous.y)/distanceSeen};
    state.lastSeen={x:p.x,y:p.y};state.estimate=null;state.trail.length=0;
+   indoorShareGuardSighting(h,state);
   }
  }
  const visible=!!state.visible;

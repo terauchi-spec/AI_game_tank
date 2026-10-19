@@ -545,6 +545,7 @@ function guardScenario(){
  const src=require('node:fs').readFileSync(require('node:path').join(__dirname,'../js/infiltration-world.js'),'utf8');
  const avatar={x:200,y:100};let visible=false,patrols=0,finished=0,shots=0,wallClear=true,light=1;
  const d=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+ const ray=(a,b)=>typeof wallClear==='function'?wallClear(a,b):wallClear;
  const api=new Function('p','R','D','angD','pauseAfterEnemyDetection','fire','los','cachedLos',
  'debugMode','weather','inTumbleweed','inBush','inWaterAt','detectRange','DETECT_CENTER_HALF','DETECT_OUTER_HALF','DETECT_OUTER_SCALE',
  'patrol','findDetectedTarget','enterHumanFound','mv',
@@ -552,12 +553,12 @@ function guardScenario(){
  indoorMoveGuardTo=(h,q,dt,sp)=>{const d=D(h,q),k=Math.min(1,sp*dt/Math.max(.001,d));h.x+=(q.x-h.x)*k;h.y+=(q.y-h.y)*k;return true;};
  indoorGuardSeesPlayer=()=>visibleNow();
  indoorLightLevel=()=>lightNow();
- return {begin:indoorStartGuardPursuit,update:updateInfiltrationGuardAI,points:indoorSearchPoints,
+ return {begin:indoorStartGuardPursuit,update:updateInfiltrationGuardAI,points:indoorSearchPoints,share:indoorShareGuardSighting,
  setSensors:(v,l)=>{visibleNow=v;lightNow=l;},setWorld:w=>{indoorWorld=w;},
  gen:indoorGenerateFloor,grid:indoorMakeGuardGrid,at:indoorAt};
  function visibleNow(){return false;} function lightNow(){return 1;}
  `)(avatar,()=>.5,d,(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b)),()=>{finished++;},()=>{shots++;},
- ()=>wallClear,()=>wallClear,0,'clear',()=>false,()=>false,()=>false,()=>250,.2,1,.7,
+ ray,ray,0,'clear',()=>false,()=>false,()=>false,()=>250,.2,1,.7,
  h=>{patrols++;return h.face;},()=>null,h=>{
   h.st=1;h.target='p';h.sus=0;if(!h.indoorAlert||h.indoorAlert.phase!=='found')api.begin(h);
  },(h,dx,dy)=>{h.x+=dx;h.y+=dy;});
@@ -589,10 +590,10 @@ test('indoor guards follow current visible player and last seen position if hidd
  const avatar={x:180,y:110},destinations=[];let visible=true;
  const [begin,update]=new Function('p','R','D','indoorGuardSeesPlayer','indoorMoveGuardTo',
   'indoorEstimateEscape','angD','pauseAfterEnemyDetection','enterHumanFound','enemyBombPoint','bombs','fire',
-  'performance','INDOOR_TRAIL_LIMIT',code+'\nreturn [indoorStartGuardPursuit,updateInfiltrationGuardAI];')(
+  'performance','INDOOR_TRAIL_LIMIT','indoorShareGuardSighting',code+'\nreturn [indoorStartGuardPursuit,updateInfiltrationGuardAI];')(
   avatar,()=>.6,(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),()=>visible,
   (h,p)=>{destinations.push({...p});return true;},(_h,state)=>state.lastSeen,()=>0,()=>{},()=>{},()=>({x:0,y:0}),
-  [],()=>{}, {now:()=>0},48);
+  [],()=>{}, {now:()=>0},48,()=>0);
  const h={indoorGuard:true,x:0,y:110,st:1,target:'p',cd:100,bu:true};
  begin(h);avatar.x=240;update(h,.1);
  assert.equal(destinations.at(-1).x,240,'immediately chase current visible position');
@@ -870,4 +871,86 @@ test('hallway furniture and cargo share one side with at most two items per cell
   for(const side of floorSides)sides.add(side);
  }
  assert.equal(sides.size,2,'either side may be selected for a new floor');
+});
+
+
+function coordinationScenario(){
+ const s=guardScenario();
+ const guard=(x,extra={})=>({indoorGuard:true,indoorFloor:1,alive:true,x,y:100,face:0,st:0,target:null,cd:100,...extra});
+ const source=s.h;source.x=100;
+ const recipients=[guard(130),guard(160),guard(190)];
+ const world={currentFloor:0,floors:[{guards:[source,...recipients]}]};
+ s.api.setWorld(world);s.api.begin(source);
+ source.indoorAlert.visible=true;
+ return {...s,source,recipients,world,guard};
+}
+test('a firsthand sighting recruits only two nearest available guards on the same floor',()=>{
+ const s=coordinationScenario(),{source,recipients,world,guard}=s;
+ const excluded=[guard(102,{alive:false}),guard(104,{stun:1}),guard(106,{stunRecover:1}),
+  guard(108,{houndPinned:true}),guard(110,{blastAirT:1}),guard(112,{indoorFloor:2}),
+  guard(114,{st:1,target:'ally:1'}),guard(116,{indoorGuard:false}),guard(350)];
+ world.floors[0].guards.push(...excluded);
+ assert.equal(s.api.share(source,source.indoorAlert,1000),2);
+ for(const h of recipients.slice(0,2)){
+  assert.equal(h.indoorAlert.phase,'lastSeen');assert.equal(h.st,0);assert.equal(h.target,null);
+  assert.equal(h.indoorAlert.travelLeft,6);assert.equal(h.sharePause,.35);
+ }
+ assert.equal(recipients[2].indoorAlert,undefined);
+ for(const h of excluded)assert.equal(h.indoorAlert,undefined,'unavailable/distant/other-floor guards are excluded');
+ assert.equal(world.floors[0].nextGuardReportAt,5000);
+});
+test('reports carry a copied last sighting and cannot relay hidden player coordinates',()=>{
+ const s=coordinationScenario();
+ s.source.indoorAlert.lastSeen={x:220,y:120};s.source.indoorAlert.lastDir={x:1,y:0};
+ Object.defineProperty(s.avatar,'x',{get(){throw Error('hidden player read during report');}});
+ assert.equal(s.api.share(s.source,s.source.indoorAlert,1000),2);
+ const receiver=s.recipients[0];
+ s.source.indoorAlert.lastSeen.x=900;s.source.indoorAlert.lastDir.x=-1;
+ assert.equal(receiver.indoorAlert.lastSeen.x,220);assert.equal(receiver.indoorAlert.lastDir.x,1);
+ assert.equal(s.api.share(receiver,receiver.indoorAlert,6000),0,'a received report cannot relay itself');
+ assert.equal(s.recipients[2].indoorAlert,undefined);
+});
+test('walls block voice reports and the floor cooldown prevents repeated alarm waves',()=>{
+ const s=coordinationScenario();s.setWall((_a,b)=>b!==s.recipients[0]);
+ assert.equal(s.api.share(s.source,s.source.indoorAlert,1000),2);
+ assert.equal(s.recipients[0].indoorAlert,undefined,'the wall-blocked nearest guard stays idle');
+ assert.ok(s.recipients[1].indoorAlert&&s.recipients[2].indoorAlert);
+ s.api.begin(s.source);s.source.indoorAlert.visible=true;
+ s.setWall(true);
+ assert.equal(s.api.share(s.source,s.source.indoorAlert,2000),0,'new firsthand report respects floor cooldown');
+ assert.equal(s.recipients[0].indoorAlert,undefined);
+ s.api.begin(s.source);s.source.indoorAlert.visible=true;
+ assert.equal(s.api.share(s.source,s.source.indoorAlert,5001),1);
+});
+test('unconfirmed noise and reports from inactive floors never recruit other guards',()=>{
+ const s=coordinationScenario();s.source.indoorAlert.visible=false;
+ assert.equal(s.api.share(s.source,s.source.indoorAlert,1000),0);
+ s.source.indoorAlert.visible=true;s.source.indoorAlert.phase='lastSeen';
+ assert.equal(s.api.share(s.source,s.source.indoorAlert,1000),0);
+ s.source.indoorAlert.phase='found';s.world.currentFloor=1;
+ assert.equal(s.api.share(s.source,s.source.indoorAlert,1000),0);
+ assert.ok(s.recipients.every(h=>!h.indoorAlert));
+});
+test('cooperating guards search opposite reachable sectors and give up without renewed sight',()=>{
+ const s=coordinationScenario(),grid={x:0,y:0,step:16,cols:40,rows:40,solid:new Uint8Array(1600)};
+ const nav={grid,origin:{x:0,y:0},stepX:180,stepY:315,
+  neighbors:Array.from({length:35},(_,i)=>[i-1,i+1,i-5,i+5].filter(j=>j>=0&&j<35))};
+ s.world.floors[0].navigation=nav;s.source.indoorAlert.lastSeen={x:240,y:240};
+ s.source.indoorAlert.lastDir={x:1,y:0};
+ s.api.share(s.source,s.source.indoorAlert,1000);
+ const [a,b]=s.recipients,pa=s.api.points(a,a.indoorAlert),pb=s.api.points(b,b.indoorAlert);
+ assert.ok(pa[0].y<240&&pb[0].y>240,'first search targets spread to opposite sides');
+ for(const q of [...pa,...pb])assert.ok(Math.hypot(q.x-240,q.y-240)<=180);
+ for(let tick=0;tick<310;tick++)for(const h of [a,b])s.api.update(h,.05);
+ assert.equal(a.indoorAlert,null);assert.equal(b.indoorAlert,null);
+ assert.equal(a.st,0);assert.equal(b.st,0);
+});
+test('the pursuit visibility sample triggers coordination only on an actual sighting',()=>{
+ const s=coordinationScenario();s.source.indoorAlert.visible=false;
+ s.api.update(s.source,.02);
+ assert.ok(s.recipients.every(h=>!h.indoorAlert));
+ s.setVisible(true);s.api.update(s.source,.14);
+ assert.ok(s.recipients[0].indoorAlert&&s.recipients[1].indoorAlert);
+ assert.equal(s.recipients[2].indoorAlert,undefined);
+ assert.deepEqual(s.recipients[0].indoorAlert.lastSeen,{x:s.avatar.x,y:s.avatar.y});
 });
