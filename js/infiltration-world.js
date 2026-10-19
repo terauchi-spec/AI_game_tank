@@ -808,7 +808,7 @@ function setupInfiltrationWorld(){
         target:null,patrolMode:'axis',zoneHeavy:'indoor',indoorGuard:true,indoorFloor:n};
       humans.push(guard);guards.push(guard);
     }
-    // 待機兵にも本編の発見・追跡・射撃AIをそのまま適用。通常時だけ動かない。
+    // 待機兵にも潜入専用の認識・追跡・射撃AIを適用。通常時だけ動かない。
     const postGuards=[];
     for(const h of raw.postGuards){
       const pos=to(h);
@@ -954,12 +954,12 @@ function indoorGuardCellRoute(nav,from,to){
 }
 function indoorStartGuardPursuit(h){
  if(!h||!h.indoorGuard||!p)return;
- const spot={x:p.x,y:p.y},duration=5+R()*5;
+ const spot={x:p.x,y:p.y},duration=1.35;
  h.indoorAlert={phase:'found',duration,remaining:duration,trail:[spot],lastSeen:spot,
   searchLeft:0,scanT:0,route:null,routeKey:'',waypoint:null,stuck:0,blockedT:0,
   replanT:0,detour:null,detourKey:'',lastDir:null,estimate:null,searchTravelLeft:0,
   progressGoalCell:-1,bestGoalDistance:Infinity,noGoalProgressT:0,rescueCooldown:0,
-  sightGrace:0,sightCheckT:0,visible:false};
+  sightGrace:0,sightCheckT:0,visible:false,travelLeft:10,searchPoints:null,searchIndex:0,scanFace:h.face};
  h.lost=duration;h._detectCache=null;h._nextDetectAt=0;
 }
 function indoorGuardSeesPlayer(h){
@@ -1008,12 +1008,12 @@ function indoorMoveGuardTo(h,goal,dt,sp){
   x:nav.centers[from].x+(target.x-nav.centers[from].x)*.78,
   y:nav.centers[from].y+(target.y-nav.centers[from].y)*.78
  }:target;
- if(a.detour&&a.detourGoalCell!==to)a.detour=null;
+ if(a.detour&&(a.detourGoalCell!==to||a.detourGoal&&D(a.detourGoal,goal)>64))a.detour=null;
  if(a.noGoalProgressT>4.5&&a.rescueCooldown<=0){
   a.rescueCooldown=7;a.noGoalProgressT=0;
   const rescue=indoorGridDetour(nav,h,goal,5200);
   if(rescue?.length){
-   a.detour=rescue;a.detourGoalCell=to;a.detourKey='recovery';
+   a.detour=rescue;a.detourGoalCell=to;a.detourGoal={...goal};a.detourKey='recovery';
    a.replanT=1.7;
   }
  }
@@ -1038,7 +1038,7 @@ function indoorMoveGuardTo(h,goal,dt,sp){
    // Obstacle-aware short path, calculated only on collision and cached.
    const detour=indoorGridDetour(nav,h,desired,1700);
    a.replanT=.85+R()*.2;a.stuck=0;
-   if(detour?.length){a.detour=detour;a.detourKey=routeKey;a.detourGoalCell=to;}
+   if(detour?.length){a.detour=detour;a.detourKey=routeKey;a.detourGoalCell=to;a.detourGoal={...goal};}
    else a.detour=null;
   }
  }
@@ -1062,92 +1062,162 @@ function indoorEstimateEscape(h,state){
  }
  return far;
 }
+// These helpers are called only by the existing indoor-guard hook. Outdoor AI stays intact.
+function indoorFinishGuardSearch(h){
+ h.indoorAlert=null;h.indoorNotice=null;
+ h.st=0;h.target=null;h.sus=0;h.susMax=0;h.lost=0;
+ h.susPause=0;h.burstLeft=0;h.foundPause=0;h.sharePause=0;
+ h._detectCache=null;h._nextDetectAt=0;pauseAfterEnemyDetection(h);
+}
+function indoorSearchPoints(h,state){
+ const nav=indoorWorld?.floors[h.indoorFloor-1]?.navigation,g=nav?.grid;
+ if(!g)return [{...state.lastSeen}];
+ // A single small flood fill per search. Only reachable positions within 180px
+ // of the actual last sighting qualify; there is no live-player input here.
+ const source=indoorGridFreeNearest(g,indoorGridPoint(g,state.lastSeen));
+ if(source<0)return [{...state.lastSeen}];
+ const queue=[source],seen=new Set(queue),candidates=[];
+ for(let i=0;i<queue.length&&i<400;i++){
+  const id=queue[i],x=id%g.cols,y=(id/g.cols)|0;
+  const q={x:g.x+(x+.5)*g.step,y:g.y+(y+.5)*g.step};
+  if(D(q,state.lastSeen)>180)continue;
+  if(D(q,state.lastSeen)>=64)candidates.push(q);
+  for(let k=0;k<4;k++){
+   if((k===0&&y===0)||(k===1&&y===g.rows-1)||(k===2&&x===0)||(k===3&&x===g.cols-1))continue;
+   const n=id+(k===0?-g.cols:k===1?g.cols:k===2?-1:1);
+   if(!g.solid[n]&&!seen.has(n)){seen.add(n);queue.push(n);}
+  }
+ }
+ const points=[],predicted=indoorEstimateEscape(h,state);
+ if(candidates.length){
+  candidates.sort((a,b)=>D(a,predicted)-D(b,predicted));points.push(candidates[0]);
+  const other=candidates.filter(q=>D(q,points[0])>=96);
+  if(other.length)points.push(other[Math.floor(R()*other.length)]);
+ }
+ return points.length?points:[{...state.lastSeen}];
+}
+function indoorBeginGuardSearch(h,state){
+ state.phase='search';state.searchLeft=8;state.searchTravelLeft=0;
+ state.scanT=0;state.scanFace=h.face;state.sightCheckT=0;
+ state.searchPoints=indoorSearchPoints(h,state);state.searchIndex=0;
+ state.detour=null;state.route=null;state.noGoalProgressT=0;
+ h.st=0;h.target=null;h.sus=8;h.susMax=8;
+ h.foundPause=0;h.burstLeft=0;h.lost=0;
+}
+function indoorUpdateGuardNotice(h,dt){
+ // Ordinary patrol still uses the established path and speed, but player
+ // recognition and suspicion belong exclusively to this stage.
+ const n=h.indoorNotice||(h.indoorNotice={checkT:0,exposure:0,visible:false,sampleX:p.x,sampleY:p.y,sampleAge:0});
+ n.checkT-=dt;n.sampleAge+=dt;
+ if(n.checkT<=0){
+  const elapsed=Math.max(.001,n.sampleAge),distanceMoved=Math.hypot(p.x-n.sampleX,p.y-n.sampleY);
+  const sameFloor=h.indoorFloor===indoorWorld?.currentFloor+1;
+  n.visible=indoorGuardSeesPlayer(h);n.checkT=.12;n.sampleAge=0;
+  n.sampleX=p.x;n.sampleY=p.y;
+  if(n.visible){
+   const illumination=indoorLightLevel(p.x,p.y),d=D(h,p);
+   n.threshold=d<40?.15:.45+(1-illumination)*.65;
+   n.spot={x:p.x,y:p.y};
+  }else if(sameFloor&&debugMode<2&&!(p.dig>0)&&distanceMoved/elapsed>80&&distanceMoved<50&&D(h,p)<72&&cachedLos(h,p)){
+   // Nearby footsteps cause investigation, never instant discovery. Walls block
+   // this conservative hearing model; teleporting between floors emits no step.
+   indoorStartGuardPursuit(h);
+   const a=h.indoorAlert;a.phase='lastSeen';a.lastSeen={x:p.x,y:p.y};
+   a.travelLeft=3;a.visible=false;a.sightCheckT=.12;
+   h.st=0;h.target=null;h.sus=3;h.susMax=3;return true;
+  }
+ }
+ n.exposure=n.visible?Math.min(1.5,n.exposure+dt):Math.max(0,n.exposure-dt*2);
+ if(n.visible&&n.exposure>=n.threshold){
+  if(!indoorGuardSeesPlayer(h)||!los(h,p)){n.visible=false;n.checkT=0;return true;}
+  enterHumanFound(h,'p');h.indoorNotice=null;return true;
+ }
+ if(n.exposure>0){
+  // Reuse the existing suspicion icon; no extra drawing or UI work per frame.
+  h.sus=n.exposure;h.susMax=n.threshold||1;
+  if(n.spot){const angle=Math.atan2(n.spot.y-h.y,n.spot.x-h.x);h.face+=Math.max(-dt*2,Math.min(dt*2,angD(angle,h.face)));}
+  return true;
+ }
+ h.sus=0;h.susMax=0;
+ // Other skill targets retain their existing combat handling.
+ const other=findDetectedTarget(h,h.face);
+ if(other&&other.key!=='p'){enterHumanFound(h,other.key);return false;}
+ if(h.chatResumeT>0)return true;
+ h.face=patrol(h,dt,30,8);return true;
+}
 function updateInfiltrationGuardAI(h,dt){
  if(!h.indoorGuard)return false;
  if(!h.indoorAlert){
   if(h.st&&h.target==='p')indoorStartGuardPursuit(h);
-  else return false;
+  else if(h.st)return false;
+  else return indoorUpdateGuardNotice(h,dt);
  }
  const state=h.indoorAlert;
- if(state.phase==='found'&&(!h.st||h.target!=='p')){
-  h.indoorAlert=null;return false; // Stun and forced reset cancel the dedicated chase.
+ if((h.stun>0)||(h.stunRecover>0)||h.houndPinned||h.blastAirT>0||
+    (state.phase==='found'&&(!h.st||h.target!=='p'))){
+  h.indoorAlert=null;h.indoorNotice=null;return false;
  }
- // Visibility rays are expensive on mobile; sample at 120ms intervals per guard.
+ // Sample visibility and the observed position together. Cached visibility must
+ // never reveal new coordinates after the player has gone around a corner.
  state.sightCheckT=(state.sightCheckT||0)-dt;
  if(state.sightCheckT<=0){
   state.sightCheckT=.12+((h.indoorFloor||1)%3)*.01;
   state.visible=indoorGuardSeesPlayer(h);
+  if(state.visible){
+   const previous=state.lastSeen,distanceSeen=D(previous,p);
+   if(distanceSeen>18)state.lastDir={x:(p.x-previous.x)/distanceSeen,y:(p.y-previous.y)/distanceSeen};
+   state.lastSeen={x:p.x,y:p.y};state.estimate=null;state.trail.length=0;
+  }
  }
  const visible=!!state.visible;
- if(visible)state.sightGrace=1.35;
- else state.sightGrace=Math.max(0,(state.sightGrace||0)-dt);
- const seen=visible||(state.sightGrace>0);
- if(state.phase==='search'){
-  if(visible){h.st=1;h.target='p';h.sus=0;indoorStartGuardPursuit(h);return true;}
-  const inspect=state.estimate||state.lastSeen;
-  const moving=state.searchTravelLeft>0&&D(h,inspect)>32;
-  if(moving){
-   state.searchTravelLeft=Math.max(0,state.searchTravelLeft-dt);
-   // Searching follows the same door-aware path at a slightly slower speed.
-   indoorMoveGuardTo(h,inspect,dt,72);
-   h.sus=Math.max(.01,state.searchLeft);h.susMax=5;
-  }else{
-   state.searchLeft=Math.max(0,state.searchLeft-dt);
-   h.sus=Math.max(.01,state.searchLeft);h.susMax=5;
-   state.scanT+=dt;
-   // Look around deliberately without rapidly spinning or oscillating.
-   h.face+=Math.sin(state.scanT*.9)*dt*.45;
-   if(state.searchLeft<=0){
-    h.indoorAlert=null;h.st=0;h.target=null;h.sus=0;h.susMax=0;
-    h.susPause=0;h.burstLeft=0;pauseAfterEnemyDetection(h);
-   }
-  }
-  return true;
- }
- // The found state lasts at least a randomized 5–10 seconds, regardless of distance.
- state.remaining=Math.max(0,state.remaining-dt);
  if(visible){
-  state.trail.length=0; // Avoid replaying stale discovery positions.
-  const previous=state.lastSeen;
-  const distanceSeen=D(previous,p);
-  if(distanceSeen>18){
-   state.lastDir={x:(p.x-previous.x)/distanceSeen,y:(p.y-previous.y)/distanceSeen};
+  if(state.phase!=='found'){
+   // Confirmed visual reacquisition resumes pursuit, not the initial notice delay.
+   enterHumanFound(h,'p');indoorStartGuardPursuit(h);return true;
   }
-  state.lastSeen={x:p.x,y:p.y};
-  state.estimate=null; // Clear predicted escape routes as soon as sight is restored.
- }else if(!state.estimate){
-  state.estimate=indoorEstimateEscape(h,state);
- }
- if(state.remaining<=0){
-  if(seen){state.duration=5+R()*5;state.remaining=state.duration;}
-  else{
-   // Continue to the last credible trail endpoint BEFORE the search countdown.
-   state.phase='search';state.searchLeft=3+R()*2;state.searchTravelLeft=11;
-   state.scanT=0;state.sightCheckT=0;
-   h.st=0;h.target=null;h.sus=state.searchLeft;h.susMax=5;
-   h.foundPause=0;h.burstLeft=0;h.lost=0;return true;
-  }
- }
- h.lost=state.remaining;
- // Direct pursuit when visible; a short inferred continuation after line of sight breaks.
- // The player can defeat this prediction by doubling back after a corner or a door.
- const next=visible?{x:p.x,y:p.y}:(state.estimate||state.lastSeen);
- h.cd-=dt;h.ct=(h.ct||0)+dt;
+  state.remaining=1.35;
+ }else state.remaining=Math.max(0,state.remaining-dt);
  const pause=(h.modePause||0)>0||(h.foundPause||0)>0||
    (h.sharePause||0)>0||(h.chatResumeT||0)>0;
  h.modePause=Math.max(0,(h.modePause||0)-dt);
  h.foundPause=Math.max(0,(h.foundPause||0)-dt);h.sharePause=Math.max(0,(h.sharePause||0)-dt);
- if(!pause){
-  // Infiltration soldiers never plant explosives; preserve the outdoor enemy bomb behavior.
-  h.plantT=0;h.plantA=null;
-  if(D(h,next)>20)indoorMoveGuardTo(h,next,dt,95);
-  else if(visible)h.face+=Math.max(-dt*4,Math.min(dt*4,angD(Math.atan2(p.y-h.y,p.x-h.x),h.face)));
+ if(state.phase==='search'){
+  // Total search time includes movement, so blocked furniture cannot prolong it.
+  state.searchLeft=Math.max(0,state.searchLeft-dt);h.sus=state.searchLeft;h.susMax=8;
+  if(state.searchLeft<=0){indoorFinishGuardSearch(h);return true;}
+  if(pause)return true;
+  const inspect=state.searchPoints[state.searchIndex];
+  if(inspect&&D(h,inspect)>24){
+   indoorMoveGuardTo(h,inspect,dt,62);state.scanFace=h.face;state.scanT=0;
+  }else{
+   state.scanT+=dt;
+   const sweep=Math.floor(state.scanT/.7)%4;
+   const angle=state.scanFace+[.8,-.8,1.6,0][sweep];
+   h.face+=Math.max(-dt*1.8,Math.min(dt*1.8,angD(angle,h.face)));
+   if(state.scanT>=1.4&&state.searchIndex<state.searchPoints.length-1){state.searchIndex++;state.detour=null;}
+  }
+  return true;
  }
- if(!pause&&visible&&D(h,p)<150&&h.cd<=0){
-  const angle=Math.atan2(p.y-h.y,p.x-h.x);
+ if(!visible&&state.remaining<=0&&state.phase==='found'){
+  state.phase='lastSeen';state.travelLeft=10;state.detour=null;
+  h.burstLeft=0;
+ }
+ const next=state.lastSeen;
+ if(state.phase==='lastSeen'){
+  state.travelLeft=Math.max(0,state.travelLeft-dt);
+  if(D(h,next)<=24||state.travelLeft<=0){indoorBeginGuardSearch(h,state);return true;}
+ }
+ h.lost=state.phase==='found'?Math.max(.01,state.remaining):state.travelLeft;
+ h.cd-=dt;h.ct=(h.ct||0)+dt;h.plantT=0;h.plantA=null;
+ if(!pause){
+  if(D(h,next)>20)indoorMoveGuardTo(h,next,dt,state.phase==='found'?95:78);
+  else if(visible)h.face+=Math.max(-dt*4,Math.min(dt*4,angD(Math.atan2(next.y-h.y,next.x-h.x),h.face)));
+ }
+ // Recheck the actual wall ray before shooting; a cached sample may be stale.
+ if(!pause&&visible&&D(h,next)<150&&h.cd<=0&&los(h,p)){
+  const angle=Math.atan2(next.y-h.y,next.x-h.x);
   if(!(h.burstLeft>0))h.burstLeft=3;
-  h.characterShotAt=performance.now();
-  fire(h.x,h.y,angle+(R()-.5)*.15,'e','r',330,150);
+  h.characterShotAt=performance.now();fire(h.x,h.y,angle+(R()-.5)*.15,'e','r',330,150);
   h.burstLeft--;h.cd=h.burstLeft>0?.14:2;
  }
  return true;
@@ -1155,8 +1225,9 @@ function updateInfiltrationGuardAI(h,dt){
 function updateInfiltrationDoors(dt){
   if(!indoorWorld)return;
   // PC、味方、敵兵の誰でも近づけば自動で開く。離れたら自然に閉じる。
-  // AIの移動・発見・戦闘ルールには介入しない。
+  // 気絶・拘束中の古い追跡情報は、AI更新がスキップされる間も破棄する。
   for(const floor of indoorWorld.floors){
+    for(const h of floor.guards||[])if(!h.alive||h.stun>0||h.stunRecover>0||h.houndPinned||h.blastAirT>0){h.indoorAlert=null;h.indoorNotice=null;}
     const players=[p,...floor.guards,...(allies||[])];
     if(partner)players.push(partner);
     if(hound)players.push(hound);
@@ -1186,8 +1257,7 @@ function updateInfiltrationMission(dt){
   const detected=playerDetectedNow();
   m.detected=detected;
   updateInfiltrationDoors(dt);
-  // Stealth is the objective. The game's existing AI determines when detection occurs.
-  // 発見だけでは終了させず、本編の青兵AIによる追跡と攻撃を継続する。
+  // 発見だけでは終了させず、潜入専用AIの追跡・最終目撃地点確認・捜索を継続する。
   w.stairsCooldown=Math.max(0,w.stairsCooldown-dt);
   const floor=w.floors[w.currentFloor],nearStair=D(p,floor.stair)<48;
   if(!nearStair)w.stairArmed=true;

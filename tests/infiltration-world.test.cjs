@@ -541,45 +541,44 @@ test('indoor graph routes through actual passages and never through an unwalled 
   assert.equal(indoorGuardCellRoute(nav,-1,valid[0]),null);
  }
 });
-test('indoor pursuit holds 5-10 seconds and transitions through investigation to patrol',()=>{
- const fs=require('node:fs'),path=require('node:path');
- const src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
- const between=(a,b)=>{const i=src.indexOf(a),j=src.indexOf(b,i+a.length);
-  assert.ok(i>=0&&j>i);return src.slice(i,j);};
- const body=between('function indoorStartGuardPursuit(h){','function indoorGuardSeesPlayer(h){')+
-  between('function updateInfiltrationGuardAI(h,dt){','function updateInfiltrationDoors(dt){');
- const avatar={x:200,y:100};
- let seen=false,patrol=0,reacquired=0;
- let begin;
- const enter=h=>{reacquired++;h.st=1;h.target='p';begin(h);};
- const [start,update]=new Function('p','R','D','indoorGuardSeesPlayer',
-  'indoorMoveGuardTo','indoorEstimateEscape','angD','pauseAfterEnemyDetection','enterHumanFound','enemyBombPoint',
-  'bombs','fire','performance','INDOOR_TRAIL_LIMIT',
-  body+'\nreturn [indoorStartGuardPursuit,updateInfiltrationGuardAI];')(
-  avatar,()=>.5,(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),
-  ()=>seen,()=>true,(_h,state)=>state.lastSeen,()=>0,()=>{patrol++;},enter,()=>({x:0,y:0}),
-  [],()=>{}, {now:()=>0},48);
- begin=start;
- const guard={indoorGuard:true,st:1,target:'p',x:0,y:100,face:0,
-  cd:100,ct:0,bu:true,foundPause:0,modePause:0};
- begin(guard);
- assert.equal(guard.indoorAlert.duration,7.5);
- update(guard,7.49);assert.equal(guard.indoorAlert.phase,'found');
- update(guard,.02);assert.equal(guard.indoorAlert.phase,'search');
- assert.ok(!guard.st&&guard.sus>0,'search replaces found state');
- guard.x=avatar.x;guard.y=avatar.y; // The guard reaches the last sighting before scanning.
- update(guard,4.26);assert.equal(guard.indoorAlert,null);
- assert.equal(guard.sus,0);assert.equal(patrol,1);
- // A search phase reacquires immediately if the player is sighted again.
- guard.st=1;guard.target='p';begin(guard);
- seen=false;update(guard,7.51);
- assert.equal(guard.indoorAlert.phase,'search');
- seen=true;update(guard,.1);
- assert.equal(reacquired,0);assert.equal(guard.indoorAlert.phase,'found');
- assert.equal(guard.st,1);
- // Seeing the player when the timer expires renews it, not drops the alert.
- guard.indoorAlert.remaining=.01;update(guard,.02);
- assert.equal(guard.indoorAlert.phase,'found');assert.equal(guard.indoorAlert.remaining,7.5);
+function guardScenario(){
+ const src=require('node:fs').readFileSync(require('node:path').join(__dirname,'../js/infiltration-world.js'),'utf8');
+ const avatar={x:200,y:100};let visible=false,patrols=0,finished=0,shots=0,wallClear=true,light=1;
+ const d=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+ const api=new Function('p','R','D','angD','pauseAfterEnemyDetection','fire','los','cachedLos',
+ 'debugMode','weather','inTumbleweed','inBush','inWaterAt','detectRange','DETECT_CENTER_HALF','DETECT_OUTER_HALF','DETECT_OUTER_SCALE',
+ 'patrol','findDetectedTarget','enterHumanFound','mv',
+ 'const module={exports:{}};'+src+`
+ indoorMoveGuardTo=(h,q,dt,sp)=>{const d=D(h,q),k=Math.min(1,sp*dt/Math.max(.001,d));h.x+=(q.x-h.x)*k;h.y+=(q.y-h.y)*k;return true;};
+ indoorGuardSeesPlayer=()=>visibleNow();
+ indoorLightLevel=()=>lightNow();
+ return {begin:indoorStartGuardPursuit,update:updateInfiltrationGuardAI,points:indoorSearchPoints,
+ setSensors:(v,l)=>{visibleNow=v;lightNow=l;},setWorld:w=>{indoorWorld=w;},
+ gen:indoorGenerateFloor,grid:indoorMakeGuardGrid,at:indoorAt};
+ function visibleNow(){return false;} function lightNow(){return 1;}
+ `)(avatar,()=>.5,d,(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b)),()=>{finished++;},()=>{shots++;},
+ ()=>wallClear,()=>wallClear,0,'clear',()=>false,()=>false,()=>false,()=>250,.2,1,.7,
+ h=>{patrols++;return h.face;},()=>null,h=>{
+  h.st=1;h.target='p';h.sus=0;if(!h.indoorAlert||h.indoorAlert.phase!=='found')api.begin(h);
+ },(h,dx,dy)=>{h.x+=dx;h.y+=dy;});
+ api.setSensors(()=>visible,()=>light);
+ api.setWorld({currentFloor:0,floors:[{}]});
+ const h={indoorGuard:true,indoorFloor:1,alive:true,st:1,target:'p',x:0,y:100,face:0,cd:100,ct:0};
+ return {api,h,avatar,setVisible:v=>visible=v,setWall:v=>wallClear=v,setLight:v=>light=v,
+ get finished(){return finished;},get patrols(){return patrols;},get shots(){return shots;}};
+}
+test('sight loss travels to the last sighting, then searches with a hard timeout',()=>{
+ const s=guardScenario(),{api,h,avatar}=s;api.begin(h);
+ api.update(h,1.36);assert.equal(h.indoorAlert.phase,'lastSeen');
+ assert.equal(h.indoorAlert.lastSeen.x,200);
+ avatar.x=900; // Hidden avatar position must not change the destination.
+ for(let i=0;i<200&&h.indoorAlert?.phase!=='search';i++)api.update(h,.05);
+ assert.equal(h.indoorAlert.phase,'search');assert.ok(Math.abs(h.x-200)<25);
+ for(let i=0;i<162&&h.indoorAlert;i++)api.update(h,.05);
+ assert.equal(h.indoorAlert,null);assert.equal(h.st,0);assert.equal(h.sus,0);assert.equal(s.finished,1);
+ h.st=1;h.target='p';api.begin(h);api.update(h,1.36);
+ s.setVisible(true);api.update(h,.14);assert.equal(h.indoorAlert.phase,'found');
+ assert.equal(h.indoorAlert.lastSeen.x,900);
 });
 test('indoor guards follow current visible player and last seen position if hidden',()=>{
  const fs=require('node:fs'),path=require('node:path');
@@ -609,9 +608,9 @@ test('infiltration pursuit follows stable door midpoints and keeps short sight l
  assert.ok(src.includes("(target.x-nav.centers[from].x)*.78"),'door waypoint crosses to next cell');
  assert.ok(src.includes("a.stuck>.44"),'avoid reacting to a single blocked movement frame');
  assert.ok(src.includes("indoorGridDetour(nav,h,desired,1700)"),'use an obstacle-aware cached detour');
- assert.ok(src.includes("state.sightGrace=1.35"),'transient loss has grace period');
- assert.ok(src.includes("if(seen){state.duration=5+R()*5"),'fresh sight renews the timed alert');
- assert.ok(src.includes("if(visible){h.st=1;h.target='p';h.sus=0;indoorStartGuardPursuit(h)"),'reacquisition transitions to found');
+ assert.ok(src.includes("state.remaining=1.35"),'transient loss has grace period');
+ assert.ok(src.includes("state.remaining=1.35"),'fresh sight renews pursuit memory');
+ assert.ok(src.includes("enterHumanFound(h,'p');indoorStartGuardPursuit(h)"),'reacquisition transitions to found');
 });
 test('indoor navigation crosses beyond door boundaries and throttles vision checks',()=>{
  const fs=require('node:fs'),path=require('node:path');
@@ -620,7 +619,7 @@ test('indoor navigation crosses beyond door boundaries and throttles vision chec
  assert.ok(src.includes('(target.y-nav.centers[from].y)*.78'),'door waypoint advances beyond the door');
  assert.ok(src.includes('state.sightCheckT=.12+'),'vision rays are throttled');
  assert.ok(src.includes('state.sightCheckT=0;'),'search transition checks vision immediately');
- assert.ok(src.includes('if(visible)state.sightGrace=1.35'),'brief visibility loss remains tolerated');
+ assert.ok(src.includes('state.remaining=1.35'),'brief visibility loss remains tolerated');
 });
 test('entrance has three soft ceiling pools and indoor lighting retains a brighter base',()=>{
  const fs=require('node:fs'),path=require('node:path');
@@ -684,7 +683,7 @@ test('indoor pursuing guards cross automatic doors and skirt cargo in simulated 
    "const module={exports:{}};"+src+
    "\nreturn {gen:indoorGenerateFloor,grid:indoorMakeGuardGrid,move:indoorMoveGuardTo,at:indoorAt,setWorld:w=>{indoorWorld=w;}};"
  )(mv,d,()=>.55,angleDiff);
- for(const [seed,guardIndex] of [[3,3],[5,1],[11,0],[12,3],[14,1],[14,4],[15,0],[16,1]]){
+ for(const [seed,guardIndex] of Array.from({length:160},(_,i)=>[1+Math.floor(i/4),i%4])){
   const raw=sim.gen(1,random(seed*13+1)),off=9300;
   const owners=new Map(raw.rooms.flatMap(r=>r.cellIds.map(i=>[i,r.id])));
   for(const tile of raw.corridors){
@@ -740,11 +739,11 @@ test('infiltration expensive recovery is limited to genuinely stalled pursuits',
 test('indoor guards search the last credible direction without tracking unseen position',()=>{
  const fs=require('node:fs'),path=require('node:path'),
   src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
- assert.ok(src.includes('state.estimate=indoorEstimateEscape(h,state)'));
+ assert.ok(src.includes('predicted=indoorEstimateEscape(h,state)'));
  assert.ok(src.includes('for(let i=1;i<=7;i++)'),'prediction ends after 112 pixels');
  assert.ok(src.includes('if(id<0||g.solid[id])break'),'prediction stops at solid walls');
- assert.ok(src.includes('const next=visible?{x:p.x,y:p.y}:(state.estimate||state.lastSeen)'));
- assert.ok(src.includes('state.searchTravelLeft=11'),'finish traveling before searching');
+ assert.ok(src.includes('const next=state.lastSeen;'));
+ assert.ok(src.includes("state.phase='lastSeen';state.travelLeft=10"),'bound last-sighting travel before searching');
  assert.ok(src.includes('state.searchLeft=Math.max(0,state.searchLeft-dt)'),
   'scanning timer is counted separately from travel');
  assert.ok(src.includes('a.replanT=.85+R()*.2'),'avoid frame-by-frame pathfinding');
@@ -788,4 +787,65 @@ test('two gun hits instantly detonate only the new shell-pallet kind',()=>{
  assert.equal(exploded,1,'second hit explodes immediately');
  assert.equal(fn(other,'mg'),true);
  assert.equal(exploded,1,'existing crates keep their own damage behavior');
+});
+
+test('brief exposure can fade and darkness gives more time before recognition',()=>{
+ const notice=light=>{const s=guardScenario();s.h.st=0;s.h.target=null;s.setLight(light);s.setVisible(true);return s;};
+ const bright=notice(1),dark=notice(.24);
+ for(let i=0;i<10;i++){bright.api.update(bright.h,.05);dark.api.update(dark.h,.05);}
+ assert.equal(bright.h.indoorAlert.phase,'found');assert.equal(dark.h.st,0);
+ for(let i=0;i<12;i++)dark.api.update(dark.h,.05);
+ assert.equal(dark.h.indoorAlert.phase,'found');
+ const brief=notice(1);
+ for(let i=0;i<4;i++)brief.api.update(brief.h,.05);
+ brief.setVisible(false);for(let i=0;i<12;i++)brief.api.update(brief.h,.05);
+ assert.equal(brief.h.st,0);assert.equal(brief.h.indoorAlert,undefined);
+ assert.equal(brief.h.sus,0);assert.ok(brief.patrols>0);
+});
+test('nearby moving footsteps investigate a snapshot, while walls and standing remain quiet',()=>{
+ for(const wall of [true,false]){
+  const s=guardScenario();s.h.st=0;s.h.target=null;s.h.x=160;s.setWall(wall);
+  s.api.update(s.h,.13);assert.equal(s.h.indoorAlert,undefined,'standing is silent');
+  s.avatar.x+=15;s.api.update(s.h,.13);
+  if(wall){
+   assert.equal(s.h.indoorAlert.phase,'lastSeen');assert.equal(s.h.st,0);
+   const heard=s.h.indoorAlert.lastSeen.x;s.avatar.x=800;s.api.update(s.h,.13);
+   assert.equal(s.h.indoorAlert.lastSeen.x,heard,'sound destination does not follow hidden player');
+  }else assert.equal(s.h.indoorAlert,undefined,'walls block hearing');
+ }
+});
+test('cached sight never supplies new hidden coordinates and walls stop firing',()=>{
+ const s=guardScenario();s.api.begin(s.h);s.setVisible(true);s.api.update(s.h,.02);
+ assert.equal(s.h.indoorAlert.lastSeen.x,200);
+ s.setVisible(false);s.avatar.x=900;s.h.cd=0;s.setWall(false);s.api.update(s.h,.05);
+ assert.equal(s.h.indoorAlert.lastSeen.x,200,'coordinates refresh only with sight sample');
+ assert.equal(s.shots,0);
+});
+test('both lost-sight approach and search reacquire confirmed sightings',()=>{
+ for(const phase of ['lastSeen','search']){
+  const s=guardScenario();s.api.begin(s.h);s.api.update(s.h,1.36);
+  if(phase==='search'){s.h.x=200;s.api.update(s.h,.05);}
+  assert.equal(s.h.indoorAlert.phase,phase);
+  s.avatar.x=240;s.setVisible(true);s.api.update(s.h,.14);
+  assert.equal(s.h.indoorAlert.phase,'found');assert.equal(s.h.st,1);
+  assert.equal(s.h.indoorAlert.lastSeen.x,240);
+ }
+});
+test('search locations stay on reachable nearby floor without querying hidden player',()=>{
+ const s=guardScenario(),{api,h,avatar}=s;
+ const grid={x:0,y:0,step:16,cols:40,rows:40,solid:new Uint8Array(1600)};
+ for(let y=0;y<40;y++)grid.solid[y*40+20]=1;
+ api.setWorld({currentFloor:0,floors:[{navigation:{grid,origin:{x:0,y:0},stepX:180,stepY:315,
+  neighbors:Array.from({length:35},()=>[])}}]});
+ const state={lastSeen:{x:240,y:240},lastDir:null};
+ Object.defineProperty(avatar,'x',{get(){throw Error('hidden player position read');}});
+ const points=api.points(h,state);assert.ok(points.length>0&&points.length<=2);
+ for(const q of points){assert.ok(Math.hypot(q.x-240,q.y-240)<=180);assert.ok(q.x<320,'cannot cross solid wall');}
+});
+test('stalled approach and blocked searches expire and dedicated AI skips outdoor guards',()=>{
+ const s=guardScenario();s.api.begin(s.h);s.h.indoorAlert.phase='search';
+ Object.assign(s.h.indoorAlert,{searchLeft:.1,searchPoints:[{x:200,y:100}],searchIndex:0});
+ s.api.update(s.h,.11);assert.equal(s.h.indoorAlert,null);
+ const outdoor={x:1,y:2,st:0};const copy={...outdoor};
+ assert.equal(s.api.update(outdoor,.1),false);assert.deepEqual(outdoor,copy);
 });
