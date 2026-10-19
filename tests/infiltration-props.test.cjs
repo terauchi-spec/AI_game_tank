@@ -137,3 +137,23 @@ test('exit marker uses the escape radius and a half ring at 2.5 seconds',()=>{
  assert.deepEqual(circles,[[300,1672,90,0,Math.PI*2],[300,1672,90,-Math.PI/2,Math.PI/2]]);
  assert.ok(labels.some(q=>q[0]==='EXIT'));assert.ok(labels.some(q=>q[0]==='2.5s'));
 });
+
+test('stair sprites select ascending and descending artwork and preserve image proportions',()=>{
+ const start=source.indexOf('function drawInfiltrationStairSprite(floor){'),end=source.indexOf('function drawInfiltrationFloors(cx,cy){',start);
+ const calls=[],requests=[],g={save(){},restore(){},drawImage:(...a)=>calls.push(a)};
+ const image={naturalWidth:100,naturalHeight:240};
+ const draw=new Function('g','indoorPropImage',source.slice(start,end)+';return drawInfiltrationStairSprite;')(g,key=>{requests.push(key);return image;});
+ for(const number of [1,2])assert.equal(draw({number,stair:{x:500,y:1000}}),true);
+ assert.deepEqual(requests,['stairs_up','stairs_down']);
+ for(const [im,x,y,w,h] of calls){assert.equal(im,image);assert.ok(Math.abs(w/h-100/240)<1e-9);assert.ok(w<=92&&h<=140);assert.equal(x+w/2,500);assert.equal(y+h/2,1000);}
+});
+
+test('ascending and descending staircase files are small alpha WebP assets',()=>{
+ let bytes=0;
+ for(const name of ['stairs_up','stairs_down']){
+  const data=fs.readFileSync(path.join(__dirname,'../assets/indoor/'+name+'.webp'));bytes+=data.length;
+  assert.equal(data.toString('ascii',8,12),'WEBP');assert.ok(data[20]&16);
+  assert.ok(1+data.readUIntLE(24,3)<=256);assert.ok(1+data.readUIntLE(27,3)<=320);
+ }
+ assert.ok(bytes<50000);
+});

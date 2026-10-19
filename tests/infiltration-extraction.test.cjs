@@ -16,7 +16,8 @@ function harness(seed=1,width=480){
  vm.runInContext(source+`;setupInfiltrationWorld();setupInfiltrationMission();
   api={get world(){return indoorWorld;},bounds:infiltrationFloorBounds,clamp:enforceInfiltrationBoundary,
     camera:infiltrationCamera,begin:beginInfiltrationExtraction,update:updateInfiltrationExtraction,
-    mission:updateInfiltrationMission,draw:drawInfiltrationExtraction,sprite:infiltrationJeepSprite};`,c);
+    mission:updateInfiltrationMission,draw:drawInfiltrationExtraction,sprite:infiltrationJeepSprite,
+    protected:indoorStairProtected,protect:indoorBeginStairSanctuary,tick:indoorTickStairSanctuary,sees:indoorGuardSeesPlayer,record:indoorRecordGuardDiscovery};`,c);
  return{c,api:c.api,draws,get completed(){return completed;},get canvases(){return canvases;}};
 }
 
@@ -79,4 +80,39 @@ test('pickup animation does not activate for completed base or frontline stages'
   assert.equal(h.c.state,'play');assert.equal(h.c.mission.extraction,undefined);
   h.api.update(10);h.api.draw(0,0);assert.equal(h.canvases,0);assert.equal(h.draws.length,0);
  }
+});
+
+test('deployment EXIT and player start at the horizontal center at every generated layout',()=>{
+ for(let seed=1;seed<=40;seed++)for(const width of [480,840]){
+  const h=harness(seed,width);
+  assert.equal(h.c.p.x,h.c.WW/2);assert.equal(h.api.world.exits[0].x,h.c.WW/2);
+  assert.equal(h.c.p.x-h.api.camera().x,width/2);
+ }
+});
+
+test('stair transition grants a bounded sanctuary and clears stale player discovery',()=>{
+ const h=harness(),c=h.c,w=h.api.world,target=w.floors[1],guard=target.guards[0];
+ Object.assign(c.p,w.floors[0].stair);guard.st=1;guard.target='p';guard.indoorAlert={phase:'found'};
+ guard.indoorNotice={visible:true,exposure:1};guard._detectCache={key:'p',obj:c.p};guard._nextDetectAt=9999;
+ h.api.mission(.01);
+ assert.equal(w.currentFloor,1);assert.equal(h.api.protected(),true);assert.equal(w.stairSanctuary.remaining,3);
+ assert.equal(guard.st,0);assert.equal(guard.target,null);assert.equal(guard.indoorNotice,null);assert.equal(guard._detectCache,null);
+ assert.equal(h.api.sees(guard),false,'even a point-blank guard cannot see the landing player');
+ guard.st=1;guard.target='p';h.api.record(guard);assert.equal(w.alarm.witnesses.size,0);
+ h.api.tick(2.9);assert.equal(h.api.protected(),true);
+ h.api.tick(.11);assert.equal(h.api.protected(),false);assert.equal(w.stairSanctuary,null);
+ h.api.protect(target);c.p.x+=111;h.api.tick(.01);assert.equal(h.api.protected(),false);
+ c.p.x-=111;assert.equal(h.api.protected(),false,'returning to the landing does not renew protection');
+});
+
+test('common detection cannot reuse a cached player sighting inside the stair sanctuary',()=>{
+ const h=harness(),c=h.c,w=h.api.world;h.api.protect(w.floors[0]);
+ Object.assign(c.p,{x:w.stairSanctuary.x,y:w.stairSanctuary.y});
+ c.performance={now:()=>100};c.decoy=null;c.frontlineEnemyAreaTarget=()=>null;
+ const index=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+ const start=index.indexOf('function canDetect(o,target,face,key){'),end=index.indexOf('const MAX_PARTS=',start);
+ vm.runInContext(index.slice(start,end),c);
+ const guard=w.floors[0].guards[0];guard._detectCache={key:'p',obj:c.p};guard._nextDetectAt=10000;
+ assert.equal(c.canDetect(guard,c.p,0,'p'),false);
+ assert.equal(c.findDetectedTarget(guard,0),null);assert.equal(guard._detectCache,null);
 });

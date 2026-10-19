@@ -595,10 +595,10 @@ test('indoor guards follow current visible player and last seen position if hidd
  const avatar={x:180,y:110},destinations=[];let visible=true;
  const [begin,update]=new Function('p','R','D','indoorGuardSeesPlayer','indoorMoveGuardTo',
   'indoorEstimateEscape','angD','pauseAfterEnemyDetection','enterHumanFound','enemyBombPoint','bombs','fire',
-  'performance','INDOOR_TRAIL_LIMIT','indoorShareGuardSighting','indoorRecordGuardDiscovery','indoorObserveFoundGuard','indoorUpdateAllyCombat',code+'\nreturn [indoorStartGuardPursuit,updateInfiltrationGuardAI];')(
+  'performance','INDOOR_TRAIL_LIMIT','indoorShareGuardSighting','indoorRecordGuardDiscovery','indoorObserveFoundGuard','indoorUpdateAllyCombat','indoorStairProtected',code+'\nreturn [indoorStartGuardPursuit,updateInfiltrationGuardAI];')(
   avatar,()=>.6,(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),()=>visible,
   (h,p)=>{destinations.push({...p});return true;},(_h,state)=>state.lastSeen,()=>0,()=>{},()=>{},()=>({x:0,y:0}),
-  [],()=>{}, {now:()=>0},48,()=>0,()=>{},()=>false,()=>false);
+  [],()=>{}, {now:()=>0},48,()=>0,()=>{},()=>false,()=>false,()=>false);
  const h={indoorGuard:true,x:0,y:110,st:1,target:'p',cd:100,bu:true};
  begin(h);avatar.x=240;update(h,.1);
  assert.equal(destinations.at(-1).x,240,'immediately chase current visible position');
@@ -1090,8 +1090,8 @@ test('upper-floor drawing omits exterior paths and entrance signs while preservi
   {get:(o,k)=>k in o?o[k]:()=>{}});
  for(const floorNo of [1,2]){
   const f=indoorGenerateFloor(floorNo,random(313));
-  const draw=new Function('g','indoorWorld','WW','H','INDOOR_FORECOURT_DEPTH','W','terrainSurfacePattern','indoorOutdoorTerrain','indoorConcretePattern','INDOOR_EXIT_RADIUS','INDOOR_EXIT_SECONDS',src.slice(from,to)+';return drawInfiltrationFloors;')(
-   g,{floors:[f]},960,2500,900,960,()=>null,{g:0},()=>null,90,5);
+  const draw=new Function('g','indoorWorld','WW','H','INDOOR_FORECOURT_DEPTH','W','terrainSurfacePattern','indoorOutdoorTerrain','indoorConcretePattern','INDOOR_EXIT_RADIUS','INDOOR_EXIT_SECONDS','drawInfiltrationStairSprite',src.slice(from,to)+';return drawInfiltrationFloors;')(
+   g,{floors:[f]},960,2500,900,960,()=>null,{g:0},()=>null,90,5,()=>false);
   labels.length=0;fills.length=0;draw(0,0);
   if(floorNo===1){
    assert.ok(labels.includes('EXIT'));assert.ok(labels.includes('2F ▲'));
@@ -1708,7 +1708,7 @@ test('static indoor lighting reuses one mask across frames and preserves camera 
  const s=alarmWorld();const contexts=[],presentations=[];
  s.sandbox.document.createElement=()=>({width:0,height:0});
  s.sandbox.gameCanvasContext=canvas=>{
-  const context={canvas,clears:0,stamps:0,clearRect(){this.clears++;},drawImage(){this.stamps++;},
+  const context={canvas,clears:0,stamps:0,wallCuts:0,fillRect(){if(this.globalCompositeOperation==='destination-out'&&this.fillStyle==='rgba(0,0,0,.72)')this.wallCuts++;},clearRect(){this.clears++;},drawImage(){this.stamps++;},
    createRadialGradient(){return {addColorStop(){}};}};
   contexts.push(context);return new Proxy(context,{get:(o,k)=>k in o?o[k]:()=>{}});
  };
@@ -1717,10 +1717,11 @@ test('static indoor lighting reuses one mask across frames and preserves camera 
  const y=s.api.world.floors[0].footprint.y;
  const draw=(x,dy)=>vm.runInContext('drawInfiltrationLighting('+x+','+dy+');',s.sandbox);
  draw(0,y);const first=contexts[0].clears,stamps=contexts[0].stamps;
- assert.ok(stamps>0);assert.equal(contexts.length,2,'one mask and one light texture');
+ assert.ok(stamps>0);const wallCuts=contexts[0].wallCuts;assert.ok(wallCuts>0,'walls retain visibility through reduced shadow');assert.equal(contexts.length,2,'one mask and one light texture');
  for(let i=0;i<120;i++)draw(0,y);
  assert.equal(contexts[0].clears,first,'stationary frames do no lighting recomposition');
  assert.equal(contexts[0].stamps,stamps,'light stamps are not redrawn on every frame');
+ assert.equal(contexts[0].wallCuts,wallCuts,'wall shadow work is cached as well');
  for(let i=0;i<60;i++)draw(i,y+i);
  assert.equal(contexts[0].clears,first,'camera scrolls inside cached overscan');
  draw(300,y+300);assert.equal(contexts[0].clears,first+1,'moving beyond coverage rebuilds once');

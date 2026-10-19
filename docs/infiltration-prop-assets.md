@@ -76,3 +76,27 @@ Final prompt:
 ```text
 Use case: precise-object-edit. Asset type: transparent high resolution sprite for a top-down military infiltration game. Reference/edit target: the attached 80px wooden ammunition pallet sprite. Reconstruct the SAME object at high detail with crisp readable textures: a square weathered wooden pallet containing orderly rows of upright olive-green metal artillery shells with brass tips. Preserve the square footprint, shell arrangement, muted color palette, overhead camera angle and isolated silhouette of the reference. Improve fine detail of wooden slats, steel casings and brass tips without adding objects. No floor, no text, no watermark, no painted symbols. Genuinely transparent alpha background, no external cast shadow. One centered square sprite with minimal transparent margin. Production asset suitable for 512x512 export.
 ```
+
+## Stair sprites
+
+Built-in image_gen, transparent_background: true. Alpha bounds cropped, uniformly downsampled to a maximum of 256×320 pixels and exported as WebP quality 82. Used only in infiltration; original proportions are preserved.
+
+### stairs_up
+
+Saved asset: `assets/indoor/stairs_up.webp`
+
+Final prompt:
+
+```text
+Use case: stylized-concept. Asset type: transparent game sprite for a top-down realistic military concrete building, orthographic camera directly overhead at 90 degrees, no isometric perspective. One compact straight rectangular concrete staircase aligned vertically, brushed steel handrails along its two long edges, realistic worn gray concrete treads with subtle nosing strips, muted cool gray palette, soft ambient light. Entire object centered and fully contained, true transparent alpha outside the staircase silhouette, no surrounding room, no people, no text, no arrows, no labels, no watermark. Crisp details readable at a small 90 by 140 pixel game size. An UP staircase viewed from the lower landing at the bottom of the image: treads progressively rise toward the top, with the upper landing at the top. Clearly depict the raised flight and subtle side wall height, no dark hole.
+```
+
+### stairs_down
+
+Saved asset: `assets/indoor/stairs_down.webp`
+
+Final prompt:
+
+```text
+Use case: stylized-concept. Asset type: transparent game sprite for a top-down realistic military concrete building, orthographic camera directly overhead at 90 degrees, no isometric perspective. One compact straight rectangular concrete staircase aligned vertically, brushed steel handrails along its two long edges, realistic worn gray concrete treads with subtle nosing strips, muted cool gray palette, soft ambient light. Entire object centered and fully contained, true transparent alpha outside the staircase silhouette, no surrounding room, no people, no text, no arrows, no labels, no watermark. Crisp details readable at a small 90 by 140 pixel game size. A DOWN stairwell viewed from the upper landing at the bottom of the image: a rectangular opening in the floor with concrete treads descending away toward the top into a shaded lower landing. Clearly visible recessed stairwell rim and progressive depth shading, keep treads readable rather than black.
+```

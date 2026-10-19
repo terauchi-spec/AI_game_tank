@@ -50,7 +50,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
   const mainDoor={x:center(index(entranceCol,6)).x,y:Y0+ROWS*SIZE,side:'bottom'};
   const frontDoors=hasExterior?[mainDoor,{...mainDoor,x:center(index(entranceCol===lobbyLeft?lobbyLeft+1:lobbyLeft,6)).x}]:[];
   const entrances=frontDoors.map(d=>({x:d.x,y:d.y+384}));
-  const entrance=entrances[0]||null;
+  const entrance=hasExterior?{x:X0+COLS*SIZE/2,y:entrances[0].y}:null;
   const emergencyDoor={x:center(index(2,0)).x,y:Y0,side:'top'};
   const emergency=hasEmergency?{x:emergencyDoor.x,y:emergencyDoor.y-384}:null;
   // 固定(2,1)を廃止し、生成された廊下の中から階段を抽選する。
@@ -566,6 +566,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     if(addLight(point,'hall','hall-extra',SIZE*.54,SIZE*.54))extraLights++;
   }
   if(hasExterior){
+    for(const dy of [36,176,336])addLight({x:entrance.x,y:mainDoor.y+dy},'entry','entry-center',195,195);
     for(const door of frontDoors){
       addLight({x:door.x,y:door.y+36},'entry','entry-main',180,180);
       addLight({x:door.x,y:door.y+176},'entry','entry-approach',190,190);
@@ -740,6 +741,12 @@ function drawInfiltrationLighting(cx,cy){
         q.clip();q.drawImage(stamp,x-rx,y-ry,rx*2,ry*2);q.restore();
       }
     }
+    // 壁だけ遮光を薄くする。暗い床と明るい壁面の差を出し、毎フレームの再描画は増やさない。
+    q.fillStyle='rgba(0,0,0,.72)';
+    for(const f of indoorWorld.floors)for(const wall of f.walls||[]){
+      if(wall.x+wall.w<left||wall.x>left+mw||wall.y+wall.h<top||wall.y>top+mh)continue;
+      q.fillRect(wall.x-left-2,wall.y-top-2,wall.w+4,wall.h+4);
+    }
     q.globalCompositeOperation='source-over';
     cached=indoorShadeSnapshot={world:indoorWorld,x:left,y:top};
   }
@@ -762,7 +769,7 @@ const indoorRect=(rect,offset)=>({x:INDOOR_OFFSET_X+rect.x*INDOOR_SCALE_X,y:rect
 function indoorGenerateExterior(floor,rng,worldWidth=960){
   if(floor.number!==1)return[];
   const out=[],fp=floor.footprint,south=fp.y+fp.h;
-  const gateways=[...(floor.entrances||[]),floor.emergency].filter(Boolean);
+  const gateways=[floor.entrance,...(floor.entrances||[]),floor.emergency].filter(Boolean);
   for(const side of ['south','north']){
     const limit=side==='south'?8:2;let placed=0;
     for(let attempt=0;attempt<160&&placed<limit;attempt++){
@@ -770,7 +777,7 @@ function indoorGenerateExterior(floor,rng,worldWidth=960){
       const cx=65+rng()*(worldWidth-130),cy=side==='south'
         ?south+110+rng()*(INDOOR_FORECOURT_DEPTH-220):fp.y-190+rng()*70;
       if(gateways.some(q=>Math.hypot(cx-q.x,cy-q.y)<145+size/2||Math.abs(cy-q.y)<110+size/2))continue;
-      if(side==='south'&&(floor.entrances||[]).some(q=>Math.abs(cx-q.x)<92+size/2))continue;
+      if(side==='south'&&[floor.entrance,...(floor.entrances||[])].filter(Boolean).some(q=>Math.abs(cx-q.x)<92+size/2))continue;
       if(side==='north'&&floor.emergency&&Math.abs(cx-floor.emergency.x)<110+size/2)continue;
       if(out.some(q=>Math.hypot(cx-q.x-q.w/2,cy-q.y-q.h/2)<155))continue;
       out.push({x:cx-size/2,y:cy-size/2,w:size,h:size,kd:tree?6:8,
@@ -813,9 +820,10 @@ function setupInfiltrationWorld(){
       return{...rect,id:r.id,name:r.name,size:r.size,isGuardPost:!!r.isGuardPost,tiles:r.tiles.map(tile=>indoorRect(tile,off))};
     });
     // Walls use the existing concrete wall cover kind. Doors remain actual gaps in the core collision grid.
+    const wallRects=[];
     for(const wall of raw.walls){
-      const q=indoorRect(wall,off);
-      covers.push({...q,kd:1,indoorWall:true,hp:999999});
+      const q={...indoorRect(wall,off),kd:1,indoorWall:true,hp:999999};
+      covers.push(q);wallRects.push(q);
     }
     // 補給物資と室内家具は既存遮蔽判定を利用。描画だけ屋内用に区別。
     // 固定家具なので、砲撃などがあっても配置グリッドを再生成しない。
@@ -906,7 +914,7 @@ function setupInfiltrationWorld(){
       entrance,entrances,exit:entrance,emergency,
       footprint:indoorRect(raw.footprint,off),
       doors,windows:raw.windows.map(openingPoint),guards,postGuards,
-      guardPostId:raw.postRoomId,props,lightFixtures,navigation});
+      guardPostId:raw.postRoomId,walls:wallRects,props,lightFixtures,navigation});
   }
   // Replace approximately one third of the existing building guards, including patrols.
   const commanderPool=indoorShuffle(humans.slice(),R);
@@ -1239,7 +1247,7 @@ function indoorRefreshAlarm(){
  }
 }
 function indoorRecordGuardDiscovery(h){
- if(indoorWorld?.alarm?.active)return; // Reinforcement waves must not grow the completed warning set.
+ if(indoorStairProtected()||indoorWorld?.alarm?.active)return; // Reinforcement waves must not grow the completed warning set.
  if(!h?.indoorGuard||!h.alive||!h.st||h.target!=='p'||h.stun>0||h.stunRecover>0||h.houndPinned||h.blastAirT>0||
     !indoorWorld||h.indoorFloor!==indoorWorld.currentFloor+1)return;
  const alarm=indoorWorld.alarm||(indoorWorld.alarm={active:false,witnesses:new Set(),elapsed:0});
@@ -1317,6 +1325,29 @@ function indoorUpdateAlarmSweep(h,a,dt){
  indoorSelectSweepGoal(h,a,floor,points);
 }
 
+const INDOOR_STAIR_GRACE_SECONDS=3,INDOOR_STAIR_GRACE_RADIUS=110;
+function indoorStairProtected(){
+  const area=indoorWorld?.stairSanctuary;
+  return !!(area&&area.remaining>0&&area.floor===indoorWorld.currentFloor&&
+    Math.hypot(p.x-area.x,p.y-area.y)<=INDOOR_STAIR_GRACE_RADIUS);
+}
+function indoorBeginStairSanctuary(floor){
+  indoorWorld.stairSanctuary={x:floor.stair.x,y:floor.stair.y+38,
+    floor:indoorWorld.currentFloor,remaining:INDOOR_STAIR_GRACE_SECONDS};
+  for(const h of floor.guards){
+    h.indoorNotice=null;h._detectCache=null;h._nextDetectAt=0;h._nextVisAt=0;
+    if(h.target==='p'||(h.indoorAlert&&h.indoorAlert.phase!=='sweep')){
+      h.st=0;h.target=null;h.sus=0;h.susMax=0;h.lost=0;h.burstLeft=0;
+      h.indoorAlert=null;h.indoorRocketCharge=0;h.indoorRocketAim=null;
+      if(indoorWorld.alarm?.active)indoorBeginAlarmSweep(h);
+    }
+  }
+}
+function indoorTickStairSanctuary(dt){
+  const area=indoorWorld?.stairSanctuary;if(!area)return;
+  area.remaining=Math.max(0,area.remaining-dt);
+  if(!indoorStairProtected())indoorWorld.stairSanctuary=null;
+}
 function indoorStartGuardPursuit(h){
  if(!h||!h.indoorGuard||!p)return;
  indoorGuardAlertAt(h,p);
@@ -1333,7 +1364,7 @@ function indoorGuardAlertAt(h,observed){
  h.lost=duration;h._detectCache=null;h._nextDetectAt=0;
 }
 function indoorGuardSeesPlayer(h){
- if(!p||debugMode>=2||p.dig>0||inTumbleweed(p)||(!p.tank&&inBush(p))||
+ if(!p||indoorStairProtected()||debugMode>=2||p.dig>0||inTumbleweed(p)||(!p.tank&&inBush(p))||
    (weather==='rain'&&inWaterAt(p.x,p.y,0))||
    h.indoorFloor!==indoorWorld?.currentFloor+1)return false;
  const d=D(h,p),a=Math.abs(angD(Math.atan2(p.y-h.y,p.x-h.x),h.face));
@@ -1561,7 +1592,7 @@ function indoorUpdateGuardNotice(h,dt){
     if(moved>=6)n.lastDir={x:(p.x-n.spot.x)/moved,y:(p.y-n.spot.y)/moved};
    }else n.lastDir=null;
    n.spot={x:p.x,y:p.y};
-  }else if(sameFloor&&debugMode<2&&!(p.dig>0)&&distanceMoved/elapsed>80&&distanceMoved<50&&D(h,p)<72&&
+  }else if(sameFloor&&!indoorStairProtected()&&debugMode<2&&!(p.dig>0)&&distanceMoved/elapsed>80&&distanceMoved<50&&D(h,p)<72&&
     Math.abs(angD(Math.atan2(p.y-h.y,p.x-h.x),h.face))<Math.PI*7/8&&cachedLos(h,p)){
    // Nearby footsteps cause investigation, never instant discovery. Walls block
    // this conservative hearing model; teleporting between floors emits no step.
@@ -1700,8 +1731,12 @@ function indoorUpdateAllyCombat(h,dt){
 }
 function updateInfiltrationGuardAI(h,dt){
  if(!h.indoorGuard)return false;
+ if(indoorStairProtected()&&h.indoorFloor===indoorWorld.currentFloor+1&&h.target==='p'){
+   h.st=0;h.target=null;h.indoorAlert=null;h.indoorNotice=null;h.burstLeft=0;h.lost=0;
+   h.indoorRocketCharge=0;h.indoorRocketAim=null;
+ }
  if(indoorUpdateAllyCombat(h,dt))return true;
- indoorObserveFoundGuard(h,dt);
+ if(!indoorStairProtected())indoorObserveFoundGuard(h,dt);
  if(!h.indoorAlert){
   if(h.st&&h.target==='p')indoorStartGuardPursuit(h);
   else if(h.st)return false;
@@ -1833,6 +1868,7 @@ function indoorPartnerAssistsDocument(q){
 function updateInfiltrationMission(dt){
   if(!indoorWorld||!mission||state!=='play')return;
   const w=indoorWorld,m=mission;
+  indoorTickStairSanctuary(dt);
   if(w.alarm?.active)w.alarm.elapsed+=dt;
   const detected=playerDetectedNow();
   m.detected=detected;
@@ -1849,6 +1885,7 @@ function updateInfiltrationMission(dt){
     w.currentFloor=1-w.currentFloor;
     const target=w.floors[w.currentFloor];
     p.x=target.stair.x;p.y=target.stair.y+38;
+    indoorBeginStairSanctuary(target);
     w.stairsCooldown=2;w.stairArmed=false;
     m.progress=0;m.current=null;
     cam=Math.max(0,Math.min(WH-H,p.y-H*.6));
@@ -1981,6 +2018,13 @@ function indoorConcretePattern(){
   return pattern;
 }
 const indoorOutdoorTerrain={n:'丘陵',g:'#6b7a3a'};
+function drawInfiltrationStairSprite(floor){
+  const image=indoorPropImage(floor.number===1?'stairs_up':'stairs_down');if(!image)return false;
+  const iw=image.naturalWidth||image.width,ih=image.naturalHeight||image.height;
+  const scale=Math.min(92/iw,140/ih),w=iw*scale,h=ih*scale;
+  g.save();g.imageSmoothingEnabled=true;
+  g.drawImage(image,floor.stair.x-w/2,floor.stair.y-h/2,w,h);g.restore();return true;
+}
 function drawInfiltrationFloors(cx,cy){
   if(!indoorWorld)return;
   const left=Math.max(0,cx-24),top=cy-24,right=Math.min(WW,cx+W+24),bottom=cy+H+24;
@@ -2023,6 +2067,7 @@ function drawInfiltrationFloors(cx,cy){
     // 俯瞰の階段。段板・影・手すりを軽量Canvas図形だけで描く。
     if(f.stair.y>cy-130&&f.stair.y<cy+H+130){
       const x=f.stair.x,y=f.stair.y;
+      if(!drawInfiltrationStairSprite(f)){
       g.save();g.translate(x,y);
       g.fillStyle='#283c37';g.fillRect(-44,-58,88,116);
       g.fillStyle='#8a9684';g.fillRect(-36,-52,72,103);
@@ -2037,9 +2082,10 @@ function drawInfiltrationFloors(cx,cy){
       g.fillStyle='#ced7bc';g.fillRect(-42,-50,5,96);g.fillRect(37,-50,5,96);
       g.strokeStyle='#e1f5dd';g.lineWidth=2;g.beginPath();
       g.moveTo(0,20);g.lineTo(0,-24);g.lineTo(-11,-12);g.moveTo(0,-24);g.lineTo(11,-12);g.stroke();
-      g.font='bold 12px system-ui';g.fillStyle='#f1efcf';g.textAlign='center';
-      g.fillText(f.number===1?'2F ▲':'1F ▼',0,67);
       g.restore();
+      }
+      g.font='bold 12px system-ui';g.fillStyle='#f1efcf';g.textAlign='center';
+      g.fillText(f.number===1?'2F ▲':'1F ▼',x,y+80);
     }
     // 前線制圧のような円形の脱出範囲。描画と待機判定は同じ半径を使う。
     for(const q of [f.entrance||f.entrances?.[0],f.emergency].filter(Boolean)){
@@ -2248,6 +2294,13 @@ function drawInfiltrationMission(){
     gm.fillText('館内アラート',W/2,25);
   }
   drawInfiltrationAlarmEyes();
+  if(indoorStairProtected()){
+    const area=indoorWorld.stairSanctuary,x=area.x-camX,y=area.y-cam;
+    gm.save();gm.fillStyle='rgba(110,220,240,.08)';gm.strokeStyle='rgba(150,235,255,.6)';gm.lineWidth=2;
+    gm.beginPath();gm.arc(x,y,INDOOR_STAIR_GRACE_RADIUS,0,Math.PI*2);gm.fill();gm.stroke();
+    gm.font='bold 12px system-ui';gm.textAlign='center';gm.fillStyle='#c5f5ff';
+    gm.fillText('SAFE '+area.remaining.toFixed(1)+'s',x,y-30);gm.restore();
+  }
   for(const q of mission.points){
     if(q.floor!==indoorWorld.currentFloor+1||(q.done&&!(q.collectedT>0)))continue;
     const x=q.x-camX,y=q.y-cam,r=INDOOR_ACQUIRE_RADIUS;
