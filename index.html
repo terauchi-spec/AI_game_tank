@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.20.0759</title>
+<title>こっそり戦車大作戦 2026.10.20.0840</title>
 
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
@@ -864,7 +864,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.20.0759',FILE_CREATED_AT='2026/10/20 07:59',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.20.0840',FILE_CREATED_AT='2026/10/20 08:40',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -1354,7 +1354,8 @@ function objectHitRect(o){
   return{x:vr.x+vr.w*.07,y:vr.y+vr.h*.035,w:vr.w*.86,h:vr.h*.93};
  }
  const cx=o.x+o.w/2,cy=o.y+o.h/2;
- if(o.indoorExplosive&&(o.kind==='crate'||o.kind==='shellPallet')){
+ if(o.indoorExplosive&&o.kind==='crate')return centerRect(cx,cy,o.w*1.02*.90,o.h*1.02*.90);
+ if(o.indoorExplosive&&o.kind==='shellPallet'){
   const im=o.kind==='crate'?COVER_IMG.crate:COVER_IMG.shell_pallet;
   const [w,h]=fitAspect(im,o.w*(o.kind==='crate'?1.02:1.12),o.h*(o.kind==='crate'?1.02:1.12));
   return centerRect(cx,cy,w*.90,h*.90);
@@ -1480,7 +1481,7 @@ function drawObject(o){
  }
  if(o.kind==='civilCar'){g.save();g.translate(cx,cy);if(o.h>o.w)g.rotate(Math.PI/2);drawStaticRaster(civilCarSprite(o.color||0),-41,-22,82,44);g.restore();return;}
  if(o.kind==='crate'){/* 木箱は敵前線基地で使用していた素材・向きに統一 */const im=COVER_IMG.crate;
-  if(o.indoorExplosive){const [w,h]=fitAspect(im,o.w*1.02,o.h*1.02);if(drawAssetSprite(im,cx,cy,w,h,0,1))return;}
+  if(o.indoorExplosive){if(drawAssetSprite(im,cx,cy,o.w*1.02,o.h*1.02,0,1))return;}
   else if(drawAssetSprite(im,cx,cy,o.w*1.02,o.h*1.02,0,1))return;g.fillStyle='#7a5f3a';g.fillRect(o.x,o.y,o.w,o.h);g.strokeStyle='#4e3c24';g.lineWidth=3;g.strokeRect(o.x+2,o.y+2,o.w-4,o.h-4);return;}
  if(o.kind==='barrel'){
   const im=COVER_IMG.barrel;
@@ -3223,7 +3224,7 @@ function terrainMoveScale(o,dx,dy,r){
  }
  return 1;
 }
-function mv(o,dx,dy,r,slowOverride=null){if(mazeComparisonEnemyFrozen(o))return;const slow=Number.isFinite(slowOverride)?slowOverride:terrainMoveScale(o,dx,dy,r);dx*=slow;dy*=slow;const nx=o.x+dx;if(!(stageMode==='indoor'&&o.indoorGuard&&indoorGuardStairBlocked(o,nx,o.y,r))&&nx>r&&nx<WW-r&&!hitsC(nx,o.y,r)&&!enemyTankObjectBlocked(o,nx,o.y)&&!tankBlocked(o,nx,o.y,r)&&!enemyUnitBlocked(o,nx,o.y,r)&&(!o.dogHandler||dogHandlerStepAllowed(o,nx,o.y)))o.x=nx;const top=frontlineMovementTop(o,r),ny=top>r?Math.max(top,o.y+dy):o.y+dy;if(!(stageMode==='indoor'&&o.indoorGuard&&indoorGuardStairBlocked(o,o.x,ny,r))&&ny>r&&ny<WH-r&&!hitsC(o.x,ny,r)&&!enemyTankObjectBlocked(o,o.x,ny)&&!tankBlocked(o,o.x,ny,r)&&!enemyUnitBlocked(o,o.x,ny,r)&&(!o.dogHandler||dogHandlerStepAllowed(o,o.x,ny)))o.y=ny;}
+function mv(o,dx,dy,r,slowOverride=null){if(stageMode==='indoor'&&o===p&&indoorWorld?.stairMoveLock>0)return;if(mazeComparisonEnemyFrozen(o))return;const slow=Number.isFinite(slowOverride)?slowOverride:terrainMoveScale(o,dx,dy,r);dx*=slow;dy*=slow;const nx=o.x+dx;if(!(stageMode==='indoor'&&o.indoorGuard&&indoorGuardStairBlocked(o,nx,o.y,r))&&nx>r&&nx<WW-r&&!hitsC(nx,o.y,r)&&!enemyTankObjectBlocked(o,nx,o.y)&&!tankBlocked(o,nx,o.y,r)&&!enemyUnitBlocked(o,nx,o.y,r)&&(!o.dogHandler||dogHandlerStepAllowed(o,nx,o.y)))o.x=nx;const top=frontlineMovementTop(o,r),ny=top>r?Math.max(top,o.y+dy):o.y+dy;if(!(stageMode==='indoor'&&o.indoorGuard&&indoorGuardStairBlocked(o,o.x,ny,r))&&ny>r&&ny<WH-r&&!hitsC(o.x,ny,r)&&!enemyTankObjectBlocked(o,o.x,ny)&&!tankBlocked(o,o.x,ny,r)&&!enemyUnitBlocked(o,o.x,ny,r)&&(!o.dogHandler||dogHandlerStepAllowed(o,o.x,ny)))o.y=ny;}
 let lastEnemySeparationAt=-1e9;
 function separateEnemyUnits(force=false){
  const now=performance.now();if(!force&&now-lastEnemySeparationAt<100)return;lastEnemySeparationAt=now;
@@ -7972,7 +7973,7 @@ function reportGameError(error){
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/canyon.js?v=2026.10.14.1836"></script>
 <script src="js/vegetation.js?v=2026.10.14.1653"></script>
-<script src="js/infiltration-world.js?v=2026.10.20.0759"></script>
+<script src="js/infiltration-world.js?v=2026.10.20.0840"></script>
 <script>
 (function(){
 // iPhone Chrome/Safari: synthetic KeyboardEvent に依存せず、ゲーム内部の入力状態を直接更新する。

@@ -17,7 +17,7 @@ function harness(seed=1,width=480){
   api={get world(){return indoorWorld;},bounds:infiltrationFloorBounds,clamp:enforceInfiltrationBoundary,
     camera:infiltrationCamera,begin:beginInfiltrationExtraction,update:updateInfiltrationExtraction,
     mission:updateInfiltrationMission,draw:drawInfiltrationExtraction,sprite:infiltrationJeepSprite,
-    protected:indoorStairProtected,protect:indoorBeginStairSanctuary,tick:indoorTickStairSanctuary,sees:indoorGuardSeesPlayer,record:indoorRecordGuardDiscovery,stairBlocked:indoorGuardStairBlocked,move:indoorMoveGuardTo,stairBounds:indoorStairBounds};`,c);
+    protected:indoorStairProtected,protect:indoorBeginStairSanctuary,tick:indoorTickStairSanctuary,sees:indoorGuardSeesPlayer,record:indoorRecordGuardDiscovery,stairBlocked:indoorGuardStairBlocked,move:indoorMoveGuardTo,stairBounds:indoorStairBounds,landing:indoorStairLanding};`,c);
  return{c,api:c.api,draws,get completed(){return completed;},get canvases(){return canvases;}};
 }
 
@@ -186,9 +186,32 @@ test('stairs have three solid sides, require entering at the mouth, and switch o
    c.p.y=b.y+20;h.api.mission(.01);assert.equal(w.currentFloor,1-before);
    assert.equal(h.api.protected(),true);
    const area=w.stairSanctuary;
-   c.p.x=area.x+100;assert.equal(h.api.protected(),true);
-   c.p.x=area.x+101;assert.equal(h.api.protected(),false);
+   const landing=h.api.landing(w.floors[w.currentFloor]);
+   assert.equal(c.p.x,landing.x);assert.equal(c.p.y,landing.y);
+   assert.equal(area.w,44);assert.equal(area.h,44);
+   c.p.x=area.x+area.w;assert.equal(h.api.protected(),true);
+   c.p.x+=1;assert.equal(h.api.protected(),false);
+   c.p.x=landing.x;c.p.y=area.y+area.h;assert.equal(h.api.protected(),true);
+   c.p.y+=1;assert.equal(h.api.protected(),false);
+   c.p.y=landing.y;
    c.p.x=area.x;h.api.mission(3);assert.equal(w.currentFloor,1-before,'landing never immediately bounces back');
   }
  }
+});
+
+
+test('stair arrival freezes only the infiltration player for 0.3 seconds',()=>{
+ const h=harness(),c=h.c,w=h.api.world,b=h.api.stairBounds(w.floors[0].stair,1);
+ Object.assign(c.p,{x:w.floors[0].stair.x,y:b.y+b.h-12});h.api.mission(.01);
+ c.p.y=b.y+20;h.api.mission(.01);assert.equal(w.stairMoveLock,.3);
+ const index=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),start=index.indexOf('function mv(');
+ Object.assign(c,{mazeComparisonEnemyFrozen:()=>false,terrainMoveScale:()=>1,hitsC:()=>false,
+  enemyTankObjectBlocked:()=>false,tankBlocked:()=>false,enemyUnitBlocked:()=>false,frontlineMovementTop:()=>0});
+ vm.runInContext(index.slice(start,index.indexOf('\n',start)),c);
+ const x=c.p.x,y=c.p.y;
+ c.mv(c.p,5,5,8);assert.equal(c.p.x,x);assert.equal(c.p.y,y);
+ const ally={x:100,y:c.p.y};c.mv(ally,5,0,8);assert.equal(ally.x,105);
+ h.api.mission(.29);c.mv(c.p,5,0,8);assert.equal(c.p.x,x);
+ h.api.mission(.011);c.mv(c.p,5,0,8);assert.equal(c.p.x,x+5);
+ w.stairMoveLock=.3;c.stageMode='base';c.mv(c.p,5,0,8);assert.equal(c.p.x,x+10);
 });

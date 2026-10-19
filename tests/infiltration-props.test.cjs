@@ -28,7 +28,7 @@ test('indoor WebP prop types vary while beds stay confined to small rooms',()=>{
  const expected=['bed','cabinet','container','desk','equipment','shelf'];
  for(let seed=1;seed<=60;seed++)for(const number of [1,2]){
   const f=indoorGenerateFloor(number,random(seed));
-  assert.ok(f.furniture.filter(q=>q.zone==='room').every(q=>expected.includes(q.artKind)));
+  assert.ok(f.furniture.every(q=>expected.includes(q.artKind)),'every indoor furniture collider has a WebP asset');
   for(const q of f.furniture.filter(q=>q.artKind==='bed')){
    const room=f.rooms.find(r=>r.tiles.some(t=>q.x>=t.x&&q.x<t.x+t.w&&q.y>=t.y&&q.y<t.y+t.h));
    assert.equal(room.size,1);assert.ok(Math.abs(q.h*1.75-104)<1e-9);assert.ok(Math.abs(q.w/104-106/256)<1e-9);

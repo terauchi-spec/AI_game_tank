@@ -353,8 +353,9 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
       Math.max(tx+16,Math.min(tx+SIZE-item.w-16,cx-item.w/2));
     item.y=Math.max(ty+16,Math.min(ty+SIZE-item.h-16,cy-item.h/2));
   }
+  for(let i=furniture.length-1;i>=0;i--)if(!furniture[i].artKind)furniture.splice(i,1);
   // Stage-exclusive cargo: each cluster contains one kind; collisions match visual scale.
-  // Crates are 2x and shell pallets 4x along BOTH axes. Barrels keep their size.
+  // Crates use a vertical 2:1 world ratio; shell pallets keep their large footprint.
   const explosiveObjects=[];
   const clusterCells=indoorShuffle(halls.filter(i=>!lobbyIds.includes(i)&&i!==stairIndex&&i!==index(2,0)),rng);
   const roomCells=indoorShuffle(rooms.filter(r=>r!==postRoom).flatMap(r=>r.cellIds),rng);
@@ -403,14 +404,15 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     if(count<=0)return false;
     const columns=zone==='hallway'||kind==='shellPallet'||kind==='crate'?1:2;
     const gap=kind==='shellPallet'?0:7;
-    const rows=Math.ceil(count/columns),width=columns*size+(columns-1)*gap,height=rows*size+(rows-1)*gap;
+    const itemH=kind==='crate'?size*2/INDOOR_SCALE_Y:size;
+    const rows=Math.ceil(count/columns),width=columns*size+(columns-1)*gap,height=rows*itemH+(rows-1)*gap;
     const positions=zone==='hallway'
       ?hallCorners(width,height,14)
       :[[14,14],[SIZE-width-14,14],[14,SIZE-height-14],[SIZE-width-14,SIZE-height-14]];
     for(const [dx,dy] of positions){
       const items=Array.from({length:count},(_,i)=>({
-        x:xx+dx+(i%columns)*(size+gap),y:yy+dy+Math.floor(i/columns)*(size+gap),
-        w:size,h:size,kind,zone,group:zone+'-'+groupId}));
+        x:xx+dx+(i%columns)*(size+gap),y:yy+dy+Math.floor(i/columns)*(itemH+gap),
+        w:size,h:itemH,kind,zone,group:zone+'-'+groupId}));
       if(dx<10||dy<10||dx+width>SIZE-10||dy+height>SIZE-10)continue;
       if(items.every(o=>isFree(o))){
         explosiveObjects.push(...items);return true;
@@ -457,6 +459,27 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
   if(!explosiveObjects.some(o=>o.zone==='room'))reserve('room','barrel');
   if(!explosiveObjects.some(o=>o.kind==='crate'))reserve('room','crate')||reserve('hallway','crate');
   if(!explosiveObjects.some(o=>o.kind==='barrel'))reserve('room','barrel')||reserve('hallway','barrel');
+  // 廊下の家具・貨物を同じ区画の実在する壁へ寄せる。生成時に一度だけ実行。
+  const hallPieces=[...furniture,...explosiveObjects].filter(o=>o.zone==='hallway');
+  for(const item of hallPieces){
+    const tx=X0+Math.floor((item.x-X0)/SIZE)*SIZE,ty=Y0+Math.floor((item.y-Y0)/SIZE)*SIZE;
+    const candidates=[];
+    for(const wall of walls){
+      if(wall.h>wall.w&&wall.y<=item.y&&wall.y+wall.h>=item.y+item.h){
+        if(hallLeft&&wall.x+wall.w<=item.x)candidates.push({...item,x:wall.x+wall.w+3});
+        if(!hallLeft&&wall.x>=item.x+item.w)candidates.push({...item,x:wall.x-item.w-3});
+      }
+      if(wall.w>wall.h&&wall.x<=item.x&&wall.x+wall.w>=item.x+item.w){
+        if(wall.y+wall.h<=item.y)candidates.push({...item,y:wall.y+wall.h+3});
+        if(wall.y>=item.y+item.h)candidates.push({...item,y:wall.y-item.h-3});
+      }
+    }
+    candidates.sort((a,b)=>distance(a,item)-distance(b,item));
+    const near=candidates.find(o=>o.x>=tx+10&&o.x+o.w<=tx+SIZE-10&&o.y>=ty+10&&o.y+o.h<=ty+SIZE-10&&
+      distance(o,item)<=48&&!walls.some(w=>overlap(o,w,2))&&!doorLanes.some(d=>overlap(o,d,5))&&
+      ![...furniture,...explosiveObjects].some(q=>q!==item&&overlap(o,q,6)));
+    if(near){item.x=near.x;item.y=near.y;}
+  }
   // Ceiling lights are centered on real room/table locations, never in the walls.
   // All geometry and light strengths below are confined to the infiltration stage.
   const lightFixtures=[];
@@ -788,7 +811,7 @@ function setupInfiltrationWorld(){
   // Off-map base avoids outdoor destruction / HQ spawning while preserving core state shape.
   base={x:-5000,y:-5000,w:100,h:100,hp:30,maxHp:30,deadAt:0};
   document.body.classList.remove('front-battle');
-  indoorWorld={floors:[],intel:[],currentFloor:0,stairEntryFloor:null,stairsCooldown:0,exit:null,emergency:null,entrance:null,
+  indoorWorld={floors:[],intel:[],currentFloor:0,stairEntryFloor:null,stairMoveLock:0,stairsCooldown:0,exit:null,emergency:null,entrance:null,
     alarm:{active:false,witnesses:new Set(),elapsed:0}};
   // 同じ階段位置を1F/2Fで共有させる。間取りは各階別々のランダムシード。
   const indoorSeedRng=seed=>{let x=seed>>>0;return()=>{x=(Math.imul(x,1664525)+1013904223)>>>0;return x/4294967296;};};
@@ -1007,7 +1030,7 @@ function indoorStairObstacleBounds(stair,number){
 }
 function indoorStairLanding(floor){
   const b=indoorStairBounds(floor.stair,floor.number);
-  return{x:floor.stair.x,y:b.y+b.h+20};
+  return{x:floor.stair.x,y:b.y+22};
 }
 function indoorStairTravelReady(floor){
   const b=indoorStairBounds(floor.stair,floor.number),w=indoorWorld;
@@ -1381,14 +1404,17 @@ function indoorUpdateAlarmSweep(h,a,dt){
  indoorSelectSweepGoal(h,a,floor,points);
 }
 
-const INDOOR_STAIR_GRACE_RADIUS=100;
+function indoorStairSafeArea(floor){
+  const b=indoorStairBounds(floor.stair,floor.number);
+  return{x:b.x+8,y:b.y+8,w:b.w-16,h:44};
+}
 function indoorStairProtected(){
   const area=indoorWorld?.stairSanctuary;
   return !!(area&&area.floor===indoorWorld.currentFloor&&
-    Math.hypot(p.x-area.x,p.y-area.y)<=INDOOR_STAIR_GRACE_RADIUS);
+    p.x>=area.x&&p.x<=area.x+area.w&&p.y>=area.y&&p.y<=area.y+area.h);
 }
 function indoorBeginStairSanctuary(floor){
-  indoorWorld.stairSanctuary={...indoorStairLanding(floor),
+  indoorWorld.stairSanctuary={...indoorStairSafeArea(floor),
     floor:indoorWorld.currentFloor};
   for(const h of floor.guards){
     h.indoorNotice=null;h._detectCache=null;h._nextDetectAt=0;h._nextVisAt=0;
@@ -1946,6 +1972,7 @@ function updateInfiltrationMission(dt){
   indoorUpdateAlarmChats(dt);
   indoorScanStunnedGuards(dt);
   // 発見だけでは終了させず、潜入専用AIの追跡・最終目撃地点確認・捜索を継続する。
+  w.stairMoveLock=Math.max(0,(w.stairMoveLock||0)-dt);
   w.stairsCooldown=Math.max(0,w.stairsCooldown-dt);
   const floor=w.floors[w.currentFloor];
   if(indoorStairTravelReady(floor)&&w.stairsCooldown<=0){
@@ -1953,7 +1980,7 @@ function updateInfiltrationMission(dt){
     const target=w.floors[w.currentFloor];
     Object.assign(p,indoorStairLanding(target));
     indoorBeginStairSanctuary(target);
-    w.stairsCooldown=2;w.stairEntryFloor=null;
+    w.stairsCooldown=2;w.stairEntryFloor=null;w.stairMoveLock=.3;
     m.progress=0;m.current=null;
     cam=Math.max(0,Math.min(WH-H,p.y-H*.6));
     say((w.currentFloor+1)+'階へ移動');sfx('skill');
@@ -2214,61 +2241,9 @@ function drawInfiltrationProps(cx,cy){
     for(const o of floor.props){
       const {x,y,w,h}=o;
       if(x>cx+W+50||x+w<cx-50||y>cy+H+50||y+h<cy-50)continue;
-      const type=o.propKind;
-      g.save();
-      g.fillStyle='rgba(0,0,0,.26)';g.fillRect(x+4,y+5,w,h);
-      if(drawInfiltrationPropSprite(o)){g.restore();continue;}
-      if(type==='barrel'){
-        g.fillStyle='#283c40';g.fillRect(x+5,y+3,w-10,h-6);
-        for(const ax of [.28,.72]){
-          const bx=x+w*ax,by=y+h*.5,rad=Math.min(w*.19,h*.34);
-          g.fillStyle='#426169';g.beginPath();g.arc(bx,by,rad+2,0,Math.PI*2);g.fill();
-          g.strokeStyle='#a3b9ad';g.lineWidth=2;g.stroke();
-          g.fillStyle='#17272b';g.beginPath();g.arc(bx,by,rad*.42,0,Math.PI*2);g.fill();
-        }
-      }else if(type==='sandbag'){
-        g.fillStyle='#766e4c';g.fillRect(x,y,w,h);
-        for(let k=0;k<3;k++){
-          const yy=y+5+k*(h-9)/3;
-          g.fillStyle=k%2?'#9d9064':'#b2a278';g.fillRect(x+4,yy,w-8,(h-12)/3);
-          g.strokeStyle='rgba(53,47,34,.7)';g.strokeRect(x+4,yy,w-8,(h-12)/3);
-        }
-      }else if(type==='ammo'||type==='supply'||type==='kit'){
-        g.fillStyle=type==='ammo'?'#4a6348':type==='supply'?'#76664b':'#55616a';
-        g.fillRect(x,y,w,h);
-        g.strokeStyle='#1e2a26';g.lineWidth=3;g.strokeRect(x+1.5,y+1.5,w-3,h-3);
-        g.fillStyle='rgba(196,190,136,.35)';g.fillRect(x+5,y+5,w-10,5);
-        g.strokeStyle='#c9c8aa';g.lineWidth=2;
-        g.beginPath();g.moveTo(x+9,y+10);g.lineTo(x+w-9,y+h-9);
-        g.moveTo(x+w-9,y+10);g.lineTo(x+9,y+h-9);g.stroke();
-        g.textAlign='center';g.font='bold 10px system-ui';g.fillStyle='#e2e8c5';
-
-      }else if(type==='cabinet'){
-        g.fillStyle='#66777b';g.fillRect(x,y,w,h);
-        g.fillStyle='#899699';g.fillRect(x+3,y+4,w-6,h-8);
-        for(let k=1;k<=3;k++){
-          g.strokeStyle='#374c4f';g.lineWidth=2;g.beginPath();
-          g.moveTo(x+5,y+k*h/4);g.lineTo(x+w-5,y+k*h/4);g.stroke();
-          g.fillStyle='#d5ded6';g.fillRect(x+w/2-7,y+k*h/4-5,14,2);
-        }
-      }else if(type==='postTable'||type==='table'||type==='desk'){
-        g.fillStyle=type==='postTable'?'#67593e':type==='desk'?'#6a6550':'#827158';
-        g.fillRect(x,y,w,h);g.strokeStyle='#37362d';g.lineWidth=3;g.strokeRect(x+1,y+1,w-2,h-2);
-        g.fillStyle='#a59775';g.fillRect(x+7,y+6,w-14,Math.max(6,h-12));
-        if(type==='postTable'){
-          g.fillStyle='#c1c9b0';g.fillRect(x+11,y+12,Math.min(24,w/3),Math.min(18,h/2));
-          g.fillStyle='#3c584f';g.fillRect(x+w-34,y+10,25,18);
-          g.strokeStyle='#d3d3ad';g.lineWidth=1;g.strokeRect(x+w-34,y+10,25,18);
-        }else if(type==='desk'){
-          g.fillStyle='#d2d3b8';g.fillRect(x+11,y+9,17,13);
-          g.fillStyle='#4e585a';g.fillRect(x+w-26,y+8,17,18);
-        }else{
-          g.fillStyle='#d1c9a7';g.fillRect(x+8,y+8,18,12);
-          g.fillStyle='#615944';g.fillRect(x+w-17,y+8,9,11);
-        }
-      }else{
-        g.fillStyle='#696d63';g.fillRect(x,y,w,h);
-      }
+      if(!indoorPropImage(o.propArt))continue;
+      g.save();g.fillStyle='rgba(0,0,0,.26)';g.fillRect(x+4,y+5,w,h);
+      drawInfiltrationPropSprite(o);
       g.restore();
     }
   }
@@ -2369,9 +2344,9 @@ function drawInfiltrationMission(){
   if(indoorStairProtected()){
     const area=indoorWorld.stairSanctuary,x=area.x-camX,y=area.y-cam;
     gm.save();gm.fillStyle='rgba(110,220,240,.08)';gm.strokeStyle='rgba(150,235,255,.6)';gm.lineWidth=2;
-    gm.beginPath();gm.arc(x,y,INDOOR_STAIR_GRACE_RADIUS,0,Math.PI*2);gm.fill();gm.stroke();
+    gm.fillRect(x,y,area.w,area.h);gm.strokeRect(x,y,area.w,area.h);
     gm.font='bold 12px system-ui';gm.textAlign='center';gm.fillStyle='#c5f5ff';
-    gm.fillText('SAFE',x,y-30);gm.restore();
+    gm.fillText('SAFE',x+area.w/2,y+area.h/2+4);gm.restore();
   }
   for(const q of mission.points){
     if(q.floor!==indoorWorld.currentFloor+1||(q.done&&!(q.collectedT>0)))continue;

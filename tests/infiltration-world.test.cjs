@@ -456,7 +456,7 @@ test('ceiling lighting transitions smoothly rather than switching abruptly',()=>
  assert.ok(levels[1]<levels[0]&&levels[3]>levels[4],'intermediate gradient zones exist');
  assert.ok(src.includes('indoorLightStamp'),'gradient texture is cached for mobile');
 });
-test('indoor cargo artwork retains image aspect ratios without altering outdoor sprites',()=>{
+test('indoor crates use a 2:1 vertical shape while pallets and outdoor sprites retain their ratios',()=>{
  const fs=require('node:fs'),path=require('node:path');
  const src=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
  const extract=(start,end)=>{
@@ -471,9 +471,9 @@ test('indoor cargo artwork retains image aspect ratios without altering outdoor 
  const drawFn=new Function('COVER_IMG','fitAspect','drawAssetSprite','drawInfiltrationShellPallet',
    extract('function drawObject(o){','\nfunction drawBuiltConcrete(')+'\nreturn drawObject;')(
    {crate,shell_pallet:shell},fitFn,drawSprite,()=>false);
- drawFn({x:0,y:0,w:60,h:60,kind:'crate',indoorExplosive:true});
+ drawFn({x:0,y:0,w:60,h:120,kind:'crate',indoorExplosive:true});
  drawFn({x:0,y:0,w:120,h:120,kind:'shellPallet',indoorExplosive:true});
- assert.ok(Math.abs(draws[0].w/draws[0].h-80/120)<.0001,'wooden crate source ratio');
+ assert.ok(Math.abs(draws[0].h/draws[0].w-2)<.0001,'indoor crate is twice as tall as wide');
  assert.ok(Math.abs(draws[1].w/draws[1].h-200/100)<.0001,'pallet source ratio');
  drawFn({x:0,y:0,w:60,h:60,kind:'crate'});
  assert.equal(draws[2].w,60*1.02,'outdoor crate size remains unchanged');
@@ -502,7 +502,7 @@ test('all advertised indoor door apertures remain wall-free and cargo clusters a
   const kinds=new Map();
   for(const o of f.explosiveObjects){
    assert.equal(o.w,o.kind==='crate'?60:o.kind==='shellPallet'?120:30);
-   assert.equal(o.h,o.w,'enlarged objects have matching physical bounds');
+   assert.equal(o.h,o.kind==='crate'?o.w*2/1.75:o.w,'crate ratio accounts for the indoor world scale');
    const previous=kinds.get(o.group);
    if(previous)assert.equal(previous,o.kind,'cluster must not mix kinds');
    kinds.set(o.group,o.kind);
