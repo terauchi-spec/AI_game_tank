@@ -632,6 +632,11 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     for(const door of frontDoors)doorMarks.push({...door,vertical:false,outer:true,kind:'main'});
     doorMarks.push({...emergencyDoor,vertical:false,outer:true,kind:'emergency'});
   }
+  // 見た目だけを差し替え、家具の数・配置・当たり判定・乱数列は維持する。
+  const roomArt=['container','equipment','shelf','cabinet','desk','bed'];let artIndex=0;
+  for(const item of furniture)item.artKind=item.kind==='postTable'?'desk':
+    item.zone==='room'?roomArt[artIndex++%roomArt.length]:
+    ({ammo:'container',supply:'shelf',kit:'equipment'}[item.kind]||null);
   return{number,pattern,rooms,walls,furniture,explosiveObjects,lightFixtures,guards,postGuards,postCount,postRoomId:postRoom.id,intel,stair,exit,entrance,entrances,emergency,
     roomRoomDoors:connectingRooms,extraHallDoors:moreHallDoors,
     doors:doorMarks,windows,
@@ -732,6 +737,27 @@ function indoorDoorCollisionRect(q){
 const indoorAt=(x,y,offset)=>({x:INDOOR_OFFSET_X+x*INDOOR_SCALE_X,y:y*INDOOR_SCALE_Y+offset});
 const indoorRect=(rect,offset)=>({x:INDOOR_OFFSET_X+rect.x*INDOOR_SCALE_X,y:rect.y*INDOOR_SCALE_Y+offset,
  w:rect.w*INDOOR_SCALE_X,h:rect.h*INDOOR_SCALE_Y});
+// 屋外のみ、固定回数の抽選で疎らに配置。建物・玄関導線・脱出地点は必ず空ける。
+function indoorGenerateExterior(floor,rng,worldWidth=960){
+  if(floor.number!==1)return[];
+  const out=[],fp=floor.footprint,south=fp.y+fp.h;
+  const gateways=[...(floor.entrances||[]),floor.emergency].filter(Boolean);
+  for(const side of ['south','north']){
+    const limit=side==='south'?8:2;let placed=0;
+    for(let attempt=0;attempt<160&&placed<limit;attempt++){
+      const tree=placed%2===0,size=tree?72+rng()*24:48+rng()*20;
+      const cx=65+rng()*(worldWidth-130),cy=side==='south'
+        ?south+110+rng()*(INDOOR_FORECOURT_DEPTH-220):fp.y-190+rng()*70;
+      if(gateways.some(q=>Math.hypot(cx-q.x,cy-q.y)<145+size/2))continue;
+      if(side==='south'&&(floor.entrances||[]).some(q=>Math.abs(cx-q.x)<92+size/2))continue;
+      if(side==='north'&&floor.emergency&&Math.abs(cx-floor.emergency.x)<110+size/2)continue;
+      if(out.some(q=>Math.hypot(cx-q.x-q.w/2,cy-q.y-q.h/2)<155))continue;
+      out.push({x:cx-size/2,y:cy-size/2,w:size,h:size,kd:tree?6:8,
+        indoorExterior:true,hp:999999});placed++;
+    }
+  }
+  return out;
+}
 function setupInfiltrationWorld(){
   const ground=ZONE_STYLE['敵迷路基地'];
   ZONES=[{n:'敵迷路基地',y0:WH,y1:-400,g:'#202820',p:ground.p.slice(),pat:null,indoor:true}];
@@ -775,7 +801,7 @@ function setupInfiltrationWorld(){
     const props=[];
     for(const piece of raw.furniture){
       const q=indoorRect(piece,off);
-      const prop={...q,kd:1,indoorProp:true,propKind:piece.kind,propZone:piece.zone,hp:999999};
+      const prop={...q,kd:1,indoorProp:true,propKind:piece.kind,propArt:piece.artKind,propZone:piece.zone,hp:999999};
       covers.push(prop);props.push(prop);
     }
     // 共通の木箱/ドラム缶/砲弾ケースを通常の爆発オブジェクトとして登録。
@@ -874,6 +900,8 @@ function setupInfiltrationWorld(){
   indoorWorld.emergency={...entrance.emergency};
   indoorWorld.exits=[...entrance.entrances,entrance.emergency];
   indoorWorld.currentFloor=0;
+  indoorWorld.exterior=indoorGenerateExterior(entrance,indoorSeedRng(seeds[0]^0x7e31ac09));
+  covers.push(...indoorWorld.exterior);
   patrolRoutesVisible=false;
   rebuildSpatialGrid();
   say('拠点潜入：廊下の物資に身を隠し、重要資料3箇所を回収せよ');
@@ -1854,10 +1882,7 @@ function drawInfiltrationFloors(cx,cy){
     const fp=f.footprint,x=Math.max(left,fp.x),y=Math.max(top,fp.y);
     const r=Math.min(right,fp.x+fp.w),b=Math.min(bottom,fp.y+fp.h);
     g.fillStyle=concrete;if(r>x&&b>y)g.fillRect(x,y,r-x,b-y);
-    // 建物外側に玄関前の通路を設ける。二つの出入口の前は屋外地面。
-    g.fillStyle=concrete;
-    for(const entry of f.entrances||[])g.fillRect(entry.x-55,f.footprint.y+f.footprint.h,110,entry.y-f.footprint.y-f.footprint.h+45);
-    if(f.emergency)g.fillRect(f.emergency.x-45,f.emergency.y-30,90,Math.max(0,f.footprint.y-f.emergency.y+30));
+    // 玄関前と非常口前は丘陵地面のまま。帯状の舗装は描かない。
     g.fillStyle='rgba(145,153,142,.07)';
     for(const tile of f.corridors){
       if(tile.y+tile.h<cy-30||tile.y>cy+H+30)continue;
@@ -1915,6 +1940,25 @@ function drawInfiltrationFloors(cx,cy){
   }
 }
 
+const indoorPropImages=Object.create(null);
+function indoorPropImage(kind){
+  if(!kind)return null;
+  if(!Object.prototype.hasOwnProperty.call(indoorPropImages,kind)){
+    const image=new Image();image.decoding='async';
+    image.src='assets/indoor/'+kind+'.webp';indoorPropImages[kind]=image;
+  }
+  const image=indoorPropImages[kind];return assetOK(image)?image:null;
+}
+function drawInfiltrationPropSprite(o){
+  const image=indoorPropImage(o.propArt);if(!image)return false;
+  // 画像は透過余白を除いた小型WebP。描画矩形を実際の遮蔽判定に一致させる。
+  g.save();g.imageSmoothingEnabled=true;
+  if(o.w>o.h){
+    g.translate(o.x+o.w/2,o.y+o.h/2);g.rotate(Math.PI/2);
+    g.drawImage(image,-o.h/2,-o.w/2,o.h,o.w);
+  }else g.drawImage(image,o.x,o.y,o.w,o.h);
+  g.restore();return true;
+}
 function drawInfiltrationProps(cx,cy){
   // 背景の上・兵士の下に描画する軽量な俯瞰家具。コリジョンと視線遮蔽は同じcover。
   if(!indoorWorld)return;
@@ -1926,6 +1970,7 @@ function drawInfiltrationProps(cx,cy){
       const type=o.propKind;
       g.save();
       g.fillStyle='rgba(0,0,0,.26)';g.fillRect(x+4,y+5,w,h);
+      if(drawInfiltrationPropSprite(o)){g.restore();continue;}
       if(type==='barrel'){
         g.fillStyle='#283c40';g.fillRect(x+5,y+3,w-10,h-6);
         for(const ax of [.28,.72]){
@@ -2119,4 +2164,4 @@ function drawInfiltrationMission(){
   }
   gm.restore();
 }
-if(typeof module!=='undefined'&&module.exports)module.exports={indoorGenerateFloor,indoorAt,indoorRect,indoorGuardCell,indoorGuardCellRoute,indoorMakeGuardGrid,indoorGridDetour,indoorGridPoint};
+if(typeof module!=='undefined'&&module.exports)module.exports={indoorGenerateExterior,indoorGenerateFloor,indoorAt,indoorRect,indoorGuardCell,indoorGuardCellRoute,indoorMakeGuardGrid,indoorGridDetour,indoorGridPoint};
