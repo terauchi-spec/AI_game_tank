@@ -431,18 +431,6 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
   if(!explosiveObjects.some(o=>o.zone==='room'))reserve('room','barrel');
   if(!explosiveObjects.some(o=>o.kind==='crate'))reserve('room','crate')||reserve('hallway','crate');
   if(!explosiveObjects.some(o=>o.kind==='barrel'))reserve('room','barrel')||reserve('hallway','barrel');
-  // Post guards take a few steps around their own position, avoiding the table.
-  const postObstacles=[...walls,...furniture,...explosiveObjects];
-  for(let k=0;k<postGuards.length;k++){
-    const guard=postGuards[k];
-    for(const axis of (k%2?['y','x']:['x','y'])){
-      const a={x:guard.x,y:guard.y},b={...a};a[axis]-=10;b[axis]+=10;
-      const lane={x:Math.min(a.x,b.x)-9,y:Math.min(a.y,b.y)-9,
-        w:Math.abs(b.x-a.x)+18,h:Math.abs(b.y-a.y)+18};
-      if(postObstacles.some(o=>overlap(lane,o)))continue;
-      guard.waypoints=[a,b];break;
-    }
-  }
   // Ceiling lights are centered on real room/table locations, never in the walls.
   // All geometry and light strengths below are confined to the infiltration stage.
   const lightFixtures=[];
@@ -543,6 +531,14 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
       if(!p)break;
       roomLight(p,'room-wing',room);installed.push(p);
     }
+  }
+  // Up to three extra pools fill the darkest corridor gaps, only at map creation.
+  const lightGaps=[...corridorCells].map(cell=>center(cell)).sort((a,b)=>
+    Math.min(...lightFixtures.map(l=>distance(b,l)))-Math.min(...lightFixtures.map(l=>distance(a,l))));
+  let extraLights=0;
+  for(const point of lightGaps){
+    if(extraLights>=3)break;
+    if(addLight(point,'hall','hall-extra',SIZE*.54,SIZE*.54))extraLights++;
   }
   if(hasExterior){
     for(const door of frontDoors){
@@ -761,6 +757,7 @@ function setupInfiltrationWorld(){
   const sharedStair=sharedOptions[Math.floor(R()*sharedOptions.length)];
   if(!Number.isInteger(sharedStair))throw Error('共通階段の設置候補がありません');
   const rawFloors=[1,2].map((n,i)=>indoorGenerateFloor(n,indoorSeedRng(seeds[i]),sharedStair));
+  const groundFiles=R()<.5?1:2;
   const shuffled=[1,2];
   for(const n of shuffled){
     const raw=rawFloors[n-1],off=INDOOR_FLOOR_OFFSETS[n-1];
@@ -831,7 +828,7 @@ function setupInfiltrationWorld(){
         indoorCommander:false,frontCommander:false};
       humans.push(guard);guards.push(guard);
     }
-    // 詰所兵は短い往復経路を使い、認識・追跡・射撃は潜入専用AIに統一。
+    // 詰所兵は持ち場で静止。認識・追跡・射撃は潜入専用AIに統一。
     const postGuards=[];
     for(const h of raw.postGuards){
       const pos=to(h);
@@ -842,8 +839,8 @@ function setupInfiltrationWorld(){
         indoorCommander:false,frontCommander:false};
       humans.push(guard);guards.push(guard);postGuards.push(guard);
     }
-    // 施設全体で3箇所。1階1箇所・2階2箇所に分ける。
-    const count=n===1?1:2;
+    // 合計3箇所を、1階1・2階2または1階2・2階1に分ける。
+    const count=n===1?groundFiles:INDOOR_FILES_TOTAL-groundFiles;
     const intel=raw.intel.slice(0,count).map((q,i)=>({...to(q),id:q.id,name:'重要資料 '+n+'F-'+(i+1),done:false,floor:n,progress:0}));
     indoorWorld.intel.push(...intel);
     const entrances=raw.entrances.map(to);
@@ -1021,6 +1018,42 @@ function indoorGuardCellRoute(nav,from,to){
  if(!seen.has(to))return null;
  const path=[];for(let n=to;n!==-1;n=parent[n])path.push(n);
  return path.reverse();
+}
+function indoorPostChatEligible(h){
+ return !!(h?.indoorPost&&h.alive&&!h.st&&!(h.sus>0)&&!h.indoorAlert&&!h.indoorReturn&&
+  !h.indoorAllyCombat&&!(h.stun>0)&&!(h.stunRecover>0)&&!h.houndPinned&&!(h.blastAirT>0));
+}
+function indoorUpdatePostChats(dt){
+ if(!indoorWorld)return;
+ for(const floor of indoorWorld.floors){
+  const chat=floor.postChat;
+  if(chat){
+   chat.remaining-=dt;
+   if(chat.remaining<=0||indoorWorld.alarm?.active||!indoorPostChatEligible(chat.a)||!indoorPostChatEligible(chat.b))floor.postChat=null;
+   continue;
+  }
+  if(floor.number!==indoorWorld.currentFloor+1||indoorWorld.alarm?.active)continue;
+  if(floor.postChatWait===undefined)floor.postChatWait=3+R()*5;
+  floor.postChatWait-=dt;if(floor.postChatWait>0)continue;
+  floor.postChatWait=8+R()*8;
+  const guards=floor.postGuards||[],start=floor.postChatCursor||0;
+  for(let k=0;k<guards.length;k++){
+   const index=(start+k)%guards.length,a=guards[index];if(!indoorPostChatEligible(a))continue;
+   let b=null,best=140;
+   for(const other of guards){
+    if(other===a||!indoorPostChatEligible(other))continue;
+    const d=D(a,other);if(d<best&&los(a,other)){b=other;best=d;}
+   }
+   if(b){floor.postChat={a,b,remaining:4};floor.postChatCursor=index+1;break;}
+  }
+ }
+}
+function drawInfiltrationPostChats(){
+ const floor=indoorWorld?.floors[indoorWorld.currentFloor],chat=floor?.postChat;
+ if(!chat||!indoorPostChatEligible(chat.a)||!indoorPostChatEligible(chat.b))return;
+ const x=(chat.a.x+chat.b.x)*.5-camX,y=Math.min(chat.a.y,chat.b.y)-cam-25;
+ if(x<-50||x>W+50||y<-50||y>H+50)return;
+ drawPatrolChatBubbleAt(x,y,.88,Math.sin(performance.now()*.005+chat.a.x*.03)*.8);
 }
 // Alarm conversations use dedicated fields: the outdoor chat loop intentionally
 // cancels chats for suspicious soldiers, so it must remain untouched.
@@ -1460,22 +1493,6 @@ function indoorBeginGuardSearch(h,state){
  h.st=0;h.target=null;h.sus=8;h.susMax=8;
  h.foundPause=0;h.burstLeft=0;h.lost=0;
 }
-// A prevalidated 20px post route never needs the outdoor patrol pathfinder.
-function indoorUpdatePostPatrol(h,dt){
- if(!h.path||h.path.length<2)return h.face;
- h.indoorPostWait=Math.max(0,(h.indoorPostWait||0)-dt);
- if(h.indoorPostWait>0)return h.face;
- h.wi=(h.wi||0)%h.path.length;
- const point=h.path[h.wi],distance=D(h,point);
- if(distance<2){h.wi=(h.wi+1)%h.path.length;h.indoorPostWait=.8;return h.face;}
- const angle=Math.atan2(point.y-h.y,point.x-h.x),step=Math.min(distance,18*dt);
- const oldX=h.x,oldY=h.y;mv(h,Math.cos(angle)*step,Math.sin(angle)*step,8);
- if(Math.hypot(h.x-oldX,h.y-oldY)<step*.2){
-  // A temporary obstruction reverses this short walk instead of launching A*.
-  h.wi=(h.wi+1)%h.path.length;h.indoorPostWait=1;
- }
- return angle;
-}
 function indoorUpdateGuardNotice(h,dt){
  // Ordinary patrol still uses the established path and speed, but player
  // recognition and suspicion belong exclusively to this stage.
@@ -1530,7 +1547,8 @@ function indoorUpdateGuardNotice(h,dt){
   else indoorMoveGuardTo(h,back.goal,dt,30,back.nav);
   return true;
  }
- h.face=h.indoorPost?indoorUpdatePostPatrol(h,dt):patrol(h,dt,30*(h.indoorWhite?1.2:1),8);return true;
+ if(h.indoorPost)return true;
+ h.face=patrol(h,dt,30*(h.indoorWhite?1.2:1),8);return true;
 }
 // Visual alert relay is separate from the limited nearby voice report.
 function indoorObserveFoundGuard(h,dt){
@@ -1771,6 +1789,7 @@ function updateInfiltrationMission(dt){
   m.detected=detected;
   indoorReplenishGuards(dt);
   updateInfiltrationDoors(dt);
+  indoorUpdatePostChats(dt);
   indoorUpdateAlarmChats(dt);
   indoorScanStunnedGuards(dt);
   // 発見だけでは終了させず、潜入専用AIの追跡・最終目撃地点確認・捜索を継続する。
@@ -2019,6 +2038,7 @@ function drawInfiltrationMission(){
     if(nextText!==indoorHudSnapshot){indoorHudSnapshot=nextText;el.innerHTML=nextText;}
   }
   gm.save();gm.setTransform(1,0,0,1,0,0);
+  drawInfiltrationPostChats();
   drawInfiltrationAlarmChats();
   if(indoorWorld.alarm?.active){
     const height=Math.min(150,H*.2);

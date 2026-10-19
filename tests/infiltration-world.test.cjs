@@ -126,7 +126,7 @@ test('windows only on exterior walls, rooms furnished, corridors contain militar
    assert.ok(f.furniture.some(x=>x.kind==='postTable'));
  }
 });
-test('large barracks has four to eight guards with short patrols outside the table',()=>{
+test('large barracks has four to eight stationary guards outside the table',()=>{
  for(let seed=1;seed<=180;seed++){
   const f=indoorGenerateFloor(1,random(seed*31));
   const post=f.rooms.find(x=>x.isGuardPost);
@@ -139,8 +139,7 @@ test('large barracks has four to eight guards with short patrols outside the tab
   const table=f.furniture.find(x=>x.kind==='postTable');
   assert.ok(table);
   for(const guard of f.postGuards){
-   assert.equal(guard.waypoints.length,2,'guards walk a short patrol within the post');
-   assert.ok(Math.abs(Math.abs(guard.waypoints[0].x-guard.waypoints[1].x)+Math.abs(guard.waypoints[0].y-guard.waypoints[1].y)-20)<1e-6);
+   assert.equal(guard.waypoints.length,1,'guards stay at their original post');
    const x=guard.x,y=guard.y;
    const nearestX=Math.max(table.x,Math.min(x,table.x+table.w));
    const nearestY=Math.max(table.y,Math.min(y,table.y+table.h));
@@ -356,7 +355,7 @@ test('room and corridor lights are placed at meaningful fixtures with shadow poc
     'barracks lamp must hang over the central table');
   assert.equal(lights.filter(l=>l.zone==='lobby').length,n===1?3:0,'only ground-floor entrance has lobby lights');
   const halls=lights.filter(l=>l.zone==='hall');
-  assert.ok(halls.length>=3&&halls.every(l=>l.anchor==='hall-regular'||l.anchor==='hall-terminal'),
+  assert.ok(halls.length>=3&&halls.every(l=>l.anchor==='hall-regular'||l.anchor==='hall-terminal'||l.anchor==='hall-extra'),
     'corridor lamps are placed at regular intervals and at short passage ends');
   const tileCenters=new Set(f.corridors.map(c=>(c.x+c.w/2)+':'+(c.y+c.h/2)));
   for(const light of halls){
@@ -365,7 +364,7 @@ test('room and corridor lights are placed at meaningful fixtures with shadow poc
     assert.equal(light.rx,light.ry,'corridor light is circular');
     assert.ok(light.rx<=180*.65,'corridor pool size is bounded');
   }
-  assert.ok(lights.length>=22&&lights.length<=42,'added room lighting remains within a bounded fixture budget');
+  assert.ok(lights.length>=22&&lights.length<=45,'added room lighting remains within a bounded fixture budget');
   const spots=f.corridors.concat(f.rooms.flatMap(r=>r.tiles));
   const samples=spots.map(t=>({x:t.x+t.w/2,y:t.y+t.h/2}));
   const dark=samples.filter(p=>lights.every(l=>Math.hypot(p.x-l.x,p.y-l.y)>185*.72));
@@ -1119,7 +1118,8 @@ test('world setup accepts upstairs null entry metadata and preserves paired stai
  assert.ok(upper.lightFixtures.every(l=>l.clipTiles.length>0&&l.clipTiles.every(Boolean)));
  assert.equal(ground.stair.x,upper.stair.x);
  assert.equal(ground.stair.y-ground.offset,upper.stair.y-upper.offset);
- assert.equal(sandbox.result.intel.filter(q=>q.floor===2).length,2);
+ assert.equal(sandbox.result.intel.length,3);
+ assert.ok([1,2].includes(sandbox.result.intel.filter(q=>q.floor===2).length));
 });
 
 function returnNavigation(){
@@ -1197,7 +1197,7 @@ function alarmWorld(seed=1771){
  vm.createContext(sandbox);
  vm.runInContext(source+`;setupInfiltrationWorld();setupInfiltrationMission();
   indoorGuardSeesPlayer=()=>false;
-  api={lightLevel:indoorLightLevel,seesAlly:indoorGuardSeesAlly,allyCombat:indoorUpdateAllyCombat,selectSweep:indoorSelectSweepGoal,sweepPoints:indoorAlarmSweepPoints,reinforce:indoorReplenishGuards,spawnPoint:indoorReinforcementPoint,get world(){return indoorWorld;},record:indoorRecordGuardDiscovery,begin:indoorStartGuardPursuit,
+  api={postChats:indoorUpdatePostChats,lightLevel:indoorLightLevel,seesAlly:indoorGuardSeesAlly,allyCombat:indoorUpdateAllyCombat,selectSweep:indoorSelectSweepGoal,sweepPoints:indoorAlarmSweepPoints,reinforce:indoorReplenishGuards,spawnPoint:indoorReinforcementPoint,get world(){return indoorWorld;},record:indoorRecordGuardDiscovery,begin:indoorStartGuardPursuit,
    updateMission:updateInfiltrationMission,update:updateInfiltrationGuardAI,finish:indoorFinishGuardSearch,sweep:indoorBeginAlarmSweep,
    draw:drawInfiltrationMission,setup:setupInfiltrationWorld,chats:indoorUpdateAlarmChats,
    cancelChat:indoorCancelAlarmChat,scanBodies:indoorScanStunnedGuards,level:indoorAlarmLevel,weapon:indoorUpdateCommanderWeapon,setVisible:h=>{indoorGuardSeesPlayer=q=>q===h;}};`,sandbox);
@@ -1700,39 +1700,6 @@ test('front deployment and exit pads are deep in a lit forecourt',()=>{
   for(const dy of [50,160,300,450,600,672])assert.ok(s.api.lightLevel(q.x,bottom+dy)>.55,'lit approach at '+dy);
  }
 });
-test('post guards use short horizontal or vertical paths free of furniture and walls',()=>{
- for(let seed=1;seed<=100;seed++){
-  const f=indoorGenerateFloor(1,random(seed*199)),obstacles=[...f.walls,...f.furniture,...f.explosiveObjects];
-  for(const h of f.postGuards){
-   const [a,b]=h.waypoints;assert.ok(a.x===b.x||a.y===b.y);
-   for(let i=0;i<=10;i++){
-    const x=a.x+(b.x-a.x)*i/10,y=a.y+(b.y-a.y)*i/10;
-    assert.ok(obstacles.every(o=>x<=o.x-8||x>=o.x+o.w+8||y<=o.y-8||y>=o.y+o.h+8),'short patrol must not hit a table or wall');
-   }
-  }
- }
-});
-
-test('post guards actually walk back and forth slowly within their short patrol endpoints',()=>{
- const s=alarmWorld(),h=s.api.world.floors[0].postGuards[0],start={x:h.x,y:h.y};
- const src=require('node:fs').readFileSync(require('node:path').join(__dirname,'../index.html'),'utf8');
- const a=src.indexOf('function patrol(o,dt,sp,r){'),b=src.indexOf('function distributeFlankPatrols()',a);
- s.sandbox.patrol=new Function('mazeComparisonEnemyFrozen','moveFrontlineEnemy','movePatrolReturn',
-  src.slice(a,b)+';return patrol;')(()=>false,()=>{},(h,q,dt,sp)=>{
-   const distance=Math.hypot(q.x-h.x,q.y-h.y),step=Math.min(distance,sp*dt);
-   if(distance){h.x+=(q.x-h.x)/distance*step;h.y+=(q.y-h.y)/distance*step;}
-   return Math.atan2(q.y-h.y,q.x-h.x);
-  });
- let moved=0,travel=0;
- for(let i=0;i<140;i++){
-  const before={x:h.x,y:h.y};
-  s.api.update(h,.1);travel+=Math.hypot(h.x-before.x,h.y-before.y);moved=Math.max(moved,Math.hypot(h.x-start.x,h.y-start.y));
-  assert.ok(h.x>=Math.min(...h.path.map(q=>q.x))-.01&&h.x<=Math.max(...h.path.map(q=>q.x))+.01);
-  assert.ok(h.y>=Math.min(...h.path.map(q=>q.y))-.01&&h.y<=Math.max(...h.path.map(q=>q.y))+.01);
- }
- assert.ok(moved>=5&&travel>=20,'guard takes several small trips with the existing endpoint tolerance');
-});
-
 test('static indoor lighting reuses one mask across frames and preserves camera cropping',()=>{
  const s=alarmWorld();const contexts=[],presentations=[];
  s.sandbox.document.createElement=()=>({width:0,height:0});
@@ -1763,11 +1730,44 @@ test('static indoor lighting reuses one mask across frames and preserves camera 
  s.api.setup();draw(300,y+300);assert.equal(contexts[0].clears,after+1,'new map invalidates old lighting');
  assert.equal(contexts.length,2,'new runs reuse the bounded canvases');
 });
-test('post movement never calls the general patrol pathfinder, even when blocked',()=>{
- const s=alarmWorld(),h=s.api.world.floors[0].postGuards[0];let moves=0;
- s.sandbox.patrol=()=>{throw Error('general patrol pathfinder used for short post walk');};
- s.sandbox.mv=()=>{moves++;};
+test('post guards remain stationary without calling movement or patrol pathfinding',()=>{
+ const s=alarmWorld(),h=s.api.world.floors[0].postGuards[0],point={x:h.x,y:h.y};
+ s.sandbox.patrol=()=>{throw Error('post patrol should remain stationary');};
+ s.sandbox.mv=()=>{throw Error('stationary guard attempted movement');};
  for(let i=0;i<120;i++)s.api.update(h,.1);
- assert.ok(moves>0&&moves<25,'blocked movement waits between retries instead of searching continuously');
- assert.equal(h.patrolSearch,undefined);
+ assert.equal(h.x,point.x);assert.equal(h.y,point.y);
+});
+
+
+test('document distribution includes both 1+2 and 2+1 patterns with exactly three files',()=>{
+ const patterns=new Set();
+ for(let seed=1;seed<=12;seed++){
+  const s=alarmWorld(seed),files=s.api.world.intel;
+  const first=files.filter(q=>q.floor===1).length,second=files.filter(q=>q.floor===2).length;
+  assert.equal(files.length,3);assert.equal(first+second,3);assert.ok(first>=1&&second>=1);
+  patterns.add(first+':'+second);
+ }
+ assert.deepEqual([...patterns].sort(),['1:2','2:1']);
+});
+test('post guards occasionally share a bubble without moving, then resume after a cooldown',()=>{
+ const s=alarmWorld(),floor=s.api.world.floors[0];floor.postChatWait=0;
+ const positions=floor.postGuards.map(h=>[h.x,h.y]);
+ s.api.postChats(.1);assert.ok(floor.postChat);const chat=floor.postChat;
+ s.sandbox.cam=chat.a.y-200;s.sandbox.camX=chat.a.x-200;
+ s.api.draw();assert.equal(s.bubbles.length,1,'one bubble for a stationary pair');
+ assert.deepEqual(floor.postGuards.map(h=>[h.x,h.y]),positions);
+ assert.ok(!chat.a.st&&!chat.b.st);assert.equal(s.api.world.alarm.witnesses.size,0);
+ s.api.postChats(4);assert.equal(floor.postChat,null);
+ s.api.postChats(.1);assert.equal(floor.postChat,null,'conversation cannot immediately restart');
+ floor.postChatWait=0;s.api.postChats(.1);assert.ok(floor.postChat,'another occasional chat starts later');
+});
+test('discovery, stun or an alarm interrupts idle post conversations',()=>{
+ for(const reason of ['discovery','stun','alarm']){
+  const s=alarmWorld(),floor=s.api.world.floors[0];floor.postChatWait=0;s.api.postChats(.1);
+  const chat=floor.postChat;assert.ok(chat);
+  if(reason==='discovery'){chat.a.st=1;chat.a.target='p';}
+  if(reason==='stun')chat.a.stun=2;
+  if(reason==='alarm')s.api.world.alarm.active=true;
+  s.api.postChats(.1);assert.equal(floor.postChat,null,reason);
+ }
 });
