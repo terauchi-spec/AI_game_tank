@@ -1150,10 +1150,10 @@ function indoorScanStunnedGuards(dt){
   }
  }
 }
-function indoorUpdateCommanderWeapon(h,point,visible,paused,dt){
+function indoorUpdateCommanderWeapon(h,point,visible,paused,dt,target=p){
  if(!h.indoorCommander)return false;
  if((h.cd||0)>0&&!(h.indoorRocketCharge>0))return false;
- if(!visible||paused||D(h,point)>480||!los(h,p)){h.indoorRocketCharge=0;return false;}
+ if(!visible||paused||D(h,point)>480||!los(h,target)){h.indoorRocketCharge=0;return false;}
  if(!(h.indoorRocketCharge>0)){
   h.indoorRocketCharge=.5;h.indoorRocketAim=Math.atan2(point.y-h.y,point.x-h.x);return true;
  }
@@ -1467,7 +1467,7 @@ function indoorUpdateGuardNotice(h,dt){
  h.sus=0;h.susMax=0;
  // Other skill targets retain their existing combat handling.
  const other=findDetectedTarget(h,h.face);
- if(other&&other.key!=='p'){enterHumanFound(h,other.key);return false;}
+ if(other&&other.key!=='p'&&!other.key.startsWith('ally:')){enterHumanFound(h,other.key);return false;}
  if(h.chatResumeT>0)return true;
  if(h.indoorReturn){
   const back=h.indoorReturn;
@@ -1507,8 +1507,78 @@ function indoorObserveFoundGuard(h,dt){
  }
  return false;
 }
+function indoorGuardSeesAlly(h,ally,tracking=false){
+ if(!ally?.alive||ally.chute>0||h.indoorFloor!==indoorWorld?.currentFloor+1)return false;
+ const nav=indoorWorld.floors[h.indoorFloor-1]?.navigation;
+ if(!nav||indoorGuardCell(nav,ally)<0)return false;
+ const angle=Math.abs(angD(Math.atan2(ally.y-h.y,ally.x-h.x),h.face)),d=D(h,ally);
+ const light=indoorLightLevel(ally.x,ally.y),factor=tracking?Math.max(.78,.5+.5*light):(.36+.64*light);
+ const range=detectRange('ally:'+ally.id)*1.2*factor*(h.indoorChatT>0?.5:1);
+ return ((angle<=DETECT_CENTER_HALF*1.2&&d<range)||
+  (angle<=DETECT_OUTER_HALF*1.2&&d<range*DETECT_OUTER_SCALE))&&los(h,ally);
+}
+function indoorEndAllyCombat(h){
+ const fight=h.indoorAllyCombat;if(!fight)return;
+ h.indoorAllyCombat=null;h.indoorRocketCharge=0;h.burstLeft=0;
+ const searching=h.indoorAlert&&h.indoorAlert.phase!=='found';
+ h.st=searching?0:fight.previousSt;h.target=searching?null:fight.previousTarget;h.foundPause=0;
+ if(h.indoorAlert){h.indoorAlert.visible=false;h.indoorAlert.sightCheckT=0;}
+}
+// A separate combat overlay keeps the existing indoor search route and its memory.
+function indoorUpdateAllyCombat(h,dt){
+ if(!h.alive||h.stun>0||h.stunRecover>0||h.houndPinned||h.blastAirT>0){indoorEndAllyCombat(h);return false;}
+ // Keep a confirmed, currently visible player as the priority target.
+ if(!h.indoorAllyCombat&&h.indoorAlert?.phase==='found'&&h.indoorAlert.visible)return false;
+ let fight=h.indoorAllyCombat;
+ if(fight&&!fight.ally.alive){indoorEndAllyCombat(h);return false;}
+ h.indoorAllyCheckT=(h.indoorAllyCheckT||0)-dt;
+ if(h.indoorAllyCheckT<=0){
+  h.indoorAllyCheckT=.15;
+  if(!fight){
+   let nearest=null,best=Infinity;
+   for(const ally of typeof allies==='undefined'?[]:allies){
+    const distance=D(h,ally);
+    if(distance<best&&indoorGuardSeesAlly(h,ally)){nearest=ally;best=distance;}
+   }
+   if(nearest){
+    fight=h.indoorAllyCombat={ally:nearest,previousSt:h.st||0,previousTarget:h.target||null,
+     visible:true,lastSeen:{x:nearest.x,y:nearest.y},remaining:1.35,travelLeft:3,phase:'found'};
+    if(h.indoorChatT>0)indoorCancelAlarmChat(h);
+    h.st=1;h.target='ally:'+nearest.id;h.sus=0;h.burstLeft=0;
+    h.foundPause=Math.max(h.foundPause||0,.35);h.indoorRocketCharge=0;
+   }
+  }else{
+   fight.visible=indoorGuardSeesAlly(h,fight.ally,true);
+   if(fight.visible){fight.lastSeen={x:fight.ally.x,y:fight.ally.y};fight.remaining=1.35;fight.phase='found';fight.travelLeft=3;}
+  }
+ }
+ if(!fight)return false;
+ h.st=1;h.target='ally:'+fight.ally.id;h.sus=0;
+ if(!fight.visible)fight.remaining=Math.max(0,fight.remaining-dt);
+ if(!fight.visible&&fight.remaining<=0){
+  fight.phase='lastSeen';fight.travelLeft-=dt;
+  if(D(h,fight.lastSeen)<24||fight.travelLeft<=0){indoorEndAllyCombat(h);return false;}
+ }
+ const paused=(h.foundPause||0)>0||(h.modePause||0)>0||(h.sharePause||0)>0;
+ h.foundPause=Math.max(0,(h.foundPause||0)-dt);h.modePause=Math.max(0,(h.modePause||0)-dt);
+ h.sharePause=Math.max(0,(h.sharePause||0)-dt);h.cd=(h.cd||0)-dt;
+ const point=fight.lastSeen;
+ h.face+=Math.max(-dt*4,Math.min(dt*4,angD(Math.atan2(point.y-h.y,point.x-h.x),h.face)));
+ const aiming=h.indoorCommander&&indoorUpdateCommanderWeapon(h,point,fight.visible,paused,dt,fight.ally);
+ if(!paused&&!aiming&&D(h,point)>70)indoorMoveGuardTo(h,point,dt,fight.visible?95:78,fight);
+ if(!h.indoorCommander&&!paused&&fight.visible&&D(h,point)<150&&los(h,fight.ally)){
+  if(h.cd<=0){
+   if(!(h.burstLeft>0))h.burstLeft=3;
+   h.characterShotAt=performance.now();
+   fire(h.x,h.y,Math.atan2(point.y-h.y,point.x-h.x)+(R()-.5)*.15,'e','r',330,150);
+   h.burstLeft--;h.cd=h.burstLeft>0?.14:2;
+  }
+ }
+ return true;
+}
 function updateInfiltrationGuardAI(h,dt){
  if(!h.indoorGuard)return false;
+ if(indoorUpdateAllyCombat(h,dt))return true;
  indoorObserveFoundGuard(h,dt);
  if(!h.indoorAlert){
   if(h.st&&h.target==='p')indoorStartGuardPursuit(h);
@@ -1607,7 +1677,9 @@ function updateInfiltrationDoors(dt){
   // PC、味方、敵兵の誰でも近づけば自動で開く。離れたら自然に閉じる。
   // 気絶・拘束中の古い追跡情報は、AI更新がスキップされる間も破棄する。
   for(const floor of indoorWorld.floors){
-    for(const h of floor.guards||[])if(!h.alive||h.stun>0||h.stunRecover>0||h.houndPinned||h.blastAirT>0){h.indoorAlert=null;h.indoorNotice=null;}
+    for(const h of floor.guards||[])if(!h.alive||h.stun>0||h.stunRecover>0||h.houndPinned||h.blastAirT>0){
+      indoorEndAllyCombat(h);h.indoorAlert=null;h.indoorNotice=null;
+    }
     const players=[p,...floor.guards,...(allies||[])];
     if(partner)players.push(partner);
     if(hound)players.push(hound);

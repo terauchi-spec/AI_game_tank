@@ -235,10 +235,10 @@ test('automatic doors have identical slim 6px thickness in both orientations',()
  for(const rc of fills.slice(2))assert.equal(rc[3],6,'horizontal drawn thickness');
  // 触れる前は閉じたまま。薄くしても近接開閉のルールは維持する。
  const entities=[{x:450,y:400}],cover={noHit:false},door={...q,vertical:true,open:0,cover};
- const updater=new Function('indoorWorld','p','allies','partner','hound',
+ const updater=new Function('indoorWorld','p','allies','partner','hound','indoorEndAllyCombat',
    'INDOOR_DOOR_THICKNESS','INDOOR_DOOR_SPEED','INDOOR_DOOR_WIDTH','INDOOR_SCALE_X','INDOOR_SCALE_Y',
    extract('updateInfiltrationDoors')+'\nreturn updateInfiltrationDoors;')(
-     {floors:[{doors:[door],guards:[]}]},entities[0],[],null,null,thickness,5.2,84,1,1.75
+     {floors:[{doors:[door],guards:[]}]},entities[0],[],null,null,()=>{},thickness,5.2,84,1,1.75
    );
  updater(.2);assert.equal(cover.noHit,false,'stays shut away from the panel');
  entities[0].x=419;updater(.2);assert.equal(cover.noHit,true,'opens on contact');
@@ -595,10 +595,10 @@ test('indoor guards follow current visible player and last seen position if hidd
  const avatar={x:180,y:110},destinations=[];let visible=true;
  const [begin,update]=new Function('p','R','D','indoorGuardSeesPlayer','indoorMoveGuardTo',
   'indoorEstimateEscape','angD','pauseAfterEnemyDetection','enterHumanFound','enemyBombPoint','bombs','fire',
-  'performance','INDOOR_TRAIL_LIMIT','indoorShareGuardSighting','indoorRecordGuardDiscovery','indoorObserveFoundGuard',code+'\nreturn [indoorStartGuardPursuit,updateInfiltrationGuardAI];')(
+  'performance','INDOOR_TRAIL_LIMIT','indoorShareGuardSighting','indoorRecordGuardDiscovery','indoorObserveFoundGuard','indoorUpdateAllyCombat',code+'\nreturn [indoorStartGuardPursuit,updateInfiltrationGuardAI];')(
   avatar,()=>.6,(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),()=>visible,
   (h,p)=>{destinations.push({...p});return true;},(_h,state)=>state.lastSeen,()=>0,()=>{},()=>{},()=>({x:0,y:0}),
-  [],()=>{}, {now:()=>0},48,()=>0,()=>{},()=>false);
+  [],()=>{}, {now:()=>0},48,()=>0,()=>{},()=>false,()=>false);
  const h={indoorGuard:true,x:0,y:110,st:1,target:'p',cd:100,bu:true};
  begin(h);avatar.x=240;update(h,.1);
  assert.equal(destinations.at(-1).x,240,'immediately chase current visible position');
@@ -1186,7 +1186,7 @@ function alarmWorld(seed=1771){
  const sandbox={ZONE_STYLE:{'敵迷路基地':{p:[]}},WH:14000,W:840,H:720,p:{},scoreStats:{},R:random(seed),
   document:{body:{classList:{remove(){}}},getElementById:()=>({style:{},innerHTML:''})},
   rebuildSpatialGrid(){},say(){},sfx(){},module:{exports:{}},partner:null,hound:null,
-  stageMode:'indoor',state:'play',hitsM:()=>false,debugMode:0,detectRange:()=>250,playerDetectedNow:()=>false,performance:{now:()=>1000},
+  stageMode:'indoor',state:'play',patrol:h=>h.face,findDetectedTarget:()=>null,hitsM:()=>false,debugMode:0,detectRange:()=>250,playerDetectedNow:()=>false,performance:{now:()=>1000},
   los:()=>true,drawPatrolChatBubbleAt:(...args)=>bubbles.push(args),
   DETECT_CENTER_HALF:7.5*Math.PI/180,DETECT_OUTER_HALF:52.5*Math.PI/180,DETECT_OUTER_SCALE:.7,
   enemyCannonSpeed:()=>630,fire:(...args)=>sandbox.bullets.push({args}),
@@ -1195,7 +1195,7 @@ function alarmWorld(seed=1771){
  vm.createContext(sandbox);
  vm.runInContext(source+`;setupInfiltrationWorld();setupInfiltrationMission();
   indoorGuardSeesPlayer=()=>false;
-  api={selectSweep:indoorSelectSweepGoal,sweepPoints:indoorAlarmSweepPoints,reinforce:indoorReplenishGuards,spawnPoint:indoorReinforcementPoint,get world(){return indoorWorld;},record:indoorRecordGuardDiscovery,begin:indoorStartGuardPursuit,
+  api={seesAlly:indoorGuardSeesAlly,allyCombat:indoorUpdateAllyCombat,selectSweep:indoorSelectSweepGoal,sweepPoints:indoorAlarmSweepPoints,reinforce:indoorReplenishGuards,spawnPoint:indoorReinforcementPoint,get world(){return indoorWorld;},record:indoorRecordGuardDiscovery,begin:indoorStartGuardPursuit,
    updateMission:updateInfiltrationMission,update:updateInfiltrationGuardAI,finish:indoorFinishGuardSearch,sweep:indoorBeginAlarmSweep,
    draw:drawInfiltrationMission,setup:setupInfiltrationWorld,chats:indoorUpdateAlarmChats,
    cancelChat:indoorCancelAlarmChat,scanBodies:indoorScanStunnedGuards,level:indoorAlarmLevel,weapon:indoorUpdateCommanderWeapon,setVisible:h=>{indoorGuardSeesPlayer=q=>q===h;}};`,sandbox);
@@ -1557,4 +1557,64 @@ test('clustered alarm patrols disperse through collision-aware rooms over sustai
   const remaining=floor.guards.filter(h=>Math.hypot(h.x-origin.x,h.y-origin.y)<90).length;
   assert.ok(remaining<=floor.guards.length/2,'original crowd clears: seed '+seed+' remaining '+remaining+'/'+floor.guards.length);
  }
+});
+
+function indoorAllyScenario(){
+ const s=alarmWorld(),h=s.api.world.floors[0].guards[0],floor=s.api.world.floors[0];
+ const point=s.api.sweepPoints(floor).find(Boolean);Object.assign(h,{x:point.x,y:point.y,face:0,cd:0,st:0,target:null,indoorCommander:false,frontCommander:false});
+ const ally={x:h.x+50,y:h.y,id:9,alive:true,chute:0};s.sandbox.allies.push(ally);
+ return {...s,h,ally,floor};
+}
+test('indoor guards recognize and shoot reinforcement allies while idle, sweeping or searching',()=>{
+ for(const phase of ['idle','sweep','search']){
+  const s=indoorAllyScenario(),{h,ally}=s;
+  if(phase==='sweep')s.api.sweep(h);
+  if(phase==='search'){s.api.begin(h);Object.assign(h.indoorAlert,{phase:'search',searchLeft:8,searchPoints:[],scanT:0});h.st=0;h.target=null;}
+  const previous=h.indoorAlert;
+  s.api.update(h,.16);assert.equal(h.target,'ally:9',phase);assert.equal(h.st,1,phase);
+  for(let i=0;i<5;i++)s.api.update(h,.1);
+  assert.ok(s.sandbox.bullets.length>0,phase+' guard shoots at ally');
+  assert.equal(s.api.world.alarm.witnesses.size,0,'ally sighting is not a player discovery');
+  ally.alive=false;s.api.update(h,.1);assert.equal(h.indoorAllyCombat,null);
+  if(previous)assert.equal(h.indoorAlert,previous,'existing search is resumed');
+ }
+});
+test('reinforcement detection requires sight, distance, same floor and a living landed target',()=>{
+ for(const reason of ['wall','behind','distance','floor','dead','parachute']){
+  const s=indoorAllyScenario();
+  if(reason==='wall')s.sandbox.los=()=>false;
+  if(reason==='behind')s.h.face=Math.PI;
+  if(reason==='distance')s.ally.x+=1000;
+  if(reason==='floor')s.h.indoorFloor=2;
+  if(reason==='dead')s.ally.alive=false;
+  if(reason==='parachute')s.ally.chute=1;
+  s.api.update(s.h,.16);assert.equal(s.h.indoorAllyCombat,undefined,reason);
+ }
+});
+test('lost reinforcement sight keeps a snapshot, stops firing and resumes alarm search',()=>{
+ const s=indoorAllyScenario();s.api.sweep(s.h);const search=s.h.indoorAlert;
+ s.api.update(s.h,.16);const x=s.h.indoorAllyCombat.lastSeen.x;
+ s.sandbox.los=()=>false;s.ally.x+=180;
+ s.api.update(s.h,.16);assert.equal(s.h.indoorAllyCombat.lastSeen.x,x);
+ const shots=s.sandbox.bullets.length;
+ for(let i=0;i<48;i++)s.api.update(s.h,.1);
+ assert.equal(s.h.indoorAllyCombat,null);assert.equal(s.h.indoorAlert,search);
+ assert.equal(s.sandbox.bullets.length,shots,'no firing through walls');
+});
+test('indoor commanders fire bazookas at visible allies using the ally wall ray',()=>{
+ const s=indoorAllyScenario();s.h.indoorCommander=true;
+ s.sandbox.los=(_a,b)=>b===s.ally;
+ for(let i=0;i<15;i++)s.api.update(s.h,.1);
+ assert.ok(s.sandbox.bullets.some(b=>b.commanderRocket),'commander attacks ally instead of checking hidden player');
+});
+
+test('ally combat remains valid when alarm search starts and clears on stun',()=>{
+ const s=indoorAllyScenario();s.api.update(s.h,.16);
+ s.api.sweep(s.h);s.api.update(s.h,.16);
+ assert.equal(s.h.target,'ally:9');assert.equal(s.h.st,1,'alarm initialization cannot erase active combat target');
+ s.ally.alive=false;s.api.update(s.h,.1);
+ assert.equal(s.h.indoorAlert.phase,'sweep');assert.equal(s.h.st,0);assert.equal(s.h.target,null);
+ s.ally.alive=true;s.api.update(s.h,.2);assert.ok(s.h.indoorAllyCombat);
+ s.h.stun=2;s.api.updateMission(.1);assert.equal(s.h.indoorAllyCombat,null);
+ assert.equal(s.h.indoorAlert,null,'stun clears stale combat and search memories');
 });
