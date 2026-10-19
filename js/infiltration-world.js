@@ -1344,9 +1344,11 @@ function indoorUpdateGuardNotice(h,dt){
     if(moved>=6)n.lastDir={x:(p.x-n.spot.x)/moved,y:(p.y-n.spot.y)/moved};
    }else n.lastDir=null;
    n.spot={x:p.x,y:p.y};
-  }else if(sameFloor&&debugMode<2&&!(p.dig>0)&&distanceMoved/elapsed>80&&distanceMoved<50&&D(h,p)<72&&cachedLos(h,p)){
+  }else if(sameFloor&&debugMode<2&&!(p.dig>0)&&distanceMoved/elapsed>80&&distanceMoved<50&&D(h,p)<72&&
+    Math.abs(angD(Math.atan2(p.y-h.y,p.x-h.x),h.face))<Math.PI*7/8&&cachedLos(h,p)){
    // Nearby footsteps cause investigation, never instant discovery. Walls block
    // this conservative hearing model; teleporting between floors emits no step.
+   // The rear 45-degree sector (22.5 degrees each side) is silent to this guard.
    indoorStartGuardPursuit(h);
    const a=h.indoorAlert;a.phase='lastSeen';a.lastSeen={x:p.x,y:p.y};
    a.travelLeft=3;a.visible=false;a.sightCheckT=.12;

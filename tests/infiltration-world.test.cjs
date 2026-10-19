@@ -819,6 +819,19 @@ test('nearby moving footsteps investigate a snapshot, while walls and standing r
   }else assert.equal(s.h.indoorAlert,undefined,'walls block hearing');
  }
 });
+test('footsteps stay silent in the rear 45-degree sector across facing wraparound',()=>{
+ for(const face of [0,Math.PI,-Math.PI+.1,Math.PI/2])for(const offset of [0,-22,22,-23,23,90,180]){
+  const s=guardScenario();s.h.st=0;s.h.target=null;s.h.face=face;
+  const angle=face+Math.PI+offset*Math.PI/180;
+  const place=radius=>{s.avatar.x=s.h.x+Math.cos(angle)*radius;s.avatar.y=s.h.y+Math.sin(angle)*radius;};
+  place(60);s.api.update(s.h,.13);
+  place(45);s.api.update(s.h,.13);
+  if(Math.abs(offset)<=22){
+   assert.equal(s.h.indoorAlert,undefined,'rear approach must not trigger investigation');
+   assert.equal(s.h.sus,0,'rear footsteps must not show suspicion');
+  }else assert.equal(s.h.indoorAlert?.phase,'lastSeen','outside rear sector footsteps are still heard');
+ }
+});
 test('cached sight never supplies new hidden coordinates and walls stop firing',()=>{
  const s=guardScenario();s.api.begin(s.h);s.setVisible(true);s.api.update(s.h,.02);
  assert.equal(s.h.indoorAlert.lastSeen.x,200);
