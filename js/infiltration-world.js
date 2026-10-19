@@ -1017,7 +1017,8 @@ function indoorUpdateAlarmChats(dt){
   const guards=floor.guards.filter(h=>indoorAlarmChatEligible(h)&&!(h.indoorChatT>0)&&!(h.indoorChatCooldown>0));
   for(let i=0;i<guards.length;i++)for(let j=i+1;j<guards.length;j++){
    const a=guards[i],b=guards[j];
-   if(a.indoorChatT>0||b.indoorChatT>0||D(a,b)>31||!los(a,b))continue;
+   if(a.indoorChatT>0||b.indoorChatT>0||D(a,b)>31||
+      indoorAlarmCrowded(a,floor)||indoorAlarmCrowded(b,floor)||!los(a,b))continue;
    a.indoorChatT=b.indoorChatT=5;a.indoorChatMate=b;b.indoorChatMate=a;
    a.indoorChatLead=true;b.indoorChatLead=false;
    a.face=Math.atan2(b.y-a.y,b.x-a.x);b.face=Math.atan2(a.y-b.y,a.x-b.x);
@@ -1047,6 +1048,48 @@ function indoorAlarmSweepPoints(floor){
  });
  return floor.alarmSweepPoints;
 }
+// Select a reachable search sector using reservations and actual guard positions.
+// The small 35-cell buffers are reused, and planning runs only at goal changes.
+function indoorSelectSweepGoal(h,a,floor,points){
+ const nav=floor.navigation,here=indoorGuardCell(nav,h);if(here<0)return false;
+ const work=floor.sweepWork||(floor.sweepWork={pressure:new Uint8Array(35),distance:new Int8Array(35),queue:new Int16Array(35)});
+ const {pressure,distance,queue}=work;pressure.fill(0);distance.fill(-1);
+ for(const other of floor.guards){
+  if(other===h||!other.alive||other.stun>0||other.stunRecover>0||other.houndPinned||other.blastAirT>0)continue;
+  const cell=indoorGuardCell(nav,other);if(cell>=0)pressure[cell]+=2;
+  const state=other.indoorAlert;
+  if(state?.phase==='sweep'&&state.sweepCell>=0)pressure[state.sweepCell]+=3;
+ }
+ let tail=1,best=-1,bestScore=Infinity;queue[0]=here;distance[here]=0;
+ for(let head=0;head<tail;head++){
+  const cell=queue[head];
+  if(cell!==here&&cell!==a.sweepAvoidCell&&points[cell]){
+   const score=pressure[cell]*8+Math.min(20,a.sweepVisits[cell])*2+distance[cell]*.65+
+    (cell===a.sweepPrevious?1:0)+((cell+a.sweepOrder)%35)*.001;
+   if(score<bestScore){bestScore=score;best=cell;}
+  }
+  for(const next of nav.neighbors[cell]||[])if(distance[next]<0){
+   distance[next]=distance[cell]+1;queue[tail++]=next;
+  }
+ }
+ if(best<0){
+  a.sweepWait=0;a.sweepTravel=1;a.sweepStall=0;a.sweepAvoidCell=-1;
+  a.sweepGoal={x:h.x,y:h.y};return false;
+ }
+ a.sweepPrevious=here;a.sweepCell=best;a.sweepAvoidCell=-1;
+ a.sweepVisits[best]=Math.min(65535,a.sweepVisits[best]+1);
+ a.sweepGoal=points[best];a.sweepWait=0;a.sweepTravel=Math.min(24,4+distance[best]*6);
+ a.sweepStall=0;a.detour=null;a.route=null;
+ return true;
+}
+function indoorAlarmCrowded(h,floor){
+ let nearby=0;
+ for(const other of floor.guards)if(other!==h&&other.alive&&!(other.stun>0)&&
+  !(other.stunRecover>0)&&!other.houndPinned&&!(other.blastAirT>0)&&D(h,other)<70){
+  if(++nearby>=2)return true;
+ }
+ return false;
+}
 function indoorBeginAlarmSweep(h){
  const floor=indoorWorld?.floors[h.indoorFloor-1],points=floor&&indoorAlarmSweepPoints(floor);
  if(!h.indoorGuard||!h.alive||h.stun>0||h.stunRecover>0||h.houndPinned||h.blastAirT>0||!points)return false;
@@ -1055,10 +1098,11 @@ function indoorBeginAlarmSweep(h){
  const visited=new Uint16Array(35);visited[cell]=1;
  h.indoorAlert={phase:'sweep',lastSeen:{x:h.x,y:h.y},trail:[],lastDir:null,
   sightCheckT:0,visible:false,remaining:0,sweepCell:cell,sweepPrevious:-1,
-  sweepVisits:visited,sweepGoal:points[cell]||{x:h.x,y:h.y},sweepWait:0,sweepTravel:9,
+  sweepVisits:visited,sweepGoal:{x:h.x,y:h.y},sweepWait:0,sweepTravel:9,
   sweepOrder:(floor.guards||[]).indexOf(h)};
  h.indoorReturn=null;h.indoorNotice=null;h.st=0;h.target=null;
  h.sus=1;h.susMax=1;h.lost=0;h.burstLeft=0;h.plantT=0;
+ indoorSelectSweepGoal(h,h.indoorAlert,floor,points);
  return true;
 }
 function indoorAlarmLevel(alarm=indoorWorld?.alarm){
@@ -1123,20 +1167,33 @@ function indoorUpdateCommanderWeapon(h,point,visible,paused,dt){
  return true;
 }
 function indoorUpdateAlarmSweep(h,a,dt){
- const floor=indoorWorld.floors[h.indoorFloor-1],nav=floor.navigation,points=indoorAlarmSweepPoints(floor);
+ const floor=indoorWorld.floors[h.indoorFloor-1],points=indoorAlarmSweepPoints(floor);
  h.sus=1;h.susMax=1;a.sweepTravel-=dt;
- if(D(h,a.sweepGoal)>20&&a.sweepTravel>0){indoorMoveGuardTo(h,a.sweepGoal,dt,62);return;}
- // Inspect each reached cell before choosing a connected, less-visited neighbor.
+ const distance=D(h,a.sweepGoal);
+ if(distance>20&&a.sweepTravel>0){
+  const oldX=h.x,oldY=h.y;
+  indoorMoveGuardTo(h,a.sweepGoal,dt,62);
+  // A legitimate wall detour can temporarily lead away from the destination.
+  const moved=Math.hypot(h.x-oldX,h.y-oldY);
+  a.sweepStall=moved<62*dt*.2?(a.sweepStall||0)+dt:0;
+  if(a.sweepStall<2)return;
+  // Try the existing bounded recovery before abandoning a door approach.
+  if(!(a.rescueCooldown>0)){
+   a.rescueCooldown=7;
+   const path=indoorGridDetour(floor.navigation,h,a.sweepGoal,5200);
+   if(path?.length){
+    a.detour=path;a.detourGoalCell=indoorGuardCell(floor.navigation,a.sweepGoal);
+    a.detourGoal={...a.sweepGoal};a.replanT=1.7;a.sweepStall=0;return;
+   }
+  }
+  // A blocked doorway or crowd cannot hold the whole patrol at one goal.
+  a.sweepAvoidCell=a.sweepCell;
+  indoorSelectSweepGoal(h,a,floor,points);return;
+ }
+ if(distance>20)a.sweepAvoidCell=a.sweepCell;
  a.sweepWait+=dt;
  if(a.sweepWait<.7){h.face+=dt*.65;return;}
- const here=indoorGuardCell(nav,h),choices=(nav.neighbors[here]||[]).filter(i=>points[i]);
- if(!choices.length){a.sweepWait=0;a.sweepTravel=2;return;}
- choices.sort((x,y)=>(a.sweepVisits[x]-a.sweepVisits[y])||
-  ((x===a.sweepPrevious)-(y===a.sweepPrevious))||
-  (((x+a.sweepOrder)%35)-((y+a.sweepOrder)%35)));
- const cell=choices[0];a.sweepPrevious=here;a.sweepCell=cell;
- a.sweepVisits[cell]=Math.min(65535,a.sweepVisits[cell]+1);
- a.sweepGoal=points[cell];a.sweepWait=0;a.sweepTravel=9;a.detour=null;a.route=null;
+ indoorSelectSweepGoal(h,a,floor,points);
 }
 
 function indoorStartGuardPursuit(h){

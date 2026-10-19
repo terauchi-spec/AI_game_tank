@@ -1174,7 +1174,7 @@ test('a completed mission cannot escape from the upper floor through an emergenc
  assert.equal(completed,1,'ground-floor emergency exit remains usable');
 });
 
-function alarmWorld(){
+function alarmWorld(seed=1771){
  const vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
  const source=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
  const labels=[],rectangles=[],gradients=[],bubbles=[],eyePupils=[],rotations=[],strokes=[];let currentArc=null;
@@ -1183,7 +1183,7 @@ function alarmWorld(){
   fillText:t=>labels.push(t),fillRect(...r){rectangles.push({r,style:this.fillStyle});},
   createLinearGradient(...args){const stops=[];const gradient={args,stops,addColorStop:(...s)=>stops.push(s)};gradients.push(gradient);return gradient;}},
   {get:(o,k)=>k in o?o[k]:()=>{}});
- const sandbox={ZONE_STYLE:{'敵迷路基地':{p:[]}},WH:14000,W:840,H:720,p:{},scoreStats:{},R:random(1771),
+ const sandbox={ZONE_STYLE:{'敵迷路基地':{p:[]}},WH:14000,W:840,H:720,p:{},scoreStats:{},R:random(seed),
   document:{body:{classList:{remove(){}}},getElementById:()=>({style:{},innerHTML:''})},
   rebuildSpatialGrid(){},say(){},sfx(){},module:{exports:{}},partner:null,hound:null,
   stageMode:'indoor',state:'play',hitsM:()=>false,debugMode:0,detectRange:()=>250,playerDetectedNow:()=>false,performance:{now:()=>1000},
@@ -1195,7 +1195,7 @@ function alarmWorld(){
  vm.createContext(sandbox);
  vm.runInContext(source+`;setupInfiltrationWorld();setupInfiltrationMission();
   indoorGuardSeesPlayer=()=>false;
-  api={reinforce:indoorReplenishGuards,spawnPoint:indoorReinforcementPoint,get world(){return indoorWorld;},record:indoorRecordGuardDiscovery,begin:indoorStartGuardPursuit,
+  api={selectSweep:indoorSelectSweepGoal,sweepPoints:indoorAlarmSweepPoints,reinforce:indoorReplenishGuards,spawnPoint:indoorReinforcementPoint,get world(){return indoorWorld;},record:indoorRecordGuardDiscovery,begin:indoorStartGuardPursuit,
    updateMission:updateInfiltrationMission,update:updateInfiltrationGuardAI,finish:indoorFinishGuardSearch,sweep:indoorBeginAlarmSweep,
    draw:drawInfiltrationMission,setup:setupInfiltrationWorld,chats:indoorUpdateAlarmChats,
    cancelChat:indoorCancelAlarmChat,scanBodies:indoorScanStunnedGuards,level:indoorAlarmLevel,weapon:indoorUpdateCommanderWeapon,setVisible:h=>{indoorGuardSeesPlayer=q=>q===h;}};`,sandbox);
@@ -1504,4 +1504,57 @@ test('indoor white movement is exactly 20 percent faster without outdoor elite m
  for(const s of [normal,fast]){s.h.st=0;s.h.target=null;}
  fast.h.indoorWhite=true;normal.api.update(normal.h,.1);fast.api.update(fast.h,.1);
  assert.equal(normal.patrolSpeed,30);assert.equal(fast.patrolSpeed,36);
+});
+
+test('alarm guards clustered in one sector reserve distinct reachable search destinations',()=>{
+ const s=alarmWorld(),floor=s.api.world.floors[0],points=s.api.sweepPoints(floor);
+ const cell=points.findIndex(Boolean),pos=points[cell];
+ for(const h of floor.guards){Object.assign(h,pos);h.st=0;h.target=null;}
+ Object.defineProperty(s.sandbox.p,'x',{get(){throw Error('hidden player read during dispersed search');}});
+ for(const h of floor.guards)assert.equal(s.api.sweep(h),true);
+ const goals=new Set(floor.guards.map(h=>h.indoorAlert.sweepCell));
+ assert.equal(goals.size,floor.guards.length,'each clustered guard reserves a separate sector');
+ const {indoorGuardCellRoute}=require('../js/infiltration-world.js');
+ for(const h of floor.guards){
+  const a=h.indoorAlert;assert.notEqual(a.sweepCell,cell);
+  assert.ok(indoorGuardCellRoute(floor.navigation,cell,a.sweepCell),'route follows actual door connectivity');
+ }
+ const work=floor.sweepWork;s.api.selectSweep(floor.guards[0],floor.guards[0].indoorAlert,floor,points);
+ assert.equal(floor.sweepWork,work,'planning buffers are reused');
+});
+test('a stalled alarm guard tries a bounded detour then changes destination if still blocked',()=>{
+ const s=alarmWorld(),floor=s.api.world.floors[0],h=floor.guards[0];
+ s.api.sweep(h);const original=h.indoorAlert.sweepCell;
+ s.sandbox.mv=()=>{};
+ for(let i=0;i<23;i++)s.api.update(h,.1);
+ assert.ok(h.indoorAlert.rescueCooldown>0,'bounded recovery starts after two seconds without movement');
+ for(let i=0;i<23;i++)s.api.update(h,.1);
+ assert.notEqual(h.indoorAlert.sweepCell,original);
+ assert.equal(h.indoorAlert.phase,'sweep');
+});
+test('alarm conversations do not lock a crowd in place but a normal pair still talks',()=>{
+ const s=alarmChatPair(),{a,b}=s,floor=s.api.world.floors[0];
+ const third=floor.guards.find(h=>h!==a&&h!==b);
+ Object.assign(third,{x:a.x+20,y:a.y+20});
+ s.api.chats(.1);assert.equal(a.indoorChatT||0,0);assert.equal(b.indoorChatT||0,0);
+ third.x+=200;s.api.chats(.2);assert.equal(a.indoorChatT,5);assert.equal(b.indoorChatT,5);
+});
+
+test('clustered alarm patrols disperse through collision-aware rooms over sustained movement',()=>{
+ for(const seed of [1771,2834,3931]){
+  const s=alarmWorld(seed),floor=s.api.world.floors[0],points=s.api.sweepPoints(floor);
+  const origin=points.find(Boolean),g=floor.navigation.grid;
+  s.sandbox.mv=(h,dx,dy)=>{
+   const free=(x,y)=>{const col=Math.floor((x-g.x)/g.step),row=Math.floor((y-g.y)/g.step);
+    return col>=0&&col<g.cols&&row>=0&&row<g.rows&&!g.solid[row*g.cols+col];};
+   if(free(h.x+dx,h.y))h.x+=dx;if(free(h.x,h.y+dy))h.y+=dy;
+  };
+  for(const h of floor.guards){Object.assign(h,origin);h.st=0;h.target=null;s.api.sweep(h);}
+  for(let frame=0;frame<300;frame++)for(const h of floor.guards)s.api.update(h,.1);
+  const sectors=new Set(floor.guards.map(h=>Math.floor((h.x-floor.navigation.origin.x)/floor.navigation.stepX)+
+   5*Math.floor((h.y-floor.navigation.origin.y)/floor.navigation.stepY)));
+  assert.ok(sectors.size>=4,'patrols spread across rooms: seed '+seed);
+  const remaining=floor.guards.filter(h=>Math.hypot(h.x-origin.x,h.y-origin.y)<90).length;
+  assert.ok(remaining<=floor.guards.length/2,'original crowd clears: seed '+seed+' remaining '+remaining+'/'+floor.guards.length);
+ }
 });
