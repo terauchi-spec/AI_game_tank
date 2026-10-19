@@ -199,9 +199,10 @@ test('indoor wall artwork covers the full collision wall length without visible 
  assert.ok(sprite&&sprite[3]>=315,'horizontal indoor wall also covers the whole span');
 });
 
-test('automatic doors have identical slim 12px thickness in both orientations',()=>{
+test('automatic doors have identical slim 6px thickness in both orientations',()=>{
  const fs=require('node:fs'),path=require('node:path');
  const source=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
+ const thickness=Number(source.match(/INDOOR_DOOR_THICKNESS=(\d+)/)[1]);
  const extract=(name)=>{
    const begin=source.indexOf('function '+name+'(');
    const end=source.indexOf('\n}\n',begin);
@@ -209,11 +210,11 @@ test('automatic doors have identical slim 12px thickness in both orientations',(
    return source.slice(begin,end+2);
  };
  const geometry=new Function('INDOOR_DOOR_WIDTH','INDOOR_DOOR_THICKNESS','INDOOR_SCALE_X','INDOOR_SCALE_Y',
-   extract('indoorDoorCollisionRect')+'\nreturn indoorDoorCollisionRect;')(84,12,1,1.75);
+   extract('indoorDoorCollisionRect')+'\nreturn indoorDoorCollisionRect;')(84,thickness,1,1.75);
  const q={x:400,y:400};
  const vertical=geometry({...q,vertical:true}),horizontal=geometry({...q,vertical:false});
- assert.equal(vertical.w,12,'thin vertical door collision');
- assert.equal(horizontal.h,12,'thin horizontal door collision');
+ assert.equal(vertical.w,6,'thin vertical door collision');
+ assert.equal(horizontal.h,6,'thin horizontal door collision');
  assert.equal(vertical.h,147,'door length remains 84px by vertical map scaling');
  assert.equal(horizontal.w,84,'door width unchanged');
  const fills=[],g={
@@ -226,18 +227,18 @@ test('automatic doors have identical slim 12px thickness in both orientations',(
  const drawer=new Function('g','indoorWorld','drawInfiltrationProps','W','H','INDOOR_SCALE_X','INDOOR_SCALE_Y',
   'INDOOR_DOOR_WIDTH','INDOOR_DOOR_THICKNESS',
   extract('drawInfiltrationOpenings')+'\nreturn drawInfiltrationOpenings;')(
-  g,{floors:[floor]},()=>{},840,720,1,1.75,84,12
+  g,{floors:[floor]},()=>{},840,720,1,1.75,84,thickness
  );
  drawer(0,250);
  assert.equal(fills.length,4,'two sliding panels per closed door');
- for(const rc of fills.slice(0,2))assert.equal(rc[2],12,'vertical drawn thickness');
- for(const rc of fills.slice(2))assert.equal(rc[3],12,'horizontal drawn thickness');
+ for(const rc of fills.slice(0,2))assert.equal(rc[2],6,'vertical drawn thickness');
+ for(const rc of fills.slice(2))assert.equal(rc[3],6,'horizontal drawn thickness');
  // 触れる前は閉じたまま。薄くしても近接開閉のルールは維持する。
  const entities=[{x:450,y:400}],cover={noHit:false},door={...q,vertical:true,open:0,cover};
  const updater=new Function('indoorWorld','p','allies','partner','hound',
    'INDOOR_DOOR_THICKNESS','INDOOR_DOOR_SPEED','INDOOR_DOOR_WIDTH','INDOOR_SCALE_X','INDOOR_SCALE_Y',
    extract('updateInfiltrationDoors')+'\nreturn updateInfiltrationDoors;')(
-     {floors:[{doors:[door],guards:[]}]},entities[0],[],null,null,12,5.2,84,1,1.75
+     {floors:[{doors:[door],guards:[]}]},entities[0],[],null,null,thickness,5.2,84,1,1.75
    );
  updater(.2);assert.equal(cover.noHit,false,'stays shut away from the panel');
  entities[0].x=419;updater(.2);assert.equal(cover.noHit,true,'opens on contact');

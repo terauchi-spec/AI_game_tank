@@ -691,9 +691,9 @@ function drawInfiltrationLighting(cx,cy){
   gm.save();gm.drawImage(mask,0,0);gm.restore();
 }
 
-const INDOOR_DOOR_WIDTH=84,INDOOR_DOOR_THICKNESS=12,INDOOR_DOOR_SPEED=5.2;
+const INDOOR_DOOR_WIDTH=84,INDOOR_DOOR_THICKNESS=6,INDOOR_DOOR_SPEED=5.2;
 function indoorDoorCollisionRect(q){
-  // 縦横とも世界座標で12pxの薄型パネル。当たり判定も描画と一致させる。
+  // 縦横とも世界座標で6pxの薄型パネル。当たり判定も描画と一致させる。
   const half=INDOOR_DOOR_WIDTH/2,thick=INDOOR_DOOR_THICKNESS;
   return q.vertical
     ?{x:q.x-thick/2,y:q.y-half*INDOOR_SCALE_Y,w:thick,h:INDOOR_DOOR_WIDTH*INDOOR_SCALE_Y}
