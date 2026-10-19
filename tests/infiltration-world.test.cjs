@@ -1177,8 +1177,8 @@ test('a completed mission cannot escape from the upper floor through an emergenc
 function alarmWorld(){
  const vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
  const source=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
- const labels=[],rectangles=[],gradients=[],bubbles=[],eyePupils=[];let currentArc=null;
- const gm=new Proxy({beginPath(){currentArc=null;},arc(...args){currentArc=args;},
+ const labels=[],rectangles=[],gradients=[],bubbles=[],eyePupils=[],rotations=[];let currentArc=null;
+ const gm=new Proxy({rotate:angle=>rotations.push(angle),beginPath(){currentArc=null;},arc(...args){currentArc=args;},
   fill(){if(currentArc&&currentArc[1]===48&&currentArc[2]===3)eyePupils.push({x:currentArc[0],color:this.fillStyle});},
   fillText:t=>labels.push(t),fillRect(...r){rectangles.push({r,style:this.fillStyle});},
   createLinearGradient(...args){const stops=[];const gradient={args,stops,addColorStop:(...s)=>stops.push(s)};gradients.push(gradient);return gradient;}},
@@ -1201,7 +1201,7 @@ function alarmWorld(){
    cancelChat:indoorCancelAlarmChat,scanBodies:indoorScanStunnedGuards,level:indoorAlarmLevel,weapon:indoorUpdateCommanderWeapon,setVisible:h=>{indoorGuardSeesPlayer=q=>q===h;}};`,sandbox);
  sandbox.enterHumanFound=h=>{h.st=1;h.target='p';sandbox.api.begin(h);};
  const sight=h=>{sandbox.api.world.currentFloor=h.indoorFloor-1;h.st=1;h.target='p';sandbox.api.begin(h);sandbox.api.record(h);};
- return {api:sandbox.api,sandbox,sight,labels,rectangles,gradients,bubbles,eyePupils};
+ return {api:sandbox.api,sandbox,sight,labels,rectangles,gradients,bubbles,eyePupils,rotations};
 }
 test('three distinct firsthand witnesses trigger one building alarm across both floors',()=>{
  const s=alarmWorld(),world=s.api.world,[a,b,c]=world.floors[0].guards;
@@ -1401,5 +1401,28 @@ test('only indoor commander artwork selects the bazooka through the dedicated ac
   [{indoorCommander:true},'', '', 'blue']]){
   weapons.length=0;bodies.length=0;draw(0,0,0,false,true,false,false,commander,true,false,actor);
   assert.equal(weapons[0][0],expectedWeapon);assert.equal(bodies[0],expectedBody);
+ }
+});
+
+test('document guide points to nearest uncollected document on the current floor',()=>{
+ const s=alarmWorld();Object.assign(s.sandbox.p,{x:100,y:100});
+ s.sandbox.mission.points=[{x:100,y:300,floor:1,done:false},
+  {x:150,y:100,floor:1,done:false},{x:101,y:100,floor:1,done:true},
+  {x:100,y:101,floor:2,done:false}];
+ s.api.draw();assert.deepEqual(s.rotations,[0],'nearest same-floor target determines direction');
+ s.sandbox.mission.points[1].done=true;s.rotations.length=0;
+ s.api.draw();assert.deepEqual(s.rotations,[Math.PI/2],'guide switches to next remaining document');
+});
+test('document guide shows the remaining floor without an arrow and EXIT after collection',()=>{
+ for(const floor of [1,2]){
+  const s=alarmWorld();s.api.world.currentFloor=floor-1;
+  s.sandbox.mission.points=[{x:100,y:100,floor,done:true},
+   {x:150,y:150,floor:3-floor,done:false}];
+  s.api.draw();assert.equal(s.rotations.length,0,'no stair arrow on an empty floor');
+  assert.ok(s.labels.includes((3-floor)+'階'));assert.ok(s.labels.includes('重要書類'));
+  assert.ok(!s.labels.includes('EXIT'));
+  s.sandbox.mission.points[1].done=true;s.labels.length=0;
+  s.api.draw();assert.equal(s.rotations.length,0,'no exit arrow after all documents');
+  assert.ok(s.labels.includes('EXIT'));assert.ok(!s.labels.includes('重要書類'));
  }
 });

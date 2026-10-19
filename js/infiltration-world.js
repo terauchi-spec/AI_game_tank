@@ -1822,21 +1822,28 @@ function drawInfiltrationMission(){
     gm.fillStyle='#fff0ad';gm.fillText('資料',x,y+2);
     gm.font='bold 13px system-ui';gm.fillText((q.progress||0).toFixed(1)+' / 8秒',x,y+22);
   }
-  // 画面右上の方角ガイドは表示領域の外にある重要資料も案内する。
-  let target=mission.points.filter(q=>!q.done&&q.floor===indoorWorld.currentFloor+1)
-    .sort((a,b)=>D(a,p)-D(b,p))[0];
-  if(!target){
-    target=mission.index===INDOOR_FILES_TOTAL?
-      (indoorWorld.currentFloor===0?(D(p,indoorWorld.exit)<D(p,indoorWorld.emergency)?indoorWorld.exit:indoorWorld.emergency):indoorWorld.floors[indoorWorld.currentFloor].stair):
-      indoorWorld.floors[indoorWorld.currentFloor].stair;
+  // 同じ階の未回収資料だけを距離で比較。階段や出口への矢印には切り替えない。
+  let target=null,nearest=Infinity;
+  const remainingFloors=new Set();
+  for(const q of mission.points){
+    if(q.done)continue;
+    remainingFloors.add(q.floor);
+    if(q.floor!==indoorWorld.currentFloor+1)continue;
+    const distance=D(q,p);
+    if(distance<nearest){nearest=distance;target=q;}
   }
   if(target){
-    const angle=Math.atan2(target.y-p.y,target.x-p.x),cx=W-115,cy=84,distancePx=Math.round(D(target,p));
+    const angle=Math.atan2(target.y-p.y,target.x-p.x);
     // 黒背景・ラベルを使わない、右上のシンプルな方向矢印のみ。
     gm.save();gm.translate(W-37,85);gm.rotate(angle);
     gm.fillStyle='#ffe1a0';gm.strokeStyle='rgba(51,45,26,.65)';gm.lineWidth=2;
     gm.beginPath();gm.moveTo(20,0);gm.lineTo(-12,-11);gm.lineTo(-5,0);gm.lineTo(-12,11);gm.closePath();
     gm.fill();gm.stroke();gm.restore();
+  }else{
+    gm.textAlign='center';gm.font='bold 18px system-ui';
+    gm.fillStyle=remainingFloors.size?'#ffe1a0':'#a9f3c0';
+    gm.fillText(remainingFloors.size?[...remainingFloors].sort().join('・')+'階':'EXIT',W-48,90);
+    if(remainingFloors.size){gm.font='bold 12px system-ui';gm.fillText('重要書類',W-48,108);}
   }
   gm.restore();
 }
