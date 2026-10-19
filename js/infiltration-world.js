@@ -1553,23 +1553,22 @@ function updateInfiltrationMission(dt){
     const target=w.floors[w.currentFloor];
     p.x=target.stair.x;p.y=target.stair.y+38;
     w.stairsCooldown=2;w.stairArmed=false;
-    if(m.current&&!m.current.done)m.current.progress=0;
     m.progress=0;m.current=null;
     cam=Math.max(0,Math.min(WH-H,p.y-H*.6));
     say((w.currentFloor+1)+'階へ移動');sfx('skill');
   }
-  const near=m.points.find(q=>!q.done&&D(p,q)<INDOOR_ACQUIRE_RADIUS);
+  for(const q of m.points)if(q.collectedT>0)q.collectedT=Math.max(0,q.collectedT-dt);
+  const near=m.points.find(q=>!q.done&&q.floor===w.currentFloor+1&&D(p,q)<INDOOR_ACQUIRE_RADIUS);
   if(near&&!p.tank){
-    if(m.current!==near){m.current=near;m.progress=0;}
-    m.progress=Math.min(INDOOR_ACQUIRE_SECONDS,m.progress+dt);
+    m.current=near;
+    m.progress=Math.min(INDOOR_ACQUIRE_SECONDS,(near.progress||0)+dt);
     near.progress=m.progress;
     if(m.progress>=INDOOR_ACQUIRE_SECONDS){
-      near.done=true;m.index++;m.progress=0;m.current=null;sfx('pickup');
+      near.done=true;near.collectedT=.9;m.index++;m.progress=0;m.current=null;sfx('pickup');
       say('重要資料回収 '+m.index+'/'+m.points.length);
       if(m.index===m.points.length)say('全資料回収！ 1階の玄関か非常口から脱出せよ');
     }
   }else{
-    if(m.current&&!m.current.done)m.current.progress=0;
     m.progress=0;m.current=null;
   }
   // 外周にある玄関と非常口の両方を脱出地点として扱う。
@@ -1790,7 +1789,7 @@ function drawInfiltrationMission(){
     indoorHudRefresh=now+120;
     const next=mission.points.find(q=>!q.done),floor=indoorWorld.floors[indoorWorld.currentFloor],text='拠点潜入 '+(indoorWorld.currentFloor+1)+'階（'+floor.pattern+'型）　重要資料 '+mission.index+'/'+INDOOR_FILES_TOTAL;
     const alarmText=indoorWorld.alarm?.active?'館内アラート発令中：全館捜索 ／ ':'';
-    const desc=alarmText+(mission.index===INDOOR_FILES_TOTAL?'1階の正面玄関または非常口から脱出':mission.detected?'発見中：追跡・攻撃に注意':next?'資料の円の中に8秒留まる':'1階の出口へ');
+    const desc=alarmText+(mission.index===INDOOR_FILES_TOTAL?'1階の正面玄関または非常口から脱出':mission.detected?'発見中：追跡・攻撃に注意':next?'資料の円の中に合計8秒留まる':'1階の出口へ');
     const progress='<progress max="8" value="'+mission.progress+'"></progress>';
     const nextText='<b>'+text+'</b>'+progress+'<small>'+desc+'</small>';
     if(nextText!==indoorHudSnapshot){indoorHudSnapshot=nextText;el.innerHTML=nextText;}
@@ -1810,17 +1809,21 @@ function drawInfiltrationMission(){
   }
   drawInfiltrationAlarmEyes();
   for(const q of mission.points){
-    if(q.done)continue;
+    if(q.floor!==indoorWorld.currentFloor+1||(q.done&&!(q.collectedT>0)))continue;
     const x=q.x-camX,y=q.y-cam,r=INDOOR_ACQUIRE_RADIUS;
     if(x<-r-15||x>W+r+15||y<-r-15||y>H+r+15)continue;
-    gm.fillStyle='rgba(241,208,112,.12)';gm.strokeStyle='rgba(250,220,130,.65)';
+    gm.save();
+    if(q.done)gm.globalAlpha=Math.min(1,q.collectedT/.55);
+    gm.fillStyle=q.done?'rgba(80,220,130,.25)':'rgba(241,208,112,.12)';
+    gm.strokeStyle=q.done?'#79e8a2':'rgba(250,220,130,.65)';
     gm.lineWidth=3;gm.beginPath();gm.arc(x,y,r,0,Math.PI*2);gm.fill();gm.stroke();
     const ratio=Math.min(1,(q.progress||0)/INDOOR_ACQUIRE_SECONDS);
-    gm.strokeStyle='#ffdf83';gm.lineWidth=8;gm.lineCap='round';gm.beginPath();
+    gm.strokeStyle=q.done?'#79e8a2':'#ffdf83';gm.lineWidth=8;gm.lineCap='round';gm.beginPath();
     gm.arc(x,y,r,-Math.PI/2,-Math.PI/2+Math.PI*2*ratio);if(ratio>0)gm.stroke();
     gm.lineCap='butt';gm.font='bold 18px system-ui';gm.textAlign='center';
-    gm.fillStyle='#fff0ad';gm.fillText('資料',x,y+2);
-    gm.font='bold 13px system-ui';gm.fillText((q.progress||0).toFixed(1)+' / 8秒',x,y+22);
+    gm.fillStyle=q.done?'#baffce':'#fff0ad';gm.fillText(q.done?'回収完了':'資料',x,y+2);
+    if(!q.done){gm.font='bold 13px system-ui';gm.fillText((q.progress||0).toFixed(1)+' / 8秒',x,y+22);}
+    gm.restore();
   }
   // 同じ階の未回収資料だけを距離で比較。階段や出口への矢印には切り替えない。
   let target=null,nearest=Infinity;

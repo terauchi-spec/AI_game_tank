@@ -1177,8 +1177,8 @@ test('a completed mission cannot escape from the upper floor through an emergenc
 function alarmWorld(){
  const vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
  const source=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
- const labels=[],rectangles=[],gradients=[],bubbles=[],eyePupils=[],rotations=[];let currentArc=null;
- const gm=new Proxy({rotate:angle=>rotations.push(angle),beginPath(){currentArc=null;},arc(...args){currentArc=args;},
+ const labels=[],rectangles=[],gradients=[],bubbles=[],eyePupils=[],rotations=[],strokes=[];let currentArc=null;
+ const gm=new Proxy({stroke(){strokes.push(this.strokeStyle);},rotate:angle=>rotations.push(angle),beginPath(){currentArc=null;},arc(...args){currentArc=args;},
   fill(){if(currentArc&&currentArc[1]===48&&currentArc[2]===3)eyePupils.push({x:currentArc[0],color:this.fillStyle});},
   fillText:t=>labels.push(t),fillRect(...r){rectangles.push({r,style:this.fillStyle});},
   createLinearGradient(...args){const stops=[];const gradient={args,stops,addColorStop:(...s)=>stops.push(s)};gradients.push(gradient);return gradient;}},
@@ -1196,12 +1196,12 @@ function alarmWorld(){
  vm.runInContext(source+`;setupInfiltrationWorld();setupInfiltrationMission();
   indoorGuardSeesPlayer=()=>false;
   api={get world(){return indoorWorld;},record:indoorRecordGuardDiscovery,begin:indoorStartGuardPursuit,
-   update:updateInfiltrationGuardAI,finish:indoorFinishGuardSearch,sweep:indoorBeginAlarmSweep,
+   updateMission:updateInfiltrationMission,update:updateInfiltrationGuardAI,finish:indoorFinishGuardSearch,sweep:indoorBeginAlarmSweep,
    draw:drawInfiltrationMission,setup:setupInfiltrationWorld,chats:indoorUpdateAlarmChats,
    cancelChat:indoorCancelAlarmChat,scanBodies:indoorScanStunnedGuards,level:indoorAlarmLevel,weapon:indoorUpdateCommanderWeapon,setVisible:h=>{indoorGuardSeesPlayer=q=>q===h;}};`,sandbox);
  sandbox.enterHumanFound=h=>{h.st=1;h.target='p';sandbox.api.begin(h);};
  const sight=h=>{sandbox.api.world.currentFloor=h.indoorFloor-1;h.st=1;h.target='p';sandbox.api.begin(h);sandbox.api.record(h);};
- return {api:sandbox.api,sandbox,sight,labels,rectangles,gradients,bubbles,eyePupils,rotations};
+ return {api:sandbox.api,sandbox,sight,labels,rectangles,gradients,bubbles,eyePupils,rotations,strokes};
 }
 test('three distinct firsthand witnesses trigger one building alarm across both floors',()=>{
  const s=alarmWorld(),world=s.api.world,[a,b,c]=world.floors[0].guards;
@@ -1425,4 +1425,28 @@ test('document guide shows the remaining floor without an arrow and EXIT after c
   s.api.draw();assert.equal(s.rotations.length,0,'no exit arrow after all documents');
   assert.ok(s.labels.includes('EXIT'));assert.ok(!s.labels.includes('重要書類'));
  }
+});
+
+test('document charge accumulates across leaving, switching documents and changing floors',()=>{
+ const s=alarmWorld(),world=s.api.world,m=s.sandbox.mission;
+ const [a,b]=m.points;Object.assign(b,{floor:1,x:-500,y:a.y});
+ Object.assign(s.sandbox.p,{x:a.x,y:a.y});
+ s.api.updateMission(3);assert.equal(a.progress,3);assert.equal(a.done,false);
+ s.sandbox.p.x=-1000;s.api.updateMission(1);assert.equal(a.progress,3);assert.equal(m.progress,0);
+ Object.assign(s.sandbox.p,{x:b.x,y:b.y});s.api.updateMission(2);assert.equal(b.progress,2);
+ Object.assign(s.sandbox.p,world.floors[0].stair);world.stairArmed=true;world.stairsCooldown=0;
+ s.api.updateMission(.01);assert.equal(world.currentFloor,1);assert.equal(b.progress,2);assert.equal(a.progress,3);
+ world.currentFloor=0;Object.assign(s.sandbox.p,{x:a.x,y:a.y});
+ s.api.updateMission(5);assert.equal(a.done,true);assert.equal(a.progress,8);assert.equal(m.index,1);
+ s.api.updateMission(.1);assert.equal(m.index,1,'completed document cannot be collected twice');
+});
+test('completed document region turns green briefly and fades away',()=>{
+ const s=alarmWorld(),q=s.sandbox.mission.points[0];
+ Object.assign(s.sandbox.p,{x:q.x,y:q.y});s.sandbox.cam=q.y-200;s.sandbox.camX=q.x-200;
+ s.api.updateMission(8);assert.equal(q.done,true);assert.equal(q.collectedT,.9);
+ s.api.draw();assert.ok(s.labels.includes('回収完了'));assert.ok(s.strokes.includes('#79e8a2'));
+ s.api.updateMission(.4);assert.ok(q.collectedT>0&&q.collectedT<.55,'green region enters fade');
+ s.labels.length=0;s.api.draw();assert.ok(s.labels.includes('回収完了'));
+ s.api.updateMission(.6);assert.equal(q.collectedT,0);
+ s.labels.length=0;s.api.draw();assert.ok(!s.labels.includes('回収完了'),'completed region disappears');
 });
