@@ -594,10 +594,10 @@ test('indoor guards follow current visible player and last seen position if hidd
  const avatar={x:180,y:110},destinations=[];let visible=true;
  const [begin,update]=new Function('p','R','D','indoorGuardSeesPlayer','indoorMoveGuardTo',
   'indoorEstimateEscape','angD','pauseAfterEnemyDetection','enterHumanFound','enemyBombPoint','bombs','fire',
-  'performance','INDOOR_TRAIL_LIMIT','indoorShareGuardSighting',code+'\nreturn [indoorStartGuardPursuit,updateInfiltrationGuardAI];')(
+  'performance','INDOOR_TRAIL_LIMIT','indoorShareGuardSighting','indoorRecordGuardDiscovery',code+'\nreturn [indoorStartGuardPursuit,updateInfiltrationGuardAI];')(
   avatar,()=>.6,(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),()=>visible,
   (h,p)=>{destinations.push({...p});return true;},(_h,state)=>state.lastSeen,()=>0,()=>{},()=>{},()=>({x:0,y:0}),
-  [],()=>{}, {now:()=>0},48,()=>0);
+  [],()=>{}, {now:()=>0},48,()=>0,()=>{});
  const h={indoorGuard:true,x:0,y:110,st:1,target:'p',cd:100,bu:true};
  begin(h);avatar.x=240;update(h,.1);
  assert.equal(destinations.at(-1).x,240,'immediately chase current visible position');
@@ -1119,4 +1119,90 @@ test('a completed mission cannot escape from the upper floor through an emergenc
  assert.equal(completed,0,'upper-floor state cannot use any exterior exit');
  vm.runInContext('indoorWorld.currentFloor=0;updateInfiltrationMission(.01);',sandbox);
  assert.equal(completed,1,'ground-floor emergency exit remains usable');
+});
+
+function alarmWorld(){
+ const vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
+ const source=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
+ const labels=[],rectangles=[],gradients=[];
+ const gm=new Proxy({fillText:t=>labels.push(t),fillRect(...r){rectangles.push({r,style:this.fillStyle});},
+  createLinearGradient(...args){const stops=[];const gradient={args,stops,addColorStop:(...s)=>stops.push(s)};gradients.push(gradient);return gradient;}},
+  {get:(o,k)=>k in o?o[k]:()=>{}});
+ const sandbox={ZONE_STYLE:{'敵迷路基地':{p:[]}},WH:14000,W:840,H:720,p:{},scoreStats:{},R:random(1771),
+  document:{body:{classList:{remove(){}}},getElementById:()=>({style:{},innerHTML:''})},
+  rebuildSpatialGrid(){},say(){},sfx(){},module:{exports:{}},partner:null,hound:null,
+  stageMode:'indoor',state:'play',playerDetectedNow:()=>false,performance:{now:()=>1000},
+  D:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),angD:(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b)),
+  mv:(h,dx,dy)=>{h.x+=dx;h.y+=dy;},pauseAfterEnemyDetection(){},gm,cam:0,camX:0};
+ vm.createContext(sandbox);
+ vm.runInContext(source+`;setupInfiltrationWorld();setupInfiltrationMission();
+  indoorGuardSeesPlayer=()=>false;
+  api={get world(){return indoorWorld;},record:indoorRecordGuardDiscovery,begin:indoorStartGuardPursuit,
+   update:updateInfiltrationGuardAI,finish:indoorFinishGuardSearch,sweep:indoorBeginAlarmSweep,
+   draw:drawInfiltrationMission,setup:setupInfiltrationWorld};`,sandbox);
+ const sight=h=>{sandbox.api.world.currentFloor=h.indoorFloor-1;h.st=1;h.target='p';sandbox.api.begin(h);sandbox.api.record(h);};
+ return {api:sandbox.api,sandbox,sight,labels,rectangles,gradients};
+}
+test('three distinct firsthand witnesses trigger one building alarm across both floors',()=>{
+ const s=alarmWorld(),world=s.api.world,[a,b,c]=world.floors[0].guards;
+ s.sight(a);s.sight(a);assert.equal(world.alarm.witnesses.size,1);assert.equal(world.alarm.active,false);
+ s.sight(b);assert.equal(world.alarm.active,false);
+ const noise=world.floors[1].guards[0];s.api.record(noise);
+ assert.equal(world.alarm.witnesses.size,2,'hearing a noise or receiving a report is not discovery');
+ s.sight(c);assert.equal(world.alarm.active,true);assert.equal(world.alarm.witnesses.size,3);
+ for(const floor of world.floors)for(const h of floor.guards){
+  if([a,b,c].includes(h)){assert.equal(h.indoorAlert.phase,'found');continue;}
+  assert.equal(h.indoorAlert.phase,'sweep');assert.equal(h.st,0);assert.equal(h.target,null);
+ }
+});
+test('alarm activation and search never read the hidden player position',()=>{
+ const s=alarmWorld(),world=s.api.world;
+ const observers=world.floors[0].guards.slice(0,3);s.sight(observers[0]);s.sight(observers[1]);
+ const third=observers[2];third.st=1;third.target='p';s.api.begin(third);
+ Object.defineProperty(s.sandbox.p,'x',{get(){throw Error('hidden player coordinates read');}});
+ s.api.record(third);
+ const h=world.floors[1].guards[0],visited=new Set();
+ for(let i=0;i<800;i++){s.api.update(h,.1);visited.add(h.indoorAlert.sweepCell);}
+ assert.ok(visited.size>=4,'search actively visits different connected cells');
+ assert.equal(h.indoorAlert.phase,'sweep');assert.equal(world.alarm.active,true);
+});
+test('an active alarm resumes global search after local pursuit and recovering from stun',()=>{
+ const s=alarmWorld(),world=s.api.world,guard=world.floors[1].guards[0];guard.stun=1;
+ for(const h of world.floors[0].guards.slice(0,3))s.sight(h);
+ assert.equal(guard.indoorAlert,undefined,'stunned guards do not move');
+ guard.stun=0;s.api.update(guard,.1);assert.equal(guard.indoorAlert.phase,'sweep');
+ const pursuer=world.floors[0].guards[0];s.api.finish(pursuer);
+ assert.equal(pursuer.indoorAlert.phase,'sweep');assert.equal(pursuer.indoorReturn,null);
+ s.api.setup();assert.equal(s.api.world.alarm.active,false);assert.equal(s.api.world.alarm.witnesses.size,0);
+});
+test('red alarm shading is drawn only when active and its gradient is cached',()=>{
+ const s=alarmWorld();s.api.draw();assert.ok(!s.labels.includes('館内アラート'));
+ for(const h of s.api.world.floors[0].guards.slice(0,3))s.sight(h);
+ s.api.draw();s.api.draw();
+ assert.ok(s.labels.includes('館内アラート'));assert.equal(s.gradients.length,1);
+ assert.equal(s.gradients[0].stops[0][1],'rgba(190,22,18,.24)');
+ assert.ok(s.rectangles.some(q=>q.r[0]===0&&q.r[1]===0&&q.r[2]===840&&q.r[3]===144));
+});
+test('each guard post has at most one commander with approximately one-third probability',()=>{
+ let count=0;
+ for(let seed=1;seed<=600;seed++){
+  const f=indoorGenerateFloor(seed%2+1,random(seed*997));
+  const commanders=f.postGuards.filter(h=>h.indoorCommander);
+  assert.ok(commanders.length<=1);count+=commanders.length;
+  assert.equal(f.postGuards.length,f.postCount,'commander replaces a waiting guard');
+  assert.ok(!f.guards.some(h=>h.indoorCommander),'commander is stationed in the post');
+ }
+ assert.ok(count/600>.27&&count/600<.40,'deterministic sample matches a one-in-three post chance');
+});
+test('post commanders use the radio pose and retain the dedicated indoor AI',()=>{
+ const s=alarmWorld();let commanders=[];
+ for(let i=0;i<12&&!commanders.length;i++){
+  s.api.setup();commanders=s.api.world.floors.flatMap(f=>f.guards).filter(h=>h.indoorCommander);
+ }
+ assert.ok(commanders.length>0);
+ for(const h of commanders){
+  assert.equal(h.indoorPost,true);assert.equal(h.indoorGuard,true);
+  assert.equal(h.frontCommander,true,'reuse the existing radio-equipped blue pose');
+  assert.equal(h.commander,null,'outdoor commander AI is not enabled');
+ }
 });
