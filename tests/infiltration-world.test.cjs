@@ -1186,7 +1186,7 @@ function alarmWorld(seed=1771){
  const sandbox={ZONE_STYLE:{'敵迷路基地':{p:[]}},WH:14000,W:840,H:720,p:{},scoreStats:{},R:random(seed),
   document:{body:{classList:{remove(){}}},getElementById:()=>({style:{},innerHTML:''})},
   rebuildSpatialGrid(){},say(){},sfx(){},module:{exports:{}},partner:null,hound:null,
-  stageMode:'indoor',state:'play',patrol:h=>h.face,findDetectedTarget:()=>null,hitsM:()=>false,debugMode:0,detectRange:()=>250,playerDetectedNow:()=>false,performance:{now:()=>1000},
+  stageMode:'indoor',state:'play',skill:'partner',patrol:h=>h.face,findDetectedTarget:()=>null,hitsM:()=>false,debugMode:0,detectRange:()=>250,playerDetectedNow:()=>false,performance:{now:()=>1000},
   los:()=>true,drawPatrolChatBubbleAt:(...args)=>bubbles.push(args),
   DETECT_CENTER_HALF:7.5*Math.PI/180,DETECT_OUTER_HALF:52.5*Math.PI/180,DETECT_OUTER_SCALE:.7,
   enemyCannonSpeed:()=>630,fire:(...args)=>sandbox.bullets.push({args}),
@@ -1617,4 +1617,44 @@ test('ally combat remains valid when alarm search starts and clears on stun',()=
  s.ally.alive=true;s.api.update(s.h,.2);assert.ok(s.h.indoorAllyCombat);
  s.h.stun=2;s.api.updateMission(.1);assert.equal(s.h.indoorAllyCombat,null);
  assert.equal(s.h.indoorAlert,null,'stun clears stale combat and search memories');
+});
+
+function assistedDocumentScenario(){
+ const s=alarmWorld(),q=s.sandbox.mission.points[0];
+ Object.assign(s.sandbox.p,{x:q.x,y:q.y});
+ s.sandbox.partner={x:q.x+20,y:q.y,down:false,stunT:0};
+ return {...s,q};
+}
+test('a partner in the document circle halves collection time to four seconds',()=>{
+ const s=assistedDocumentScenario();
+ s.api.updateMission(3.9);assert.equal(s.q.done,false);assert.equal(s.q.progress,7.8);
+ s.api.updateMission(.1);assert.equal(s.q.done,true);assert.equal(s.q.progress,8);
+ assert.equal(s.sandbox.mission.index,1);assert.equal(s.q.collectedT,.9);
+});
+test('partner bonus switches as they enter or leave without resetting accumulated charge',()=>{
+ const s=assistedDocumentScenario();s.sandbox.partner.x+=200;
+ s.api.updateMission(2);assert.equal(s.q.progress,2);
+ s.sandbox.partner.x=s.q.x;s.api.updateMission(2);assert.equal(s.q.progress,6);
+ s.sandbox.partner.x+=200;s.api.updateMission(1);assert.equal(s.q.progress,7);
+ s.sandbox.p.x+=200;s.api.updateMission(1);assert.equal(s.q.progress,7,'player leaving preserves charge');
+ s.sandbox.p.x=s.q.x;s.api.updateMission(1);assert.equal(s.q.done,true);
+});
+test('document assistance requires an active foot partner and the player collecting',()=>{
+ for(const condition of ['absent','down','stunned','vehicle','passenger','other-skill','player-away']){
+  const s=assistedDocumentScenario();
+  if(condition==='absent')s.sandbox.partner=null;
+  if(condition==='down')s.sandbox.partner.down=true;
+  if(condition==='stunned')s.sandbox.partner.stunT=2;
+  if(condition==='vehicle')s.sandbox.partner.vehicle={};
+  if(condition==='passenger')s.sandbox.partner.passengerVehicle={};
+  if(condition==='other-skill')s.sandbox.skill='reinforce';
+  if(condition==='player-away')s.sandbox.p.x+=200;
+  s.api.updateMission(1);
+  assert.equal(s.q.progress,condition==='player-away'?0:1,condition);
+ }
+});
+test('assisted document shows the cooperation indicator only inside the active circle',()=>{
+ const s=assistedDocumentScenario();s.sandbox.cam=s.q.y-200;s.sandbox.camX=s.q.x-200;
+ s.api.draw();assert.ok(s.labels.includes('相棒協力 ×2'));
+ s.sandbox.partner.x+=200;s.labels.length=0;s.api.draw();assert.ok(!s.labels.includes('相棒協力 ×2'));
 });

@@ -1703,6 +1703,11 @@ function updateInfiltrationDoors(dt){
     }
   }
 }
+function indoorPartnerAssistsDocument(q){
+ return !!(partner&&skill==='partner'&&!partner.down&&!(partner.stunT>0)&&
+  !partner.vehicle&&!partner.passengerVehicle&&q.floor===indoorWorld?.currentFloor+1&&
+  D(partner,q)<INDOOR_ACQUIRE_RADIUS);
+}
 function updateInfiltrationMission(dt){
   if(!indoorWorld||!mission||state!=='play')return;
   const w=indoorWorld,m=mission;
@@ -1730,7 +1735,7 @@ function updateInfiltrationMission(dt){
   const near=m.points.find(q=>!q.done&&q.floor===w.currentFloor+1&&D(p,q)<INDOOR_ACQUIRE_RADIUS);
   if(near&&!p.tank){
     m.current=near;
-    m.progress=Math.min(INDOOR_ACQUIRE_SECONDS,(near.progress||0)+dt);
+    m.progress=Math.min(INDOOR_ACQUIRE_SECONDS,(near.progress||0)+dt*(indoorPartnerAssistsDocument(near)?2:1));
     near.progress=m.progress;
     if(m.progress>=INDOOR_ACQUIRE_SECONDS){
       near.done=true;near.collectedT=.9;m.index++;m.progress=0;m.current=null;sfx('pickup');
@@ -1958,7 +1963,7 @@ function drawInfiltrationMission(){
     indoorHudRefresh=now+120;
     const next=mission.points.find(q=>!q.done),floor=indoorWorld.floors[indoorWorld.currentFloor],text='拠点潜入 '+(indoorWorld.currentFloor+1)+'階（'+floor.pattern+'型）　重要資料 '+mission.index+'/'+INDOOR_FILES_TOTAL;
     const alarmText=indoorWorld.alarm?.active?'館内アラート発令中：全館捜索 ／ ':'';
-    const desc=alarmText+(mission.index===INDOOR_FILES_TOTAL?'1階の正面玄関または非常口から脱出':mission.detected?'発見中：追跡・攻撃に注意':next?'資料の円の中に合計8秒留まる':'1階の出口へ');
+    const desc=alarmText+(mission.index===INDOOR_FILES_TOTAL?'1階の正面玄関または非常口から脱出':mission.detected?'発見中：追跡・攻撃に注意':next?'円内で回収：通常8秒／相棒と一緒なら4秒':'1階の出口へ');
     const progress='<progress max="8" value="'+mission.progress+'"></progress>';
     const nextText='<b>'+text+'</b>'+progress+'<small>'+desc+'</small>';
     if(nextText!==indoorHudSnapshot){indoorHudSnapshot=nextText;el.innerHTML=nextText;}
@@ -1991,7 +1996,12 @@ function drawInfiltrationMission(){
     gm.arc(x,y,r,-Math.PI/2,-Math.PI/2+Math.PI*2*ratio);if(ratio>0)gm.stroke();
     gm.lineCap='butt';gm.font='bold 18px system-ui';gm.textAlign='center';
     gm.fillStyle=q.done?'#baffce':'#fff0ad';gm.fillText(q.done?'回収完了':'資料',x,y+2);
-    if(!q.done){gm.font='bold 13px system-ui';gm.fillText((q.progress||0).toFixed(1)+' / 8秒',x,y+22);}
+    if(!q.done){
+      gm.font='bold 13px system-ui';gm.fillText((q.progress||0).toFixed(1)+' / 8秒',x,y+22);
+      if(indoorPartnerAssistsDocument(q)){
+        gm.fillStyle='#a8e4ff';gm.font='bold 12px system-ui';gm.fillText('相棒協力 ×2',x,y+40);
+      }
+    }
     gm.restore();
   }
   // 同じ階の未回収資料だけを距離で比較。階段や出口への矢印には切り替えない。
