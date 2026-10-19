@@ -117,9 +117,9 @@ test('windows only on exterior walls, rooms furnished, corridors contain militar
    }
    const hallway=f.furniture.filter(x=>x.zone==='hallway');
    const interior=f.furniture.filter(x=>x.zone==='room');
-   assert.ok(hallway.length>=10&&hallway.length<=13,'10–13 military props per floor');
+   assert.ok(hallway.length>=1&&hallway.length<=13,'sparse one-sided military props per floor');
    assert.ok(hallway.every(x=>['ammo','supply','barrel','sandbag','kit'].includes(x.kind)));
-   assert.ok(new Set(hallway.map(x=>x.kind)).size>=4,'corridor supplies include four different military props');
+   assert.ok(new Set(hallway.map(x=>x.kind)).size>=2,'sparser corridor supplies keep varied military props');
    assert.ok(interior.some(x=>x.kind==='cabinet'),'cabinet in rooms');
    assert.ok(interior.some(x=>x.kind==='table')||f.furniture.some(x=>x.kind==='postTable'),'tables in rooms');
    assert.ok(f.furniture.some(x=>x.kind==='postTable'));
@@ -247,7 +247,7 @@ test('expanded patrol density and supply items remain separated and keep lanes c
   for(let seed=1;seed<=250;seed++)for(let floorNo=1;floorNo<=2;floorNo++){
     const f=indoorGenerateFloor(floorNo,random(seed*131+floorNo));
     const props=f.furniture.filter(q=>q.zone==='hallway');
-    assert.ok(props.length>=10&&props.length<=13,'expanded hallway cover count');
+    assert.ok(props.length>=1&&props.length<=13,'sparse hallway cover count');
     assert.ok(f.guards.length>=6&&f.guards.length<=8,'expanded mobile soldiers');
     assert.ok(f.postGuards.length>=4&&f.postGuards.length<=8,'keep barracks soldiers');
     assert.ok(f.guards.length+f.postGuards.length<=16,'cap soldiers per floor for performance');
@@ -324,7 +324,7 @@ test('when forced to use a shared stair cell, both floor plans use that position
  }
 });
 
-test('clustered wooden crates, barrels and shell pallets stay in groups of four or fewer',()=>{
+test('clustered wooden crates, barrels and shell pallets stay in groups of two or fewer',()=>{
  for(let seed=1;seed<=250;seed++)for(let number=1;number<=2;number++){
   const f=indoorGenerateFloor(number,random(seed*147+number));
   const g=new Map(),types=new Set(f.explosiveObjects.map(o=>o.kind));
@@ -335,7 +335,7 @@ test('clustered wooden crates, barrels and shell pallets stay in groups of four 
    assert.ok(obj.w>0&&obj.h>0);
    g.set(obj.group,(g.get(obj.group)||0)+1);
   }
-  assert.ok([...g.values()].every(v=>v>=1&&v<=4),'maximum of four crates in a group');
+  assert.ok([...g.values()].every(v=>v>=1&&v<=2),'maximum of two objects in a group');
   assert.ok(f.lightFixtures.length>=15,'ceiling lights regularly distributed');
   const loc=new Set(f.lightFixtures.map(p=>p.x+':'+p.y));
   assert.equal(loc.size,f.lightFixtures.length,'no duplicate light fixtures');
@@ -848,4 +848,26 @@ test('stalled approach and blocked searches expire and dedicated AI skips outdoo
  s.api.update(s.h,.11);assert.equal(s.h.indoorAlert,null);
  const outdoor={x:1,y:2,st:0};const copy={...outdoor};
  assert.equal(s.api.update(outdoor,.1),false);assert.deepEqual(outdoor,copy);
+});
+
+
+test('hallway furniture and cargo share one side with at most two items per cell',()=>{
+ const sides=new Set();
+ for(let seed=1;seed<=300;seed++)for(let floorNo=1;floorNo<=2;floorNo++){
+  const f=indoorGenerateFloor(floorNo,random(seed*157+floorNo));
+  const props=[...f.furniture,...f.explosiveObjects].filter(o=>o.zone==='hallway');
+  const floorSides=new Set();
+  for(const tile of f.corridors){
+   const items=props.filter(o=>o.x>=tile.x&&o.x<tile.x+tile.w&&o.y>=tile.y&&o.y<tile.y+tile.h);
+   assert.ok(items.length<=2,'maximum two items including static cover and explosive cargo');
+   for(const o of items){
+    const mid=tile.x+tile.w/2;
+    assert.ok(o.x+o.w+10<mid||o.x-10>mid,'central lane stays open');
+    floorSides.add(o.x+o.w/2<mid?'left':'right');
+   }
+  }
+  assert.equal(floorSides.size,1,'all hall items use the same side, including door relocations');
+  for(const side of floorSides)sides.add(side);
+ }
+ assert.equal(sides.size,2,'either side may be selected for a new floor');
 });

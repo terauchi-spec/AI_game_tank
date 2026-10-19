@@ -308,26 +308,22 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     }
   }
   addFurniture('postTable',postCenter.x-47,postCenter.y-28,94,56,'post');
-  // 通路の軍用物資は10～13個へ増量。壁際の対角コーナーに寄せて
-  // 通路中央(幅約26px以上)・階段・ドアの通行帯は塞がない。
+  // Keep one consistent side throughout each floor, including doorway fallback
+  // positions and explosive cargo. Never alternate sides in adjacent hall cells.
+  let hallLeft;
+  const hallCorners=(w,h,margin=16)=>{
+    const x=hallLeft?margin:SIZE-w-margin;
+    return [[x,margin],[x,SIZE-h-margin]];
+  };
   const supplies=indoorShuffle(['ammo','supply','barrel','sandbag','kit'],rng);
   const safeHalls=indoorShuffle(halls.filter(i=>i!==stairIndex&&i!==index(2,0)&&!lobbyIds.includes(i)),rng);
-  const supplyCount=Math.min(13,Math.max(10,Math.round(halls.length*.95)));
-  const corners=[];
-  for(let k=0;k<safeHalls.length;k++){
-    const {c,r}=coord(safeHalls[k]);
-    const left=rng()<.5,top=rng()<.5;
-    corners.push({c,r,left,top});
-    const kind=supplies[k%supplies.length];
-    addFurniture(kind,X0+c*SIZE+(left?20:SIZE-76),
-      Y0+r*SIZE+(top?20:SIZE-66),52,40,'hallway');
-  }
-  // 十分な区画のない短い廊下でも、同一区画の反対角へ追加して多様な遮蔽を作る。
-  for(let k=safeHalls.length;k<supplyCount;k++){
-    const {c,r,left,top}=corners[(k-safeHalls.length)%corners.length];
-    const kind=supplies[k%supplies.length];
-    addFurniture(kind,X0+c*SIZE+(left?SIZE-76:20),
-      Y0+r*SIZE+(top?SIZE-66:20),52,40,'hallway');
+  const supplyCount=safeHalls.length;
+  for(let k=0;k<supplyCount;k++){
+    // Preserve random draws so unrelated room layouts and patrol routes stay stable.
+    const {c,r}=coord(safeHalls[k]),left=rng()<.5,top=rng()<.5;
+    if(hallLeft===undefined)hallLeft=left;
+    const [dx,dy]=hallCorners(52,40)[top?0:1];
+    addFurniture(supplies[k%supplies.length],X0+c*SIZE+dx,Y0+r*SIZE+dy,52,40,'hallway');
   }
   // Stage-exclusive cargo: each cluster contains one kind; collisions match visual scale.
   // Crates are 2x and shell pallets 4x along BOTH axes. Barrels keep their size.
@@ -344,7 +340,8 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     const item=furniture[i];
     if(!doorLanes.some(d=>overlap(item,d)))continue;
     const tx=X0+Math.floor((item.x-X0)/SIZE)*SIZE,ty=Y0+Math.floor((item.y-Y0)/SIZE)*SIZE;
-    const corners=[[16,16],[SIZE-item.w-16,16],[16,SIZE-item.h-16],[SIZE-item.w-16,SIZE-item.h-16]];
+    const corners=item.zone==='hallway'?hallCorners(item.w,item.h):
+      [[16,16],[SIZE-item.w-16,16],[16,SIZE-item.h-16],[SIZE-item.w-16,SIZE-item.h-16]];
     const alternate=corners.map(([dx,dy])=>({...item,x:tx+dx,y:ty+dy})).find(o=>
       !doorLanes.some(d=>overlap(o,d))&&
       !furniture.some((f,j)=>j!==i&&overlap(o,f,3))&&
@@ -352,34 +349,13 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     if(alternate){item.x=alternate.x;item.y=alternate.y;}
     else furniture.splice(i,1);
   }
-  // Replenish military hall props after clearing any doorways; preserve their variety and number.
-  const targetHallCount=supplyCount;
-  const hallKinds=['ammo','supply','barrel','sandbag','kit'];
-  let addIndex=0;
-  for(const cell of safeHalls){
-    if(furniture.filter(o=>o.zone==='hallway').length>=targetHallCount)break;
-    const {c,r}=coord(cell),tx=X0+c*SIZE,ty=Y0+r*SIZE;
-    for(const [dx,dy] of [[20,20],[SIZE-76,20],[20,SIZE-66],[SIZE-76,SIZE-66]]){
-      if(furniture.filter(o=>o.zone==='hallway').length>=targetHallCount)break;
-      const q={kind:hallKinds[addIndex++%hallKinds.length],x:tx+dx,y:ty+dy,w:52,h:40,zone:'hallway'};
-      if(doorLanes.some(d=>overlap(q,d))||furniture.some(o=>overlap(q,o,5))||
-        distance({x:q.x+26,y:q.y+20},stair)<88)continue;
-      furniture.push(q);
-    }
-  }
-  // A compact reserve supply guarantees minimum corridor cover without blocking the lane.
-  if(furniture.filter(o=>o.zone==='hallway').length<10){
-    for(const cell of safeHalls){
-      if(furniture.filter(o=>o.zone==='hallway').length>=10)break;
-      const {c,r}=coord(cell),tx=X0+c*SIZE,ty=Y0+r*SIZE;
-      for(const [dx,dy] of [[16,16],[SIZE-48,16],[16,SIZE-48],[SIZE-48,SIZE-48]]){
-        const q={kind:hallKinds[addIndex++%hallKinds.length],x:tx+dx,y:ty+dy,w:32,h:32,zone:'hallway'};
-        if(doorLanes.some(d=>overlap(q,d))||furniture.some(o=>overlap(q,o,2))||
-          distance({x:q.x+16,y:q.y+16},stair)<75)continue;
-        furniture.push(q);break;
-      }
-    }
-  }
+  // Do not replenish the opposite side to satisfy an old density minimum.
+  // At most two props/cargo pieces may occupy a hallway cell in total.
+  const hallCellCount=cell=>{
+    const {c,r}=coord(cell),x=X0+c*SIZE,y=Y0+r*SIZE;
+    return [...furniture,...explosiveObjects].filter(o=>o.zone==='hallway'&&
+      o.x>=x&&o.x<x+SIZE&&o.y>=y&&o.y<y+SIZE).length;
+  };
   const isFree=o=>{
     const cx=o.x+o.w/2,cy=o.y+o.h/2;
     if(distance({x:cx,y:cy},stair)<98)return false;
@@ -392,12 +368,15 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
   const placeCluster=(cell,zone,kind,groupId)=>{
     const {c,r}=coord(cell),xx=X0+c*SIZE,yy=Y0+r*SIZE;
     const size=kind==='shellPallet'?120:kind==='crate'?60:30;
-    const count=kind==='shellPallet'?1:kind==='crate'?2:zone==='hallway'?3:4;
+    const available=zone==='hallway'?2-hallCellCount(cell):2-explosiveObjects.filter(o=>
+      o.x>=xx&&o.x<xx+SIZE&&o.y>=yy&&o.y<yy+SIZE).length;
+    const count=Math.min(kind==='shellPallet'?1:2,available);
+    if(count<=0)return false;
     const columns=zone==='hallway'||kind==='shellPallet'||kind==='crate'?1:2;
     const gap=kind==='shellPallet'?0:7;
     const rows=Math.ceil(count/columns),width=columns*size+(columns-1)*gap,height=rows*size+(rows-1)*gap;
     const positions=zone==='hallway'
-      ?[[14,16],[SIZE-width-14,16],[14,SIZE-height-16],[SIZE-width-14,SIZE-height-16]]
+      ?hallCorners(width,height,14)
       :[[14,14],[SIZE-width-14,14],[14,SIZE-height-14],[SIZE-width-14,SIZE-height-14]];
     for(const [dx,dy] of positions){
       const items=Array.from({length:count},(_,i)=>({
