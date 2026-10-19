@@ -842,6 +842,44 @@ function setupInfiltrationWorld(){
   rebuildSpatialGrid();
   say('拠点潜入：廊下の物資に身を隠し、重要資料3箇所を回収せよ');
 }
+// Keep the original roster slots: killed reinforcements are replaced too.
+function indoorReinforcementPoint(floor){
+ const points=indoorAlarmSweepPoints(floor);if(!points?.length)return null;
+ const start=(floor.reinforcementCursor||0)%points.length;
+ for(let i=0;i<points.length;i++){
+  const index=(start+i)%points.length,q=points[index];if(!q)continue;
+  if(q.x>=camX-100&&q.x<=camX+W+100&&q.y>=cam-100&&q.y<=cam+H+100)continue;
+  if(D(q,p)<160||hitsM(q.x,q.y,8))continue;
+  if(floor.guards.some(h=>h.alive&&D(h,q)<36)||bombs.some(b=>D(b,q)<120))continue;
+  floor.reinforcementCursor=index+1;return q;
+ }
+ return null;
+}
+function indoorReplenishGuards(dt){
+ if(stageMode!=='indoor'||state!=='play'||!indoorWorld)return;
+ indoorWorld.reinforcementCheckT=(indoorWorld.reinforcementCheckT||0)-dt;
+ if(indoorWorld.reinforcementCheckT>0)return;indoorWorld.reinforcementCheckT=.25;
+ for(const floor of indoorWorld.floors)for(let i=0;i<floor.guards.length;i++){
+  const dead=floor.guards[i];
+  if(dead.alive||dead.sniperFallT>0)continue;
+  const point=indoorReinforcementPoint(floor);if(!point)continue;
+  // Existing patrol routes have real door crossings; rejoin one without cutting walls.
+  const patrolGuard=floor.guards.find(h=>h.path?.length>1);
+  const path=patrolGuard?.path||[{x:point.x,y:point.y}];
+  const guard={x:point.x,y:point.y,path,loop:!!patrolGuard?.loop,wi:0,dir:1,stk:0,
+   alive:true,elite:true,commander:null,st:0,sus:0,lost:0,cd:R()*1.2,burstLeft:0,
+   face:dead.face||0,target:null,patrolMode:'axis',zoneHeavy:'indoor',
+   indoorGuard:true,indoorFloor:floor.number,indoorWhite:true,
+   indoorCommander:false,frontCommander:false};
+  floor.guards[i]=guard;
+  const slot=humans.indexOf(dead);if(slot>=0)humans[slot]=guard;else humans.push(guard);
+  const post=floor.postGuards?.indexOf(dead)??-1;if(post>=0)floor.postGuards.splice(post,1);
+  if(dead.indoorChatMate)indoorCancelAlarmChat(dead);
+  // Rejoin an established, door-aware patrol rather than walking straight to it.
+  guard.indoorReturn=indoorPatrolReturnPlan(guard);
+  if(indoorWorld.alarm?.active)indoorBeginAlarmSweep(guard);
+ }
+}
 function setupInfiltrationMission(){
   mission={index:0,progress:0,points:indoorWorld.intel,exit:indoorWorld.exit,detected:false,
     current:null,alarm:0};
@@ -1036,6 +1074,7 @@ function indoorRefreshAlarm(){
  }
 }
 function indoorRecordGuardDiscovery(h){
+ if(indoorWorld?.alarm?.active)return; // Reinforcement waves must not grow the completed warning set.
  if(!h?.indoorGuard||!h.alive||!h.st||h.target!=='p'||h.stun>0||h.stunRecover>0||h.houndPinned||h.blastAirT>0||
     !indoorWorld||h.indoorFloor!==indoorWorld.currentFloor+1)return;
  const alarm=indoorWorld.alarm||(indoorWorld.alarm={active:false,witnesses:new Set(),elapsed:0});
@@ -1176,7 +1215,7 @@ function indoorMoveGuardTo(h,goal,dt,sp,moveState=null){
   if(a.detour.length)dest=a.detour[0];else a.detour=null;
  }
  const heading=Math.atan2(dest.y-h.y,dest.x-h.x);
- const step=Math.min(sp*dt,D(h,dest));
+ const step=Math.min(sp*(h.indoorWhite?1.2:1)*dt,D(h,dest));
  if(step<=0)return true;
  const oldX=h.x,oldY=h.y;
  mv(h,Math.cos(heading)*step,Math.sin(heading)*step,8);
@@ -1379,7 +1418,7 @@ function indoorUpdateGuardNotice(h,dt){
   else indoorMoveGuardTo(h,back.goal,dt,30,back.nav);
   return true;
  }
- h.face=patrol(h,dt,30,8);return true;
+ h.face=patrol(h,dt,30*(h.indoorWhite?1.2:1),8);return true;
 }
 // Visual alert relay is separate from the limited nearby voice report.
 function indoorObserveFoundGuard(h,dt){
@@ -1541,6 +1580,7 @@ function updateInfiltrationMission(dt){
   if(w.alarm?.active)w.alarm.elapsed+=dt;
   const detected=playerDetectedNow();
   m.detected=detected;
+  indoorReplenishGuards(dt);
   updateInfiltrationDoors(dt);
   indoorUpdateAlarmChats(dt);
   indoorScanStunnedGuards(dt);

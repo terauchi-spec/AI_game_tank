@@ -547,7 +547,7 @@ test('indoor graph routes through actual passages and never through an unwalled 
 });
 function guardScenario(){
  const src=require('node:fs').readFileSync(require('node:path').join(__dirname,'../js/infiltration-world.js'),'utf8');
- const avatar={x:200,y:100};let visible=false,patrols=0,finished=0,shots=0,wallClear=true,light=1,blockedMovement=false;
+ const avatar={x:200,y:100};let visible=false,patrols=0,patrolSpeed=0,finished=0,shots=0,wallClear=true,light=1,blockedMovement=false;
  const d=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
  const ray=(a,b)=>typeof wallClear==='function'?wallClear(a,b):wallClear;
  const api=new Function('p','R','D','angD','pauseAfterEnemyDetection','fire','los','cachedLos',
@@ -564,14 +564,14 @@ function guardScenario(){
  function visibleNow(){return false;} function lightNow(){return 1;} function movementBlocked(){return false;}
  `)(avatar,()=>.5,d,(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b)),()=>{finished++;},()=>{shots++;},
  ray,ray,0,'clear',()=>false,()=>false,()=>false,()=>250,.2,1,.7,
- h=>{patrols++;return h.face;},()=>null,h=>{
+ (h,_dt,sp)=>{patrols++;patrolSpeed=sp;return h.face;},()=>null,h=>{
   h.st=1;h.target='p';h.sus=0;if(!h.indoorAlert||h.indoorAlert.phase!=='found')api.begin(h);
  },(h,dx,dy)=>{h.x+=dx;h.y+=dy;});
  api.setSensors(()=>visible,()=>light,()=>blockedMovement);
  api.setWorld({currentFloor:0,floors:[{}]});
  const h={indoorGuard:true,indoorFloor:1,alive:true,st:1,target:'p',x:0,y:100,face:0,cd:100,ct:0};
  return {api,h,avatar,setVisible:v=>visible=v,setWall:v=>wallClear=v,setLight:v=>light=v,setBlocked:v=>blockedMovement=v,
- get finished(){return finished;},get patrols(){return patrols;},get shots(){return shots;}};
+ get finished(){return finished;},get patrolSpeed(){return patrolSpeed;},get patrols(){return patrols;},get shots(){return shots;}};
 }
 test('sight loss travels to the last sighting, then searches with a hard timeout',()=>{
  const s=guardScenario(),{api,h,avatar}=s;api.begin(h);
@@ -1161,7 +1161,7 @@ test('a completed mission cannot escape from the upper floor through an emergenc
  let completed=0;
  const sandbox={ZONE_STYLE:{'敵迷路基地':{p:[]}},WH:14000,p:{},scoreStats:{},R:random(1221),
   document:{body:{classList:{remove(){}}}},rebuildSpatialGrid(){},say(){},sfx(){},
-  module:{exports:{}},partner:null,hound:null,state:'play',playerDetectedNow:()=>false,
+  module:{exports:{}},partner:null,hound:null,stageMode:'indoor',state:'play',playerDetectedNow:()=>false,
   D:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),completeMission(){completed++;},
   mission:{index:3,points:[],progress:0,current:null}};
  vm.createContext(sandbox);
@@ -1186,7 +1186,7 @@ function alarmWorld(){
  const sandbox={ZONE_STYLE:{'敵迷路基地':{p:[]}},WH:14000,W:840,H:720,p:{},scoreStats:{},R:random(1771),
   document:{body:{classList:{remove(){}}},getElementById:()=>({style:{},innerHTML:''})},
   rebuildSpatialGrid(){},say(){},sfx(){},module:{exports:{}},partner:null,hound:null,
-  stageMode:'indoor',state:'play',debugMode:0,detectRange:()=>250,playerDetectedNow:()=>false,performance:{now:()=>1000},
+  stageMode:'indoor',state:'play',hitsM:()=>false,debugMode:0,detectRange:()=>250,playerDetectedNow:()=>false,performance:{now:()=>1000},
   los:()=>true,drawPatrolChatBubbleAt:(...args)=>bubbles.push(args),
   DETECT_CENTER_HALF:7.5*Math.PI/180,DETECT_OUTER_HALF:52.5*Math.PI/180,DETECT_OUTER_SCALE:.7,
   enemyCannonSpeed:()=>630,fire:(...args)=>sandbox.bullets.push({args}),
@@ -1195,7 +1195,7 @@ function alarmWorld(){
  vm.createContext(sandbox);
  vm.runInContext(source+`;setupInfiltrationWorld();setupInfiltrationMission();
   indoorGuardSeesPlayer=()=>false;
-  api={get world(){return indoorWorld;},record:indoorRecordGuardDiscovery,begin:indoorStartGuardPursuit,
+  api={reinforce:indoorReplenishGuards,spawnPoint:indoorReinforcementPoint,get world(){return indoorWorld;},record:indoorRecordGuardDiscovery,begin:indoorStartGuardPursuit,
    updateMission:updateInfiltrationMission,update:updateInfiltrationGuardAI,finish:indoorFinishGuardSearch,sweep:indoorBeginAlarmSweep,
    draw:drawInfiltrationMission,setup:setupInfiltrationWorld,chats:indoorUpdateAlarmChats,
    cancelChat:indoorCancelAlarmChat,scanBodies:indoorScanStunnedGuards,level:indoorAlarmLevel,weapon:indoorUpdateCommanderWeapon,setVisible:h=>{indoorGuardSeesPlayer=q=>q===h;}};`,sandbox);
@@ -1449,4 +1449,59 @@ test('completed document region turns green briefly and fades away',()=>{
  s.labels.length=0;s.api.draw();assert.ok(s.labels.includes('回収完了'));
  s.api.updateMission(.6);assert.equal(q.collectedT,0);
  s.labels.length=0;s.api.draw();assert.ok(!s.labels.includes('回収完了'),'completed region disappears');
+});
+
+test('infiltration deaths are replaced offscreen by white guards without growing the roster',()=>{
+ const s=alarmWorld(),world=s.api.world,total=s.sandbox.humans.length,floor=world.floors[0];
+ for(let wave=0;wave<4;wave++){
+  const dead=floor.guards[0];dead.alive=false;
+  s.api.reinforce(.3);const h=floor.guards[0];
+  assert.notEqual(h,dead);assert.equal(h.alive,true);assert.equal(h.indoorWhite,true);
+  assert.equal(h.elite,true);assert.equal(h.commander,null);assert.equal(h.indoorCommander,false);
+  assert.equal(h.indoorFloor,1);assert.ok(s.sandbox.humans.includes(h));
+  assert.ok(!s.sandbox.humans.includes(dead));assert.equal(s.sandbox.humans.length,total);
+  assert.ok(h.x<s.sandbox.camX-100||h.x>s.sandbox.camX+840+100||
+   h.y<s.sandbox.cam-100||h.y>s.sandbox.cam+720+100,'never appears inside viewport margin');
+  const g=floor.navigation.grid,id=Math.floor((h.y-g.y)/g.step)*g.cols+Math.floor((h.x-g.x)/g.step);
+  assert.equal(g.solid[id],0,'spawn position is free of walls and cargo');
+ }
+});
+test('reinforcements preserve stunned guards and wait for an offscreen safe point',()=>{
+ const s=alarmWorld(),floor=s.api.world.floors[0],h=floor.guards[0];
+ h.stun=10;s.api.reinforce(.3);assert.equal(floor.guards[0],h,'stun is not a death');
+ h.alive=false;s.sandbox.hitsM=()=>true;s.api.reinforce(.3);
+ assert.equal(floor.guards[0],h,'blocked spawn points defer replacement');
+ s.sandbox.hitsM=()=>false;floor.alarmSweepPoints=[{x:200,y:200}];s.api.reinforce(.3);
+ assert.equal(floor.guards[0],h,'visible spawn points defer replacement');
+ floor.alarmSweepPoints=null;h.sniperFallT=.4;s.api.reinforce(.3);
+ assert.equal(floor.guards[0],h,'death animation finishes before replacing the actor');
+ h.sniperFallT=0;s.sandbox.stageMode='base';s.api.reinforce(.3);
+ assert.equal(floor.guards[0],h,'other stages cannot use replenishment');
+ s.sandbox.stageMode='indoor';s.api.reinforce(.3);assert.notEqual(floor.guards[0],h);
+});
+test('all dead slots including commanders are refilled and alarm reinforcements start searching',()=>{
+ const s=alarmWorld(),world=s.api.world,total=s.sandbox.humans.length;
+ for(const h of world.floors[0].guards.slice(0,3))s.sight(h);
+ for(const h of s.sandbox.humans)h.alive=false;
+ s.api.reinforce(.3);
+ assert.equal(s.sandbox.humans.length,total);assert.ok(s.sandbox.humans.every(h=>h.alive&&h.indoorWhite));
+ assert.ok(s.sandbox.humans.every(h=>h.indoorAlert.phase==='sweep'));
+ assert.equal(world.alarm.witnesses.size,3,'alarm witness history remains bounded');
+});
+test('indoor white movement is exactly 20 percent faster without outdoor elite movement',()=>{
+ const src=require('node:fs').readFileSync(require('node:path').join(__dirname,'../js/infiltration-world.js'),'utf8');
+ const a=src.indexOf('function indoorMoveGuardTo('),b=src.indexOf('function indoorEstimateEscape(',a);
+ const move=new Function('indoorWorld','indoorGuardCell','indoorGuardCellRoute','D','angD','mv',
+  src.slice(a,b)+';return indoorMoveGuardTo;')({floors:[{navigation:{centers:[{x:0,y:0}]}}]},
+  ()=>0,()=>[0],(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),(a,b)=>a-b,
+  (h,dx,dy)=>{h.x+=dx;h.y+=dy;});
+ const blue={x:0,y:0,face:0,indoorFloor:1,indoorAlert:{}},white={...blue,indoorWhite:true,indoorAlert:{}};
+ for(const speed of [30,62,78,95]){
+  blue.x=0;white.x=0;move(blue,{x:200,y:0},.5,speed);move(white,{x:200,y:0},.5,speed);
+  assert.equal(white.x,blue.x*1.2);
+ }
+ const normal=guardScenario(),fast=guardScenario();
+ for(const s of [normal,fast]){s.h.st=0;s.h.target=null;}
+ fast.h.indoorWhite=true;normal.api.update(normal.h,.1);fast.api.update(fast.h,.1);
+ assert.equal(normal.patrolSpeed,30);assert.equal(fast.patrolSpeed,36);
 });
