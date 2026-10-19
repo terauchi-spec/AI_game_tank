@@ -608,8 +608,6 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
       index:1,face:Math.atan2(next.y-path[0].y,next.x-path[0].x),
       wait:indoorRand(rng,0,1),speed:65,sight:245});
   }
-  // One commander may replace a waiting guard in each post, without adding units.
-  if(rng()<1/3&&postGuards.length)postGuards[Math.floor(rng()*postGuards.length)].indoorCommander=true;
   if(hasExterior){
     doorMarks.push({...mainDoor,vertical:false,outer:true,kind:'main'});
     doorMarks.push({...emergencyDoor,vertical:false,outer:true,kind:'emergency'});
@@ -792,7 +790,8 @@ function setupInfiltrationWorld(){
       const pos=to(h),path=h.waypoints.map(to);
       const guard={...pos,path,loop:!!h.loop,wi:1,dir:1,stk:0,
         alive:true,elite:false,commander:null,st:0,sus:0,lost:0,cd:R()*1.2,burstLeft:0,face:h.face,
-        target:null,patrolMode:'axis',zoneHeavy:'indoor',indoorGuard:true,indoorFloor:n};
+        target:null,patrolMode:'axis',zoneHeavy:'indoor',indoorGuard:true,indoorFloor:n,
+        indoorCommander:false,frontCommander:false};
       humans.push(guard);guards.push(guard);
     }
     // 待機兵にも潜入専用の認識・追跡・射撃AIを適用。通常時だけ動かない。
@@ -803,7 +802,7 @@ function setupInfiltrationWorld(){
         alive:true,elite:false,commander:null,st:0,sus:0,lost:0,cd:R()*1.2,
         burstLeft:0,face:h.face,target:null,patrolMode:'post',
         zoneHeavy:'indoor',indoorGuard:true,indoorPost:true,indoorFloor:n,
-        indoorCommander:!!h.indoorCommander,frontCommander:!!h.indoorCommander};
+        indoorCommander:false,frontCommander:false};
       humans.push(guard);guards.push(guard);postGuards.push(guard);
     }
     // 施設全体で3箇所。1階1箇所・2階2箇所に分ける。
@@ -826,6 +825,11 @@ function setupInfiltrationWorld(){
       footprint:indoorRect(raw.footprint,off),
       doors,windows:raw.windows.map(openingPoint),guards,postGuards,
       guardPostId:raw.postRoomId,props,lightFixtures,navigation});
+  }
+  // Replace approximately one third of the existing building guards, including patrols.
+  const commanderPool=indoorShuffle(humans.slice(),R);
+  for(const h of commanderPool.slice(0,Math.round(commanderPool.length/3))){
+    h.indoorCommander=true;h.frontCommander=true;
   }
   const entrance=indoorWorld.floors[0];
   p.x=entrance.entrance.x;p.y=entrance.entrance.y;p.hp=3;p.tank=null;p.body=-Math.PI/2;p.ang=-Math.PI/2;
@@ -941,6 +945,57 @@ function indoorGuardCellRoute(nav,from,to){
  const path=[];for(let n=to;n!==-1;n=parent[n])path.push(n);
  return path.reverse();
 }
+// Alarm conversations use dedicated fields: the outdoor chat loop intentionally
+// cancels chats for suspicious soldiers, so it must remain untouched.
+function indoorAlarmChatEligible(h){
+ return !!(h?.indoorGuard&&h.alive&&!h.st&&!(h.chatT>0)&&h.sus>0&&
+  ['sweep','search'].includes(h.indoorAlert?.phase)&&!(h.stun>0)&&
+  !(h.stunRecover>0)&&!h.houndPinned&&!(h.blastAirT>0));
+}
+function indoorCancelAlarmChat(h,finished=false){
+ const mate=h.indoorChatMate;
+ for(const q of [h,mate]){
+  if(!q)continue;
+  q.indoorChatT=0;q.indoorChatMate=null;q.indoorChatLead=false;
+  q.indoorChatCooldown=Math.max(q.indoorChatCooldown||0,finished?10:3);
+  if(finished){q.sharePause=Math.max(q.sharePause||0,.5);}
+ }
+}
+function indoorUpdateAlarmChats(dt){
+ const world=indoorWorld;if(!world?.alarm?.active)return;
+ for(const floor of world.floors)for(const h of floor.guards){
+  h.indoorChatCooldown=Math.max(0,(h.indoorChatCooldown||0)-dt);
+  if(!(h.indoorChatT>0))continue;
+  const mate=h.indoorChatMate;
+  if(!indoorAlarmChatEligible(h)||!indoorAlarmChatEligible(mate)){
+   indoorCancelAlarmChat(h);continue;
+  }
+  h.indoorChatT=Math.max(0,h.indoorChatT-dt);
+  if(h.indoorChatT<=0)indoorCancelAlarmChat(h,true);
+ }
+ world.alarm.chatScanT=(world.alarm.chatScanT||0)-dt;
+ if(world.alarm.chatScanT>0)return;world.alarm.chatScanT=.1;
+ for(const floor of world.floors){
+  const guards=floor.guards.filter(h=>indoorAlarmChatEligible(h)&&!(h.indoorChatT>0)&&!(h.indoorChatCooldown>0));
+  for(let i=0;i<guards.length;i++)for(let j=i+1;j<guards.length;j++){
+   const a=guards[i],b=guards[j];
+   if(a.indoorChatT>0||b.indoorChatT>0||D(a,b)>31||!los(a,b))continue;
+   a.indoorChatT=b.indoorChatT=5;a.indoorChatMate=b;b.indoorChatMate=a;
+   a.indoorChatLead=true;b.indoorChatLead=false;
+   a.face=Math.atan2(b.y-a.y,b.x-a.x);b.face=Math.atan2(a.y-b.y,a.x-b.x);
+  }
+ }
+}
+function drawInfiltrationAlarmChats(){
+ if(!indoorWorld?.alarm?.active)return;
+ const floor=indoorWorld.floors[indoorWorld.currentFloor];
+ for(const h of floor.guards){
+  if(!(h.indoorChatT>0)||!h.indoorChatLead||!h.indoorChatMate)continue;
+  const mate=h.indoorChatMate,x=(h.x+mate.x)*.5-camX,y=Math.min(h.y,mate.y)-cam-25;
+  if(x<-50||x>W+50||y<-50||y>H+50)continue;
+  drawPatrolChatBubbleAt(x,y,.88,Math.sin(performance.now()*.005+h.x*.03)*.8);
+ }
+}
 function indoorAlarmSweepPoints(floor){
  if(floor.alarmSweepPoints)return floor.alarmSweepPoints;
  const nav=floor.navigation,g=nav?.grid;
@@ -1002,6 +1057,7 @@ function indoorStartGuardPursuit(h){
  indoorGuardAlertAt(h,p);
 }
 function indoorGuardAlertAt(h,observed){
+ if(h.indoorChatT>0)indoorCancelAlarmChat(h);
  h.indoorReturn=null;
  const spot={x:observed.x,y:observed.y},duration=1.35;
  h.indoorAlert={phase:'found',duration,remaining:duration,trail:[spot],lastSeen:spot,
@@ -1019,7 +1075,7 @@ function indoorGuardSeesPlayer(h){
  const illumination=indoorLightLevel(p.x,p.y);
  const tracking=h.indoorAlert?.phase==='found';
  const visibilityFactor=tracking?Math.max(.78,.5+.5*illumination):(.36+.64*illumination);
- const range=detectRange('p')*1.2*visibilityFactor;
+ const range=detectRange('p')*1.2*visibilityFactor*(h.indoorChatT>0?.5:1);
  if(!((a<=DETECT_CENTER_HALF*1.2&&d<range)||
        (a<=DETECT_OUTER_HALF*1.2&&d<range*DETECT_OUTER_SCALE)))return false;
  return cachedLos(h,p);
@@ -1128,6 +1184,7 @@ function indoorPatrolReturnPlan(h){
  return best;
 }
 function indoorFinishGuardSearch(h){
+ if(h.indoorChatT>0)indoorCancelAlarmChat(h);
  h.indoorAlert=null;h.indoorNotice=null;
  h.st=0;h.target=null;h.sus=0;h.susMax=0;h.lost=0;
  h.susPause=0;h.burstLeft=0;h.foundPause=0;h.sharePause=0;
@@ -1313,6 +1370,7 @@ function updateInfiltrationGuardAI(h,dt){
  h.modePause=Math.max(0,(h.modePause||0)-dt);
  h.foundPause=Math.max(0,(h.foundPause||0)-dt);h.sharePause=Math.max(0,(h.sharePause||0)-dt);
  if(state.phase==='sweep'){
+  if(h.indoorChatT>0)return true;
   if(!pause)indoorUpdateAlarmSweep(h,state,dt);
   return true;
  }
@@ -1320,7 +1378,7 @@ function updateInfiltrationGuardAI(h,dt){
   // Total search time includes movement, so blocked furniture cannot prolong it.
   state.searchLeft=Math.max(0,state.searchLeft-dt);h.sus=state.searchLeft;h.susMax=8;
   if(state.searchLeft<=0){indoorFinishGuardSearch(h);return true;}
-  if(pause)return true;
+  if(pause||h.indoorChatT>0)return true;
   const inspect=state.searchPoints[state.searchIndex];
   if(inspect&&!state.searchHold&&D(h,inspect)>24){
    const beforeX=h.x,beforeY=h.y;
@@ -1402,6 +1460,7 @@ function updateInfiltrationMission(dt){
   const detected=playerDetectedNow();
   m.detected=detected;
   updateInfiltrationDoors(dt);
+  indoorUpdateAlarmChats(dt);
   // 発見だけでは終了させず、潜入専用AIの追跡・最終目撃地点確認・捜索を継続する。
   w.stairsCooldown=Math.max(0,w.stairsCooldown-dt);
   const floor=w.floors[w.currentFloor],nearStair=D(p,floor.stair)<48;
@@ -1642,11 +1701,12 @@ function drawInfiltrationMission(){
     if(nextText!==indoorHudSnapshot){indoorHudSnapshot=nextText;el.innerHTML=nextText;}
   }
   gm.save();gm.setTransform(1,0,0,1,0,0);
+  drawInfiltrationAlarmChats();
   if(indoorWorld.alarm?.active){
     const height=Math.min(150,H*.2);
     if(!indoorAlarmGradient){
       indoorAlarmGradient=gm.createLinearGradient(0,0,0,height);
-      indoorAlarmGradient.addColorStop(0,'rgba(190,22,18,.24)');
+      indoorAlarmGradient.addColorStop(0,'rgba(190,22,18,.36)');
       indoorAlarmGradient.addColorStop(1,'rgba(190,22,18,0)');
     }
     gm.fillStyle=indoorAlarmGradient;gm.fillRect(0,0,W,height);

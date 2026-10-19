@@ -1124,7 +1124,7 @@ test('a completed mission cannot escape from the upper floor through an emergenc
 function alarmWorld(){
  const vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
  const source=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
- const labels=[],rectangles=[],gradients=[];
+ const labels=[],rectangles=[],gradients=[],bubbles=[];
  const gm=new Proxy({fillText:t=>labels.push(t),fillRect(...r){rectangles.push({r,style:this.fillStyle});},
   createLinearGradient(...args){const stops=[];const gradient={args,stops,addColorStop:(...s)=>stops.push(s)};gradients.push(gradient);return gradient;}},
   {get:(o,k)=>k in o?o[k]:()=>{}});
@@ -1132,6 +1132,7 @@ function alarmWorld(){
   document:{body:{classList:{remove(){}}},getElementById:()=>({style:{},innerHTML:''})},
   rebuildSpatialGrid(){},say(){},sfx(){},module:{exports:{}},partner:null,hound:null,
   stageMode:'indoor',state:'play',playerDetectedNow:()=>false,performance:{now:()=>1000},
+  los:()=>true,drawPatrolChatBubbleAt:(...args)=>bubbles.push(args),
   D:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),angD:(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b)),
   mv:(h,dx,dy)=>{h.x+=dx;h.y+=dy;},pauseAfterEnemyDetection(){},gm,cam:0,camX:0};
  vm.createContext(sandbox);
@@ -1139,9 +1140,11 @@ function alarmWorld(){
   indoorGuardSeesPlayer=()=>false;
   api={get world(){return indoorWorld;},record:indoorRecordGuardDiscovery,begin:indoorStartGuardPursuit,
    update:updateInfiltrationGuardAI,finish:indoorFinishGuardSearch,sweep:indoorBeginAlarmSweep,
-   draw:drawInfiltrationMission,setup:setupInfiltrationWorld};`,sandbox);
+   draw:drawInfiltrationMission,setup:setupInfiltrationWorld,chats:indoorUpdateAlarmChats,
+   cancelChat:indoorCancelAlarmChat,setVisible:h=>{indoorGuardSeesPlayer=q=>q===h;}};`,sandbox);
+ sandbox.enterHumanFound=h=>{h.st=1;h.target='p';sandbox.api.begin(h);};
  const sight=h=>{sandbox.api.world.currentFloor=h.indoorFloor-1;h.st=1;h.target='p';sandbox.api.begin(h);sandbox.api.record(h);};
- return {api:sandbox.api,sandbox,sight,labels,rectangles,gradients};
+ return {api:sandbox.api,sandbox,sight,labels,rectangles,gradients,bubbles};
 }
 test('three distinct firsthand witnesses trigger one building alarm across both floors',()=>{
  const s=alarmWorld(),world=s.api.world,[a,b,c]=world.floors[0].guards;
@@ -1180,29 +1183,82 @@ test('red alarm shading is drawn only when active and its gradient is cached',()
  for(const h of s.api.world.floors[0].guards.slice(0,3))s.sight(h);
  s.api.draw();s.api.draw();
  assert.ok(s.labels.includes('館内アラート'));assert.equal(s.gradients.length,1);
- assert.equal(s.gradients[0].stops[0][1],'rgba(190,22,18,.24)');
+ assert.equal(s.gradients[0].stops[0][1],'rgba(190,22,18,.36)');
  assert.ok(s.rectangles.some(q=>q.r[0]===0&&q.r[1]===0&&q.r[2]===840&&q.r[3]===144));
 });
-test('each guard post has at most one commander with approximately one-third probability',()=>{
- let count=0;
- for(let seed=1;seed<=600;seed++){
-  const f=indoorGenerateFloor(seed%2+1,random(seed*997));
-  const commanders=f.postGuards.filter(h=>h.indoorCommander);
-  assert.ok(commanders.length<=1);count+=commanders.length;
-  assert.equal(f.postGuards.length,f.postCount,'commander replaces a waiting guard');
-  assert.ok(!f.guards.some(h=>h.indoorCommander),'commander is stationed in the post');
+test('approximately one third of all building enemies are commanders without adding guards',()=>{
+ const s=alarmWorld();let patrolCommanders=0,postCommanders=0;
+ for(let seed=0;seed<50;seed++){
+  s.api.setup();const guards=s.api.world.floors.flatMap(f=>f.guards);
+  const commanders=guards.filter(h=>h.indoorCommander);
+  assert.equal(commanders.length,Math.round(guards.length/3));
+  assert.ok(guards.length>=20&&guards.length<=32,'existing building population remains bounded');
+  patrolCommanders+=commanders.filter(h=>!h.indoorPost).length;
+  postCommanders+=commanders.filter(h=>h.indoorPost).length;
  }
- assert.ok(count/600>.27&&count/600<.40,'deterministic sample matches a one-in-three post chance');
+ assert.ok(patrolCommanders>0&&postCommanders>0,'commanders occur in patrols and posts');
 });
-test('post commanders use the radio pose and retain the dedicated indoor AI',()=>{
+test('building commanders use the radio pose and retain the dedicated indoor AI',()=>{
  const s=alarmWorld();let commanders=[];
  for(let i=0;i<12&&!commanders.length;i++){
   s.api.setup();commanders=s.api.world.floors.flatMap(f=>f.guards).filter(h=>h.indoorCommander);
  }
  assert.ok(commanders.length>0);
  for(const h of commanders){
-  assert.equal(h.indoorPost,true);assert.equal(h.indoorGuard,true);
+  assert.equal(h.indoorGuard,true);
   assert.equal(h.frontCommander,true,'reuse the existing radio-equipped blue pose');
   assert.equal(h.commander,null,'outdoor commander AI is not enabled');
+ }
+});
+
+
+function alarmChatPair(){
+ const s=alarmWorld(),world=s.api.world;
+ for(const h of world.floors[0].guards.slice(0,3))s.sight(h);
+ for(const floor of world.floors)for(const h of floor.guards)h.indoorChatCooldown=100;
+ const [a,b]=world.floors[0].guards.slice(3,5),y=world.floors[0].footprint.y+160;
+ Object.assign(a,{x:200,y,indoorChatCooldown:0});Object.assign(b,{x:220,y,indoorChatCooldown:0});
+ s.sandbox.cam=world.floors[0].footprint.y;
+ return {...s,a,b};
+}
+test('question-mark alarm searchers stop on contact and display one shared speech bubble',()=>{
+ const s=alarmChatPair(),{a,b}=s;
+ s.api.chats(.1);
+ assert.equal(a.indoorChatT,5);assert.equal(b.indoorChatT,5);
+ assert.equal(a.indoorChatMate,b);assert.equal(b.indoorChatMate,a);
+ assert.equal(a.chatT,undefined,'outdoor conversation state remains untouched');
+ assert.equal(a.sus,1);assert.equal(b.sus,1);
+ const before=[a.x,a.y,b.x,b.y];s.api.update(a,.1);s.api.update(b,.1);
+ assert.deepEqual([a.x,a.y,b.x,b.y],before,'both searchers pause while talking');
+ s.api.draw();assert.equal(s.bubbles.length,1,'one bubble per speaking pair');
+});
+test('alarm conversations last five seconds, then resume search with a cooldown',()=>{
+ const s=alarmChatPair(),{a,b}=s;s.api.chats(.1);
+ s.api.chats(4.9);assert.ok(a.indoorChatT>0&&b.indoorChatT>0);
+ s.api.chats(.2);assert.equal(a.indoorChatT,0);assert.equal(b.indoorChatT,0);
+ assert.ok(a.indoorChatCooldown>0&&b.indoorChatCooldown>0);
+ assert.equal(a.indoorAlert.phase,'sweep');assert.equal(b.indoorAlert.phase,'sweep');
+ const before=a.x;s.api.update(a,.6);s.api.update(a,.1);
+ assert.notEqual(a.x,before,'search movement resumes after the brief pause');
+ s.api.chats(.1);assert.equal(a.indoorChatT,0,'the same contact cannot immediately restart conversation');
+});
+test('discovery or stun interrupts both members of an alarm conversation',()=>{
+ for(const cause of ['discovery','stun']){
+  const s=alarmChatPair(),{a,b}=s;s.api.chats(.1);
+  if(cause==='discovery'){s.api.setVisible(a);s.api.update(a,.14);assert.equal(a.indoorAlert.phase,'found');}
+  else{a.stun=1;s.api.chats(.1);}
+  assert.equal(a.indoorChatT,0);assert.equal(b.indoorChatT,0);
+  assert.equal(a.indoorChatMate,null);assert.equal(b.indoorChatMate,null);
+ }
+});
+test('alarm conversations require contact, a clear line and eligible search states',()=>{
+ for(const condition of ['wall','distance','found','stunned','no-alarm']){
+  const s=alarmChatPair(),{a,b}=s;
+  if(condition==='wall')s.sandbox.los=()=>false;
+  if(condition==='distance')b.x=a.x+50;
+  if(condition==='found'){b.st=1;b.target='p';}
+  if(condition==='stunned')b.stun=1;
+  if(condition==='no-alarm')s.api.world.alarm.active=false;
+  s.api.chats(.1);assert.ok(!(a.indoorChatT>0)&&!(b.indoorChatT>0),condition);
  }
 });
