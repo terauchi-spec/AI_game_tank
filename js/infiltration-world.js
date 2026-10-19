@@ -1825,18 +1825,40 @@ function updateInfiltrationMission(dt){
   if(m.index===INDOOR_FILES_TOTAL&&w.currentFloor===0&&!p.tank&&outside&&
      (w.exits||[w.exit,w.emergency]).some(exit=>D(p,exit)<90))completeMission();
 }
+// 潜入専用。画像は初回のみ読み込み、CanvasPatternは描画コンテキストごとに再利用。
+let indoorConcreteImage=null;
+const indoorConcretePatterns=new WeakMap();
+function indoorConcretePattern(){
+  if(!indoorConcreteImage){
+    indoorConcreteImage=new Image();indoorConcreteImage.decoding='async';
+    indoorConcreteImage.src='assets/terrain/indoor_concrete.webp';
+  }
+  if(!assetOK(indoorConcreteImage))return null;
+  const old=indoorConcretePatterns.get(g);if(old)return old;
+  const pattern=g.createPattern(indoorConcreteImage,'repeat');
+  if(pattern)indoorConcretePatterns.set(g,pattern);
+  return pattern;
+}
+const indoorOutdoorTerrain={n:'丘陵',g:'#6b7a3a'};
 function drawInfiltrationFloors(cx,cy){
   if(!indoorWorld)return;
+  const left=Math.max(0,cx-24),top=cy-24,right=Math.min(WW,cx+W+24),bottom=cy+H+24;
+  // 丘陵と同一の画像・倍率・合成済みパターンを使い、屋外を一度だけ塗る。
+  g.fillStyle=terrainSurfacePattern(indoorOutdoorTerrain)||indoorOutdoorTerrain.g;
+  g.fillRect(left,top,right-left,bottom-top);
+  const concrete=indoorConcretePattern()||'#777975';
   for(const f of indoorWorld.floors){
     const minY=f.footprint.y-260,maxY=f.footprint.y+f.footprint.h+INDOOR_FORECOURT_DEPTH;
     if(maxY<cy-100||minY>cy+H+100)continue;
     // Corridor tiles are generated in H/L/T/ring/U patterns instead of a vertical stripe.
-    g.fillStyle='#171e1c';g.fillRect(0,minY-15,WW,maxY-minY+30);
+    const fp=f.footprint,x=Math.max(left,fp.x),y=Math.max(top,fp.y);
+    const r=Math.min(right,fp.x+fp.w),b=Math.min(bottom,fp.y+fp.h);
+    g.fillStyle=concrete;if(r>x&&b>y)g.fillRect(x,y,r-x,b-y);
     // 建物外側に玄関前の通路を設ける。二つの出入口の前は屋外地面。
-    g.fillStyle='#777766';
+    g.fillStyle=concrete;
     for(const entry of f.entrances||[])g.fillRect(entry.x-55,f.footprint.y+f.footprint.h,110,entry.y-f.footprint.y-f.footprint.h+45);
     if(f.emergency)g.fillRect(f.emergency.x-45,f.emergency.y-30,90,Math.max(0,f.footprint.y-f.emergency.y+30));
-    g.fillStyle='#626658';
+    g.fillStyle='rgba(145,153,142,.07)';
     for(const tile of f.corridors){
       if(tile.y+tile.h<cy-30||tile.y>cy+H+30)continue;
       g.fillRect(tile.x,tile.y,tile.w,tile.h);
@@ -1844,14 +1866,14 @@ function drawInfiltrationFloors(cx,cy){
     // エントランスホールは廊下より明るい広い共用床として描き、家具は置かない。
     const lobby=f.lobbyArea;
     if(lobby&&lobby.y+lobby.h>=cy-40&&lobby.y<=cy+H+40){
-      g.fillStyle='#74796b';g.fillRect(lobby.x+2,lobby.y+2,lobby.w-4,lobby.h-4);
+      g.fillStyle='rgba(215,218,207,.10)';g.fillRect(lobby.x+2,lobby.y+2,lobby.w-4,lobby.h-4);
       g.strokeStyle='rgba(210,212,181,.28)';g.lineWidth=2;g.strokeRect(lobby.x+14,lobby.y+16,lobby.w-28,lobby.h-32);
-      g.fillStyle='rgba(56,71,59,.35)';g.fillRect(lobby.x+lobby.w*.22,lobby.y+lobby.h*.38,lobby.w*.56,lobby.h*.17);
+      g.fillStyle='rgba(56,71,59,.10)';g.fillRect(lobby.x+lobby.w*.22,lobby.y+lobby.h*.38,lobby.w*.56,lobby.h*.17);
 
     }
     for(const room of f.rooms){
       if(room.y+room.h<cy-40||room.y>cy+H+40)continue;
-      g.fillStyle=room.id%2===0?'#55594b':'#50564a';
+      g.fillStyle=room.id%2===0?'rgba(34,41,33,.08)':'rgba(34,41,33,.12)';
       for(const tile of room.tiles){
         if(tile.y+tile.h<cy-30||tile.y>cy+H+30)continue;
         // Adjacent same-room tiles share an open interior, never draw an internal wall.

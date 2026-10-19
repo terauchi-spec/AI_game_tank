@@ -1090,8 +1090,8 @@ test('upper-floor drawing omits exterior paths and entrance signs while preservi
   {get:(o,k)=>k in o?o[k]:()=>{}});
  for(const floorNo of [1,2]){
   const f=indoorGenerateFloor(floorNo,random(313));
-  const draw=new Function('g','indoorWorld','WW','H','INDOOR_FORECOURT_DEPTH',src.slice(from,to)+';return drawInfiltrationFloors;')(
-   g,{floors:[f]},960,2500,900);
+  const draw=new Function('g','indoorWorld','WW','H','INDOOR_FORECOURT_DEPTH','W','terrainSurfacePattern','indoorOutdoorTerrain','indoorConcretePattern',src.slice(from,to)+';return drawInfiltrationFloors;')(
+   g,{floors:[f]},960,2500,900,960,()=>null,{g:0},()=>null);
   labels.length=0;fills.length=0;draw(0,0);
   if(floorNo===1){
    assert.ok(labels.includes('EXIT'));assert.ok(labels.includes('2F ▲'));
@@ -1099,7 +1099,7 @@ test('upper-floor drawing omits exterior paths and entrance signs while preservi
   }else{
    assert.ok(labels.includes('1F ▼'));
    for(const label of ['エントランスホール','正面玄関','非常口'])assert.ok(!labels.includes(label));
-   assert.ok(!fills.some(r=>r[1]>f.footprint.y+f.footprint.h),'no exterior entrance path');
+   assert.ok(!fills.some(r=>r[2]===110&&r[1]===f.footprint.y+f.footprint.h),'no exterior entrance path');
   }
  }
 });
@@ -1770,4 +1770,39 @@ test('discovery, stun or an alarm interrupts idle post conversations',()=>{
   if(reason==='alarm')s.api.world.alarm.active=true;
   s.api.postChats(.1);assert.equal(floor.postChat,null,reason);
  }
+});
+
+test('indoor concrete loads lazily and reuses one pattern per render context',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const source=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
+ const start=source.indexOf('let indoorConcreteImage=null;'),end=source.indexOf('function drawInfiltrationFloors(cx,cy){',start);
+ let loads=0,patterns=0;const images=[];
+ class MockImage{constructor(){loads++;images.push(this);this.complete=false;}set src(value){this.url=value;}}
+ const a={createPattern:(image,mode)=>{patterns++;assert.equal(mode,'repeat');return {image};}};
+ const b={createPattern:a.createPattern};
+ const api=new Function('Image','assetOK','g',source.slice(start,end)+';return {get:indoorConcretePattern,context:value=>g=value};')(
+  MockImage,image=>image.complete,a);
+ assert.equal(loads,0);assert.equal(api.get(),null);assert.equal(loads,1);
+ assert.equal(images[0].url,'assets/terrain/indoor_concrete.webp');
+ assert.equal(api.get(),null);assert.equal(patterns,0,'unloaded texture uses solid fallback');
+ images[0].complete=true;const first=api.get();
+ for(let i=0;i<240;i++)assert.equal(api.get(),first);
+ assert.equal(patterns,1);api.context(b);assert.notEqual(api.get(),first);
+ assert.equal(patterns,2);api.context(a);assert.equal(api.get(),first);assert.equal(loads,1);
+});
+
+test('infiltration floors use hills outdoors and concrete only within the building',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const source=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
+ const start=source.indexOf('function drawInfiltrationFloors(cx,cy){'),end=source.indexOf('function drawInfiltrationProps(cx,cy){',start);
+ const fills=[],hill={},concrete={};let terrain;
+ const g=new Proxy({fillRect(...rect){fills.push({style:this.fillStyle,rect});}},{get:(obj,key)=>key in obj?obj[key]:()=>{}});
+ const f={footprint:{x:100,y:200,w:700,h:800},entrances:[],corridors:[],rooms:[],stair:{x:300,y:-1000}};
+ const draw=new Function('g','indoorWorld','WW','W','H','INDOOR_FORECOURT_DEPTH','terrainSurfacePattern','indoorOutdoorTerrain','indoorConcretePattern',source.slice(start,end)+';return drawInfiltrationFloors;')(
+  g,{floors:[f]},960,480,720,900,z=>{terrain=z;return hill;},{n:'丘陵',g:'#6b7a3a'},()=>concrete);
+ draw(50,100);
+ assert.deepEqual(terrain,{n:'丘陵',g:'#6b7a3a'});
+ assert.deepEqual(fills[0],{style:hill,rect:[26,76,528,768]});
+ assert.deepEqual(fills[1],{style:concrete,rect:[100,200,454,644]});
+ fills.length=0;draw(50,2000);assert.equal(fills.length,1,'outside view draws no indoor floor');
 });
