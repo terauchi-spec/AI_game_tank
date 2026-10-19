@@ -942,6 +942,7 @@ function indoorStartGuardPursuit(h){
  indoorGuardAlertAt(h,p);
 }
 function indoorGuardAlertAt(h,observed){
+ h.indoorReturn=null;
  const spot={x:observed.x,y:observed.y},duration=1.35;
  h.indoorAlert={phase:'found',duration,remaining:duration,trail:[spot],lastSeen:spot,
   searchLeft:0,scanT:0,route:null,routeKey:'',waypoint:null,stuck:0,blockedT:0,
@@ -964,8 +965,8 @@ function indoorGuardSeesPlayer(h){
  return cachedLos(h,p);
 }
 
-function indoorMoveGuardTo(h,goal,dt,sp){
- const nav=indoorWorld?.floors[h.indoorFloor-1]?.navigation,a=h.indoorAlert;
+function indoorMoveGuardTo(h,goal,dt,sp,moveState=null){
+ const nav=indoorWorld?.floors[h.indoorFloor-1]?.navigation,a=moveState||h.indoorAlert;
  if(!nav||!goal||!a)return false;
  const from=indoorGuardCell(nav,h),to=indoorGuardCell(nav,goal);
  if(from<0||to<0)return false;
@@ -1051,11 +1052,28 @@ function indoorEstimateEscape(h,state){
  return far;
 }
 // These helpers are called only by the existing indoor-guard hook. Outdoor AI stays intact.
+function indoorPatrolReturnPlan(h){
+ const nav=indoorWorld?.floors[h.indoorFloor-1]?.navigation;
+ if(!nav||!h.path?.length)return null;
+ const from=indoorGuardCell(nav,h);
+ let best=null;
+ for(let index=0;index<h.path.length;index++){
+  const goal=h.path[index],route=indoorGuardCellRoute(nav,from,indoorGuardCell(nav,goal));
+  if(!route)continue;
+  // Prefer a nearby connected patrol point, not a point behind a long wall detour.
+  let cost=D(h,goal);
+  for(let i=1;i<route.length;i++)cost+=D(nav.centers[route[i-1]],nav.centers[route[i]]);
+  if(!best||cost<best.cost)best={goal:{x:goal.x,y:goal.y},index,cost,nav:{}};
+ }
+ return best;
+}
 function indoorFinishGuardSearch(h){
  h.indoorAlert=null;h.indoorNotice=null;
  h.st=0;h.target=null;h.sus=0;h.susMax=0;h.lost=0;
  h.susPause=0;h.burstLeft=0;h.foundPause=0;h.sharePause=0;
  h._detectCache=null;h._nextDetectAt=0;pauseAfterEnemyDetection(h);
+ h.indoorReturn=indoorPatrolReturnPlan(h);
+ if(h.indoorReturn){h.wi=h.indoorReturn.index;h.turnPause=0;h.stk=0;}
 }
 function indoorSearchPoints(h,state){
  const nav=indoorWorld?.floors[h.indoorFloor-1]?.navigation,g=nav?.grid;
@@ -1136,6 +1154,7 @@ function indoorBeginGuardSearch(h,state){
  state.phase='search';state.searchLeft=8;state.searchTravelLeft=0;
  state.scanT=0;state.scanFace=h.face;state.sightCheckT=0;
  state.searchPoints=indoorSearchPoints(h,state);state.searchIndex=0;
+ state.searchStall=0;state.searchHold=false;
  state.detour=null;state.route=null;state.noGoalProgressT=0;
  h.st=0;h.target=null;h.sus=8;h.susMax=8;
  h.foundPause=0;h.burstLeft=0;h.lost=0;
@@ -1186,6 +1205,12 @@ function indoorUpdateGuardNotice(h,dt){
  const other=findDetectedTarget(h,h.face);
  if(other&&other.key!=='p'){enterHumanFound(h,other.key);return false;}
  if(h.chatResumeT>0)return true;
+ if(h.indoorReturn){
+  const back=h.indoorReturn;
+  if(D(h,back.goal)<=12){h.indoorReturn=null;h.wi=back.index;h.turnPause=0;}
+  else indoorMoveGuardTo(h,back.goal,dt,30,back.nav);
+  return true;
+ }
  h.face=patrol(h,dt,30,8);return true;
 }
 function updateInfiltrationGuardAI(h,dt){
@@ -1231,14 +1256,23 @@ function updateInfiltrationGuardAI(h,dt){
   if(state.searchLeft<=0){indoorFinishGuardSearch(h);return true;}
   if(pause)return true;
   const inspect=state.searchPoints[state.searchIndex];
-  if(inspect&&D(h,inspect)>24){
+  if(inspect&&!state.searchHold&&D(h,inspect)>24){
+   const beforeX=h.x,beforeY=h.y;
    indoorMoveGuardTo(h,inspect,dt,62);state.scanFace=h.face;state.scanT=0;
+   state.searchStall=Math.hypot(h.x-beforeX,h.y-beforeY)<62*dt*.2?(state.searchStall||0)+dt:0;
+   if(state.searchStall>=1.5){
+    if(state.searchIndex<state.searchPoints.length-1)state.searchIndex++;
+    else state.searchHold=true;
+    state.detour=null;state.route=null;state.searchStall=0;
+   }
   }else{
    state.scanT+=dt;
    const sweep=Math.floor(state.scanT/.7)%4;
    const angle=state.scanFace+[.8,-.8,1.6,0][sweep];
    h.face+=Math.max(-dt*1.8,Math.min(dt*1.8,angD(angle,h.face)));
-   if(state.scanT>=1.4&&state.searchIndex<state.searchPoints.length-1){state.searchIndex++;state.detour=null;}
+   if(state.scanT>=1.4&&state.searchIndex<state.searchPoints.length-1){
+    state.searchIndex++;state.detour=null;state.searchStall=0;state.searchHold=false;
+   }
   }
   return true;
  }

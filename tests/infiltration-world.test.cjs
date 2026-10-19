@@ -546,29 +546,30 @@ test('indoor graph routes through actual passages and never through an unwalled 
 });
 function guardScenario(){
  const src=require('node:fs').readFileSync(require('node:path').join(__dirname,'../js/infiltration-world.js'),'utf8');
- const avatar={x:200,y:100};let visible=false,patrols=0,finished=0,shots=0,wallClear=true,light=1;
+ const avatar={x:200,y:100};let visible=false,patrols=0,finished=0,shots=0,wallClear=true,light=1,blockedMovement=false;
  const d=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
  const ray=(a,b)=>typeof wallClear==='function'?wallClear(a,b):wallClear;
  const api=new Function('p','R','D','angD','pauseAfterEnemyDetection','fire','los','cachedLos',
  'debugMode','weather','inTumbleweed','inBush','inWaterAt','detectRange','DETECT_CENTER_HALF','DETECT_OUTER_HALF','DETECT_OUTER_SCALE',
  'patrol','findDetectedTarget','enterHumanFound','mv',
  'const module={exports:{}};'+src+`
- indoorMoveGuardTo=(h,q,dt,sp)=>{const d=D(h,q),k=Math.min(1,sp*dt/Math.max(.001,d));h.x+=(q.x-h.x)*k;h.y+=(q.y-h.y)*k;return true;};
+ indoorMoveGuardTo=(h,q,dt,sp)=>{if(movementBlocked())return false;const d=D(h,q),k=Math.min(1,sp*dt/Math.max(.001,d));h.x+=(q.x-h.x)*k;h.y+=(q.y-h.y)*k;return true;};
  indoorGuardSeesPlayer=()=>visibleNow();
  indoorLightLevel=()=>lightNow();
  return {begin:indoorStartGuardPursuit,update:updateInfiltrationGuardAI,points:indoorSearchPoints,share:indoorShareGuardSighting,approach:indoorReportApproachPoint,
- setSensors:(v,l)=>{visibleNow=v;lightNow=l;},setWorld:w=>{indoorWorld=w;},
+ setSensors:(v,l,b)=>{visibleNow=v;lightNow=l;movementBlocked=b;},setWorld:w=>{indoorWorld=w;},
+ finish:indoorFinishGuardSearch,returnPlan:indoorPatrolReturnPlan,
  gen:indoorGenerateFloor,grid:indoorMakeGuardGrid,at:indoorAt};
- function visibleNow(){return false;} function lightNow(){return 1;}
+ function visibleNow(){return false;} function lightNow(){return 1;} function movementBlocked(){return false;}
  `)(avatar,()=>.5,d,(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b)),()=>{finished++;},()=>{shots++;},
  ray,ray,0,'clear',()=>false,()=>false,()=>false,()=>250,.2,1,.7,
  h=>{patrols++;return h.face;},()=>null,h=>{
   h.st=1;h.target='p';h.sus=0;if(!h.indoorAlert||h.indoorAlert.phase!=='found')api.begin(h);
  },(h,dx,dy)=>{h.x+=dx;h.y+=dy;});
- api.setSensors(()=>visible,()=>light);
+ api.setSensors(()=>visible,()=>light,()=>blockedMovement);
  api.setWorld({currentFloor:0,floors:[{}]});
  const h={indoorGuard:true,indoorFloor:1,alive:true,st:1,target:'p',x:0,y:100,face:0,cd:100,ct:0};
- return {api,h,avatar,setVisible:v=>visible=v,setWall:v=>wallClear=v,setLight:v=>light=v,
+ return {api,h,avatar,setVisible:v=>visible=v,setWall:v=>wallClear=v,setLight:v=>light=v,setBlocked:v=>blockedMovement=v,
  get finished(){return finished;},get patrols(){return patrols;},get shots(){return shots;}};
 }
 test('sight loss travels to the last sighting, then searches with a hard timeout',()=>{
@@ -1064,4 +1065,58 @@ test('world setup accepts upstairs null entry metadata and preserves paired stai
  assert.equal(ground.stair.x,upper.stair.x);
  assert.equal(ground.stair.y-ground.offset,upper.stair.y-upper.offset);
  assert.equal(sandbox.result.intel.filter(q=>q.floor===2).length,2);
+});
+
+function returnNavigation(){
+ return {origin:{x:0,y:0},stepX:180,stepY:315,
+  centers:Array.from({length:35},(_,i)=>({x:(i%5+.5)*180,y:(Math.floor(i/5)+.5)*315})),
+  neighbors:Array.from({length:35},(_,i)=>[i-1,i+1,i-5,i+5].filter(j=>j>=0&&j<35))};
+}
+test('blocked search points are skipped and the final blocked point becomes a timed lookout',()=>{
+ const s=guardScenario();s.api.begin(s.h);s.setBlocked(true);
+ Object.assign(s.h.indoorAlert,{phase:'search',searchLeft:8,searchPoints:[{x:300,y:100},{x:400,y:100}],searchIndex:0});
+ for(let i=0;i<16;i++)s.api.update(s.h,.1);
+ assert.equal(s.h.indoorAlert.searchIndex,1);
+ for(let i=0;i<16;i++)s.api.update(s.h,.1);
+ assert.equal(s.h.indoorAlert.searchHold,true);
+ assert.ok(s.h.indoorAlert.searchLeft<5);
+ for(let i=0;i<50&&s.h.indoorAlert;i++)s.api.update(s.h,.1);
+ assert.equal(s.h.indoorAlert,null);assert.equal(s.h.sus,0);assert.equal(s.h.st,0);
+});
+test('stationary post guards return to their original post after the search ends',()=>{
+ const s=guardScenario();s.api.setWorld({currentFloor:0,floors:[{navigation:returnNavigation()}]});
+ s.h.x=180;s.h.path=[{x:20,y:100}];s.h.indoorPost=true;
+ s.api.finish(s.h);assert.deepEqual(s.h.indoorReturn.goal,{x:20,y:100});
+ for(let tick=0;tick<80;tick++)s.api.update(s.h,.1);
+ assert.equal(s.h.indoorReturn,null);assert.ok(Math.abs(s.h.x-20)<=12);
+ assert.equal(s.h.wi,0);assert.ok(s.patrols>0,'normal stationary patrol resumes');
+});
+test('return planning prefers a nearby connected waypoint over one behind a long wall detour',()=>{
+ const s=guardScenario(),nav={origin:{x:0,y:0},stepX:100,stepY:100,
+  centers:Array.from({length:35},(_,i)=>({x:(i%5+.5)*100,y:(Math.floor(i/5)+.5)*100})),
+  neighbors:Array.from({length:35},()=>[])};
+ nav.neighbors[0]=[5];nav.neighbors[5]=[0,6];nav.neighbors[6]=[5,1];nav.neighbors[1]=[6];
+ s.api.setWorld({currentFloor:0,floors:[{navigation:nav}]});
+ s.h.x=90;s.h.y=50;s.h.path=[{x:110,y:50},{x:50,y:90},{x:450,y:650}];
+ const plan=s.api.returnPlan(s.h);assert.equal(plan.index,1);
+ s.api.finish(s.h);assert.equal(s.h.wi,1);assert.ok(s.h.indoorReturn);
+ s.api.begin(s.h);assert.equal(s.h.indoorReturn,null,'new discovery cancels the return route');
+});
+test('a completed mission cannot escape from the upper floor through an emergency exit',()=>{
+ const vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
+ const source=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
+ let completed=0;
+ const sandbox={ZONE_STYLE:{'敵迷路基地':{p:[]}},WH:14000,p:{},scoreStats:{},R:random(1221),
+  document:{body:{classList:{remove(){}}}},rebuildSpatialGrid(){},say(){},sfx(){},
+  module:{exports:{}},partner:null,hound:null,state:'play',playerDetectedNow:()=>false,
+  D:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),completeMission(){completed++;},
+  mission:{index:3,points:[],progress:0,current:null}};
+ vm.createContext(sandbox);
+ vm.runInContext(source+`;setupInfiltrationWorld();
+  indoorWorld.currentFloor=1;
+  p.x=indoorWorld.emergency.x;p.y=indoorWorld.emergency.y;
+  updateInfiltrationMission(.01);`,sandbox);
+ assert.equal(completed,0,'upper-floor state cannot use any exterior exit');
+ vm.runInContext('indoorWorld.currentFloor=0;updateInfiltrationMission(.01);',sandbox);
+ assert.equal(completed,1,'ground-floor emergency exit remains usable');
 });
