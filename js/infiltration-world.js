@@ -45,7 +45,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
   if(hasExterior)for(let r=5;r<=6;r++)for(let c=lobbyLeft;c<=lobbyLeft+1;c++){add(c,r);lobbyIds.push(index(c,r));}
   const mainDoor={x:center(index(entranceCol,6)).x,y:Y0+ROWS*SIZE,side:'bottom'};
   const frontDoors=hasExterior?[mainDoor,{...mainDoor,x:center(index(entranceCol===lobbyLeft?lobbyLeft+1:lobbyLeft,6)).x}]:[];
-  const entrances=frontDoors.map(d=>({x:d.x,y:d.y+96}));
+  const entrances=frontDoors.map(d=>({x:d.x,y:d.y+384}));
   const entrance=entrances[0]||null;
   const emergencyDoor={x:center(index(2,0)).x,y:Y0,side:'top'};
   const emergency=hasExterior?{x:emergencyDoor.x,y:emergencyDoor.y-96}:null;
@@ -431,6 +431,18 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
   if(!explosiveObjects.some(o=>o.zone==='room'))reserve('room','barrel');
   if(!explosiveObjects.some(o=>o.kind==='crate'))reserve('room','crate')||reserve('hallway','crate');
   if(!explosiveObjects.some(o=>o.kind==='barrel'))reserve('room','barrel')||reserve('hallway','barrel');
+  // Post guards take a few steps around their own position, avoiding the table.
+  const postObstacles=[...walls,...furniture,...explosiveObjects];
+  for(let k=0;k<postGuards.length;k++){
+    const guard=postGuards[k];
+    for(const axis of (k%2?['y','x']:['x','y'])){
+      const a={x:guard.x,y:guard.y},b={...a};a[axis]-=10;b[axis]+=10;
+      const lane={x:Math.min(a.x,b.x)-9,y:Math.min(a.y,b.y)-9,
+        w:Math.abs(b.x-a.x)+18,h:Math.abs(b.y-a.y)+18};
+      if(postObstacles.some(o=>overlap(lane,o)))continue;
+      guard.waypoints=[a,b];break;
+    }
+  }
   // Ceiling lights are centered on real room/table locations, never in the walls.
   // All geometry and light strengths below are confined to the infiltration stage.
   const lightFixtures=[];
@@ -533,7 +545,11 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     }
   }
   if(hasExterior){
-    for(const door of frontDoors)addLight({x:door.x,y:door.y+36},'entry','entry-main',180,180);
+    for(const door of frontDoors){
+      addLight({x:door.x,y:door.y+36},'entry','entry-main',180,180);
+      addLight({x:door.x,y:door.y+176},'entry','entry-approach',190,190);
+      addLight({x:door.x,y:door.y+336},'entry','entry-forecourt',195,195);
+    }
     addLight({x:emergencyDoor.x,y:emergencyDoor.y-36},'entry','entry-north',150,150);
   }
   // Circular light pools of different sizes; preserve each former ellipse's area.
@@ -632,7 +648,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
 // A stage map adapter; uses the main game's player, enemies, all skills,
 // collisions, rendering and scoring loops without duplicating their behavior.
 // 屋内専用の縦長座標変換。幅は画面内に収め、奥行きを広げて総床面積を約2倍にする。
-const INDOOR_FLOOR_OFFSETS=[9300,5500],INDOOR_SCALE_X=1,INDOOR_SCALE_Y=1.75,INDOOR_OFFSET_X=-40;
+const INDOOR_FLOOR_OFFSETS=[9300,5500],INDOOR_SCALE_X=1,INDOOR_SCALE_Y=1.75,INDOOR_OFFSET_X=-40,INDOOR_FORECOURT_DEPTH=900;
 let indoorWorld=null,indoorHudSnapshot='',indoorHudRefresh=0,indoorAlarmGradient=null;
 
 let indoorShadeCanvas=null,indoorShadeCtx=null,indoorLightStamp=null;
@@ -642,7 +658,7 @@ function indoorLightLevel(x,y){
   if(!indoorWorld)return 1;
   let near=Infinity,withinFloor=false;
   for(const f of indoorWorld.floors){
-    if(y<f.footprint.y-260||y>f.footprint.y+f.footprint.h+260)continue;
+    if(y<f.footprint.y-260||y>f.footprint.y+f.footprint.h+INDOOR_FORECOURT_DEPTH)continue;
     withinFloor=true;
     for(const lamp of f.lightFixtures){
       const rx=lamp.rx||INDOOR_LIGHT_RADIUS,ry=lamp.ry||INDOOR_LIGHT_RADIUS;
@@ -661,11 +677,11 @@ function indoorLightingStamp(){
   const r=INDOOR_LIGHT_RADIUS,c=document.createElement('canvas');
   c.width=c.height=Math.ceil(2*r);
   const q=c.getContext('2d'),gr=q.createRadialGradient(r,r,0,r,r,r);
-  gr.addColorStop(0,'rgba(0,0,0,.96)');
-  gr.addColorStop(.20,'rgba(0,0,0,.91)');
-  gr.addColorStop(.47,'rgba(0,0,0,.70)');
-  gr.addColorStop(.73,'rgba(0,0,0,.34)');
-  gr.addColorStop(.91,'rgba(0,0,0,.08)');
+  gr.addColorStop(0,'rgba(0,0,0,.99)');
+  gr.addColorStop(.20,'rgba(0,0,0,.97)');
+  gr.addColorStop(.47,'rgba(0,0,0,.85)');
+  gr.addColorStop(.73,'rgba(0,0,0,.24)');
+  gr.addColorStop(.91,'rgba(0,0,0,.04)');
   gr.addColorStop(1,'rgba(0,0,0,0)');
   q.fillStyle=gr;q.fillRect(0,0,c.width,c.height);
   indoorLightStamp=c;return c;
@@ -677,10 +693,10 @@ function drawInfiltrationLighting(cx,cy){
   const mask=indoorShadeCanvas,q=indoorShadeCtx,r=INDOOR_LIGHT_RADIUS,stamp=indoorLightingStamp();
   if(mask.width!==Math.ceil(W)||mask.height!==Math.ceil(H)){mask.width=Math.ceil(W);mask.height=Math.ceil(H);}
   q.setTransform(1,0,0,1,0,0);q.clearRect(0,0,W,H);
-  q.fillStyle='rgba(7,13,15,.58)';q.fillRect(0,0,W,H);
+  q.fillStyle='rgba(7,13,15,.70)';q.fillRect(0,0,W,H);
   q.globalCompositeOperation='destination-out';
   for(const f of indoorWorld.floors){
-    if(f.footprint.y>cy+H+260||f.footprint.y+f.footprint.h<cy-260)continue;
+    if(f.footprint.y>cy+H+260||f.footprint.y+f.footprint.h<cy-INDOOR_FORECOURT_DEPTH)continue;
     for(const lamp of f.lightFixtures){
       const x=lamp.x-cx,y=lamp.y-cy,rx=lamp.rx||r,ry=lamp.ry||r;
       if(x<-rx||x>W+rx||y<-ry||y>H+ry)continue;
@@ -765,7 +781,7 @@ function setupInfiltrationWorld(){
     const corridors=raw.corridors.map(tile=>indoorRect(tile,off));
     const lobbyArea=raw.lobbyArea?indoorRect(raw.lobbyArea,off):null;
     const footprint=indoorRect(raw.footprint,off);
-    const southApron={x:footprint.x,y:footprint.y+footprint.h,w:footprint.w,h:260};
+    const southApron={x:footprint.x,y:footprint.y+footprint.h,w:footprint.w,h:INDOOR_FORECOURT_DEPTH};
     const northApron={x:footprint.x,y:footprint.y-260,w:footprint.w,h:260};
     const lightFixtures=raw.lightFixtures.map(item=>{
       const clipTiles=item.zone==='room'?rooms[item.roomId].tiles:
@@ -806,11 +822,11 @@ function setupInfiltrationWorld(){
         indoorCommander:false,frontCommander:false};
       humans.push(guard);guards.push(guard);
     }
-    // 待機兵にも潜入専用の認識・追跡・射撃AIを適用。通常時だけ動かない。
+    // 詰所兵は短い往復経路を使い、認識・追跡・射撃は潜入専用AIに統一。
     const postGuards=[];
     for(const h of raw.postGuards){
       const pos=to(h);
-      const guard={...pos,path:[{...pos}],loop:false,wi:0,dir:1,stk:0,
+      const guard={...pos,path:h.waypoints.map(to),loop:false,wi:0,dir:1,stk:0,
         alive:true,elite:false,commander:null,st:0,sus:0,lost:0,cd:R()*1.2,
         burstLeft:0,face:h.face,target:null,patrolMode:'post',
         zoneHeavy:'indoor',indoorGuard:true,indoorPost:true,indoorFloor:n,
@@ -1489,7 +1505,7 @@ function indoorUpdateGuardNotice(h,dt){
   else indoorMoveGuardTo(h,back.goal,dt,30,back.nav);
   return true;
  }
- h.face=patrol(h,dt,30*(h.indoorWhite?1.2:1),8);return true;
+ h.face=patrol(h,dt,(h.indoorPost?18:30)*(h.indoorWhite?1.2:1),8);return true;
 }
 // Visual alert relay is separate from the limited nearby voice report.
 function indoorObserveFoundGuard(h,dt){
@@ -1768,7 +1784,7 @@ function updateInfiltrationMission(dt){
 function drawInfiltrationFloors(cx,cy){
   if(!indoorWorld)return;
   for(const f of indoorWorld.floors){
-    const minY=f.footprint.y-260,maxY=f.footprint.y+f.footprint.h+260;
+    const minY=f.footprint.y-260,maxY=f.footprint.y+f.footprint.h+INDOOR_FORECOURT_DEPTH;
     if(maxY<cy-100||minY>cy+H+100)continue;
     // Corridor tiles are generated in H/L/T/ring/U patterns instead of a vertical stripe.
     g.fillStyle='#171e1c';g.fillRect(0,minY-15,WW,maxY-minY+30);

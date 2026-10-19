@@ -2,7 +2,7 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const {indoorGenerateFloor,indoorAt,indoorRect}=require('../js/infiltration-world.js');
 const random=seed=>{let x=Math.imul(seed,2654435761)>>>0;return()=>{x=(Math.imul(x,1664525)+1013904223)>>>0;return x/4294967296}};
-const offset=9300,STEP=12,COLS=80,ROWS=240,GRID_Y=-80;
+const offset=9300,STEP=12,COLS=80,ROWS=300,GRID_Y=-80;
 function reachablePoints(f){
  const rectangles=[...f.walls,...f.furniture].map(r=>indoorRect(r,offset));
  const occupied=new Uint8Array(COLS*ROWS);
@@ -126,7 +126,7 @@ test('windows only on exterior walls, rooms furnished, corridors contain militar
    assert.ok(f.furniture.some(x=>x.kind==='postTable'));
  }
 });
-test('large barracks has four to eight stationary guards arranged outside the table',()=>{
+test('large barracks has four to eight guards with short patrols outside the table',()=>{
  for(let seed=1;seed<=180;seed++){
   const f=indoorGenerateFloor(1,random(seed*31));
   const post=f.rooms.find(x=>x.isGuardPost);
@@ -139,7 +139,8 @@ test('large barracks has four to eight stationary guards arranged outside the ta
   const table=f.furniture.find(x=>x.kind==='postTable');
   assert.ok(table);
   for(const guard of f.postGuards){
-   assert.equal(guard.waypoints.length,1,'guards wait instead of patrolling');
+   assert.equal(guard.waypoints.length,2,'guards walk a short patrol within the post');
+   assert.ok(Math.abs(Math.abs(guard.waypoints[0].x-guard.waypoints[1].x)+Math.abs(guard.waypoints[0].y-guard.waypoints[1].y)-20)<1e-6);
    const x=guard.x,y=guard.y;
    const nearestX=Math.max(table.x,Math.min(x,table.x+table.w));
    const nearestY=Math.max(table.y,Math.min(y,table.y+table.h));
@@ -364,7 +365,7 @@ test('room and corridor lights are placed at meaningful fixtures with shadow poc
     assert.equal(light.rx,light.ry,'corridor light is circular');
     assert.ok(light.rx<=180*.65,'corridor pool size is bounded');
   }
-  assert.ok(lights.length>=22&&lights.length<=38,'added room lighting remains within a bounded fixture budget');
+  assert.ok(lights.length>=22&&lights.length<=42,'added room lighting remains within a bounded fixture budget');
   const spots=f.corridors.concat(f.rooms.flatMap(r=>r.tiles));
   const samples=spots.map(t=>({x:t.x+t.w/2,y:t.y+t.h/2}));
   const dark=samples.filter(p=>lights.every(l=>Math.hypot(p.x-l.x,p.y-l.y)>185*.72));
@@ -447,9 +448,9 @@ test('ceiling lighting transitions smoothly rather than switching abruptly',()=>
  const src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
  const start=src.indexOf('function indoorLightLevel('),end=src.indexOf('\n}\n',start);
  assert.ok(start>=0&&end>start);
- const fn=new Function('indoorWorld','INDOOR_LIGHT_RADIUS',
+ const fn=new Function('indoorWorld','INDOOR_LIGHT_RADIUS','INDOOR_FORECOURT_DEPTH',
    src.slice(start,end+2)+'\nreturn indoorLightLevel;')({
-     floors:[{footprint:{y:0,h:1800},lightFixtures:[{x:200,y:200}]}]},185);
+     floors:[{footprint:{y:0,h:1800},lightFixtures:[{x:200,y:200}]}]},185,900);
  const levels=[0,45,90,135,180,260].map(d=>fn(200+d,200));
  for(let i=1;i<levels.length;i++)assert.ok(levels[i]<=levels[i-1],'light must fade with distance');
  assert.ok(levels[0]>.90&&levels[2]>.40&&levels[2]<.80&&levels[4]<.25);
@@ -486,9 +487,9 @@ test('indoor darkness reduces sight without guard flashlights',()=>{
  const src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
  const a=src.indexOf('function indoorLightLevel('),b=src.indexOf('\n}\n',a);
  assert.ok(a>=0&&b>a,'light level helper exists');
- const light=new Function('indoorWorld','INDOOR_LIGHT_RADIUS',
+ const light=new Function('indoorWorld','INDOOR_LIGHT_RADIUS','INDOOR_FORECOURT_DEPTH',
    src.slice(a,b+2)+'\nreturn indoorLightLevel;')({
-     floors:[{footprint:{y:0,h:1800},lightFixtures:[{x:200,y:200}]}]},185);
+     floors:[{footprint:{y:0,h:1800},lightFixtures:[{x:200,y:200}]}]},185,900);
  assert.ok(light(200,200)>.90,'within the lit zone visibility remains high');
  assert.ok(light(400,500)<.30,'outside a ceiling light, detection is much harder');
  assert.ok(!src.includes('function indoorFlashlightInside('),'no guard flashlight mechanics');
@@ -630,7 +631,7 @@ test('indoor navigation crosses beyond door boundaries and throttles vision chec
 test('entrance has three soft ceiling pools and indoor lighting retains a brighter base',()=>{
  const fs=require('node:fs'),path=require('node:path');
  const src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
- assert.ok(src.includes("q.fillStyle='rgba(7,13,15,.58)'"),'lighter rendered shadow overlay');
+ assert.ok(src.includes("q.fillStyle='rgba(7,13,15,.70)'"),'stronger shadow contrast without changing AI illumination levels');
  assert.ok(src.includes('return withinFloor?.24:1'),'indoor darkness floor is increased');
  assert.ok(src.includes('Math.max(.78,.5+.5*illumination)'),'alerted guards remain able to see into shadow');
  for(let seed=1;seed<=100;seed++){
@@ -1090,8 +1091,8 @@ test('upper-floor drawing omits exterior paths and entrance signs while preservi
   {get:(o,k)=>k in o?o[k]:()=>{}});
  for(const floorNo of [1,2]){
   const f=indoorGenerateFloor(floorNo,random(313));
-  const draw=new Function('g','indoorWorld','WW','H',src.slice(from,to)+';return drawInfiltrationFloors;')(
-   g,{floors:[f]},960,2500);
+  const draw=new Function('g','indoorWorld','WW','H','INDOOR_FORECOURT_DEPTH',src.slice(from,to)+';return drawInfiltrationFloors;')(
+   g,{floors:[f]},960,2500,900);
   labels.length=0;fills.length=0;draw(0,0);
   if(floorNo===1){
    assert.ok(labels.includes('EXIT'));assert.ok(labels.includes('2F ▲'));
@@ -1689,4 +1690,45 @@ test('escape completes outside any ground-floor exit, never from inside the entr
   Object.assign(s.sandbox.p,exit);s.api.updateMission(.01);
  }
  assert.equal(completions,3);
+});
+
+test('front deployment and exit pads are deep in a lit forecourt',()=>{
+ const s=alarmWorld(),f=s.api.world.floors[0],bottom=f.footprint.y+f.footprint.h;
+ assert.equal(s.sandbox.p.y-bottom,672);
+ for(const q of f.entrances){
+  assert.equal(q.y-bottom,672);assert.ok(q.y<12800-200,'deployment remains inside playable bounds');
+  for(const dy of [50,160,300,450,600,672])assert.ok(s.api.lightLevel(q.x,bottom+dy)>.55,'lit approach at '+dy);
+ }
+});
+test('post guards use short horizontal or vertical paths free of furniture and walls',()=>{
+ for(let seed=1;seed<=100;seed++){
+  const f=indoorGenerateFloor(1,random(seed*199)),obstacles=[...f.walls,...f.furniture,...f.explosiveObjects];
+  for(const h of f.postGuards){
+   const [a,b]=h.waypoints;assert.ok(a.x===b.x||a.y===b.y);
+   for(let i=0;i<=10;i++){
+    const x=a.x+(b.x-a.x)*i/10,y=a.y+(b.y-a.y)*i/10;
+    assert.ok(obstacles.every(o=>x<=o.x-8||x>=o.x+o.w+8||y<=o.y-8||y>=o.y+o.h+8),'short patrol must not hit a table or wall');
+   }
+  }
+ }
+});
+
+test('post guards actually walk back and forth slowly within their short patrol endpoints',()=>{
+ const s=alarmWorld(),h=s.api.world.floors[0].postGuards[0],start={x:h.x,y:h.y};
+ const src=require('node:fs').readFileSync(require('node:path').join(__dirname,'../index.html'),'utf8');
+ const a=src.indexOf('function patrol(o,dt,sp,r){'),b=src.indexOf('function distributeFlankPatrols()',a);
+ s.sandbox.patrol=new Function('mazeComparisonEnemyFrozen','moveFrontlineEnemy','movePatrolReturn',
+  src.slice(a,b)+';return patrol;')(()=>false,()=>{},(h,q,dt,sp)=>{
+   const distance=Math.hypot(q.x-h.x,q.y-h.y),step=Math.min(distance,sp*dt);
+   if(distance){h.x+=(q.x-h.x)/distance*step;h.y+=(q.y-h.y)/distance*step;}
+   return Math.atan2(q.y-h.y,q.x-h.x);
+  });
+ let moved=0,travel=0;
+ for(let i=0;i<140;i++){
+  const before={x:h.x,y:h.y};
+  s.api.update(h,.1);travel+=Math.hypot(h.x-before.x,h.y-before.y);moved=Math.max(moved,Math.hypot(h.x-start.x,h.y-start.y));
+  assert.ok(h.x>=Math.min(...h.path.map(q=>q.x))-.01&&h.x<=Math.max(...h.path.map(q=>q.x))+.01);
+  assert.ok(h.y>=Math.min(...h.path.map(q=>q.y))-.01&&h.y<=Math.max(...h.path.map(q=>q.y))+.01);
+ }
+ assert.ok(moved>=5&&travel>=20,'guard takes several small trips with the existing endpoint tolerance');
 });
