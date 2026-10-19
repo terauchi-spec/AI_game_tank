@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.19.1754</title>
+<title>こっそり戦車大作戦 2026.10.19.2044</title>
 
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
@@ -864,7 +864,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.19.1754',FILE_CREATED_AT='2026/10/19 17:54',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.19.2044',FILE_CREATED_AT='2026/10/19 20:44',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -7144,8 +7144,8 @@ function draw(near){
  }
  drawLabels(cx,cy);drawVehicleMarkers(cx,cy);
  // 右上のナビ情報は従来どおり。スマホでは状態HUDを左上へ集約する。
- g.fillStyle='#e6e9d8';g.font='bold 14px system-ui';g.textAlign='right';g.fillText(stageMode==='indoor'?'拠点潜入：情報収集':areaDebugEnabled?'エリアテスト：'+zoneAt(p.y).n:'司令部まで '+distanceMeters(p.y-150)+'m',W-12,22);
- g.fillStyle=areaDebugEnabled?'#ffd27a':'#b9c19a';g.font='12px system-ui';g.fillText(stageMode==='indoor'?((indoorWorld?.currentFloor||0)+1)+'階 / 屋内施設':(areaDebugEnabled?'AREA DEBUG / ':'エリア: ')+zoneAt(p.y).n,W-12,40);
+ g.fillStyle='#e6e9d8';g.font='bold 14px system-ui';g.textAlign='right';g.fillText(stageMode==='indoor'?'':areaDebugEnabled?'エリアテスト：'+zoneAt(p.y).n:'司令部まで '+distanceMeters(p.y-150)+'m',W-12,22);
+ g.fillStyle=areaDebugEnabled?'#ffd27a':'#b9c19a';g.font='12px system-ui';g.fillText(stageMode==='indoor'?'':(areaDebugEnabled?'AREA DEBUG / ':'エリア: ')+zoneAt(p.y).n,W-12,40);
  // 歩兵HUDはHP・爆弾・索敵解除をアイコン化。スマホは左上、PCは左下に表示する。
  drawInfantryBottomHud();drawSkillBottomHud();drawVehicleBottomHud();
  if(msgT>0){g.textAlign='center';g.font=vehicleNameT>0?'bold 25px system-ui':'bold 17px system-ui';g.fillText(msg,W/2,vehicleNameT>0?70:64);}
@@ -7967,7 +7967,7 @@ function reportGameError(error){
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/canyon.js?v=2026.10.14.1836"></script>
 <script src="js/vegetation.js?v=2026.10.14.1653"></script>
-<script src="js/infiltration-world.js?v=2026.10.19.1754"></script>
+<script src="js/infiltration-world.js?v=2026.10.19.2044"></script>
 <script>
 (function(){
 // iPhone Chrome/Safari: synthetic KeyboardEvent に依存せず、ゲーム内部の入力状態を直接更新する。
