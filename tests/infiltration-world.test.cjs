@@ -553,7 +553,7 @@ function guardScenario(){
  indoorMoveGuardTo=(h,q,dt,sp)=>{const d=D(h,q),k=Math.min(1,sp*dt/Math.max(.001,d));h.x+=(q.x-h.x)*k;h.y+=(q.y-h.y)*k;return true;};
  indoorGuardSeesPlayer=()=>visibleNow();
  indoorLightLevel=()=>lightNow();
- return {begin:indoorStartGuardPursuit,update:updateInfiltrationGuardAI,points:indoorSearchPoints,share:indoorShareGuardSighting,
+ return {begin:indoorStartGuardPursuit,update:updateInfiltrationGuardAI,points:indoorSearchPoints,share:indoorShareGuardSighting,approach:indoorReportApproachPoint,
  setSensors:(v,l)=>{visibleNow=v;lightNow=l;},setWorld:w=>{indoorWorld=w;},
  gen:indoorGenerateFloor,grid:indoorMakeGuardGrid,at:indoorAt};
  function visibleNow(){return false;} function lightNow(){return 1;}
@@ -743,7 +743,7 @@ test('indoor guards search the last credible direction without tracking unseen p
  assert.ok(src.includes('predicted=indoorEstimateEscape(h,state)'));
  assert.ok(src.includes('for(let i=1;i<=7;i++)'),'prediction ends after 112 pixels');
  assert.ok(src.includes('if(id<0||g.solid[id])break'),'prediction stops at solid walls');
- assert.ok(src.includes('const next=state.lastSeen;'));
+ assert.ok(src.includes('const next=state.approachGoal||state.lastSeen;'));
  assert.ok(src.includes("state.phase='lastSeen';state.travelLeft=10"),'bound last-sighting travel before searching');
  assert.ok(src.includes('state.searchLeft=Math.max(0,state.searchLeft-dt)'),
   'scanning timer is counted separately from travel');
@@ -953,4 +953,59 @@ test('the pursuit visibility sample triggers coordination only on an actual sigh
  assert.ok(s.recipients[0].indoorAlert&&s.recipients[1].indoorAlert);
  assert.equal(s.recipients[2].indoorAlert,undefined);
  assert.deepEqual(s.recipients[0].indoorAlert.lastSeen,{x:s.avatar.x,y:s.avatar.y});
+});
+
+
+function predictionScenario(){
+ const s=coordinationScenario(),grid={x:0,y:0,step:16,cols:40,rows:40,solid:new Uint8Array(1600)};
+ const nav={grid,origin:{x:0,y:0},stepX:180,stepY:315,
+  neighbors:Array.from({length:35},(_,i)=>[i-1,i+1,i-5,i+5].filter(j=>j>=0&&j<35))};
+ s.world.floors[0].navigation=nav;
+ s.source.indoorAlert.lastSeen={x:240,y:240};s.source.indoorAlert.lastDir={x:1,y:0};
+ return {...s,grid};
+}
+test('only one responder checks a short predicted route while the other checks the sighting',()=>{
+ const s=predictionScenario();
+ s.api.share(s.source,s.source.indoorAlert,1000);
+ const [first,second]=s.recipients;
+ assert.equal(first.indoorAlert.approachGoal,null);
+ assert.deepEqual(second.indoorAlert.approachGoal,{x:352,y:240});
+ assert.deepEqual(second.indoorAlert.lastSeen,{x:240,y:240},'prediction does not overwrite the actual last sighting');
+ s.avatar.x=30;s.api.update(second,.4);s.api.update(second,.1);
+ assert.equal(second.indoorAlert.lastSeen.x,240);
+ assert.equal(second.indoorAlert.approachGoal.x,352,'doubling back does not update the mistaken prediction');
+ assert.ok(second.x>160,'second responder follows predicted direction');
+});
+test('prediction stops at static walls and cancels at a closed door or missing movement evidence',()=>{
+ const s=predictionScenario();
+ for(let y=0;y<40;y++)s.grid.solid[y*40+18]=1;
+ const report=s.source.indoorAlert;
+ const point=s.api.approach(s.recipients[1],report);
+ assert.ok(point.x<288&&point.x>=272,'prediction stops before the wall');
+ s.setWall(false);assert.equal(s.api.approach(s.recipients[1],report),null,'closed door blocks prediction');
+ s.setWall(true);report.lastDir=null;
+ assert.equal(s.api.approach(s.recipients[1],report),null,'stationary or unknown movement gives no prediction');
+});
+test('prediction reads only the report and is cleared upon confirmed visual reacquisition',()=>{
+ const s=predictionScenario();
+ const report=s.source.indoorAlert;
+ Object.defineProperty(s.avatar,'x',{configurable:true,get(){throw Error('hidden player queried');}});
+ assert.deepEqual(s.api.approach(s.recipients[1],report),{x:352,y:240});
+ s.api.share(s.source,report,1000);
+ Object.defineProperty(s.avatar,'x',{value:120,writable:true});
+ const second=s.recipients[1];s.setVisible(true);s.api.update(second,.14);
+ assert.equal(second.indoorAlert.phase,'found');
+ assert.equal(second.indoorAlert.approachGoal,undefined,'new pursuit drops the old inferred destination');
+ assert.equal(second.indoorAlert.lastSeen.x,120);
+});
+test('initial recognition retains only movement witnessed in successive visible samples',()=>{
+ const s=guardScenario();s.h.st=0;s.h.target=null;s.setVisible(true);
+ s.api.update(s.h,.13);s.avatar.x+=20;s.api.update(s.h,.13);s.avatar.x+=20;s.api.update(s.h,.13);
+ s.avatar.x+=20;s.api.update(s.h,.13);
+ assert.equal(s.h.indoorAlert.phase,'found');
+ assert.deepEqual(s.h.indoorAlert.lastDir,{x:1,y:0},'observed movement can inform the first report');
+ const hidden=guardScenario();hidden.h.st=0;hidden.h.target=null;
+ hidden.api.update(hidden.h,.13);hidden.avatar.x=800;hidden.setVisible(true);
+ for(let i=0;i<5;i++)hidden.api.update(hidden.h,.13);
+ assert.equal(hidden.h.indoorAlert.lastDir,null,'unseen displacement is not treated as observed direction');
 });

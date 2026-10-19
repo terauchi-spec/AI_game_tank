@@ -1085,6 +1085,14 @@ function indoorSearchPoints(h,state){
  }
  return points.length?points:[{...state.lastSeen}];
 }
+function indoorReportApproachPoint(h,report){
+ // A short extrapolation of witnessed movement, never a route to the live player.
+ // A closed door, wall or cargo between the sighting and estimate cancels it.
+ if(!report.lastDir)return null;
+ const point=indoorEstimateEscape(h,report),distance=D(point,report.lastSeen);
+ if(distance<32||distance>112.01||!los(report.lastSeen,point))return null;
+ return {x:point.x,y:point.y};
+}
 // One firsthand report may enlist at most two nearby idle guards. A floor-wide
 // cooldown prevents a shout from turning into an instant building-wide alarm.
 function indoorShareGuardSighting(h,state,now=performance.now()){
@@ -1106,6 +1114,8 @@ function indoorShareGuardSighting(h,state,now=performance.now()){
   const alert=other.indoorAlert;
   alert.phase='lastSeen';alert.remaining=0;alert.travelLeft=6;
   alert.lastDir=state.lastDir?{...state.lastDir}:null;
+  // Only the second responder checks ahead. The first still verifies the sighting.
+  alert.approachGoal=count===1?indoorReportApproachPoint(other,state):null;
   alert.reportDirection={x:Math.cos(h.face),y:Math.sin(h.face)};
   alert.searchSide=count===0?-1:1;alert.reported=true;
   other.indoorNotice=null;other.st=0;other.target=null;
@@ -1132,11 +1142,16 @@ function indoorUpdateGuardNotice(h,dt){
  if(n.checkT<=0){
   const elapsed=Math.max(.001,n.sampleAge),distanceMoved=Math.hypot(p.x-n.sampleX,p.y-n.sampleY);
   const sameFloor=h.indoorFloor===indoorWorld?.currentFloor+1;
+  const previouslyVisible=n.visible;
   n.visible=indoorGuardSeesPlayer(h);n.checkT=.12;n.sampleAge=0;
   n.sampleX=p.x;n.sampleY=p.y;
   if(n.visible){
    const illumination=indoorLightLevel(p.x,p.y),d=D(h,p);
    n.threshold=d<40?.15:.45+(1-illumination)*.65;
+   if(previouslyVisible&&n.spot){
+    const moved=D(n.spot,p);
+    if(moved>=6)n.lastDir={x:(p.x-n.spot.x)/moved,y:(p.y-n.spot.y)/moved};
+   }else n.lastDir=null;
    n.spot={x:p.x,y:p.y};
   }else if(sameFloor&&debugMode<2&&!(p.dig>0)&&distanceMoved/elapsed>80&&distanceMoved<50&&D(h,p)<72&&cachedLos(h,p)){
    // Nearby footsteps cause investigation, never instant discovery. Walls block
@@ -1150,7 +1165,9 @@ function indoorUpdateGuardNotice(h,dt){
  n.exposure=n.visible?Math.min(1.5,n.exposure+dt):Math.max(0,n.exposure-dt*2);
  if(n.visible&&n.exposure>=n.threshold){
   if(!indoorGuardSeesPlayer(h)||!los(h,p)){n.visible=false;n.checkT=0;return true;}
-  enterHumanFound(h,'p');h.indoorNotice=null;return true;
+  enterHumanFound(h,'p');
+  if(h.indoorAlert&&n.lastDir)h.indoorAlert.lastDir={...n.lastDir};
+  h.indoorNotice=null;return true;
  }
  if(n.exposure>0){
   // Reuse the existing suspicion icon; no extra drawing or UI work per frame.
@@ -1186,7 +1203,7 @@ function updateInfiltrationGuardAI(h,dt){
   if(state.visible){
    const previous=state.lastSeen,distanceSeen=D(previous,p);
    if(distanceSeen>18)state.lastDir={x:(p.x-previous.x)/distanceSeen,y:(p.y-previous.y)/distanceSeen};
-   state.lastSeen={x:p.x,y:p.y};state.estimate=null;state.trail.length=0;
+   state.lastSeen={x:p.x,y:p.y};state.approachGoal=null;state.estimate=null;state.trail.length=0;
    indoorShareGuardSighting(h,state);
   }
  }
@@ -1223,7 +1240,7 @@ function updateInfiltrationGuardAI(h,dt){
   state.phase='lastSeen';state.travelLeft=10;state.detour=null;
   h.burstLeft=0;
  }
- const next=state.lastSeen;
+ const next=state.approachGoal||state.lastSeen;
  if(state.phase==='lastSeen'){
   state.travelLeft=Math.max(0,state.travelLeft-dt);
   if(D(h,next)<=24||state.travelLeft<=0){indoorBeginGuardSearch(h,state);return true;}
