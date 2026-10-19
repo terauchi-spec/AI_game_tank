@@ -1381,8 +1381,39 @@ function indoorUpdateGuardNotice(h,dt){
  }
  h.face=patrol(h,dt,30,8);return true;
 }
+// Visual alert relay is separate from the limited nearby voice report.
+function indoorObserveFoundGuard(h,dt){
+ if(!h.indoorGuard||!h.alive||h.stun>0||h.stunRecover>0||h.houndPinned||h.blastAirT>0||
+    h.indoorFloor!==indoorWorld?.currentFloor+1||debugMode>=2||
+    h.indoorAlert?.phase==='found'||(h.st&&h.target!=='p'))return false;
+ h.indoorRelayCheckT=(h.indoorRelayCheckT||0)-dt;
+ if(h.indoorRelayCheckT>0)return false;h.indoorRelayCheckT=.2;
+ const guards=indoorWorld?.floors[h.indoorFloor-1]?.guards||[];
+ for(const other of guards){
+  const alert=other.indoorAlert;
+  if(other===h||!other.indoorGuard||!other.alive||other.indoorFloor!==h.indoorFloor||
+     !other.st||other.target!=='p'||alert?.phase!=='found'||!(alert.remaining>.05)||
+     other.stun>0||other.stunRecover>0||other.houndPinned||other.blastAirT>0)continue;
+  const d=D(h,other),angle=Math.abs(angD(Math.atan2(other.y-h.y,other.x-h.x),h.face));
+  const range=detectRange('p')*1.2*(.36+.64*indoorLightLevel(other.x,other.y))*(h.indoorChatT>0?.5:1);
+  if(!((angle<=DETECT_CENTER_HALF*1.2&&d<range)||
+     (angle<=DETECT_OUTER_HALF*1.2&&d<range*DETECT_OUTER_SCALE))||!los(h,other))continue;
+  indoorGuardAlertAt(h,alert.lastSeen);
+  const state=h.indoorAlert;
+  // Inherit the remaining memory rather than renewing it through cyclic relays.
+  state.remaining=Math.min(state.duration,alert.remaining);state.reported=true;
+  state.lastDir=alert.lastDir?{...alert.lastDir}:null;
+  h.st=1;h.target='p';h.sus=0;h.susMax=0;h.indoorNotice=null;
+  h.burstLeft=0;h.foundPause=Math.max(h.foundPause||0,.35);
+  h.face=Math.atan2(state.lastSeen.y-h.y,state.lastSeen.x-h.x);
+  // Relay alone is not another firsthand discovery for the red-eye counter.
+  return true;
+ }
+ return false;
+}
 function updateInfiltrationGuardAI(h,dt){
  if(!h.indoorGuard)return false;
+ indoorObserveFoundGuard(h,dt);
  if(!h.indoorAlert){
   if(h.st&&h.target==='p')indoorStartGuardPursuit(h);
   else if(h.st)return false;

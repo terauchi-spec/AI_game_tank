@@ -556,7 +556,7 @@ function guardScenario(){
  indoorMoveGuardTo=(h,q,dt,sp)=>{if(movementBlocked())return false;const d=D(h,q),k=Math.min(1,sp*dt/Math.max(.001,d));h.x+=(q.x-h.x)*k;h.y+=(q.y-h.y)*k;return true;};
  indoorGuardSeesPlayer=()=>visibleNow();
  indoorLightLevel=()=>lightNow();
- return {begin:indoorStartGuardPursuit,update:updateInfiltrationGuardAI,points:indoorSearchPoints,share:indoorShareGuardSighting,approach:indoorReportApproachPoint,
+ return {relay:indoorObserveFoundGuard,begin:indoorStartGuardPursuit,update:updateInfiltrationGuardAI,points:indoorSearchPoints,share:indoorShareGuardSighting,approach:indoorReportApproachPoint,
  setSensors:(v,l,b)=>{visibleNow=v;lightNow=l;movementBlocked=b;},setWorld:w=>{indoorWorld=w;},
  finish:indoorFinishGuardSearch,returnPlan:indoorPatrolReturnPlan,
  gen:indoorGenerateFloor,grid:indoorMakeGuardGrid,at:indoorAt};
@@ -594,10 +594,10 @@ test('indoor guards follow current visible player and last seen position if hidd
  const avatar={x:180,y:110},destinations=[];let visible=true;
  const [begin,update]=new Function('p','R','D','indoorGuardSeesPlayer','indoorMoveGuardTo',
   'indoorEstimateEscape','angD','pauseAfterEnemyDetection','enterHumanFound','enemyBombPoint','bombs','fire',
-  'performance','INDOOR_TRAIL_LIMIT','indoorShareGuardSighting','indoorRecordGuardDiscovery',code+'\nreturn [indoorStartGuardPursuit,updateInfiltrationGuardAI];')(
+  'performance','INDOOR_TRAIL_LIMIT','indoorShareGuardSighting','indoorRecordGuardDiscovery','indoorObserveFoundGuard',code+'\nreturn [indoorStartGuardPursuit,updateInfiltrationGuardAI];')(
   avatar,()=>.6,(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),()=>visible,
   (h,p)=>{destinations.push({...p});return true;},(_h,state)=>state.lastSeen,()=>0,()=>{},()=>{},()=>({x:0,y:0}),
-  [],()=>{}, {now:()=>0},48,()=>0,()=>{});
+  [],()=>{}, {now:()=>0},48,()=>0,()=>{},()=>false);
  const h={indoorGuard:true,x:0,y:110,st:1,target:'p',cd:100,bu:true};
  begin(h);avatar.x=240;update(h,.1);
  assert.equal(destinations.at(-1).x,240,'immediately chase current visible position');
@@ -901,6 +901,45 @@ function coordinationScenario(){
  source.indoorAlert.visible=true;
  return {...s,source,recipients,world,guard};
 }
+test('seeing a found guard relays found mode across a chain using copied memories',()=>{
+ const s=coordinationScenario();s.source.indoorAlert.lastSeen={x:220,y:120};
+ s.source.indoorAlert.remaining=.8;s.source.indoorAlert.lastDir={x:1,y:0};
+ for(const h of s.recipients)h.face=Math.PI;
+ const a=s.recipients[0],b=s.recipients[1];
+ Object.defineProperty(s.avatar,'x',{get(){throw Error('hidden player read during visual relay');}});
+ assert.equal(s.api.relay(a,.2),true);assert.equal(a.st,1);assert.equal(a.indoorAlert.phase,'found');
+ assert.equal(a.indoorAlert.remaining,.8);assert.equal(a.indoorAlert.visible,false);
+ s.source.indoorAlert.phase='lastSeen';a.indoorAlert.remaining=.6;
+ assert.equal(s.api.relay(b,.2),true,'an indirectly alerted guard can relay onward');
+ assert.equal(b.indoorAlert.remaining,.6,'relay never renews pursuit memory');
+ a.indoorAlert.lastSeen.x=900;a.indoorAlert.lastDir.x=-1;
+ assert.equal(b.indoorAlert.lastSeen.x,220);assert.equal(b.indoorAlert.lastDir.x,1);
+ b.indoorAlert.phase='lastSeen';a.indoorAlert.phase='lastSeen';
+ assert.equal(s.api.relay(b,.2),false,'search and last-seen guards cannot propagate found mode');
+ assert.equal(s.world.alarm,undefined,'relay does not increment firsthand discovery count');
+});
+test('visual relay requires sight, range, same active floor and conscious guards',()=>{
+ for(const reason of ['wall','behind','far','otherFloor','inactiveFloor','stunnedSource','stunnedObserver','deadSource','deadObserver','search']){
+  const s=coordinationScenario(),h=s.recipients[0];s.world.floors[0].guards=[s.source,h];h.face=Math.PI;
+  if(reason==='wall')s.setWall(false);
+  if(reason==='behind')h.face=0;
+  if(reason==='far')h.x=900;
+  if(reason==='otherFloor')s.source.indoorFloor=2;
+  if(reason==='inactiveFloor')s.world.currentFloor=1;
+  if(reason==='stunnedSource')s.source.stun=1;
+  if(reason==='stunnedObserver')h.stun=1;
+  if(reason==='deadSource')s.source.alive=false;
+  if(reason==='deadObserver')h.alive=false;
+  if(reason==='search')s.source.indoorAlert.phase='search';
+  assert.equal(s.api.relay(h,.2),false,reason);assert.equal(h.st,0,reason);
+ }
+});
+test('visual relay expires into last-seen pursuit without shooting at a hidden player',()=>{
+ const s=coordinationScenario(),h=s.recipients[0];h.face=Math.PI;
+ s.source.indoorAlert.remaining=.1;
+ s.api.update(h,.02);assert.equal(h.indoorAlert.phase,'found');assert.equal(h.st,1);
+ s.api.update(h,.15);assert.equal(h.indoorAlert.phase,'lastSeen');assert.equal(s.shots,0);
+});
 test('a firsthand sighting recruits only two nearest available guards on the same floor',()=>{
  const s=coordinationScenario(),{source,recipients,world,guard}=s;
  const excluded=[guard(102,{alive:false}),guard(104,{stun:1}),guard(106,{stunRecover:1}),
@@ -1146,7 +1185,7 @@ function alarmWorld(){
  const sandbox={ZONE_STYLE:{'敵迷路基地':{p:[]}},WH:14000,W:840,H:720,p:{},scoreStats:{},R:random(1771),
   document:{body:{classList:{remove(){}}},getElementById:()=>({style:{},innerHTML:''})},
   rebuildSpatialGrid(){},say(){},sfx(){},module:{exports:{}},partner:null,hound:null,
-  stageMode:'indoor',state:'play',playerDetectedNow:()=>false,performance:{now:()=>1000},
+  stageMode:'indoor',state:'play',debugMode:0,detectRange:()=>250,playerDetectedNow:()=>false,performance:{now:()=>1000},
   los:()=>true,drawPatrolChatBubbleAt:(...args)=>bubbles.push(args),
   DETECT_CENTER_HALF:7.5*Math.PI/180,DETECT_OUTER_HALF:52.5*Math.PI/180,DETECT_OUTER_SCALE:.7,
   enemyCannonSpeed:()=>630,fire:(...args)=>sandbox.bullets.push({args}),
