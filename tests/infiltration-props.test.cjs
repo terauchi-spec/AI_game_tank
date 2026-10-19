@@ -105,7 +105,7 @@ test('emergency exit randomizes its real doorway, escape pad and light together'
  let withExit=0,withoutExit=0;
  for(let seed=1;seed<=200;seed++){
   const floor=indoorGenerateFloor(1,random(seed*913));
-  assert.equal(floor.doors.some(q=>q.kind==='emergency'),!!floor.emergency);
+  assert.equal(floor.entryOpenings.some(q=>q.side===-1),!!floor.emergency);assert.ok(floor.doors.every(q=>!q.outer));
   assert.equal(floor.lightFixtures.some(q=>q.anchor==='entry-north'),!!floor.emergency);
   const x=floor.footprint.x+450,y=floor.footprint.y;
   const blocked=floor.walls.some(q=>x>=q.x&&x<=q.x+q.w&&y>=q.y&&y<=q.y+q.h);
@@ -142,10 +142,10 @@ test('stair sprites select ascending and descending artwork and preserve image p
  const start=source.indexOf('function drawInfiltrationStairSprite(floor){'),end=source.indexOf('function drawInfiltrationFloors(cx,cy){',start);
  const calls=[],requests=[],g={save(){},restore(){},drawImage:(...a)=>calls.push(a)};
  const image={naturalWidth:100,naturalHeight:240};
- const draw=new Function('g','indoorPropImage',source.slice(start,end)+';return drawInfiltrationStairSprite;')(g,key=>{requests.push(key);return image;});
+ const draw=new Function('g','indoorPropImage','INDOOR_STAIR_WIDTH',source.slice(start,end)+';return drawInfiltrationStairSprite;')(g,key=>{requests.push(key);return image;},60);
  for(const number of [1,2])assert.equal(draw({number,stair:{x:500,y:1000}}),true);
  assert.deepEqual(requests,['stairs_up','stairs_down']);
- for(const [im,x,y,w,h] of calls){assert.equal(im,image);assert.ok(Math.abs(w/h-100/240)<1e-9);assert.ok(w<=92&&h<=140);assert.equal(x+w/2,500);assert.equal(y+h/2,1000);}
+ for(const [im,x,y,w,h] of calls){assert.equal(im,image);assert.ok(Math.abs(w/h-100/240)<1e-9);assert.equal(w,60);assert.equal(h,144);assert.equal(x+w/2,500);assert.equal(y+h/2,1000);}
 });
 
 test('ascending and descending staircase files are small alpha WebP assets',()=>{

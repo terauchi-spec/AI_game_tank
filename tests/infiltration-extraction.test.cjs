@@ -17,15 +17,15 @@ function harness(seed=1,width=480){
   api={get world(){return indoorWorld;},bounds:infiltrationFloorBounds,clamp:enforceInfiltrationBoundary,
     camera:infiltrationCamera,begin:beginInfiltrationExtraction,update:updateInfiltrationExtraction,
     mission:updateInfiltrationMission,draw:drawInfiltrationExtraction,sprite:infiltrationJeepSprite,
-    protected:indoorStairProtected,protect:indoorBeginStairSanctuary,tick:indoorTickStairSanctuary,sees:indoorGuardSeesPlayer,record:indoorRecordGuardDiscovery};`,c);
+    protected:indoorStairProtected,protect:indoorBeginStairSanctuary,tick:indoorTickStairSanctuary,sees:indoorGuardSeesPlayer,record:indoorRecordGuardDiscovery,stairBlocked:indoorGuardStairBlocked,move:indoorMoveGuardTo};`,c);
  return{c,api:c.api,draws,get completed(){return completed;},get canvases(){return canvases;}};
 }
 
-test('one main EXIT remains with two automatic doors; emergency EXIT is farther away and inside the boundary',()=>{
+test('one main EXIT aligns with the open entrance; optional emergency EXIT remains inside the boundary',()=>{
  let optional=0;
  for(let seed=1;seed<=30;seed++){
   const h=harness(seed),f=h.api.world.floors[0];
-  assert.equal(f.entrances.length,2);assert.equal(f.doors.filter(q=>q.kind==='main').length,2);
+  assert.equal(f.entrances.length,2);assert.equal(f.doors.filter(q=>q.outer).length,0);
   assert.equal(h.api.world.exits.filter(q=>q.y>f.footprint.y+f.footprint.h).length,1);
   assert.equal(h.api.world.exits.length,1+Number(!!f.emergency));
   assert.equal(h.api.world.exits[0],f.entrance);
@@ -82,25 +82,25 @@ test('pickup animation does not activate for completed base or frontline stages'
  }
 });
 
-test('deployment EXIT and player start at the horizontal center at every generated layout',()=>{
+test('deployment EXIT and player start align with the wide entrance center',()=>{
  for(let seed=1;seed<=40;seed++)for(const width of [480,840]){
   const h=harness(seed,width);
-  assert.equal(h.c.p.x,h.c.WW/2);assert.equal(h.api.world.exits[0].x,h.c.WW/2);
-  assert.equal(h.c.p.x-h.api.camera().x,width/2);
+  const f=h.api.world.floors[0],center=f.lobbyArea.x+f.lobbyArea.w/2;
+  assert.equal(h.c.p.x,center);assert.equal(h.api.world.exits[0].x,center);
+  assert.equal(f.openings[0].x,center);
  }
 });
 
-test('stair transition grants a bounded sanctuary and clears stale player discovery',()=>{
+test('stair transition grants sanctuary until the landing area is left and clears stale discovery',()=>{
  const h=harness(),c=h.c,w=h.api.world,target=w.floors[1],guard=target.guards[0];
  Object.assign(c.p,w.floors[0].stair);guard.st=1;guard.target='p';guard.indoorAlert={phase:'found'};
  guard.indoorNotice={visible:true,exposure:1};guard._detectCache={key:'p',obj:c.p};guard._nextDetectAt=9999;
  h.api.mission(.01);
- assert.equal(w.currentFloor,1);assert.equal(h.api.protected(),true);assert.equal(w.stairSanctuary.remaining,3);
+ assert.equal(w.currentFloor,1);assert.equal(h.api.protected(),true);assert.ok(w.stairSanctuary);
  assert.equal(guard.st,0);assert.equal(guard.target,null);assert.equal(guard.indoorNotice,null);assert.equal(guard._detectCache,null);
  assert.equal(h.api.sees(guard),false,'even a point-blank guard cannot see the landing player');
  guard.st=1;guard.target='p';h.api.record(guard);assert.equal(w.alarm.witnesses.size,0);
- h.api.tick(2.9);assert.equal(h.api.protected(),true);
- h.api.tick(.11);assert.equal(h.api.protected(),false);assert.equal(w.stairSanctuary,null);
+ h.api.tick(3600);assert.equal(h.api.protected(),true,'standing on the landing never expires');
  h.api.protect(target);c.p.x+=111;h.api.tick(.01);assert.equal(h.api.protected(),false);
  c.p.x-=111;assert.equal(h.api.protected(),false,'returning to the landing does not renew protection');
 });
@@ -115,4 +115,48 @@ test('common detection cannot reuse a cached player sighting inside the stair sa
  const guard=w.floors[0].guards[0];guard._detectCache={key:'p',obj:c.p};guard._nextDetectAt=10000;
  assert.equal(c.canDetect(guard,c.p,0,'p'),false);
  assert.equal(c.findDetectedTarget(guard,0),null);assert.equal(guard._detectCache,null);
+});
+
+test('guards route around the actual stair artwork and separation cannot push them onto it',()=>{
+ const h=harness(),c=h.c;
+ c.angD=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
+ c.mv=(o,dx,dy,r)=>{
+  if(!h.api.stairBlocked(o,o.x+dx,o.y,r))o.x+=dx;
+  if(!h.api.stairBlocked(o,o.x,o.y+dy,r))o.y+=dy;
+ };
+ for(const floor of h.api.world.floors){
+  const stair=floor.stair,b=floor.stairObstacle;
+  assert.equal(b.w,60);
+  const guard={x:stair.x-70,y:stair.y,face:0,alive:true,indoorGuard:true,indoorFloor:floor.number,indoorAlert:{}};
+  const goal={x:stair.x+70,y:stair.y};
+  for(let i=0;i<1200&&c.D(guard,goal)>18;i++){
+   h.api.move(guard,goal,.05,78);
+   assert.equal(h.api.stairBlocked(guard,guard.x,guard.y,8),false);
+  }
+  assert.ok(c.D(guard,goal)<18,'guard completes the detour on floor '+floor.number);
+  const original=floor.guards[0];original.x=stair.x;original.y=stair.y;
+  h.api.clamp();assert.equal(h.api.stairBlocked(original,original.x,original.y,8),false);
+ }
+});
+
+test('entrances are broad unobstructed openings and existing guards patrol across their thresholds',()=>{
+ const h=harness(3),c=h.c,f=h.api.world.floors[0];
+ assert.equal(f.doors.filter(q=>q.outer).length,0);
+ assert.equal(f.openings[0].w,360);
+ assert.equal(h.api.world.exits[0].x,f.openings[0].x);
+ assert.equal(f.guards.filter(q=>q.indoorEntrancePatrol).length,2);
+ for(const gate of f.openings){
+  for(let x=gate.x-gate.w/2+20;x<gate.x+gate.w/2-20;x+=10)
+   assert.ok(!f.walls.some(w=>x>=w.x&&x<=w.x+w.w&&gate.y>=w.y&&gate.y<=w.y+w.h));
+  assert.ok(f.guards.filter(q=>q.indoorEntrancePatrol).some(q=>q.path.some(p=>gate.side*(p.y-gate.y)>80)&&q.path.some(p=>gate.side*(p.y-gate.y)<-40)));
+ }
+ c.angD=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
+ c.mv=(o,dx,dy)=>{o.x+=dx;o.y+=dy;};
+ for(const gate of f.openings){
+  const guard={x:gate.x,y:gate.y-gate.side*64,face:0,alive:true,indoorGuard:true,indoorFloor:1,indoorAlert:{}};
+  for(const goal of [{x:gate.x,y:gate.y+gate.side*180},{x:gate.x,y:gate.y-gate.side*80}]){
+   for(let i=0;i<600&&c.D(guard,goal)>18;i++)h.api.move(guard,goal,.05,78);
+   assert.ok(c.D(guard,goal)<18,'pursuit can cross the open entrance in both directions');
+  }
+ }
 });

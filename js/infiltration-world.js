@@ -50,7 +50,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
   const mainDoor={x:center(index(entranceCol,6)).x,y:Y0+ROWS*SIZE,side:'bottom'};
   const frontDoors=hasExterior?[mainDoor,{...mainDoor,x:center(index(entranceCol===lobbyLeft?lobbyLeft+1:lobbyLeft,6)).x}]:[];
   const entrances=frontDoors.map(d=>({x:d.x,y:d.y+384}));
-  const entrance=hasExterior?{x:X0+COLS*SIZE/2,y:entrances[0].y}:null;
+  const entrance=hasExterior?{x:X0+(lobbyLeft+1)*SIZE,y:entrances[0].y}:null;
   const emergencyDoor={x:center(index(2,0)).x,y:Y0,side:'top'};
   const emergency=hasEmergency?{x:emergencyDoor.x,y:emergencyDoor.y-384}:null;
   // 固定(2,1)を廃止し、生成された廊下の中から階段を抽選する。
@@ -245,7 +245,8 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
       (side==='bottom'&&(c===lobbyLeft||c===lobbyLeft+1)&&r===ROWS-1)||
       (hasEmergency&&side==='top'&&c===2&&r===0)
     );
-    if(doors.has(key)||externalEntry){
+    if(externalEntry)return; // 屋外の入口は区画全幅の開口。扉や袖壁を残さない。
+    if(doors.has(key)){
       const gap=84,shift=(SIZE-gap)/2,thick=22;
       if(vertical){put(wx-thick/2,wy,thick,shift);put(wx-thick/2,wy+shift+gap,thick,length-shift-gap);}
       else{put(wx,wy-thick/2,shift,thick);put(wx+shift+gap,wy-thick/2,length-shift-gap,thick);}
@@ -566,7 +567,6 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     if(addLight(point,'hall','hall-extra',SIZE*.54,SIZE*.54))extraLights++;
   }
   if(hasExterior){
-    for(const dy of [36,176,336])addLight({x:entrance.x,y:mainDoor.y+dy},'entry','entry-center',195,195);
     for(const door of frontDoors){
       addLight({x:door.x,y:door.y+36},'entry','entry-main',180,180);
       addLight({x:door.x,y:door.y+176},'entry','entry-approach',190,190);
@@ -655,11 +655,9 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
       index:1,face:Math.atan2(next.y-path[0].y,next.x-path[0].x),
       wait:indoorRand(rng,0,1),speed:65,sight:245});
   }
-  if(hasExterior){
-    for(const door of frontDoors)doorMarks.push({...door,vertical:false,outer:true,kind:'main'});
-    if(hasEmergency)doorMarks.push({...emergencyDoor,vertical:false,outer:true,kind:'emergency'});
-  }
-  return{number,pattern,rooms,walls,furniture,explosiveObjects,lightFixtures,guards,postGuards,postCount,postRoomId:postRoom.id,intel,stair,exit,entrance,entrances,emergency,
+  const entryOpenings=hasExterior?[{x:entrance.x,y:mainDoor.y,side:1,w:2*SIZE},
+    ...(hasEmergency?[{x:emergencyDoor.x,y:emergencyDoor.y,side:-1,w:SIZE}]:[])]:[];
+  return{number,pattern,rooms,walls,furniture,entryOpenings,explosiveObjects,lightFixtures,guards,postGuards,postCount,postRoomId:postRoom.id,intel,stair,exit,entrance,entrances,emergency,
     roomRoomDoors:connectingRooms,extraHallDoors:moreHallDoors,
     doors:doorMarks,windows,
     footprint:{x:X0,y:Y0,w:COLS*SIZE,h:ROWS*SIZE},
@@ -725,7 +723,7 @@ function drawInfiltrationLighting(cx,cy){
     const left=Math.floor(cx/64)*64-96,top=Math.floor(cy/64)*64-96;
     const r=INDOOR_LIGHT_RADIUS,stamp=indoorLightingStamp();
     q.setTransform(1,0,0,1,0,0);q.clearRect(0,0,mw,mh);
-    q.fillStyle='rgba(7,13,15,.70)';q.fillRect(0,0,mw,mh);
+    q.fillStyle='rgba(7,13,15,.58)';q.fillRect(0,0,mw,mh);
     q.globalCompositeOperation='destination-out';
     for(const f of indoorWorld.floors){
       if(f.footprint.y>top+mh+INDOOR_FORECOURT_DEPTH||f.footprint.y+f.footprint.h<top-INDOOR_FORECOURT_DEPTH)continue;
@@ -740,12 +738,6 @@ function drawInfiltrationLighting(cx,cy){
         }
         q.clip();q.drawImage(stamp,x-rx,y-ry,rx*2,ry*2);q.restore();
       }
-    }
-    // 壁だけ遮光を薄くする。暗い床と明るい壁面の差を出し、毎フレームの再描画は増やさない。
-    q.fillStyle='rgba(0,0,0,.72)';
-    for(const f of indoorWorld.floors)for(const wall of f.walls||[]){
-      if(wall.x+wall.w<left||wall.x>left+mw||wall.y+wall.h<top||wall.y>top+mh)continue;
-      q.fillRect(wall.x-left-2,wall.y-top-2,wall.w+4,wall.h+4);
     }
     q.globalCompositeOperation='source-over';
     cached=indoorShadeSnapshot={world:indoorWorld,x:left,y:top};
@@ -874,13 +866,27 @@ function setupInfiltrationWorld(){
       })
     };
     navigation.grid=indoorMakeGuardGrid(raw,off);
+    const stair=to(raw.stair),stairObstacle=indoorStairBounds(stair,n);
+    const avoidStair=pt=>{
+      if(!(pt.x>=stairObstacle.x-12&&pt.x<=stairObstacle.x+stairObstacle.w+12&&pt.y>=stairObstacle.y-12&&pt.y<=stairObstacle.y+stairObstacle.h+12))return pt;
+      const grid=navigation.grid,id=indoorGridFreeNearest(grid,indoorGridPoint(grid,pt));
+      return id<0?pt:{x:grid.x+(id%grid.cols+.5)*grid.step,y:grid.y+(((id/grid.cols)|0)+.5)*grid.step};
+    };
+    navigation.centers=navigation.centers.map(avoidStair);
+    const openings=raw.entryOpenings.map(q=>({...to(q),side:q.side,w:q.w}));
     const guards=[];
-    for(const h of raw.guards){
-      const pos=to(h),path=h.waypoints.map(to);
+    for(const [guardIndex,h] of raw.guards.entries()){
+      const pos=avoidStair(to(h)),path=h.waypoints.map(q=>avoidStair(to(q)));
       const guard={...pos,path,loop:!!h.loop,wi:1,dir:1,stk:0,
         alive:true,elite:false,commander:null,st:0,sus:0,lost:0,cd:R()*1.2,burstLeft:0,face:h.face,
         target:null,patrolMode:'axis',zoneHeavy:'indoor',indoorGuard:true,indoorFloor:n,
         indoorCommander:false,frontCommander:false};
+      if(n===1&&guardIndex<2){
+        const gate=openings[Math.min(guardIndex,openings.length-1)],dx=openings.length===1?(guardIndex?60:-60):0;
+        guard.path=[{x:gate.x+dx,y:gate.y-gate.side*64},{x:gate.x+dx,y:gate.y+gate.side*110},
+          {x:gate.x+dx+(guardIndex?64:-64),y:gate.y+gate.side*200},{x:gate.x+dx,y:gate.y+gate.side*110}];
+        guard.x=guard.path[0].x;guard.y=guard.path[0].y;guard.wi=1;guard.indoorEntrancePatrol=true;
+      }
       humans.push(guard);guards.push(guard);
     }
     // 詰所兵は持ち場で静止。認識・追跡・射撃は潜入専用AIに統一。
@@ -899,7 +905,7 @@ function setupInfiltrationWorld(){
     const intel=raw.intel.slice(0,count).map((q,i)=>({...to(q),id:q.id,name:'重要資料 '+n+'F-'+(i+1),done:false,floor:n,progress:0}));
     indoorWorld.intel.push(...intel);
     const entrances=raw.entrances.map(to);
-    const stair=to(raw.stair),entrance=raw.entrance?to(raw.entrance):null,
+    const entrance=raw.entrance?to(raw.entrance):null,
       emergency=raw.emergency?to(raw.emergency):null;
     const openingPoint=q=>({...to(q),vertical:q.vertical,kind:q.kind,outer:!!q.outer});
     const doors=raw.doors.map(q=>{
@@ -910,7 +916,7 @@ function setupInfiltrationWorld(){
       covers.push(door.cover);return door;
     });
     indoorWorld.floors.push({number:n,offset:off,pattern:raw.pattern,
-      corridors,lobbyArea,rooms,stair,
+      corridors,lobbyArea,rooms,stair,stairObstacle,openings,
       entrance,entrances,exit:entrance,emergency,
       footprint:indoorRect(raw.footprint,off),
       doors,windows:raw.windows.map(openingPoint),guards,postGuards,
@@ -979,12 +985,35 @@ function setupInfiltrationMission(){
 }
 
 
+const INDOOR_STAIR_WIDTH=60;
+function indoorStairBounds(stair,number){
+  const h=INDOOR_STAIR_WIDTH*(number===1?320/100:320/162);
+  return{x:stair.x-INDOOR_STAIR_WIDTH/2,y:stair.y-h/2,w:INDOOR_STAIR_WIDTH,h};
+}
+function indoorGuardStairBlocked(h,x,y,r=8){
+  if(!h.indoorGuard)return false;
+  const floor=indoorWorld?.floors[h.indoorFloor-1];if(!floor)return false;
+  const b=floor.stairObstacle||indoorStairBounds(floor.stair,floor.number);
+  return x+r>b.x&&x-r<b.x+b.w&&y+r>b.y&&y-r<b.y+b.h;
+}
+function indoorPatrolAroundStairs(h,dt){
+  const floor=indoorWorld?.floors[h.indoorFloor-1],goal=h.path?.[h.wi||0];
+  if(!floor||!goal||h.path.length<2||h.turnPause>0)return null;
+  const b=floor.stairObstacle;
+  const crosses=b&&Math.max(h.x,goal.x)>b.x-12&&Math.min(h.x,goal.x)<b.x+b.w+12&&
+    Math.max(h.y,goal.y)>b.y-12&&Math.min(h.y,goal.y)<b.y+b.h+12;
+  if(!crosses&&!h.indoorStairRoute)return null;
+  const a=h.indoorStairRoute||(h.indoorStairRoute={});
+  if(D(h,goal)<14){h.indoorStairRoute=null;h.turnPause=2;h.pauseFace=h.face;return null;}
+  indoorMoveGuardTo(h,goal,dt,30,a);return h.face;
+}
 function indoorMakeGuardGrid(raw,off){
  // Immutable room/wall/prop occupancy, built once per floor. Dynamic doors are open
  // to planning because a nearby guard opens them; collision still handles actual doors.
  const step=16,origin=indoorAt(70,80,off),cols=Math.ceil(900/step),rows=Math.ceil(1260*INDOOR_SCALE_Y/step);
  const solid=new Uint8Array(cols*rows),rects=[...raw.walls,...raw.furniture,...raw.explosiveObjects]
    .map(o=>indoorRect(o,off));
+ rects.push(indoorStairBounds(indoorAt(raw.stair.x,raw.stair.y,off),raw.number));
  const margin=10;
  for(const rect of rects){
   const minX=Math.max(0,Math.ceil((rect.x-margin-origin.x)/step-.5));
@@ -1057,7 +1086,7 @@ function indoorGridDetour(nav,start,goal,maxVisits=850){
      y:g.y+(((id/g.cols)|0)+.5)*g.step});
   }
  }
- if(found&&dest===indoorGridPoint(g,goal))points.push({x:goal.x,y:goal.y});
+ if(found&&dest===indoorGridPoint(g,goal)&&!g.solid[dest])points.push({x:goal.x,y:goal.y});
  return points.slice(0,30);
 }
 
@@ -1325,15 +1354,15 @@ function indoorUpdateAlarmSweep(h,a,dt){
  indoorSelectSweepGoal(h,a,floor,points);
 }
 
-const INDOOR_STAIR_GRACE_SECONDS=3,INDOOR_STAIR_GRACE_RADIUS=110;
+const INDOOR_STAIR_GRACE_RADIUS=110;
 function indoorStairProtected(){
   const area=indoorWorld?.stairSanctuary;
-  return !!(area&&area.remaining>0&&area.floor===indoorWorld.currentFloor&&
+  return !!(area&&area.floor===indoorWorld.currentFloor&&
     Math.hypot(p.x-area.x,p.y-area.y)<=INDOOR_STAIR_GRACE_RADIUS);
 }
 function indoorBeginStairSanctuary(floor){
   indoorWorld.stairSanctuary={x:floor.stair.x,y:floor.stair.y+38,
-    floor:indoorWorld.currentFloor,remaining:INDOOR_STAIR_GRACE_SECONDS};
+    floor:indoorWorld.currentFloor};
   for(const h of floor.guards){
     h.indoorNotice=null;h._detectCache=null;h._nextDetectAt=0;h._nextVisAt=0;
     if(h.target==='p'||(h.indoorAlert&&h.indoorAlert.phase!=='sweep')){
@@ -1345,7 +1374,6 @@ function indoorBeginStairSanctuary(floor){
 }
 function indoorTickStairSanctuary(dt){
   const area=indoorWorld?.stairSanctuary;if(!area)return;
-  area.remaining=Math.max(0,area.remaining-dt);
   if(!indoorStairProtected())indoorWorld.stairSanctuary=null;
 }
 function indoorStartGuardPursuit(h){
@@ -1381,7 +1409,19 @@ function indoorMoveGuardTo(h,goal,dt,sp,moveState=null){
  const nav=indoorWorld?.floors[h.indoorFloor-1]?.navigation,a=moveState||h.indoorAlert;
  if(!nav||!goal||!a)return false;
  const from=indoorGuardCell(nav,h),to=indoorGuardCell(nav,goal);
- if(from<0||to<0)return false;
+ if(from<0||to<0){
+   const floor=indoorWorld.floors[h.indoorFloor-1];if(floor.number!==1)return false;
+   const gate=floor.openings?.find(q=>q.side===(h.y<floor.footprint.y||goal.y<floor.footprint.y?-1:1));
+   if(!gate)return false;
+   const inner={x:gate.x,y:gate.y-gate.side*64},outer={x:gate.x,y:gate.y+gate.side*64};
+   const aligned=Math.abs(h.x-gate.x)<50;
+   if(from>=0&&!(aligned&&gate.side*(h.y-gate.y)>-92))return indoorMoveGuardTo(h,inner,dt,sp,a);
+   let dest=goal;
+   if(from>=0)dest=outer;
+   else if(to>=0)dest=aligned&&gate.side*(h.y-gate.y)<92?inner:outer;
+   const angle=Math.atan2(dest.y-h.y,dest.x-h.x),step=Math.min(sp*(h.indoorWhite?1.2:1)*dt,D(h,dest));
+   mv(h,Math.cos(angle)*step,Math.sin(angle)*step,8);h.face=angle;return true;
+ }
  // Separate the quick local detours from a rare, capped full-room recovery.
  // Otherwise a blocked doorway can send a soldier around the same 3 cells forever.
  if(a.progressGoalCell!==to){
@@ -1628,7 +1668,8 @@ function indoorUpdateGuardNotice(h,dt){
   return true;
  }
  if(h.indoorPost)return true;
- h.face=patrol(h,dt,30*(h.indoorWhite?1.2:1),8);return true;
+ const stairFace=indoorPatrolAroundStairs(h,dt);
+ h.face=stairFace===null?patrol(h,dt,30*(h.indoorWhite?1.2:1),8):stairFace;return true;
 }
 // Visual alert relay is separate from the limited nearby voice report.
 function indoorObserveFoundGuard(h,dt){
@@ -1928,6 +1969,11 @@ function enforceInfiltrationBoundary(){
   const bounds=infiltrationFloorBounds();if(!bounds)return;
   const radius=p.tank?24:8;
   p.y=Math.max(bounds.top+radius,Math.min(bounds.bottom-radius,p.y));
+  // 移動後の兵士同士の押し出しでも階段に重ならないようにする。
+  for(const floor of indoorWorld.floors)for(const h of floor.guards){
+    if(!h.alive||!indoorGuardStairBlocked(h,h.x,h.y,8))continue;
+    const b=floor.stairObstacle;h.x=h.x<=b.x+b.w/2?b.x-10:b.x+b.w+10;
+  }
 }
 function infiltrationCamera(){
   if(!indoorWorld)return null;
@@ -2021,7 +2067,7 @@ const indoorOutdoorTerrain={n:'丘陵',g:'#6b7a3a'};
 function drawInfiltrationStairSprite(floor){
   const image=indoorPropImage(floor.number===1?'stairs_up':'stairs_down');if(!image)return false;
   const iw=image.naturalWidth||image.width,ih=image.naturalHeight||image.height;
-  const scale=Math.min(92/iw,140/ih),w=iw*scale,h=ih*scale;
+  const w=INDOOR_STAIR_WIDTH,h=w*ih/iw;
   g.save();g.imageSmoothingEnabled=true;
   g.drawImage(image,floor.stair.x-w/2,floor.stair.y-h/2,w,h);g.restore();return true;
 }
@@ -2068,7 +2114,7 @@ function drawInfiltrationFloors(cx,cy){
     if(f.stair.y>cy-130&&f.stair.y<cy+H+130){
       const x=f.stair.x,y=f.stair.y;
       if(!drawInfiltrationStairSprite(f)){
-      g.save();g.translate(x,y);
+      g.save();g.translate(x,y);g.scale(60/88,1);
       g.fillStyle='#283c37';g.fillRect(-44,-58,88,116);
       g.fillStyle='#8a9684';g.fillRect(-36,-52,72,103);
       g.fillStyle='#354740';g.fillRect(-36,-52,72,10);
@@ -2085,7 +2131,7 @@ function drawInfiltrationFloors(cx,cy){
       g.restore();
       }
       g.font='bold 12px system-ui';g.fillStyle='#f1efcf';g.textAlign='center';
-      g.fillText(f.number===1?'2F ▲':'1F ▼',x,y+80);
+      g.fillText(f.number===1?'2F ▲':'1F ▼',x,y+110);
     }
     // 前線制圧のような円形の脱出範囲。描画と待機判定は同じ半径を使う。
     for(const q of [f.entrance||f.entrances?.[0],f.emergency].filter(Boolean)){
@@ -2299,7 +2345,7 @@ function drawInfiltrationMission(){
     gm.save();gm.fillStyle='rgba(110,220,240,.08)';gm.strokeStyle='rgba(150,235,255,.6)';gm.lineWidth=2;
     gm.beginPath();gm.arc(x,y,INDOOR_STAIR_GRACE_RADIUS,0,Math.PI*2);gm.fill();gm.stroke();
     gm.font='bold 12px system-ui';gm.textAlign='center';gm.fillStyle='#c5f5ff';
-    gm.fillText('SAFE '+area.remaining.toFixed(1)+'s',x,y-30);gm.restore();
+    gm.fillText('SAFE',x,y-30);gm.restore();
   }
   for(const q of mission.points){
     if(q.floor!==indoorWorld.currentFloor+1||(q.done&&!(q.collectedT>0)))continue;

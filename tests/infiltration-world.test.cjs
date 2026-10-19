@@ -55,7 +55,7 @@ test('five corridor shapes and differently sized rooms remain navigable at doubl
   assert.ok(f.rooms.some(r=>r.size===1));
   assert.ok(f.rooms.some(r=>r.size>=3));
   assert.equal(f.rooms.reduce((s,r)=>s+r.tiles.length,0)+f.corridors.length,35);
-  assert.ok(f.doors.length>=(n===1?15:14)&&f.doors.length<=(n===1?21:18),'interior doors plus ground-floor exits');
+  assert.ok(f.doors.length>=14&&f.doors.length<=18,'interior doors plus ground-floor exits');
   assert.ok(f.doors.filter(q=>q.kind==='room-room').length>=2,'direct room-to-room doors');
   assert.ok(f.rooms.filter(q=>q.doors.length>1).length>=2,'several rooms have two doors');
   for(const r of f.rooms){sizeSet.add(r.size);assert.equal(r.size,r.tiles.length);}
@@ -72,8 +72,8 @@ test('exterior walls have no gaps except the front door and emergency exit; wind
   const isWall=(x,y)=>w.some(q=>x>=q.x&&x<=q.x+q.w&&y>=q.y&&y<=q.y+q.h);
   const {x,y,w:width,h}=f.footprint;
   for(let px=x+2;px<x+width-2;px+=5){
-   if(!f.emergency||Math.abs(px-f.emergency.x)>60)assert.ok(isWall(px,y),'north boundary hole');
-   if(f.entrances.every(entry=>Math.abs(px-entry.x)>60))assert.ok(isWall(px,y+h),'south boundary hole');
+   if(!f.emergency||Math.abs(px-f.emergency.x)>92)assert.ok(isWall(px,y),'north boundary hole');
+   if(px<f.lobbyArea.x-2||px>f.lobbyArea.x+f.lobbyArea.w+2)assert.ok(isWall(px,y+h),'south boundary hole');
   }
   for(const win of f.windows)assert.ok(isWall(win.x,win.y),'window must not leave a traversable hole');
   assert.ok(!isWall(f.entrance.x,y+h),'main doorway opening');
@@ -155,8 +155,8 @@ test('smaller doors have multiple routes between rooms, corridors, and exterior 
   assert.ok(rr.length>=2,'at least two direct inter-room doorways');
   assert.ok(f.rooms.some(r=>r.doors.length>=2),'at least one multi-door room');
   assert.ok(f.rooms.filter(r=>r.doors.length>=2).length>=2,'multiple rooms have options');
-  assert.ok(f.doors.length>=(floorNo===1?15:14)&&f.doors.length<=(floorNo===1?21:18));
-  assert.equal(f.doors.filter(d=>d.kind==='main'||d.kind==='emergency').length,floorNo===1?2+Number(!!f.emergency):0);
+  assert.ok(f.doors.length>=14&&f.doors.length<=18);
+  assert.equal(f.doors.filter(d=>d.kind==='main'||d.kind==='emergency').length,0);
   const windows=f.windows;
   assert.ok(windows.every(d=>d.external),'keep windows exterior-only');
   for(const d of interior){
@@ -630,7 +630,7 @@ test('indoor navigation crosses beyond door boundaries and throttles vision chec
 test('entrance has three soft ceiling pools and indoor lighting retains a brighter base',()=>{
  const fs=require('node:fs'),path=require('node:path');
  const src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
- assert.ok(src.includes("q.fillStyle='rgba(7,13,15,.70)'"),'stronger shadow contrast without changing AI illumination levels');
+ assert.ok(src.includes("q.fillStyle='rgba(7,13,15,.58)'"),'uniform ambient light without selective wall cutouts');
  assert.ok(src.includes('return withinFloor?.24:1'),'indoor darkness floor is increased');
  assert.ok(src.includes('Math.max(.78,.5+.5*illumination)'),'alerted guards remain able to see into shadow');
  for(let seed=1;seed<=100;seed++){
@@ -1112,7 +1112,7 @@ test('world setup accepts upstairs null entry metadata and preserves paired stai
  vm.runInContext(source+';setupInfiltrationWorld();result=indoorWorld;',sandbox);
  const [ground,upper]=sandbox.result.floors;
  assert.ok(ground.entrance&&ground.lobbyArea);
- assert.equal(ground.doors.some(q=>q.kind==='emergency'),!!ground.emergency);
+ assert.equal(ground.openings.some(q=>q.side===-1),!!ground.emergency);
  assert.equal(upper.entrance,null);assert.equal(upper.exit,null);
  assert.equal(upper.emergency,null);assert.equal(upper.lobbyArea,null);
  assert.ok(upper.doors.every(d=>!d.outer));
@@ -1671,10 +1671,10 @@ test('lighting is circular after world scaling, varies in size and lights the ou
  assert.ok(radii.size>=4,'different pool sizes');
  for(const entry of [...floor.entrances,floor.emergency].filter(Boolean))assert.ok(s.api.lightLevel(entry.x,entry.y)>.55,'outside entry is bright');
 });
-test('multiple front automatic doors are physically openable and all start and exit pads are outside',()=>{
+test('wide front openings are wall-free and all start and exit pads are outside',()=>{
  for(let seed=1;seed<=100;seed++){
   const f=indoorGenerateFloor(1,random(seed*147));
-  assert.equal(f.entrances.length,2);assert.equal(f.doors.filter(d=>d.outer&&d.kind==='main').length,2);
+  assert.equal(f.entrances.length,2);assert.equal(f.doors.filter(d=>d.outer).length,0);
   for(const entry of f.entrances){
    assert.ok(entry.y>f.footprint.y+f.footprint.h+90);
    const aperture={x:entry.x-35,y:f.footprint.y+f.footprint.h-10,w:70,h:20};
@@ -1717,7 +1717,7 @@ test('static indoor lighting reuses one mask across frames and preserves camera 
  const y=s.api.world.floors[0].footprint.y;
  const draw=(x,dy)=>vm.runInContext('drawInfiltrationLighting('+x+','+dy+');',s.sandbox);
  draw(0,y);const first=contexts[0].clears,stamps=contexts[0].stamps;
- assert.ok(stamps>0);const wallCuts=contexts[0].wallCuts;assert.ok(wallCuts>0,'walls retain visibility through reduced shadow');assert.equal(contexts.length,2,'one mask and one light texture');
+ assert.ok(stamps>0);const wallCuts=contexts[0].wallCuts;assert.equal(wallCuts,0,'no artificial bright rectangle around walls');assert.equal(contexts.length,2,'one mask and one light texture');
  for(let i=0;i<120;i++)draw(0,y);
  assert.equal(contexts[0].clears,first,'stationary frames do no lighting recomposition');
  assert.equal(contexts[0].stamps,stamps,'light stamps are not redrawn on every frame');
