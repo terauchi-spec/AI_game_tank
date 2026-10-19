@@ -134,6 +134,6 @@ test('exit marker uses the escape radius and a half ring at 2.5 seconds',()=>{
  const draw=new Function('g','indoorWorld','WW','W','H','INDOOR_FORECOURT_DEPTH','terrainSurfacePattern','indoorOutdoorTerrain','indoorConcretePattern','INDOOR_EXIT_RADIUS','INDOOR_EXIT_SECONDS','mission',source.slice(start,end)+';return drawInfiltrationFloors;')(
   g,{floors:[floor]},960,480,720,900,()=>null,{g:'#6b7a3a'},()=>null,90,5,m);
  draw(0,1050);
- assert.deepEqual(circles,[[300,1672,90,0,Math.PI*2],[300,1672,83,-Math.PI/2,Math.PI/2]]);
+ assert.deepEqual(circles,[[300,1672,90,0,Math.PI*2],[300,1672,90,-Math.PI/2,Math.PI/2]]);
  assert.ok(labels.some(q=>q[0]==='EXIT'));assert.ok(labels.some(q=>q[0]==='2.5s'));
 });

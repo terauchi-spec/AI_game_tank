@@ -2,7 +2,7 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const {indoorGenerateFloor,indoorAt,indoorRect}=require('../js/infiltration-world.js');
 const random=seed=>{let x=Math.imul(seed,2654435761)>>>0;return()=>{x=(Math.imul(x,1664525)+1013904223)>>>0;return x/4294967296}};
-const offset=9300,STEP=12,COLS=80,ROWS=300,GRID_Y=-80;
+const offset=9300,STEP=12,COLS=80,ROWS=360,GRID_Y=-700;
 function reachablePoints(f){
  const rectangles=[...f.walls,...f.furniture].map(r=>indoorRect(r,offset));
  const occupied=new Uint8Array(COLS*ROWS);
@@ -1162,7 +1162,7 @@ test('a completed mission cannot escape from the upper floor through an emergenc
  const vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
  const source=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
  let completed=0;
- const sandbox={ZONE_STYLE:{'敵迷路基地':{p:[]}},WH:14000,p:{},scoreStats:{},R:random(1221),
+ const sandbox={ZONE_STYLE:{'敵迷路基地':{p:[]}},WH:14000,WW:960,W:840,H:720,p:{},scoreStats:{},R:random(1221),
   document:{body:{classList:{remove(){}}}},rebuildSpatialGrid(){},say(){},sfx(){},
   module:{exports:{}},partner:null,hound:null,stageMode:'indoor',state:'play',playerDetectedNow:()=>false,
   D:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),los:()=>true,completeMission(){completed++;},
@@ -1187,7 +1187,7 @@ function alarmWorld(seed=1771){
   fillText:t=>labels.push(t),fillRect(...r){rectangles.push({r,style:this.fillStyle});},
   createLinearGradient(...args){const stops=[];const gradient={args,stops,addColorStop:(...s)=>stops.push(s)};gradients.push(gradient);return gradient;}},
   {get:(o,k)=>k in o?o[k]:()=>{}});
- const sandbox={ZONE_STYLE:{'敵迷路基地':{p:[]}},WH:14000,W:840,H:720,p:{},scoreStats:{},R:random(seed),
+ const sandbox={ZONE_STYLE:{'敵迷路基地':{p:[]}},WH:14000,WW:960,W:840,H:720,p:{},scoreStats:{},R:random(seed),
   document:{body:{classList:{remove(){}}},getElementById:()=>({style:{},innerHTML:''})},
   rebuildSpatialGrid(){},say(){},sfx(){},module:{exports:{}},partner:null,hound:null,
   stageMode:'indoor',state:'play',skill:'partner',patrol:h=>h.face,findDetectedTarget:()=>null,hitsM:()=>false,debugMode:0,detectRange:()=>250,playerDetectedNow:()=>false,performance:{now:()=>1000},
@@ -1689,6 +1689,7 @@ test('escape completes outside any ground-floor exit, never from inside the entr
  Object.assign(s.sandbox.p,{x:floor.entrance.x,y:floor.footprint.y+floor.footprint.h-20});
  s.api.updateMission(.01);assert.equal(completions,0);
  for(const exit of s.api.world.exits){
+  s.sandbox.state='play';s.sandbox.mission.extraction=null;
   s.sandbox.mission.escapeComplete=false;s.sandbox.mission.escapeProgress=0;s.sandbox.mission.escapeExit=null;
   Object.assign(s.sandbox.p,exit);s.api.updateMission(4.9);assert.equal(completions,s.api.world.exits.indexOf(exit));s.api.updateMission(.1);
  }
@@ -1811,7 +1812,8 @@ test('infiltration floors use hills outdoors and concrete only within the buildi
 });
 
 test('exit requires five continuous seconds, resets on leaving or switching exits and needs all files',()=>{
- const s=alarmWorld(),m=s.sandbox.mission,w=s.api.world,p=s.sandbox.p;let completed=0;
+ let s=alarmWorld();for(let seed=1;s.api.world.exits.length<2;seed++)s=alarmWorld(seed);
+ const m=s.sandbox.mission,w=s.api.world,p=s.sandbox.p;let completed=0;
  s.sandbox.completeMission=()=>completed++;
  Object.assign(p,w.exits[0]);m.index=2;s.api.updateMission(6);
  assert.equal(completed,0);assert.equal(m.escapeProgress,0);

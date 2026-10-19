@@ -52,7 +52,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
   const entrances=frontDoors.map(d=>({x:d.x,y:d.y+384}));
   const entrance=entrances[0]||null;
   const emergencyDoor={x:center(index(2,0)).x,y:Y0,side:'top'};
-  const emergency=hasEmergency?{x:emergencyDoor.x,y:emergencyDoor.y-96}:null;
+  const emergency=hasEmergency?{x:emergencyDoor.x,y:emergencyDoor.y-384}:null;
   // 固定(2,1)を廃止し、生成された廊下の中から階段を抽選する。
   const halls=Array.from(hall);
   const stairOptions=halls.filter(i=>{const {r}=coord(i);return r>=1&&r<=4;});
@@ -571,7 +571,8 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
       addLight({x:door.x,y:door.y+176},'entry','entry-approach',190,190);
       addLight({x:door.x,y:door.y+336},'entry','entry-forecourt',195,195);
     }
-    if(hasEmergency)addLight({x:emergencyDoor.x,y:emergencyDoor.y-36},'entry','entry-north',150,150);
+    if(hasEmergency)for(const [i,dy] of [36,176,336].entries())
+      addLight({x:emergencyDoor.x,y:emergencyDoor.y-dy},'entry',i?'entry-north-'+i:'entry-north',190,190);
   }
   // Circular light pools of different sizes; preserve each former ellipse's area.
   for(const lamp of lightFixtures){const radius=Math.sqrt(lamp.rx*lamp.ry);lamp.rx=radius;lamp.ry=radius;}
@@ -726,7 +727,7 @@ function drawInfiltrationLighting(cx,cy){
     q.fillStyle='rgba(7,13,15,.70)';q.fillRect(0,0,mw,mh);
     q.globalCompositeOperation='destination-out';
     for(const f of indoorWorld.floors){
-      if(f.footprint.y>top+mh+260||f.footprint.y+f.footprint.h<top-INDOOR_FORECOURT_DEPTH)continue;
+      if(f.footprint.y>top+mh+INDOOR_FORECOURT_DEPTH||f.footprint.y+f.footprint.h<top-INDOOR_FORECOURT_DEPTH)continue;
       for(const lamp of f.lightFixtures){
         const x=lamp.x-left,y=lamp.y-top,rx=lamp.rx||r,ry=lamp.ry||r;
         if(x<-rx||x>mw+rx||y<-ry||y>mh+ry)continue;
@@ -768,7 +769,7 @@ function indoorGenerateExterior(floor,rng,worldWidth=960){
       const tree=placed%2===0,size=tree?72+rng()*24:48+rng()*20;
       const cx=65+rng()*(worldWidth-130),cy=side==='south'
         ?south+110+rng()*(INDOOR_FORECOURT_DEPTH-220):fp.y-190+rng()*70;
-      if(gateways.some(q=>Math.hypot(cx-q.x,cy-q.y)<145+size/2))continue;
+      if(gateways.some(q=>Math.hypot(cx-q.x,cy-q.y)<145+size/2||Math.abs(cy-q.y)<110+size/2))continue;
       if(side==='south'&&(floor.entrances||[]).some(q=>Math.abs(cx-q.x)<92+size/2))continue;
       if(side==='north'&&floor.emergency&&Math.abs(cx-floor.emergency.x)<110+size/2)continue;
       if(out.some(q=>Math.hypot(cx-q.x-q.w/2,cy-q.y-q.h/2)<155))continue;
@@ -834,11 +835,11 @@ function setupInfiltrationWorld(){
     const lobbyArea=raw.lobbyArea?indoorRect(raw.lobbyArea,off):null;
     const footprint=indoorRect(raw.footprint,off);
     const southApron={x:footprint.x,y:footprint.y+footprint.h,w:footprint.w,h:INDOOR_FORECOURT_DEPTH};
-    const northApron={x:footprint.x,y:footprint.y-260,w:footprint.w,h:260};
+    const northApron={x:footprint.x,y:footprint.y-INDOOR_FORECOURT_DEPTH,w:footprint.w,h:INDOOR_FORECOURT_DEPTH};
     const lightFixtures=raw.lightFixtures.map(item=>{
       const clipTiles=item.zone==='room'?rooms[item.roomId].tiles:
         item.zone==='lobby'?[lobbyArea]:item.zone==='entry'?
-          (item.anchor==='entry-north'?[northApron,...corridors.filter(t=>t.y===footprint.y)]:[southApron,lobbyArea]):corridors;
+          (item.anchor.startsWith('entry-north')?[northApron,...corridors.filter(t=>t.y===footprint.y)]:[southApron,lobbyArea]):corridors;
       const radius=item.rx*Math.sqrt(INDOOR_SCALE_X*INDOOR_SCALE_Y);
       return{...to(item),zone:item.zone,anchor:item.anchor,rx:radius,ry:radius,clipTiles};
     });
@@ -918,7 +919,7 @@ function setupInfiltrationWorld(){
   indoorWorld.exit={...entrance.entrance};
   indoorWorld.entrance={...entrance.entrance};
   indoorWorld.emergency=entrance.emergency?{...entrance.emergency}:null;
-  indoorWorld.exits=[...entrance.entrances,entrance.emergency].filter(Boolean);
+  indoorWorld.exits=[entrance.entrance,entrance.emergency].filter(Boolean);
   indoorWorld.currentFloor=0;
   indoorWorld.exterior=indoorGenerateExterior(entrance,indoorSeedRng(seeds[0]^0x7e31ac09));
   covers.push(...indoorWorld.exterior);
@@ -1875,9 +1876,95 @@ function updateInfiltrationMission(dt){
   if(escape){
     if(m.escapeExit!==escape)m.escapeProgress=0;
     m.escapeExit=escape;m.escapeProgress=Math.min(INDOOR_EXIT_SECONDS,(m.escapeProgress||0)+dt);
-    if(m.escapeProgress>=INDOOR_EXIT_SECONDS-1e-9&&!m.escapeComplete){m.escapeComplete=true;completeMission();}
+    if(m.escapeProgress>=INDOOR_EXIT_SECONDS-1e-9&&!m.escapeComplete){m.escapeComplete=true;completeMission();beginInfiltrationExtraction(escape);}
   }else{m.escapeExit=null;m.escapeProgress=0;}
 
+}
+// 各階の屋外を含む独立した行動範囲。1Fから座標上の2Fへ歩いて行かせない。
+function infiltrationFloorBounds(){
+  const floor=indoorWorld?.floors[indoorWorld.currentFloor];if(!floor)return null;
+  const fp=floor.footprint,pad=floor.number===1?INDOOR_FORECOURT_DEPTH:24;
+  return{top:fp.y-pad,bottom:fp.y+fp.h+pad};
+}
+function enforceInfiltrationBoundary(){
+  if(stageMode!=='indoor'||!indoorWorld)return;
+  const bounds=infiltrationFloorBounds();if(!bounds)return;
+  const radius=p.tank?24:8;
+  p.y=Math.max(bounds.top+radius,Math.min(bounds.bottom-radius,p.y));
+}
+function infiltrationCamera(){
+  if(!indoorWorld)return null;
+  const extraction=typeof mission!=='undefined'&&mission?.extraction;
+  if(extraction)return{x:extraction.camX,y:extraction.camY};
+  const bounds=infiltrationFloorBounds();if(!bounds)return null;
+  return{x:Math.max(0,Math.min(WW-W,p.x-W/2)),
+    y:Math.max(bounds.top,Math.min(Math.max(bounds.top,bounds.bottom-H),p.y-H*.6))};
+}
+function beginInfiltrationExtraction(exit){
+  if(stageMode!=='indoor'||!mission||mission.extraction)return;
+  const view=infiltrationCamera();
+  mission.extraction={elapsed:0,duration:5.2,camX:view.x,camY:view.y,
+    startX:view.x-100,stopX:exit.x,endX:view.x+W+100,y:exit.y+(p.y>=exit.y?-68:68),
+    carX:view.x-100,fromX:p.x,fromY:p.y,boarded:false,phase:'approach'};
+  // 成否とスコアは5秒の待機完了時に確定。評価画面は回収演出の後に開く。
+  state='indoorEscape';
+  if(typeof keys!=='undefined')for(const key of Object.keys(keys))keys[key]=false;
+  bombReq=false;cannonReq=false;interact=false;skillReq=false;
+  p.dig=0;p.digPrep=0;p.drill=0;p.grappleT=0;p.flameActive=false;
+  p.sniperMode=false;p.sniperEnterT=0;p.sniperReadyT=0;
+}
+function updateInfiltrationExtraction(dt){
+  const v=stageMode==='indoor'&&mission?.extraction;
+  if(state!=='indoorEscape'||!v)return;
+  v.elapsed=Math.min(v.duration,v.elapsed+Math.max(0,dt));const t=v.elapsed;
+  if(t<1.8){const u=t/1.8;v.carX=v.startX+(v.stopX-v.startX)*(1-(1-u)**3);}
+  else v.carX=v.stopX;
+  if(t>=2.05&&!v.boarded){
+    v.phase='boarding';const u=Math.min(1,(t-2.05)/.75),x=v.stopX-8,y=v.y+10;
+    p.body=Math.atan2(y-v.fromY,x-v.fromX);p.ang=p.body;
+    p.x=v.fromX+(x-v.fromX)*u;p.y=v.fromY+(y-v.fromY)*u;
+    if(u>=1){v.boarded=true;v.phase='aboard';}
+  }
+  if(t>=3.1){const u=Math.min(1,(t-3.1)/(v.duration-3.1));
+    v.phase='depart';v.carX=v.stopX+(v.endX-v.stopX)*u*u;
+  }
+  if(v.boarded){p.x=v.carX-8;p.y=v.y+10;}
+  if(t>=v.duration){state='win';resultAnimT=0;}
+}
+let indoorJeepCanvas=null;
+function infiltrationJeepSprite(){
+  if(indoorJeepCanvas)return indoorJeepCanvas;
+  const canvas=document.createElement('canvas');canvas.width=128;canvas.height=76;
+  const q=gameCanvasContext(canvas);q.clearRect(0,0,128,76);
+  q.fillStyle='rgba(0,0,0,.28)';q.fillRect(12,15,106,53);
+  q.fillStyle='#151b18';for(const x of [27,91]){q.fillRect(x,4,17,13);q.fillRect(x,59,17,13);}
+  q.fillStyle='#334330';q.fillRect(15,14,101,48);
+  q.fillStyle='#758259';q.fillRect(19,17,92,42);
+  q.fillStyle='#48573b';q.fillRect(22,20,46,36);
+  q.strokeStyle='#a0aa7a';q.lineWidth=2;q.strokeRect(21,18,88,40);
+  // 車体右が進行方向。開放座席・フロントガラス・ボンネット・スペアタイヤ。
+  q.fillStyle='#25342c';q.fillRect(34,23,30,30);
+  q.fillStyle='#7a8055';q.fillRect(35,24,10,12);q.fillRect(35,41,10,11);
+  q.fillStyle='#8facaa';q.fillRect(65,20,7,36);
+  q.fillStyle='#56653f';q.fillRect(75,21,31,34);
+  q.strokeStyle='#a3ac7a';q.lineWidth=1;q.strokeRect(77,23,26,30);
+  q.fillStyle='#202a24';q.fillRect(111,18,7,40);
+  q.fillStyle='#c8c69a';q.fillRect(113,20,5,7);q.fillRect(113,48,5,7);
+  q.fillStyle='#19221b';q.beginPath();q.ellipse(20,38,9,16,0,0,Math.PI*2);q.fill();
+  q.fillStyle='#53623e';q.beginPath();q.arc(54,29,6,0,Math.PI*2);q.fill();
+  q.fillStyle='#d0b58a';q.fillRect(58,27,3,4);
+  indoorJeepCanvas=canvas;return canvas;
+}
+function drawInfiltrationExtraction(cx,cy){
+  const v=stageMode==='indoor'&&state==='indoorEscape'&&mission?.extraction;if(!v)return;
+  gm.save();gm.translate(v.carX-cx,v.y-cy);gm.imageSmoothingEnabled=true;
+  gm.drawImage(infiltrationJeepSprite(),-64,-38,128,76);
+  if(v.boarded){
+    gm.fillStyle='#d0b58a';gm.beginPath();gm.arc(-8,10,6,0,Math.PI*2);gm.fill();
+    gm.fillStyle='#67734d';gm.beginPath();gm.arc(-9,9,6,0,Math.PI*2);gm.fill();
+    gm.fillStyle='#b5372e';gm.fillRect(-10,3,3,12);
+  }
+  gm.restore();
 }
 // 潜入専用。画像は初回のみ読み込み、CanvasPatternは描画コンテキストごとに再利用。
 let indoorConcreteImage=null;
@@ -1902,7 +1989,7 @@ function drawInfiltrationFloors(cx,cy){
   g.fillRect(left,top,right-left,bottom-top);
   const concrete=indoorConcretePattern()||'#777975';
   for(const f of indoorWorld.floors){
-    const minY=f.footprint.y-260,maxY=f.footprint.y+f.footprint.h+INDOOR_FORECOURT_DEPTH;
+    const minY=f.footprint.y-INDOOR_FORECOURT_DEPTH,maxY=f.footprint.y+f.footprint.h+INDOOR_FORECOURT_DEPTH;
     if(maxY<cy-100||minY>cy+H+100)continue;
     // Corridor tiles are generated in H/L/T/ring/U patterns instead of a vertical stripe.
     const fp=f.footprint,x=Math.max(left,fp.x),y=Math.max(top,fp.y);
@@ -1955,7 +2042,7 @@ function drawInfiltrationFloors(cx,cy){
       g.restore();
     }
     // 前線制圧のような円形の脱出範囲。描画と待機判定は同じ半径を使う。
-    for(const q of [...(f.entrances||[]),f.emergency].filter(Boolean)){
+    for(const q of [f.entrance||f.entrances?.[0],f.emergency].filter(Boolean)){
       const radius=INDOOR_EXIT_RADIUS;
       if(q.x+radius<cx||q.x-radius>cx+W||q.y+radius<cy||q.y-radius>cy+H)continue;
       const active=typeof mission!=='undefined'&&mission?.escapeExit===q;
@@ -1963,8 +2050,8 @@ function drawInfiltrationFloors(cx,cy){
       g.save();g.lineWidth=3;g.strokeStyle='#9de7ae';g.fillStyle='rgba(75,170,100,.15)';
       g.beginPath();g.arc(q.x,q.y,radius,0,Math.PI*2);g.fill();g.stroke();
       if(progress>0){
-        g.strokeStyle='#6eff8e';g.lineWidth=7;g.beginPath();
-        g.arc(q.x,q.y,radius-7,-Math.PI/2,-Math.PI/2+Math.PI*2*progress);g.stroke();
+        g.strokeStyle='#6eff8e';g.lineWidth=7;g.lineCap='round';g.beginPath();
+        g.arc(q.x,q.y,radius,-Math.PI/2,-Math.PI/2+Math.PI*2*progress);g.stroke();
       }
       g.font='bold 22px system-ui';g.fillStyle='#e9ffec';g.textAlign='center';g.fillText('EXIT',q.x,q.y+7);
       if(active){g.font='bold 15px system-ui';g.fillText(Math.max(0,INDOOR_EXIT_SECONDS-(mission.escapeProgress||0)).toFixed(1)+'s',q.x,q.y+32);}
@@ -2141,7 +2228,7 @@ function drawInfiltrationMission(){
     indoorHudRefresh=now+120;
     const next=mission.points.find(q=>!q.done),floor=indoorWorld.floors[indoorWorld.currentFloor],text='拠点潜入 '+(indoorWorld.currentFloor+1)+'階（'+floor.pattern+'型）　重要資料 '+mission.index+'/'+INDOOR_FILES_TOTAL;
     const alarmText=indoorWorld.alarm?.active?'館内アラート発令中：全館捜索 ／ ':'';
-    const desc=alarmText+(mission.index===INDOOR_FILES_TOTAL?'1階の正面玄関または非常口から脱出':mission.detected?'発見中：追跡・攻撃に注意':next?'円内で回収：通常8秒／相棒と一緒なら4秒':'1階の出口へ');
+    const desc=alarmText+(mission.index===INDOOR_FILES_TOTAL?(indoorWorld.emergency?'1階の玄関または非常口のEXITで5秒待機':'1階の玄関のEXITで5秒待機'):mission.detected?'発見中：追跡・攻撃に注意':next?'円内で回収：通常8秒／相棒と一緒なら4秒':'1階の出口へ');
     const progress='<progress max="8" value="'+mission.progress+'"></progress>';
     const nextText='<b>'+text+'</b>'+progress+'<small>'+desc+'</small>';
     if(nextText!==indoorHudSnapshot){indoorHudSnapshot=nextText;el.innerHTML=nextText;}

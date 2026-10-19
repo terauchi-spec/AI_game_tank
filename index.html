@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.19.2249</title>
+<title>こっそり戦車大作戦 2026.10.19.2309</title>
 
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
@@ -864,7 +864,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.19.2249',FILE_CREATED_AT='2026/10/19 22:49',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.19.2309',FILE_CREATED_AT='2026/10/19 23:09',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -892,7 +892,7 @@ function queueDAction(){
 }
 addEventListener('keydown',e=>{
  const code=normKeyCode(e);
- if(state==='briefing'||state==='failed'||state==='succeeded'||state==='frontVictory')return;
+ if(state==='briefing'||state==='failed'||state==='succeeded'||state==='frontVictory'||state==='indoorEscape')return;
  if((state==='play'||state==='blast')&&(code.startsWith('Arrow')||code==='Space'))e.preventDefault();
  const first=!keys[code];keys[code]=true;
  // Dは移動キーとは完全に独立したアクションとして扱う。
@@ -918,7 +918,7 @@ addEventListener('keydown',e=>{
 },true);
 // 一部キーボードでは3キー同時押し時にkeydownだけ欠落するため、keypressも予備経路にする。
 addEventListener('keypress',e=>{
- if(state==='briefing'||state==='failed'||state==='succeeded'||state==='frontVictory')return;
+ if(state==='briefing'||state==='failed'||state==='succeeded'||state==='frontVictory'||state==='indoorEscape')return;
  const code=normKeyCode(e);
  if(code==='KeyD'&&!dPressHandled)queueDAction();
 },true);
@@ -5620,7 +5620,7 @@ function update(dt){
  for(const o of humans)holdEnemyModePosition(o);
   for(const o of etanks)holdEnemyModePosition(o);
  updateEnemyDogs(dt);
- separateFootPlayerEnemyTanks();enforceFrontlineBoundary();
+ separateFootPlayerEnemyTanks();enforceFrontlineBoundary();if(stageMode==='indoor')enforceInfiltrationBoundary();
  for(const f of fx)f.l-=dt;fx=fx.filter(f=>f.l>0);
  updateParts(dt);updateWaterRipples(dt);
  shake=Math.max(0,shake-35*dt);flash=Math.max(0,flash-dt*2.5);msgT-=dt;vehicleNameT=Math.max(0,vehicleNameT-dt);updateScoreTracking(dt,frameMove);if(state==='play')updateMission(dt);return near;
@@ -6973,7 +6973,7 @@ function draw(near){
  g=MOBILE_VIEW?gm:og;g.setTransform(MOBILE_VIEW?1:.5,0,0,MOBILE_VIEW?1:.5,0,0);g.imageSmoothingEnabled=false;labels.length=0;vehicleMarkers.length=0;
  fragmentDrawFrame++;fragmentAssetSignature=Object.values(COVER_IMG).reduce((n,im)=>n+(assetOK(im)?1:0),0);
  const bl=state==='blast'||((state==='win'||state==='succeeded')&&(stageMode==='base'||stageMode==='beginner'));
- const victoryCamera=frontlineVictoryCamera();
+ const victoryCamera=stageMode==='indoor'?infiltrationCamera():frontlineVictoryCamera();
  if(victoryCamera){cam=victoryCamera.y;camX=victoryCamera.x;}else if(bl){cam+=(0-cam)*.07;camX+=(Math.max(0,Math.min(WW-W,base.x+base.w/2-W/2))-camX)*.07;}else{cam=Math.max(frontlineNorthEdge(),Math.min(WH-H,p.y-H*.6));camX=Math.max(0,Math.min(WW-W,p.x-W/2));}
  const cy=Math.round(cam/2)*2,cx=Math.round(camX/2)*2;
  g.save();if(shake>0)g.translate((R()-.5)*shake,(R()-.5)*shake);
@@ -7089,11 +7089,13 @@ function draw(near){
  drawHound();drawEnemyDogs();
  for(const ab of airbombs){const mt=ab.maxT||.48,k=Math.max(0,Math.min(1,1-ab.t/mt));g.fillStyle=ab.fighter?'#252b31':'#171717';g.beginPath();g.ellipse(ab.x,ab.y,ab.fighter?7:5,ab.fighter?13:10,0,0,6.28);g.fill();g.strokeStyle=ab.fighter?'rgba(180,220,255,.65)':'rgba(255,190,80,.55)';g.beginPath();g.arc(ab.x,ab.y,(ab.fighter?20:14)*k,0,6.28);g.stroke();}
  if(!p.tank&&p.grappleT>0&&p.grappleTarget&&p.grappleTarget.alive){const h=p.grappleTarget,a=Math.atan2(h.y-p.y,h.x-p.x),k=1-p.grappleT/.3;g.save();g.strokeStyle='rgba(255,230,170,'+(1-k*.25)+')';g.lineWidth=3;g.beginPath();g.moveTo(p.x+Math.cos(a+.55)*8,p.y+Math.sin(a+.55)*8);g.lineTo(h.x-Math.cos(a)*5,h.y-Math.sin(a)*5);g.moveTo(p.x+Math.cos(a-.55)*8,p.y+Math.sin(a-.55)*8);g.lineTo(h.x-Math.cos(a)*5,h.y-Math.sin(a)*5);g.stroke();g.strokeStyle='rgba(255,255,255,'+(0.7-k*.4)+')';g.lineWidth=2;for(let q=0;q<3;q++){const off=(q-1)*7;g.beginPath();g.moveTo(p.x-Math.cos(a)*10+Math.cos(a+1.57)*off,p.y-Math.sin(a)*10+Math.sin(a+1.57)*off);g.lineTo(p.x-Math.cos(a)*20+Math.cos(a+1.57)*off,p.y-Math.sin(a)*20+Math.sin(a+1.57)*off);g.stroke();}g.restore();}
+ if(!(stageMode==='indoor'&&mission?.extraction?.boarded)){
  if(p.tank){if(!(p.tank.kind==='tank'&&inBush(p)))drawVehicle(p.tank,p.x,p.y,p.body,p.ang);if(p.tank.f<=0)markVehicle(p.x,p.y-(p.tank.kind==='fighter'?66:p.tank.kind==='truck'?42:50),'fuel');}
  else if(p.sniperEnterT>0||p.sniperReadyT>0){drawSniperSetupPlayer();}
  else if(p.dig>0){if(digUsesWaterFx(p.x,p.y)){g.save();g.translate(p.x,p.y);g.rotate(p.body+1.5708);g.fillStyle='rgba(38,54,45,.92)';g.beginPath();g.ellipse(0,-2,7,9,0,0,6.28);g.fill();g.fillStyle='#66735f';g.beginPath();g.arc(0,-5,6,Math.PI,0);g.fill();g.strokeStyle='rgba(220,240,245,.65)';g.lineWidth=1.5;g.beginPath();g.moveTo(-10,4);g.quadraticCurveTo(0,8,10,4);g.stroke();g.restore();}else{g.fillStyle='#3a2a18';g.beginPath();g.ellipse(p.x,p.y+2,11,8,0,0,6.28);g.fill();g.fillStyle='#6b4e30';g.beginPath();g.ellipse(p.x,p.y,8,6,0,0,6.28);g.fill();}}
  else if(p.digPrep>0)drawDigPreparation();
- else{drawBlastShadow(p);soldier(p.x,p.y-blastLift(p),p.body,true,false,!!(keys.ArrowUp||keys.ArrowDown||keys.ArrowLeft||keys.ArrowRight),false,'',false,true,p);}
+ else{drawBlastShadow(p);soldier(p.x,p.y-blastLift(p),p.body,true,false,!!(keys.ArrowUp||keys.ArrowDown||keys.ArrowLeft||keys.ArrowRight)||(stageMode==='indoor'&&state==='indoorEscape'&&mission?.extraction?.phase==='boarding'),false,'',false,true,p);}
+ }
  if(!p.tank&&p.drill>0){const a=p.body,t=performance.now()/90;g.save();g.translate(p.x,p.y);g.rotate(a);g.fillStyle='#30343a';g.beginPath();g.moveTo(10,-10);g.lineTo(48,0);g.lineTo(10,10);g.closePath();g.fill();g.strokeStyle='#d6d9dd';g.lineWidth=2;for(let q=0;q<4;q++){const xx=14+q*8,yy=Math.sin(t+q*1.7)*6;g.beginPath();g.moveTo(xx,-8+yy*.25);g.lineTo(xx+6,8-yy*.25);g.stroke();}g.fillStyle='#ffd27a';g.beginPath();g.arc(49,0,3+Math.sin(t)*1.2,0,6.28);g.fill();g.restore();if(p.drillTarget){g.fillStyle='rgba(0,0,0,.58)';g.fillRect(p.x-22,p.y-31,44,5);g.fillStyle='#ffd27a';g.fillRect(p.x-22,p.y-31,44*Math.min(1,p.drillHit/.5),5);}}
  drawGrassBushChunks(cx,cy);
  for(const b of nearbyBushes(cx+W/2,cy+H/2,Math.max(W,H)*.8+100)){if(b.spinifex||isGrassBush(b)||b.x+b.w<cx-40||b.x>cx+W+40||b.y+b.h<cy-40||b.y>cy+H+40)continue;drawBushCached(b);}
@@ -7123,7 +7125,7 @@ function draw(near){
  drawSpinifexScatters(cx,cy);drawPartnerOrderSignal();
  g.restore();
  g=gm;gm.imageSmoothingEnabled=false;if(!MOBILE_VIEW)gm.drawImage(oc,0,0,W,H);drawFrontlineCargoNative(cx,cy);drawWeatherOverlay();
-  if(stageMode==='indoor')drawInfiltrationLighting(cx,cy);
+  if(stageMode==='indoor'){drawInfiltrationLighting(cx,cy);drawInfiltrationExtraction(cx,cy);}
  // 潜伏中：画面全体を徐々に暗くする。HUDはこの後に描画して可読性を維持。
  if(p.dig>0){
   const t=Math.max(0,Math.min(1,p.digElapsed||0)),swim=digUsesWaterFx(p.x,p.y);
@@ -7924,7 +7926,7 @@ let firstMenuFrame=true,last=performance.now(),prevState=state;
 // 実機でrAFだけが約330ms途切れるため、タッチ端末のプレイ中はタイマーで駆動する。
 // 処理時間を差し引いて約60Hzを目標にし、次回予約は必ず1件だけ行う。
 function queueNextGameFrame(started){
- if(MOBILE_VIEW&&state==='play'&&document.visibilityState!=='hidden'){
+ if(MOBILE_VIEW&&(state==='play'||(stageMode==='indoor'&&state==='indoorEscape'))&&document.visibilityState!=='hidden'){
   setTimeout(()=>loop(performance.now()),Math.max(4,1000/60-(performance.now()-started)));
  }else requestAnimationFrame(loop);
 }
@@ -7939,7 +7941,7 @@ function loop(n){
   const dt=Math.min(.033,remain||.000001);remain=Math.max(0,remain-dt);
   if(state!==prevState)resultAnimT=0;else if(state==='win'||state==='lose')resultAnimT+=dt;else resultAnimT=0;
   if(!assetsLoading()){
-   if(state==='play')near=debugMode===4&&debugRenderDiagnostic?.active?updateDebugRenderDiagnostic(dt):update(dt);else if(state==='frontVictory')updateFrontlineVictory(dt);else if(state==='blast')blastUpdate(dt);else if(state==='dying')dyingUpdate(dt);
+   if(state==='play')near=debugMode===4&&debugRenderDiagnostic?.active?updateDebugRenderDiagnostic(dt):update(dt);else if(state==='indoorEscape')updateInfiltrationExtraction(dt);else if(state==='frontVictory')updateFrontlineVictory(dt);else if(state==='blast')blastUpdate(dt);else if(state==='dying')dyingUpdate(dt);
   }
   prevState=state;
  }while(remain>.000001);
@@ -7968,7 +7970,7 @@ function reportGameError(error){
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/canyon.js?v=2026.10.14.1836"></script>
 <script src="js/vegetation.js?v=2026.10.14.1653"></script>
-<script src="js/infiltration-world.js?v=2026.10.19.2249"></script>
+<script src="js/infiltration-world.js?v=2026.10.19.2309"></script>
 <script>
 (function(){
 // iPhone Chrome/Safari: synthetic KeyboardEvent に依存せず、ゲーム内部の入力状態を直接更新する。
