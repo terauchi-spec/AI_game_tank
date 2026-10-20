@@ -1322,13 +1322,16 @@ test('red alarm shading is drawn only when active and its gradient is cached',()
  assert.equal(s.gradients[0].stops[0][1],'rgba(190,22,18,.48)');
  assert.ok(s.rectangles.some(q=>q.r[0]===0&&q.r[1]===0&&q.r[2]===840&&q.r[3]===144));
 });
-test('building patrols and stationary posts double exactly without overlapping walls or soldiers',()=>{
+test('building patrols retain 60 percent and stationary posts 70 percent of the doubled roster without overlap',()=>{
  for(const seed of [1771,14,28,67,91,2834,3931]){
   const s=alarmWorld(seed);
   for(const floor of s.api.world.floors){
    const originals=floor.guards.filter(h=>!h.indoorDoubled),added=floor.guards.filter(h=>h.indoorDoubled);
-   assert.equal(added.length,originals.length);
-   assert.equal(added.filter(h=>h.indoorPost).length,originals.filter(h=>h.indoorPost).length);
+   for(const [post,keep] of [[false,.6],[true,.7]]){
+    const before=originals.filter(h=>!!h.indoorPost===post).length*2;
+    const after=floor.guards.filter(h=>!!h.indoorPost===post).length;
+    assert.equal(after,Math.round(before*keep));
+   }
    const grid=floor.navigation.grid;
    for(const h of added){
     const col=Math.floor((h.x-grid.x)/grid.step),row=Math.floor((h.y-grid.y)/grid.step);
@@ -1348,7 +1351,7 @@ test('approximately one third of all building enemies are commanders without add
   s.api.setup();const guards=s.api.world.floors.flatMap(f=>f.guards);
   const commanders=guards.filter(h=>h.indoorCommander);
   assert.equal(commanders.length,Math.round(guards.length/3));
-  assert.ok(guards.length>=40&&guards.length<=64,'doubled building population remains bounded');
+  assert.ok(guards.length>=26&&guards.length<=42,'reduced building population remains bounded');
   patrolCommanders+=commanders.filter(h=>!h.indoorPost).length;
   postCommanders+=commanders.filter(h=>h.indoorPost).length;
  }
@@ -1564,7 +1567,7 @@ test('alarm adds one bounded offscreen entrance detail, covering every ground-fl
   w.alarm.active=true;
   for(let i=0;i<10;i++)s.api.entranceGuards(.3);
   const guards=f.guards.filter(h=>h.indoorEntranceGuard);
-  assert.ok(guards.length===10||guards.length===12);
+  assert.ok(guards.length===6||guards.length===7);
   assert.equal(s.sandbox.humans.length,total+guards.length);
   assert.equal(new Set(guards.map(h=>h.indoorEntranceSlot.gate)).size,f.openings.length);
   for(const h of guards){
@@ -1584,7 +1587,7 @@ test('entrance guards wait while visible or blocked and never spawn in other sta
  const s=alarmWorld(),w=s.api.world,f=w.floors[0],total=s.sandbox.humans.length;
  w.alarm.active=true;s.sandbox.cam=0;s.sandbox.H=14000;
  s.api.entranceGuards(.3);const count=w.alarm.entranceGuards.pending.length;
- assert.ok(count===10||count===12);assert.equal(s.sandbox.humans.length,total);
+ assert.ok(count===6||count===7);assert.equal(s.sandbox.humans.length,total);
  s.sandbox.H=720;s.sandbox.hitsM=()=>true;s.api.entranceGuards(.3);
  assert.equal(w.alarm.entranceGuards.pending.length,count,'solid terrain defers all candidates');
  s.sandbox.hitsM=()=>false;s.sandbox.stageMode='base';s.api.entranceGuards(.3);

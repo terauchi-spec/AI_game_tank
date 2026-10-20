@@ -1143,8 +1143,8 @@ function setupInfiltrationWorld(){
       doors,windows:raw.windows.map(openingPoint),guards,postGuards,
       guardPostId:raw.postRoomId,walls:wallRects,props,lightFixtures,navigation});
   }
-  // Double the roster after layout generation so rooms, furniture and routes stay unchanged.
-  for(const floor of indoorWorld.floors)indoorDoubleGuardRoster(floor);
+  // Scale the former doubled roster without changing rooms, furniture or patrol routes.
+  for(const floor of indoorWorld.floors)indoorScaleGuardRoster(floor);
   // Replace approximately one third of the existing building guards, including patrols.
   const commanderPool=indoorShuffle(humans.slice(),R);
   for(const h of commanderPool.slice(0,Math.round(commanderPool.length/3))){
@@ -1164,9 +1164,16 @@ function setupInfiltrationWorld(){
   rebuildSpatialGrid();
   say('拠点潜入：廊下の物資に身を隠し、重要資料3箇所を回収せよ');
 }
-function indoorDoubleGuardRoster(floor){
+function indoorScaleGuardRoster(floor){
  const originals=floor.guards.slice(),grid=floor.navigation.grid;
- for(const source of originals){
+ const mobile=originals.filter(h=>!h.indoorPost),posts=originals.filter(h=>h.indoorPost),sources=[];
+ for(const [group,keep] of [[mobile,.6],[posts,.7]]){
+  const additional=Math.round(group.length*2*keep)-group.length;
+  // Keep the original entrance patrols; distribute extra mobile guards inside the building.
+  const pool=group.filter(h=>!h.indoorEntrancePatrol).concat(group.filter(h=>h.indoorEntrancePatrol));
+  for(let i=0;i<additional;i++)sources.push(pool[Math.floor(i*pool.length/additional)]);
+ }
+ for(const source of sources){
   const index=source.indoorPost||source.indoorEntrancePatrol?0:Math.floor(source.path.length/2);
   const anchor=source.path[index]||source,cell=indoorGuardCell(floor.navigation,anchor);
   const origin=indoorGridPoint(grid,anchor),ox=origin%grid.cols,oy=(origin/grid.cols)|0;
@@ -1216,7 +1223,7 @@ function indoorUpdateEntranceGuards(dt){
  const floor=indoorWorld.floors[0],alarm=indoorWorld.alarm;
  if(!floor?.openings?.length)return;
  if(!alarm.entranceGuards){
-  const total=(5+Math.floor(R()*2))*2,pending=[];
+  const total=Math.round((5+Math.floor(R()*2))*2*.6),pending=[];
   for(let i=0;i<total;i++)pending.push({gate:i%floor.openings.length,seat:Math.floor(i/floor.openings.length)});
   alarm.entranceGuards={pending,checkT:0};
  }

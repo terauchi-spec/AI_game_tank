@@ -146,7 +146,7 @@ test('entrances are broad unobstructed openings and existing guards patrol acros
  assert.equal(f.doors.filter(q=>q.outer).length,0);
  assert.equal(f.openings[0].w,360);
  assert.equal(h.api.world.exits[0].x,f.openings[0].x);
- assert.equal(f.guards.filter(q=>q.indoorEntrancePatrol).length,4);
+ assert.equal(f.guards.filter(q=>q.indoorEntrancePatrol).length,2);
  for(const gate of f.openings){
   for(let x=gate.x-gate.w/2+20;x<gate.x+gate.w/2-20;x+=10)
    assert.ok(!f.walls.some(w=>x>=w.x&&x<=w.x+w.w&&gate.y>=w.y&&gate.y<=w.y+w.h));
