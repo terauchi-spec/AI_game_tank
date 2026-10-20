@@ -1255,7 +1255,7 @@ function alarmWorld(seed=1771){
  vm.createContext(sandbox);
  vm.runInContext(source+`;setupInfiltrationWorld();setupInfiltrationMission();
   indoorGuardSeesPlayer=()=>false;
-  api={hearExplosion:indoorHearExplosion,postChats:indoorUpdatePostChats,lightLevel:indoorLightLevel,seesAlly:indoorGuardSeesAlly,allyCombat:indoorUpdateAllyCombat,selectSweep:indoorSelectSweepGoal,sweepPoints:indoorAlarmSweepPoints,reinforce:indoorReplenishGuards,spawnPoint:indoorReinforcementPoint,get world(){return indoorWorld;},record:indoorRecordGuardDiscovery,begin:indoorStartGuardPursuit,
+  api={entranceGuards:indoorUpdateEntranceGuards,hearExplosion:indoorHearExplosion,postChats:indoorUpdatePostChats,lightLevel:indoorLightLevel,seesAlly:indoorGuardSeesAlly,allyCombat:indoorUpdateAllyCombat,selectSweep:indoorSelectSweepGoal,sweepPoints:indoorAlarmSweepPoints,reinforce:indoorReplenishGuards,spawnPoint:indoorReinforcementPoint,get world(){return indoorWorld;},record:indoorRecordGuardDiscovery,begin:indoorStartGuardPursuit,
    updateMission:updateInfiltrationMission,update:updateInfiltrationGuardAI,finish:indoorFinishGuardSearch,sweep:indoorBeginAlarmSweep,
    draw:drawInfiltrationMission,setup:setupInfiltrationWorld,chats:indoorUpdateAlarmChats,
    cancelChat:indoorCancelAlarmChat,scanBodies:indoorScanStunnedGuards,level:indoorAlarmLevel,weapon:indoorUpdateCommanderWeapon,setVisible:h=>{indoorGuardSeesPlayer=q=>q===h;}};`,sandbox);
@@ -1516,6 +1516,55 @@ test('completed document region turns green briefly and fades away',()=>{
  s.labels.length=0;s.api.draw();assert.ok(s.labels.includes('回収完了'));
  s.api.updateMission(.6);assert.equal(q.collectedT,0);
  s.labels.length=0;s.api.draw();assert.ok(!s.labels.includes('回収完了'),'completed region disappears');
+});
+
+test('alarm adds one bounded offscreen entrance detail, covering every ground-floor exit',()=>{
+ for(const seed of [1771,14,28,67,91]){
+  const s=alarmWorld(seed),w=s.api.world,f=w.floors[0],total=s.sandbox.humans.length;
+  s.api.entranceGuards(.3);assert.equal(s.sandbox.humans.length,total,'no guards before an alarm');
+  w.alarm.active=true;
+  for(let i=0;i<10;i++)s.api.entranceGuards(.3);
+  const guards=f.guards.filter(h=>h.indoorEntranceGuard);
+  assert.ok(guards.length>=5&&guards.length<=6);
+  assert.equal(s.sandbox.humans.length,total+guards.length);
+  assert.equal(new Set(guards.map(h=>h.indoorEntranceSlot.gate)).size,f.openings.length);
+  for(const h of guards){
+   const gate=f.openings[h.indoorEntranceSlot.gate];
+   assert.equal(h.indoorFloor,1);assert.equal(h.indoorAlert.phase,'sweep');
+   assert.ok(Math.hypot(h.x-gate.x,h.y-gate.y)<450,'guards stay near their assigned exit');
+   assert.ok(h.x<s.sandbox.camX-100||h.x>s.sandbox.camX+940||h.y<s.sandbox.cam-100||h.y>s.sandbox.cam+820);
+   const home={...h.indoorEntranceHome};
+   s.api.update(h,.2);assert.equal(h.x,home.x);assert.equal(h.y,home.y,'watch instead of joining the interior sweep');
+   s.api.begin(h);s.api.finish(h);
+   assert.deepEqual({...h.indoorAlert.sweepGoal},home,'return to the gate after pursuit and search');
+  }
+  assert.equal(w.alarm.entranceGuards.pending.length,0);
+ }
+});
+test('entrance guards wait while visible or blocked and never spawn in other stages',()=>{
+ const s=alarmWorld(),w=s.api.world,f=w.floors[0],total=s.sandbox.humans.length;
+ w.alarm.active=true;s.sandbox.cam=0;s.sandbox.H=14000;
+ s.api.entranceGuards(.3);const count=w.alarm.entranceGuards.pending.length;
+ assert.ok(count>=5&&count<=6);assert.equal(s.sandbox.humans.length,total);
+ s.sandbox.H=720;s.sandbox.hitsM=()=>true;s.api.entranceGuards(.3);
+ assert.equal(w.alarm.entranceGuards.pending.length,count,'solid terrain defers all candidates');
+ s.sandbox.hitsM=()=>false;s.sandbox.stageMode='base';s.api.entranceGuards(.3);
+ assert.equal(s.sandbox.humans.length,total);
+ s.sandbox.stageMode='indoor';s.sandbox.state='pause';s.api.entranceGuards(.3);
+ assert.equal(s.sandbox.humans.length,total);
+ s.sandbox.state='play';s.api.entranceGuards(.3);
+ assert.equal(f.guards.filter(h=>h.indoorEntranceGuard).length,count);
+ s.api.setup();assert.equal(s.api.world.alarm.entranceGuards,undefined,'restart clears the detail');
+});
+test('dead entrance guards are replaced offscreen at an exit and keep their watch duty',()=>{
+ const s=alarmWorld(),w=s.api.world,f=w.floors[0];w.alarm.active=true;s.api.entranceGuards(.3);
+ const dead=f.guards.find(h=>h.indoorEntranceGuard),total=s.sandbox.humans.length;
+ const index=f.guards.indexOf(dead);dead.alive=false;
+ s.api.reinforce(.3);const guard=f.guards[index];
+ assert.notEqual(guard,dead);assert.equal(guard.indoorEntranceGuard,true);assert.equal(guard.indoorWhite,true);
+ assert.equal(guard.indoorEntranceSlot,dead.indoorEntranceSlot);
+ assert.equal(guard.indoorAlert.sweepGoal,guard.indoorEntranceHome);
+ assert.equal(s.sandbox.humans.length,total,'replacement never grows the detail');
 });
 
 test('infiltration deaths are replaced offscreen by white guards without growing the roster',()=>{

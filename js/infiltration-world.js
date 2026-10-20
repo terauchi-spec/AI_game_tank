@@ -1163,6 +1163,43 @@ function setupInfiltrationWorld(){
   say('拠点潜入：廊下の物資に身を隠し、重要資料3箇所を回収せよ');
 }
 // Keep the original roster slots: killed reinforcements are replaced too.
+function indoorEntranceGuardPoint(floor,slot){
+ const gate=floor.openings[slot.gate];if(!gate)return null;
+ // Small, bounded exterior candidates; never materialize in the camera margin.
+ for(let attempt=0;attempt<5;attempt++){
+  const q={x:gate.x+(slot.seat%3-1)*96+(attempt===3?-32:attempt===4?32:0),
+   y:gate.y+gate.side*(112+Math.floor(slot.seat/3)*80+attempt*40)};
+  if(q.x<16||q.x>WW-16||q.y<16||q.y>WH-16)continue;
+  if(q.x>=camX-100&&q.x<=camX+W+100&&q.y>=cam-100&&q.y<=cam+H+100)continue;
+  if(D(q,p)<160||hitsM(q.x,q.y,10))continue;
+  if(floor.guards.some(h=>h.alive&&D(h,q)<42)||bombs.some(b=>D(b,q)<120))continue;
+  return q;
+ }
+ return null;
+}
+function indoorUpdateEntranceGuards(dt){
+ if(stageMode!=='indoor'||state!=='play'||!indoorWorld?.alarm?.active)return;
+ const floor=indoorWorld.floors[0],alarm=indoorWorld.alarm;
+ if(!floor?.openings?.length)return;
+ if(!alarm.entranceGuards){
+  const total=5+Math.floor(R()*2),pending=[];
+  for(let i=0;i<total;i++)pending.push({gate:i%floor.openings.length,seat:Math.floor(i/floor.openings.length)});
+  alarm.entranceGuards={pending,checkT:0};
+ }
+ const wave=alarm.entranceGuards;if(!wave.pending.length)return;
+ wave.checkT-=dt;if(wave.checkT>0)return;wave.checkT=.25;
+ for(let i=wave.pending.length-1;i>=0;i--){
+  const slot=wave.pending[i],point=indoorEntranceGuardPoint(floor,slot);if(!point)continue;
+  const gate=floor.openings[slot.gate];
+  const guard={...point,path:[{...point}],loop:false,wi:0,dir:1,stk:0,
+   alive:true,elite:false,commander:null,st:0,sus:0,lost:0,cd:R()*1.2,burstLeft:0,
+   face:gate.side>0?-Math.PI/2:Math.PI/2,target:null,patrolMode:'post',zoneHeavy:'indoor',
+   indoorGuard:true,indoorFloor:1,indoorCommander:false,frontCommander:false,
+   indoorEntranceGuard:true,indoorEntranceSlot:slot,indoorEntranceHome:{...point}};
+  humans.push(guard);floor.guards.push(guard);indoorBeginAlarmSweep(guard);
+  wave.pending.splice(i,1);
+ }
+}
 function indoorReinforcementPoint(floor){
  const points=indoorAlarmSweepPoints(floor);if(!points?.length)return null;
  const start=(floor.reinforcementCursor||0)%points.length;
@@ -1182,7 +1219,7 @@ function indoorReplenishGuards(dt){
  for(const floor of indoorWorld.floors)for(let i=0;i<floor.guards.length;i++){
   const dead=floor.guards[i];
   if(dead.alive||dead.sniperFallT>0)continue;
-  const point=indoorReinforcementPoint(floor);if(!point)continue;
+  const point=dead.indoorEntranceGuard?indoorEntranceGuardPoint(floor,dead.indoorEntranceSlot):indoorReinforcementPoint(floor);if(!point)continue;
   // Existing patrol routes have real door crossings; rejoin one without cutting walls.
   const patrolGuard=floor.guards.find(h=>h.path?.length>1);
   const path=patrolGuard?.path||[{x:point.x,y:point.y}];
@@ -1191,6 +1228,10 @@ function indoorReplenishGuards(dt){
    face:dead.face||0,target:null,patrolMode:'axis',zoneHeavy:'indoor',
    indoorGuard:true,indoorFloor:floor.number,indoorWhite:true,
    indoorCommander:false,frontCommander:false};
+  if(dead.indoorEntranceGuard){
+   guard.indoorEntranceGuard=true;guard.indoorEntranceSlot=dead.indoorEntranceSlot;
+   guard.indoorEntranceHome={...point};guard.path=[{...point}];guard.patrolMode='post';
+  }
   floor.guards[i]=guard;
   const slot=humans.indexOf(dead);if(slot>=0)humans[slot]=guard;else humans.push(guard);
   const post=floor.postGuards?.indexOf(dead)??-1;if(post>=0)floor.postGuards.splice(post,1);
@@ -1417,6 +1458,7 @@ function drawInfiltrationPostChats(){
 // Alarm conversations use dedicated fields: the outdoor chat loop intentionally
 // cancels chats for suspicious soldiers, so it must remain untouched.
 function indoorAlarmChatEligible(h){
+ if(h?.indoorEntranceGuard)return false;
  return !!(h?.indoorGuard&&h.alive&&!h.st&&!(h.chatT>0)&&h.sus>0&&
   ['sweep','search'].includes(h.indoorAlert?.phase)&&!(h.stun>0)&&
   !(h.stunRecover>0)&&!h.houndPinned&&!(h.blastAirT>0));
@@ -1525,15 +1567,16 @@ function indoorBeginAlarmSweep(h){
  const floor=indoorWorld?.floors[h.indoorFloor-1],points=floor&&indoorAlarmSweepPoints(floor);
  if(!h.indoorGuard||!h.alive||h.stun>0||h.stunRecover>0||h.houndPinned||h.blastAirT>0||!points)return false;
  const nav=floor.navigation,cell=indoorGuardCell(nav,h);
- if(cell<0)return false;
- const visited=new Uint16Array(35);visited[cell]=1;
+ if(cell<0&&!h.indoorEntranceGuard)return false;
+ const visited=new Uint16Array(35);if(cell>=0)visited[cell]=1;
  h.indoorAlert={phase:'sweep',lastSeen:{x:h.x,y:h.y},trail:[],lastDir:null,
   sightCheckT:0,visible:false,remaining:0,sweepCell:cell,sweepPrevious:-1,
   sweepVisits:visited,sweepGoal:{x:h.x,y:h.y},sweepWait:0,sweepTravel:9,
   sweepOrder:(floor.guards||[]).indexOf(h)};
  h.indoorReturn=null;h.indoorNotice=null;h.st=0;h.target=null;
  h.sus=1;h.susMax=1;h.lost=0;h.burstLeft=0;h.plantT=0;
- indoorSelectSweepGoal(h,h.indoorAlert,floor,points);
+ if(h.indoorEntranceGuard)h.indoorAlert.sweepGoal=h.indoorEntranceHome;
+ else indoorSelectSweepGoal(h,h.indoorAlert,floor,points);
  return true;
 }
 function indoorAlarmLevel(alarm=indoorWorld?.alarm){
@@ -1617,6 +1660,12 @@ function indoorUpdateCommanderWeapon(h,point,visible,paused,dt,target=p){
  return true;
 }
 function indoorUpdateAlarmSweep(h,a,dt){
+ if(h.indoorEntranceGuard){
+  const home=h.indoorEntranceHome;
+  if(D(h,home)>14)indoorMoveGuardTo(h,home,dt,62);
+  else h.face+=dt*.45;
+  return;
+ }
  const floor=indoorWorld.floors[h.indoorFloor-1],points=indoorAlarmSweepPoints(floor);
  h.sus=1;h.susMax=1;a.sweepTravel-=dt;
  const distance=D(h,a.sweepGoal);
@@ -2228,6 +2277,7 @@ function updateInfiltrationMission(dt){
   const detected=playerDetectedNow();
   m.detected=detected;
   indoorReplenishGuards(dt);
+  indoorUpdateEntranceGuards(dt);
   updateInfiltrationDoors(dt);
   indoorUpdatePostChats(dt);
   indoorUpdateAlarmChats(dt);
