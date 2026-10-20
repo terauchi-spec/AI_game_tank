@@ -224,10 +224,10 @@ test('automatic doors have identical slim 6px thickness in both orientations',()
  const doors=[{...q,vertical:true,open:0,kind:'room-hall'},
    {...q,x:600,vertical:false,open:0,kind:'room-room'}];
  const floor={footprint:{y:100,h:850},windows:[],doors};
- const drawer=new Function('g','indoorWorld','drawInfiltrationProps','W','H','INDOOR_SCALE_X','INDOOR_SCALE_Y',
+ const drawer=new Function('drawInfiltrationDoorPanels','g','indoorWorld','drawInfiltrationProps','W','H','INDOOR_SCALE_X','INDOOR_SCALE_Y',
   'INDOOR_DOOR_WIDTH','INDOOR_DOOR_THICKNESS',
   extract('drawInfiltrationOpenings')+'\nreturn drawInfiltrationOpenings;')(
-  g,{floors:[floor]},()=>{},840,720,1,1.75,84,thickness
+  ()=>false,g,{floors:[floor]},()=>{},840,720,1,1.75,84,thickness
  );
  drawer(0,250);
  assert.equal(fills.length,4,'two sliding panels per closed door');
@@ -245,6 +245,40 @@ test('automatic doors have identical slim 6px thickness in both orientations',()
  entities[0].x=470;updater(.3);assert.equal(cover.noHit,false,'closes on departure');
 });
 
+test('automatic door WebP leaves retract without stretching and reuse the sprite in both orientations',()=>{
+ const fs=require('node:fs'),path=require('node:path'),src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
+ const from=src.indexOf('function drawInfiltrationDoorPanels('),to=src.indexOf('function drawInfiltrationOpenings(',from);
+ const image={naturalWidth:512,naturalHeight:75},calls=[],rotations=[],requests=[];
+ const g={save(){},restore(){},translate(){},rotate:a=>rotations.push(a),drawImage:(...a)=>calls.push(a)};
+ const draw=new Function('g','indoorPropImage','INDOOR_DOOR_THICKNESS',src.slice(from,to)+';return drawInfiltrationDoorPanels;')(g,key=>{requests.push(key);return image;},6);
+ for(const vertical of [false,true])for(const open of [0,.5]){
+  const half=vertical?73.5:42,part=half*(1-open),before=calls.length;
+  assert.equal(draw({x:100,y:100,vertical},open,half,part),true);
+  const [left,right]=calls.slice(before);assert.equal(left[0],image);assert.equal(right[0],image);
+  assert.deepEqual(left.slice(1),[256*open,0,256*(1-open),75,-half,-5,part,10]);
+  assert.deepEqual(right.slice(1),[256,0,256*(1-open),75,half-part,-5,part,10]);
+ }
+ assert.deepEqual(rotations,[Math.PI/2,Math.PI/2]);
+ assert.ok(requests.every(k=>k==='automatic_door'));
+});
+test('automatic door rendering skips offscreen and fully retracted panels and keeps a loading fallback',()=>{
+ const fs=require('node:fs'),path=require('node:path'),src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
+ const from=src.indexOf('function drawInfiltrationDoorPanels('),to=src.indexOf('function drawInfiltrationAlarmEyes(',from);
+ const calls=[],fills=[],requests=[],image={naturalWidth:512,naturalHeight:75};let ready=false;
+ const g=new Proxy({drawImage:(...a)=>calls.push(a),fillRect:(...a)=>fills.push(a)},{get:(o,k)=>k in o?o[k]:()=>{}});
+ const floor={footprint:{y:0,h:800},windows:[],doors:[{x:200,y:200,open:0},{x:300,y:200,open:1},{x:200,y:2000,open:0}]};
+ const draw=new Function('g','indoorPropImage','indoorWorld','drawInfiltrationProps','W','H','INDOOR_SCALE_X','INDOOR_SCALE_Y','INDOOR_DOOR_WIDTH','INDOOR_DOOR_THICKNESS',
+  src.slice(from,to)+';return drawInfiltrationOpenings;')(g,key=>{requests.push(key);return ready?image:null;},{floors:[floor]},()=>{},840,720,1,1.75,84,6);
+ draw(0,0);assert.equal(calls.length,0);assert.equal(fills.length,2);assert.equal(requests.length,1);
+ ready=true;draw(0,0);assert.equal(calls.length,2);assert.equal(fills.length,2);assert.equal(requests.length,2);
+ assert.ok(!src.slice(from,to).includes('createElement'),'no per-door raster canvas');
+});
+test('automatic door asset is one small transparent WebP with no ground padding',()=>{
+ const fs=require('node:fs'),path=require('node:path'),data=fs.readFileSync(path.join(__dirname,'../assets/indoor/automatic_door.webp'));
+ assert.equal(data.toString('ascii',8,12),'WEBP');assert.ok(data.length<20000);
+ assert.ok(data[20]&16,'transparent alpha');
+ assert.equal(1+data.readUIntLE(24,3),512);assert.equal(1+data.readUIntLE(27,3),75);
+});
 test('expanded patrol density and supply items remain separated and keep lanes clear',()=>{
   for(let seed=1;seed<=250;seed++)for(let floorNo=1;floorNo<=2;floorNo++){
     const f=indoorGenerateFloor(floorNo,random(seed*131+floorNo));

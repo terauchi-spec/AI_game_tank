@@ -2604,6 +2604,16 @@ function drawInfiltrationProps(cx,cy){
   }
 }
 
+function drawInfiltrationDoorPanels(q,open,half,part){
+  const image=indoorPropImage('automatic_door');if(!image)return false;
+  const sourceHalf=(image.naturalWidth||image.width)/2,height=image.naturalHeight||image.height;
+  const visible=sourceHalf*(1-open),depth=INDOOR_DOOR_THICKNESS+4;
+  // Crop retracting leaves rather than squeezing the texture as the door opens.
+  g.save();g.translate(q.x,q.y);if(q.vertical)g.rotate(Math.PI/2);
+  g.drawImage(image,sourceHalf-visible,0,visible,height,-half,-depth/2,part,depth);
+  g.drawImage(image,sourceHalf,0,visible,height,half-part,-depth/2,part,depth);
+  g.restore();return true;
+}
 function drawInfiltrationOpenings(cx,cy){
   if(!indoorWorld)return;
   drawInfiltrationProps(cx,cy);
@@ -2628,21 +2638,22 @@ function drawInfiltrationOpenings(cx,cy){
     for(const q of f.doors){
       if(q.x<cx-130||q.x>cx+W+130||q.y<cy-150||q.y>cy+H+150)continue;
       g.save();
-      const panel='#59b9d0';
-      const border='#c5f5ff';
+      const panel='#65695b';
+      const border='#a5a695';
       g.fillStyle=panel;g.strokeStyle=border;g.lineWidth=2;
       const open=Math.max(0,Math.min(1,q.open||0)),half=INDOOR_DOOR_WIDTH/2*(q.vertical?INDOOR_SCALE_Y:INDOOR_SCALE_X);
       const part=half*(1-open),thick=INDOOR_DOOR_THICKNESS,frame=thick/2+4;
+      const textured=part>1&&drawInfiltrationDoorPanels(q,open,half,part);
       if(q.vertical){
         const top=q.y-half,bottom=q.y+half;
-        if(part>1){
+        if(part>1&&!textured){
           g.fillRect(q.x-thick/2,top,thick,part);
           g.fillRect(q.x-thick/2,bottom-part,thick,part);
         }
         g.beginPath();g.moveTo(q.x-frame,top);g.lineTo(q.x-frame,bottom);
         g.moveTo(q.x+frame,top);g.lineTo(q.x+frame,bottom);g.stroke();
       }else{
-        if(part>1){
+        if(part>1&&!textured){
           g.fillRect(q.x-half,q.y-thick/2,part,thick);
           g.fillRect(q.x+half-part,q.y-thick/2,part,thick);
         }
