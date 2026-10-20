@@ -12,7 +12,7 @@ Built-in image_gen mode, one generation per distinct asset, transparent_backgrou
 | Personal lockers | assets/indoor/personal_lockers.webp | 194×384 | 21,888 |
 | Generator | assets/indoor/generator.webp | 253×384 | 28,112 |
 
-Total transfer: 103,808 bytes. Total decoded RGBA: 1,526,784 bytes. Sources were cropped around their opaque silhouette with a small transparent margin, then reduced once using Lanczos with premultiplied alpha and saved at WebP quality 82, alpha quality 100, method 6. Transparent alpha and the cropped source aspect ratio are preserved. Server racks and generators now have full-length footprints of 224 and 232 world pixels respectively (twice the original 112 and 116); sources retain 384 pixels along the long edge. Canvas smoothing uses high quality. There is no runtime image resampling canvas or additional per-frame layout/pathfinding pass.
+Total transfer: 103,808 bytes. Total decoded RGBA: 1,526,784 bytes. Sources were cropped around their opaque silhouette with a small transparent margin, then reduced once using Lanczos with premultiplied alpha and saved at WebP quality 82, alpha quality 100, method 6. Transparent alpha and the cropped source aspect ratio are preserved. Server racks have a full-length footprint of 224 world pixels; generators use 154⅔ world pixels (two thirds of the previous 232px footprint) in a fixed south-facing portrait orientation; sources retain 384 pixels along the long edge. Canvas smoothing uses high quality. There is no runtime image resampling canvas or additional per-frame layout/pathfinding pass.
 
 ## Rooms and placement
 
@@ -70,3 +70,9 @@ Document collection points are adjacent to cabinets, desks, servers, operations 
 The utility room preferentially receives a horizontally spacious room; communications receives another large room. Enlarged equipment may span contiguous tiles within its own room. A bounded local connectivity check preserves doors and walking space. Supplementary furniture is removed from a machinery room when necessary; ordinary cargo is placed elsewhere. The large shell-pallet reservation can use a machinery room only after checking connectivity. All layout checks run during generation.
 
 Infiltration crates retain a 60px world width and now use 40px world height (horizontal 1.5:1). Their artwork and physical hit rectangle share this ratio; other stages' crates are unchanged.
+
+## Destruction and wall foundations
+
+Infiltration furniture uses the existing shared 14px cover-fragment system. Surviving fragments retain the original furniture WebP, source dimensions and orientation. Original floor-prop records point to the surviving fragment group; they cannot redraw the intact object after damage. Fragment canvases are rebuilt only on damage or shared asset changes and otherwise reused. A not-yet-loaded furniture WebP is not committed to a permanent fallback damage cache. Removed fragments immediately lose their hit geometry, and the affected floor's guard grid is rebuilt from live covers and cargo on destruction only. Other stages do not receive these metadata flags.
+
+Indoor walls draw a dark, solid foundation rim behind the wall sprite. Wall fragments retain the indoor wall renderer, so the remaining wall's rim follows the surviving sections. No blur or per-frame shadow raster generation is introduced. Stair movement lock is 0.5 seconds; the landing sanctuary rules are unchanged.

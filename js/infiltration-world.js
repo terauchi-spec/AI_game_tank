@@ -11,7 +11,7 @@ const INDOOR_ROOM_ART={
   quarters:['bed','personal_lockers','desk'],storage:['container','shelf','cabinet'],
   records:['cabinet','desk','shelf'],guard_post:['desk','cabinet','equipment']
 };
-const INDOOR_PROP_LENGTH={weapon_rack:112,server_rack:224,operations_table:144,personal_lockers:106,generator:232};
+const INDOOR_PROP_LENGTH={weapon_rack:112,server_rack:224,operations_table:144,personal_lockers:106,generator:232*2/3};
 const indoorRand=(rng,a,b)=>a+(b-a)*rng();
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -453,8 +453,8 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     for(const scale of large?[1]:[1,.88,.76,.67,.6]){
       const h=INDOOR_PROP_LENGTH[artKind]*scale/INDOOR_SCALE_Y,w=INDOOR_PROP_LENGTH[artKind]*scale*INDOOR_PROP_ASPECT[artKind];
       placementSearch: for(const [pw,ph] of [[w,h],[h*INDOOR_SCALE_Y,w/INDOOR_SCALE_Y]]){
-        // 発電機は横に広い部屋の壁沿いに置き、背後の通行不能な隙間を作らない。
-        if(artKind==='generator'&&pw<ph*INDOOR_SCALE_Y)continue;
+        // 発電機は南向きの原画を回転せず置く。
+        if(artKind==='generator'&&pw>ph*INDOOR_SCALE_Y)continue;
         for(let y=room.y+14;y+ph<=room.y+room.h-14;y+=8)for(let x=room.x+14;x+pw<=room.x+room.w-14;x+=8){
           const o={kind:'cabinet',artKind,roomId:room.id,purpose:room.purpose,primaryAsset:true,zone:'room',x,y,w:pw,h:ph};
           const area=room.tiles.reduce((sum,t)=>sum+Math.max(0,Math.min(x+pw,t.x+t.w)-Math.max(x,t.x))*
@@ -748,7 +748,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     valid.sort((a,b)=>doorDistance(b)-doorDistance(a));
     return valid.length?{room,point:valid[0]}:null;
   }).filter(Boolean);
-  if(intelCandidates.length<INDOOR_FILES_TOTAL)throw Error('家具付近の資料への通行可能な配置が不足');
+  if(intelCandidates.length<2)throw Error('家具付近の資料への通行可能な配置が不足');
   const intel=indoorShuffle(intelCandidates,rng).slice(0,INDOOR_FILES_TOTAL).map(({room,point},i)=>
     ({x:point.x,y:point.y,room:room.name,roomId:room.id,fixtureArt:point.fixture.artKind,id:number+'-'+i,taken:false}));
   // 既存AIのpatrol()へ渡す巡回経路を、建物全体の通行グラフから探索。
@@ -979,7 +979,7 @@ function setupInfiltrationWorld(){
       covers.push(q);wallRects.push(q);
     }
     // 補給物資と室内家具は既存遮蔽判定を利用。描画だけ屋内用に区別。
-    // 固定家具なので、砲撃などがあっても配置グリッドを再生成しない。
+    // 破壊時には共有の破片描画を使い、当たり判定と移動グリッドを同期する。
     const props=[];
     for(const piece of raw.furniture){
       const q=indoorRect(piece,off);
@@ -1208,6 +1208,31 @@ function indoorMakeGuardGrid(raw,off){
  return{x:origin.x,y:origin.y,step,cols,rows,solid,
    parents:new Int32Array(cols*rows),seen:new Uint16Array(cols*rows),
    queue:new Int32Array(cols*rows),epoch:0};
+}
+// 破壊があった階だけ更新。毎フレームのレイアウト再生成は行わない。
+function indoorRefreshDamagedNavigation(x,y,r){
+ if(!indoorWorld)return;
+ for(const floor of indoorWorld.floors){
+  const f=floor.footprint;if(x+r<f.x||x-r>f.x+f.w||y+r<f.y||y-r>f.y+f.h)continue;
+  const grid=floor.navigation.grid;grid.solid.fill(0);grid.seen.fill(0);grid.epoch=0;
+  const rects=[];floor.walls=[];
+  for(const c of covers){
+   if(c.indoorDoor||c.noHit||c.x+c.w<f.x||c.x>f.x+f.w||c.y+c.h<f.y||c.y>f.y+f.h)continue;
+   const rect=coverHitRect(c);if(rect)rects.push(rect);
+   if(c.indoorWall)floor.walls.push(c);
+  }
+  for(const o of objects)if(o.x+o.w>=f.x&&o.x<=f.x+f.w&&o.y+o.h>=f.y&&o.y<=f.y+f.h)rects.push(objectHitRect(o));
+  rects.push(floor.stairObstacle);
+  for(const rect of rects){if(!rect)continue;
+   const x0=Math.max(0,Math.ceil((rect.x-10-grid.x)/grid.step-.5)),x1=Math.min(grid.cols-1,Math.floor((rect.x+rect.w+10-grid.x)/grid.step-.5));
+   const y0=Math.max(0,Math.ceil((rect.y-10-grid.y)/grid.step-.5)),y1=Math.min(grid.rows-1,Math.floor((rect.y+rect.h+10-grid.y)/grid.step-.5));
+   for(let row=y0;row<=y1;row++)for(let col=x0;col<=x1;col++)grid.solid[row*grid.cols+col]=1;
+  }
+  for(const h of floor.guards){
+   for(const a of [h.indoorAlert,h.indoorReturn,h.indoorAllyCombat,h.indoorStairRoute])if(a){a.detour=null;a.replanT=0;a.rescueCooldown=0;}
+   h._nextVisAt=0;h._detectCache=null;
+  }
+ }
 }
 function indoorGridPoint(grid,p){
  const x=Math.floor((p.x-grid.x)/grid.step),y=Math.floor((p.y-grid.y)/grid.step);
@@ -2118,7 +2143,7 @@ function updateInfiltrationMission(dt){
     const target=w.floors[w.currentFloor];
     Object.assign(p,indoorStairLanding(target));
     indoorBeginStairSanctuary(target);
-    w.stairsCooldown=2;w.stairEntryFloor=null;w.stairMoveLock=.3;
+    w.stairsCooldown=2;w.stairEntryFloor=null;w.stairMoveLock=.5;
     m.progress=0;m.current=null;
     cam=Math.max(0,Math.min(WH-H,p.y-H*.6));
     say((w.currentFloor+1)+'階へ移動');sfx('skill');
@@ -2362,7 +2387,7 @@ function drawInfiltrationShellPallet(o){
 function drawInfiltrationPropSprite(o){
   const image=indoorPropImage(o.propArt);if(!image)return false;
   // 拡縮は常に等倍率。万一旧サイズの家具があっても画像を引き伸ばさない。
-  const horizontal=o.w>o.h,iw=image.naturalWidth||image.width,ih=image.naturalHeight||image.height;
+  const horizontal=o.propArt!=='generator'&&o.w>o.h,iw=image.naturalWidth||image.width,ih=image.naturalHeight||image.height;
   const scale=Math.min((horizontal?o.h:o.w)/iw,(horizontal?o.w:o.h)/ih),w=iw*scale,h=ih*scale;
   g.save();g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
   if(horizontal){
@@ -2379,6 +2404,12 @@ function drawInfiltrationProps(cx,cy){
     for(const o of floor.props){
       const {x,y,w,h}=o;
       if(x>cx+W+50||x+w<cx-50||y>cy+H+50||y+h<cy-50)continue;
+      if(o.indoorDamageGroup){
+        if(!indoorPropImage(o.propArt))continue;
+        const fragment=o.indoorDamageGroup.primaryFragment;
+        if(fragment)drawCoverFragmentGroup(fragment);
+        continue;
+      }
       if(!indoorPropImage(o.propArt))continue;
       g.save();g.fillStyle='rgba(0,0,0,.26)';g.fillRect(x+4,y+5,w,h);
       drawInfiltrationPropSprite(o);

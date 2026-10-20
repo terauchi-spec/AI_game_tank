@@ -51,7 +51,7 @@ test('five corridor shapes and differently sized rooms remain navigable at doubl
   const f=indoorGenerateFloor(n,random(seed*83+n));
   patterns.add(f.pattern);
   assert.equal(f.rooms.length,10);assert.ok(f.guards.length>=6&&f.guards.length<=8,'6–8 patrol guards per floor');
-  assert.equal(f.intel.length,3,'generator candidates');
+  assert.ok(f.intel.length>=2&&f.intel.length<=3,'each floor has enough candidates for its maximum two documents');
   assert.ok(f.rooms.some(r=>r.size===1));
   assert.ok(f.rooms.some(r=>r.size>=3));
   assert.equal(f.rooms.reduce((s,r)=>s+r.tiles.length,0)+f.corridors.length,35);
@@ -177,7 +177,7 @@ test('indoor wall artwork covers the full collision wall length without visible 
  assert.ok(begin>=0&&end>begin,'find actual canvas cover rendering function');
  const sourceFunction=source.slice(begin,end+2);
  const calls=[],g={
-   save(){},restore(){},imageSmoothingEnabled:true,
+   save(){},restore(){},fillRect(){},imageSmoothingEnabled:true,
    drawImage(...a){calls.push(a);}
  };
  const image={naturalWidth:100,naturalHeight:200};

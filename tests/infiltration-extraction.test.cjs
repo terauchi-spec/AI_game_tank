@@ -200,10 +200,10 @@ test('stairs have three solid sides, require entering at the mouth, and switch o
 });
 
 
-test('stair arrival freezes only the infiltration player for 0.3 seconds',()=>{
+test('stair arrival freezes only the infiltration player for 0.5 seconds',()=>{
  const h=harness(),c=h.c,w=h.api.world,b=h.api.stairBounds(w.floors[0].stair,1);
  Object.assign(c.p,{x:w.floors[0].stair.x,y:b.y+b.h-12});h.api.mission(.01);
- c.p.y=b.y+20;h.api.mission(.01);assert.equal(w.stairMoveLock,.3);
+ c.p.y=b.y+20;h.api.mission(.01);assert.equal(w.stairMoveLock,.5);
  const index=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),start=index.indexOf('function mv(');
  Object.assign(c,{mazeComparisonEnemyFrozen:()=>false,terrainMoveScale:()=>1,hitsC:()=>false,
   enemyTankObjectBlocked:()=>false,tankBlocked:()=>false,enemyUnitBlocked:()=>false,frontlineMovementTop:()=>0});
@@ -211,7 +211,7 @@ test('stair arrival freezes only the infiltration player for 0.3 seconds',()=>{
  const x=c.p.x,y=c.p.y;
  c.mv(c.p,5,5,8);assert.equal(c.p.x,x);assert.equal(c.p.y,y);
  const ally={x:100,y:c.p.y};c.mv(ally,5,0,8);assert.equal(ally.x,105);
- h.api.mission(.29);c.mv(c.p,5,0,8);assert.equal(c.p.x,x);
+ h.api.mission(.49);c.mv(c.p,5,0,8);assert.equal(c.p.x,x);
  h.api.mission(.011);c.mv(c.p,5,0,8);assert.equal(c.p.x,x+5);
- w.stairMoveLock=.3;c.stageMode='base';c.mv(c.p,5,0,8);assert.equal(c.p.x,x+10);
+ w.stairMoveLock=.5;c.stageMode='base';c.mv(c.p,5,0,8);assert.equal(c.p.x,x+10);
 });

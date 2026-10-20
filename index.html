@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.20.0947</title>
+<title>こっそり戦車大作戦 2026.10.20.1011</title>
 
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
@@ -864,7 +864,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.20.0947',FILE_CREATED_AT='2026/10/20 09:47',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.20.1011',FILE_CREATED_AT='2026/10/20 10:11',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -1229,7 +1229,7 @@ function fitAspect(im,maxW,maxH){
 function centerRect(cx,cy,w,h){return{x:cx-w/2,y:cy-h/2,w,h};}
 function coverVisualRect(c){
  if(!c)return c;
- if(c.indoorProp)return{x:c.x,y:c.y,w:c.w,h:c.h}; // 屋内固定家具の当たり判定
+ if(c.indoorProp&&!c.fr)return{x:c.x,y:c.y,w:c.w,h:c.h}; // 屋内固定家具の当たり判定
  // NOTE: historical name. This function represents the intact cover collision bounds,
  // not necessarily the complete rendered sprite bounds.
  if(c.fr){
@@ -1284,6 +1284,7 @@ function coverHitRect(c){return c?.frontAntenna?{x:c.x,y:c.y,w:c.w,h:c.h}:coverV
 function coverSpriteRect(c){
  if(!c)return c;
  if(c.fr)return{x:c.x,y:c.y,w:c.w,h:c.h};
+ if(c.indoorProp)return{x:c.x,y:c.y,w:c.w,h:c.h};
  if(c.playerBuilt)return{x:c.x,y:c.y,w:c.w,h:c.h};
  const cx=c.x+c.w/2,cy=c.y+c.h/2,hor=c.w>=c.h;
  if(c.kd===0){const long=hor?c.w:c.h,short=Math.max(hor?c.h:c.w,long*.34),len=long*1.08,th=short*1.08;return hor?centerRect(cx,cy,len,th):centerRect(cx,cy,th,len);}
@@ -1523,6 +1524,10 @@ function naturalCoverImage(c,key){
 }
 function drawCoverAsset(c){
  if(c.frontAntenna)return true;
+ if(c.indoorProp)return drawInfiltrationPropSprite(c);
+ if(c.indoorWall){
+  g.save();g.fillStyle='rgba(0,0,0,.72)';g.fillRect(c.x-2,c.y,c.w+4,c.h+4);g.restore();
+ }
  const cx=c.x+c.w/2,cy=c.y+c.h/2,hor=c.w>=c.h;
  if(c.playerBuilt)return drawBuiltConcrete(c);
  if(c.kd===0){
@@ -1651,7 +1656,7 @@ function markFragmentRenderDirty(group,f){
  const d={x0:Math.floor(f.x)-2,y0:Math.floor(f.y)-2,x1:Math.ceil(f.x+f.w)+2,y1:Math.ceil(f.y+f.h)+2};
  if(group.dirty){const p=group.dirty;p.x0=Math.min(p.x0,d.x0);p.y0=Math.min(p.y0,d.y0);p.x1=Math.max(p.x1,d.x1);p.y1=Math.max(p.y1,d.y1);}else group.dirty=d;
 }
-function markFragmentRenderRemoved(f){const group=f._fragmentGroup;if(!group)return;group.fragments[f._fragmentIndex]=null;group.remaining--;markFragmentRenderDirty(group,f);if(group.remaining===0){evictFragmentRender(group);group.fragments.length=0;}}
+function markFragmentRenderRemoved(f){const group=f._fragmentGroup;if(!group)return;group.fragments[f._fragmentIndex]=null;group.remaining--;if(group.indoorProp&&group.primaryFragment===f)group.primaryFragment=group.fragments.find(Boolean)||null;markFragmentRenderDirty(group,f);if(group.remaining===0){evictFragmentRender(group);group.fragments.length=0;}}
 function drawCoverFragmentGroup(f){
  const group=f._fragmentGroup;if(!group){drawCoverFragment(f);return;}
  if(group.lastDraw===fragmentDrawFrame)return;
@@ -1672,6 +1677,8 @@ function drawCoverFragmentGroup(f){
 }
 function drawCoverFragment(c){
  const src={kd:c.kd,x:c.ox0??c.x,y:c.oy0??c.y,w:c.ow0??c.ow??c.w,h:c.oh0??c.oh??c.h,playerBuilt:!!c.pb};
+ if(c.indoorProp){src.indoorProp=true;src.propArt=c.propArt;}
+ if(c.indoorWall)src.indoorWall=true;
  g.save();
  // A tiny overlap prevents antialiasing seams between adjacent surviving tiles.
  const bleed=.75;g.beginPath();g.rect(c.x-bleed,c.y-bleed,c.w+bleed*2,c.h+bleed*2);g.clip();
@@ -5688,6 +5695,7 @@ function carve(x,y,r,credit=false,objectDamageSource='impact'){
   const fr=coverFragmentRect(c);
   const pal=FRAG_COLORS[c.kd]||[CCol[c.kd]||'#8a7a55'],tile=14,ox=fr.x,oy=fr.y,ow=fr.w,oh=fr.h;
   coverChanged=true;const fragmentGroup={x:Math.floor(ox)-2,y:Math.floor(oy)-2,w:Math.ceil(ox+ow)-Math.floor(ox)+4,h:Math.ceil(oy+oh)-Math.floor(oy)+4,fragments:[],remaining:0,revision:0,lastDraw:-1};
+  if(c.indoorProp){fragmentGroup.indoorProp=true;c.indoorDamageGroup=fragmentGroup;}
   let keptArea=0;
   for(let a=ox;a<ox+ow;a+=tile)for(let b=oy;b<oy+oh;b+=tile){
    const w=Math.min(tile,ox+ow-a),h=Math.min(tile,oy+oh-b),mx=a+w/2,my=b+h/2,dist=Math.hypot(mx-x,my-y);
@@ -5715,12 +5723,14 @@ function carve(x,y,r,credit=false,objectDamageSource='impact'){
     if(hx2<=hx||hy2<=hy)f.noHit=1;
     else{f.hx=hx;f.hy=hy;f.hw=hx2-hx;f.hh=hy2-hy;}
    }else f.noHit=1;
+   if(c.indoorProp){f.indoorProp=true;f.propArt=c.propArt;if(!fragmentGroup.primaryFragment)fragmentGroup.primaryFragment=f;}
+   if(c.indoorWall)f.indoorWall=true;
    f._fragmentGroup=fragmentGroup;f._fragmentIndex=fragmentGroup.fragments.length;fragmentGroup.fragments.push(f);fragmentGroup.remaining++;out.push(f);
   }
   const removedHere=Math.max(0,ow*oh-keptArea);removedArea+=removedHere;if(!c.playerBuilt&&!c.pb)styleRemoved+=removedHere;if(removedHere>0&&objectDamageSource==='cannonBlast')cannonDebris.push({x,y,col:(FRAG_COLORS[c.kd]||[CCol[c.kd]||'#8a7a55'])[0],n:Math.max(2,Math.min(6,Math.round(removedHere/2600)))});
  }
  // 形が変わらない接触では配列を差し替えず、空間グリッドの全再構築を避ける。
- if(coverChanged)covers=out;
+ if(coverChanged){covers=out;if(typeof indoorWorld!=='undefined'&&indoorWorld&&stageMode==='indoor')indoorRefreshDamagedNavigation(x,y,r);}
  if(removedArea>0&&objectDamageSource==='cannonBlast')for(const d of cannonDebris)cannonCoverDebris(d.x,d.y,d.col,d.n);
  if(credit&&scoreStats&&!scoreStats.finalized){scoreStats.coverDestroyed+=removedArea;scoreStats.styleDestroyed+=styleRemoved;}
  return removedArea;
@@ -7973,7 +7983,7 @@ function reportGameError(error){
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/canyon.js?v=2026.10.14.1836"></script>
 <script src="js/vegetation.js?v=2026.10.14.1653"></script>
-<script src="js/infiltration-world.js?v=2026.10.20.0947"></script>
+<script src="js/infiltration-world.js?v=2026.10.20.1011"></script>
 <script>
 (function(){
 // iPhone Chrome/Safari: synthetic KeyboardEvent に依存せず、ゲーム内部の入力状態を直接更新する。
