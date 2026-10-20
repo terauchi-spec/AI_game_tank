@@ -2605,13 +2605,14 @@ function drawInfiltrationProps(cx,cy){
 }
 
 function drawInfiltrationDoorPanels(q,open,half,part){
-  const image=indoorPropImage('automatic_door');if(!image)return false;
+  const image=indoorPropImage(q.vertical?'automatic_door':'automatic_door_horizontal');if(!image)return false;
   const sourceHalf=(image.naturalWidth||image.width)/2,height=image.naturalHeight||image.height;
-  const visible=sourceHalf*(1-open),depth=INDOOR_DOOR_THICKNESS+4;
+  const visible=sourceHalf*(1-open),top=-(INDOOR_DOOR_THICKNESS+4)/2;
+  const depth=INDOOR_DOOR_THICKNESS+4+(q.vertical?0:3);
   // Crop retracting leaves rather than squeezing the texture as the door opens.
   g.save();g.translate(q.x,q.y);if(q.vertical)g.rotate(Math.PI/2);
-  g.drawImage(image,sourceHalf-visible,0,visible,height,-half,-depth/2,part,depth);
-  g.drawImage(image,sourceHalf,0,visible,height,half-part,-depth/2,part,depth);
+  g.drawImage(image,sourceHalf-visible,0,visible,height,-half,top,part,depth);
+  g.drawImage(image,sourceHalf,0,visible,height,half-part,top,part,depth);
   g.restore();return true;
 }
 function drawInfiltrationOpenings(cx,cy){
