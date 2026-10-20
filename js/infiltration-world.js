@@ -1143,6 +1143,8 @@ function setupInfiltrationWorld(){
       doors,windows:raw.windows.map(openingPoint),guards,postGuards,
       guardPostId:raw.postRoomId,walls:wallRects,props,lightFixtures,navigation});
   }
+  // Double the roster after layout generation so rooms, furniture and routes stay unchanged.
+  for(const floor of indoorWorld.floors)indoorDoubleGuardRoster(floor);
   // Replace approximately one third of the existing building guards, including patrols.
   const commanderPool=indoorShuffle(humans.slice(),R);
   for(const h of commanderPool.slice(0,Math.round(commanderPool.length/3))){
@@ -1161,6 +1163,38 @@ function setupInfiltrationWorld(){
   patrolRoutesVisible=false;
   rebuildSpatialGrid();
   say('拠点潜入：廊下の物資に身を隠し、重要資料3箇所を回収せよ');
+}
+function indoorDoubleGuardRoster(floor){
+ const originals=floor.guards.slice(),grid=floor.navigation.grid;
+ for(const source of originals){
+  const index=source.indoorPost||source.indoorEntrancePatrol?0:Math.floor(source.path.length/2);
+  const anchor=source.path[index]||source,cell=indoorGuardCell(floor.navigation,anchor);
+  const origin=indoorGridPoint(grid,anchor),ox=origin%grid.cols,oy=(origin/grid.cols)|0;
+  let point=null;
+  // Setup only: reuse the collision grid and keep each new soldier clear of the roster.
+  for(let radius=0;radius<=10&&!point;radius++)for(let dy=-radius;dy<=radius&&!point;dy++)for(let dx=-radius;dx<=radius;dx++){
+   if(Math.max(Math.abs(dx),Math.abs(dy))!==radius)continue;
+   const col=ox+dx,row=oy+dy;
+   if(col<0||col>=grid.cols||row<0||row>=grid.rows||grid.solid[row*grid.cols+col])continue;
+   const q={x:grid.x+(col+.5)*grid.step,y:grid.y+(row+.5)*grid.step};
+   if(indoorGuardCell(floor.navigation,q)!==cell)continue;
+   if(floor.guards.some(h=>Math.hypot(h.x-q.x,h.y-q.y)<24))continue;
+   point=q;break;
+  }
+  // A cramped route sector can use another safe point on the same patrol.
+  if(!point){
+   for(const q of source.path){
+    const id=indoorGridPoint(grid,q);
+    if(id>=0&&!grid.solid[id]&&!floor.guards.some(h=>Math.hypot(h.x-q.x,h.y-q.y)<24)){point={...q};break;}
+   }
+  }
+  point=point||{x:source.x,y:source.y};
+  const guard={...source,...point,indoorDoubled:true,
+   wi:source.indoorPost?0:(index+1)%source.path.length};
+  if(source.indoorPost)guard.path=[{...point}];
+  floor.guards.push(guard);humans.push(guard);
+  if(source.indoorPost)floor.postGuards.push(guard);
+ }
 }
 // Keep the original roster slots: killed reinforcements are replaced too.
 function indoorEntranceGuardPoint(floor,slot){
@@ -1182,7 +1216,7 @@ function indoorUpdateEntranceGuards(dt){
  const floor=indoorWorld.floors[0],alarm=indoorWorld.alarm;
  if(!floor?.openings?.length)return;
  if(!alarm.entranceGuards){
-  const total=5+Math.floor(R()*2),pending=[];
+  const total=(5+Math.floor(R()*2))*2,pending=[];
   for(let i=0;i<total;i++)pending.push({gate:i%floor.openings.length,seat:Math.floor(i/floor.openings.length)});
   alarm.entranceGuards={pending,checkT:0};
  }

@@ -1282,7 +1282,11 @@ test('alarm activation and search never read the hidden player position',()=>{
  Object.defineProperty(s.sandbox.p,'x',{get(){throw Error('hidden player coordinates read');}});
  s.api.record(third);
  const h=world.floors[1].guards[0],visited=new Set();
- for(let i=0;i<800;i++){s.api.update(h,.1);visited.add(h.indoorAlert.sweepCell);}
+ // The larger roster must move together; frozen reservations would artificially occupy sectors.
+ for(let i=0;i<800;i++){
+  for(const guard of world.floors[1].guards)s.api.update(guard,.1);
+  visited.add(h.indoorAlert.sweepCell);
+ }
  assert.ok(visited.size>=4,'search actively visits different connected cells');
  assert.equal(h.indoorAlert.phase,'sweep');assert.equal(world.alarm.active,true);
 });
@@ -1303,13 +1307,33 @@ test('red alarm shading is drawn only when active and its gradient is cached',()
  assert.equal(s.gradients[0].stops[0][1],'rgba(190,22,18,.48)');
  assert.ok(s.rectangles.some(q=>q.r[0]===0&&q.r[1]===0&&q.r[2]===840&&q.r[3]===144));
 });
+test('building patrols and stationary posts double exactly without overlapping walls or soldiers',()=>{
+ for(const seed of [1771,14,28,67,91,2834,3931]){
+  const s=alarmWorld(seed);
+  for(const floor of s.api.world.floors){
+   const originals=floor.guards.filter(h=>!h.indoorDoubled),added=floor.guards.filter(h=>h.indoorDoubled);
+   assert.equal(added.length,originals.length);
+   assert.equal(added.filter(h=>h.indoorPost).length,originals.filter(h=>h.indoorPost).length);
+   const grid=floor.navigation.grid;
+   for(const h of added){
+    const col=Math.floor((h.x-grid.x)/grid.step),row=Math.floor((h.y-grid.y)/grid.step);
+    assert.ok(col>=0&&col<grid.cols&&row>=0&&row<grid.rows);
+    assert.equal(grid.solid[row*grid.cols+col],0);
+    assert.ok(floor.guards.every(other=>other===h||Math.hypot(h.x-other.x,h.y-other.y)>=24),'new soldiers spawn separately');
+    if(h.indoorPost){
+     assert.equal(h.path.length,1);assert.equal(h.path[0].x,h.x);assert.equal(h.path[0].y,h.y);
+    }
+   }
+  }
+ }
+});
 test('approximately one third of all building enemies are commanders without adding guards',()=>{
  const s=alarmWorld();let patrolCommanders=0,postCommanders=0;
  for(let seed=0;seed<50;seed++){
   s.api.setup();const guards=s.api.world.floors.flatMap(f=>f.guards);
   const commanders=guards.filter(h=>h.indoorCommander);
   assert.equal(commanders.length,Math.round(guards.length/3));
-  assert.ok(guards.length>=20&&guards.length<=32,'existing building population remains bounded');
+  assert.ok(guards.length>=40&&guards.length<=64,'doubled building population remains bounded');
   patrolCommanders+=commanders.filter(h=>!h.indoorPost).length;
   postCommanders+=commanders.filter(h=>h.indoorPost).length;
  }
@@ -1525,7 +1549,7 @@ test('alarm adds one bounded offscreen entrance detail, covering every ground-fl
   w.alarm.active=true;
   for(let i=0;i<10;i++)s.api.entranceGuards(.3);
   const guards=f.guards.filter(h=>h.indoorEntranceGuard);
-  assert.ok(guards.length>=5&&guards.length<=6);
+  assert.ok(guards.length===10||guards.length===12);
   assert.equal(s.sandbox.humans.length,total+guards.length);
   assert.equal(new Set(guards.map(h=>h.indoorEntranceSlot.gate)).size,f.openings.length);
   for(const h of guards){
@@ -1545,7 +1569,7 @@ test('entrance guards wait while visible or blocked and never spawn in other sta
  const s=alarmWorld(),w=s.api.world,f=w.floors[0],total=s.sandbox.humans.length;
  w.alarm.active=true;s.sandbox.cam=0;s.sandbox.H=14000;
  s.api.entranceGuards(.3);const count=w.alarm.entranceGuards.pending.length;
- assert.ok(count>=5&&count<=6);assert.equal(s.sandbox.humans.length,total);
+ assert.ok(count===10||count===12);assert.equal(s.sandbox.humans.length,total);
  s.sandbox.H=720;s.sandbox.hitsM=()=>true;s.api.entranceGuards(.3);
  assert.equal(w.alarm.entranceGuards.pending.length,count,'solid terrain defers all candidates');
  s.sandbox.hitsM=()=>false;s.sandbox.stageMode='base';s.api.entranceGuards(.3);
