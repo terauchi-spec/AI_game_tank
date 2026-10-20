@@ -927,19 +927,18 @@ function indoorWallGroundSprite(mark){
  const c=document.createElement('canvas'),mask=document.createElement('canvas');
  c.width=mask.width=Math.max(1,Math.ceil(mark.w));c.height=mask.height=Math.max(1,Math.ceil(mark.h));
  const q=gameCanvasContext(c),mq=gameCanvasContext(mask);
- q.drawImage(buildingShadowSprite('indoorWall'),0,0,c.width,c.height);
  indoorPaintLightingMask(mq,mark.x,mark.y,c.width,c.height);
- const pixels=q.getImageData(0,0,c.width,c.height),shade=mq.getImageData(0,0,c.width,c.height).data;
- // A slightly lighter charcoal, compensated before the existing lighting pass.
- // Only opaque silhouette pixels change; actors keep their normal lighting above it.
- const target=[28,34,36],tint=[7,13,15],data=pixels.data;
- for(let i=0;i<data.length;i+=4){
-  if(!data[i+3])continue;
-  const alpha=shade[i+3]/255;
-  for(let k=0;k<3;k++)data[i+k]=Math.round((target[k]-tint[k]*alpha)/(1-alpha));
- }
- q.putImageData(pixels,0,0);
- // Keep only the finished small raster: no readback or lamp loop on later frames.
+ // Convert mask alpha to opaque gray using compositing, without CPU readback.
+ mq.globalCompositeOperation='source-in';mq.fillStyle='#fff';mq.fillRect(0,0,c.width,c.height);
+ mq.globalCompositeOperation='destination-over';mq.fillStyle='#000';mq.fillRect(0,0,c.width,c.height);
+ // color-dodge computes 21/(1-alpha); adding the light tint gives the same
+ // precompensated charcoal as the previous pixel loop: tint+21/(1-alpha).
+ q.fillStyle='#151515';q.fillRect(0,0,c.width,c.height);
+ q.globalCompositeOperation='color-dodge';q.drawImage(mask,0,0);
+ q.globalCompositeOperation='lighter';q.fillStyle='#070d0f';q.fillRect(0,0,c.width,c.height);
+ q.globalCompositeOperation='destination-in';q.drawImage(buildingShadowSprite('indoorWall'),0,0,c.width,c.height);
+ q.globalCompositeOperation='source-over';
+ // Keep only the finished small raster: no CPU readback, pixel upload or later lamp loop.
  mark.indoorShadowRaster=c;return c;
 }
 function drawInfiltrationLighting(cx,cy){

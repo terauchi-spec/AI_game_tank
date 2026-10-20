@@ -2,8 +2,8 @@ const test=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),source=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
 function harness(){
- let seed=191,canvases=0;const images=[],fills=[],rasters=[];
- const context=()=>new Proxy({createRadialGradient:()=>({addColorStop(){}}),getImageData:(x,y,w,h)=>({data:new Uint8ClampedArray(w*h*4)}),globalAlpha:1,drawImage:(...a)=>images.push(a),fillRect(...r){fills.push({r,color:this.fillStyle});}},{get:(o,k)=>k in o?o[k]:()=>{}});
+ let seed=191,canvases=0,readbacks=0,pixelUploads=0;const images=[],fills=[],rasters=[];
+ const context=()=>new Proxy({createRadialGradient:()=>({addColorStop(){}}),getImageData(x,y,w,h){readbacks++;return {data:new Uint8ClampedArray(w*h*4)};},putImageData(){pixelUploads++;},globalAlpha:1,drawImage:(...a)=>images.push(a),fillRect(...r){fills.push({r,color:this.fillStyle});}},{get:(o,k)=>k in o?o[k]:()=>{}});
  const g=context(),c={stageMode:'indoor',state:'play',WH:12800,WW:960,W:480,H:440,p:{},scoreStats:{},
   R:()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;},ZONE_STYLE:{'敵迷路基地':{p:[]}},module:{exports:{}},
   document:{body:{classList:{remove(){}}},createElement:()=>{canvases++;return{width:0,height:0};}},
@@ -19,7 +19,7 @@ function harness(){
   cut('const BUILDING_SHADOW_KDS=','function drawBridgeFancy(')+cut('function carve(','function useSkill('),c);
  vm.runInContext(`api={world:indoorWorld,props:drawInfiltrationProps,carve,hit:coverHitRect,asset:drawCoverAsset,fragment:drawCoverFragment,
   get covers(){return covers;},get marks(){return buildingGroundMarks;},ground:drawBuildingGroundMarks,setup:setupInfiltrationWorld,gridPoint:indoorGridPoint,frame:()=>fragmentDrawFrame++,load:(key,im)=>indoorPropImages[key]=im};`,c);
- return{c,api:c.api,images,fills,rasters,get canvases(){return canvases;}};
+ return{c,api:c.api,images,fills,rasters,get canvases(){return canvases;},get readbacks(){return readbacks;},get pixelUploads(){return pixelUploads;}};
 }
 
 test('infiltration furniture chips use the original WebP, preserve holes and reuse the fragment canvas',()=>{
@@ -105,6 +105,8 @@ test('lighter indoor scars compensate ceiling light once and preserve outdoor la
  const h=harness(),a=h.api;
  h.c.buildingGroundMarks=[{x:100,y:100,w:120,h:22,kind:'concrete',indoorWall:true}];
  a.ground(0,0);const indoorSprite=h.rasters.at(-1)[0],canvases=h.canvases;
+ assert.equal(h.readbacks,0,'first visible destruction marks must not stall rendering with CPU pixel readbacks');
+ assert.equal(h.pixelUploads,0,'shadow compensation stays in canvas compositing');
  a.ground(0,0);assert.equal(h.rasters.at(-1)[0],indoorSprite);
  assert.equal(h.canvases,canvases,'finished scars are reused without per-frame canvas work');
  h.c.stageMode='base';a.ground(0,0);
