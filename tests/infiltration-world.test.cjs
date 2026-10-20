@@ -797,11 +797,11 @@ test('two gun hits instantly detonate only the new shell-pallet kind',()=>{
  assert.equal(exploded,1,'existing crates keep their own damage behavior');
 });
 
-test('patrol suspicion confirms at 90 percent while investigation confirms at 70 percent with fresh sight',()=>{
+test('patrol suspicion confirms at 90 percent while investigation confirms at 55 percent with fresh sight',()=>{
  for(const investigating of [false,true])for(const above of [false,true])for(const clear of [false,true]){
   const s=guardScenario();s.h.st=0;s.h.target=null;s.h.x=-300;
   if(investigating){s.api.begin(s.h);s.h.indoorAlert.phase='lastSeen';}
-  const threshold=investigating?.7:.9;
+  const threshold=investigating?.55:.9;
   s.h.indoorNotice={checkT:1,sampleAge:0,exposure:threshold+(above?.01:-.01),visible:true,rate:0};
   s.setVisible(true);s.setWall(clear);s.api.update(s.h,.001);
   assert.equal(s.h.st,above&&clear?1:0);

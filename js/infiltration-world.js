@@ -2184,7 +2184,7 @@ function updateInfiltrationGuardAI(h,dt){
  // Confirmed pursuit retains its original sight-loss timer and last-seen snapshots.
  if(state.phase!=='found'){
   const n=indoorAdvanceVisualNotice(h,dt,.12+((h.indoorFloor||1)%3)*.01);
-  if(n.visible&&n.exposure>=.7){
+  if(n.visible&&n.exposure>=.55){
    if(indoorGuardSeesPlayer(h)&&los(h,p)){
     enterHumanFound(h,'p');indoorStartGuardPursuit(h);indoorRecordGuardDiscovery(h);h.indoorNotice=null;return true;
    }
