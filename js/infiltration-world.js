@@ -1680,14 +1680,15 @@ function indoorRefreshAlarm(){
  if(!alarm||alarm.active||indoorAlarmLevel(alarm)<3)return;
  alarm.active=true;alarm.elapsed=0;
  for(const floor of indoorWorld.floors)for(const other of floor.guards||[]){
-  if(other.st&&other.target==='p')continue;
+  if(other.st&&(other.target==='p'||(other.target==='decoy'&&other.indoorDecoy)))continue;
   indoorBeginAlarmSweep(other);
  }
 }
 function indoorRecordGuardDiscovery(h){
- if(indoorStairProtected()||indoorWorld?.alarm?.active)return; // Reinforcement waves must not grow the completed warning set.
- if(!h?.indoorGuard||!h.alive||!h.st||h.target!=='p'||h.stun>0||h.stunRecover>0||h.houndPinned||h.blastAirT>0||
-    !indoorWorld||h.indoorFloor!==indoorWorld.currentFloor+1)return;
+ const lure=h?.target==='decoy'&&h.indoorDecoy?.source;
+ if(indoorWorld?.alarm?.active||(!lure&&indoorStairProtected()))return; // Completed warning sets stay bounded.
+ if(!h?.indoorGuard||!h.alive||!h.st||(!lure&&h.target!=='p')||h.stun>0||h.stunRecover>0||h.houndPinned||h.blastAirT>0||!indoorWorld)return;
+ if(lure?(lure.t<=0||lure.indoorFloor!==h.indoorFloor):h.indoorFloor!==indoorWorld.currentFloor+1)return;
  const alarm=indoorWorld.alarm||(indoorWorld.alarm={active:false,witnesses:new Set(),elapsed:0});
  alarm.witnesses.add(h);indoorRefreshAlarm();
 }
@@ -2248,6 +2249,7 @@ function indoorUpdateDecoy(h,dt){
   if(h.indoorChatT>0)indoorCancelAlarmChat(h);
   h.indoorNotice=null;h.indoorRocketCharge=0;h.burstLeft=0;
   enterHumanFound(h,'decoy');
+  indoorRecordGuardDiscovery(h);
  }else if(lure.source!==source){lure.source=source;lure.nav={};lure.sightCheckT=0;h.indoorRocketCharge=0;h.burstLeft=0;}
  // Reuse the existing door/furniture routing; hearing never bypasses collision.
  const paused=(h.foundPause||0)>0||(h.modePause||0)>0||(h.sharePause||0)>0;

@@ -1360,7 +1360,7 @@ function alarmWorld(seed=1771){
  const sight=h=>{sandbox.api.world.currentFloor=h.indoorFloor-1;h.st=1;h.target='p';sandbox.api.begin(h);sandbox.api.record(h);};
  return {api:sandbox.api,sandbox,sight,labels,rectangles,gradients,bubbles,eyePupils,rotations,strokes};
 }
-test('indoor decoys distract patrol, suspicion, pursuit, search and alarm guards without player coordinates or red eyes',()=>{
+test('indoor decoys distract every guard mode and add a unique red eye without player coordinates',()=>{
  for(const phase of ['patrol','suspicion','found','lastSeen','search','sweep']){
   const s=alarmWorld(),h=s.api.world.floors[0].guards.find(q=>!q.indoorCommander);
   h.cd=99;const point={x:h.x+100,y:h.y,t:5,indoorFloor:1};s.sandbox.decoy=point;
@@ -1373,11 +1373,33 @@ test('indoor decoys distract patrol, suspicion, pursuit, search and alarm guards
   Object.defineProperty(s.sandbox.p,'x',{get(){throw Error('decoy AI must not read hidden player');}});
   assert.equal(s.api.update(h,.1),true,phase);assert.equal(h.target,'decoy');assert.equal(h.st,1);
   assert.equal(h.indoorDecoy.source,point);assert.equal(h.indoorAlert,previous,'preserve the interrupted route');
-  assert.equal(s.api.level(),eyes,'decoy does not count as finding the player');
+  assert.equal(s.api.level(),eyes+(phase==='sweep'?0:1),'decoy discovery uses the normal warning counter until the alarm activates');
   assert.equal(s.sandbox.bullets.length,0,'no shooting through a wall');
   assert.ok(moves.length>0,'hearing moves toward the lure even without sight: '+phase);
  }
 });
+test('three distinct decoy discoveries activate the building alarm once without cancelling lure reactions',()=>{
+ const s=alarmWorld(),guards=s.api.world.floors[0].guards.slice(0,4),source={x:guards[0].x,y:guards[0].y,t:5,indoorFloor:1};
+ s.sandbox.decoy=source;s.sandbox.los=()=>false;
+ for(const [i,h] of guards.entries()){
+  Object.assign(h,{x:source.x-40-i*10,y:source.y,cd:99});
+  s.api.update(h,.1);
+  assert.equal(s.api.level(),Math.min(3,i+1));
+  assert.equal(h.target,'decoy');assert.equal(h.st,1);
+  for(let frame=0;frame<5;frame++)s.api.update(h,.1);
+  assert.equal(s.api.level(),Math.min(3,i+1),'the same guard never adds an eye each frame');
+ }
+ assert.equal(s.api.world.alarm.active,true);assert.equal(s.api.world.alarm.witnesses.size,3);
+ for(const h of guards){assert.equal(h.target,'decoy');assert.ok(h.indoorDecoy,'alarm activation preserves the distraction');}
+ source.t=0;s.sandbox.decoy=null;
+ for(const h of guards){s.api.update(h,.1);assert.equal(h.indoorAlert.phase,'sweep');assert.ok(!h.indoorDecoy);}
+});
+test('player and decoy discoveries share the same per-guard warning identity',()=>{
+ const s=alarmWorld(),h=s.api.world.floors[0].guards[0];s.sight(h);assert.equal(s.api.level(),1);
+ s.sandbox.decoy={x:h.x+60,y:h.y,t:5,indoorFloor:1};s.api.update(h,.1);
+ assert.equal(h.target,'decoy');assert.equal(s.api.level(),1,'a guard already counted for the player cannot be counted again for the decoy');
+});
+
 test('indoor decoy expires into its previous patrol or search and ignores other floors, distant and stunned guards',()=>{
  for(const phase of ['patrol','found','sweep']){
   const s=alarmWorld(),h=s.api.world.floors[0].guards.find(q=>!q.indoorCommander);
