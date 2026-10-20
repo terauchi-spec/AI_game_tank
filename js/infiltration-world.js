@@ -2408,10 +2408,19 @@ function updateInfiltrationDoors(dt){
     }
   }
 }
+function indoorPartnerRouteBlocked(x,y,r){
+ // Plan through automatic panels without opening them or ignoring adjacent masonry.
+ return indoorFloorEdgeBlocked(partner||p,x,y,r)||
+  nearbyCovers(x,y,r+6).some(c=>!c.indoorDoor&&circleHitsCover(x,y,r,c))||
+  nearbyObjects(x,y,r+6).some(o=>circleHitsObject(x,y,r,o))||circleHitsBase(x,y,r);
+}
 function indoorPartnerAssistsDocument(q){
  return !!(partner&&skill==='partner'&&!partner.down&&!(partner.stunT>0)&&
   !partner.vehicle&&!partner.passengerVehicle&&q.floor===indoorWorld?.currentFloor+1&&
   D(partner,q)<INDOOR_ACQUIRE_RADIUS);
+}
+function indoorPartnerDocumentTarget(){
+ return (typeof mission!=='undefined'&&mission?.points.find(q=>!q.done&&indoorPartnerAssistsDocument(q)))||null;
 }
 function updateInfiltrationMission(dt){
   if(!indoorWorld||!mission||state!=='play')return;
@@ -2441,18 +2450,19 @@ function updateInfiltrationMission(dt){
     say((w.currentFloor+1)+'階へ移動');sfx('skill');
   }
   for(const q of m.points)if(q.collectedT>0)q.collectedT=Math.max(0,q.collectedT-dt);
-  const near=m.points.find(q=>!q.done&&q.floor===w.currentFloor+1&&D(p,q)<INDOOR_ACQUIRE_RADIUS);
-  if(near&&!p.tank){
-    m.current=near;
-    m.progress=Math.min(INDOOR_ACQUIRE_SECONDS,(near.progress||0)+dt*(indoorPartnerAssistsDocument(near)?2:1));
-    near.progress=m.progress;
-    if(m.progress>=INDOOR_ACQUIRE_SECONDS){
-      near.done=true;near.collectedT=.9;m.index++;m.progress=0;m.current=null;sfx('pickup');
+  m.current=null;m.progress=0;
+  for(const q of m.points){
+    if(q.done||q.floor!==w.currentFloor+1)continue;
+    const playerHere=!p.tank&&D(p,q)<INDOOR_ACQUIRE_RADIUS,partnerHere=indoorPartnerAssistsDocument(q);
+    const workers=(playerHere?1:0)+(partnerHere?1:0);if(!workers)continue;
+    q.progress=Math.min(INDOOR_ACQUIRE_SECONDS,(q.progress||0)+dt*workers);
+    if(q.progress>=INDOOR_ACQUIRE_SECONDS){
+      q.done=true;q.collectedT=.9;m.index++;sfx('pickup');
       say('重要資料回収 '+m.index+'/'+m.points.length);
       if(m.index===m.points.length)say(w.emergency?'全資料回収！ 1階の玄関か非常口で5秒待機せよ':'全資料回収！ 1階の玄関で5秒待機せよ');
+    }else if(!m.current||playerHere){
+      m.current=q;m.progress=q.progress;
     }
-  }else{
-    m.progress=0;m.current=null;
   }
   // 外周にある玄関と非常口の両方を脱出地点として扱う。
   const ground=w.floors[0].footprint;
@@ -2868,7 +2878,8 @@ function drawInfiltrationMission(){
     if(!q.done){
       gm.font='bold 13px system-ui';gm.fillText((q.progress||0).toFixed(1)+' / 8秒',x,y+22);
       if(indoorPartnerAssistsDocument(q)){
-        gm.fillStyle='#a8e4ff';gm.font='bold 12px system-ui';gm.fillText('相棒協力 ×2',x,y+40);
+        const together=!p.tank&&D(p,q)<INDOOR_ACQUIRE_RADIUS;
+        gm.fillStyle='#a8e4ff';gm.font='bold 12px system-ui';gm.fillText(together?'相棒協力 ×2':'相棒が回収中',x,y+40);
       }
     }
     gm.restore();

@@ -2084,7 +2084,7 @@ test('partner bonus switches as they enter or leave without resetting accumulate
  s.sandbox.p.x+=200;s.api.updateMission(1);assert.equal(s.q.progress,7,'player leaving preserves charge');
  s.sandbox.p.x=s.q.x;s.api.updateMission(1);assert.equal(s.q.done,true);
 });
-test('document assistance requires an active foot partner and the player collecting',()=>{
+test('document assistance requires an active foot partner and works without the player',()=>{
  for(const condition of ['absent','down','stunned','vehicle','passenger','other-skill','player-away']){
   const s=assistedDocumentScenario();
   if(condition==='absent')s.sandbox.partner=null;
@@ -2095,13 +2095,31 @@ test('document assistance requires an active foot partner and the player collect
   if(condition==='other-skill')s.sandbox.skill='reinforce';
   if(condition==='player-away')s.sandbox.p.x+=200;
   s.api.updateMission(1);
-  assert.equal(s.q.progress,condition==='player-away'?0:1,condition);
+  assert.equal(s.q.progress,1,condition);
  }
 });
 test('assisted document shows the cooperation indicator only inside the active circle',()=>{
  const s=assistedDocumentScenario();s.sandbox.cam=s.q.y-200;s.sandbox.camX=s.q.x-200;
  s.api.draw();assert.ok(s.labels.includes('相棒協力 ×2'));
  s.sandbox.partner.x+=200;s.labels.length=0;s.api.draw();assert.ok(!s.labels.includes('相棒協力 ×2'));
+});
+
+test('a solo partner collects documents in eight seconds, pauses on leaving and completes only once',()=>{
+ const s=assistedDocumentScenario();s.sandbox.p.x+=200;
+ s.api.updateMission(3);assert.equal(s.q.progress,3);assert.equal(s.q.done,false);
+ s.sandbox.partner.x+=200;s.api.updateMission(1);assert.equal(s.q.progress,3,'leaving preserves charge');
+ s.sandbox.partner.x=s.q.x;s.api.updateMission(4.9);assert.equal(s.q.progress,7.9);assert.equal(s.q.done,false);
+ s.sandbox.cam=s.q.y-200;s.sandbox.camX=s.q.x-200;s.api.draw();assert.ok(s.labels.includes('相棒が回収中'));assert.ok(!s.labels.includes('相棒協力 ×2'));
+ s.api.updateMission(.1);assert.equal(s.q.done,true);assert.equal(s.q.progress,8);assert.equal(s.sandbox.mission.index,1);
+ s.api.updateMission(1);assert.equal(s.sandbox.mission.index,1,'no duplicate completion');
+});
+
+test('player and partner can independently collect separate documents on the same floor',()=>{
+ const s=assistedDocumentScenario(),q2={...s.q,x:s.q.x+300,done:false,progress:0};s.sandbox.mission.points=[s.q,q2];
+ Object.assign(s.sandbox.partner,{x:q2.x,y:q2.y});s.api.updateMission(2);
+ assert.equal(s.q.progress,2);assert.equal(q2.progress,2);
+ q2.floor=2;s.api.updateMission(1);assert.equal(q2.progress,2,'no collection on another floor');
+ s.sandbox.p.tank={};s.api.updateMission(1);assert.equal(s.q.progress,3,'a mounted player cannot collect');
 });
 
 test('lighting is circular after world scaling, varies in size and lights the outdoor entrances',()=>{

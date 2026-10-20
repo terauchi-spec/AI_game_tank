@@ -144,6 +144,13 @@ function partnerWaterMovement(q,ox,oy){
 function partnerCompanionMove(q,goal,speed,dt){
  const ox=q.x,oy=q.y;
  if(q.vehicle)partnerVehicleMove(q,goal,speed,dt);
+ else if(stageMode==='indoor'&&q.route){
+  const angle=Math.atan2(goal.y-q.y,goal.x-q.x);
+  if(!indoorPartnerRouteBlocked(q.x+Math.cos(angle)*18,q.y+Math.sin(angle)*18,8)){
+   q.wallFollow=null;q.sideStep=null;
+   const step=Math.min(speed*dt,D(q,goal));mv(q,Math.cos(angle)*step,Math.sin(angle)*step,8);
+  }else moveAllySmart(q,goal,speed,dt);
+ }
  else moveAllySmart(q,goal,speed,dt);
  partnerWaterMovement(q,ox,oy);
 }
@@ -233,7 +240,7 @@ function updatePartnerOrder(dt){
  const cx=Math.max(0,Math.min(WW-W,p.x-W/2)),cy=Math.max(0,Math.min(WH-H,p.y-H*.6));
  const nx=Math.max(15,Math.min(WW-15,Math.max(cx+15,Math.min(cx+W-15,c.x+dx*step))));
  const ny=Math.max(15,Math.min(WH-15,Math.max(cy+15,Math.min(cy+H-15,c.y+dy*step))));
- if(hitsC(nx,ny,7)){
+ if(stageMode==='indoor'?indoorPartnerRouteBlocked(nx,ny,7):hitsC(nx,ny,7)){
   const first=partnerOrder.path[0];
   if(first){c.x=first.x;c.y=first.y;partnerOrder.path=[{x:first.x,y:first.y}];}
   if(!partnerOrder.blocked)say('障害物に接触：指示ルートを開始地点へ戻した');
@@ -386,6 +393,7 @@ function updatePartner(dt){
   if(q.moving)q.face=Math.atan2(q.y-oldY,q.x-oldX);
   return;
  }
+ if(stageMode==='indoor'&&indoorPartnerDocumentTarget()){q.moving=false;return;}
   const vx=(p.x-(q.prevPX??p.x))/Math.max(dt,.001),vy=(p.y-(q.prevPY??p.y))/Math.max(dt,.001);
  q.prevPX=p.x;q.prevPY=p.y;
  // Low-pass speed, to avoid mode switching on every frame.
