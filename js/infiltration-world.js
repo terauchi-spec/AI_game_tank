@@ -2221,8 +2221,53 @@ function indoorUpdateAllyCombat(h,dt){
  }
  return true;
 }
+function indoorEndDecoy(h,resume=true){
+ const lure=h.indoorDecoy;if(!lure)return;
+ h.indoorDecoy=null;h.indoorRocketCharge=0;h.burstLeft=0;
+ if(h.target==='decoy'){
+  h.st=resume?lure.previousSt:0;h.target=resume?lure.previousTarget:null;
+  h.sus=resume?lure.previousSus:0;h.susMax=resume?lure.previousSusMax:0;
+ }
+ h.foundPause=0;h._detectCache=null;h._nextDetectAt=0;
+ if(h.indoorAlert){h.indoorAlert.visible=false;h.indoorAlert.sightCheckT=0;}
+ if(resume&&!h.indoorAlert)h.indoorReturn=indoorPatrolReturnPlan(h);
+}
+function indoorUpdateDecoy(h,dt){
+ if(!h.alive||h.stun>0||h.stunRecover>0||h.houndPinned||h.blastAirT>0){indoorEndDecoy(h,false);return false;}
+ const source=typeof decoy!=='undefined'?decoy:null;
+ const audible=source&&source.t>0&&source.indoorFloor===h.indoorFloor&&D(h,source)<500*(h.indoorChatT>0?.5:1);
+ if(!audible){indoorEndDecoy(h);return false;}
+ let lure=h.indoorDecoy;
+ if(!lure){
+  indoorEndAllyCombat(h);
+  lure=h.indoorDecoy={source,nav:{},previousSt:h.st||0,previousTarget:h.target||null,
+   previousSus:h.sus||0,previousSusMax:h.susMax||0};
+  if(h.indoorChatT>0)indoorCancelAlarmChat(h);
+  h.indoorNotice=null;h.indoorRocketCharge=0;h.burstLeft=0;
+  enterHumanFound(h,'decoy');
+ }else if(lure.source!==source){lure.source=source;lure.nav={};lure.sightCheckT=0;h.indoorRocketCharge=0;h.burstLeft=0;}
+ // Reuse the existing door/furniture routing; hearing never bypasses collision.
+ const paused=(h.foundPause||0)>0||(h.modePause||0)>0||(h.sharePause||0)>0;
+ h.foundPause=Math.max(0,(h.foundPause||0)-dt);h.modePause=Math.max(0,(h.modePause||0)-dt);
+ h.sharePause=Math.max(0,(h.sharePause||0)-dt);h.cd=(h.cd||0)-dt;
+ lure.sightCheckT=(lure.sightCheckT||0)-dt;
+ if(lure.sightCheckT<=0){lure.sightCheckT=.12;lure.visible=los(h,source);}
+ const visible=lure.visible;
+ const aiming=h.indoorCommander&&indoorUpdateCommanderWeapon(h,source,visible,paused,dt,source);
+ if(!paused&&!aiming){
+  if(D(h,source)>70)indoorMoveGuardTo(h,source,dt,95,lure.nav);
+  else h.face+=Math.max(-dt*4,Math.min(dt*4,angD(Math.atan2(source.y-h.y,source.x-h.x),h.face)));
+ }
+ if(!h.indoorCommander&&!paused&&visible&&D(h,source)<150&&h.cd<=0&&los(h,source)){
+  if(!(h.burstLeft>0))h.burstLeft=3;
+  h.characterShotAt=performance.now();fire(h.x,h.y,Math.atan2(source.y-h.y,source.x-h.x)+(R()-.5)*.15,'e','r',330,150);
+  h.burstLeft--;h.cd=h.burstLeft>0?.14:2;
+ }
+ return true;
+}
 function updateInfiltrationGuardAI(h,dt){
  if(!h.indoorGuard)return false;
+ if(typeof decoy!=='undefined'&&(decoy||h.indoorDecoy)&&indoorUpdateDecoy(h,dt))return true;
  if(indoorStairProtected()&&h.indoorFloor===indoorWorld.currentFloor+1&&h.target==='p'){
    h.st=0;h.target=null;h.indoorAlert=null;h.indoorNotice=null;h.burstLeft=0;h.lost=0;
    h.indoorRocketCharge=0;h.indoorRocketAim=null;
@@ -2332,6 +2377,7 @@ function updateInfiltrationDoors(dt){
   // 気絶・拘束中の古い追跡情報は、AI更新がスキップされる間も破棄する。
   for(const floor of indoorWorld.floors){
     for(const h of floor.guards||[])if(!h.alive||h.stun>0||h.stunRecover>0||h.houndPinned||h.blastAirT>0){
+      indoorEndDecoy(h,false);
       indoorEndAllyCombat(h);h.indoorAlert=null;h.indoorNotice=null;
     }
     const players=[p,...floor.guards,...(allies||[])];

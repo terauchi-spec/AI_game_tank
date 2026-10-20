@@ -1356,10 +1356,85 @@ function alarmWorld(seed=1771){
    updateMission:updateInfiltrationMission,update:updateInfiltrationGuardAI,finish:indoorFinishGuardSearch,sweep:indoorBeginAlarmSweep,
    draw:drawInfiltrationMission,setup:setupInfiltrationWorld,chats:indoorUpdateAlarmChats,
    cancelChat:indoorCancelAlarmChat,scanBodies:indoorScanStunnedGuards,level:indoorAlarmLevel,weapon:indoorUpdateCommanderWeapon,setVisible:h=>{indoorGuardSeesPlayer=q=>q===h;}};`,sandbox);
- sandbox.enterHumanFound=h=>{h.st=1;h.target='p';sandbox.api.begin(h);};
+ sandbox.enterHumanFound=(h,key='p')=>{h.st=1;h.target=key;if(key==='p')sandbox.api.begin(h);};
  const sight=h=>{sandbox.api.world.currentFloor=h.indoorFloor-1;h.st=1;h.target='p';sandbox.api.begin(h);sandbox.api.record(h);};
  return {api:sandbox.api,sandbox,sight,labels,rectangles,gradients,bubbles,eyePupils,rotations,strokes};
 }
+test('indoor decoys distract patrol, suspicion, pursuit, search and alarm guards without player coordinates or red eyes',()=>{
+ for(const phase of ['patrol','suspicion','found','lastSeen','search','sweep']){
+  const s=alarmWorld(),h=s.api.world.floors[0].guards.find(q=>!q.indoorCommander);
+  h.cd=99;const point={x:h.x+100,y:h.y,t:5,indoorFloor:1};s.sandbox.decoy=point;
+  if(phase==='suspicion')h.sus=2;
+  if(['found','lastSeen','search'].includes(phase)){s.api.begin(h);h.indoorAlert.phase=phase;h.indoorAlert.visible=false;h.st=phase==='found'?1:0;h.target=phase==='found'?'p':null;}
+  if(phase==='sweep'){s.api.world.alarm.active=true;s.api.sweep(h);}
+  const previous=h.indoorAlert,eyes=s.api.level(),moves=[];
+  s.sandbox.los=(_h,target)=>{assert.equal(target,point);return false;};
+  s.sandbox.mv=(actor,dx,dy)=>{moves.push([dx,dy]);actor.x+=dx;actor.y+=dy;};
+  Object.defineProperty(s.sandbox.p,'x',{get(){throw Error('decoy AI must not read hidden player');}});
+  assert.equal(s.api.update(h,.1),true,phase);assert.equal(h.target,'decoy');assert.equal(h.st,1);
+  assert.equal(h.indoorDecoy.source,point);assert.equal(h.indoorAlert,previous,'preserve the interrupted route');
+  assert.equal(s.api.level(),eyes,'decoy does not count as finding the player');
+  assert.equal(s.sandbox.bullets.length,0,'no shooting through a wall');
+  assert.ok(moves.length>0,'hearing moves toward the lure even without sight: '+phase);
+ }
+});
+test('indoor decoy expires into its previous patrol or search and ignores other floors, distant and stunned guards',()=>{
+ for(const phase of ['patrol','found','sweep']){
+  const s=alarmWorld(),h=s.api.world.floors[0].guards.find(q=>!q.indoorCommander);
+  if(phase==='found'){s.api.begin(h);h.st=1;h.target='p';}
+  if(phase==='sweep'){s.api.world.alarm.active=true;s.api.sweep(h);}
+  const previous=h.indoorAlert,st=h.st,target=h.target;
+  s.sandbox.decoy={x:h.x+60,y:h.y,t:5,indoorFloor:1};s.api.update(h,.1);assert.equal(h.target,'decoy');
+  s.sandbox.decoy=null;s.sandbox.los=()=>false;
+  // Expiry restores state before the regular AI performs its next observation.
+  require('node:vm').runInContext('indoorEndDecoy(h)',Object.assign(s.sandbox,{h}));
+  assert.equal(h.indoorDecoy,null);assert.equal(h.indoorAlert,previous);assert.equal(h.st,st||0);assert.equal(h.target,target||null);
+ }
+ for(const reason of ['floor','distance','stun','dead']){
+  const s=alarmWorld(),h=s.api.world.floors[0].guards[0];
+  s.sandbox.decoy={x:h.x+60,y:h.y,t:5,indoorFloor:reason==='floor'?2:1};
+  if(reason==='distance')s.sandbox.decoy.x=h.x+501;
+  if(reason==='stun')h.stun=2;if(reason==='dead')h.alive=false;
+  require('node:vm').runInContext('result=indoorUpdateDecoy(h,.1)',Object.assign(s.sandbox,{h}));
+  assert.equal(s.sandbox.result,false);assert.ok(!h.indoorDecoy,reason);
+ }
+});
+test('indoor decoy uses infantry and commander weapons, throttles sight rays and cancels safely on stun',()=>{
+ for(const commander of [false,true]){
+  const s=alarmWorld(),h=s.api.world.floors[0].guards[0];h.indoorCommander=commander;h.cd=0;
+  const point=s.sandbox.decoy={x:h.x+100,y:h.y,t:5,indoorFloor:1};
+  for(let i=0;i<8;i++)s.api.update(h,.1);
+  assert.ok(s.sandbox.bullets.length>0);
+  for(const b of s.sandbox.bullets)assert.equal(b.args[4],commander?'c':'r');
+  h.stun=2;require('node:vm').runInContext('indoorEndDecoy(h,false)',Object.assign(s.sandbox,{h}));
+  assert.equal(h.indoorDecoy,null);assert.equal(h.st,0);assert.equal(h.target,null);
+ }
+ const s=alarmWorld(),h=s.api.world.floors[0].guards.find(q=>!q.indoorCommander);h.cd=99;let rays=0;
+ s.sandbox.los=()=>{rays++;return false;};s.sandbox.decoy={x:h.x+60,y:h.y,t:5,indoorFloor:1};
+ for(let i=0;i<60;i++)s.api.update(h,1/60);
+ assert.ok(rays<=9,'visibility sampling stays near 8 Hz instead of once per frame');
+});
+
+test('indoor decoy deployment records its floor while outdoor deployment and lure scoring stay unchanged',()=>{
+ const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+ const start=html.indexOf(" else if(skill==='decoy'){"),end=html.indexOf('\n else if(',start+10),branch=html.slice(start,end).replace('else if','if');
+ const deploy=new Function('p','stageMode','indoorWorld','setSkillCooldown','sfx','say',"let skill='decoy',decoy=null;"+branch+';return decoy;');
+ for(const mode of ['base','front','indoor']){
+  const decoy=deploy({x:100,y:200,body:0},mode,{currentFloor:1},()=>{},()=>{},()=>{});
+  assert.equal(decoy.t,5);assert.equal(decoy.indoorFloor,mode==='indoor'?2:undefined);
+  if(mode!=='indoor')assert.deepEqual(decoy,{x:100,y:200,t:5,face:0,sound:.05});
+ }
+ const s=alarmWorld(),h=s.api.world.floors[0].guards.find(q=>!q.indoorCommander);
+ Object.assign(s.sandbox,{recordDecoyLure:(actor,key)=>{if(key==='decoy'&&!actor.styleDecoyCounted){actor.styleDecoyCounted=true;s.sandbox.scoreStats.decoyLures++;}},targetObj:key=>key==='decoy'?s.sandbox.decoy:s.sandbox.p,
+  humanMemory:()=>3,foundModePause:()=>.5,commanderWhistle:()=>{},enemyModePaused:()=>{}});
+ s.sandbox.scoreStats.decoyLures=0;
+ const a=html.indexOf('function enterHumanFound('),b=html.indexOf('function activateStaticTank(',a);vm.runInContext(html.slice(a,b),s.sandbox);
+ s.sandbox.decoy={x:h.x+60,y:h.y,t:5,indoorFloor:1};
+ for(let i=0;i<10;i++)s.api.update(h,.1);
+ assert.equal(h.target,'decoy');assert.equal(s.sandbox.scoreStats.decoyLures,1,'lure counted once through the real found transition');
+ s.sandbox.decoy=null;s.api.update(h,.1);assert.ok(!h.indoorDecoy);assert.notEqual(h.target,'decoy','actual AI resumes after expiry');
+});
+
 test('three distinct firsthand witnesses trigger one building alarm across both floors',()=>{
  const s=alarmWorld(),world=s.api.world,[a,b,c]=world.floors[0].guards;
  s.sight(a);s.sight(a);assert.equal(world.alarm.witnesses.size,1);assert.equal(world.alarm.active,false);
