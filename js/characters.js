@@ -200,6 +200,8 @@ function drawCharacterWeapon(commander,shot=0,flame=false,player=false,elite=fal
 function drawCharacterWebP(x,y,face,isPlayer,alert,moving,elite,commander,weaponVisible,playerStripe,actor=null){
  if(CHARACTER_GRAPHICS_MODE!=='webp')return false;
  if(!isPlayer&&actor?.indoorGuard&&actor.indoorCommander)commander='blue';
+ const indoorWhiteCommander=!isPlayer&&actor?.indoorGuard&&actor.indoorWhiteCommander;
+ if(indoorWhiteCommander)commander='white';
  const key=isPlayer?(playerStripe==='blue'?'player_blue':playerStripe?'player':'player_plain'):characterArtKey(false,elite,commander);
  const im=CHARACTER_ART[key];if(!assetOK(im))return false;
  const now=performance.now(),stunned=actor&&(actor.stun>0||actor.stunT>0||actor.down);
@@ -212,7 +214,7 @@ function drawCharacterWebP(x,y,face,isPlayer,alert,moving,elite,commander,weapon
  // The overhead artwork points right, exactly like world angle zero.
  g.rotate(face);
  // Weapons sit beneath the body/helmet; the muzzle remains forward of the hands.
- if(armed&&!stunned)drawCharacterWeapon(commander,shot,flame,isPlayer,elite,!elite&&!commander&&(!isPlayer||(actor&&actor!==p&&playerStripe===false))?1.5:1);
+ if(armed&&!stunned)drawCharacterWeapon(indoorWhiteCommander?'':commander,shot,flame,isPlayer,indoorWhiteCommander?false:elite,indoorWhiteCommander||!elite&&!commander&&(!isPlayer||(actor&&actor!==p&&playerStripe===false))?1.5:1);
  if(stunned){g.save();g.rotate(.8);g.scale(1,.68);}
  // Normalize blue commander body height to the regular blue soldier; the radio/antenna keeps its silhouette.
  // blue.webp is 175×192; use its aspect even before it finishes loading.
@@ -233,12 +235,13 @@ function drawCharacterProne(){
 }
 function drawScopedCharacter(o,elite,x,top,height,falling){
  if(CHARACTER_GRAPHICS_MODE!=='webp')return false;
- const im=CHARACTER_ART['scope_'+characterArtKey(false,elite,o.commander||'')];if(!assetOK(im))return false;
+ const indoorWhiteCommander=o.indoorGuard&&o.indoorWhiteCommander;
+ const im=CHARACTER_ART['scope_'+characterArtKey(false,elite,indoorWhiteCommander?'white':o.commander||'')];if(!assetOK(im))return false;
  top+=height*(1-CHARACTER_GRAPHICS_SCALE);height*=CHARACTER_GRAPHICS_SCALE;
  const now=performance.now();
  const stride=characterGait(o,o.x,o.y,!!o.walking&&!falling,now);
  g.save();g.imageSmoothingEnabled=true;g.translate(x,top+height*.56);g.scale(height/43,height/43);
  drawPortraitCutout(im,43*.61,43,stride,!!o.st&&!falling);
- if(o.st&&!falling){g.save();g.scale(.62,.62);drawCharacterWeapon(o.commander||'',Math.max(0,.09-(now-(o.characterShotAt||-1e9))/1000));g.restore();}
+ if(o.st&&!falling){g.save();g.scale(.62,.62);drawCharacterWeapon(indoorWhiteCommander?'':o.commander||'',Math.max(0,.09-(now-(o.characterShotAt||-1e9))/1000));g.restore();}
  g.restore();return true;
 }

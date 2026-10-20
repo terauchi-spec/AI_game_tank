@@ -44,8 +44,40 @@ test('ground-floor movement and camera cannot reach or reveal the separate secon
  assert.equal(c.p.y,ground.footprint.y-900+8);
  assert.ok(c.p.y>upperBottom+300);assert.ok(h.api.camera().y>upperBottom+300);
  c.p.y=99999;h.api.clamp();assert.equal(c.p.y,ground.footprint.y+ground.footprint.h+900-8);
- w.currentFloor=1;c.p.y=-100;h.api.clamp();assert.equal(c.p.y,upper.footprint.y-24+8);
+ w.currentFloor=1;c.p.y=-100;h.api.clamp();assert.equal(c.p.y,upper.footprint.y+8);
  c.stageMode='base';c.p.y=-100;h.api.clamp();assert.equal(c.p.y,-100,'other stages retain their movement');
+});
+
+test('destroyed upper exterior walls cannot expose walkable ground or allow movement over any edge',()=>{
+ const h=harness(),c=h.c,w=h.api.world,upper=w.floors[1].footprint;
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),start=html.indexOf('function mv(o,'),end=html.indexOf('\nlet lastEnemySeparationAt=',start);
+ Object.assign(c,{mazeComparisonEnemyFrozen:()=>false,hitsC:()=>false,enemyTankObjectBlocked:()=>false,tankBlocked:()=>false,enemyUnitBlocked:()=>false,frontlineMovementTop:()=>0});
+ vm.runInContext(html.slice(start,end),c);w.currentFloor=1;
+ for(const [x,y,dx,dy] of [
+  [upper.x+8,upper.y+upper.h/2,-50,0],
+  [upper.x+upper.w-8,upper.y+upper.h/2,50,0],
+  [upper.x+upper.w/2,upper.y+8,0,-50],
+  [upper.x+upper.w/2,upper.y+upper.h-8,0,50]]){
+  Object.assign(c.p,{x,y});c.mv(c.p,dx,dy,8,1);
+  assert.equal(c.p.x,x);assert.equal(c.p.y,y,'edge remains solid even when every wall collider is gone');
+  Object.assign(c.p,{x:x+dx,y:y+dy});h.api.clamp();
+  assert.ok(c.p.x>=upper.x+8&&c.p.x<=upper.x+upper.w-8);
+  assert.ok(c.p.y>=upper.y+8&&c.p.y<=upper.y+upper.h-8,'blast displacement is clamped too');
+ }
+ const guard=w.floors[1].guards[0];Object.assign(guard,{x:upper.x-50,y:upper.y-50});h.api.clamp();
+ assert.equal(guard.x,upper.x+8);assert.equal(guard.y,upper.y+8);
+ const ground=w.floors[0].footprint,groundGuard=w.floors[0].guards[0];Object.assign(groundGuard,{x:ground.x+9,y:ground.y+100});
+ c.mv(groundGuard,-20,0,8,1);assert.equal(groundGuard.x,ground.x-11,'ground guards can still use the exterior while player is upstairs');
+ for(const mode of ['base','front']){c.stageMode=mode;Object.assign(c.p,{x:upper.x+8,y:upper.y+100});c.mv(c.p,-10,0,8,1);assert.equal(c.p.x,upper.x-2,'other stages keep shared movement');}
+});
+
+test('upper-floor exterior renders as void without building terrain patterns',()=>{
+ const h=harness(),c=h.c,w=h.api.world,ops=[];let patterns=0;
+ const g=new Proxy({fillRect(...r){ops.push({color:this.fillStyle,r});}},{get:(o,k)=>k in o?o[k]:()=>{}});
+ Object.assign(c,{g,terrainSurfacePattern:()=>{patterns++;return '#456';},indoorConcretePattern:()=>null,drawInfiltrationStairSprite:()=>true});
+ vm.runInContext('renderFloor=drawInfiltrationFloors;',c);
+ w.currentFloor=1;c.renderFloor(0,w.floors[1].footprint.y);assert.equal(ops[0].color,'#11171c');assert.equal(patterns,0);
+ ops.length=0;w.currentFloor=0;c.renderFloor(0,w.floors[0].footprint.y);assert.equal(ops[0].color,'#456');assert.equal(patterns,1);
 });
 
 test('five-second extraction finalizes once, freezes gameplay, boards the player and departs before results',()=>{

@@ -1581,14 +1581,16 @@ test('only indoor commander artwork selects the bazooka through the dedicated ac
  const draw=new Function('CHARACTER_GRAPHICS_MODE','CHARACTER_ART','assetOK','performance','characterGait',
   'CHARACTER_GRAPHICS_SCALE','g','drawCharacterWeapon','drawOverheadCutout','characterArtKey','p',
   src.slice(a,b)+';return drawCharacterWebP;')('webp',art,()=>true,{now:()=>1000},()=>0,.84,g,
-  (...v)=>weapons.push(v),im=>bodies.push(im.id),(_p,elite,c)=>c==='blue'?'blue_commander':elite?'white':'blue',{});
+  (...v)=>weapons.push(v),im=>bodies.push(im.id),(_p,elite,c)=>c==='blue'?'blue_commander':c==='white'?'white_commander':elite?'white':'blue',{});
  for(const [actor,commander,expectedWeapon,expectedBody] of [
   [{indoorGuard:true,indoorCommander:true},'', 'blue','blue_commander'],
+  [{indoorGuard:true,indoorWhiteCommander:true},'', '', 'white_commander'],
   [{},'', '', 'blue'],
   [{},'blue','blue','blue_commander'],
   [{indoorCommander:true},'', '', 'blue']]){
   weapons.length=0;bodies.length=0;draw(0,0,0,false,true,false,false,commander,true,false,actor);
   assert.equal(weapons[0][0],expectedWeapon);assert.equal(bodies[0],expectedBody);
+  if(actor.indoorGuard&&actor.indoorWhiteCommander){assert.equal(weapons[0][4],false);assert.equal(weapons[0][5],1.5,'same gun dimensions as blue infantry');}
  }
 });
 
@@ -1683,7 +1685,7 @@ test('entrance guards wait while visible or blocked and never spawn in other sta
 test('dead entrance guards are replaced offscreen at an exit and keep their watch duty',()=>{
  const s=alarmWorld(),w=s.api.world,f=w.floors[0];w.alarm.active=true;s.api.entranceGuards(.3);
  const dead=f.guards.find(h=>h.indoorEntranceGuard),total=s.sandbox.humans.length;
- const index=f.guards.indexOf(dead);dead.alive=false;
+ const index=f.guards.indexOf(dead);dead.alive=false;s.sandbox.R=()=>.7;
  s.api.reinforce(.3);const guard=f.guards[index];
  assert.notEqual(guard,dead);assert.equal(guard.indoorEntranceGuard,true);assert.equal(guard.indoorWhite,true);
  assert.equal(guard.indoorEntranceSlot,dead.indoorEntranceSlot);
@@ -1691,13 +1693,15 @@ test('dead entrance guards are replaced offscreen at an exit and keep their watc
  assert.equal(s.sandbox.humans.length,total,'replacement never grows the detail');
 });
 
-test('infiltration deaths are replaced offscreen by white guards without growing the roster',()=>{
+test('infiltration deaths mix blue commanders and white reinforcements without growing the roster',()=>{
  const s=alarmWorld(),world=s.api.world,total=s.sandbox.humans.length,floor=world.floors[0];
- for(let wave=0;wave<4;wave++){
+ for(const roll of [0,.499,.5,.899,.9,.999]){
+  s.sandbox.R=()=>roll;
   const dead=floor.guards[0];dead.alive=false;
   s.api.reinforce(.3);const h=floor.guards[0];
-  assert.notEqual(h,dead);assert.equal(h.alive,true);assert.equal(h.indoorWhite,true);
-  assert.equal(h.elite,true);assert.equal(h.commander,null);assert.equal(h.indoorCommander,false);
+  assert.notEqual(h,dead);assert.equal(h.alive,true);assert.equal(h.indoorWhite,roll>=.5);
+  assert.equal(h.elite,roll>=.5);assert.equal(h.commander,null);assert.equal(h.indoorCommander,roll<.5);
+  assert.equal(h.indoorWhiteCommander,roll>=.9);assert.equal(h.frontCommander,roll<.5);
   assert.equal(h.indoorFloor,1);assert.ok(s.sandbox.humans.includes(h));
   assert.ok(!s.sandbox.humans.includes(dead));assert.equal(s.sandbox.humans.length,total);
   assert.ok(h.x<s.sandbox.camX-100||h.x>s.sandbox.camX+840+100||
@@ -1724,7 +1728,7 @@ test('all dead slots including commanders are refilled and alarm reinforcements 
  for(const h of world.floors[0].guards.slice(0,3))s.sight(h);
  for(const h of s.sandbox.humans)h.alive=false;
  s.api.reinforce(.3);
- assert.equal(s.sandbox.humans.length,total);assert.ok(s.sandbox.humans.every(h=>h.alive&&h.indoorWhite));
+ assert.equal(s.sandbox.humans.length,total);assert.ok(s.sandbox.humans.every(h=>h.alive&&(h.indoorWhite||h.indoorCommander)));
  assert.ok(s.sandbox.humans.every(h=>h.indoorAlert.phase==='sweep'));
  assert.equal(world.alarm.witnesses.size,3,'alarm witness history remains bounded');
 });
@@ -1735,15 +1739,53 @@ test('indoor white movement is exactly 20 percent faster without outdoor elite m
   src.slice(a,b)+';return indoorMoveGuardTo;')({floors:[{navigation:{centers:[{x:0,y:0}]}}]},
   ()=>0,()=>[0],(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),(a,b)=>a-b,
   (h,dx,dy)=>{h.x+=dx;h.y+=dy;});
- const blue={x:0,y:0,face:0,indoorFloor:1,indoorAlert:{}},white={...blue,indoorWhite:true,indoorAlert:{}};
+ const blue={x:0,y:0,face:0,indoorFloor:1,indoorAlert:{}},white={...blue,indoorWhite:true,indoorAlert:{}},commander={...white,indoorWhiteCommander:true,indoorAlert:{}};
  for(const speed of [30,62,78,95]){
-  blue.x=0;white.x=0;move(blue,{x:200,y:0},.5,speed);move(white,{x:200,y:0},.5,speed);
+  blue.x=0;white.x=0;commander.x=0;move(blue,{x:200,y:0},.5,speed);move(white,{x:200,y:0},.5,speed);move(commander,{x:200,y:0},.5,speed);
   assert.equal(white.x,blue.x*1.2);
+  assert.equal(commander.x,blue.x*1.5,'white commander speed is based on blue infantry, without stacking the white multiplier');
  }
  const normal=guardScenario(),fast=guardScenario();
  for(const s of [normal,fast]){s.h.st=0;s.h.target=null;}
  fast.h.indoorWhite=true;normal.api.update(normal.h,.1);fast.api.update(fast.h,.1);
  assert.equal(normal.patrolSpeed,30);assert.equal(fast.patrolSpeed,36);
+ fast.h.indoorWhiteCommander=true;fast.api.update(fast.h,.1);assert.equal(fast.patrolSpeed,45);
+});
+
+test('reinforcement roles split 50 percent blue commanders, 40 percent white, 10 percent white commanders',()=>{
+ const src=require('node:fs').readFileSync(require('node:path').join(__dirname,'../js/infiltration-world.js'),'utf8');
+ const start=src.indexOf('function indoorReinforcementRole('),end=src.indexOf('function indoorReplenishGuards(',start);
+ const pick=new Function(src.slice(start,end)+';return indoorReinforcementRole;')();
+ const counts={blue:0,white:0,commander:0};
+ for(let i=0;i<1000;i++){
+  const role=pick((i+.5)/1000);
+  counts[role.indoorCommander?'blue':role.indoorWhiteCommander?'commander':'white']++;
+  assert.equal(role.elite,role.indoorWhite);assert.equal(role.frontCommander,role.indoorCommander);
+  assert.ok(!(role.indoorCommander&&role.indoorWhiteCommander));
+ }
+ assert.deepEqual(counts,{blue:500,white:400,commander:100});
+});
+
+test('indoor white commander scoped artwork keeps its infantry rifle while outdoor commander artwork is unchanged',()=>{
+ const src=require('node:fs').readFileSync(require('node:path').join(__dirname,'../js/characters.js'),'utf8');
+ const start=src.indexOf('function drawScopedCharacter('),body=src.slice(start);
+ const bodies=[],weapons=[],g=new Proxy({},{get:()=>()=>{}}),art={scope_white_commander:{id:'commander'},scope_white:{id:'white'}};
+ const draw=new Function('CHARACTER_GRAPHICS_MODE','CHARACTER_ART','characterArtKey','assetOK','CHARACTER_GRAPHICS_SCALE','performance','characterGait','g','drawPortraitCutout','drawCharacterWeapon',
+  body+';return drawScopedCharacter;')('webp',art,(_p,_e,c)=>c==='white'?'white_commander':'white',()=>true,.84,{now:()=>1000},()=>0,g,im=>bodies.push(im.id),(...a)=>weapons.push(a));
+ for(const [actor,weapon] of [[{indoorGuard:true,indoorWhiteCommander:true,commander:null,st:1},''],[{commander:'white',st:1},'white']]){
+  bodies.length=0;weapons.length=0;draw(actor,true,0,0,100,false);
+  assert.deepEqual(bodies,['commander']);assert.equal(weapons[0][0],weapon);
+ }
+});
+
+test('indoor white commanders use standard blue infantry bursts with no outdoor sniper or bazooka AI',()=>{
+ const s=alarmWorld(),h=s.api.world.floors[0].guards.find(h=>!h.indoorCommander);
+ Object.assign(h,{indoorWhite:true,indoorWhiteCommander:true,elite:true,commander:null,indoorCommander:false,x:s.sandbox.p.x-100,y:s.sandbox.p.y,cd:0,foundPause:0,modePause:0,sharePause:0});
+ s.api.begin(h);h.st=1;h.target='p';s.api.setVisible(h);
+ for(let i=0;i<4;i++)s.api.update(h,.15);
+ assert.equal(s.sandbox.bullets.length,3,'three-round infantry burst');
+ for(const b of s.sandbox.bullets){assert.equal(b.args[4],'r');assert.equal(b.args[5],330);assert.equal(b.args[6],150);assert.ok(!b.commanderRocket);}
+ assert.equal(h.commander,null);assert.equal(h.commanderCharge,undefined);assert.ok(!(h.indoorRocketCharge>0));
 });
 
 test('alarm guards clustered in one sector reserve distinct reachable search destinations',()=>{

@@ -18,10 +18,23 @@ function harness(){
  vm.runInContext(cut('function centerRect(','function rockHitEllipse(')+cut('function drawCoverAsset(','// 建物の足元に残す')+
   cut('const BUILDING_SHADOW_KDS=','function drawBridgeFancy(')+cut('function carve(','function useSkill('),c);
  vm.runInContext(`api={world:indoorWorld,doors:updateInfiltrationDoors,props:drawInfiltrationProps,carve,hit:coverHitRect,asset:drawCoverAsset,fragment:drawCoverFragment,
-  breakWindow:indoorBreakWindow,damageWindows:indoorDamageWindows,openings:drawInfiltrationOpenings,
+  breakWindow:indoorBreakWindow,damageWindows:indoorDamageWindows,openings:drawInfiltrationOpenings,clamp:enforceInfiltrationBoundary,
   get covers(){return covers;},get marks(){return buildingGroundMarks;},ground:drawBuildingGroundMarks,setup:setupInfiltrationWorld,gridPoint:indoorGridPoint,frame:()=>fragmentDrawFrame++,load:(key,im)=>indoorPropImages[key]=im};`,c);
  return{c,api:c.api,images,fills,rasters,get canvases(){return canvases;},get readbacks(){return readbacks;},get pixelUploads(){return pixelUploads;}};
 }
+
+test('upper exterior wall destruction preserves a solid navigation edge and contains blast-displaced actors',()=>{
+ const h=harness(),a=h.api,f=a.world.floors[1],fp=f.footprint;
+ const wall=f.walls.find(c=>!c.indoorStairWall&&Math.abs(c.x+c.w/2-fp.x)<1);assert.ok(wall);
+ const x=wall.x+wall.w/2,y=wall.y+wall.h/2;
+ assert.ok(a.carve(x,y,45,false,null)>0);
+ assert.ok(!a.covers.includes(wall),'the exterior wall really was destroyed');
+ const grid=f.navigation.grid;
+ for(let row=0;row<grid.rows;row++){assert.equal(grid.solid[row*grid.cols],1);assert.equal(grid.solid[(row+1)*grid.cols-1],1);}
+ for(let col=0;col<grid.cols;col++){assert.equal(grid.solid[col],1);assert.equal(grid.solid[(grid.rows-1)*grid.cols+col],1);}
+ a.world.currentFloor=1;Object.assign(h.c.p,{x:fp.x-100,y});a.clamp();
+ assert.equal(h.c.p.x,fp.x+8);assert.equal(h.c.p.y,y);
+});
 
 test('window glass fills real wall openings on both floors and clears collision exactly once',()=>{
  const h=harness(),a=h.api;let bursts=0;

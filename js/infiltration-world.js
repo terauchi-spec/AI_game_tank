@@ -1295,6 +1295,12 @@ function indoorReinforcementPoint(floor){
  }
  return null;
 }
+function indoorReinforcementRole(roll=R()){
+ // Half blue commanders; one fifth of the remaining white pool are commanders.
+ const blue=roll<.5,whiteCommander=roll>=.9;
+ return{elite:!blue,indoorWhite:!blue,indoorCommander:blue,
+   frontCommander:blue,indoorWhiteCommander:whiteCommander};
+}
 function indoorReplenishGuards(dt){
  if(stageMode!=='indoor'||state!=='play'||!indoorWorld)return;
  indoorWorld.reinforcementCheckT=(indoorWorld.reinforcementCheckT||0)-dt;
@@ -1307,10 +1313,9 @@ function indoorReplenishGuards(dt){
   const patrolGuard=floor.guards.find(h=>h.path?.length>1);
   const path=patrolGuard?.path||[{x:point.x,y:point.y}];
   const guard={x:point.x,y:point.y,path,loop:!!patrolGuard?.loop,wi:0,dir:1,stk:0,
-   alive:true,elite:true,commander:null,st:0,sus:0,lost:0,cd:R()*1.2,burstLeft:0,
+   alive:true,commander:null,st:0,sus:0,lost:0,cd:R()*1.2,burstLeft:0,
    face:dead.face||0,target:null,patrolMode:'axis',zoneHeavy:'indoor',
-   indoorGuard:true,indoorFloor:floor.number,indoorWhite:true,
-   indoorCommander:false,frontCommander:false};
+   indoorGuard:true,indoorFloor:floor.number,...indoorReinforcementRole()};
   if(dead.indoorEntranceGuard){
    guard.indoorEntranceGuard=true;guard.indoorEntranceSlot=dead.indoorEntranceSlot;
    guard.indoorEntranceHome={...point};guard.path=[{...point}];guard.patrolMode='post';
@@ -1411,6 +1416,11 @@ function indoorRefreshDamagedNavigation(x,y,r){
    const x0=Math.max(0,Math.ceil((rect.x-10-grid.x)/grid.step-.5)),x1=Math.min(grid.cols-1,Math.floor((rect.x+rect.w+10-grid.x)/grid.step-.5));
    const y0=Math.max(0,Math.ceil((rect.y-10-grid.y)/grid.step-.5)),y1=Math.min(grid.rows-1,Math.floor((rect.y+rect.h+10-grid.y)/grid.step-.5));
    for(let row=y0;row<=y1;row++)for(let col=x0;col<=x1;col++)grid.solid[row*grid.cols+col]=1;
+  }
+  // A destroyed upstairs wall opens sight, never creates a route into the void.
+  if(floor.number===2){
+   grid.solid.fill(1,0,grid.cols);grid.solid.fill(1,(grid.rows-1)*grid.cols);
+   for(let row=1;row<grid.rows-1;row++){grid.solid[row*grid.cols]=1;grid.solid[(row+1)*grid.cols-1]=1;}
   }
   for(const h of floor.guards){
    for(const a of [h.indoorAlert,h.indoorReturn,h.indoorAllyCombat,h.indoorStairRoute])if(a){a.detour=null;a.replanT=0;a.rescueCooldown=0;}
@@ -1848,7 +1858,7 @@ function indoorMoveGuardTo(h,goal,dt,sp,moveState=null){
    let dest=goal;
    if(from>=0)dest=outer;
    else if(to>=0)dest=aligned&&gate.side*(h.y-gate.y)<92?inner:outer;
-   const angle=Math.atan2(dest.y-h.y,dest.x-h.x),step=Math.min(sp*(h.indoorWhite?1.2:1)*dt,D(h,dest));
+   const angle=Math.atan2(dest.y-h.y,dest.x-h.x),step=Math.min(sp*(h.indoorWhiteCommander?1.5:h.indoorWhite?1.2:1)*dt,D(h,dest));
    mv(h,Math.cos(angle)*step,Math.sin(angle)*step,8);h.face=angle;return true;
  }
  // Separate the quick local detours from a rare, capped full-room recovery.
@@ -1893,7 +1903,7 @@ function indoorMoveGuardTo(h,goal,dt,sp,moveState=null){
   if(a.detour.length)dest=a.detour[0];else a.detour=null;
  }
  const heading=Math.atan2(dest.y-h.y,dest.x-h.x);
- const step=Math.min(sp*(h.indoorWhite?1.2:1)*dt,D(h,dest));
+ const step=Math.min(sp*(h.indoorWhiteCommander?1.5:h.indoorWhite?1.2:1)*dt,D(h,dest));
  if(step<=0)return true;
  const oldX=h.x,oldY=h.y;
  mv(h,Math.cos(heading)*step,Math.sin(heading)*step,8);
@@ -2110,7 +2120,7 @@ function indoorUpdateGuardNotice(h,dt){
  }
  if(h.indoorPost)return true;
  const stairFace=indoorPatrolAroundStairs(h,dt);
- h.face=stairFace===null?patrol(h,dt,30*(h.indoorWhite?1.2:1),8):stairFace;return true;
+ h.face=stairFace===null?patrol(h,dt,30*(h.indoorWhiteCommander?1.5:h.indoorWhite?1.2:1),8):stairFace;return true;
 }
 // Visual alert relay is separate from the limited nearby voice report.
 function indoorObserveFoundGuard(h,dt){
@@ -2408,17 +2418,38 @@ function updateInfiltrationMission(dt){
 // 各階の屋外を含む独立した行動範囲。1Fから座標上の2Fへ歩いて行かせない。
 function infiltrationFloorBounds(){
   const floor=indoorWorld?.floors[indoorWorld.currentFloor];if(!floor)return null;
-  const fp=floor.footprint,pad=floor.number===1?INDOOR_FORECOURT_DEPTH:24;
-  return{top:fp.y-pad,bottom:fp.y+fp.h+pad};
+  const fp=floor.footprint,pad=floor.number===1?INDOOR_FORECOURT_DEPTH:0;
+  return{left:fp.x,right:fp.x+fp.w,top:fp.y-pad,bottom:fp.y+fp.h+pad};
+}
+function indoorFloorEdgeBlocked(o,x,y,r=8){
+  if(!indoorWorld)return false;
+  const floor=indoorWorld.floors[(o.indoorFloor||indoorWorld.currentFloor+1)-1];
+  if(floor?.number!==2)return false;
+  const f=floor.footprint;
+  return x-r<f.x||x+r>f.x+f.w||y-r<f.y||y+r>f.y+f.h;
+}
+function indoorClampToFloor(o,f,r=8){
+  if(!o||!f)return;
+  o.x=Math.max(f.x+r,Math.min(f.x+f.w-r,o.x));
+  o.y=Math.max(f.y+r,Math.min(f.y+f.h-r,o.y));
 }
 function enforceInfiltrationBoundary(){
   if(stageMode!=='indoor'||!indoorWorld)return;
   const bounds=infiltrationFloorBounds();if(!bounds)return;
   const radius=p.tank?24:8;
   p.y=Math.max(bounds.top+radius,Math.min(bounds.bottom-radius,p.y));
+  const upper=indoorWorld.floors[1]?.footprint;
+  if(indoorWorld.currentFloor===1){
+    indoorClampToFloor(p,upper,radius);
+    for(const a of (typeof allies!=='undefined'?allies:[]))if(a.alive&&!(a.chute>0))indoorClampToFloor(a,upper);
+    if(typeof partner!=='undefined'&&partner?.alive)indoorClampToFloor(partner,upper);
+    if(typeof hound!=='undefined'&&hound?.alive)indoorClampToFloor(hound,upper);
+  }
   // 移動後の兵士同士の押し出しでも階段に重ならないようにする。
   for(const floor of indoorWorld.floors)for(const h of floor.guards){
-    if(!h.alive||!indoorGuardStairBlocked(h,h.x,h.y,8))continue;
+    if(!h.alive)continue;
+    if(h.indoorFloor===2)indoorClampToFloor(h,upper);
+    if(!indoorGuardStairBlocked(h,h.x,h.y,8))continue;
     const b=floor.stairObstacle;h.x=h.x<=b.x+b.w/2?b.x-10:b.x+b.w+10;
   }
 }
@@ -2526,8 +2557,8 @@ function drawInfiltrationStairSprite(floor){
 function drawInfiltrationFloors(cx,cy){
   if(!indoorWorld)return;
   const left=Math.max(0,cx-24),top=cy-24,right=Math.min(WW,cx+W+24),bottom=cy+H+24;
-  // 丘陵と同一の画像・倍率・合成済みパターンを使い、屋外を一度だけ塗る。
-  g.fillStyle=terrainSurfacePattern(indoorOutdoorTerrain)||indoorOutdoorTerrain.g;
+  // Upstairs has no exterior floor: use a flat void, never walkable ground.
+  g.fillStyle=indoorWorld.currentFloor===1?'#11171c':terrainSurfacePattern(indoorOutdoorTerrain)||indoorOutdoorTerrain.g;
   g.fillRect(left,top,right-left,bottom-top);
   const concrete=indoorConcretePattern()||'#777975';
   for(const f of indoorWorld.floors){
