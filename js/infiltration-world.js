@@ -2605,11 +2605,12 @@ function drawInfiltrationProps(cx,cy){
 }
 
 function drawInfiltrationDoorPanels(q,open,half,part){
-  const image=indoorPropImage(q.vertical?'automatic_door':'automatic_door_horizontal_front10x');if(!image)return false;
+  const image=indoorPropImage(q.vertical?'automatic_door_cyan':'automatic_door_horizontal_cyan');if(!image)return false;
   const sourceHalf=(image.naturalWidth||image.width)/2,height=image.naturalHeight||image.height;
-  const visible=sourceHalf*(1-open),top=-(INDOOR_DOOR_THICKNESS+4)/2;
+  const visible=sourceHalf*(1-open),verticalDepth=(INDOOR_DOOR_THICKNESS+4)*1.5;
+  const top=q.vertical?-verticalDepth/2:-(INDOOR_DOOR_THICKNESS+4)/2;
   // Keep the old horizontal sprite's pixel scale; only the taller front extends downward.
-  const depth=q.vertical?INDOOR_DOOR_THICKNESS+4:(INDOOR_DOOR_THICKNESS+7)*height/84;
+  const depth=q.vertical?verticalDepth:(INDOOR_DOOR_THICKNESS+7)*height/84;
   // Crop retracting leaves rather than squeezing the texture as the door opens.
   g.save();g.translate(q.x,q.y);if(q.vertical)g.rotate(Math.PI/2);
   g.drawImage(image,sourceHalf-visible,0,visible,height,-half,top,part,depth);
@@ -2647,7 +2648,8 @@ function drawInfiltrationOpenings(cx,cy){
       const border='#a5a695';
       g.fillStyle=panel;g.strokeStyle=border;g.lineWidth=2;
       const open=Math.max(0,Math.min(1,q.open||0)),half=INDOOR_DOOR_WIDTH/2*(q.vertical?INDOOR_SCALE_Y:INDOOR_SCALE_X);
-      const part=half*(1-open),thick=INDOOR_DOOR_THICKNESS,frame=thick/2+4;
+      const visualScale=q.vertical?1.5:1;
+      const part=half*(1-open),thick=INDOOR_DOOR_THICKNESS*visualScale,frame=(INDOOR_DOOR_THICKNESS/2+4)*visualScale;
       const textured=part>1&&drawInfiltrationDoorPanels(q,open,half,part);
       if(q.vertical){
         const top=q.y-half,bottom=q.y+half;

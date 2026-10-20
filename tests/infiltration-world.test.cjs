@@ -199,7 +199,7 @@ test('indoor wall artwork covers the full collision wall length without visible 
  assert.ok(sprite&&sprite[3]>=315,'horizontal indoor wall also covers the whole span');
 });
 
-test('automatic doors have identical slim 6px thickness in both orientations',()=>{
+test('automatic doors keep 6px colliders while vertical artwork is 1.5 times thicker',()=>{
  const fs=require('node:fs'),path=require('node:path');
  const source=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
  const thickness=Number(source.match(/INDOOR_DOOR_THICKNESS=(\d+)/)[1]);
@@ -231,7 +231,7 @@ test('automatic doors have identical slim 6px thickness in both orientations',()
  );
  drawer(0,250);
  assert.equal(fills.length,4,'two sliding panels per closed door');
- for(const rc of fills.slice(0,2))assert.equal(rc[2],6,'vertical drawn thickness');
+ for(const rc of fills.slice(0,2))assert.equal(rc[2],9,'vertical fallback is 1.5 times thicker');
  for(const rc of fills.slice(2))assert.equal(rc[3],6,'horizontal drawn thickness');
  // 触れる前は閉じたまま。薄くしても近接開閉のルールは維持する。
  const entities=[{x:450,y:400}],cover={noHit:false},door={...q,vertical:true,open:0,cover};
@@ -250,17 +250,17 @@ test('automatic door WebP leaves retract without stretching with independent hor
  const from=src.indexOf('function drawInfiltrationDoorPanels('),to=src.indexOf('function drawInfiltrationOpenings(',from);
  const image={naturalWidth:512,naturalHeight:75},horizontalImage={naturalWidth:512,naturalHeight:206},calls=[],rotations=[],requests=[];
  const g={save(){},restore(){},translate(){},rotate:a=>rotations.push(a),drawImage:(...a)=>calls.push(a)};
- const draw=new Function('g','indoorPropImage','INDOOR_DOOR_THICKNESS',src.slice(from,to)+';return drawInfiltrationDoorPanels;')(g,key=>{requests.push(key);return key==='automatic_door'?image:horizontalImage;},6);
+ const draw=new Function('g','indoorPropImage','INDOOR_DOOR_THICKNESS',src.slice(from,to)+';return drawInfiltrationDoorPanels;')(g,key=>{requests.push(key);return key==='automatic_door_cyan'?image:horizontalImage;},6);
  for(const vertical of [false,true])for(const open of [0,.5]){
   const half=vertical?73.5:42,part=half*(1-open),before=calls.length;
   assert.equal(draw({x:100,y:100,vertical},open,half,part),true);
-  const chosen=vertical?image:horizontalImage,height=chosen.naturalHeight,depth=vertical?10:13*206/84;
+  const chosen=vertical?image:horizontalImage,height=chosen.naturalHeight,depth=vertical?15:13*206/84,top=vertical?-7.5:-5;
   const [left,right]=calls.slice(before);assert.equal(left[0],chosen);assert.equal(right[0],chosen);
-  assert.deepEqual(left.slice(1),[256*open,0,256*(1-open),height,-half,-5,part,depth]);
-  assert.deepEqual(right.slice(1),[256,0,256*(1-open),height,half-part,-5,part,depth]);
+  assert.deepEqual(left.slice(1),[256*open,0,256*(1-open),height,-half,top,part,depth]);
+  assert.deepEqual(right.slice(1),[256,0,256*(1-open),height,half-part,top,part,depth]);
  }
  assert.deepEqual(rotations,[Math.PI/2,Math.PI/2]);
- assert.deepEqual(requests,['automatic_door_horizontal_front10x','automatic_door_horizontal_front10x','automatic_door','automatic_door']);
+ assert.deepEqual(requests,['automatic_door_horizontal_cyan','automatic_door_horizontal_cyan','automatic_door_cyan','automatic_door_cyan']);
 });
 test('automatic door rendering skips offscreen and fully retracted panels and keeps a loading fallback',()=>{
  const fs=require('node:fs'),path=require('node:path'),src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
@@ -275,20 +275,20 @@ test('automatic door rendering skips offscreen and fully retracted panels and ke
  assert.ok(!src.slice(from,to).includes('createElement'),'no per-door raster canvas');
 });
 test('automatic door asset is one small transparent WebP with no ground padding',()=>{
- const fs=require('node:fs'),path=require('node:path'),data=fs.readFileSync(path.join(__dirname,'../assets/indoor/automatic_door.webp'));
- assert.equal(data.toString('ascii',8,12),'WEBP');assert.ok(data.length<20000);
+ const fs=require('node:fs'),path=require('node:path'),data=fs.readFileSync(path.join(__dirname,'../assets/indoor/automatic_door_cyan.webp'));
+ assert.equal(data.toString('ascii',8,12),'WEBP');assert.ok(data.length<24000);
  assert.ok(data[20]&16,'transparent alpha');
  assert.equal(1+data.readUIntLE(24,3),512);assert.equal(1+data.readUIntLE(27,3),75);
 });
-test('horizontal door WebP has an expanded front face while the vertical source stays byte-identical',()=>{
+test('horizontal door WebP preserves the front-face size while original door sources stay available',()=>{
  const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
  const old=fs.readFileSync(path.join(__dirname,'../assets/indoor/automatic_door.webp'));
  assert.equal(crypto.createHash('sha1').update(Buffer.concat([Buffer.from('blob '+old.length+'\0'),old])).digest('hex'),'6d0a4cde06234a72140f17b0089d93d35f66e54b');
- const data=fs.readFileSync(path.join(__dirname,'../assets/indoor/automatic_door_horizontal_front10x.webp'));
- assert.equal(data.toString('ascii',8,12),'WEBP');assert.ok(data.length<38000);assert.ok(data[20]&16);
+ const data=fs.readFileSync(path.join(__dirname,'../assets/indoor/automatic_door_horizontal_cyan.webp'));
+ assert.equal(data.toString('ascii',8,12),'WEBP');assert.ok(data.length<45000);assert.ok(data[20]&16);
  assert.equal(1+data.readUIntLE(24,3),512);assert.equal(1+data.readUIntLE(27,3),206);
 });
-test('horizontal door panels and rails move up together while vertical graphics and logical positions stay fixed',()=>{
+test('horizontal door position is retained while widened vertical artwork stays centered on its unchanged logical position',()=>{
  const fs=require('node:fs'),path=require('node:path'),src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
  const from=src.indexOf('function drawInfiltrationDoorPanels('),to=src.indexOf('function drawInfiltrationAlarmEyes(',from);
  const image={naturalWidth:512,naturalHeight:206},doors=[{x:100,y:200,vertical:true,open:0},{x:300,y:200,open:0}];
@@ -299,6 +299,8 @@ test('horizontal door panels and rails move up together while vertical graphics 
  const draw=new Function('g','indoorPropImage','indoorWorld','drawInfiltrationProps','W','H','INDOOR_SCALE_X','INDOOR_SCALE_Y','INDOOR_DOOR_WIDTH','INDOOR_DOOR_THICKNESS',
   src.slice(from,to)+';return drawInfiltrationOpenings;')(g,()=>ready?image:null,{floors:[{footprint:{y:0,h:800},windows:[],doors}]},()=>{},840,720,1,1.75,84,6);
  draw(0,0);assert.equal(fills[0][1],126.5,'vertical fallback is unchanged');
+ assert.equal(fills[0][0],95.5,'widened vertical fallback remains centered');
+ assert.deepEqual(lines.slice(0,2),[[89.5,126.5],[110.5,126.5]],'vertical frame also widens 1.5 times');
  assert.equal(fills[2][1],187,'horizontal fallback moves 6px south from its previous offset');
  assert.deepEqual(lines.slice(2),[[258,183],[258,197]],'both horizontal frame rails move with the leaves');
  ready=true;draw(0,0);assert.equal(images[2][1],185,'horizontal WebP moves 6px south from its previous offset');
