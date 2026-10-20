@@ -2035,7 +2035,7 @@ function indoorAdvanceVisualNotice(h,dt,interval=.12,hearSteps=false){
 }
 function indoorUpdateGuardNotice(h,dt){
  const n=indoorAdvanceVisualNotice(h,dt,.12,true),sameFloor=h.indoorFloor===indoorWorld?.currentFloor+1;
- if(n.sampled&&!n.visible&&sameFloor&&!indoorStairProtected()&&debugMode<2&&!(p.dig>0)&&n.speed>80&&n.stepDistance<50&&D(h,p)<72&&
+ if(n.sampled&&!n.visible&&sameFloor&&!indoorStairProtected()&&debugMode<2&&!(p.dig>0)&&n.speed>70&&n.stepDistance<50&&D(h,p)<84&&
    Math.abs(angD(Math.atan2(p.y-h.y,p.x-h.x),h.face))<Math.PI*7/8&&cachedLos(h,p)){
   // Footsteps keep the rear 45-degree silent sector and investigate a snapshot only.
   indoorStartGuardPursuit(h);
@@ -2050,8 +2050,8 @@ function indoorUpdateGuardNotice(h,dt){
   h.indoorNotice=null;indoorRecordGuardDiscovery(h);return true;
  }
  // A weak glimpse can pass unnoticed. React only after enough evidence builds.
- if(n.exposure>.14){
-  h.sus=n.exposure-.14;h.susMax=.86;
+ if(n.exposure>.11){
+  h.sus=n.exposure-.11;h.susMax=.89;
   if(n.spot){const angle=Math.atan2(n.spot.y-h.y,n.spot.x-h.x);h.face+=Math.max(-dt*2,Math.min(dt*2,angD(angle,h.face)));}
   return true;
  }

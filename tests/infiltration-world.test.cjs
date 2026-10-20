@@ -873,6 +873,26 @@ test('same-floor search cannot read hidden displacement or refresh its report',(
  for(let i=0;i<5;i++)s.api.update(s.h,.1);
  assert.deepEqual(s.h.indoorAlert.lastSeen,report);
 });
+test('visual suspicion begins above 11 percent without confirming or attacking',()=>{
+ for(const exposure of [.10,.12]){
+  const s=guardScenario();s.h.st=0;s.h.target=null;s.setVisible(true);
+  s.h.indoorNotice={checkT:1,sampleAge:0,exposure,visible:true,rate:0};
+  s.api.update(s.h,.001);
+  assert.equal(s.h.sus>0,exposure>.11);assert.equal(s.h.st,0);
+  assert.equal(s.h.indoorAlert,undefined);assert.equal(s.shots,0);
+ }
+});
+test('slower nearby footsteps start investigation within 84 pixels while walls and distance protect',()=>{
+ for(const distance of [83,85])for(const clear of [true,false]){
+  const s=guardScenario();s.h.st=0;s.h.target=null;s.h.x=120;s.setWall(clear);
+  s.avatar.x=s.h.x+distance+10;
+  s.api.update(s.h,.13);assert.equal(s.h.indoorAlert,undefined,'standing remains silent');
+  s.avatar.x-=10;s.api.update(s.h,.13); // 77px/s: audible above 70, below the previous 80.
+  if(clear&&distance===83){
+   assert.equal(s.h.indoorAlert.phase,'lastSeen');assert.equal(s.h.st,0);
+  }else assert.equal(s.h.indoorAlert,undefined);
+ }
+});
 test('nearby moving footsteps investigate a snapshot, while walls and standing remain quiet',()=>{
  for(const wall of [true,false]){
   const s=guardScenario();s.h.st=0;s.h.target=null;s.h.x=160;s.setWall(wall);
