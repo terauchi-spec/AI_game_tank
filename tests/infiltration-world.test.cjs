@@ -547,7 +547,7 @@ test('indoor graph routes through actual passages and never through an unwalled 
 });
 function guardScenario(){
  const src=require('node:fs').readFileSync(require('node:path').join(__dirname,'../js/infiltration-world.js'),'utf8');
- const avatar={x:200,y:100};let visible=false,patrols=0,patrolSpeed=0,finished=0,shots=0,wallClear=true,light=1,blockedMovement=false;
+ const avatar={x:200,y:100};let visible=false,patrols=0,patrolSpeed=0,finished=0,shots=0,wallClear=true,light=1,blockedMovement=false,visionChecks=0;
  const d=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
  const ray=(a,b)=>typeof wallClear==='function'?wallClear(a,b):wallClear;
  const api=new Function('p','R','D','angD','pauseAfterEnemyDetection','fire','los','cachedLos',
@@ -557,7 +557,7 @@ function guardScenario(){
  indoorMoveGuardTo=(h,q,dt,sp)=>{if(movementBlocked())return false;const d=D(h,q),k=Math.min(1,sp*dt/Math.max(.001,d));h.x+=(q.x-h.x)*k;h.y+=(q.y-h.y)*k;return true;};
  indoorGuardSeesPlayer=()=>visibleNow();
  indoorLightLevel=()=>lightNow();
- return {relay:indoorObserveFoundGuard,begin:indoorStartGuardPursuit,update:updateInfiltrationGuardAI,points:indoorSearchPoints,share:indoorShareGuardSighting,approach:indoorReportApproachPoint,
+ return {risk:indoorVisualSuspicionRate,relay:indoorObserveFoundGuard,begin:indoorStartGuardPursuit,update:updateInfiltrationGuardAI,points:indoorSearchPoints,share:indoorShareGuardSighting,approach:indoorReportApproachPoint,
  setSensors:(v,l,b)=>{visibleNow=v;lightNow=l;movementBlocked=b;},setWorld:w=>{indoorWorld=w;},
  finish:indoorFinishGuardSearch,returnPlan:indoorPatrolReturnPlan,
  gen:indoorGenerateFloor,grid:indoorMakeGuardGrid,at:indoorAt};
@@ -567,11 +567,11 @@ function guardScenario(){
  (h,_dt,sp)=>{patrols++;patrolSpeed=sp;return h.face;},()=>null,h=>{
   h.st=1;h.target='p';h.sus=0;if(!h.indoorAlert||h.indoorAlert.phase!=='found')api.begin(h);
  },(h,dx,dy)=>{h.x+=dx;h.y+=dy;});
- api.setSensors(()=>visible,()=>light,()=>blockedMovement);
+ api.setSensors(()=>{visionChecks++;return visible;},()=>light,()=>blockedMovement);
  api.setWorld({currentFloor:0,floors:[{}]});
  const h={indoorGuard:true,indoorFloor:1,alive:true,st:1,target:'p',x:0,y:100,face:0,cd:100,ct:0};
  return {api,h,avatar,setVisible:v=>visible=v,setWall:v=>wallClear=v,setLight:v=>light=v,setBlocked:v=>blockedMovement=v,
- get finished(){return finished;},get patrolSpeed(){return patrolSpeed;},get patrols(){return patrols;},get shots(){return shots;}};
+ get visionChecks(){return visionChecks;},get finished(){return finished;},get patrolSpeed(){return patrolSpeed;},get patrols(){return patrols;},get shots(){return shots;}};
 }
 test('sight loss travels to the last sighting, then searches with a hard timeout',()=>{
  const s=guardScenario(),{api,h,avatar}=s;api.begin(h);
@@ -583,14 +583,16 @@ test('sight loss travels to the last sighting, then searches with a hard timeout
  for(let i=0;i<162&&h.indoorAlert;i++)api.update(h,.05);
  assert.equal(h.indoorAlert,null);assert.equal(h.st,0);assert.equal(h.sus,0);assert.equal(s.finished,1);
  h.st=1;h.target='p';api.begin(h);api.update(h,1.36);
- s.setVisible(true);api.update(h,.14);assert.equal(h.indoorAlert.phase,'found');
+ s.setVisible(true);api.update(h,.14);assert.notEqual(h.indoorAlert.phase,'found');
+ for(let i=0;i<60&&h.indoorAlert?.phase!=='found';i++)api.update(h,.1);
+ assert.equal(h.indoorAlert.phase,'found');
  assert.equal(h.indoorAlert.lastSeen.x,900);
 });
 test('indoor guards follow current visible player and last seen position if hidden',()=>{
  const fs=require('node:fs'),path=require('node:path');
  const src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
  const piece=(a,b)=>src.slice(src.indexOf(a),src.indexOf(b,src.indexOf(a)+a.length));
- const code=piece('function indoorStartGuardPursuit(h){','function indoorGuardSeesPlayer(h){')+
+ const code=piece('function indoorStartGuardPursuit(h){','function indoorGuardSeesPlayer(')+
   piece('function updateInfiltrationGuardAI(h,dt){','function updateInfiltrationDoors(dt){');
  const avatar={x:180,y:110},destinations=[];let visible=true;
  const [begin,update]=new Function('p','R','D','indoorGuardSeesPlayer','indoorMoveGuardTo',
@@ -798,15 +800,63 @@ test('two gun hits instantly detonate only the new shell-pallet kind',()=>{
 test('brief exposure can fade and darkness gives more time before recognition',()=>{
  const notice=light=>{const s=guardScenario();s.h.st=0;s.h.target=null;s.setLight(light);s.setVisible(true);return s;};
  const bright=notice(1),dark=notice(.24);
- for(let i=0;i<10;i++){bright.api.update(bright.h,.05);dark.api.update(dark.h,.05);}
+ for(let i=0;i<25;i++){bright.api.update(bright.h,.05);dark.api.update(dark.h,.05);}
  assert.equal(bright.h.indoorAlert.phase,'found');assert.equal(dark.h.st,0);
- for(let i=0;i<12;i++)dark.api.update(dark.h,.05);
+ for(let i=0;i<60;i++)dark.api.update(dark.h,.05);
  assert.equal(dark.h.indoorAlert.phase,'found');
  const brief=notice(1);
  for(let i=0;i<4;i++)brief.api.update(brief.h,.05);
  brief.setVisible(false);for(let i=0;i<12;i++)brief.api.update(brief.h,.05);
  assert.equal(brief.h.st,0);assert.equal(brief.h.indoorAlert,undefined);
  assert.equal(brief.h.sus,0);assert.ok(brief.patrols>0);
+});
+test('each visual cue increases risk and overlapping cues compound',()=>{
+ const {api}=guardScenario();
+ const rate=mask=>api.risk(mask&1?.96:.24,mask&2?120:0,mask&4?35:260,mask&8?0:1.2);
+ for(let mask=0;mask<16;mask++)for(let bit=1;bit<=8;bit*=2){
+  if(!(mask&bit))assert.ok(rate(mask|bit)>rate(mask),'every cue raises risk at every combination');
+ }
+ assert.equal(rate(0),.08);assert.ok(Math.abs(rate(15)-2.8)<1e-9);
+ assert.ok(rate(15)-rate(0)>[1,2,4,8].reduce((sum,bit)=>sum+rate(bit)-rate(0),0),
+  'overlapping cues compound instead of applying a single fixed delay');
+ assert.equal(api.risk(-1,-100,2000,10),rate(0));
+ assert.equal(api.risk(2,1000,-100,0),rate(15));
+});
+test('a dark stationary peripheral glimpse can pass without stopping patrol',()=>{
+ const s=guardScenario();s.h.st=0;s.h.target=null;s.h.face=-1.15;s.setLight(.24);s.setVisible(true);
+ for(let i=0;i<20;i++)s.api.update(s.h,.05);
+ assert.equal(s.h.sus,0);assert.equal(s.h.st,0);assert.ok(s.patrols>=20);
+ assert.equal(s.h.indoorAlert,undefined);
+ s.setVisible(false);for(let i=0;i<10;i++)s.api.update(s.h,.05);
+ assert.equal(s.h.indoorNotice.exposure,0,'concealment clears unconfirmed evidence');
+});
+test('moving in a nearby bright sightline is confirmed faster than standing still',()=>{
+ const recognitionTime=(moving,light)=>{
+  const s=guardScenario();s.h.st=0;s.h.target=null;s.setLight(light);s.setVisible(true);s.avatar.x=58;
+  for(let i=0;i<200;i++){
+   if(moving)s.avatar.x=i%2?66:50;
+   s.api.update(s.h,.04);if(s.h.st)return (i+1)*.04;
+  }
+  return Infinity;
+ };
+ const moving=recognitionTime(true,1),standing=recognitionTime(false,1),shadow=recognitionTime(false,.24);
+ assert.ok(moving>=.3&&moving<standing,`${moving} < ${standing}`);
+ assert.ok(standing<shadow&&shadow<4,`${standing} < ${shadow}`);
+});
+test('visual suspicion retains throttled sight checks for patrol and search',()=>{
+ for(const search of [false,true]){
+  const s=guardScenario();s.h.st=0;s.h.target=null;
+  if(search){s.api.begin(s.h);s.h.indoorAlert.phase='lastSeen';s.h.indoorAlert.travelLeft=10;}
+  for(let i=0;i<120;i++)s.api.update(s.h,1/120);
+  assert.ok(s.visionChecks>=7&&s.visionChecks<=10,'no per-frame vision rays');
+ }
+});
+test('same-floor search cannot read hidden displacement or refresh its report',()=>{
+ const s=guardScenario();s.api.begin(s.h);s.api.update(s.h,1.36);
+ const report={...s.h.indoorAlert.lastSeen};
+ Object.defineProperty(s.avatar,'x',{get(){throw Error('hidden displacement queried');}});
+ for(let i=0;i<5;i++)s.api.update(s.h,.1);
+ assert.deepEqual(s.h.indoorAlert.lastSeen,report);
 });
 test('nearby moving footsteps investigate a snapshot, while walls and standing remain quiet',()=>{
  for(const wall of [true,false]){
@@ -846,6 +896,9 @@ test('both lost-sight approach and search reacquire confirmed sightings',()=>{
   if(phase==='search'){s.h.x=200;s.api.update(s.h,.05);}
   assert.equal(s.h.indoorAlert.phase,phase);
   s.avatar.x=240;s.setVisible(true);s.api.update(s.h,.14);
+  assert.equal(s.h.indoorAlert.phase,phase,'a glimpse must not instantly confirm');
+  assert.equal(s.h.indoorAlert.lastSeen.x,200,'unconfirmed glimpse cannot overwrite the report');
+  for(let i=0;i<60&&s.h.indoorAlert?.phase!=='found';i++)s.api.update(s.h,.1);
   assert.equal(s.h.indoorAlert.phase,'found');assert.equal(s.h.st,1);
   assert.equal(s.h.indoorAlert.lastSeen.x,240);
  }
@@ -1051,6 +1104,8 @@ test('prediction reads only the report and is cleared upon confirmed visual reac
  s.api.share(s.source,report,1000);
  Object.defineProperty(s.avatar,'x',{value:120,writable:true});
  const second=s.recipients[1];s.setVisible(true);s.api.update(second,.14);
+ assert.notEqual(second.indoorAlert.phase,'found');
+ for(let i=0;i<60&&second.indoorAlert?.phase!=='found';i++)s.api.update(second,.1);
  assert.equal(second.indoorAlert.phase,'found');
  assert.equal(second.indoorAlert.approachGoal,undefined,'new pursuit drops the old inferred destination');
  assert.equal(second.indoorAlert.lastSeen.x,120);
@@ -1059,11 +1114,12 @@ test('initial recognition retains only movement witnessed in successive visible 
  const s=guardScenario();s.h.st=0;s.h.target=null;s.setVisible(true);
  s.api.update(s.h,.13);s.avatar.x+=20;s.api.update(s.h,.13);s.avatar.x+=20;s.api.update(s.h,.13);
  s.avatar.x+=20;s.api.update(s.h,.13);
+ for(let i=0;i<20&&!s.h.st;i++){s.avatar.x+=20;s.api.update(s.h,.13);}
  assert.equal(s.h.indoorAlert.phase,'found');
  assert.deepEqual(s.h.indoorAlert.lastDir,{x:1,y:0},'observed movement can inform the first report');
  const hidden=guardScenario();hidden.h.st=0;hidden.h.target=null;
  hidden.api.update(hidden.h,.13);hidden.avatar.x=800;hidden.setVisible(true);
- for(let i=0;i<5;i++)hidden.api.update(hidden.h,.13);
+ for(let i=0;i<40&&!hidden.h.st;i++)hidden.api.update(hidden.h,.13);
  assert.equal(hidden.h.indoorAlert.lastDir,null,'unseen displacement is not treated as observed direction');
 });
 
@@ -1306,7 +1362,11 @@ test('alarm conversations last five seconds, then resume search with a cooldown'
 test('discovery or stun interrupts both members of an alarm conversation',()=>{
  for(const cause of ['discovery','stun']){
   const s=alarmChatPair(),{a,b}=s;s.api.chats(.1);
-  if(cause==='discovery'){s.api.setVisible(a);s.api.update(a,.14);assert.equal(a.indoorAlert.phase,'found');}
+  if(cause==='discovery'){
+   s.api.setVisible(a);s.api.update(a,.14);
+   for(let i=0;i<80&&a.indoorAlert?.phase!=='found';i++)s.api.update(a,.1);
+   assert.equal(a.indoorAlert.phase,'found');
+  }
   else{a.stun=1;s.api.chats(.1);}
   assert.equal(a.indoorChatT,0);assert.equal(b.indoorChatT,0);
   assert.equal(a.indoorChatMate,null);assert.equal(b.indoorChatMate,null);

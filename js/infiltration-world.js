@@ -1607,12 +1607,13 @@ function indoorGuardAlertAt(h,observed){
   sightGrace:0,sightCheckT:0,visible:false,travelLeft:10,searchPoints:null,searchIndex:0,scanFace:h.face};
  h.lost=duration;h._detectCache=null;h._nextDetectAt=0;
 }
-function indoorGuardSeesPlayer(h){
+function indoorGuardSeesPlayer(h,sample=null){
  if(!p||indoorStairProtected()||debugMode>=2||p.dig>0||inTumbleweed(p)||(!p.tank&&inBush(p))||
    (weather==='rain'&&inWaterAt(p.x,p.y,0))||
    h.indoorFloor!==indoorWorld?.currentFloor+1)return false;
  const d=D(h,p),a=Math.abs(angD(Math.atan2(p.y-h.y,p.x-h.x),h.face));
  const illumination=indoorLightLevel(p.x,p.y);
+ if(sample){sample.light=illumination;sample.distance=d;sample.angle=a;}
  const tracking=h.indoorAlert?.phase==='found';
  const visibilityFactor=tracking?Math.max(.78,.5+.5*illumination):(.36+.64*illumination);
  const range=detectRange('p')*1.2*visibilityFactor*(h.indoorChatT>0?.5:1);
@@ -1829,46 +1830,58 @@ function indoorBeginGuardSearch(h,state){
  h.st=0;h.target=null;h.sus=8;h.susMax=8;
  h.foundPause=0;h.burstLeft=0;h.lost=0;
 }
-function indoorUpdateGuardNotice(h,dt){
- // Ordinary patrol still uses the established path and speed, but player
- // recognition and suspicion belong exclusively to this stage.
- const n=h.indoorNotice||(h.indoorNotice={checkT:0,exposure:0,visible:false,sampleX:p.x,sampleY:p.y,sampleAge:0});
- n.checkT-=dt;n.sampleAge+=dt;
+// Four visible cues combine nonlinearly; reuse sampled geometry instead of adding rays.
+function indoorVisualSuspicionRate(illumination,speed,distance,angle){
+ const light=clamp((illumination-.24)/.72,0,1),motion=clamp(speed/120,0,1);
+ const close=clamp((260-distance)/225,0,1),front=clamp(1-Math.abs(angle)/(DETECT_OUTER_HALF*1.2),0,1);
+ const risk=.30*light+.25*motion+.25*close+.20*front;
+ return .08+2.72*risk*risk;
+}
+function indoorAdvanceVisualNotice(h,dt,interval=.12,hearSteps=false){
+ const n=h.indoorNotice||(h.indoorNotice={checkT:0,exposure:0,visible:false,sampleX:null,sampleY:null,sampleAge:0});
+ n.checkT-=dt;n.sampleAge+=dt;n.sampled=false;
  if(n.checkT<=0){
-  const elapsed=Math.max(.001,n.sampleAge),distanceMoved=Math.hypot(p.x-n.sampleX,p.y-n.sampleY);
-  const sameFloor=h.indoorFloor===indoorWorld?.currentFloor+1;
-  const previouslyVisible=n.visible;
-  n.visible=indoorGuardSeesPlayer(h);n.checkT=.12;n.sampleAge=0;
-  n.sampleX=p.x;n.sampleY=p.y;
+  const elapsed=Math.max(.001,n.sampleAge),previouslyVisible=n.visible;
+  n.visible=indoorGuardSeesPlayer(h,n);n.checkT=interval;n.sampleAge=0;n.sampled=true;
+  // Searchers cannot sample hidden coordinates, including guards on another floor.
+  const hear=hearSteps&&h.indoorFloor===indoorWorld?.currentFloor+1;
+  if(n.visible||hear){
+   const moved=n.sampleX===null?0:Math.hypot(p.x-n.sampleX,p.y-n.sampleY);
+   n.sampleX=p.x;n.sampleY=p.y;n.stepDistance=moved;n.speed=moved<50?moved/elapsed:0;
+  }else{n.sampleX=null;n.sampleY=null;n.stepDistance=0;n.speed=0;}
   if(n.visible){
-   const illumination=indoorLightLevel(p.x,p.y),d=D(h,p);
-   n.threshold=d<40?.15:.45+(1-illumination)*.65;
+   const light=Number.isFinite(n.light)?n.light:indoorLightLevel(p.x,p.y),d=Number.isFinite(n.distance)?n.distance:D(h,p);
+   const angle=Number.isFinite(n.angle)?n.angle:Math.abs(angD(Math.atan2(p.y-h.y,p.x-h.x),h.face));
+   n.rate=indoorVisualSuspicionRate(light,n.speed,d,angle);
    if(previouslyVisible&&n.spot){
-    const moved=D(n.spot,p);
-    if(moved>=6)n.lastDir={x:(p.x-n.spot.x)/moved,y:(p.y-n.spot.y)/moved};
+    const step=D(n.spot,p);
+    if(step>=6)n.lastDir={x:(p.x-n.spot.x)/step,y:(p.y-n.spot.y)/step};
    }else n.lastDir=null;
    n.spot={x:p.x,y:p.y};
-  }else if(sameFloor&&!indoorStairProtected()&&debugMode<2&&!(p.dig>0)&&distanceMoved/elapsed>80&&distanceMoved<50&&D(h,p)<72&&
-    Math.abs(angD(Math.atan2(p.y-h.y,p.x-h.x),h.face))<Math.PI*7/8&&cachedLos(h,p)){
-   // Nearby footsteps cause investigation, never instant discovery. Walls block
-   // this conservative hearing model; teleporting between floors emits no step.
-   // The rear 45-degree sector (22.5 degrees each side) is silent to this guard.
-   indoorStartGuardPursuit(h);
-   const a=h.indoorAlert;a.phase='lastSeen';a.lastSeen={x:p.x,y:p.y};
-   a.travelLeft=3;a.visible=false;a.sightCheckT=.12;
-   h.st=0;h.target=null;h.sus=3;h.susMax=3;return true;
-  }
+  }else n.rate=0;
  }
- n.exposure=n.visible?Math.min(1.5,n.exposure+dt):Math.max(0,n.exposure-dt*2);
- if(n.visible&&n.exposure>=n.threshold){
+ n.exposure=n.visible?Math.min(1,n.exposure+dt*n.rate):Math.max(0,n.exposure-dt*1.6);
+ return n;
+}
+function indoorUpdateGuardNotice(h,dt){
+ const n=indoorAdvanceVisualNotice(h,dt,.12,true),sameFloor=h.indoorFloor===indoorWorld?.currentFloor+1;
+ if(n.sampled&&!n.visible&&sameFloor&&!indoorStairProtected()&&debugMode<2&&!(p.dig>0)&&n.speed>80&&n.stepDistance<50&&D(h,p)<72&&
+   Math.abs(angD(Math.atan2(p.y-h.y,p.x-h.x),h.face))<Math.PI*7/8&&cachedLos(h,p)){
+  // Footsteps keep the rear 45-degree silent sector and investigate a snapshot only.
+  indoorStartGuardPursuit(h);
+  const a=h.indoorAlert;a.phase='lastSeen';a.lastSeen={x:p.x,y:p.y};
+  a.travelLeft=3;a.visible=false;a.sightCheckT=.12;
+  h.st=0;h.target=null;h.sus=3;h.susMax=3;return true;
+ }
+ if(n.visible&&n.exposure>=1){
   if(!indoorGuardSeesPlayer(h)||!los(h,p)){n.visible=false;n.checkT=0;return true;}
   enterHumanFound(h,'p');
   if(h.indoorAlert&&n.lastDir)h.indoorAlert.lastDir={...n.lastDir};
   h.indoorNotice=null;indoorRecordGuardDiscovery(h);return true;
  }
- if(n.exposure>0){
-  // Reuse the existing suspicion icon; no extra drawing or UI work per frame.
-  h.sus=n.exposure;h.susMax=n.threshold||1;
+ // A weak glimpse can pass unnoticed. React only after enough evidence builds.
+ if(n.exposure>.14){
+  h.sus=n.exposure-.14;h.susMax=.86;
   if(n.spot){const angle=Math.atan2(n.spot.y-h.y,n.spot.x-h.x);h.face+=Math.max(-dt*2,Math.min(dt*2,angD(angle,h.face)));}
   return true;
  }
@@ -2004,28 +2017,33 @@ function updateInfiltrationGuardAI(h,dt){
     (state.phase==='found'&&(!h.st||h.target!=='p'))){
   h.indoorAlert=null;h.indoorNotice=null;return false;
  }
- // Sample visibility and the observed position together. Cached visibility must
- // never reveal new coordinates after the player has gone around a corner.
- state.sightCheckT=(state.sightCheckT||0)-dt;
- if(state.sightCheckT<=0){
-  state.sightCheckT=.12+((h.indoorFloor||1)%3)*.01;
-  state.visible=indoorGuardSeesPlayer(h);
-  if(state.visible){
-   const previous=state.lastSeen,distanceSeen=D(previous,p);
-   if(distanceSeen>18)state.lastDir={x:(p.x-previous.x)/distanceSeen,y:(p.y-previous.y)/distanceSeen};
-   state.lastSeen={x:p.x,y:p.y};state.approachGoal=null;state.estimate=null;state.trail.length=0;
-   if(state.phase==='found')indoorRecordGuardDiscovery(h);
-   indoorShareGuardSighting(h,state);
+ // Unconfirmed glimpses during search/sweep use the same combined cues.
+ // Confirmed pursuit retains its original sight-loss timer and last-seen snapshots.
+ if(state.phase!=='found'){
+  const n=indoorAdvanceVisualNotice(h,dt,.12+((h.indoorFloor||1)%3)*.01);
+  if(n.visible&&n.exposure>=.8){
+   if(indoorGuardSeesPlayer(h)&&los(h,p)){
+    enterHumanFound(h,'p');indoorStartGuardPursuit(h);indoorRecordGuardDiscovery(h);h.indoorNotice=null;return true;
+   }
+   n.visible=false;n.checkT=0;
+  }
+  state.visible=false;
+ }else{
+  state.sightCheckT=(state.sightCheckT||0)-dt;
+  if(state.sightCheckT<=0){
+   state.sightCheckT=.12+((h.indoorFloor||1)%3)*.01;
+   state.visible=indoorGuardSeesPlayer(h);
+   if(state.visible){
+    const previous=state.lastSeen,distanceSeen=D(previous,p);
+    if(distanceSeen>18)state.lastDir={x:(p.x-previous.x)/distanceSeen,y:(p.y-previous.y)/distanceSeen};
+    state.lastSeen={x:p.x,y:p.y};state.approachGoal=null;state.estimate=null;state.trail.length=0;
+    indoorRecordGuardDiscovery(h);indoorShareGuardSighting(h,state);
+   }
   }
  }
  const visible=!!state.visible;
- if(visible){
-  if(state.phase!=='found'){
-   // Confirmed visual reacquisition resumes pursuit, not the initial notice delay.
-   enterHumanFound(h,'p');indoorStartGuardPursuit(h);indoorRecordGuardDiscovery(h);return true;
-  }
-  state.remaining=1.35;
- }else state.remaining=Math.max(0,state.remaining-dt);
+ if(visible)state.remaining=1.35;
+ else state.remaining=Math.max(0,state.remaining-dt);
  const pause=(h.modePause||0)>0||(h.foundPause||0)>0||
    (h.sharePause||0)>0||(h.chatResumeT||0)>0;
  h.modePause=Math.max(0,(h.modePause||0)-dt);
