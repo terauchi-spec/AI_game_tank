@@ -864,7 +864,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.20.1421',FILE_CREATED_AT='2026/10/20 14:21',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.20.1439',FILE_CREATED_AT='2026/10/20 14:39',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -1614,8 +1614,7 @@ function buildingShadowSprite(kind){
   q.fillStyle='rgba(31,33,28,.09)';q.beginPath();q.ellipse(48,40,35,23,0,0,Math.PI*2);q.fill();
   buildingShadowCache[kind]=c;return c;
  }
- // Indoor scars use the lighting mask's RGB at full opacity. Compositing the
- // same RGB at any light alpha leaves their darkness constant, below actors.
+ // Opaque indoor-only stencil, compensated and cached per scar before lighting.
  if(kind==='indoorWall'){
   q.fillStyle='#070d0f';q.beginPath();q.moveTo(8,14);q.lineTo(88,10);
   q.lineTo(93,56);q.lineTo(81,65);q.lineTo(13,63);q.lineTo(4,51);q.closePath();q.fill();
@@ -1652,7 +1651,7 @@ function drawBuildingGroundMarks(cx,cy){
  if(!buildingGroundMarks||!buildingGroundMarks.length)return;
  for(const m of buildingGroundMarks){
   if(m.x+m.w<cx-30||m.x>cx+W+30||m.y+m.h<cy-30||m.y>cy+H+30)continue;
-  const im=buildingShadowSprite(stageMode==='indoor'&&m.indoorWall?'indoorWall':m.kind),pad=m.indoorWall?0:m.hq?14:m.kind==='rock'?6:4;
+  const im=stageMode==='indoor'&&m.indoorWall?indoorWallGroundSprite(m):buildingShadowSprite(m.kind),pad=m.indoorWall?0:m.hq?14:m.kind==='rock'?6:4;
   drawStaticRaster(im,m.x-pad,m.y-pad*.45,m.w+pad*2,m.h+pad*1.15);
  }
 }

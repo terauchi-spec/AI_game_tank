@@ -863,20 +863,8 @@ function indoorLightingStamp(){
   q.fillStyle=gr;q.fillRect(0,0,c.width,c.height);
   indoorLightStamp=c;return c;
 }
-function drawInfiltrationLighting(cx,cy){
-  if(!indoorWorld||!gm)return;
-  // One bounded, overscanned mask. Static lighting is rebuilt only when the
-  // viewport approaches its edge, rather than composited and transferred each frame.
-  // Match the main Canvas backing settings, especially on readback-first iPhones.
-  if(!indoorShadeCanvas){
-    indoorShadeCanvas=document.createElement('canvas');indoorShadeCtx=gameCanvasContext(indoorShadeCanvas);
-  }
-  const mask=indoorShadeCanvas,q=indoorShadeCtx,mw=Math.ceil(W)+256,mh=Math.ceil(H)+256;
-  let cached=indoorShadeSnapshot;
-  if(!cached||cached.world!==indoorWorld||mask.width!==mw||mask.height!==mh||
-     cx<cached.x+32||cy<cached.y+32||cx+W>cached.x+mw-32||cy+H>cached.y+mh-32){
-    if(mask.width!==mw)mask.width=mw;if(mask.height!==mh)mask.height=mh;
-    const left=Math.floor(cx/64)*64-96,top=Math.floor(cy/64)*64-96;
+// Shared static mask painter, also used once to compensate a destroyed wall scar.
+function indoorPaintLightingMask(q,left,top,mw,mh){
     const r=INDOOR_LIGHT_RADIUS,stamp=indoorLightingStamp();
     q.setTransform(1,0,0,1,0,0);q.clearRect(0,0,mw,mh);
     q.fillStyle='rgba(7,13,15,.58)';q.fillRect(0,0,mw,mh);
@@ -896,6 +884,42 @@ function drawInfiltrationLighting(cx,cy){
       }
     }
     q.globalCompositeOperation='source-over';
+}
+function indoorWallGroundSprite(mark){
+ if(mark.indoorShadowRaster)return mark.indoorShadowRaster;
+ const c=document.createElement('canvas'),mask=document.createElement('canvas');
+ c.width=mask.width=Math.max(1,Math.ceil(mark.w));c.height=mask.height=Math.max(1,Math.ceil(mark.h));
+ const q=gameCanvasContext(c),mq=gameCanvasContext(mask);
+ q.drawImage(buildingShadowSprite('indoorWall'),0,0,c.width,c.height);
+ indoorPaintLightingMask(mq,mark.x,mark.y,c.width,c.height);
+ const pixels=q.getImageData(0,0,c.width,c.height),shade=mq.getImageData(0,0,c.width,c.height).data;
+ // A slightly lighter charcoal, compensated before the existing lighting pass.
+ // Only opaque silhouette pixels change; actors keep their normal lighting above it.
+ const target=[28,34,36],tint=[7,13,15],data=pixels.data;
+ for(let i=0;i<data.length;i+=4){
+  if(!data[i+3])continue;
+  const alpha=shade[i+3]/255;
+  for(let k=0;k<3;k++)data[i+k]=Math.round((target[k]-tint[k]*alpha)/(1-alpha));
+ }
+ q.putImageData(pixels,0,0);
+ // Keep only the finished small raster: no readback or lamp loop on later frames.
+ mark.indoorShadowRaster=c;return c;
+}
+function drawInfiltrationLighting(cx,cy){
+  if(!indoorWorld||!gm)return;
+  // One bounded, overscanned mask. Static lighting is rebuilt only when the
+  // viewport approaches its edge, rather than composited and transferred each frame.
+  // Match the main Canvas backing settings, especially on readback-first iPhones.
+  if(!indoorShadeCanvas){
+    indoorShadeCanvas=document.createElement('canvas');indoorShadeCtx=gameCanvasContext(indoorShadeCanvas);
+  }
+  const mask=indoorShadeCanvas,q=indoorShadeCtx,mw=Math.ceil(W)+256,mh=Math.ceil(H)+256;
+  let cached=indoorShadeSnapshot;
+  if(!cached||cached.world!==indoorWorld||mask.width!==mw||mask.height!==mh||
+     cx<cached.x+32||cy<cached.y+32||cx+W>cached.x+mw-32||cy+H>cached.y+mh-32){
+    if(mask.width!==mw)mask.width=mw;if(mask.height!==mh)mask.height=mh;
+    const left=Math.floor(cx/64)*64-96,top=Math.floor(cy/64)*64-96;
+    indoorPaintLightingMask(q,left,top,mw,mh);
     cached=indoorShadeSnapshot={world:indoorWorld,x:left,y:top};
   }
   gm.save();gm.drawImage(mask,cx-cached.x,cy-cached.y,W,H,0,0,W,H);gm.restore();
