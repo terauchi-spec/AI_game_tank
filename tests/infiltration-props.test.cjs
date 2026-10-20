@@ -210,3 +210,24 @@ test('important documents are beside storage or work fixtures rather than doorwa
  }
 });
 
+
+test('denser room furnishings remain bounded and never overlap walls, furniture or explosive cargo',()=>{
+ let added=0,total=0,floors=0;
+ const overlaps=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
+ for(let seed=1;seed<=30;seed++)for(const n of [1,2]){
+  const f=indoorGenerateFloor(n,random(seed*157+n)),extra=f.furniture.filter(o=>o.densityExtra);
+  assert.ok(extra.length<=24,'generation has a fixed per-floor furniture budget');
+  assert.ok(extra.length>8,'a meaningful number of furniture pieces is added');
+  for(const o of extra){
+   const room=f.rooms.find(r=>r.id===o.roomId);
+   assert.ok(room&&!room.isGuardPost,'leave the seated guard formation alone');
+   assert.ok(room.tiles.some(t=>o.x>=t.x&&o.y>=t.y&&o.x+o.w<=t.x+t.w&&o.y+o.h<=t.y+t.h));
+   assert.ok(!f.walls.some(w=>overlaps(o,w)),'no furniture in walls');
+   assert.ok(!f.furniture.some(q=>q!==o&&overlaps(o,q)),'no furniture overlap');
+   assert.ok(!f.explosiveObjects.some(q=>overlaps(o,q)),'preserve cargo space');
+  }
+  total+=f.furniture.length;added+=extra.length;floors++;
+ }
+ assert.ok(total/floors>=38,'rooms reach the requested denser furnished appearance');
+ assert.ok(added/floors>=15,'density increase is sustained across random floor plans');
+});

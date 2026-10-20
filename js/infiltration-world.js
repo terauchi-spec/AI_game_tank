@@ -708,6 +708,43 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
   }
   // Circular light pools of different sizes; preserve each former ellipse's area.
   for(const lamp of lightFixtures){const radius=Math.sqrt(lamp.rx*lamp.ry);lamp.rx=radius;lamp.ry=radius;}
+  // Furnish the unused room edges more densely, after cargo has reserved its space.
+  // Keep the existing light layout; extra tables use rooms that already have a task lamp.
+  // This is a bounded generation-only pass: no new assets or per-frame planning.
+  let extraFurniture=0;
+  for(const room of rooms){
+    if(room===postRoom)continue; // Keep the seated guard formation and its table clear.
+    const target=Math.min(9,Math.max(3,room.size*2));
+    const palette=INDOOR_ROOM_ART[room.purpose].filter(art=>
+      art!=='server_rack'&&art!=='generator'&&(art!=='bed'||room.size===1)&&
+      (!['desk','operations_table'].includes(art)||lightFixtures.some(l=>l.roomId===room.id&&l.anchor==='table')));
+    let count=furniture.filter(o=>o.roomId===room.id).length,walkChecks=0;
+    densityRoom: for(let pass=0;pass<3;pass++)for(const tile of room.tiles){
+      if(count>=target||extraFurniture>=24||walkChecks>=10)break densityRoom;
+      let placed=false;
+      for(let slot=0;slot<palette.length&&!placed;slot++){
+        const artKind=palette[(slot+pass+room.id)%palette.length];
+        if(artKind==='bed'&&furniture.some(o=>o.roomId===room.id&&o.artKind==='bed'))continue;
+        const worldH=artKind==='bed'?104:artKind==='container'?140:(INDOOR_PROP_LENGTH[artKind]||70);
+        const w=worldH*INDOOR_PROP_ASPECT[artKind],h=worldH/INDOOR_SCALE_Y;
+        const positions=[[14,14],[SIZE-w-14,14],[14,SIZE-h-14],[SIZE-w-14,SIZE-h-14],
+          [14,(SIZE-h)/2],[SIZE-w-14,(SIZE-h)/2],[(SIZE-w)/2,14],[(SIZE-w)/2,SIZE-h-14]];
+        for(const [dx,dy] of positions){
+          if(dx<12||dy<12||dx+w>SIZE-12||dy+h>SIZE-12)continue;
+          const o={kind:'roomSupport',artKind,roomId:room.id,purpose:room.purpose,zone:'room',
+            x:tile.x+dx,y:tile.y+dy,w,h,densityExtra:true};
+          if(blocksRoomWalk(o)||doorLanes.some(q=>overlap(o,q,5))||walls.some(q=>overlap(o,q,3))||
+             distance({x:o.x+w/2,y:o.y+h/2},stair)<98||
+             furniture.some(q=>overlap(o,q,6))||explosiveObjects.some(q=>overlap(o,q,7)))continue;
+          // Include cargo and large machines: an empty corner is not enough if it
+          // closes the last route between doors, room tiles or collection space.
+          if(++walkChecks>10)break;
+          if(!indoorRoomEquipmentWalkable(room,[...walls,...furniture,...explosiveObjects,o]))continue;
+          furniture.push(o);count++;extraFurniture++;placed=true;break;
+        }
+      }
+    }
+  }
   // Select only rooms with a genuine walkable document position.
   const obstacles=[...walls,...furniture,...explosiveObjects];
   // 貨物も含む実際の移動グリッドで、廊下から到達できる回収位置だけを選ぶ。
