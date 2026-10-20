@@ -1354,6 +1354,25 @@ function indoorStairLanding(floor){
   const b=indoorStairBounds(floor.stair,floor.number);
   return{x:floor.stair.x,y:b.y+22};
 }
+function indoorPreparePartnerTravel(q){
+  if(q.vehicle){
+    const v=q.vehicle;v.x=q.x;v.y=q.y;v.body=q.face;
+    if(typeof cars!=='undefined'&&!cars.includes(v))cars.push(v);
+  }
+  Object.assign(q,{vehicle:null,passengerVehicle:null,route:null,routeStart:null,routeIndex:0,routeWait:0,
+    routePointT:0,routeStuckT:0,boardTarget:null,boardAt:null,backup:false,wallFollow:null,sideStep:null,
+    goal:null,planT:0,modeT:0,reentryT:0,off:0,farT:0,moving:false,grappleT:0,grappleTarget:null,
+    prevPX:p.x,prevPY:p.y,playerSpeed:0});
+  if(typeof partnerOrder!=='undefined'){
+    partnerOrder.pressed=false;partnerOrder.held=0;partnerOrder.drawing=false;partnerOrder.cursor=null;partnerOrder.path=[];partnerOrder.signalT=0;partnerOrder.blocked=false;
+  }
+}
+function indoorPartnerStairLanding(floor){
+  if(typeof skill==='undefined'||skill!=='partner'||typeof partner==='undefined'||!partner)return;
+  indoorPreparePartnerTravel(partner);
+  const landing=indoorStairLanding(floor);
+  Object.assign(partner,{x:landing.x+14,y:landing.y+12,face:p.body});
+}
 function indoorStairTravelReady(floor){
   const b=indoorStairBounds(floor.stair,floor.number),w=indoorWorld;
   const inside=p.x>=b.x+8&&p.x<=b.x+b.w-8&&p.y>=b.y+8&&p.y<=b.y+b.h+12;
@@ -2443,6 +2462,7 @@ function updateInfiltrationMission(dt){
     w.currentFloor=1-w.currentFloor;
     const target=w.floors[w.currentFloor];
     Object.assign(p,indoorStairLanding(target));
+    indoorPartnerStairLanding(target);
     indoorBeginStairSanctuary(target);
     w.stairsCooldown=2;w.stairEntryFloor=null;w.stairMoveLock=.5;
     m.progress=0;m.current=null;
@@ -2528,6 +2548,12 @@ function beginInfiltrationExtraction(exit){
   mission.extraction={elapsed:0,duration:5.2,camX:view.x,camY:view.y,
     startX:view.x-100,stopX:exit.x,endX:view.x+W+100,y:exit.y+(p.y>=exit.y?-68:68),
     carX:view.x-100,fromX:p.x,fromY:p.y,boarded:false,phase:'approach'};
+  if(typeof skill!=='undefined'&&skill==='partner'&&typeof partner!=='undefined'&&partner){
+    indoorPreparePartnerTravel(partner);
+    mission.extraction.partner={actor:partner,boarded:false,
+      fromX:Math.max(view.x-16,Math.min(view.x+W+16,partner.x)),
+      fromY:Math.max(view.y-16,Math.min(view.y+H+16,partner.y)),waitX:p.x-20,waitY:p.y+14};
+  }
   // 成否とスコアは5秒の待機完了時に確定。評価画面は回収演出の後に開く。
   state='indoorEscape';
   if(typeof keys!=='undefined')for(const key of Object.keys(keys))keys[key]=false;
@@ -2551,6 +2577,16 @@ function updateInfiltrationExtraction(dt){
     v.phase='depart';v.carX=v.stopX+(v.endX-v.stopX)*u*u;
   }
   if(v.boarded){p.x=v.carX-8;p.y=v.y+10;}
+  if(v.partner){
+    const ride=v.partner,q=ride.actor,oldX=q.x,oldY=q.y;
+    if(t<2.05){const u=Math.min(1,t/1.8);q.x=ride.fromX+(ride.waitX-ride.fromX)*u;q.y=ride.fromY+(ride.waitY-ride.fromY)*u;}
+    else if(!ride.boarded){const u=Math.min(1,(t-2.05)/.75);
+      q.x=ride.waitX+(v.stopX-25-ride.waitX)*u;q.y=ride.waitY+(v.y-10-ride.waitY)*u;
+      if(u>=1)ride.boarded=true;
+    }
+    if(ride.boarded){q.x=v.carX-25;q.y=v.y-10;q.face=0;q.moving=false;}
+    else{q.moving=!q.down&&!(q.stunT>0)&&Math.hypot(q.x-oldX,q.y-oldY)>.01;if(q.moving)q.face=Math.atan2(q.y-oldY,q.x-oldX);}
+  }
   if(t>=v.duration){state='win';resultAnimT=0;}
 }
 let indoorJeepCanvas=null;
@@ -2585,6 +2621,11 @@ function drawInfiltrationExtraction(cx,cy){
     gm.fillStyle='#d0b58a';gm.beginPath();gm.arc(-8,10,6,0,Math.PI*2);gm.fill();
     gm.fillStyle='#67734d';gm.beginPath();gm.arc(-9,9,6,0,Math.PI*2);gm.fill();
     gm.fillStyle='#b5372e';gm.fillRect(-10,3,3,12);
+  }
+  if(v.partner?.boarded){
+    gm.fillStyle='#d0b58a';gm.beginPath();gm.arc(-24,-9,6,0,Math.PI*2);gm.fill();
+    gm.fillStyle='#4e6855';gm.beginPath();gm.arc(-25,-10,6,0,Math.PI*2);gm.fill();
+    gm.fillStyle='#399bff';gm.fillRect(-27,-16,3,12);
   }
   gm.restore();
 }

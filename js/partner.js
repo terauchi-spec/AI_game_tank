@@ -337,6 +337,7 @@ function updatePartner(dt){
   recallSeparatedPartner(partner,0);
  }
  const q=partner;
+ if(stageMode==='indoor'&&indoorWorld?.stairMoveLock>0){q.moving=false;return;}
  if(updatePartnerPassenger(q,dt))return;
  q.grappleT=Math.max(0,(q.grappleT||0)-dt);
  recallSeparatedPartner(q,dt);
@@ -477,6 +478,7 @@ function drawPartnerOrderSignal(){
 }
 function drawPartner(){
  if(!partner||skill!=='partner')return;const q=partner;
+ if(stageMode==='indoor'&&mission?.extraction?.partner?.boarded&&mission.extraction.partner.actor===q)return;
  if(q.passengerVehicle===p.tank&&p.tank)return;
  if(partnerOrder.drawing){
   g.save();g.strokeStyle='#76d5ff';g.lineWidth=3;g.setLineDash([8,5]);g.beginPath();

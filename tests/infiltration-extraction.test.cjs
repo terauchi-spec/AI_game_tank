@@ -98,6 +98,55 @@ test('five-second extraction finalizes once, freezes gameplay, boards the player
  assert.equal(h.completed,1);h.api.update(10);assert.equal(h.completed,1);
 });
 
+test('both stair directions bring the partner onto the protected landing and clear old-floor orders without healing',()=>{
+ for(const condition of ['active','stunned','down']){
+  const h=harness(),c=h.c,w=h.api.world;c.skill='partner';c.cars=[];
+  c.partner={x:100,y:100,hp:condition==='down'?0:2,down:condition==='down',stunT:condition==='stunned'?3:0,
+   route:[{x:700,y:100}],routeStart:{x:100,y:100},backup:true,reentryT:1.5,goal:{x:700,y:100},farT:1};
+  vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/partner.js'),'utf8')+';order=partnerOrder;',c);
+  for(const destination of [1,0]){
+   const f=w.floors[w.currentFloor],b=h.api.stairBounds(f.stair,f.number);w.stairsCooldown=0;
+   c.order.pressed=true;c.order.drawing=true;c.order.path=[{x:1,y:2}];
+   Object.assign(c.p,{x:f.stair.x,y:b.y+b.h-12});h.api.mission(.01);c.p.y=b.y+20;h.api.mission(.01);
+   assert.equal(w.currentFloor,destination);const landing=h.api.landing(w.floors[destination]),q=c.partner;
+   assert.equal(q.x,landing.x+14);assert.equal(q.y,landing.y+12);
+   const area=w.stairSanctuary;assert.ok(q.x>=area.x&&q.x<=area.x+area.w&&q.y>=area.y&&q.y<=area.y+area.h);
+   assert.equal(q.route,null);assert.equal(q.routeStart,null);assert.equal(q.goal,null);assert.equal(q.backup,false);assert.equal(q.reentryT,0);assert.equal(q.farT,0);
+   assert.equal(c.order.pressed,false);assert.equal(c.order.drawing,false);assert.equal(c.order.path.length,0);
+   const x=q.x,y=q.y;c.updatePartner(.1);assert.equal(q.x,x);assert.equal(q.y,y,'partner shares the landing pause');
+   assert.equal(q.hp,condition==='down'?0:2);assert.equal(q.down,condition==='down');assert.equal(q.stunT,condition==='stunned'?3:0);
+  }
+ }
+});
+
+test('EXIT pickup boards the partner beside the player, displays the blue helmet and carries both away',()=>{
+ const h=harness(),c=h.c,exit=h.api.world.exits[0];Object.assign(c.p,exit);c.skill='partner';
+ c.partner={x:exit.x+60,y:exit.y+30,face:0,hp:2,down:false,stunT:0,route:[{x:10,y:20}],backup:true};
+ vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/partner.js'),'utf8'),c);
+ h.api.begin(exit);const v=c.mission.extraction;assert.equal(v.partner.actor,c.partner);assert.equal(v.partner.boarded,false);
+ assert.equal(c.partner.route,null);assert.equal(c.partner.backup,false);
+ h.api.update(1.8);assert.equal(c.partner.x,v.partner.waitX);assert.equal(c.partner.y,v.partner.waitY);
+ h.api.update(.6);assert.equal(v.phase,'boarding');assert.equal(v.partner.boarded,false);assert.equal(c.partner.moving,true);
+ let bodies=0;const fills=[];c.g=new Proxy({},{get:()=>()=>{}});c.soldier=()=>bodies++;
+ c.gm.fillRect=function(...r){fills.push({color:this.fillStyle,r});};c.drawPartner();assert.equal(bodies,1);
+ h.api.update(.5);assert.equal(v.boarded,true);assert.equal(v.partner.boarded,true);assert.equal(c.partner.x,v.carX-25);assert.equal(c.partner.y,v.y-10);
+ c.drawPartner();assert.equal(bodies,1,'no duplicate standing partner once aboard');h.api.draw(0,0);
+ assert.ok(fills.some(f=>f.color==='#399bff'),'blue partner helmet is visible in the car');
+ assert.ok(fills.some(f=>f.color==='#b5372e'),'red player helmet remains visible');
+ h.api.update(1);assert.equal(v.phase,'depart');assert.equal(c.partner.x,v.carX-25);assert.equal(c.p.x,v.carX-8);
+ h.api.update(2);assert.equal(c.state,'win');assert.equal(c.partner.x,v.carX-25);assert.equal(c.partner.hp,2);
+});
+
+test('pickup includes an incapacitated partner without changing health and omits partners for other skills',()=>{
+ for(const condition of ['down','stunned','other-skill','absent']){
+  const h=harness(),c=h.c;c.skill=condition==='other-skill'?'throw':'partner';
+  c.partner=condition==='absent'?null:{x:100,y:100,hp:condition==='down'?0:2,down:condition==='down',stunT:condition==='stunned'?3:0};
+  h.api.begin(h.api.world.exits[0]);const v=c.mission.extraction;h.api.update(3);
+  if(condition==='other-skill'||condition==='absent')assert.equal(v.partner,undefined);
+  else{assert.equal(v.partner.boarded,true);assert.equal(c.partner.hp,condition==='down'?0:2);assert.equal(c.partner.stunT,condition==='stunned'?3:0);}
+ }
+});
+
 test('jeep raster is built once and reused throughout the cutscene, with no work after results',()=>{
  const h=harness(),exit=h.api.world.exits[0];h.api.begin(exit);
  for(let i=0;i<240;i++){h.api.update(.016);h.api.draw(0,0);}
