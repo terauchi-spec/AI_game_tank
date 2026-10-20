@@ -2036,7 +2036,7 @@ function indoorUpdateGuardNotice(h,dt){
   a.travelLeft=3;a.visible=false;a.sightCheckT=.12;
   h.st=0;h.target=null;h.sus=3;h.susMax=3;return true;
  }
- if(n.visible&&n.exposure>=1){
+ if(n.visible&&n.exposure>=.9){
   if(!indoorGuardSeesPlayer(h)||!los(h,p)){n.visible=false;n.checkT=0;return true;}
   enterHumanFound(h,'p');
   if(h.indoorAlert&&n.lastDir)h.indoorAlert.lastDir={...n.lastDir};
@@ -2184,7 +2184,7 @@ function updateInfiltrationGuardAI(h,dt){
  // Confirmed pursuit retains its original sight-loss timer and last-seen snapshots.
  if(state.phase!=='found'){
   const n=indoorAdvanceVisualNotice(h,dt,.12+((h.indoorFloor||1)%3)*.01);
-  if(n.visible&&n.exposure>=.8){
+  if(n.visible&&n.exposure>=.7){
    if(indoorGuardSeesPlayer(h)&&los(h,p)){
     enterHumanFound(h,'p');indoorStartGuardPursuit(h);indoorRecordGuardDiscovery(h);h.indoorNotice=null;return true;
    }
