@@ -2640,6 +2640,9 @@ function drawInfiltrationOpenings(cx,cy){
     for(const q of f.doors){
       if(q.x<cx-130||q.x>cx+W+130||q.y<cy-150||q.y>cy+H+150)continue;
       g.save();
+      // Horizontal wall artwork rises above its collider after vertical map scaling.
+      // Move the complete door visual together; its contact sensor/collider stays fixed.
+      if(!q.vertical)g.translate(0,-16);
       const panel='#65695b';
       const border='#a5a695';
       g.fillStyle=panel;g.strokeStyle=border;g.lineWidth=2;

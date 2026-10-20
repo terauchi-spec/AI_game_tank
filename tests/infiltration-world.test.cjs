@@ -218,7 +218,7 @@ test('automatic doors have identical slim 6px thickness in both orientations',()
  assert.equal(vertical.h,147,'door length remains 84px by vertical map scaling');
  assert.equal(horizontal.w,84,'door width unchanged');
  const fills=[],g={
-   save(){},restore(){},beginPath(){},moveTo(){},lineTo(){},stroke(){},
+   save(){},restore(){},translate(){},beginPath(){},moveTo(){},lineTo(){},stroke(){},
    fillRect(...args){fills.push(args);}
  };
  const doors=[{...q,vertical:true,open:0,kind:'room-hall'},
@@ -287,6 +287,23 @@ test('horizontal door WebP has an expanded front face while the vertical source 
  const data=fs.readFileSync(path.join(__dirname,'../assets/indoor/automatic_door_horizontal_front10x.webp'));
  assert.equal(data.toString('ascii',8,12),'WEBP');assert.ok(data.length<38000);assert.ok(data[20]&16);
  assert.equal(1+data.readUIntLE(24,3),512);assert.equal(1+data.readUIntLE(27,3),206);
+});
+test('horizontal door panels and rails move up together while vertical graphics and logical positions stay fixed',()=>{
+ const fs=require('node:fs'),path=require('node:path'),src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
+ const from=src.indexOf('function drawInfiltrationDoorPanels('),to=src.indexOf('function drawInfiltrationAlarmEyes(',from);
+ const image={naturalWidth:512,naturalHeight:206},doors=[{x:100,y:200,vertical:true,open:0},{x:300,y:200,open:0}];
+ let tx=0,ty=0,ready=false;const stack=[],fills=[],images=[],lines=[];
+ const g=new Proxy({save(){stack.push([tx,ty]);},restore(){[tx,ty]=stack.pop();},translate(x,y){tx+=x;ty+=y;},
+  fillRect(x,y,w,h){fills.push([x+tx,y+ty,w,h]);},drawImage(...a){images.push([a[5]+tx,a[6]+ty]);},moveTo(x,y){lines.push([x+tx,y+ty]);}},
+  {get:(o,k)=>k in o?o[k]:()=>{}});
+ const draw=new Function('g','indoorPropImage','indoorWorld','drawInfiltrationProps','W','H','INDOOR_SCALE_X','INDOOR_SCALE_Y','INDOOR_DOOR_WIDTH','INDOOR_DOOR_THICKNESS',
+  src.slice(from,to)+';return drawInfiltrationOpenings;')(g,()=>ready?image:null,{floors:[{footprint:{y:0,h:800},windows:[],doors}]},()=>{},840,720,1,1.75,84,6);
+ draw(0,0);assert.equal(fills[0][1],126.5,'vertical fallback is unchanged');
+ assert.equal(fills[2][1],181,'horizontal fallback moves 16px north');
+ assert.deepEqual(lines.slice(2),[[258,177],[258,191]],'both horizontal frame rails move with the leaves');
+ ready=true;draw(0,0);assert.equal(images[2][1],179,'horizontal WebP moves 16px north');
+ assert.equal(doors[0].y,200);assert.equal(doors[1].y,200,'logical door positions are unchanged');
+ assert.equal(tx,0);assert.equal(ty,0,'offset cannot leak to following graphics');
 });
 test('expanded patrol density and supply items remain separated and keep lanes clear',()=>{
   for(let seed=1;seed<=250;seed++)for(let floorNo=1;floorNo<=2;floorNo++){
