@@ -864,7 +864,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.21.0755',FILE_CREATED_AT='2026/10/21 07:55',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.21.0840',FILE_CREATED_AT='2026/10/21 08:40',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -4535,11 +4535,13 @@ function updateHound(dt){
 function drawHound(dog=hound){
  const hound=dog;
  if(!hound||(!hound.enemyDog&&skill!=='hound'))return;
+ const ride=!hound.enemyDog&&stageMode==='indoor'&&mission?.extraction?.hound;
+ if(ride&&ride.actor===hound&&ride.boarded)return;
  const a=hound.face||0,stunned=hound.stun>0,bite=hound.state==='bite';
  const dashState=!stunned&&!bite&&(hound.state==='dashOut'||hound.state==='chase'||hound.state==='returnDash');
  let moveDist=0;
  if(!stunned&&!bite&&(hound.state==='follow'||hound.state==='return')){const tt=houndTrailTarget();moveDist=Math.hypot(tt.x-hound.x,tt.y-hound.y);}
- const walking=hound.enemyDog?(!stunned&&hound.walking):!stunned&&!bite&&(hound.state==='lost'||hound.state==='follow'||hound.state==='return'||dashState)&&((hound.state==='lost')||dashState||moveDist>10);
+ const walking=ride&&ride.actor===hound?(!stunned&&!!hound.moving):hound.enemyDog?(!stunned&&hound.walking):!stunned&&!bite&&(hound.state==='lost'||hound.state==='follow'||hound.state==='return'||dashState)&&((hound.state==='lost')||dashState||moveDist>10);
  const now=performance.now(),rate=dashState?.026:.014,phase=walking?now*rate:0;
  const strideBase=dashState?6.6:3.8;
  const stride=walking?Math.sin(phase)*strideBase:0;

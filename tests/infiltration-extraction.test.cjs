@@ -147,6 +147,51 @@ test('pickup includes an incapacitated partner without changing health and omits
  }
 });
 
+test('EXIT pickup gathers and boards the hound, releases its target and carries it with the player',()=>{
+ const h=harness(),c=h.c,exit=h.api.world.exits[0];Object.assign(c.p,exit);c.skill='hound';c.mission.index=3;
+ const target={houndPinned:true};c.hound={x:exit.x+60,y:exit.y+30,face:0,col:'#4a3025',state:'bite',stun:0,target,biteT:2,dashDist:70};
+ h.api.mission(5);assert.equal(h.completed,1);assert.equal(c.state,'indoorEscape');
+ const v=c.mission.extraction;assert.equal(v.hound.actor,c.hound);assert.equal(v.hound.boarded,false);
+ assert.equal(target.houndPinned,false);assert.equal(c.hound.target,null);assert.equal(c.hound.biteT,0);
+ h.api.update(1.8);assert.equal(c.hound.x,v.hound.waitX);assert.equal(c.hound.y,v.hound.waitY);
+ h.api.update(.6);assert.equal(v.phase,'boarding');assert.equal(v.hound.boarded,false);assert.equal(c.hound.moving,true);
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),start=html.indexOf('function drawHound('),end=html.indexOf('function startAirstrike(',start);
+ let bodies=0;const fills=[];c.g=new Proxy({translate:()=>bodies++},{get:(o,k)=>k in o?o[k]:()=>{}});
+ c.houndTrailTarget=()=>c.p;c.performance={now:()=>1000};vm.runInContext(html.slice(start,end),c);
+ c.drawHound();assert.equal(bodies,1,'dog remains visible during boarding');
+ c.gm.fillRect=function(...r){fills.push({color:this.fillStyle,r});};
+ h.api.update(.5);assert.equal(v.hound.boarded,true);assert.equal(c.hound.x,v.carX-25);assert.equal(c.hound.y,v.y-10);
+ c.drawHound();assert.equal(bodies,1,'no duplicate dog left standing outside the car');h.api.draw(0,0);
+ assert.ok(fills.some(f=>f.color==='#201710'),'dog muzzle is rendered in the car');
+ assert.ok(fills.some(f=>f.color==='#b5372e'),'player remains aboard');
+ h.api.update(1);assert.equal(v.phase,'depart');assert.equal(c.hound.x,v.carX-25);assert.equal(c.p.x,v.carX-8);
+ h.api.update(2);assert.equal(c.state,'win');assert.equal(c.hound.x,v.carX-25);assert.equal(h.completed,1);
+ for(const mode of ['base','front']){c.stageMode=mode;const before=bodies;c.drawHound();assert.equal(bodies,before+1,'other stages retain dog drawing');}
+ c.stageMode='indoor';const before=bodies;c.drawHound({...c.hound,enemyDog:true});assert.equal(bodies,before+1,'enemy dogs are never hidden by the player extraction');
+});
+
+test('hound pickup preserves coat color and stun state, includes a distant lost dog and excludes inactive skills',()=>{
+ for(const condition of ['brown','white','black','stunned','lost','other-skill','absent']){
+  const h=harness(),c=h.c;c.skill=condition==='other-skill'?'throw':'hound';
+  c.hound=condition==='absent'?null:{x:condition==='lost'?-999:100,y:condition==='lost'?-999:100,
+   col:condition==='white'?'#e8e5da':condition==='black'?'#222222':'#4a3025',face:0,state:condition==='lost'?'lost':'follow',stun:condition==='stunned'?3:0};
+  h.api.begin(h.api.world.exits[0]);const v=c.mission.extraction;
+  if(condition==='other-skill'||condition==='absent'){assert.equal(v.hound,undefined);continue;}
+  assert.ok(v.hound.fromX>=v.camX-16&&v.hound.fromX<=v.camX+c.W+16);
+  assert.ok(v.hound.fromY>=v.camY-16&&v.hound.fromY<=v.camY+c.H+16);
+  const color=c.hound.col;h.api.update(3);assert.equal(v.hound.boarded,true);assert.equal(c.hound.col,color);
+  assert.equal(c.hound.stun,condition==='stunned'?3:0,'extraction never heals the dog');
+ }
+});
+
+test('hound extraction reuses the single jeep raster and does not allocate per-frame images',()=>{
+ const h=harness(),c=h.c;c.skill='hound';c.hound={x:c.p.x+40,y:c.p.y+20,face:0,col:'#4a3025',state:'follow',stun:0};
+ h.api.begin(h.api.world.exits[0]);
+ for(let i=0;i<240;i++){h.api.update(.016);h.api.draw(0,0);}
+ assert.equal(h.canvases,1);assert.equal(h.draws.length,240);assert.equal(h.draws[0][0],h.draws[239][0]);
+ assert.equal(c.mission.extraction.hound.boarded,true);
+});
+
 test('jeep raster is built once and reused throughout the cutscene, with no work after results',()=>{
  const h=harness(),exit=h.api.world.exits[0];h.api.begin(exit);
  for(let i=0;i<240;i++){h.api.update(.016);h.api.draw(0,0);}
