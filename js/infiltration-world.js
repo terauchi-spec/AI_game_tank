@@ -2383,7 +2383,12 @@ function drawInfiltrationStairSprite(floor){
   const iw=image.naturalWidth||image.width,ih=image.naturalHeight||image.height;
   const w=INDOOR_STAIR_WIDTH,h=w*ih/iw;
   g.save();g.imageSmoothingEnabled=true;
-  g.drawImage(image,floor.stair.x-w/2,floor.stair.y-h/2,w,h);g.restore();return true;
+  g.drawImage(image,floor.stair.x-w/2,floor.stair.y-h/2,w,h);
+  if(floor.number===1){
+    g.fillStyle='rgba(0,0,0,.14)';
+    g.fillRect(floor.stair.x-w*.4,floor.stair.y-h/2+h*.035,w*.8,h*.16);
+  }
+  g.restore();return true;
 }
 function drawInfiltrationFloors(cx,cy){
   if(!indoorWorld)return;
@@ -2425,7 +2430,7 @@ function drawInfiltrationFloors(cx,cy){
       g.save();g.translate(x,y);g.scale(60/88,1);
       g.fillStyle='#283c37';g.fillRect(-44,-58,88,116);
       g.fillStyle='#8a9684';g.fillRect(-36,-52,72,103);
-      g.fillStyle='#354740';g.fillRect(-36,-52,72,10);
+      g.fillStyle=f.number===1?'#2e3e37':'#354740';g.fillRect(-36,-52,72,10);
       for(let step=0;step<7;step++){
         const yy=-40+step*13;
         g.fillStyle=step%2?'#718477':'#9aa79a';
@@ -2438,8 +2443,6 @@ function drawInfiltrationFloors(cx,cy){
       g.moveTo(0,20);g.lineTo(0,-24);g.lineTo(-11,-12);g.moveTo(0,-24);g.lineTo(11,-12);g.stroke();
       g.restore();
       }
-      g.font='bold 12px system-ui';g.fillStyle='#f1efcf';g.textAlign='center';
-      g.fillText(f.number===1?'2F ▲':'1F ▼',x,y+110);
     }
     // 前線制圧のような円形の脱出範囲。描画と待機判定は同じ半径を使う。
     for(const q of [f.entrance||f.entrances?.[0],f.emergency].filter(Boolean)){

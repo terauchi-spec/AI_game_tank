@@ -1150,10 +1150,10 @@ test('upper-floor drawing omits exterior paths and entrance signs while preservi
    g,{floors:[f]},960,2500,900,960,()=>null,{g:0},()=>null,90,5,()=>false);
   labels.length=0;fills.length=0;draw(0,0);
   if(floorNo===1){
-   assert.ok(labels.includes('EXIT'));assert.ok(labels.includes('2F ▲'));
+   assert.ok(labels.includes('EXIT'));assert.ok(!labels.includes('2F ▲'));
    for(const label of ['エントランスホール','正面玄関','非常口',...f.rooms.map(r=>r.name)])assert.ok(!labels.includes(label));
   }else{
-   assert.ok(labels.includes('1F ▼'));
+   assert.ok(!labels.includes('1F ▼'));
    for(const label of ['エントランスホール','正面玄関','非常口'])assert.ok(!labels.includes(label));
    assert.ok(!fills.some(r=>r[2]===110&&r[1]===f.footprint.y+f.footprint.h),'no exterior entrance path');
   }

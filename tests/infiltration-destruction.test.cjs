@@ -17,7 +17,7 @@ function harness(){
  vm.runInContext(source+`;setupInfiltrationWorld();setupInfiltrationMission();`,c);
  vm.runInContext(cut('function centerRect(','function rockHitEllipse(')+cut('function drawCoverAsset(','// 建物の足元に残す')+
   cut('const BUILDING_SHADOW_KDS=','function drawBridgeFancy(')+cut('function carve(','function useSkill('),c);
- vm.runInContext(`api={world:indoorWorld,props:drawInfiltrationProps,carve,hit:coverHitRect,asset:drawCoverAsset,fragment:drawCoverFragment,
+ vm.runInContext(`api={world:indoorWorld,doors:updateInfiltrationDoors,props:drawInfiltrationProps,carve,hit:coverHitRect,asset:drawCoverAsset,fragment:drawCoverFragment,
   get covers(){return covers;},get marks(){return buildingGroundMarks;},ground:drawBuildingGroundMarks,setup:setupInfiltrationWorld,gridPoint:indoorGridPoint,frame:()=>fragmentDrawFrame++,load:(key,im)=>indoorPropImages[key]=im};`,c);
  return{c,api:c.api,images,fills,rasters,get canvases(){return canvases;},get readbacks(){return readbacks;},get pixelUploads(){return pixelUploads;}};
 }
@@ -46,6 +46,27 @@ test('infiltration furniture chips use the original WebP, preserve holes and reu
  assert.equal(group.remaining,0);assert.equal(group.primaryFragment,null);
  const before=h.images.filter(q=>q[0]===image).length;a.frame();a.props(prop.x-30,prop.y-30);
  assert.equal(h.images.filter(q=>q[0]===image).length,before,'the intact furniture cannot reappear after destruction');
+});
+
+test('automatic doors survive adjacent wall destruction and still open and close',()=>{
+ const h=harness(),a=h.api;Object.assign(h.c,{allies:[],partner:null,hound:null});
+ for(const floor of a.world.floors)floor.guards=[];
+ for(const floor of a.world.floors)for(const door of floor.doors){
+  const cover=door.cover;
+  h.c.p.x=door.x;h.c.p.y=door.y;a.doors(1);
+  assert.equal(door.open,1);assert.equal(cover.noHit,true);
+  for(const open of [true,false]){
+   Object.assign(h.c.p,open?{x:door.x,y:door.y}:{x:-1000,y:-1000});a.doors(1);
+   a.carve(door.x,door.y,60,false,null);
+   assert.ok(a.covers.includes(cover),'the original controlled collider remains registered');
+   assert.equal(cover.fr,undefined,'the door is never replaced by concrete fragments');
+   h.c.p.x=door.x;h.c.p.y=door.y;a.doors(1);
+   assert.equal(door.open,1);assert.equal(cover.noHit,true);
+   h.c.p.x=-1000;h.c.p.y=-1000;a.doors(1);
+   assert.equal(door.open,0);assert.equal(cover.noHit,false);
+  }
+ }
+ assert.ok(a.covers.some(q=>q.indoorWall&&q.fr),'adjacent walls remain destructible');
 });
 
 test('indoor walls leave no ground foundation mark before damage',()=>{
