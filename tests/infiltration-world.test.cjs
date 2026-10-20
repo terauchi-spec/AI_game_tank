@@ -299,9 +299,9 @@ test('horizontal door panels and rails move up together while vertical graphics 
  const draw=new Function('g','indoorPropImage','indoorWorld','drawInfiltrationProps','W','H','INDOOR_SCALE_X','INDOOR_SCALE_Y','INDOOR_DOOR_WIDTH','INDOOR_DOOR_THICKNESS',
   src.slice(from,to)+';return drawInfiltrationOpenings;')(g,()=>ready?image:null,{floors:[{footprint:{y:0,h:800},windows:[],doors}]},()=>{},840,720,1,1.75,84,6);
  draw(0,0);assert.equal(fills[0][1],126.5,'vertical fallback is unchanged');
- assert.equal(fills[2][1],181,'horizontal fallback moves 16px north');
- assert.deepEqual(lines.slice(2),[[258,177],[258,191]],'both horizontal frame rails move with the leaves');
- ready=true;draw(0,0);assert.equal(images[2][1],179,'horizontal WebP moves 16px north');
+ assert.equal(fills[2][1],187,'horizontal fallback moves 6px south from its previous offset');
+ assert.deepEqual(lines.slice(2),[[258,183],[258,197]],'both horizontal frame rails move with the leaves');
+ ready=true;draw(0,0);assert.equal(images[2][1],185,'horizontal WebP moves 6px south from its previous offset');
  assert.equal(doors[0].y,200);assert.equal(doors[1].y,200,'logical door positions are unchanged');
  assert.equal(tx,0);assert.equal(ty,0,'offset cannot leak to following graphics');
 });
