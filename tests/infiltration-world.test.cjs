@@ -248,19 +248,19 @@ test('automatic doors have identical slim 6px thickness in both orientations',()
 test('automatic door WebP leaves retract without stretching with independent horizontal and vertical sprites',()=>{
  const fs=require('node:fs'),path=require('node:path'),src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
  const from=src.indexOf('function drawInfiltrationDoorPanels('),to=src.indexOf('function drawInfiltrationOpenings(',from);
- const image={naturalWidth:512,naturalHeight:75},horizontalImage={naturalWidth:512,naturalHeight:84},calls=[],rotations=[],requests=[];
+ const image={naturalWidth:512,naturalHeight:75},horizontalImage={naturalWidth:512,naturalHeight:134},calls=[],rotations=[],requests=[];
  const g={save(){},restore(){},translate(){},rotate:a=>rotations.push(a),drawImage:(...a)=>calls.push(a)};
  const draw=new Function('g','indoorPropImage','INDOOR_DOOR_THICKNESS',src.slice(from,to)+';return drawInfiltrationDoorPanels;')(g,key=>{requests.push(key);return key==='automatic_door'?image:horizontalImage;},6);
  for(const vertical of [false,true])for(const open of [0,.5]){
   const half=vertical?73.5:42,part=half*(1-open),before=calls.length;
   assert.equal(draw({x:100,y:100,vertical},open,half,part),true);
-  const chosen=vertical?image:horizontalImage,height=chosen.naturalHeight,depth=vertical?10:13;
+  const chosen=vertical?image:horizontalImage,height=chosen.naturalHeight,depth=vertical?10:13*134/84;
   const [left,right]=calls.slice(before);assert.equal(left[0],chosen);assert.equal(right[0],chosen);
   assert.deepEqual(left.slice(1),[256*open,0,256*(1-open),height,-half,-5,part,depth]);
   assert.deepEqual(right.slice(1),[256,0,256*(1-open),height,half-part,-5,part,depth]);
  }
  assert.deepEqual(rotations,[Math.PI/2,Math.PI/2]);
- assert.deepEqual(requests,['automatic_door_horizontal','automatic_door_horizontal','automatic_door','automatic_door']);
+ assert.deepEqual(requests,['automatic_door_horizontal_front5x','automatic_door_horizontal_front5x','automatic_door','automatic_door']);
 });
 test('automatic door rendering skips offscreen and fully retracted panels and keeps a loading fallback',()=>{
  const fs=require('node:fs'),path=require('node:path'),src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
@@ -280,13 +280,13 @@ test('automatic door asset is one small transparent WebP with no ground padding'
  assert.ok(data[20]&16,'transparent alpha');
  assert.equal(1+data.readUIntLE(24,3),512);assert.equal(1+data.readUIntLE(27,3),75);
 });
-test('horizontal door WebP has a narrow front face while the vertical source stays byte-identical',()=>{
+test('horizontal door WebP has an expanded front face while the vertical source stays byte-identical',()=>{
  const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
  const old=fs.readFileSync(path.join(__dirname,'../assets/indoor/automatic_door.webp'));
  assert.equal(crypto.createHash('sha1').update(Buffer.concat([Buffer.from('blob '+old.length+'\0'),old])).digest('hex'),'6d0a4cde06234a72140f17b0089d93d35f66e54b');
- const data=fs.readFileSync(path.join(__dirname,'../assets/indoor/automatic_door_horizontal.webp'));
- assert.equal(data.toString('ascii',8,12),'WEBP');assert.ok(data.length<20000);assert.ok(data[20]&16);
- assert.equal(1+data.readUIntLE(24,3),512);assert.equal(1+data.readUIntLE(27,3),84);
+ const data=fs.readFileSync(path.join(__dirname,'../assets/indoor/automatic_door_horizontal_front5x.webp'));
+ assert.equal(data.toString('ascii',8,12),'WEBP');assert.ok(data.length<26000);assert.ok(data[20]&16);
+ assert.equal(1+data.readUIntLE(24,3),512);assert.equal(1+data.readUIntLE(27,3),134);
 });
 test('expanded patrol density and supply items remain separated and keep lanes clear',()=>{
   for(let seed=1;seed<=250;seed++)for(let floorNo=1;floorNo<=2;floorNo++){

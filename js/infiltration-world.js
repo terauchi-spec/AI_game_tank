@@ -2605,10 +2605,11 @@ function drawInfiltrationProps(cx,cy){
 }
 
 function drawInfiltrationDoorPanels(q,open,half,part){
-  const image=indoorPropImage(q.vertical?'automatic_door':'automatic_door_horizontal');if(!image)return false;
+  const image=indoorPropImage(q.vertical?'automatic_door':'automatic_door_horizontal_front5x');if(!image)return false;
   const sourceHalf=(image.naturalWidth||image.width)/2,height=image.naturalHeight||image.height;
   const visible=sourceHalf*(1-open),top=-(INDOOR_DOOR_THICKNESS+4)/2;
-  const depth=INDOOR_DOOR_THICKNESS+4+(q.vertical?0:3);
+  // Keep the old horizontal sprite's pixel scale; only the taller front extends downward.
+  const depth=q.vertical?INDOOR_DOOR_THICKNESS+4:(INDOOR_DOOR_THICKNESS+7)*height/84;
   // Crop retracting leaves rather than squeezing the texture as the door opens.
   g.save();g.translate(q.x,q.y);if(q.vertical)g.rotate(Math.PI/2);
   g.drawImage(image,sourceHalf-visible,0,visible,height,-half,top,part,depth);
