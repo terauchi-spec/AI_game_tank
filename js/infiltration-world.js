@@ -2605,7 +2605,7 @@ function drawInfiltrationProps(cx,cy){
 }
 
 function drawInfiltrationDoorPanels(q,open,half,part){
-  const image=indoorPropImage(q.vertical?'automatic_door':'automatic_door_horizontal_front5x');if(!image)return false;
+  const image=indoorPropImage(q.vertical?'automatic_door':'automatic_door_horizontal_front10x');if(!image)return false;
   const sourceHalf=(image.naturalWidth||image.width)/2,height=image.naturalHeight||image.height;
   const visible=sourceHalf*(1-open),top=-(INDOOR_DOOR_THICKNESS+4)/2;
   // Keep the old horizontal sprite's pixel scale; only the taller front extends downward.
