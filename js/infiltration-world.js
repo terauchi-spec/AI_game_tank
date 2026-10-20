@@ -1023,8 +1023,8 @@ function setupInfiltrationWorld(){
     const northApron={x:footprint.x,y:footprint.y-INDOOR_FORECOURT_DEPTH,w:footprint.w,h:INDOOR_FORECOURT_DEPTH};
     const lightFixtures=raw.lightFixtures.map(item=>{
       const clipTiles=item.zone==='room'?rooms[item.roomId].tiles:
-        item.zone==='lobby'?[lobbyArea]:item.zone==='entry'?
-          (item.anchor.startsWith('entry-north')?[northApron,...corridors.filter(t=>t.y===footprint.y)]:[southApron,lobbyArea]):corridors;
+        item.zone==='lobby'?corridors:item.zone==='entry'?
+          (item.anchor.startsWith('entry-north')?[northApron,...corridors.filter(t=>t.y===footprint.y)]:[southApron,...corridors]):corridors;
       const radius=item.rx*Math.sqrt(INDOOR_SCALE_X*INDOOR_SCALE_Y);
       return{...to(item),zone:item.zone,anchor:item.anchor,rx:radius,ry:radius,clipTiles};
     });
@@ -2369,14 +2369,8 @@ function drawInfiltrationFloors(cx,cy){
       if(tile.y+tile.h<cy-30||tile.y>cy+H+30)continue;
       g.fillRect(tile.x,tile.y,tile.w,tile.h);
     }
-    // エントランスホールは廊下より明るい広い共用床として描き、家具は置かない。
-    const lobby=f.lobbyArea;
-    if(lobby&&lobby.y+lobby.h>=cy-40&&lobby.y<=cy+H+40){
-      g.fillStyle='rgba(215,218,207,.10)';g.fillRect(lobby.x+2,lobby.y+2,lobby.w-4,lobby.h-4);
-      g.strokeStyle='rgba(210,212,181,.28)';g.lineWidth=2;g.strokeRect(lobby.x+14,lobby.y+16,lobby.w-28,lobby.h-32);
-      g.fillStyle='rgba(56,71,59,.10)';g.fillRect(lobby.x+lobby.w*.22,lobby.y+lobby.h*.38,lobby.w*.56,lobby.h*.17);
-
-    }
+    // Open lobby and corridors share one continuous floor. No decorative border,
+    // inset rectangle or mat may imply a wall along their walkable boundary.
     for(const room of f.rooms){
       if(room.y+room.h<cy-40||room.y>cy+H+40)continue;
       g.fillStyle=room.id%2===0?'rgba(34,41,33,.08)':'rgba(34,41,33,.12)';

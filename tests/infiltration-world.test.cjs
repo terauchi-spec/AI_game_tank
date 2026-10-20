@@ -436,8 +436,8 @@ test('lighting draws only inside matching floor regions with no overflowing mask
  const src=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
  assert.ok(src.includes('const clipTiles=item.zone===\'room\'?rooms[item.roomId].tiles'),
    'room lights clip to their exact floor plan');
- assert.ok(src.includes('item.zone===\'lobby\'?[lobbyArea]:'),
-   'hall lights clip to corridor tiles');
+ assert.ok(src.includes('item.zone===\'lobby\'?corridors:'),
+   'lobby lights share the open corridor floor');
  assert.ok(src.includes('q.clip();'),'lighting is clipped before drawing');
  assert.ok(src.includes('rx:radius,ry:radius'),'light aspect ratio is preserved in world coordinates');
  assert.ok(src.includes('function indoorLightingStamp()'),'radial stamp is reused');
@@ -1955,4 +1955,34 @@ test('explosion dispatch preserves outdoor suspicion and isolates the indoor hea
   if(mode==='indoor'&&explosion)assert.deepEqual(calls,[['indoor',0,0,500]]);
   else assert.deepEqual(calls,[['human',h,2,0,0],['tank',0,0,500]],mode+' keeps the original suspicion behavior');
  }
+});
+
+
+test('open lobby has no floor outline or inset shading that could imitate a missing wall',()=>{
+ const source=require('node:fs').readFileSync(require('node:path').join(__dirname,'../js/infiltration-world.js'),'utf8');
+ const start=source.indexOf('function drawInfiltrationFloors(cx,cy){'),end=source.indexOf('function drawInfiltrationProps(cx,cy){',start);
+ const operations=[],g=new Proxy({fillRect(...r){operations.push(['fill',this.fillStyle,...r]);},strokeRect(...r){operations.push(['border',...r]);}},
+  {get:(o,k)=>k in o?o[k]:()=>{}});
+ const tile={x:200,y:200,w:180,h:315},f={footprint:{x:0,y:0,w:960,h:1200},corridors:[tile],
+  rooms:[],stair:{x:0,y:-1000},lobbyArea:{x:200,y:200,w:360,h:630}};
+ const draw=new Function('g','indoorWorld','WW','W','H','INDOOR_FORECOURT_DEPTH','terrainSurfacePattern','indoorOutdoorTerrain','indoorConcretePattern','INDOOR_EXIT_RADIUS','INDOOR_EXIT_SECONDS',
+  source.slice(start,end)+';return drawInfiltrationFloors;')(g,{floors:[f]},960,960,720,900,()=>null,{g:'#123'},()=>null,90,5);
+ draw(0,0);const withLobby=JSON.stringify(operations);operations.length=0;f.lobbyArea=null;draw(0,0);
+ assert.equal(JSON.stringify(operations),withLobby,'lobby metadata cannot paint a false boundary on the same floor');
+ assert.ok(!operations.some(op=>op[0]==='border'));
+});
+
+test('lobby lighting crosses a wall-free boundary while remaining excluded from rooms',()=>{
+ const s=alarmWorld(),f=s.api.world.floors[0],lobby=f.lobbyArea;
+ const lobbyLights=f.lightFixtures.filter(q=>q.zone==='lobby');
+ for(const light of lobbyLights)assert.equal(light.clipTiles,f.corridors,'clip to continuous open circulation area');
+ for(const light of f.lightFixtures.filter(q=>q.zone==='entry'&&!q.anchor.startsWith('entry-north')))
+  assert.ok(f.corridors.every(tile=>light.clipTiles.includes(tile)),'entry lights also avoid an artificial lobby seam');
+ for(const light of f.lightFixtures.filter(q=>q.zone==='room'))
+  assert.ok(f.rooms.some(room=>light.clipTiles===room.tiles),'closed rooms retain their existing light boundary');
+ // Two connected floor tiles on either side of the old lobby edge.
+ const y=lobby.y+100,x=lobby.x,tiles=[{x:x-180,y:lobby.y,w:180,h:315},{x,y:lobby.y,w:180,h:315}];
+ f.lightFixtures=[{x,y,rx:185,ry:185,clipTiles:tiles}];
+ const a=s.api.lightLevel(x-1,y),b=s.api.lightLevel(x+1,y);
+ assert.ok(a>.9&&b>.9);assert.ok(Math.abs(a-b)<.001,'no vertical lighting cutoff through an open floor');
 });
