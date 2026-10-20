@@ -1833,7 +1833,10 @@ function indoorGuardSeesPlayer(h,sample=null){
    (weather==='rain'&&inWaterAt(p.x,p.y,0))||
    h.indoorFloor!==indoorWorld?.currentFloor+1)return false;
  const d=D(h,p),a=Math.abs(angD(Math.atan2(p.y-h.y,p.x-h.x),h.face));
- const illumination=indoorLightLevel(p.x,p.y);
+ // Entrance sentries watch daylight exterior ground, not the unlit indoor floor mask.
+ const fp=h.indoorEntranceGuard?indoorWorld?.floors[h.indoorFloor-1]?.footprint:null;
+ const outside=fp&&(p.x<fp.x||p.x>fp.x+fp.w||p.y<fp.y||p.y>fp.y+fp.h);
+ const illumination=outside?1:indoorLightLevel(p.x,p.y);
  if(sample){sample.light=illumination;sample.distance=d;sample.angle=a;}
  const tracking=h.indoorAlert?.phase==='found';
  const visibilityFactor=tracking?Math.max(.78,.5+.5*illumination):(.36+.64*illumination);

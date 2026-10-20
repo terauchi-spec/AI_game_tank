@@ -1742,6 +1742,72 @@ test('alarm adds one bounded offscreen entrance detail, covering every ground-fl
   assert.equal(w.alarm.entranceGuards.pending.length,0);
  }
 });
+function entrancePerceptionScenario(seed=1771){
+ const s=alarmWorld(seed),vm=require('node:vm'),src=require('node:fs').readFileSync(require('node:path').join(__dirname,'../js/infiltration-world.js'),'utf8');
+ s.api.world.alarm.active=true;s.api.entranceGuards(.3);
+ const floor=s.api.world.floors[0],fp=floor.footprint;let h,point;
+ for(const guard of floor.guards.filter(q=>q.indoorEntranceGuard)){
+  for(let i=0;i<16;i++){
+   const angle=i*Math.PI/8,q={x:guard.x+Math.cos(angle)*180,y:guard.y+Math.sin(angle)*180};
+   const outside=q.x<fp.x||q.x>fp.x+fp.w||q.y<fp.y||q.y>fp.y+fp.h;
+   if(q.x>16&&q.x<944&&outside&&s.api.lightLevel(q.x,q.y)===.24){h=guard;point=q;break;}
+  }
+  if(h)break;
+ }
+ assert.ok(h,'an unlit exterior location exists near the entrance detail');const gate=floor.openings[h.indoorEntranceSlot.gate];
+ Object.assign(s.sandbox,{weather:'clear',inTumbleweed:()=>false,inBush:()=>false,inWaterAt:()=>false,
+  cachedLos:(a,b)=>s.sandbox.los(a,b),detectRange:()=>200});
+ const start=src.indexOf('function indoorGuardSeesPlayer('),end=src.indexOf('function indoorMoveGuardTo(',start);
+ vm.runInContext(src.slice(start,end),s.sandbox);
+ Object.assign(s.sandbox.p,{...point,dig:0});h.face=Math.atan2(point.y-h.y,point.x-h.x);
+ return {...s,h,gate};
+}
+test('entrance sentries notice and pursue a stationary exposed player outside the building with real perception',()=>{
+ const s=entrancePerceptionScenario(),h=s.h,home={...h.indoorEntranceHome};
+ assert.equal(s.api.lightLevel(s.sandbox.p.x,s.sandbox.p.y),.24,'reproduce the exterior being classified as a dark indoor light region');
+ for(let i=0;i<180&&h.target!=='p';i++)s.api.update(h,1/60);
+ assert.equal(h.target,'p','a visible nearby exterior player must not leave the sentry stuck in question-mark mode');
+ assert.equal(h.indoorAlert.phase,'found');h.cd=0;
+ for(let i=0;i<10;i++)s.api.update(h,.1);
+ assert.ok(Math.hypot(h.x-home.x,h.y-home.y)>10,'leaves the post to pursue the detected player');
+ assert.ok(s.sandbox.bullets.length>0,'fires once the player is within rifle range');
+});
+
+test('entrance sentry daylight correction still respects walls, concealment, viewing angle and floor separation',()=>{
+ for(const reason of ['wall','bush','dig','other-floor','behind']){
+  const s=entrancePerceptionScenario(),h=s.h;
+  if(reason==='wall')s.sandbox.los=()=>false;
+  if(reason==='bush')s.sandbox.inBush=()=>true;
+  if(reason==='dig')s.sandbox.p.dig=1;
+  if(reason==='other-floor')s.api.world.currentFloor=1;
+  if(reason==='behind')h.face+=Math.PI;
+  for(let i=0;i<(reason==='behind'?30:180);i++)s.api.update(h,1/60);
+  assert.notEqual(h.target,'p',reason+' must still prevent discovery');
+ }
+ const s=entrancePerceptionScenario(),h=s.h,vm=require('node:vm');s.sandbox.h=h;
+ vm.runInContext('sample={};indoorGuardSeesPlayer(h,sample);',s.sandbox);
+ assert.equal(s.sandbox.sample.light,1,'exterior sentry sees outdoor ambient light');
+ h.indoorEntranceGuard=false;
+ vm.runInContext('sample={};indoorGuardSeesPlayer(h,sample);',s.sandbox);
+ assert.equal(s.sandbox.sample.light,.24,'ordinary room guards retain their existing light-sensitive vision');
+ h.indoorEntranceGuard=true;
+ const fp=s.api.world.floors[0].footprint;Object.assign(s.sandbox.p,{x:fp.x+fp.w/2,y:fp.y+fp.h/2});
+ vm.runInContext('sample={};indoorGuardSeesPlayer(h,sample);',s.sandbox);
+ assert.equal(s.sandbox.sample.light,s.api.lightLevel(s.sandbox.p.x,s.sandbox.p.y),'indoor targets retain room lighting even for entrance sentries');
+});
+
+test('all replacement entrance guard types retain real exterior detection',()=>{
+ for(const roll of [.2,.7,.95]){
+  const s=entrancePerceptionScenario(),floor=s.api.world.floors[0],index=floor.guards.indexOf(s.h);
+  s.h.alive=false;s.sandbox.R=()=>roll;s.api.reinforce(.3);
+  const h=floor.guards[index];assert.notEqual(h,s.h);assert.equal(h.indoorEntranceGuard,true);
+  assert.equal(h.indoorCommander,roll<.5);assert.equal(h.indoorWhiteCommander,roll>=.9);
+  h.face=Math.atan2(s.sandbox.p.y-h.y,s.sandbox.p.x-h.x);
+  for(let i=0;i<180&&h.target!=='p';i++)s.api.update(h,1/60);
+  assert.equal(h.target,'p');assert.equal(h.indoorAlert.phase,'found');
+ }
+});
+
 test('entrance guards wait while visible or blocked and never spawn in other stages',()=>{
  const s=alarmWorld(),w=s.api.world,f=w.floors[0],total=s.sandbox.humans.length;
  w.alarm.active=true;s.sandbox.cam=0;s.sandbox.H=14000;
