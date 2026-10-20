@@ -456,7 +456,7 @@ test('ceiling lighting transitions smoothly rather than switching abruptly',()=>
  assert.ok(levels[1]<levels[0]&&levels[3]>levels[4],'intermediate gradient zones exist');
  assert.ok(src.includes('indoorLightStamp'),'gradient texture is cached for mobile');
 });
-test('indoor crates use a 2:1 vertical shape while pallets and outdoor sprites retain their ratios',()=>{
+test('indoor crates use a 1.5:1 horizontal shape while pallets and outdoor sprites retain their ratios',()=>{
  const fs=require('node:fs'),path=require('node:path');
  const src=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
  const extract=(start,end)=>{
@@ -471,9 +471,9 @@ test('indoor crates use a 2:1 vertical shape while pallets and outdoor sprites r
  const drawFn=new Function('COVER_IMG','fitAspect','drawAssetSprite','drawInfiltrationShellPallet',
    extract('function drawObject(o){','\nfunction drawBuiltConcrete(')+'\nreturn drawObject;')(
    {crate,shell_pallet:shell},fitFn,drawSprite,()=>false);
- drawFn({x:0,y:0,w:60,h:120,kind:'crate',indoorExplosive:true});
+ drawFn({x:0,y:0,w:60,h:40,kind:'crate',indoorExplosive:true});
  drawFn({x:0,y:0,w:120,h:120,kind:'shellPallet',indoorExplosive:true});
- assert.ok(Math.abs(draws[0].h/draws[0].w-2)<.0001,'indoor crate is twice as tall as wide');
+ assert.ok(Math.abs(draws[0].w/draws[0].h-1.5)<.0001,'indoor crate is 1.5 times as wide as tall');
  assert.ok(Math.abs(draws[1].w/draws[1].h-200/100)<.0001,'pallet source ratio');
  drawFn({x:0,y:0,w:60,h:60,kind:'crate'});
  assert.equal(draws[2].w,60*1.02,'outdoor crate size remains unchanged');
@@ -502,7 +502,7 @@ test('all advertised indoor door apertures remain wall-free and cargo clusters a
   const kinds=new Map();
   for(const o of f.explosiveObjects){
    assert.equal(o.w,o.kind==='crate'?60:o.kind==='shellPallet'?120:30);
-   assert.equal(o.h,o.kind==='crate'?o.w*2/1.75:o.w,'crate ratio accounts for the indoor world scale');
+   assert.equal(o.h,o.kind==='crate'?o.w/1.5/1.75:o.w,'crate ratio accounts for the indoor world scale');
    const previous=kinds.get(o.group);
    if(previous)assert.equal(previous,o.kind,'cluster must not mix kinds');
    kinds.set(o.group,o.kind);
@@ -642,7 +642,7 @@ test('entrance has three soft ceiling pools and indoor lighting retains a bright
  }
 });
 test('guard detours are bounded and avoid fixed walls, furniture, and cargo',()=>{
- const {indoorMakeGuardGrid,indoorGridDetour,indoorAt,indoorGridPoint}=
+ const {indoorMakeGuardGrid,indoorGridDetour,indoorAt,indoorGridPoint,indoorGridSafePoint}=
   require('../js/infiltration-world.js');
  let total=0,missing=0;
  for(let seed=1;seed<=55;seed++)for(let floorNo=1;floorNo<=2;floorNo++){
@@ -659,8 +659,8 @@ test('guard detours are bounded and avoid fixed walls, furniture, and cargo',()=
    const c=a%5+dx,r=Math.floor(a/5)+dy;if(c>=5||r>=7)continue;
    const b=r*5+c;
    if(!owner.has(b)||owner.get(a)!==owner.get(b)&&!doors.has(a+':'+b))continue;
-   const pa=indoorAt(70+(a%5+.5)*180,80+(Math.floor(a/5)+.5)*180,9300);
-   const pb=indoorAt(70+(b%5+.5)*180,80+(Math.floor(b/5)+.5)*180,9300);
+   const pa=indoorGridSafePoint(grid,indoorAt(70+(a%5+.5)*180,80+(Math.floor(a/5)+.5)*180,9300));
+   const pb=indoorGridSafePoint(grid,indoorAt(70+(b%5+.5)*180,80+(Math.floor(b/5)+.5)*180,9300));
    const points=indoorGridDetour({grid},pa,pb,1700);
    total++;if(!points){missing++;continue;}
    assert.ok(points.length<=30,'bounded waypoint allocation');
@@ -687,7 +687,7 @@ test('indoor pursuing guards cross automatic doors and skirt cargo in simulated 
  };
  const sim=new Function('mv','D','R','angD',
    "const module={exports:{}};"+src+
-   "\nreturn {gen:indoorGenerateFloor,grid:indoorMakeGuardGrid,move:indoorMoveGuardTo,at:indoorAt,setWorld:w=>{indoorWorld=w;}};"
+   "\nreturn {gen:indoorGenerateFloor,grid:indoorMakeGuardGrid,safe:indoorGridSafePoint,move:indoorMoveGuardTo,at:indoorAt,setWorld:w=>{indoorWorld=w;}};"
  )(mv,d,()=>.55,angleDiff);
  for(const [seed,guardIndex] of Array.from({length:160},(_,i)=>[1+Math.floor(i/4),i%4])){
   const raw=sim.gen(1,random(seed*13+1)),off=9300;
@@ -719,7 +719,7 @@ test('indoor pursuing guards cross automatic doors and skirt cargo in simulated 
     w:q.vertical?12:84,h:q.vertical?147:12,noHit:false,original:q
   }));
   const guard=raw.guards[guardIndex];
-  const actor={...sim.at(guard.x,guard.y,off),face:guard.face,indoorFloor:1,indoorAlert:{},alive:true};
+  const actor={...sim.safe(nav.grid,sim.at(guard.x,guard.y,off)),face:guard.face,indoorFloor:1,indoorAlert:{},alive:true};
   const intel=raw.intel[guardIndex%raw.intel.length],goal=sim.at(intel.x,intel.y,off);
   for(let tick=0;tick<1000&&d(actor,goal)>=35;tick++){
    for(const door of doors){
@@ -1449,6 +1449,7 @@ test('document charge accumulates across leaving, switching documents and changi
 test('completed document region turns green briefly and fades away',()=>{
  const s=alarmWorld(),q=s.sandbox.mission.points[0];
  Object.assign(s.sandbox.p,{x:q.x,y:q.y});s.sandbox.cam=q.y-200;s.sandbox.camX=q.x-200;
+ s.api.draw();assert.ok(!s.labels.includes('資料'),'document center uses an icon');
  s.api.updateMission(8);assert.equal(q.done,true);assert.equal(q.collectedT,.9);
  s.api.draw();assert.ok(s.labels.includes('回収完了'));assert.ok(s.strokes.includes('#79e8a2'));
  s.api.updateMission(.4);assert.ok(q.collectedT>0&&q.collectedT<.55,'green region enters fade');

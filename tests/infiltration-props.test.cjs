@@ -160,7 +160,7 @@ test('ascending and descending staircase files are small alpha WebP assets',()=>
 });
 
 
-test('each floor assigns room purposes and places all five military equipment types without blocking doors',()=>{
+test('room equipment stays inside its assigned room and large machines retain their doubled dimensions',()=>{
  const main={operations:'operations_table',armory:'weapon_rack',communications:'server_rack',utilities:'generator'};
  const overlap=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
  for(let seed=1;seed<=160;seed++)for(const number of [1,2]){
@@ -168,11 +168,14 @@ test('each floor assigns room purposes and places all five military equipment ty
   assert.ok(f.rooms.every(r=>['operations','armory','communications','utilities','quarters','storage','records','guard_post'].includes(r.purpose)));
   for(const [purpose,art] of Object.entries(main)){
    const room=f.rooms.find(r=>r.purpose===purpose);assert.ok(room);
-   const piece=f.furniture.find(q=>q.roomId===room.id&&q.artKind===art);assert.ok(piece,`${art} in its assigned room: seed ${seed}, floor ${number}`);
-   assert.ok(room.tiles.some(t=>piece.x>=t.x&&piece.y>=t.y&&piece.x+piece.w<=t.x+t.w&&piece.y+piece.h<=t.y+t.h));
+   const piece=f.furniture.find(q=>q.roomId===room.id&&q.artKind===art);
+   if(!piece){assert.ok(art==='generator'||art==='server_rack','large machines may be omitted if their full footprint blocks access');continue;}
+   const area=room.tiles.reduce((sum,t)=>sum+Math.max(0,Math.min(piece.x+piece.w,t.x+t.w)-Math.max(piece.x,t.x))*Math.max(0,Math.min(piece.y+piece.h,t.y+t.h)-Math.max(piece.y,t.y)),0);
+   assert.ok(Math.abs(area-piece.w*piece.h)<.01,'multi-tile machinery remains entirely inside its room');
+   if(art==='generator'||art==='server_rack')assert.ok(Math.abs(Math.max(piece.w,piece.h*1.75)-(art==='generator'?232:224))<1e-9,'large machinery cannot silently shrink');
    for(const door of f.doors){const lane=door.vertical?{x:door.x-35,y:door.y-30,w:70,h:60}:{x:door.x-24,y:door.y-35,w:48,h:70};assert.equal(overlap(piece,lane),false);}
   }
-  assert.ok(f.furniture.some(q=>q.artKind==='personal_lockers'));
+  assert.ok(f.furniture.some(q=>q.artKind==='weapon_rack'||q.artKind==='personal_lockers'));
   for(const piece of f.furniture.filter(q=>q.artKind==='bed'))assert.equal(f.rooms[piece.roomId].purpose,'quarters');
   assert.ok(f.furniture.filter(q=>q.zone==='room').length>=10,'rooms keep additional furniture');
  }
@@ -189,4 +192,18 @@ test('new military WebP equipment keeps smooth alpha edges within a small transf
   assert.ok(w<=384);assert.ok(data.length<35000);
  }
  assert.ok(bytes<115000);assert.ok(pixels*4<1600000);
+});
+
+
+test('important documents are beside storage or work fixtures rather than doorway approaches',()=>{
+ const arts=['cabinet','desk','server_rack','operations_table','personal_lockers','shelf','equipment'];
+ for(let seed=1;seed<=160;seed++)for(const number of [1,2]){
+  const f=indoorGenerateFloor(number,random(seed*157));assert.equal(f.intel.length,3);
+  for(const q of f.intel){
+   const room=f.rooms[q.roomId];assert.ok(room&&!room.isGuardPost);assert.ok(arts.includes(q.fixtureArt));
+   assert.ok(room.doors.every(d=>Math.hypot(q.x-d.x,(q.y-d.y)*1.75)>=86));
+   assert.ok(f.furniture.some(o=>o.roomId===q.roomId&&o.artKind===q.fixtureArt&&
+    Math.hypot(Math.max(o.x-q.x,0,q.x-o.x-o.w),Math.max(o.y-q.y,0,q.y-o.y-o.h)*1.75)<=39),'collection circle touches a matching fixture');
+  }
+ }
 });

@@ -11,11 +11,39 @@ const INDOOR_ROOM_ART={
   quarters:['bed','personal_lockers','desk'],storage:['container','shelf','cabinet'],
   records:['cabinet','desk','shelf'],guard_post:['desk','cabinet','equipment']
 };
-const INDOOR_PROP_LENGTH={weapon_rack:112,server_rack:112,operations_table:144,personal_lockers:106,generator:116};
+const INDOOR_PROP_LENGTH={weapon_rack:112,server_rack:224,operations_table:144,personal_lockers:106,generator:232};
 const indoorRand=(rng,a,b)=>a+(b-a)*rng();
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const indoorShuffle=(arr,rng)=>{for(let i=arr.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr;};
+// 大型設備の配置時だけ、部屋の扉同士と歩ける余白の接続を検査する。
+function indoorRoomEquipmentWalkable(room,rects){
+  const sx=12,sy=8,cols=Math.ceil(room.w/sx),rows=Math.ceil(room.h/sy),free=new Uint8Array(cols*rows);
+  const nearby=rects.filter(o=>o.x<room.x+room.w+12&&o.x+o.w>room.x-12&&o.y<room.y+room.h+8&&o.y+o.h>room.y-8);
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+    const x=room.x+(c+.5)*sx,y=room.y+(r+.5)*sy;
+    if(room.tiles.some(t=>x>=t.x&&x<t.x+t.w&&y>=t.y&&y<t.y+t.h)&&
+      !nearby.some(o=>x>o.x-11&&x<o.x+o.w+11&&y>o.y-7&&y<o.y+o.h+7))free[r*cols+c]=1;
+  }
+  const entry=room.doors[0];let first=-1,best=Infinity;
+  for(let id=0;id<free.length;id++)if(free[id]){
+    const d=Math.hypot(room.x+(id%cols+.5)*sx-entry.x,(room.y+(((id/cols)|0)+.5)*sy-entry.y)*1.75);
+    if(d<best){best=d;first=id;}
+  }
+  if(first<0||best>50)return false;
+  const seen=new Uint8Array(free.length),queue=new Int32Array(free.length);let head=0,tail=1;queue[0]=first;seen[first]=1;
+  while(head<tail){const id=queue[head++],x=id%cols,y=(id/cols)|0;
+    for(const n of [x? id-1:-1,x+1<cols?id+1:-1,y?id-cols:-1,y+1<rows?id+cols:-1])
+      if(n>=0&&free[n]&&!seen[n]){seen[n]=1;queue[tail++]=n;}
+  }
+  const near=(p,rx,ry)=>{
+    for(let id=0;id<seen.length;id++)if(seen[id]&&Math.abs(room.x+(id%cols+.5)*sx-p.x)<=rx&&
+      Math.abs(room.y+(((id/cols)|0)+.5)*sy-p.y)<=ry)return true;
+    return false;
+  };
+  if(room.doors.some(d=>!near(d,38,26)))return false;
+  return room.tiles.every(t=>[.23,.5,.77].some(u=>[.23,.5,.77].some(v=>near({x:t.x+t.w*u,y:t.y+t.h*v},20,7))));
+}
 function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
   // 5×7の180px区画を接続。廊下の形だけ先に確定し、残りを10室に分割する。
   // 同じ部屋に割り当てた区画間は壁を作らず、大小さまざまな連結部屋にする。
@@ -297,8 +325,9 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
   postRoom.name='青兵詰所';postRoom.isGuardPost=true;postRoom.purpose='guard_post';
   // 用途は生成時だけ決定。大きい部屋を作戦室にし、残りを役割ごとに装備する。
   const roleRooms=rooms.filter(r=>r!==postRoom).sort((a,b)=>b.size-a.size||a.id-b.id);
-  for(const [purpose,name] of [['operations','作戦室'],['armory','武器庫'],['communications','通信室'],['utilities','設備室']]){
-    const room=roleRooms.shift();room.purpose=purpose;room.name=name;
+  for(const [purpose,name] of [['utilities','設備室'],['communications','通信室'],['operations','作戦室'],['armory','武器庫']]){
+    const preferred=purpose==='utilities'?roleRooms.findIndex(r=>r.tiles.some(t=>r.tiles.some(u=>u.y===t.y&&u.x===t.x+SIZE))):0;
+    const room=roleRooms.splice(Math.max(0,preferred),1)[0];room.purpose=purpose;room.name=name;
   }
   for(const [i,room] of roleRooms.entries()){
     room.purpose=room.size===1?'quarters':i%2?'records':'storage';
@@ -397,16 +426,17 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     for(const n of neighbors(id))if(n>id&&room.cellIds.includes(n))addWalkLane(a,center(n));
   }
   for(const door of doorMarks)for(const id of door.cells||[])if(owner[id]>=0)addWalkLane(center(id),door);
-  const blocksRoomWalk=o=>o.zone==='room'&&roomWalkLanes.some(q=>overlap(o,q));
+  const largeEquipment=o=>o.artKind==='server_rack'||o.artKind==='generator';
+  const blocksRoomWalk=o=>o.zone==='room'&&!largeEquipment(o)&&roomWalkLanes.some(q=>overlap(o,q));
   // Static furniture must leave the actual doorway approach open.
   for(let i=furniture.length-1;i>=0;i--){
     const item=furniture[i];
-    if(!blocksRoomWalk(item)&&!doorLanes.some(d=>overlap(item,d))&&!walls.some(w=>overlap(item,w,3))&&
+    if(!largeEquipment(item)&&!blocksRoomWalk(item)&&!doorLanes.some(d=>overlap(item,d))&&!walls.some(w=>overlap(item,w,3))&&
        !furniture.some((f,j)=>j!==i&&overlap(item,f,3)))continue;
     const tx=X0+Math.floor((item.x-X0)/SIZE)*SIZE,ty=Y0+Math.floor((item.y-Y0)/SIZE)*SIZE;
     const corners=item.zone==='hallway'?hallCorners(item.w,item.h):
       [[16,16],[SIZE-item.w-16,16],[16,SIZE-item.h-16],[SIZE-item.w-16,SIZE-item.h-16]];
-    const alternate=corners.map(([dx,dy])=>({...item,x:tx+dx,y:ty+dy})).find(o=>
+    const alternate=(largeEquipment(item)?[]:corners).map(([dx,dy])=>({...item,x:tx+dx,y:ty+dy})).find(o=>
       !blocksRoomWalk(o)&&!doorLanes.some(d=>overlap(o,d))&&!walls.some(w=>overlap(o,w,3))&&
       !furniture.some((f,j)=>j!==i&&overlap(o,f,3))&&
       distance({x:o.x+o.w/2,y:o.y+o.h/2},stair)>78);
@@ -419,20 +449,32 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     const artKind=INDOOR_ROOM_ART[room.purpose][0];
     if(furniture.some(o=>o.roomId===room.id&&o.artKind===artKind))continue;
     let best=null;
-    for(const scale of [1,.88,.76,.67,.6]){
+    const large=artKind==='server_rack'||artKind==='generator';let walkChecks=0;
+    for(const scale of large?[1]:[1,.88,.76,.67,.6]){
       const h=INDOOR_PROP_LENGTH[artKind]*scale/INDOOR_SCALE_Y,w=INDOOR_PROP_LENGTH[artKind]*scale*INDOOR_PROP_ASPECT[artKind];
-      for(const [pw,ph] of [[w,h],[h*INDOOR_SCALE_Y,w/INDOOR_SCALE_Y]])
-      for(const tile of room.tiles)for(let dy=16;dy+ph<=SIZE-16;dy+=8)for(let dx=16;dx+pw<=SIZE-16;dx+=8){
-        const o={kind:'cabinet',artKind,roomId:room.id,purpose:room.purpose,primaryAsset:true,zone:'room',x:tile.x+dx,y:tile.y+dy,w:pw,h:ph};
-        if(blocksRoomWalk(o)||walls.some(q=>overlap(o,q,3))||doorLanes.some(q=>overlap(o,q,5)))continue;
-        const displaced=furniture.filter(q=>overlap(o,q,6));
-        if(displaced.some(q=>q.primaryAsset||q.roomId!==room.id))continue;
-        if(!best||displaced.length<best.displaced.length)best={o,displaced};
+      placementSearch: for(const [pw,ph] of [[w,h],[h*INDOOR_SCALE_Y,w/INDOOR_SCALE_Y]]){
+        // 発電機は横に広い部屋の壁沿いに置き、背後の通行不能な隙間を作らない。
+        if(artKind==='generator'&&pw<ph*INDOOR_SCALE_Y)continue;
+        for(let y=room.y+14;y+ph<=room.y+room.h-14;y+=8)for(let x=room.x+14;x+pw<=room.x+room.w-14;x+=8){
+          const o={kind:'cabinet',artKind,roomId:room.id,purpose:room.purpose,primaryAsset:true,zone:'room',x,y,w:pw,h:ph};
+          const area=room.tiles.reduce((sum,t)=>sum+Math.max(0,Math.min(x+pw,t.x+t.w)-Math.max(x,t.x))*
+            Math.max(0,Math.min(y+ph,t.y+t.h)-Math.max(y,t.y)),0);
+          if(Math.abs(area-pw*ph)>.01||blocksRoomWalk(o)||walls.some(q=>overlap(o,q,3))||doorLanes.some(q=>overlap(o,q,5)))continue;
+          const displaced=furniture.filter(q=>large?q.roomId===room.id:overlap(o,q,6));
+          if(displaced.some(q=>q.primaryAsset||q.roomId!==room.id))continue;
+          if(large){
+            if(++walkChecks>40)break placementSearch;
+            if(!indoorRoomEquipmentWalkable(room,[...walls,...furniture.filter(q=>!displaced.includes(q)),o]))continue;
+          }
+          if(!best||displaced.length<best.displaced.length)best={o,displaced};
+          if(large||!displaced.length)break placementSearch;
+        }
       }
-    if(best)break;
+      if(best)break;
     }
     if(best){for(const q of best.displaced)furniture.splice(furniture.indexOf(q),1);furniture.push(best.o);}
   }
+  const machineryRooms=new Set(furniture.filter(largeEquipment).map(o=>o.roomId));
   // Do not replenish the opposite side to satisfy an old density minimum.
   // At most two props/cargo pieces may occupy a hallway cell in total.
   const hallCellCount=cell=>{
@@ -442,6 +484,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
   };
   const isFree=o=>{
     const cx=o.x+o.w/2,cy=o.y+o.h/2;
+    if(rooms.some(r=>machineryRooms.has(r.id)&&r.tiles.some(t=>cx>=t.x&&cx<t.x+t.w&&cy>=t.y&&cy<t.y+t.h)))return false;
     if(distance({x:cx,y:cy},stair)<98)return false;
     if(doorLanes.some(d=>overlap(o,d,5)))return false;
     if(walls.some(w=>overlap(o,w,3)))return false;
@@ -458,7 +501,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     if(count<=0)return false;
     const columns=zone==='hallway'||kind==='shellPallet'||kind==='crate'?1:2;
     const gap=kind==='shellPallet'?0:7;
-    const itemH=kind==='crate'?size*2/INDOOR_SCALE_Y:size;
+    const itemH=kind==='crate'?size/1.5/INDOOR_SCALE_Y:size;
     const rows=Math.ceil(count/columns),width=columns*size+(columns-1)*gap,height=rows*itemH+(rows-1)*gap;
     const positions=zone==='hallway'
       ?hallCorners(width,height,14)
@@ -478,7 +521,9 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
   // Prefer an undisturbed tile; as a fallback, replace only overlapping indoor decoration.
   const reserveLargePallet=()=>{
     let best=null;
+    for(const allowMachinery of [false,true]){
     for(const cell of roomCells){
+      if(machineryRooms.has(owner[cell])&&!allowMachinery)continue;
       const {c,r}=coord(cell),xx=X0+c*SIZE,yy=Y0+r*SIZE;
       for(const dx of [14,46])for(const dy of [14,46]){
         const o={x:xx+dx,y:yy+dy,w:120,h:120,kind:'shellPallet',zone:'room',group:'room-shell-large'};
@@ -488,10 +533,14 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
            explosiveObjects.some(v=>overlap(o,v,7)))continue;
         const displaced=furniture.filter(v=>overlap(o,v,6));
         if(displaced.some(v=>v.primaryAsset))continue;
+        if(machineryRooms.has(owner[cell])&&!indoorRoomEquipmentWalkable(rooms[owner[cell]],
+          [...walls,...furniture.filter(v=>!displaced.includes(v)),...explosiveObjects,o]))continue;
         if(!best||displaced.length<best.displaced.length)best={o,displaced};
         if(!displaced.length)break;
       }
       if(best&&!best.displaced.length)break;
+    }
+    if(best)break;
     }
     if(!best)return false;
     for(const o of best.displaced)furniture.splice(furniture.indexOf(o),1);
@@ -661,22 +710,47 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
   for(const lamp of lightFixtures){const radius=Math.sqrt(lamp.rx*lamp.ry);lamp.rx=radius;lamp.ry=radius;}
   // Select only rooms with a genuine walkable document position.
   const obstacles=[...walls,...furniture,...explosiveObjects];
+  // 貨物も含む実際の移動グリッドで、廊下から到達できる回収位置だけを選ぶ。
+  const documentGrid=indoorMakeGuardGrid({number,stair,walls,furniture,explosiveObjects},0);
+  const sourceCell=indoorGridFreeNearest(documentGrid,indoorGridPoint(documentGrid,indoorAt(stair.x,stair.y,0)));
+  const reachable=documentGrid.seen,documentQueue=documentGrid.queue;
+  let documentHead=0,documentTail=0;
+  if(sourceCell>=0){documentQueue[documentTail++]=sourceCell;reachable[sourceCell]=1;}
+  while(documentHead<documentTail){
+    const id=documentQueue[documentHead++],x=id%documentGrid.cols,y=(id/documentGrid.cols)|0;
+    for(let k=0;k<4;k++){
+      if((k===0&&!y)||(k===1&&y===documentGrid.rows-1)||(k===2&&!x)||(k===3&&x===documentGrid.cols-1))continue;
+      const n=id+(k===0?-documentGrid.cols:k===1?documentGrid.cols:k===2?-1:1);
+      if(!documentGrid.solid[n]&&!reachable[n]){reachable[n]=1;documentQueue[documentTail++]=n;}
+    }
+  }
+  const documentReachable=p=>{
+    const id=indoorGridPoint(documentGrid,indoorAt(p.x,p.y,0));
+    return id>=0&&!documentGrid.solid[id]&&!!reachable[id];
+  };
+  const documentArts=new Set(['cabinet','desk','server_rack','operations_table','personal_lockers','shelf','equipment']);
+  const worldDistance=(a,b)=>Math.hypot(a.x-b.x,(a.y-b.y)*INDOOR_SCALE_Y);
   const intelCandidates=rooms.filter(r=>r!==postRoom).map(room=>{
-    const tiles=indoorShuffle(room.tiles.slice(),rng);
-    const doorsForRoom=room.doors;
-    const candidates=tiles.flatMap(t=>[
-      [90,90],[40,90],[140,90],[90,40],[90,140],
-      [40,40],[140,40],[40,140],[140,140]
-    ].map(([dx,dy])=>({x:t.x+dx,y:t.y+dy})));
-    candidates.sort((a,b)=>Math.min(...doorsForRoom.map(d=>distance(a,d)))-
-      Math.min(...doorsForRoom.map(d=>distance(b,d))));
-    const point=candidates.find(p=>obstacles.every(o=>p.x<=o.x-15||p.x>=o.x+o.w+15||
-      p.y<=o.y-15||p.y>=o.y+o.h+15));
-    return point?{room,point}:null;
+    const fixtures=furniture.filter(o=>o.roomId===room.id&&documentArts.has(o.artKind));
+    const candidates=[];
+    for(const fixture of fixtures){
+      const cx=fixture.x+fixture.w/2,cy=fixture.y+fixture.h/2;
+      for(const gap of [26,38])for(const t of [.25,.5,.75]){
+        candidates.push({x:fixture.x-gap,y:fixture.y+fixture.h*t,fixture},
+          {x:fixture.x+fixture.w+gap,y:fixture.y+fixture.h*t,fixture},
+          {x:fixture.x+fixture.w*t,y:fixture.y-gap/INDOOR_SCALE_Y,fixture},
+          {x:fixture.x+fixture.w*t,y:fixture.y+fixture.h+gap/INDOOR_SCALE_Y,fixture});
+      }
+    }
+    const doorDistance=p=>Math.min(...room.doors.map(d=>worldDistance(p,d)));
+    const valid=candidates.filter(p=>documentReachable(p)&&room.tiles.some(t=>p.x>=t.x+14&&p.x<=t.x+t.w-14&&p.y>=t.y+10&&p.y<=t.y+t.h-10)&&
+      doorDistance(p)>=86&&obstacles.every(o=>p.x<=o.x-15||p.x>=o.x+o.w+15||p.y<=o.y-15||p.y>=o.y+o.h+15));
+    valid.sort((a,b)=>doorDistance(b)-doorDistance(a));
+    return valid.length?{room,point:valid[0]}:null;
   }).filter(Boolean);
-  if(intelCandidates.length<INDOOR_FILES_TOTAL)throw Error('資料への通行可能な配置が不足');
+  if(intelCandidates.length<INDOOR_FILES_TOTAL)throw Error('家具付近の資料への通行可能な配置が不足');
   const intel=indoorShuffle(intelCandidates,rng).slice(0,INDOOR_FILES_TOTAL).map(({room,point},i)=>
-    ({...point,room:room.name,id:number+'-'+i,taken:false}));
+    ({x:point.x,y:point.y,room:room.name,roomId:room.id,fixtureArt:point.fixture.artKind,id:number+'-'+i,taken:false}));
   // 既存AIのpatrol()へ渡す巡回経路を、建物全体の通行グラフから探索。
   // 同じ部屋の区画と廊下内、およびドア部分だけを通行可能な辺とする。
   const walkNeighbors=i=>neighbors(i).filter(n=>owner[i]===owner[n]||
@@ -956,14 +1030,14 @@ function setupInfiltrationWorld(){
     const stair=to(raw.stair),stairObstacle=indoorStairObstacleBounds(stair,n);
     const avoidStair=pt=>{
       if(!(pt.x>=stairObstacle.x-12&&pt.x<=stairObstacle.x+stairObstacle.w+12&&pt.y>=stairObstacle.y-12&&pt.y<=stairObstacle.y+stairObstacle.h+12))return pt;
-      const grid=navigation.grid,id=indoorGridFreeNearest(grid,indoorGridPoint(grid,pt));
-      return id<0?pt:{x:grid.x+(id%grid.cols+.5)*grid.step,y:grid.y+(((id/grid.cols)|0)+.5)*grid.step};
+      return indoorGridSafePoint(navigation.grid,pt);
     };
+    const avoidFixed=pt=>indoorGridSafePoint(navigation.grid,pt);
     navigation.centers=navigation.centers.map(avoidStair);
     const openings=raw.entryOpenings.map(q=>({...to(q),side:q.side,w:q.w}));
     const guards=[];
     for(const [guardIndex,h] of raw.guards.entries()){
-      const pos=avoidStair(to(h)),path=h.waypoints.map(q=>avoidStair(to(q)));
+      const pos=avoidFixed(to(h)),path=h.waypoints.map(q=>avoidFixed(to(q)));
       const guard={...pos,path,loop:!!h.loop,wi:1,dir:1,stk:0,
         alive:true,elite:false,commander:null,st:0,sus:0,lost:0,cd:R()*1.2,burstLeft:0,face:h.face,
         target:null,patrolMode:'axis',zoneHeavy:'indoor',indoorGuard:true,indoorFloor:n,
@@ -989,7 +1063,7 @@ function setupInfiltrationWorld(){
     }
     // 合計3箇所を、1階1・2階2または1階2・2階1に分ける。
     const count=n===1?groundFiles:INDOOR_FILES_TOTAL-groundFiles;
-    const intel=raw.intel.slice(0,count).map((q,i)=>({...to(q),id:q.id,name:'重要資料 '+n+'F-'+(i+1),done:false,floor:n,progress:0}));
+    const intel=raw.intel.slice(0,count).map((q,i)=>({...to(q),id:q.id,name:'重要資料 '+n+'F-'+(i+1),roomId:q.roomId,fixtureArt:q.fixtureArt,done:false,floor:n,progress:0}));
     indoorWorld.intel.push(...intel);
     const entrances=raw.entrances.map(to);
     const entrance=raw.entrance?to(raw.entrance):null,
@@ -1143,7 +1217,7 @@ function indoorGridFreeNearest(grid,id){
  if(id<0)return-1;
  if(!grid.solid[id])return id;
  const x=id%grid.cols,y=(id/grid.cols)|0;
- for(let r=1;r<=4;r++){
+ for(let r=1;r<=8;r++){
   let candidate=-1,best=Infinity;
   for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){
    if(Math.max(Math.abs(dx),Math.abs(dy))!==r)continue;
@@ -1154,6 +1228,11 @@ function indoorGridFreeNearest(grid,id){
   if(candidate>=0)return candidate;
  }
  return-1;
+}
+function indoorGridSafePoint(grid,point){
+ const cell=indoorGridPoint(grid,point);if(cell<0||!grid.solid[cell])return point;
+ const id=indoorGridFreeNearest(grid,cell);
+ return id<0?point:{x:grid.x+(id%grid.cols+.5)*grid.step,y:grid.y+(((id/grid.cols)|0)+.5)*grid.step};
 }
 function indoorGridDetour(nav,start,goal,maxVisits=850){
  const g=nav?.grid;if(!g)return null;
@@ -2420,7 +2499,13 @@ function drawInfiltrationMission(){
     gm.strokeStyle=q.done?'#79e8a2':'#ffdf83';gm.lineWidth=8;gm.lineCap='round';gm.beginPath();
     gm.arc(x,y,r,-Math.PI/2,-Math.PI/2+Math.PI*2*ratio);if(ratio>0)gm.stroke();
     gm.lineCap='butt';gm.font='bold 18px system-ui';gm.textAlign='center';
-    gm.fillStyle=q.done?'#baffce':'#fff0ad';gm.fillText(q.done?'回収完了':'資料',x,y+2);
+    // 紙と折り返しの図形で、端末の絵文字フォントに依存しない資料アイコン。
+    gm.fillStyle=q.done?'#baffce':'#fff0ad';gm.strokeStyle=q.done?'#79e8a2':'#806d3e';gm.lineWidth=1.5;
+    gm.beginPath();gm.moveTo(x-10,y-17);gm.lineTo(x+4,y-17);gm.lineTo(x+11,y-10);
+    gm.lineTo(x+11,y+9);gm.lineTo(x-10,y+9);gm.closePath();gm.fill();gm.stroke();
+    gm.beginPath();gm.moveTo(x+4,y-17);gm.lineTo(x+4,y-10);gm.lineTo(x+11,y-10);gm.stroke();
+    for(const dy of [-5,0,5]){gm.beginPath();gm.moveTo(x-6,y+dy);gm.lineTo(x+6,y+dy);gm.stroke();}
+    if(q.done){gm.fillStyle='#baffce';gm.font='bold 14px system-ui';gm.fillText('回収完了',x,y+28);}
     if(!q.done){
       gm.font='bold 13px system-ui';gm.fillText((q.progress||0).toFixed(1)+' / 8秒',x,y+22);
       if(indoorPartnerAssistsDocument(q)){
@@ -2452,4 +2537,4 @@ function drawInfiltrationMission(){
   }
   gm.restore();
 }
-if(typeof module!=='undefined'&&module.exports)module.exports={indoorGenerateExterior,indoorGenerateFloor,indoorAt,indoorRect,indoorGuardCell,indoorGuardCellRoute,indoorMakeGuardGrid,indoorGridDetour,indoorGridPoint};
+if(typeof module!=='undefined'&&module.exports)module.exports={indoorGenerateExterior,indoorGenerateFloor,indoorAt,indoorRect,indoorGuardCell,indoorGuardCellRoute,indoorMakeGuardGrid,indoorGridDetour,indoorGridPoint,indoorGridSafePoint};

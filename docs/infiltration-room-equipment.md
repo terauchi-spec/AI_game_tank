@@ -12,13 +12,13 @@ Built-in image_gen mode, one generation per distinct asset, transparent_backgrou
 | Personal lockers | assets/indoor/personal_lockers.webp | 194×384 | 21,888 |
 | Generator | assets/indoor/generator.webp | 253×384 | 28,112 |
 
-Total transfer: 103,808 bytes. Total decoded RGBA: 1,526,784 bytes. Sources were cropped around their opaque silhouette with a small transparent margin, then reduced once using Lanczos with premultiplied alpha and saved at WebP quality 82, alpha quality 100, method 6. Transparent alpha and the cropped source aspect ratio are preserved. Maximum sprite length is 144 world pixels, with 384 source pixels along the long edge. Canvas smoothing uses high quality. There is no runtime image resampling canvas or additional per-frame layout/pathfinding pass.
+Total transfer: 103,808 bytes. Total decoded RGBA: 1,526,784 bytes. Sources were cropped around their opaque silhouette with a small transparent margin, then reduced once using Lanczos with premultiplied alpha and saved at WebP quality 82, alpha quality 100, method 6. Transparent alpha and the cropped source aspect ratio are preserved. Server racks and generators now have full-length footprints of 224 and 232 world pixels respectively (twice the original 112 and 116); sources retain 384 pixels along the long edge. Canvas smoothing uses high quality. There is no runtime image resampling canvas or additional per-frame layout/pathfinding pass.
 
 ## Rooms and placement
 
 Each floor assigns one operations room, armory, communications room and utility room. The existing guard post stays a guard post. Remaining one-cell rooms are quarters; remaining larger rooms are storage or records rooms. Quarters use beds and personal lockers; armories use weapon racks and lockers; communications rooms use servers and electronics; utility rooms use generators and equipment; operations rooms use planning tables and office furniture. Room names are metadata and are not printed on the floor.
 
-One supplemental furniture candidate is added per non-post room. Placement protects door approaches, room centers and connections between room tiles. If a main asset conflicts, a bounded generation-time search tries both orientations, then smaller proportional footprints in the same room. It may replace supplemental decoration, and cargo cannot replace a room's main equipment. Hallway side/count rules are preserved. Collision and navigation use the final sprite proportions.
+One supplemental furniture candidate is added per non-post room. Placement protects door approaches, room centers and connections between room tiles. If a main asset conflicts, a bounded generation-time search tries both orientations, then smaller proportional footprints in the same room for tables and other small furniture. Server racks and generators retain their full doubled dimensions; a large machine is omitted when its assigned room cannot fit it without blocking circulation. It may replace supplemental decoration, and cargo cannot replace a room's main equipment. Hallway side/count rules are preserved. Collision and navigation use the final sprite proportions.
 
 ## Final generation prompt set
 
@@ -62,3 +62,11 @@ Subject: ONE compact military diesel generator equipment skid viewed exactly fro
 
 The server rack and table edits preserve object geometry, orientation, proportions and materials while removing the concrete background and external cast shadows. The generator edit additionally removes floor visible through holes in its open frame. All require actual transparent alpha outside the object, antialiased contours, and no new elements. Alpha was inspected before WebP conversion.
 
+
+## Document placement and enlarged equipment update
+
+Document collection points are adjacent to cabinets, desks, servers, operations tables, lockers, shelves or electronics in the same room. Candidate centers are 26–38 world pixels from a fixture edge and at least 86 world pixels from the room doors. A generation-time flood fill verifies that each chosen point is reachable from the corridor navigation grid, including cargo. The HUD draws a small folded-paper icon in place of the central Japanese label; the eight-second accumulation and partner bonus are unchanged.
+
+The utility room preferentially receives a horizontally spacious room; communications receives another large room. Enlarged equipment may span contiguous tiles within its own room. A bounded local connectivity check preserves doors and walking space. Supplementary furniture is removed from a machinery room when necessary; ordinary cargo is placed elsewhere. The large shell-pallet reservation can use a machinery room only after checking connectivity. All layout checks run during generation.
+
+Infiltration crates retain a 60px world width and now use 40px world height (horizontal 1.5:1). Their artwork and physical hit rectangle share this ratio; other stages' crates are unchanged.
