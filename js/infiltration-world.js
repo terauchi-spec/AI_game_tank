@@ -2429,7 +2429,7 @@ function indoorPropImage(kind){
   if(!kind)return null;
   if(!Object.prototype.hasOwnProperty.call(indoorPropImages,kind)){
     const image=new Image();image.decoding='async';
-    image.src='assets/indoor/'+kind+'.webp';indoorPropImages[kind]=image;
+    image.src='assets/indoor/'+kind+'.webp'+(INDOOR_PROP_ASPECT[kind]?'?v=20261020-r2':'');indoorPropImages[kind]=image;
   }
   const image=indoorPropImages[kind];return assetOK(image)?image:null;
 }

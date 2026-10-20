@@ -42,15 +42,17 @@ test('prop assets load only on first use, fall back while loading, and render wi
  let loads=0;const images=[],calls=[];
  class Image{constructor(){loads++;this.complete=false;this.naturalWidth=106;this.naturalHeight=256;images.push(this);}set src(s){this.url=s;}}
  const g={save(){},restore(){},drawImage:(...args)=>calls.push(['draw',...args]),translate:(...args)=>calls.push(['translate',...args]),rotate:a=>calls.push(['rotate',a])};
- const api=new Function('Image','assetOK','g',source.slice(start,end)+';return {image:indoorPropImage,draw:drawInfiltrationPropSprite};')(Image,im=>im.complete,g);
+ const api=new Function('Image','assetOK','g','INDOOR_PROP_ASPECT',source.slice(start,end)+';return {image:indoorPropImage,draw:drawInfiltrationPropSprite};')(Image,im=>im.complete,g,{bed:106/256});
  assert.equal(loads,0);assert.equal(api.image(null),null);assert.equal(loads,0);
  const prop={propArt:'bed',x:20,y:30,w:50,h:98};
- assert.equal(api.draw(prop),false);assert.equal(loads,1);assert.equal(images[0].url,'assets/indoor/bed.webp');
+ assert.equal(api.draw(prop),false);assert.equal(loads,1);assert.equal(images[0].url,'assets/indoor/bed.webp?v=20261020-r2');
  images[0].complete=true;
  for(let i=0;i<120;i++)assert.equal(api.draw(prop),true);
  assert.equal(loads,1);const w=98*106/256;assert.deepEqual(calls[0],['draw',images[0],20+(50-w)/2,30,w,98]);
  calls.length=0;api.draw({...prop,w:98,h:50});
  assert.deepEqual(calls,[['translate',69,55],['rotate',Math.PI/2],['draw',images[0],-w/2,-49,w,98]]);
+ api.image('stairs_up');assert.equal(images[1].url,'assets/indoor/stairs_up.webp');
+ api.image('shell_pallet_hd');assert.equal(images[2].url,'assets/indoor/shell_pallet_hd.webp');
 });
 
 test('outside entrances use the hills backdrop with no concrete strips',()=>{
@@ -207,3 +209,4 @@ test('important documents are beside storage or work fixtures rather than doorwa
   }
  }
 });
+
