@@ -864,7 +864,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.20.1722',FILE_CREATED_AT='2026/10/20 17:22',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.20.1812',FILE_CREATED_AT='2026/10/20 18:12',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -1554,9 +1554,20 @@ function drawCoverAsset(c){
    const smooth=g.imageSmoothingEnabled;g.imageSmoothingEnabled=true;
    g.drawImage(im,0,0,im.naturalWidth,split,cx-dw/2,cy-dh/2,dw,dh-faceH);
    g.drawImage(im,0,split,im.naturalWidth,im.naturalHeight-split,cx-dw/2,cy+dh/2-faceH,dw,faceH);
+   if(c.indoorWall&&typeof stageMode!=='undefined'&&stageMode==='indoor'){
+    // A thin inset edge stays inside the wall artwork and existing fragment clips.
+    g.strokeStyle='#414541';g.lineWidth=2;
+    g.strokeRect(cx-dw/2+1,cy-dh/2+1,Math.max(0,dw-2),Math.max(0,dh-2));
+   }
    g.imageSmoothingEnabled=smooth;g.restore();return true;
   }
-  return drawAssetSprite(COVER_IMG.maze_wall,cx,cy,long*1.03,short*1.18,0,.98);
+  const wallW=long*1.03,wallH=short*1.18;
+  const ok=drawAssetSprite(COVER_IMG.maze_wall,cx,cy,wallW,wallH,0,.98);
+  if(ok&&c.indoorWall&&typeof stageMode!=='undefined'&&stageMode==='indoor'){
+   g.save();g.strokeStyle='#414541';g.lineWidth=2;
+   g.strokeRect(cx-wallW/2+1,cy-wallH/2+1,Math.max(0,wallW-2),Math.max(0,wallH-2));g.restore();
+  }
+  return ok;
  }
  if(c.kd===2){
   const im=COVER_IMG.crate;

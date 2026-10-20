@@ -48,7 +48,7 @@ test('infiltration furniture chips use the original WebP, preserve holes and reu
  assert.equal(h.images.filter(q=>q[0]===image).length,before,'the intact furniture cannot reappear after destruction');
 });
 
-test('indoor walls leave no foundation outline before damage',()=>{
+test('indoor walls leave no ground foundation mark before damage',()=>{
  const h=harness(),a=h.api,wall={x:100,y:100,w:120,h:22,kd:1};
  a.asset(wall);a.asset({...wall,indoorWall:true});
  assert.equal(h.fills.length,0,'both wall renderers keep their original artwork without a rim');
@@ -116,4 +116,24 @@ test('lighter indoor scars compensate ceiling light once and preserve outdoor la
   assert.ok(rgb[k]>tint[k],'scar is lighter than the previous version');
  }
  assert.ok(html.indexOf('drawBuildingGroundMarks(cx,cy);')<html.indexOf('const mazeWallsCached=drawMazeWallChunks(cx,cy);'));
+});
+
+
+test('only existing indoor wall artwork receives a thin inset gray outline',()=>{
+ const h=harness(),strokes=[];
+ h.c.g.strokeRect=function(...rect){strokes.push({rect,color:this.strokeStyle,width:this.lineWidth});};
+ h.c.COVER_IMG.maze_wall_vertical={naturalWidth:24,naturalHeight:320};
+ for(const wall of [{x:100,y:100,w:180,h:22,kd:1,indoorWall:true},{x:100,y:100,w:22,h:315,kd:1,indoorWall:true}]){
+  strokes.length=0;h.c.stageMode='indoor';assert.equal(h.api.asset(wall),true);
+  assert.equal(strokes.length,1);assert.equal(strokes[0].color,'#414541');assert.equal(strokes[0].width,2);
+  const [x,y,w,hh]=strokes[0].rect;
+  assert.ok(w>0&&hh>0);assert.ok(x>wall.x-5&&y>wall.y-5,'outline stays on the existing wall image');
+  for(const stage of ['base','beginner','front']){
+   h.c.stageMode=stage;strokes.length=0;h.api.asset(wall);assert.equal(strokes.length,0,'completed stages keep their original wall rendering');
+  }
+  h.c.stageMode='indoor';strokes.length=0;h.api.asset({...wall,indoorWall:false});assert.equal(strokes.length,0);
+ }
+ h.c.stageMode='indoor';strokes.length=0;h.c.COVER_IMG.maze_wall_vertical={};
+ assert.equal(h.api.asset({x:100,y:100,w:22,h:180,kd:1,indoorWall:true}),false);
+ assert.equal(strokes.length,0,'an unloaded wall cannot leave an isolated outline');
 });
