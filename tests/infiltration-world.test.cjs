@@ -199,7 +199,7 @@ test('indoor wall artwork covers the full collision wall length without visible 
  assert.ok(sprite&&sprite[3]>=315,'horizontal indoor wall also covers the whole span');
 });
 
-test('automatic doors keep 6px colliders while vertical artwork is 1.5 times thicker',()=>{
+test('automatic doors keep 6px colliders while vertical artwork is 10 percent thinner than the previous 1.5 scale',()=>{
  const fs=require('node:fs'),path=require('node:path');
  const source=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
  const thickness=Number(source.match(/INDOOR_DOOR_THICKNESS=(\d+)/)[1]);
@@ -231,7 +231,7 @@ test('automatic doors keep 6px colliders while vertical artwork is 1.5 times thi
  );
  drawer(0,250);
  assert.equal(fills.length,4,'two sliding panels per closed door');
- for(const rc of fills.slice(0,2))assert.equal(rc[2],9,'vertical fallback is 1.5 times thicker');
+ for(const rc of fills.slice(0,2))assert.equal(rc[2],6*1.35,'vertical fallback is 10 percent thinner');
  for(const rc of fills.slice(2))assert.equal(rc[3],6,'horizontal drawn thickness');
  // 触れる前は閉じたまま。薄くしても近接開閉のルールは維持する。
  const entities=[{x:450,y:400}],cover={noHit:false},door={...q,vertical:true,open:0,cover};
@@ -254,7 +254,7 @@ test('automatic door WebP leaves retract without stretching with independent hor
  for(const vertical of [false,true])for(const open of [0,.5]){
   const half=vertical?73.5:42,part=half*(1-open),before=calls.length;
   assert.equal(draw({x:100,y:100,vertical},open,half,part),true);
-  const chosen=vertical?image:horizontalImage,height=chosen.naturalHeight,depth=vertical?15:13*206/84,top=vertical?-7.5:-5;
+  const chosen=vertical?image:horizontalImage,height=chosen.naturalHeight,depth=vertical?13.5:13*206/84,top=vertical?-6.75:-5;
   const [left,right]=calls.slice(before);assert.equal(left[0],chosen);assert.equal(right[0],chosen);
   assert.deepEqual(left.slice(1),[256*open,0,256*(1-open),height,-half,top,part,depth]);
   assert.deepEqual(right.slice(1),[256,0,256*(1-open),height,half-part,top,part,depth]);
@@ -299,8 +299,8 @@ test('horizontal door position is retained while widened vertical artwork stays 
  const draw=new Function('g','indoorPropImage','indoorWorld','drawInfiltrationProps','W','H','INDOOR_SCALE_X','INDOOR_SCALE_Y','INDOOR_DOOR_WIDTH','INDOOR_DOOR_THICKNESS',
   src.slice(from,to)+';return drawInfiltrationOpenings;')(g,()=>ready?image:null,{floors:[{footprint:{y:0,h:800},windows:[],doors}]},()=>{},840,720,1,1.75,84,6);
  draw(0,0);assert.equal(fills[0][1],126.5,'vertical fallback is unchanged');
- assert.equal(fills[0][0],95.5,'widened vertical fallback remains centered');
- assert.deepEqual(lines.slice(0,2),[[89.5,126.5],[110.5,126.5]],'vertical frame also widens 1.5 times');
+ assert.equal(fills[0][0],95.95,'widened vertical fallback remains centered');
+ assert.deepEqual(lines.slice(0,2),[[90.55,126.5],[109.45,126.5]],'vertical frame is reduced by 10 percent');
  assert.equal(fills[2][1],187,'horizontal fallback moves 6px south from its previous offset');
  assert.deepEqual(lines.slice(2),[[258,183],[258,197]],'both horizontal frame rails move with the leaves');
  ready=true;draw(0,0);assert.equal(images[2][1],185,'horizontal WebP moves 6px south from its previous offset');

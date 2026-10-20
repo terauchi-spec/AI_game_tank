@@ -18,9 +18,85 @@ function harness(){
  vm.runInContext(cut('function centerRect(','function rockHitEllipse(')+cut('function drawCoverAsset(','// 建物の足元に残す')+
   cut('const BUILDING_SHADOW_KDS=','function drawBridgeFancy(')+cut('function carve(','function useSkill('),c);
  vm.runInContext(`api={world:indoorWorld,doors:updateInfiltrationDoors,props:drawInfiltrationProps,carve,hit:coverHitRect,asset:drawCoverAsset,fragment:drawCoverFragment,
+  breakWindow:indoorBreakWindow,damageWindows:indoorDamageWindows,openings:drawInfiltrationOpenings,
   get covers(){return covers;},get marks(){return buildingGroundMarks;},ground:drawBuildingGroundMarks,setup:setupInfiltrationWorld,gridPoint:indoorGridPoint,frame:()=>fragmentDrawFrame++,load:(key,im)=>indoorPropImages[key]=im};`,c);
  return{c,api:c.api,images,fills,rasters,get canvases(){return canvases;},get readbacks(){return readbacks;},get pixelUploads(){return pixelUploads;}};
 }
+
+test('window glass fills real wall openings on both floors and clears collision exactly once',()=>{
+ const h=harness(),a=h.api;let bursts=0;
+ h.c.burst=()=>bursts++;
+ const kinds=new Set();let clearedCells=0;
+ for(const floor of a.world.floors)for(const q of floor.windows){
+  kinds.add(q.vertical);assert.ok(q.cover&&a.covers.includes(q.cover));
+  const blocks=c=>!c.noHit&&a.hit(c)&&q.x>a.hit(c).x&&q.x<a.hit(c).x+a.hit(c).w&&q.y>a.hit(c).y&&q.y<a.hit(c).y+a.hit(c).h;
+  const blockers=a.covers.filter(blocks);assert.equal(blockers.length,1,'no hidden concrete behind glass');assert.equal(blockers[0],q.cover);
+  const grid=floor.navigation.grid,cell=a.gridPoint(grid,q);assert.equal(grid.solid[cell],1);
+  grid.epoch=12;grid.seen[cell]=123;
+  const wallCount=a.covers.filter(c=>c.indoorWall).length;
+  assert.equal(a.breakWindow(q),true);assert.equal(q.broken,true);assert.equal(q.cover.noHit,true);
+  assert.equal(a.covers.some(blocks),false,'glass no longer blocks movement or sight');
+  assert.equal(grid.epoch,0);assert.equal(grid.seen[cell],0,'guard navigation is refreshed');
+  if(grid.solid[cell]===0)clearedCells++;
+  assert.equal(a.covers.filter(c=>c.indoorWall).length,wallCount,'neighboring concrete is preserved');
+  assert.equal(a.breakWindow(q),false,'repeated hits do not repeat effects or work');
+ }
+ assert.equal(kinds.size,2);assert.ok(clearedCells>=2,'windows clear navigation except where furniture or stairs still obstruct it');
+ assert.equal(bursts,a.world.floors.reduce((n,f)=>n+f.windows.length,0));
+});
+
+test('window blast damage uses the full blast radius and wall carving cannot resurrect glass',()=>{
+ const a=harness().api,q=a.world.floors[0].windows[0],other=a.world.floors[1].windows[0];
+ const c=q.cover,x=q.vertical?c.x-80:q.x,y=q.vertical?q.y:c.y-80;
+ assert.equal(a.damageWindows(x,y,79),0,'outside the circular blast');
+ assert.ok(a.damageWindows(x,y,81)>0,'glass within blast breaks outside the wall carve core');
+ assert.equal(q.broken,true);assert.equal(other.broken,false,'other floor is unaffected');
+ assert.equal(a.damageWindows(x,y,81),0,'repeat blast is a no-op');
+ a.carve(q.x,q.y,40,false,null);assert.equal(q.cover.noHit,true);
+ const fresh=a.world.floors[0].windows.find(w=>!w.broken);assert.ok(fresh);
+ a.carve(fresh.x,fresh.y,3,false,null);assert.equal(fresh.broken,true,'direct drill/carve hit shatters the whole glass');
+ assert.equal(a.covers.some(c=>c.fr&&c.indoorWindow),false,'glass never becomes concrete fragments');
+ const isolated=a.world.floors[1].windows[0];
+ const start=html.indexOf('function damageObjectsInRadius('),end=html.indexOf('function updateBurningObjects(',start);
+ const radiusDamage=new Function('stageMode','indoorDamageWindows','objects',html.slice(start,end)+';return damageObjectsInRadius;')('indoor',a.damageWindows,[]);
+ radiusDamage(isolated.x,isolated.y,95,'bombBlast');assert.equal(isolated.broken,true,'real blast branch breaks glass even without explosive objects');
+});
+
+test('window renderer shares cached WebP states, rotates vertical glass and preserves destruction',()=>{
+ const h=harness(),a=h.api,f=a.world.floors[0],q=f.windows[0];
+ f.props=[];f.doors=[];f.windows=[q];
+ const intact={naturalWidth:512,naturalHeight:106},broken={naturalWidth:512,naturalHeight:106};
+ a.load('window_glass',intact);a.load('window_glass_broken',broken);
+ a.openings(q.x-100,q.y-100);assert.ok(h.images.some(call=>call[0]===intact));
+ const before=h.images.length;a.breakWindow(q);a.openings(q.x-100,q.y-100);
+ assert.ok(h.images.slice(before).some(call=>call[0]===broken));
+ assert.ok(!h.images.slice(before).some(call=>call[0]===intact),'intact image never returns');
+ const after=h.images.length;a.openings(q.x+2000,q.y+2000);assert.equal(h.images.length,after);
+ assert.equal(h.canvases,0);assert.equal(h.readbacks,0,'no per-frame pixel processing');
+ for(const key of ['window_glass','window_glass_broken']){
+  const data=fs.readFileSync(path.join(__dirname,'../assets/indoor/'+key+'.webp'));
+  assert.equal(data.toString('ascii',8,12),'WEBP');assert.ok(data[20]&16);assert.ok(data.length<22000);
+  assert.equal(1+data.readUIntLE(24,3),512);assert.equal(1+data.readUIntLE(27,3),106);
+ }
+});
+
+test('window glass breaks through ordinary and sniper rounds actual cover-hit branches',()=>{
+ const h=harness(),a=h.api,q=a.world.floors[0].windows[0],c=q.cover;
+ const start=html.indexOf('  // 最適化後も砲弾が薄い遮蔽物'),end=html.indexOf("  if(!dead&&(b.from==='p'||b.from==='ally'))",start);
+ const run=new Function('b','ox','oy','objectsInBox','coversInBox','segmentHitsCover','stageMode','indoorBreakWindow','burst',
+  'let dead=false;'+html.slice(start,end)+';return dead;');
+ const b={x:q.x,y:q.y,k:'r',from:'p'};
+ assert.equal(run(b,q.x-100,q.y-100,()=>[],()=>[c],()=>!c.noHit,'indoor',a.breakWindow,()=>{}),true);
+ assert.equal(q.broken,true);
+ const s=a.world.floors[0].windows.find(w=>!w.broken);assert.ok(s);
+ const from=html.indexOf(' function updateSniperPiercingBullet('),to=html.indexOf('\nfunction update(dt)',from);
+ const sniper=new Function('coversInBox','objectsInBox','humans','etanks','circleHitsBase','pointHitsCover','stageMode','indoorBreakWindow','burst',
+  html.slice(from,to)+';return updateSniperPiercingBullet;')(()=>[s.cover],()=>[],[],[],()=>false,()=>true,'indoor',a.breakWindow,()=>{});
+ assert.equal(sniper({x:s.x,y:s.y,k:'s',from:'p'},s.x-5,s.y),true);assert.equal(s.broken,true);
+ const blocked={...c,noHit:false},unchanged={...q,broken:false,cover:blocked};blocked.window=unchanged;
+ run({...b},q.x-10,q.y,()=>[],()=>[blocked],()=>true,'front',()=>{throw Error('front must not use infiltration destruction');},()=>{});
+ assert.equal(unchanged.broken,false,'front stage retains original hit behavior');
+});
 
 test('infiltration furniture chips use the original WebP, preserve holes and reuse the fragment canvas',()=>{
  const h=harness(),a=h.api,f=a.world.floors[0];
@@ -160,3 +236,4 @@ test('only existing indoor wall artwork receives a thin inset gray outline',()=>
  assert.equal(h.api.asset({x:100,y:100,w:22,h:180,kd:1,indoorWall:true}),false);
  assert.equal(strokes.length,0,'an unloaded wall cannot leave an isolated outline');
 });
+

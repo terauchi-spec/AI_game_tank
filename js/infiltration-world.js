@@ -962,6 +962,44 @@ function drawInfiltrationLighting(cx,cy){
 }
 
 const INDOOR_DOOR_WIDTH=84,INDOOR_DOOR_THICKNESS=6,INDOOR_DOOR_SPEED=5.2;
+// Window glass owns its wall opening, so breaking it cannot leave an invisible wall.
+function indoorSplitWindowWall(wall,windows){
+  let pieces=[wall];
+  for(const q of windows){
+    const next=[];
+    for(const c of pieces){
+      const vertical=c.h>c.w,half=q.vertical?30:33;
+      if(vertical!==q.vertical||q.x<c.x||q.x>c.x+c.w||q.y<c.y||q.y>c.y+c.h){next.push(c);continue;}
+      const start=vertical?c.y:c.x,end=start+(vertical?c.h:c.w),center=vertical?q.y:q.x;
+      const lo=Math.max(start,center-half),hi=Math.min(end,center+half);
+      q.cover={x:vertical?c.x:lo,y:vertical?lo:c.y,w:vertical?c.w:hi-lo,h:vertical?hi-lo:c.h,
+        kd:1,indoorWindow:true,window:q,noHit:false};
+      if(lo>start)next.push({...c,w:vertical?c.w:lo-start,h:vertical?lo-start:c.h});
+      if(hi<end)next.push({...c,x:vertical?c.x:hi,y:vertical?hi:c.y,w:vertical?c.w:end-hi,h:vertical?end-hi:c.h});
+    }
+    pieces=next;
+  }
+  return pieces;
+}
+function indoorBreakWindow(q,refresh=true){
+  if(!q||q.broken||!q.cover)return false;
+  q.broken=true;q.cover.noHit=true;
+  if(typeof burst==='function')burst(q.x,q.y,8,'#9dced8',110);
+  if(typeof noise==='function')noise(.09,.025);
+  if(typeof tone==='function')tone(1800,.06,.015,'triangle',500);
+  if(refresh)indoorRefreshDamagedNavigation(q.x,q.y,Math.max(q.cover.w,q.cover.h));
+  return true;
+}
+function indoorDamageWindows(x,y,r){
+  if(!indoorWorld)return 0;let changed=0;
+  for(const f of indoorWorld.floors)for(const q of f.windows){
+    if(q.broken||!q.cover)continue;
+    const c=q.cover,dx=Math.max(c.x-x,0,x-c.x-c.w),dy=Math.max(c.y-y,0,y-c.y-c.h);
+    if(dx*dx+dy*dy<=r*r&&indoorBreakWindow(q,false))changed++;
+  }
+  if(changed)indoorRefreshDamagedNavigation(x,y,r);
+  return changed;
+}
 function indoorDoorCollisionRect(q){
   // 縦横とも世界座標で6pxの薄型パネル。当たり判定も描画と一致させる。
   const half=INDOOR_DOOR_WIDTH/2,thick=INDOOR_DOOR_THICKNESS;
@@ -1028,11 +1066,15 @@ function setupInfiltrationWorld(){
       return{...rect,id:r.id,name:r.name,purpose:r.purpose,size:r.size,isGuardPost:!!r.isGuardPost,tiles:r.tiles.map(tile=>indoorRect(tile,off))};
     });
     // Walls use the existing concrete wall cover kind. Doors remain actual gaps in the core collision grid.
+    const windows=raw.windows.map(q=>({...to(q),vertical:q.vertical,broken:false}));
     const wallRects=[];
     for(const wall of raw.walls){
-      const q={...indoorRect(wall,off),kd:1,indoorWall:true,hp:999999};
-      covers.push(q);wallRects.push(q);
+      for(const rect of indoorSplitWindowWall(indoorRect(wall,off),windows)){
+        const q={...rect,kd:1,indoorWall:true,hp:999999};
+        covers.push(q);wallRects.push(q);
+      }
     }
+    for(const q of windows)if(q.cover)covers.push(q.cover);
     // 階段は南側だけを開口。壁は通常の衝突・視線遮蔽にも登録する。
     for(const wall of indoorStairWalls(to(raw.stair),n)){
       const q={...wall,kd:1,indoorWall:true,indoorStairWall:true,hp:999999};
@@ -1140,7 +1182,7 @@ function setupInfiltrationWorld(){
       corridors,lobbyArea,rooms,stair,stairObstacle,openings,
       entrance,entrances,exit:entrance,emergency,
       footprint:indoorRect(raw.footprint,off),
-      doors,windows:raw.windows.map(openingPoint),guards,postGuards,
+      doors,windows,guards,postGuards,
       guardPostId:raw.postRoomId,walls:wallRects,props,lightFixtures,navigation});
   }
   // Scale the former doubled roster without changing rooms, furniture or patrol routes.
@@ -2607,7 +2649,7 @@ function drawInfiltrationProps(cx,cy){
 function drawInfiltrationDoorPanels(q,open,half,part){
   const image=indoorPropImage(q.vertical?'automatic_door_cyan':'automatic_door_horizontal_cyan');if(!image)return false;
   const sourceHalf=(image.naturalWidth||image.width)/2,height=image.naturalHeight||image.height;
-  const visible=sourceHalf*(1-open),verticalDepth=(INDOOR_DOOR_THICKNESS+4)*1.5;
+  const visible=sourceHalf*(1-open),verticalDepth=(INDOOR_DOOR_THICKNESS+4)*1.35;
   const top=q.vertical?-verticalDepth/2:-(INDOOR_DOOR_THICKNESS+4)/2;
   // Keep the old horizontal sprite's pixel scale; only the taller front extends downward.
   const depth=q.vertical?verticalDepth:(INDOOR_DOOR_THICKNESS+7)*height/84;
@@ -2622,18 +2664,18 @@ function drawInfiltrationOpenings(cx,cy){
   drawInfiltrationProps(cx,cy);
   for(const f of indoorWorld.floors){
     if(f.footprint.y+f.footprint.h<cy-130||f.footprint.y>cy+H+130)continue;
-    // 壁上に窓を描く。壁と当たり判定を除去しないため、窓からは通り抜けない。
+    // One cached WebP per state; broken glass leaves a clear physical opening.
     for(const q of f.windows){
       if(q.x<cx-65||q.x>cx+W+65||q.y<cy-65||q.y>cy+H+65)continue;
-      g.save();
-      g.fillStyle='#30464c';g.strokeStyle='#9bb9bd';g.lineWidth=3;
-      const x=q.x,y=q.y;
-      if(q.vertical){
-        g.fillRect(x-8,y-30,16,60);g.strokeRect(x-8,y-30,16,60);
-        g.beginPath();g.moveTo(x,y-28);g.lineTo(x,y+28);g.stroke();
+      const image=indoorPropImage(q.broken?'window_glass_broken':'window_glass');
+      const length=q.vertical?60:66,depth=q.vertical?22*1.18:22*INDOOR_SCALE_Y*1.18;
+      g.save();g.translate(q.x,q.y);if(q.vertical)g.rotate(Math.PI/2);
+      if(image)g.drawImage(image,-length/2,-depth/2,length,depth);
+      else if(!q.broken){
+        g.fillStyle='#30464c';g.strokeStyle='#9bb9bd';g.lineWidth=3;
+        g.fillRect(-length/2,-depth/2,length,depth);g.strokeRect(-length/2,-depth/2,length,depth);
       }else{
-        g.fillRect(x-33,y-10,66,20);g.strokeRect(x-33,y-10,66,20);
-        g.beginPath();g.moveTo(x,y-9);g.lineTo(x,y+9);g.stroke();
+        g.strokeStyle='#77878b';g.lineWidth=2;g.strokeRect(-length/2,-depth/2,length,depth);
       }
       g.restore();
     }
@@ -2648,7 +2690,7 @@ function drawInfiltrationOpenings(cx,cy){
       const border='#a5a695';
       g.fillStyle=panel;g.strokeStyle=border;g.lineWidth=2;
       const open=Math.max(0,Math.min(1,q.open||0)),half=INDOOR_DOOR_WIDTH/2*(q.vertical?INDOOR_SCALE_Y:INDOOR_SCALE_X);
-      const visualScale=q.vertical?1.5:1;
+      const visualScale=q.vertical?1.35:1;
       const part=half*(1-open),thick=INDOOR_DOOR_THICKNESS*visualScale,frame=(INDOOR_DOOR_THICKNESS/2+4)*visualScale;
       const textured=part>1&&drawInfiltrationDoorPanels(q,open,half,part);
       if(q.vertical){

@@ -864,7 +864,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.21.0041',FILE_CREATED_AT='2026/10/21 00:41',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.21.0100',FILE_CREATED_AT='2026/10/21 01:00',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -1454,6 +1454,7 @@ function damageObject(o,source='impact'){
  return destroyObject(o,true);
 }
 function damageObjectsInRadius(x,y,r,source='impact'){
+ if(stageMode==='indoor')indoorDamageWindows(x,y,r);
  if(!objects||!objects.length)return 0;let n=0;
  const candidates=nearbyObjects(x,y,r+80).slice();for(const o of candidates){if(!objects.includes(o))continue;const rc=objectHitRect(o),nx=Math.max(rc.x,Math.min(x,rc.x+rc.w)),ny=Math.max(rc.y,Math.min(y,rc.y+rc.h));if(Math.hypot(nx-x,ny-y)<=r){if(damageObject(o,source))n++;}}
  return n;
@@ -4340,6 +4341,7 @@ function finishDig(msg,withBurst=true){
  sfx('skill');if(msg)say(msg);return true;
 }
 function explode(x,y,rad,big,source='',actionId=0,humanKillRadius=rad){scatterSpinifexAt(x,y,rad);if(big)sfx(source==='air'?'airExplosion':'explosion');fb(x,y,big?46:22);
+ if(stageMode==='indoor')indoorDamageWindows(x,y,rad);
  burst(x,y,big?60:20,'#ff8a3a',big?400:200);burst(x,y,big?25:6,'#fff3b0',big?500:200);if(big){shake=18;flash=.7;}
  for(const h of humans)if(h.alive&&Math.hypot(h.x-x,h.y-y)<humanKillRadius){h.alive=false;if(source==='ally')recordSupportResult('kill','ally',h);else if(actionId)recordPlayerKill(actionId,'',h);burst(h.x,h.y,10,'#c05a3a',160);}
  if(source!=='e'){
@@ -5388,7 +5390,8 @@ function drawSniperScope(){
    if(circleHitsBase(x,y,1)){b.x=x;b.y=y;burst(x,y,3,'#ffe28a',90);return true;}
    const obj=objCandidates.find(o=>pointHitsObject(x,y,o));
    if(obj){b.x=x;b.y=y;damageObject(obj,'sniper');fb(x,y,10);burst(x,y,8,'#ffb86c',170);burst(x,y,6,'#e7e2c9',135);shake=Math.max(shake,2.2);return true;}
-   if(coverCandidates.some(c=>pointHitsCover(x,y,c))){b.x=x;b.y=y;burst(x,y,4,'#b9b39a',90);return true;}
+   const cover=coverCandidates.find(c=>pointHitsCover(x,y,c));
+   if(cover){if(stageMode==='indoor'&&cover.indoorWindow)indoorBreakWindow(cover.window);b.x=x;b.y=y;burst(x,y,4,'#b9b39a',90);return true;}
    const tank=tankCandidates.find(e=>e.alive&&Math.hypot(x-e.x,y-e.y)<TANK_HIT);
    if(tank){b.x=x;b.y=y;setTankSuspicion(tank,x,y,3.5);fb(x,y,8);burst(x,y,6,'#ffb86c',150);burst(x,y,4,'#fff1b5',100);shake=Math.max(shake,2.5);return true;}
    for(const h of humanCandidates){
@@ -5605,7 +5608,7 @@ function update(dt){
    const hitObject=objectsInBox(minX,minY,maxX,maxY).find(o=>segmentHitsObject(segA,segB,o,b.k==='c'?2:0));
    if(hitObject){dead=true;if(b.k==='c'){damageObject(hitObject,'cannonDirect');}else if(b.k==='s'){damageObject(hitObject,'sniper');fb(b.x,b.y,10);burst(b.x,b.y,8,'#ffb86c',170);burst(b.x,b.y,6,'#e7e2c9',135);shake=Math.max(shake,2.2);}else{damageObject(hitObject,'mg');burst(b.x,b.y,4,'#b9b39a',90);}}
    if(!dead){const hitCover=coversInBox(minX,minY,maxX,maxY).find(c=>segmentHitsCover(segA,segB,c,b.k==='c'?2:0));
-    if(hitCover){dead=true;if(b.from==='e'&&(hitCover.playerBuilt||hitCover.pb)&&scoreStats&&!scoreStats.finalized)scoreStats.wallBlocks++;if(b.k==='c'){if(b.from==='p')playerCannonGroundImpact(b.x,b.y,b.actionId,95);else{cannonImpact(b.x,b.y,b.from);explode(b.x,b.y,28,false,b.from,0);carve(b.x,b.y,48,false,'cannonBlast');burst(b.x,b.y,22,'#a89a74',260);shake=Math.max(shake,8);}}else{if(hitCover.frontCargo)damageFrontlineCargo(hitCover,b.x,b.y,4);burst(b.x,b.y,4,'#b9b39a',90);}}
+    if(hitCover){dead=true;if(stageMode==='indoor'&&hitCover.indoorWindow)indoorBreakWindow(hitCover.window);if(b.from==='e'&&(hitCover.playerBuilt||hitCover.pb)&&scoreStats&&!scoreStats.finalized)scoreStats.wallBlocks++;if(b.k==='c'){if(b.from==='p')playerCannonGroundImpact(b.x,b.y,b.actionId,95);else{cannonImpact(b.x,b.y,b.from);explode(b.x,b.y,28,false,b.from,0);carve(b.x,b.y,48,false,'cannonBlast');burst(b.x,b.y,22,'#a89a74',260);shake=Math.max(shake,8);}}else{if(hitCover.frontCargo)damageFrontlineCargo(hitCover,b.x,b.y,4);burst(b.x,b.y,4,'#b9b39a',90);}}
    }
   }
   if(!dead&&(b.from==='p'||b.from==='ally')){
@@ -5701,6 +5704,11 @@ function carve(x,y,r,credit=false,objectDamageSource='impact'){
   if(c.frontAntenna){if(c.frontCargo)damageFrontlineCargo(c,x,y,r);out.push(c);continue;}
   // Automatic panels stay owned by the door controller, never become concrete fragments.
   if(stageMode==='indoor'&&c.indoorDoor){out.push(c);continue;}
+  if(stageMode==='indoor'&&c.indoorWindow){
+   const dx=Math.max(c.x-x,0,x-c.x-c.w),dy=Math.max(c.y-y,0,y-c.y-c.h);
+   if(dx*dx+dy*dy<=r*r&&indoorBreakWindow(c.window,false))coverChanged=true;
+   out.push(c);continue;
+  }
   // Damage checks use the visible fragment/sprite bounds; collision is handled separately below.
   const visual=c.fr?{x:c.x,y:c.y,w:c.w,h:c.h}:coverFragmentRect(c);
   if(!visual||visual.x>x+r||visual.x+visual.w<x-r||visual.y>y+r||visual.y+visual.h<y-r){out.push(c);continue;}
@@ -7053,7 +7061,7 @@ function draw(near){
   if(c.mazeWall&&mazeWallsCached)continue;
   // 空間グリッドで画面周辺の遮蔽物だけ描画する。
   if(c.x+c.w<cx-90||c.x>cx+W+90||c.y+c.h<cy-90||c.y>cy+H+90)continue;
-  if(c.indoorDoor||c.indoorProp)continue; // 屋内ドア・室内家具は屋内描画レイヤーで描く。
+  if(c.indoorDoor||c.indoorProp||c.indoorWindow)continue; // 屋内設備は専用レイヤーで描く。
   if(c.fr){drawCoverFragmentGroup(c);continue;}
   if(drawCoverAsset(c))continue;
   if(c.kd===8){
