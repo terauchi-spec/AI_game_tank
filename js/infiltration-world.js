@@ -939,7 +939,7 @@ function setupInfiltrationWorld(){
   ZONES=[{n:'敵迷路基地',y0:WH,y1:-400,g:'#202820',p:ground.p.slice(),pat:null,indoor:true}];
   roadBands=[];areaDebugLabels=[];covers=[];objects=[];bushes=[];mud=[];water=[];bridges=[];cars=[];
   etanks=[];humans=[];bullets=[];parts=[];bombs=[];items=[];waves=[];fx=[];allies=[];
-  builtWalls=[];tankWrecks=[];decoy=null;radio=null;airstrike=null;airbombs=[];
+  builtWalls=[];tankWrecks=[];buildingGroundMarks=[];decoy=null;radio=null;airstrike=null;airbombs=[];
   weather='clear';weatherT=0;rainIntensity=0;weatherNext=99999;baseSpawnT=99999;
   // Off-map base avoids outdoor destruction / HQ spawning while preserving core state shape.
   base={x:-5000,y:-5000,w:100,h:100,hp:30,maxHp:30,deadAt:0};

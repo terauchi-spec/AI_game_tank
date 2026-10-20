@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.20.1201</title>
+<title>こっそり戦車大作戦 2026.10.20.1219</title>
 
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
@@ -864,7 +864,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.20.1201',FILE_CREATED_AT='2026/10/20 12:01',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.20.1219',FILE_CREATED_AT='2026/10/20 12:19',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -1525,9 +1525,6 @@ function naturalCoverImage(c,key){
 function drawCoverAsset(c){
  if(c.frontAntenna)return true;
  if(c.indoorProp)return drawInfiltrationPropSprite(c);
- if(c.indoorWall){
-  g.save();g.fillStyle='rgba(0,0,0,.72)';g.fillRect(c.x-2,c.y,c.w+4,c.h+4);g.restore();
- }
  const cx=c.x+c.w/2,cy=c.y+c.h/2,hor=c.w>=c.h;
  if(c.playerBuilt)return drawBuiltConcrete(c);
  if(c.kd===0){
@@ -1636,11 +1633,19 @@ function captureBuildingGroundMarks(){
  }
  if(base)buildingGroundMarks.push({x:base.x,y:base.y,w:base.w,h:base.h,kind:'hq',hq:true});
 }
+// 潜入の壁が実際に欠けた時だけ、建物と同じ地面の跡を一度登録する。
+// 本体・破片とは独立させ、最後の破片がなくなっても残す。
+function recordIndoorWallGroundMark(c,group){
+ if(stageMode!=='indoor'||!c.indoorWall||group.indoorGroundMarked)return;
+ group.indoorGroundMarked=true;
+ buildingGroundMarks.push({x:c.ox0??c.x,y:c.oy0??c.y,w:c.ow0??c.w,h:c.oh0??c.h,
+  kind:'concrete',indoorWall:true});
+}
 function drawBuildingGroundMarks(cx,cy){
  if(!buildingGroundMarks||!buildingGroundMarks.length)return;
  for(const m of buildingGroundMarks){
   if(m.x+m.w<cx-30||m.x>cx+W+30||m.y+m.h<cy-30||m.y>cy+H+30)continue;
-  const im=buildingShadowSprite(m.kind),pad=m.hq?14:m.kind==='rock'?6:4;
+  const im=buildingShadowSprite(m.kind),pad=m.indoorWall?0:m.hq?14:m.kind==='rock'?6:4;
   drawStaticRaster(im,m.x-pad,m.y-pad*.45,m.w+pad*2,m.h+pad*1.15);
  }
 }
@@ -5685,7 +5690,7 @@ function carve(x,y,r,credit=false,objectDamageSource='impact'){
    if(fd>r){
     if(fd<=r+Math.max(c.w,c.h)*1.15&&!c.edge){c.edge=1;if(c._fragmentGroup)markFragmentRenderDirty(c._fragmentGroup,c);}
     out.push(c);
-   }else{coverChanged=true;markFragmentRenderRemoved(c);removedArea+=c.w*c.h;if(!c.pb&&!c.playerBuilt)styleRemoved+=c.w*c.h;if(objectDamageSource==='cannonBlast')cannonDebris.push({x:c.x+c.w/2,y:c.y+c.h/2,col:c.col||CCol[c.kd]||'#8a7a55',n:1});}
+   }else{coverChanged=true;markFragmentRenderRemoved(c);if(c.indoorWall)recordIndoorWallGroundMark(c,c._fragmentGroup);removedArea+=c.w*c.h;if(!c.pb&&!c.playerBuilt)styleRemoved+=c.w*c.h;if(objectDamageSource==='cannonBlast')cannonDebris.push({x:c.x+c.w/2,y:c.y+c.h/2,col:c.col||CCol[c.kd]||'#8a7a55',n:1});}
    continue;
   }
 
@@ -5727,7 +5732,7 @@ function carve(x,y,r,credit=false,objectDamageSource='impact'){
    if(c.indoorWall)f.indoorWall=true;
    f._fragmentGroup=fragmentGroup;f._fragmentIndex=fragmentGroup.fragments.length;fragmentGroup.fragments.push(f);fragmentGroup.remaining++;out.push(f);
   }
-  const removedHere=Math.max(0,ow*oh-keptArea);removedArea+=removedHere;if(!c.playerBuilt&&!c.pb)styleRemoved+=removedHere;if(removedHere>0&&objectDamageSource==='cannonBlast')cannonDebris.push({x,y,col:(FRAG_COLORS[c.kd]||[CCol[c.kd]||'#8a7a55'])[0],n:Math.max(2,Math.min(6,Math.round(removedHere/2600)))});
+  const removedHere=Math.max(0,ow*oh-keptArea);if(removedHere>0&&c.indoorWall)recordIndoorWallGroundMark(c,fragmentGroup);removedArea+=removedHere;if(!c.playerBuilt&&!c.pb)styleRemoved+=removedHere;if(removedHere>0&&objectDamageSource==='cannonBlast')cannonDebris.push({x,y,col:(FRAG_COLORS[c.kd]||[CCol[c.kd]||'#8a7a55'])[0],n:Math.max(2,Math.min(6,Math.round(removedHere/2600)))});
  }
  // 形が変わらない接触では配列を差し替えず、空間グリッドの全再構築を避ける。
  if(coverChanged){covers=out;if(typeof indoorWorld!=='undefined'&&indoorWorld&&stageMode==='indoor')indoorRefreshDamagedNavigation(x,y,r);}
@@ -7983,7 +7988,7 @@ function reportGameError(error){
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/canyon.js?v=2026.10.14.1836"></script>
 <script src="js/vegetation.js?v=2026.10.14.1653"></script>
-<script src="js/infiltration-world.js?v=2026.10.20.1201"></script>
+<script src="js/infiltration-world.js?v=2026.10.20.1219"></script>
 <script>
 (function(){
 // iPhone Chrome/Safari: synthetic KeyboardEvent に依存せず、ゲーム内部の入力状態を直接更新する。

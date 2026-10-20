@@ -16,9 +16,9 @@ function harness(){
  const cut=(start,end)=>html.slice(html.indexOf(start),html.indexOf(end,html.indexOf(start)));
  vm.runInContext(source+`;setupInfiltrationWorld();setupInfiltrationMission();`,c);
  vm.runInContext(cut('function centerRect(','function rockHitEllipse(')+cut('function drawCoverAsset(','// 建物の足元に残す')+
-  cut('const fragmentRenderCache=','function drawBridgeFancy(')+cut('function carve(','function useSkill('),c);
+  cut('const BUILDING_SHADOW_KDS=','function drawBridgeFancy(')+cut('function carve(','function useSkill('),c);
  vm.runInContext(`api={world:indoorWorld,props:drawInfiltrationProps,carve,hit:coverHitRect,asset:drawCoverAsset,fragment:drawCoverFragment,
-  get covers(){return covers;},gridPoint:indoorGridPoint,frame:()=>fragmentDrawFrame++,load:(key,im)=>indoorPropImages[key]=im};`,c);
+  get covers(){return covers;},get marks(){return buildingGroundMarks;},ground:drawBuildingGroundMarks,setup:setupInfiltrationWorld,gridPoint:indoorGridPoint,frame:()=>fragmentDrawFrame++,load:(key,im)=>indoorPropImages[key]=im};`,c);
  return{c,api:c.api,images,fills,rasters,get canvases(){return canvases;}};
 }
 
@@ -48,14 +48,45 @@ test('infiltration furniture chips use the original WebP, preserve holes and reu
  assert.equal(h.images.filter(q=>q[0]===image).length,before,'the intact furniture cannot reappear after destruction');
 });
 
-test('wall foundation shadows are scoped to infiltration and survive in wall fragments',()=>{
+test('indoor walls leave no foundation outline before damage',()=>{
+ const h=harness(),a=h.api,wall={x:100,y:100,w:120,h:22,kd:1};
+ a.asset(wall);a.asset({...wall,indoorWall:true});
+ assert.equal(h.fills.length,0,'both wall renderers keep their original artwork without a rim');
+ assert.equal(a.marks.length,0);a.ground(0,0);assert.equal(h.rasters.length,0);
+});
+test('partial and complete wall destruction leave one persistent building-style ground shadow',()=>{
  const h=harness(),a=h.api;
- const wall={x:100,y:100,w:120,h:22,kd:1};a.asset(wall);assert.equal(h.fills.length,0,'other stages keep the original wall rendering');
- a.asset({...wall,indoorWall:true});assert.ok(h.fills.some(q=>q.color==='rgba(0,0,0,.72)'&&q.r[2]>wall.w&&q.r[3]>wall.h));
- const existing=a.world.floors[0].walls.find(q=>!q.indoorStairWall&&q.w>80);assert.ok(existing);
- a.carve(existing.x+existing.w/2,existing.y+existing.h/2,26,false,null);
- const fragments=a.covers.filter(q=>q.indoorWall&&q.fr&&q.ox0===existing.x&&q.oy0===existing.y);assert.ok(fragments.length);
- const before=h.fills.length;a.fragment(fragments[0]);assert.ok(h.fills.slice(before).some(q=>q.color==='rgba(0,0,0,.72)'));
+ const wall=a.world.floors[0].walls.find(q=>!q.indoorStairWall&&q.w>80);assert.ok(wall);
+ const x=wall.x+wall.w/2,y=wall.y+wall.h/2;
+ assert.ok(a.carve(x,y,26,false,null)>0);
+ assert.equal(a.marks.length,1);const mark=a.marks[0];
+ assert.deepEqual([mark.x,mark.y,mark.w,mark.h],[wall.x,wall.y,wall.w,wall.h]);assert.equal(mark.kind,'concrete');
+ const pieces=()=>a.covers.filter(q=>q.indoorWall&&q.fr&&q.ox0===wall.x&&q.oy0===wall.y);
+ assert.ok(pieces().length>0);
+ a.ground(wall.x-20,wall.y-20);assert.equal(h.rasters.length,1);
+ const raster=h.rasters[0],canvasCount=h.canvases;
+ assert.deepEqual(raster.slice(1),[wall.x,wall.y,wall.w,wall.h],'no outline outside the wall footprint');
+ a.ground(wall.x-20,wall.y-20);assert.equal(h.canvases,canvasCount,'reuse the building shadow sprite');
+ a.carve(x,y,Math.hypot(wall.w,wall.h)+20,false,null);
+ assert.equal(pieces().length,0);assert.equal(a.marks.filter(q=>q.x===wall.x&&q.y===wall.y).length,1,'fragment hits cannot duplicate marks');
+ const n=h.rasters.length;a.ground(wall.x-20,wall.y-20);
+ assert.ok(h.rasters.slice(n).some(q=>q[0]===raster[0]&&q[1]===wall.x&&q[2]===wall.y),'shadow survives the final fragment');
+ const count=h.rasters.length;a.ground(wall.x+5000,wall.y+5000);assert.equal(h.rasters.length,count,'offscreen marks are skipped');
+ a.setup();assert.equal(a.marks.length,0,'restart clears old destruction marks');
+});
+test('misses leave no wall mark, and later fragment damage can create the first mark',()=>{
+ const h=harness(),a=h.api;
+ const wall=a.world.floors[0].walls.find(q=>!q.indoorStairWall&&q.w>80);assert.ok(wall);
+ a.carve(wall.x-100,wall.y-100,1,false,null);assert.equal(a.marks.length,0);
+ // Splitting without removing a 14px tile must not count as destruction.
+ a.carve(wall.x+1,wall.y+1,.1,false,null);assert.equal(a.marks.length,0);
+ const piece=a.covers.find(q=>q.indoorWall&&q.fr&&q.ox0===wall.x&&q.oy0===wall.y);assert.ok(piece);
+ a.carve(piece.x+piece.w/2,piece.y+piece.h/2,1,false,null);
+ assert.equal(a.marks.length,1);assert.equal(a.marks[0].w,wall.w);
+});
+test('outdoor building ground marks retain their original sprite and padding',()=>{
+ const h=harness();h.c.stageMode='base';h.c.buildingGroundMarks=[{x:100,y:100,w:120,h:80,kind:'concrete'}];
+ h.api.ground(0,0);assert.deepEqual(h.rasters[0].slice(1),[96,98.2,128,84.6]);
 });
 
 test('generators retain the south-facing portrait orientation at two thirds of their previous size',()=>{

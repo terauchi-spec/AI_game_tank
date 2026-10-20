@@ -71,8 +71,8 @@ The utility room preferentially receives a horizontally spacious room; communica
 
 Infiltration crates retain a 60px world width and now use 40px world height (horizontal 1.5:1). Their artwork and physical hit rectangle share this ratio; other stages' crates are unchanged.
 
-## Destruction and wall foundations
+## Destruction and persistent wall ground marks
 
 Infiltration furniture uses the existing shared 14px cover-fragment system. Surviving fragments retain the original furniture WebP, source dimensions and orientation. Original floor-prop records point to the surviving fragment group; they cannot redraw the intact object after damage. Fragment canvases are rebuilt only on damage or shared asset changes and otherwise reused. A not-yet-loaded furniture WebP is not committed to a permanent fallback damage cache. Removed fragments immediately lose their hit geometry, and the affected floor's guard grid is rebuilt from live covers and cargo on destruction only. Other stages do not receive these metadata flags.
 
-Indoor walls draw a dark, solid foundation rim behind the wall sprite. Wall fragments retain the indoor wall renderer, so the remaining wall's rim follows the surviving sections. No blur or per-frame shadow raster generation is introduced. Stair movement lock is 0.5 seconds; the landing sanctuary rules are unchanged.
+Indoor walls do not draw a foundation rim. On the first actual removal of wall material, the original wall footprint is registered once in the existing building ground-mark list. The same cached concrete shadow used by destroyed buildings draws beneath the surviving wall pieces, with no padding beyond the footprint. It remains on the floor after every fragment is removed, has no collision or vision effect, is culled outside the viewport and is cleared on stage restart. Hits that remove no wall material do not create a mark. Other stages retain their existing marks and padding. No blur or per-frame shadow raster generation is introduced. Stair movement lock is 0.5 seconds; the landing sanctuary rules are unchanged.
