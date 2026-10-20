@@ -98,3 +98,24 @@ test('generators retain the south-facing portrait orientation at two thirds of t
  }
  assert.ok(count>0);
 });
+
+
+
+test('indoor scar core stays constant under every ceiling-light opacity and retains floor layering',()=>{
+ const h=harness(),a=h.api;
+ h.c.buildingGroundMarks=[{x:100,y:100,w:120,h:22,kind:'concrete',indoorWall:true}];
+ a.ground(0,0);const indoorSprite=h.rasters.at(-1)[0];
+ h.c.stageMode='base';a.ground(0,0);
+ assert.notEqual(h.rasters.at(-1)[0],indoorSprite,'outdoor mode retains the original shadow sprite');
+ const code=html.slice(html.indexOf('function buildingShadowSprite('),html.indexOf('function captureBuildingGroundMarks('));
+ const colors=[];const ctx=new Proxy({fill(){colors.push(this.fillStyle);}},{get:(o,k)=>k in o?o[k]:()=>{}});
+ const sprite=new Function('buildingShadowCache','document','gameCanvasContext',code+';return buildingShadowSprite;')(
+  {},{createElement:()=>({})},()=>ctx);
+ const im=sprite('indoorWall');assert.deepEqual(colors,['#070d0f']);
+ assert.equal(sprite('indoorWall'),im,'one cached sprite, no new per-frame canvas');
+ const rgb=[7,13,15];
+ for(const alpha of [0,.006,.15,.35,.58])for(const channel of rgb)
+  assert.equal(Math.round(channel*(1-alpha)+channel*alpha),channel,'light mask cannot brighten or darken the opaque scar');
+ assert.ok(source.includes("q.fillStyle='rgba(7,13,15,.58)'"),'scar RGB matches the light mask RGB');
+ assert.ok(html.indexOf('drawBuildingGroundMarks(cx,cy);')<html.indexOf('const mazeWallsCached=drawMazeWallChunks(cx,cy);'));
+});

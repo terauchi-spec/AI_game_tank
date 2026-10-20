@@ -864,7 +864,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.20.1219',FILE_CREATED_AT='2026/10/20 12:19',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.20.1421',FILE_CREATED_AT='2026/10/20 14:21',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -1614,6 +1614,13 @@ function buildingShadowSprite(kind){
   q.fillStyle='rgba(31,33,28,.09)';q.beginPath();q.ellipse(48,40,35,23,0,0,Math.PI*2);q.fill();
   buildingShadowCache[kind]=c;return c;
  }
+ // Indoor scars use the lighting mask's RGB at full opacity. Compositing the
+ // same RGB at any light alpha leaves their darkness constant, below actors.
+ if(kind==='indoorWall'){
+  q.fillStyle='#070d0f';q.beginPath();q.moveTo(8,14);q.lineTo(88,10);
+  q.lineTo(93,56);q.lineTo(81,65);q.lineTo(13,63);q.lineTo(4,51);q.closePath();q.fill();
+  buildingShadowCache[kind]=c;return c;
+ }
  const col=kind==='wood'?'58,38,24':kind==='hq'?'28,29,31':'43,43,41';
  q.fillStyle='rgba('+col+',.16)';
  q.beginPath();q.moveTo(8,14);q.lineTo(88,10);q.lineTo(93,56);q.lineTo(81,65);q.lineTo(13,63);q.lineTo(4,51);q.closePath();q.fill();
@@ -1645,7 +1652,7 @@ function drawBuildingGroundMarks(cx,cy){
  if(!buildingGroundMarks||!buildingGroundMarks.length)return;
  for(const m of buildingGroundMarks){
   if(m.x+m.w<cx-30||m.x>cx+W+30||m.y+m.h<cy-30||m.y>cy+H+30)continue;
-  const im=buildingShadowSprite(m.kind),pad=m.indoorWall?0:m.hq?14:m.kind==='rock'?6:4;
+  const im=buildingShadowSprite(stageMode==='indoor'&&m.indoorWall?'indoorWall':m.kind),pad=m.indoorWall?0:m.hq?14:m.kind==='rock'?6:4;
   drawStaticRaster(im,m.x-pad,m.y-pad*.45,m.w+pad*2,m.h+pad*1.15);
  }
 }
@@ -3894,7 +3901,7 @@ function setSuspicion(h,dur=2,sourceX=null,sourceY=null){
  if(freshSuspicion&&scoreStats&&!scoreStats.finalized)scoreStats.suspicionEntries++;
  h.target=null;h.lost=0;h.burstLeft=0;h.cd=0;
 }
-function suspectHumansNear(x,y,r=500){if(debugMode>=2)return;for(const h of (humans||[]))if(h.alive&&!(h.stun>0)&&Math.hypot(h.x-x,h.y-y)<=r)setSuspicion(h,2,x,y);suspectTanksNear(x,y,r);}
+function suspectHumansNear(x,y,r=500,explosion=false){if(debugMode>=2)return;if(stageMode==='indoor'&&explosion){indoorHearExplosion(x,y,r);return;}for(const h of (humans||[]))if(h.alive&&!(h.stun>0)&&Math.hypot(h.x-x,h.y-y)<=r)setSuspicion(h,2,x,y);suspectTanksNear(x,y,r);}
 function alertedHumanInSearch(h){
  for(const b of (humans||[])){if(b===h||!b.alive||!b.st||b.stun>0||!b.target||(b.whistleSignalT||0)>0)continue;if(canDetect(h,b,h.face,'human'))return b;}
  return null;
@@ -4127,7 +4134,7 @@ function damageBridgeByBomb(x,y,r=42){
  if(damaged){bridges=next;shake=Math.max(shake,10);}
  return damaged;
 }
-function bombBlast(x,y,actionId=0,selfHit=false){scatterSpinifexAt(x,y,95);if(scoreStats&&!scoreStats.finalized)scoreStats.bombBlasts++;if(!actionId)actionId=newCombatAction('bomb');sfx('explosion');stunHoundAtBlast(x,y,95);stunPartnerByOwnBlast(x,y);suspectHumansNear(x,y,500);/* 設置爆弾の爆風で相棒は気絶（HPは減らない）。 */if(p&&!p.tank&&!(p.dig>0))beginBlastFlight(p,x,y,95,58,8,0);for(const a of (allies||[]))if(a.alive&&!(a.chute>0))beginBlastFlight(a,x,y,95,42,8,0);damageBridgeByBomb(x,y,42);/* 外側の爆風は炎上、近距離の爆芯は即爆発。 */damageObjectsInRadius(x,y,95,'bombBlast');damageObjectsInRadius(x,y,28,'bombDirect');carve(x,y,28,true,null);fb(x,y,52);burst(x,y,70,'#ff8a3a',420);burst(x,y,25,'#fff3b0',520);shake=18;flash=.7;waves.push({x,y,r:0,max:95,hit:!!selfHit,actionId});return actionId;}
+function bombBlast(x,y,actionId=0,selfHit=false){scatterSpinifexAt(x,y,95);if(scoreStats&&!scoreStats.finalized)scoreStats.bombBlasts++;if(!actionId)actionId=newCombatAction('bomb');sfx('explosion');stunHoundAtBlast(x,y,95);stunPartnerByOwnBlast(x,y);suspectHumansNear(x,y,500,true);/* 設置爆弾の爆風で相棒は気絶（HPは減らない）。 */if(p&&!p.tank&&!(p.dig>0))beginBlastFlight(p,x,y,95,58,8,0);for(const a of (allies||[]))if(a.alive&&!(a.chute>0))beginBlastFlight(a,x,y,95,42,8,0);damageBridgeByBomb(x,y,42);/* 外側の爆風は炎上、近距離の爆芯は即爆発。 */damageObjectsInRadius(x,y,95,'bombBlast');damageObjectsInRadius(x,y,28,'bombDirect');carve(x,y,28,true,null);fb(x,y,52);burst(x,y,70,'#ff8a3a',420);burst(x,y,25,'#fff3b0',520);shake=18;flash=.7;waves.push({x,y,r:0,max:95,hit:!!selfHit,actionId});return actionId;}
 function tankWreckId(t){return (t&&t.id)||'enemy';}
 function spawnTankWreck(x,y,body,ang,tank,impactX=null,impactY=null){
  if(!tankWrecks)tankWrecks=[];
@@ -4304,7 +4311,7 @@ function cannonBlastPush(x,y,from,allyStun=from==='e'?5:0){
 function fire(x,y,a,from,k,spd,rng,dmg){if(from==='p'&&scoreStats&&!scoreStats.finalized){scoreStats.shots++;if(k==='s')scoreStats.sniperShots++;else if(k==='c')scoreStats.cannonShots++;else scoreStats.mgShots++;}if(from==='p')sfx(k==='c'?'cannon':k==='s'?'sniper':'mg');else if(from==='ally')sfx(k==='c'?'cannon':'mg');else if(from==='e')sfx(k==='c'?'enemyCannon':'enemyGun');const actionId=(from==='p'&&(k==='c'||k==='s'))?newCombatAction(k==='s'?'sniper':'cannon'):0;if(from==='p'&&k==='c')suspectTanksNear(x,y,520);bullets.push({x,y,sx:x,sy:y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,from,k,dmg:dmg||0,life:rng/spd,actionId});}
 function enemyCannonSpeed(){return p&&p.tank&&p.tank.kind==='tank'?(p.tank.t.cspd||630):630;}
 function cannonImpactFx(x,y){fb(x,y,125);burst(x,y,165,'#ff7a28',560);burst(x,y,78,'#fff2a6',720);burst(x,y,30,'#ffffff',820);shake=Math.max(shake,18);flash=Math.max(flash,.62);}
-function cannonImpact(x,y,from,allyStun=from==='e'?5:0){cannonImpactFx(x,y);scatterSpinifexAt(x,y,95);cannonBlastPush(x,y,from,allyStun);stunHoundAtBlast(x,y,95);damageObjectsInRadius(x,y,60,'cannonBlast');if(from==='p')suspectHumansNear(x,y,500);else suspectTanksNear(x,y,450);}
+function cannonImpact(x,y,from,allyStun=from==='e'?5:0){cannonImpactFx(x,y);scatterSpinifexAt(x,y,95);cannonBlastPush(x,y,from,allyStun);stunHoundAtBlast(x,y,95);damageObjectsInRadius(x,y,60,'cannonBlast');if(from==='p')suspectHumansNear(x,y,500,true);else suspectTanksNear(x,y,450);}
 function playerCannonGroundImpact(x,y,actionId=0,humanKillRadius=28,allyStun=0){
  // プレイヤー戦車の主砲が地形・遮蔽物へ着弾した時の標準処理。
  // 壁への直撃だけ敵歩兵の撃破範囲を設置爆弾相当(95px)へ拡張する。
@@ -8136,3 +8143,4 @@ requestAnimationFrame(loop);
 </script>
 </body>
 </html>
+

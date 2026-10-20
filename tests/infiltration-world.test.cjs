@@ -575,14 +575,14 @@ function guardScenario(){
 }
 test('sight loss travels to the last sighting, then searches with a hard timeout',()=>{
  const s=guardScenario(),{api,h,avatar}=s;api.begin(h);
- api.update(h,1.36);assert.equal(h.indoorAlert.phase,'lastSeen');
+ api.update(h,2.71);assert.equal(h.indoorAlert.phase,'lastSeen');
  assert.equal(h.indoorAlert.lastSeen.x,200);
  avatar.x=900; // Hidden avatar position must not change the destination.
  for(let i=0;i<200&&h.indoorAlert?.phase!=='search';i++)api.update(h,.05);
  assert.equal(h.indoorAlert.phase,'search');assert.ok(Math.abs(h.x-200)<25);
  for(let i=0;i<162&&h.indoorAlert;i++)api.update(h,.05);
  assert.equal(h.indoorAlert,null);assert.equal(h.st,0);assert.equal(h.sus,0);assert.equal(s.finished,1);
- h.st=1;h.target='p';api.begin(h);api.update(h,1.36);
+ h.st=1;h.target='p';api.begin(h);api.update(h,2.71);
  s.setVisible(true);api.update(h,.14);assert.notEqual(h.indoorAlert.phase,'found');
  for(let i=0;i<60&&h.indoorAlert?.phase!=='found';i++)api.update(h,.1);
  assert.equal(h.indoorAlert.phase,'found');
@@ -616,8 +616,8 @@ test('infiltration pursuit follows stable door midpoints and keeps short sight l
  assert.ok(src.includes("(target.x-nav.centers[from].x)*.78"),'door waypoint crosses to next cell');
  assert.ok(src.includes("a.stuck>.44"),'avoid reacting to a single blocked movement frame');
  assert.ok(src.includes("indoorGridDetour(nav,h,desired,1700)"),'use an obstacle-aware cached detour');
- assert.ok(src.includes("state.remaining=1.35"),'transient loss has grace period');
- assert.ok(src.includes("state.remaining=1.35"),'fresh sight renews pursuit memory');
+ assert.ok(src.includes("state.remaining=2.7"),'transient loss has grace period');
+ assert.ok(src.includes("state.remaining=2.7"),'fresh sight renews pursuit memory');
  assert.ok(src.includes("enterHumanFound(h,'p');indoorStartGuardPursuit(h)"),'reacquisition transitions to found');
 });
 test('indoor navigation crosses beyond door boundaries and throttles vision checks',()=>{
@@ -627,7 +627,7 @@ test('indoor navigation crosses beyond door boundaries and throttles vision chec
  assert.ok(src.includes('(target.y-nav.centers[from].y)*.78'),'door waypoint advances beyond the door');
  assert.ok(src.includes('state.sightCheckT=.12+'),'vision rays are throttled');
  assert.ok(src.includes('state.sightCheckT=0;'),'search transition checks vision immediately');
- assert.ok(src.includes('state.remaining=1.35'),'brief visibility loss remains tolerated');
+ assert.ok(src.includes('state.remaining=2.7'),'brief visibility loss remains tolerated');
 });
 test('entrance has three soft ceiling pools and indoor lighting retains a brighter base',()=>{
  const fs=require('node:fs'),path=require('node:path');
@@ -812,7 +812,7 @@ test('brief exposure can fade and darkness gives more time before recognition',(
 });
 test('each visual cue increases risk and overlapping cues compound',()=>{
  const {api}=guardScenario();
- const rate=mask=>api.risk(mask&1?.96:.24,mask&2?120:0,mask&4?35:260,mask&8?0:1.2);
+ const rate=mask=>api.risk(mask&1?.96:.24,mask&2?120:0,mask&4?35:260,mask&8?0:1.4);
  for(let mask=0;mask<16;mask++)for(let bit=1;bit<=8;bit*=2){
   if(!(mask&bit))assert.ok(rate(mask|bit)>rate(mask),'every cue raises risk at every combination');
  }
@@ -892,7 +892,7 @@ test('cached sight never supplies new hidden coordinates and walls stop firing',
 });
 test('both lost-sight approach and search reacquire confirmed sightings',()=>{
  for(const phase of ['lastSeen','search']){
-  const s=guardScenario();s.api.begin(s.h);s.api.update(s.h,1.36);
+  const s=guardScenario();s.h.x=-300;s.api.begin(s.h);s.api.update(s.h,2.71);
   if(phase==='search'){s.h.x=200;s.api.update(s.h,.05);}
   assert.equal(s.h.indoorAlert.phase,phase);
   s.avatar.x=240;s.setVisible(true);s.api.update(s.h,.14);
@@ -1255,7 +1255,7 @@ function alarmWorld(seed=1771){
  vm.createContext(sandbox);
  vm.runInContext(source+`;setupInfiltrationWorld();setupInfiltrationMission();
   indoorGuardSeesPlayer=()=>false;
-  api={postChats:indoorUpdatePostChats,lightLevel:indoorLightLevel,seesAlly:indoorGuardSeesAlly,allyCombat:indoorUpdateAllyCombat,selectSweep:indoorSelectSweepGoal,sweepPoints:indoorAlarmSweepPoints,reinforce:indoorReplenishGuards,spawnPoint:indoorReinforcementPoint,get world(){return indoorWorld;},record:indoorRecordGuardDiscovery,begin:indoorStartGuardPursuit,
+  api={hearExplosion:indoorHearExplosion,postChats:indoorUpdatePostChats,lightLevel:indoorLightLevel,seesAlly:indoorGuardSeesAlly,allyCombat:indoorUpdateAllyCombat,selectSweep:indoorSelectSweepGoal,sweepPoints:indoorAlarmSweepPoints,reinforce:indoorReplenishGuards,spawnPoint:indoorReinforcementPoint,get world(){return indoorWorld;},record:indoorRecordGuardDiscovery,begin:indoorStartGuardPursuit,
    updateMission:updateInfiltrationMission,update:updateInfiltrationGuardAI,finish:indoorFinishGuardSearch,sweep:indoorBeginAlarmSweep,
    draw:drawInfiltrationMission,setup:setupInfiltrationWorld,chats:indoorUpdateAlarmChats,
    cancelChat:indoorCancelAlarmChat,scanBodies:indoorScanStunnedGuards,level:indoorAlarmLevel,weapon:indoorUpdateCommanderWeapon,setVisible:h=>{indoorGuardSeesPlayer=q=>q===h;}};`,sandbox);
@@ -1888,4 +1888,71 @@ test('exit requires five continuous seconds, resets on leaving or switching exit
  p.tank={};s.api.updateMission(.1);assert.equal(m.escapeProgress,0);p.tank=null;
  s.api.updateMission(4.9);assert.equal(completed,0);s.api.updateMission(.1);assert.equal(completed,1);
  s.api.updateMission(1);assert.equal(completed,1,'finish only once');
+});
+
+
+
+test('audible explosions add one eye per event, investigate snapshots and activate the alarm at three',()=>{
+ const s=alarmWorld(),world=s.api.world,floor=world.floors[0];
+ const listeners=floor.guards.slice(0,2),point={x:listeners[0].x,y:listeners[0].y};
+ for(const f of world.floors)for(const h of f.guards)h.stunRecover=1;
+ for(const h of listeners)Object.assign(h,{stunRecover:0,x:point.x,y:point.y,st:0});
+ s.api.hearExplosion(point.x,point.y,500);
+ assert.equal(s.api.level(),1,'several listeners hear the same explosion only once');
+ assert.equal(world.alarm.witnesses.size,0,'hearing is not visual discovery');
+ for(const h of listeners){
+  assert.ok(h.sus>0);assert.equal(h.st,0);assert.equal(h.target,null);
+  assert.equal(h.indoorAlert.phase,'lastSeen');
+  assert.equal(h.indoorAlert.lastSeen.x,point.x);
+ }
+ s.sandbox.p.x=point.x+900;
+ assert.equal(listeners[0].indoorAlert.lastSeen.x,point.x,'hidden movement never updates the noise snapshot');
+ s.api.hearExplosion(point.x+5000,point.y,100);assert.equal(s.api.level(),1,'unheard blasts add no eye');
+ world.currentFloor=1;s.api.hearExplosion(point.x,point.y,500);
+ assert.equal(s.api.level(),1,'other-floor listeners cannot hear the event');
+ world.currentFloor=0;
+ s.api.hearExplosion(point.x,point.y,500);assert.equal(s.api.level(),2);
+ s.api.hearExplosion(point.x,point.y,500);assert.equal(s.api.level(),3);assert.equal(world.alarm.active,true);
+ s.api.hearExplosion(point.x,point.y,500);assert.equal(world.alarm.noiseCount,3,'completed warning set stays bounded');
+});
+
+test('pursuit keeps found status beyond the old grace and releases after twice the old duration',()=>{
+ const s=guardScenario();s.h.x=-300;s.api.begin(s.h);s.setVisible(false);
+ s.api.update(s.h,1.36);assert.equal(s.h.indoorAlert.phase,'found');
+ s.api.update(s.h,1.33);assert.equal(s.h.indoorAlert.phase,'found');
+ s.api.update(s.h,.02);assert.equal(s.h.indoorAlert.phase,'lastSeen');
+});
+
+test('infiltration patrol sight grows moderately and pursuit release distance doubles',()=>{
+ const src=require('node:fs').readFileSync(require('node:path').join(__dirname,'../js/infiltration-world.js'),'utf8');
+ const start=src.indexOf('function indoorGuardSeesPlayer('),end=src.indexOf('function indoorMoveGuardTo(',start);
+ const p={x:0,y:0};let wall=true;
+ const sees=new Function('p','indoorStairProtected','debugMode','inTumbleweed','inBush','weather','inWaterAt',
+  'indoorWorld','D','angD','indoorLightLevel','detectRange','DETECT_CENTER_HALF','DETECT_OUTER_HALF','DETECT_OUTER_SCALE','cachedLos',
+  src.slice(start,end)+';return indoorGuardSeesPlayer;')(
+  p,()=>false,0,()=>false,()=>false,'clear',()=>false,{currentFloor:0},
+  (a,b)=>Math.hypot(a.x-b.x,a.y-b.y),(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b)),()=>1,()=>250,
+  7.5*Math.PI/180,52.5*Math.PI/180,.7,()=>wall);
+ const h={x:0,y:0,face:0,indoorFloor:1};
+ p.x=340;assert.equal(sees(h),true,'patrol now sees beyond the old 300px range');
+ p.x=351;assert.equal(sees(h),false,'patrol remains bounded');
+ const angle=70*Math.PI/180;p.x=200*Math.cos(angle);p.y=200*Math.sin(angle);
+ assert.equal(sees(h),true,'outer half-angle expands from 63 to 73.5 degrees');
+ p.x=590;p.y=0;h.indoorAlert={phase:'found'};
+ assert.equal(sees(h),true);p.x=601;assert.equal(sees(h),false,'release distance doubles from 300 to 600px');
+ p.x=100;wall=false;assert.equal(sees(h),false,'walls still block extended sight');
+});
+
+test('explosion dispatch preserves outdoor suspicion and isolates the indoor hearing handler',()=>{
+ const html=require('node:fs').readFileSync(require('node:path').join(__dirname,'../index.html'),'utf8');
+ const start=html.indexOf('function suspectHumansNear('),end=html.indexOf('\nfunction alertedHumanInSearch(',start);
+ for(const mode of ['base','beginner','front','indoor'])for(const explosion of [false,true]){
+  const calls=[],h={alive:true,x:0,y:0},stunned={alive:true,stun:1,x:0,y:0},far={alive:true,x:900,y:0};
+  const fn=new Function('stageMode','debugMode','humans','setSuspicion','suspectTanksNear','indoorHearExplosion',
+   html.slice(start,end)+';return suspectHumansNear;')(
+   mode,0,[h,stunned,far],(...a)=>calls.push(['human',...a]),(...a)=>calls.push(['tank',...a]),(...a)=>calls.push(['indoor',...a]));
+  fn(0,0,500,explosion);
+  if(mode==='indoor'&&explosion)assert.deepEqual(calls,[['indoor',0,0,500]]);
+  else assert.deepEqual(calls,[['human',h,2,0,0],['tank',0,0,500]],mode+' keeps the original suspicion behavior');
+ }
 });

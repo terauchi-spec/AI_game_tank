@@ -1477,7 +1477,7 @@ function indoorBeginAlarmSweep(h){
  return true;
 }
 function indoorAlarmLevel(alarm=indoorWorld?.alarm){
- return Math.min(3,(alarm?.witnesses?.size||0)+(alarm?.bodyCount||0));
+ return Math.min(3,(alarm?.witnesses?.size||0)+(alarm?.bodyCount||0)+(alarm?.noiseCount||0));
 }
 function indoorRefreshAlarm(){
  const alarm=indoorWorld?.alarm;
@@ -1494,6 +1494,25 @@ function indoorRecordGuardDiscovery(h){
     !indoorWorld||h.indoorFloor!==indoorWorld.currentFloor+1)return;
  const alarm=indoorWorld.alarm||(indoorWorld.alarm={active:false,witnesses:new Set(),elapsed:0});
  alarm.witnesses.add(h);indoorRefreshAlarm();
+}
+// One warning per audible explosion, regardless of how many guards investigate it.
+// Only the current floor hears it; snapshots never reveal the hidden player.
+function indoorHearExplosion(x,y,r){
+ if(!indoorWorld||debugMode>=2)return;
+ let heard=false;
+ for(const h of indoorWorld.floors[indoorWorld.currentFloor].guards||[]){
+  if(!h.alive||h.st||h.stun>0||h.stunRecover>0||h.houndPinned||h.blastAirT>0||
+     Math.hypot(h.x-x,h.y-y)>r)continue;
+  if(!(h.sus>0)&&scoreStats&&!scoreStats.finalized)scoreStats.suspicionEntries=(scoreStats.suspicionEntries||0)+1;
+  indoorGuardAlertAt(h,{x,y});
+  const a=h.indoorAlert;a.phase='lastSeen';a.remaining=0;a.travelLeft=6;
+  h.sus=6;h.susMax=6;h.target=null;h.burstLeft=0;
+  h.indoorNotice=null;heard=true;
+ }
+ const alarm=indoorWorld.alarm;
+ if(heard&&alarm&&!alarm.active){
+  alarm.noiseCount=Math.min(3,(alarm.noiseCount||0)+1);indoorRefreshAlarm();
+ }
 }
 function indoorScanStunnedGuards(dt){
  const world=indoorWorld,alarm=world?.alarm;if(!alarm||alarm.active)return;
@@ -1599,7 +1618,7 @@ function indoorStartGuardPursuit(h){
 function indoorGuardAlertAt(h,observed){
  if(h.indoorChatT>0)indoorCancelAlarmChat(h);
  h.indoorReturn=null;h.indoorRocketCharge=0;h.indoorRocketAim=null;
- const spot={x:observed.x,y:observed.y},duration=1.35;
+ const spot={x:observed.x,y:observed.y},duration=2.7;
  h.indoorAlert={phase:'found',duration,remaining:duration,trail:[spot],lastSeen:spot,
   searchLeft:0,scanT:0,route:null,routeKey:'',waypoint:null,stuck:0,blockedT:0,
   replanT:0,detour:null,detourKey:'',lastDir:null,estimate:null,searchTravelLeft:0,
@@ -1616,9 +1635,10 @@ function indoorGuardSeesPlayer(h,sample=null){
  if(sample){sample.light=illumination;sample.distance=d;sample.angle=a;}
  const tracking=h.indoorAlert?.phase==='found';
  const visibilityFactor=tracking?Math.max(.78,.5+.5*illumination):(.36+.64*illumination);
- const range=detectRange('p')*1.2*visibilityFactor*(h.indoorChatT>0?.5:1);
- if(!((a<=DETECT_CENTER_HALF*1.2&&d<range)||
-       (a<=DETECT_OUTER_HALF*1.2&&d<range*DETECT_OUTER_SCALE)))return false;
+ // Patrol range grows modestly; pursuit release distance is exactly twice its previous value.
+ const range=detectRange('p')*(tracking?2.4:1.4)*visibilityFactor*(h.indoorChatT>0?.5:1);
+ if(!((a<=DETECT_CENTER_HALF*1.4&&d<range)||
+       (a<=DETECT_OUTER_HALF*1.4&&d<range*DETECT_OUTER_SCALE)))return false;
  return cachedLos(h,p);
 }
 
@@ -1833,7 +1853,7 @@ function indoorBeginGuardSearch(h,state){
 // Four visible cues combine nonlinearly; reuse sampled geometry instead of adding rays.
 function indoorVisualSuspicionRate(illumination,speed,distance,angle){
  const light=clamp((illumination-.24)/.72,0,1),motion=clamp(speed/120,0,1);
- const close=clamp((260-distance)/225,0,1),front=clamp(1-Math.abs(angle)/(DETECT_OUTER_HALF*1.2),0,1);
+ const close=clamp((260-distance)/225,0,1),front=clamp(1-Math.abs(angle)/(DETECT_OUTER_HALF*1.4),0,1);
  const risk=.30*light+.25*motion+.25*close+.20*front;
  return .08+2.72*risk*risk;
 }
@@ -2042,7 +2062,7 @@ function updateInfiltrationGuardAI(h,dt){
   }
  }
  const visible=!!state.visible;
- if(visible)state.remaining=1.35;
+ if(visible)state.remaining=2.7;
  else state.remaining=Math.max(0,state.remaining-dt);
  const pause=(h.modePause||0)>0||(h.foundPause||0)>0||
    (h.sharePause||0)>0||(h.chatResumeT||0)>0;
@@ -2587,3 +2607,4 @@ function drawInfiltrationMission(){
   gm.restore();
 }
 if(typeof module!=='undefined'&&module.exports)module.exports={indoorGenerateExterior,indoorGenerateFloor,indoorAt,indoorRect,indoorGuardCell,indoorGuardCellRoute,indoorMakeGuardGrid,indoorGridDetour,indoorGridPoint,indoorGridSafePoint};
+
