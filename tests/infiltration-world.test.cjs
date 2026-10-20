@@ -386,7 +386,7 @@ test('room lights are centered on table surfaces or room tiles and respect room 
    if(lamp.anchor==='table')assert.ok(lamp.rx<=180*.45&&lamp.ry<=180*.45,
      'table task light is still compact');
    if(lamp.anchor==='table'){
-    const tables=f.furniture.filter(o=>o.kind==='table'||o.kind==='desk'||o.kind==='postTable');
+    const tables=f.furniture.filter(o=>o.artKind==='desk'||o.artKind==='operations_table'||o.kind==='postTable');
     assert.ok(tables.some(o=>Math.abs(lamp.x-(o.x+o.w/2))<.01&&
       Math.abs(lamp.y-(o.y+o.h/2))<.01),'table light is centered over furniture');
    }
@@ -412,7 +412,7 @@ test('each room has central lighting independently from furniture task lights',(
    const desired=inRoom?center:closest;
    assert.ok(Math.hypot(desired.x-main.x,desired.y-main.y)<.01,
      'room light at center, or nearest indoor tile for irregular geometry');
-   const tables=f.furniture.filter(o=>(o.kind==='table'||o.kind==='desk'||o.kind==='postTable')&&
+   const tables=f.furniture.filter(o=>(o.artKind==='desk'||o.artKind==='operations_table'||o.kind==='postTable')&&
      room.tiles.some(tile=>o.x>=tile.x&&o.x<tile.x+tile.w&&o.y>=tile.y&&o.y<tile.y+tile.h));
    if(tables.some(o=>Math.hypot(o.x+o.w/2-main.x,o.y+o.h/2-main.y)>5))
       assert.ok(own.some(l=>l.anchor==='table'),'furniture may have a separate task lamp');

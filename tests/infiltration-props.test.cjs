@@ -25,7 +25,7 @@ test('exterior trees and rocks are sparse and leave door approaches and exit pad
 });
 
 test('indoor WebP prop types vary while beds stay confined to small rooms',()=>{
- const expected=['bed','cabinet','container','desk','equipment','shelf'];
+ const expected=['bed','cabinet','container','desk','equipment','shelf','weapon_rack','server_rack','operations_table','personal_lockers','generator'];
  for(let seed=1;seed<=60;seed++)for(const number of [1,2]){
   const f=indoorGenerateFloor(number,random(seed));
   assert.ok(f.furniture.every(q=>expected.includes(q.artKind)),'every indoor furniture collider has a WebP asset');
@@ -81,13 +81,14 @@ test('all six deployed prop assets are small transparent WebP images',()=>{
 });
 
 test('furniture colliders preserve source aspect ratios and containers double their fitted size',()=>{
- const ratios={container:119/256,equipment:207/256,shelf:108/256,cabinet:137/256,desk:147/256,bed:106/256};
+ const ratios={container:119/256,equipment:207/256,shelf:108/256,cabinet:137/256,desk:147/256,bed:106/256,weapon_rack:179/384,server_rack:127/384,operations_table:241/384,personal_lockers:194/384,generator:253/384};
  let beds=0,containers=0;
  for(let seed=1;seed<=100;seed++)for(const number of [1,2]){
   const floor=indoorGenerateFloor(number,random(seed*771));
   for(const q of floor.furniture){
    if(!q.artKind)continue;
-   assert.ok(Math.abs(q.w/(q.h*1.75)-ratios[q.artKind])<1e-9);
+   const w=q.w,h=q.h*1.75;
+   assert.ok(Math.abs(Math.min(w,h)/Math.max(w,h)-ratios[q.artKind])<1e-9,'sprite proportions survive placement and rotation');
    if(q.artKind==='container'){
     const expected=q.kind==='cabinet'?154:140;
     assert.ok(Math.abs(q.h*1.75-expected)<1e-9);containers++;
@@ -156,4 +157,36 @@ test('ascending and descending staircase files are small alpha WebP assets',()=>
   assert.ok(1+data.readUIntLE(24,3)<=256);assert.ok(1+data.readUIntLE(27,3)<=320);
  }
  assert.ok(bytes<50000);
+});
+
+
+test('each floor assigns room purposes and places all five military equipment types without blocking doors',()=>{
+ const main={operations:'operations_table',armory:'weapon_rack',communications:'server_rack',utilities:'generator'};
+ const overlap=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
+ for(let seed=1;seed<=160;seed++)for(const number of [1,2]){
+  const f=indoorGenerateFloor(number,random(seed*97));
+  assert.ok(f.rooms.every(r=>['operations','armory','communications','utilities','quarters','storage','records','guard_post'].includes(r.purpose)));
+  for(const [purpose,art] of Object.entries(main)){
+   const room=f.rooms.find(r=>r.purpose===purpose);assert.ok(room);
+   const piece=f.furniture.find(q=>q.roomId===room.id&&q.artKind===art);assert.ok(piece,`${art} in its assigned room: seed ${seed}, floor ${number}`);
+   assert.ok(room.tiles.some(t=>piece.x>=t.x&&piece.y>=t.y&&piece.x+piece.w<=t.x+t.w&&piece.y+piece.h<=t.y+t.h));
+   for(const door of f.doors){const lane=door.vertical?{x:door.x-35,y:door.y-30,w:70,h:60}:{x:door.x-24,y:door.y-35,w:48,h:70};assert.equal(overlap(piece,lane),false);}
+  }
+  assert.ok(f.furniture.some(q=>q.artKind==='personal_lockers'));
+  for(const piece of f.furniture.filter(q=>q.artKind==='bed'))assert.equal(f.rooms[piece.roomId].purpose,'quarters');
+  assert.ok(f.furniture.filter(q=>q.zone==='room').length>=10,'rooms keep additional furniture');
+ }
+});
+
+test('new military WebP equipment keeps smooth alpha edges within a small transfer and memory budget',()=>{
+ let bytes=0,pixels=0;
+ for(const key of ['weapon_rack','server_rack','operations_table','personal_lockers','generator']){
+  const data=fs.readFileSync(path.join(__dirname,'../assets/indoor/'+key+'.webp'));bytes+=data.length;
+  assert.equal(data.toString('ascii',0,4),'RIFF');assert.equal(data.toString('ascii',8,12),'WEBP');
+  assert.equal(data.toString('ascii',12,16),'VP8X');assert.ok(data[20]&16);
+  const w=1+data.readUIntLE(24,3),h=1+data.readUIntLE(27,3);pixels+=w*h;
+  assert.equal(h,384,'source stays above maximum world display size to avoid upscaling');
+  assert.ok(w<=384);assert.ok(data.length<35000);
+ }
+ assert.ok(bytes<115000);assert.ok(pixels*4<1600000);
 });

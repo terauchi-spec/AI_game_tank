@@ -3,7 +3,15 @@ const INDOOR_FILES_TOTAL=3,INDOOR_ACQUIRE_SECONDS=8,INDOOR_ACQUIRE_RADIUS=68;
 const INDOOR_EXIT_RADIUS=90,INDOOR_EXIT_SECONDS=5;
 // 透過余白を除いたWebPの実寸比。生成時の当たり判定も元画像の比率に揃える。
 const INDOOR_PROP_ASPECT={container:119/256,equipment:207/256,shelf:108/256,
-  cabinet:137/256,desk:147/256,bed:106/256};
+  cabinet:137/256,desk:147/256,bed:106/256,weapon_rack:179/384,server_rack:127/384,
+  operations_table:241/384,personal_lockers:194/384,generator:253/384};
+const INDOOR_ROOM_ART={
+  operations:['operations_table','cabinet','desk'],armory:['weapon_rack','personal_lockers','shelf'],
+  communications:['server_rack','equipment','desk'],utilities:['generator','equipment','cabinet'],
+  quarters:['bed','personal_lockers','desk'],storage:['container','shelf','cabinet'],
+  records:['cabinet','desk','shelf'],guard_post:['desk','cabinet','equipment']
+};
+const INDOOR_PROP_LENGTH={weapon_rack:112,server_rack:112,operations_table:144,personal_lockers:106,generator:116};
 const indoorRand=(rng,a,b)=>a+(b-a)*rng();
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -286,7 +294,16 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
   const largest=Math.max(...rooms.map(r=>r.size));
   const postCandidates=rooms.filter(r=>r.size===largest);
   const postRoom=postCandidates[Math.floor(rng()*postCandidates.length)];
-  postRoom.name='青兵詰所';postRoom.isGuardPost=true;
+  postRoom.name='青兵詰所';postRoom.isGuardPost=true;postRoom.purpose='guard_post';
+  // 用途は生成時だけ決定。大きい部屋を作戦室にし、残りを役割ごとに装備する。
+  const roleRooms=rooms.filter(r=>r!==postRoom).sort((a,b)=>b.size-a.size||a.id-b.id);
+  for(const [purpose,name] of [['operations','作戦室'],['armory','武器庫'],['communications','通信室'],['utilities','設備室']]){
+    const room=roleRooms.shift();room.purpose=purpose;room.name=name;
+  }
+  for(const [i,room] of roleRooms.entries()){
+    room.purpose=room.size===1?'quarters':i%2?'records':'storage';
+    room.name=room.purpose==='quarters'?'兵員室':room.purpose==='records'?'資料室':'倉庫';
+  }
   // 部屋の奥を詰所中心にして、扉を塞がず待機できる位置を優先。
   const doorCell=coord(postRoom.door.inside);
   const postCell=postRoom.cellIds.slice().sort((a,b)=>{
@@ -315,6 +332,11 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
         tile.y+(k%2?SIZE-68:22),kind==='cabinet'?50:56,kind==='cabinet'?44:40,'room');
     }
   }
+  // 各部屋に補助家具を一つ追加。入口・壁との衝突があれば後段で移動または省略する。
+  for(const room of rooms)if(room!==postRoom){
+    const tile=room.tiles[0];
+    addFurniture('roomSupport',tile.x+SIZE-68,tile.y+SIZE-62,50,40,'room');
+  }
   addFurniture('postTable',postCenter.x-47,postCenter.y-28,94,56,'post');
   // Keep one consistent side throughout each floor, including doorway fallback
   // positions and explosive cargo. Never alternate sides in adjacent hall cells.
@@ -334,18 +356,21 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     addFurniture(supplies[k%supplies.length],X0+c*SIZE+dx,Y0+r*SIZE+dy,52,40,'hallway');
   }
   // 元の縦横比で家具を配置。ベッドは1区画の小部屋に限り、全て世界座標で同じ大きさ。
-  const roomArt=['container','equipment','shelf','cabinet','desk'],bedRooms=new Set();let artIndex=0;
+  const roomSlots=new Map();
   for(const item of furniture){
     const cx=item.x+item.w/2,cy=item.y+item.h/2;
     const room=item.zone==='room'?rooms.find(r=>r.tiles.some(t=>cx>=t.x&&cx<t.x+t.w&&cy>=t.y&&cy<t.y+t.h)):null;
-    const bed=room&&room.size===1&&!room.isGuardPost&&!bedRooms.has(room.id);
-    if(bed)bedRooms.add(room.id);
-    item.artKind=item.kind==='postTable'?'desk':bed?'bed':room?roomArt[artIndex++%roomArt.length]:
+    const slot=roomSlots.get(room?.id)||0;
+    if(room){item.roomId=room.id;item.purpose=room.purpose;roomSlots.set(room.id,slot+1);}
+    const palette=room&&INDOOR_ROOM_ART[room.purpose];
+    item.artKind=item.kind==='postTable'?'desk':palette?palette[Math.min(slot,palette.length-1)]:
       ({ammo:'container',supply:'shelf',kit:'equipment'}[item.kind]||null);
+    item.primaryAsset=!!(room&&slot===0);
     const ar=INDOOR_PROP_ASPECT[item.artKind];if(!ar)continue;
     const maxW=item.w*INDOOR_SCALE_X,maxH=item.h*INDOOR_SCALE_Y;
     let h=Math.min(maxH,maxW/ar),w=h*ar;
     if(item.artKind==='bed'){h=104;w=h*ar;}
+    if(INDOOR_PROP_LENGTH[item.artKind]){h=INDOOR_PROP_LENGTH[item.artKind];w=h*ar;}
     if(item.artKind==='container'){w*=2;h*=2;}
     item.w=w/INDOOR_SCALE_X;item.h=h/INDOOR_SCALE_Y;
     const tx=X0+Math.floor((cx-X0)/SIZE)*SIZE,ty=Y0+Math.floor((cy-Y0)/SIZE)*SIZE;
@@ -364,20 +389,49 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     ?{x:d.x-35,y:d.y-30,w:70,h:60}
     :{x:d.x-24,y:d.y-35,w:48,h:70};
   const doorLanes=doorMarks.map(doorLane);
+  const roomWalkLanes=[];
+  const addWalkLane=(a,b)=>roomWalkLanes.push({x:Math.min(a.x,b.x)-18,y:Math.min(a.y,b.y)-12,
+    w:Math.abs(a.x-b.x)+36,h:Math.abs(a.y-b.y)+24});
+  for(const room of rooms)for(const id of room.cellIds){
+    const a=center(id);addWalkLane(a,a);
+    for(const n of neighbors(id))if(n>id&&room.cellIds.includes(n))addWalkLane(a,center(n));
+  }
+  for(const door of doorMarks)for(const id of door.cells||[])if(owner[id]>=0)addWalkLane(center(id),door);
+  const blocksRoomWalk=o=>o.zone==='room'&&roomWalkLanes.some(q=>overlap(o,q));
   // Static furniture must leave the actual doorway approach open.
   for(let i=furniture.length-1;i>=0;i--){
     const item=furniture[i];
-    if(!doorLanes.some(d=>overlap(item,d))&&!walls.some(w=>overlap(item,w,3))&&
+    if(!blocksRoomWalk(item)&&!doorLanes.some(d=>overlap(item,d))&&!walls.some(w=>overlap(item,w,3))&&
        !furniture.some((f,j)=>j!==i&&overlap(item,f,3)))continue;
     const tx=X0+Math.floor((item.x-X0)/SIZE)*SIZE,ty=Y0+Math.floor((item.y-Y0)/SIZE)*SIZE;
     const corners=item.zone==='hallway'?hallCorners(item.w,item.h):
       [[16,16],[SIZE-item.w-16,16],[16,SIZE-item.h-16],[SIZE-item.w-16,SIZE-item.h-16]];
     const alternate=corners.map(([dx,dy])=>({...item,x:tx+dx,y:ty+dy})).find(o=>
-      !doorLanes.some(d=>overlap(o,d))&&
+      !blocksRoomWalk(o)&&!doorLanes.some(d=>overlap(o,d))&&!walls.some(w=>overlap(o,w,3))&&
       !furniture.some((f,j)=>j!==i&&overlap(o,f,3))&&
       distance({x:o.x+o.w/2,y:o.y+o.h/2},stair)>78);
     if(alternate){item.x=alternate.x;item.y=alternate.y;}
     else furniture.splice(i,1);
+  }
+  // 主設備が入口との干渉で省略された場合、同じ部屋内で安全な配置を探し直す。
+  // 補助家具だけを置き換え、部屋の主設備・階段・扉の通行域を守る。
+  for(const room of rooms.filter(r=>['operations','armory','communications','utilities'].includes(r.purpose))){
+    const artKind=INDOOR_ROOM_ART[room.purpose][0];
+    if(furniture.some(o=>o.roomId===room.id&&o.artKind===artKind))continue;
+    let best=null;
+    for(const scale of [1,.88,.76,.67,.6]){
+      const h=INDOOR_PROP_LENGTH[artKind]*scale/INDOOR_SCALE_Y,w=INDOOR_PROP_LENGTH[artKind]*scale*INDOOR_PROP_ASPECT[artKind];
+      for(const [pw,ph] of [[w,h],[h*INDOOR_SCALE_Y,w/INDOOR_SCALE_Y]])
+      for(const tile of room.tiles)for(let dy=16;dy+ph<=SIZE-16;dy+=8)for(let dx=16;dx+pw<=SIZE-16;dx+=8){
+        const o={kind:'cabinet',artKind,roomId:room.id,purpose:room.purpose,primaryAsset:true,zone:'room',x:tile.x+dx,y:tile.y+dy,w:pw,h:ph};
+        if(blocksRoomWalk(o)||walls.some(q=>overlap(o,q,3))||doorLanes.some(q=>overlap(o,q,5)))continue;
+        const displaced=furniture.filter(q=>overlap(o,q,6));
+        if(displaced.some(q=>q.primaryAsset||q.roomId!==room.id))continue;
+        if(!best||displaced.length<best.displaced.length)best={o,displaced};
+      }
+    if(best)break;
+    }
+    if(best){for(const q of best.displaced)furniture.splice(furniture.indexOf(q),1);furniture.push(best.o);}
   }
   // Do not replenish the opposite side to satisfy an old density minimum.
   // At most two props/cargo pieces may occupy a hallway cell in total.
@@ -433,6 +487,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
            walls.some(w=>overlap(o,w,3))||
            explosiveObjects.some(v=>overlap(o,v,7)))continue;
         const displaced=furniture.filter(v=>overlap(o,v,6));
+        if(displaced.some(v=>v.primaryAsset))continue;
         if(!best||displaced.length<best.displaced.length)best={o,displaced};
         if(!displaced.length)break;
       }
@@ -557,14 +612,18 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
       y:centers.reduce((sum,p)=>sum+p.y,0)/centers.length};
     const roomFurniture=furniture.filter(o=>o.zone==='room'&&
       room.tiles.some(t=>o.x>=t.x&&o.x<t.x+SIZE&&o.y>=t.y&&o.y<t.y+SIZE));
-    const table=room===postRoom?furniture.find(o=>o.kind==='postTable'):
-      roomFurniture.filter(o=>o.kind==='table'||o.kind==='desk')
+    let table=room===postRoom?furniture.find(o=>o.kind==='postTable'):
+      roomFurniture.filter(o=>o.artKind==='desk'||o.artKind==='operations_table')
         .sort((a,b)=>distance({x:a.x+a.w/2,y:a.y+a.h/2},mid)-
           distance({x:b.x+b.w/2,y:b.y+b.h/2},mid))[0];
     const inRoom=room.tiles.some(t=>mid.x>=t.x&&mid.x<=t.x+t.w&&
       mid.y>=t.y&&mid.y<=t.y+t.h);
     const primary=inRoom?mid:centers.slice().sort((a,b)=>distance(a,mid)-distance(b,mid))[0];
     roomLight(primary,'room-center',room);
+    if(table&&distance({x:table.x+table.w/2,y:table.y+table.h/2},primary)<5){
+      table=roomFurniture.find(o=>(o.artKind==='desk'||o.artKind==='operations_table')&&
+        distance({x:o.x+o.w/2,y:o.y+o.h/2},primary)>5)||table;
+    }
     // A ceiling task light highlights the nearby table while general room lighting remains central.
     if(table){
       const point={x:table.x+table.w/2,y:table.y+table.h/2};
@@ -832,7 +891,7 @@ function setupInfiltrationWorld(){
     const raw=rawFloors[n-1],off=INDOOR_FLOOR_OFFSETS[n-1];
     const to=pt=>indoorAt(pt.x,pt.y,off);
     const rooms=raw.rooms.map(r=>{const rect=indoorRect(r,off);
-      return{...rect,id:r.id,name:r.name,size:r.size,isGuardPost:!!r.isGuardPost,tiles:r.tiles.map(tile=>indoorRect(tile,off))};
+      return{...rect,id:r.id,name:r.name,purpose:r.purpose,size:r.size,isGuardPost:!!r.isGuardPost,tiles:r.tiles.map(tile=>indoorRect(tile,off))};
     });
     // Walls use the existing concrete wall cover kind. Doors remain actual gaps in the core collision grid.
     const wallRects=[];
@@ -850,7 +909,7 @@ function setupInfiltrationWorld(){
     const props=[];
     for(const piece of raw.furniture){
       const q=indoorRect(piece,off);
-      const prop={...q,kd:1,indoorProp:true,propKind:piece.kind,propArt:piece.artKind,propZone:piece.zone,hp:999999};
+      const prop={...q,kd:1,indoorProp:true,propKind:piece.kind,propArt:piece.artKind,propZone:piece.zone,roomId:piece.roomId,purpose:piece.purpose,hp:999999};
       covers.push(prop);props.push(prop);
     }
     // 共通の木箱/ドラム缶/砲弾ケースを通常の爆発オブジェクトとして登録。
@@ -2226,7 +2285,7 @@ function drawInfiltrationPropSprite(o){
   // 拡縮は常に等倍率。万一旧サイズの家具があっても画像を引き伸ばさない。
   const horizontal=o.w>o.h,iw=image.naturalWidth||image.width,ih=image.naturalHeight||image.height;
   const scale=Math.min((horizontal?o.h:o.w)/iw,(horizontal?o.w:o.h)/ih),w=iw*scale,h=ih*scale;
-  g.save();g.imageSmoothingEnabled=true;
+  g.save();g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
   if(horizontal){
     g.translate(o.x+o.w/2,o.y+o.h/2);g.rotate(Math.PI/2);
     g.drawImage(image,-w/2,-h/2,w,h);
