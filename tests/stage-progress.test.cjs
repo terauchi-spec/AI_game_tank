@@ -7,3 +7,24 @@ test('progress persists across reloads and front difficulties remain distinct',(
 test('failures, debug runs and duplicate finalization cannot advance progress',()=>{const c=harness();for(const s of [{final:{cleared:false}},{final:{cleared:true},debugUsed:true}])c.unlockStageOnClear(s);c.areaDebugEnabled=true;clear(c,'beginner');assert.deepEqual(c.ids(),['beginner']);c.areaDebugEnabled=false;const s=clear(c,'beginner');c.unlockStageOnClear(s);assert.deepEqual(c.ids(),['beginner','frontBeginner']);});
 test('malformed or out-of-order records never unlock stages',()=>{for(const saved of ['broken','null','{"cleared":["front","base"]}','{"cleared":"beginner"}'])assert.deepEqual(harness(saved).ids(),['beginner']);});
 test('failed storage writes do not announce an unlock that would be lost',()=>{const c=harness();c.localStorage.setItem=()=>{throw Error('quota')};const s=clear(c,'beginner');assert.equal(s.stageUnlockSaveFailed,true);assert.equal(s.unlockedStage,undefined);assert.deepEqual(c.ids(),['beginner']);});
+test('indoor advanced stays selectable while the beginner placeholder never changes the four-stage progression',()=>{
+ const c=harness();
+ assert.equal(c.stageSelectable('indoor'),true);assert.equal(c.stageSelectable('indoorBeginner'),false);
+ clear(c,'indoor');clear(c,'indoorBeginner');assert.deepEqual(c.ids(),['beginner']);assert.equal(c.storage.size,0);
+ for(const id of ['beginner','frontBeginner','base','front'])clear(c,id);
+ assert.equal(c.stageSelectable('indoor'),true);assert.equal(c.stageSelectable('indoorBeginner'),false);
+ assert.deepEqual(JSON.parse(c.storage.get('tankGameStageProgressV1')).cleared,['beginner','frontBeginner','base','front']);
+});
+test('six selection cards render with a disabled beginner placeholder and the current indoor mission as stage 06',()=>{
+ const c=harness();
+ const buttons=['beginner','frontBeginner','base','front','indoorBeginner','indoor'].map(id=>({dataset:{stage:id},classList:{toggle(k,v){this[k]=v;}},number:{textContent:''},querySelector(){return this.number;},setAttribute(k,v){this[k]=v;}}));
+ c.document={querySelectorAll:()=>buttons};c.renderStageLocks();
+ const beginner=buttons[4],advanced=buttons[5];
+ assert.equal(beginner.disabled,true);assert.equal(beginner.title,'準備中');assert.equal(beginner.number.textContent,'05');assert.equal(beginner['aria-label'],'05 潜入（初級）・準備中');
+ assert.equal(advanced.disabled,false);assert.equal(advanced.number.textContent,'06');assert.equal(advanced['aria-label'],'06 潜入（上級）');
+ assert.deepEqual(buttons.slice(0,4).map(b=>b.disabled),[false,true,true,true]);
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+ assert.match(html,/<button[^>]*data-stage="indoorBeginner"[^>]*disabled[^>]*>/);
+ assert.match(html,/<button[^>]*data-stage="indoor"[^>]*id="stageInfiltrationAdvanced"/);
+ assert.equal((html.match(/class="stage-card(?: locked)?" data-stage=/g)||[]).length,6);
+});

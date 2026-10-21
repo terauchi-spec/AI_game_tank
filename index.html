@@ -851,7 +851,8 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 <button type="button" class="stage-card" data-stage="frontBeginner"><span class="stage-number" aria-hidden="true">02</span><span class="stage-copy"><strong>前線制圧（初級）</strong><span class="stage-target">軍需物資</span></span><span class="stage-art"><img src="assets/ui/stages/supplies.webp" alt="" width="144" height="96" loading="lazy" decoding="async"></span></button>
 <button type="button" class="stage-card" data-stage="base"><span class="stage-number" aria-hidden="true">03</span><span class="stage-copy"><strong>拠点破壊（上級）</strong><span class="stage-target">軍司令施設</span></span><span class="stage-art"><img src="assets/ui/stages/headquarters.webp" alt="" width="144" height="96" loading="lazy" decoding="async"></span></button>
 <button type="button" class="stage-card" data-stage="front"><span class="stage-number" aria-hidden="true">04</span><span class="stage-copy"><strong>前線制圧（上級）</strong><span class="stage-target">戦術アンテナ</span></span><span class="stage-art"><img src="assets/ui/stages/antenna.webp" alt="" width="144" height="96" loading="lazy" decoding="async"></span></button>
-<button type="button" class="stage-card" data-stage="indoor" id="stageInfiltrationSample"><span class="stage-number" aria-hidden="true">05</span><span class="stage-copy"><strong>拠点潜入（サンプル）</strong><span class="stage-target">2階建て施設・重要資料3箇所を回収</span></span><span class="stage-art"><svg width="144" height="84" viewBox="0 0 144 84" role="img" aria-label="部屋と廊下の見取り図"><rect width="144" height="84" fill="#24382f"/><path d="M18 9h45v23H18zM81 9h45v23H81zM18 43h45v32H18zM81 43h45v32H81z" fill="#526b56" stroke="#b6bea6" stroke-width="2"/><path d="M64 4h16v76H64z" fill="#aaa987"/><path d="M60 21h25M60 58h25" stroke="#f4d17d" stroke-width="5"/><circle cx="71" cy="63" r="5" fill="#e8b65a"/><circle cx="30" cy="19" r="4" fill="#c3503a"/></svg></span></button>
+<button type="button" class="stage-card locked" data-stage="indoorBeginner" id="stageInfiltrationBeginner" disabled aria-label="05 潜入（初級）・準備中" title="準備中"><span class="stage-number" aria-hidden="true">05</span><span class="stage-copy"><strong>潜入（初級）</strong><span class="stage-target">準備中</span></span><span class="stage-art"><svg width="144" height="84" viewBox="0 0 144 84" role="img" aria-label="部屋と廊下の見取り図"><rect width="144" height="84" fill="#24382f"/><path d="M18 9h45v23H18zM81 9h45v23H81zM18 43h45v32H18zM81 43h45v32H81z" fill="#526b56" stroke="#b6bea6" stroke-width="2"/><path d="M64 4h16v76H64z" fill="#aaa987"/><path d="M60 21h25M60 58h25" stroke="#f4d17d" stroke-width="5"/><circle cx="71" cy="63" r="5" fill="#e8b65a"/><circle cx="30" cy="19" r="4" fill="#c3503a"/></svg></span></button>
+<button type="button" class="stage-card" data-stage="indoor" id="stageInfiltrationAdvanced"><span class="stage-number" aria-hidden="true">06</span><span class="stage-copy"><strong>潜入（上級）</strong><span class="stage-target">2階建て施設・重要資料3箇所を回収</span></span><span class="stage-art"><svg width="144" height="84" viewBox="0 0 144 84" role="img" aria-label="部屋と廊下の見取り図"><rect width="144" height="84" fill="#24382f"/><path d="M18 9h45v23H18zM81 9h45v23H81zM18 43h45v32H18zM81 43h45v32H81z" fill="#526b56" stroke="#b6bea6" stroke-width="2"/><path d="M64 4h16v76H64z" fill="#aaa987"/><path d="M60 21h25M60 58h25" stroke="#f4d17d" stroke-width="5"/><circle cx="71" cy="63" r="5" fill="#e8b65a"/><circle cx="30" cy="19" r="4" fill="#c3503a"/></svg></span></button>
 </div><button type="button" class="stage-back" id="stageBack">← スキル選択へ戻る</button></div></div>
 <div id="missionHud" role="status"></div>
 
@@ -865,7 +866,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.21.1837',FILE_CREATED_AT='2026/10/21 18:37',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.21.2040',FILE_CREATED_AT='2026/10/21 20:40',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -7777,7 +7778,7 @@ document.getElementById('specVersion').textContent=GAME_VERSION;
 
 
 let stageMode='beginner',frontlineBeginner=false,mission=null;
-const STAGE_NAMES={beginner:'拠点破壊（初級）：軍事衛星施設',base:'拠点破壊（上級）：軍司令施設',get front(){return frontlineBeginner?'前線制圧（初級）：軍需物資':'前線制圧（上級）：戦術アンテナ';},stealth:'潜入',indoor:'拠点潜入（サンプル）：重要資料3箇所'};
+const STAGE_NAMES={beginner:'拠点破壊（初級）：軍事衛星施設',base:'拠点破壊（上級）：軍司令施設',get front(){return frontlineBeginner?'前線制圧（初級）：軍需物資':'前線制圧（上級）：戦術アンテナ';},stealth:'潜入',indoorBeginner:'潜入（初級）',indoor:'潜入（上級）：重要資料3箇所'};
 document.querySelectorAll('[data-stage]').forEach(b=>b.addEventListener('click',()=>{if(!stageSelectable(b.dataset.stage))return;frontlineBeginner=b.dataset.stage==='frontBeginner';stageMode=frontlineBeginner?'front':b.dataset.stage;document.body.classList.remove('stage-open');selectSkillIndex(skillMenuList().findIndex(k=>k.id===selectedSkillId),true);}));
 document.getElementById('stageBack').onclick=()=>{state='skill';};
 let briefingFrameDrawn=false;
@@ -7812,7 +7813,7 @@ function syncMissionBriefing(){
    screen.querySelector('.mission-hud-guide').hidden=front||stageMode==='indoor';
    document.getElementById('missionFrontlineRules').hidden=!front;
    document.getElementById('missionIndoorRules').hidden=stageMode!=='indoor';
-   document.getElementById('missionBriefingTitle').textContent=stageMode==='indoor'?'潜入':front?(isFrontlineBeginner()?'前線制圧（初級）':'前線制圧（上級）'):stageMode==='beginner'?'拠点破壊（初級）':'拠点破壊（上級）';
+   document.getElementById('missionBriefingTitle').textContent=stageMode==='indoor'?'潜入（上級）':front?(isFrontlineBeginner()?'前線制圧（初級）':'前線制圧（上級）'):stageMode==='beginner'?'拠点破壊（初級）':'拠点破壊（上級）';
    document.getElementById('missionBriefingGoal').textContent=stageMode==='indoor'?'重要資料を回収し、敵施設から脱出せよ':front?(isFrontlineBeginner()?'軍需物資':'戦術アンテナ')+'の'+(isFrontlineBeginner()?2:3)+'拠点を制圧せよ':stageMode==='beginner'?'軍事衛星施設を破壊せよ':'軍司令施設を破壊せよ';
    document.getElementById('missionBegin').focus({preventScroll:true});
   }}
@@ -8019,7 +8020,7 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/stage-progress.js?v=2026.10.17.2030"></script>
+<script src="js/stage-progress.js?v=2026.10.21.2040"></script>
 <script src="js/frontline.js?v=2026.10.17.2030"></script>
 <script src="js/award-icons.js?v=2026.10.17.0743"></script>
 <script src="js/characters.js?v=2026.10.19.1032"></script>
