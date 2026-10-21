@@ -1,5 +1,9 @@
 # Cyan inner-panel door variants
 
+## 2026-10-21 horizontal-only storage-side extension
+
+Built-in imagegen edit of the current horizontal cyan door: extend the existing 30px stripe upward and downward by 10% of its current height (3px each, 36px total). Extend the left stripe toward the left storage-side frame and the right stripe toward the right storage-side frame, up to the inner edges of the hazard endcaps. Preserve the exact central unpainted span, hazard patches, lower front face and silhouette. Only the generated cyan stripe regions were composited: x=29..236 and 275..482, y=17..52, on the unchanged 512x206 footprint. Vertical door unchanged. Transparent WebP, quality 90.
+
 ## 2026-10-21 continuous stripe revision (supersedes reinforcing-bar interruptions below)
 
 Built-in imagegen precise-object-edit from both current cyan sprites: make each leaf's cyan stripe uninterrupted across internal reinforcing ribs, leaving the existing unpainted central opening unchanged. Vertical stripe keeps its height. Horizontal stripe extends upward and downward by 25% of the original 20-pixel band, making a 30-pixel band. Preserve outer frames, silhouette, hazards, central seam, front face and transparency. Only the generated stripe regions were composited into the original 512-pixel-wide sprites to retain surrounding artwork. Export dimensions remain 512x75 and 512x206; WebP quality 90. No runtime geometry or AI changes.
