@@ -1920,7 +1920,7 @@ test('indoor white movement is exactly 20 percent faster without outdoor elite m
 test('reinforcement roles split 50 percent blue commanders, 40 percent white, 10 percent white commanders',()=>{
  const src=require('node:fs').readFileSync(require('node:path').join(__dirname,'../js/infiltration-world.js'),'utf8');
  const start=src.indexOf('function indoorReinforcementRole('),end=src.indexOf('function indoorReplenishGuards(',start);
- const pick=new Function(src.slice(start,end)+';return indoorReinforcementRole;')();
+ const pick=new Function('isInfiltrationBeginner',src.slice(start,end)+';return indoorReinforcementRole;')(()=>false);
  const counts={blue:0,white:0,commander:0};
  for(let i=0;i<1000;i++){
   const role=pick((i+.5)/1000);

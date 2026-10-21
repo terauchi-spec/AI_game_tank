@@ -6,7 +6,7 @@ const STAGE_ORDER=[
  {id:'base',name:'拠点破壊（上級）',image:'headquarters'},
  {id:'front',name:'前線制圧（上級）',image:'antenna'}
 ];
-function currentStageId(){return stageMode==='front'&&frontlineBeginner?'frontBeginner':stageMode;}
+function currentStageId(){return stageMode==='front'&&frontlineBeginner?'frontBeginner':stageMode==='indoor'&&typeof indoorBeginner!=='undefined'&&indoorBeginner?'indoorBeginner':stageMode;}
 function readStageProgress(){
  let saved;try{saved=JSON.parse(localStorage.getItem(STAGE_PROGRESS_KEY)||'null');}catch(_){}
  const cleared=[];
@@ -15,8 +15,7 @@ function readStageProgress(){
  return{cleared};
 }
 function stageSelectable(id,progress=readStageProgress()){
- if(id==='indoor')return true; // 潜入上級は従来どおり常時解放。既存4ステージの進行には干渉しない。
- if(id==='indoorBeginner')return false; // 初級は内容実装まで準備中。
+ if(id==='indoor'||id==='indoorBeginner')return true; // 潜入は両難易度とも解放。既存4ステージの進行には干渉しない。
  const index=STAGE_ORDER.findIndex(s=>s.id===id);return index>=0&&index<=progress.cleared.length;
 }
 function unlockStageOnClear(s){
@@ -31,11 +30,11 @@ function renderStageLocks(){
  const progress=readStageProgress();
  document.querySelectorAll('[data-stage]').forEach(button=>{
   if(button.dataset.stage==='indoor'||button.dataset.stage==='indoorBeginner'){
-   const ready=button.dataset.stage==='indoor',number=ready?'06':'05',name=ready?'潜入（上級）':'潜入（初級）';
-   button.disabled=!ready;button.classList.toggle('locked',!ready);
+   const advanced=button.dataset.stage==='indoor',number=advanced?'06':'05',name=advanced?'潜入（上級）':'潜入（初級）';
+   button.disabled=false;button.classList.toggle('locked',false);
    button.querySelector('.stage-number').textContent=number;
-   button.setAttribute('aria-label',number+' '+name+(ready?'':'・準備中'));
-   button.title=ready?'2階建て施設・重要資料3箇所を回収':'準備中';return;
+   button.setAttribute('aria-label',number+' '+name);
+   button.title=advanced?'2階建て施設・重要資料3箇所を回収':'小型施設・重要資料2箇所を回収';return;
   }
   const index=STAGE_ORDER.findIndex(s=>s.id===button.dataset.stage),stage=STAGE_ORDER[index],locked=!stageSelectable(stage.id,progress);
   button.disabled=locked;button.classList.toggle('locked',locked);

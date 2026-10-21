@@ -1,5 +1,7 @@
 /* Indoor environment adapter: NO replacement game loop or controls. */
-const INDOOR_FILES_TOTAL=3,INDOOR_ACQUIRE_SECONDS=8,INDOOR_ACQUIRE_RADIUS=68;
+let INDOOR_FILES_TOTAL=3;
+const INDOOR_ACQUIRE_SECONDS=8,INDOOR_ACQUIRE_RADIUS=68;
+function isInfiltrationBeginner(){return typeof indoorBeginner!=='undefined'&&indoorBeginner;}
 const INDOOR_EXIT_RADIUS=90,INDOOR_EXIT_SECONDS=5;
 // 透過余白を除いたWebPの実寸比。生成時の当たり判定も元画像の比率に揃える。
 const INDOOR_PROP_ASPECT={container:119/256,equipment:207/256,shelf:108/256,
@@ -27,7 +29,7 @@ function indoorRoomEquipmentWalkable(room,rects){
   }
   const entry=room.doors[0];let first=-1,best=Infinity;
   for(let id=0;id<free.length;id++)if(free[id]){
-    const d=Math.hypot(room.x+(id%cols+.5)*sx-entry.x,(room.y+(((id/cols)|0)+.5)*sy-entry.y)*1.75);
+    const d=Math.hypot(room.x+(id%cols+.5)*sx-entry.x,(room.y+(((id/cols)|0)+.5)*sy-entry.y)*INDOOR_SCALE_Y);
     if(d<best){best=d;first=id;}
   }
   if(first<0||best>50)return false;
@@ -76,7 +78,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     for(let c=1;c<=3;c++)add(c,5);
   }
   // Exterior entrances and the broad lobby belong only to the ground floor.
-  const hasExterior=number===1,hasEmergency=hasExterior&&rng()<.5;
+  const hasExterior=number===1,emergencyRoll=hasExterior?rng():1,hasEmergency=hasExterior&&emergencyRoll<.5&&!isInfiltrationBeginner();
   add(2,1);add(1,1);if(hasExterior)add(2,0);
   const south=[1,2,3].filter(c=>hall.has(index(c,5)));
   const entranceCol=south.length?south[Math.floor(rng()*south.length)]:1;
@@ -766,7 +768,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     return id>=0&&!documentGrid.solid[id]&&!!reachable[id];
   };
   const documentArts=new Set(['cabinet','desk','server_rack','operations_table','personal_lockers','shelf','equipment']);
-  const worldDistance=(a,b)=>Math.hypot(a.x-b.x,(a.y-b.y)*INDOOR_SCALE_Y);
+  const worldDistance=(a,b)=>Math.hypot((a.x-b.x)*INDOOR_SCALE_X,(a.y-b.y)*INDOOR_SCALE_Y);
   const intelCandidates=rooms.filter(r=>r!==postRoom).map(room=>{
     const fixtures=furniture.filter(o=>o.roomId===room.id&&documentArts.has(o.artKind));
     const candidates=[];
@@ -862,7 +864,8 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
 // A stage map adapter; uses the main game's player, enemies, all skills,
 // collisions, rendering and scoring loops without duplicating their behavior.
 // 屋内専用の縦長座標変換。幅は画面内に収め、奥行きを広げて総床面積を約2倍にする。
-const INDOOR_FLOOR_OFFSETS=[9300,5500],INDOOR_SCALE_X=1,INDOOR_SCALE_Y=1.75,INDOOR_OFFSET_X=-40,INDOOR_FORECOURT_DEPTH=900;
+const INDOOR_FLOOR_OFFSETS=[9300,5500],INDOOR_FORECOURT_DEPTH=900;
+let INDOOR_SCALE_X=1,INDOOR_SCALE_Y=1.75,INDOOR_OFFSET_X=-40;
 let indoorWorld=null,indoorHudSnapshot='',indoorHudRefresh=0,indoorAlarmGradient=null;
 
 let indoorShadeCanvas=null,indoorShadeCtx=null,indoorLightStamp=null,indoorShadeSnapshot=null;
@@ -1033,6 +1036,10 @@ function indoorGenerateExterior(floor,rng,worldWidth=960){
   return out;
 }
 function setupInfiltrationWorld(){
+  // Scale physical floor area, retaining the same rendering resolution and two-floor layout.
+  const beginner=isInfiltrationBeginner(),size=beginner?Math.sqrt(.8):1;
+  INDOOR_FILES_TOTAL=beginner?2:3;
+  INDOOR_SCALE_X=size;INDOOR_SCALE_Y=1.75*size;INDOOR_OFFSET_X=480-520*size;
   const ground=ZONE_STYLE['敵迷路基地'];
   ZONES=[{n:'敵迷路基地',y0:WH,y1:-400,g:'#202820',p:ground.p.slice(),pat:null,indoor:true}];
   roadBands=[];areaDebugLabels=[];covers=[];objects=[];bushes=[];mud=[];water=[];bridges=[];cars=[];
@@ -1057,7 +1064,7 @@ function setupInfiltrationWorld(){
   const sharedStair=sharedOptions[Math.floor(R()*sharedOptions.length)];
   if(!Number.isInteger(sharedStair))throw Error('共通階段の設置候補がありません');
   const rawFloors=[1,2].map((n,i)=>indoorGenerateFloor(n,indoorSeedRng(seeds[i]),sharedStair));
-  const groundFiles=R()<.5?1:2;
+  const fileDistribution=R(),groundFiles=beginner?1:fileDistribution<.5?1:2;
   const shuffled=[1,2];
   for(const n of shuffled){
     const raw=rawFloors[n-1],off=INDOOR_FLOOR_OFFSETS[n-1];
@@ -1163,7 +1170,7 @@ function setupInfiltrationWorld(){
         indoorCommander:false,frontCommander:false};
       humans.push(guard);guards.push(guard);postGuards.push(guard);
     }
-    // 合計3箇所を、1階1・2階2または1階2・2階1に分ける。
+    // 初級は各階1箇所、上級は従来の合計3箇所を配分する。
     const count=n===1?groundFiles:INDOOR_FILES_TOTAL-groundFiles;
     const intel=raw.intel.slice(0,count).map((q,i)=>({...to(q),id:q.id,name:'重要資料 '+n+'F-'+(i+1),roomId:q.roomId,fixtureArt:q.fixtureArt,done:false,floor:n,progress:0}));
     indoorWorld.intel.push(...intel);
@@ -1186,7 +1193,10 @@ function setupInfiltrationWorld(){
       guardPostId:raw.postRoomId,walls:wallRects,props,lightFixtures,navigation});
   }
   // Scale the former doubled roster without changing rooms, furniture or patrol routes.
-  for(const floor of indoorWorld.floors)indoorScaleGuardRoster(floor);
+  for(const floor of indoorWorld.floors){
+    indoorScaleGuardRoster(floor);
+    if(beginner)indoorReduceBeginnerGuards(floor);
+  }
   // Replace approximately one third of the existing building guards, including patrols.
   const commanderPool=indoorShuffle(humans.slice(),R);
   for(const h of commanderPool.slice(0,Math.round(commanderPool.length/3))){
@@ -1204,7 +1214,19 @@ function setupInfiltrationWorld(){
   covers.push(...indoorWorld.exterior);
   patrolRoutesVisible=false;
   rebuildSpatialGrid();
-  say('拠点潜入：廊下の物資に身を隠し、重要資料3箇所を回収せよ');
+  say('拠点潜入：廊下の物資に身を隠し、重要資料'+INDOOR_FILES_TOTAL+'箇所を回収せよ');
+}
+function indoorReduceBeginnerGuards(floor){
+ const originalCount=floor.guards.length,target=Math.max(1,Math.round(originalCount*.7));
+ // Keep front-door patrol coverage, then reduce both post and mobile guards together.
+ const entrance=floor.guards.filter(h=>h.indoorEntrancePatrol);
+ const pool=indoorShuffle(floor.guards.filter(h=>!h.indoorEntrancePatrol),R);
+ const keep=new Set([...entrance,...pool].slice(0,target));
+ const removed=new Set(floor.guards.filter(h=>!keep.has(h)));
+ floor.guards=floor.guards.filter(h=>keep.has(h));
+ floor.postGuards=floor.postGuards.filter(h=>keep.has(h));
+ humans=humans.filter(h=>!removed.has(h));
+ floor.fullGuardCount=originalCount;
 }
 function indoorScaleGuardRoster(floor){
  const originals=floor.guards.slice(),grid=floor.navigation.grid;
@@ -1265,7 +1287,7 @@ function indoorUpdateEntranceGuards(dt){
  const floor=indoorWorld.floors[0],alarm=indoorWorld.alarm;
  if(!floor?.openings?.length)return;
  if(!alarm.entranceGuards){
-  const total=Math.round((5+Math.floor(R()*2))*2*.6),pending=[];
+  const normalTotal=Math.round((5+Math.floor(R()*2))*2*.6),total=isInfiltrationBeginner()?Math.round(normalTotal*.7):normalTotal,pending=[];
   for(let i=0;i<total;i++)pending.push({gate:i%floor.openings.length,seat:Math.floor(i/floor.openings.length)});
   alarm.entranceGuards={pending,checkT:0};
  }
@@ -1296,6 +1318,10 @@ function indoorReinforcementPoint(floor){
  return null;
 }
 function indoorReinforcementRole(roll=R()){
+ if(isInfiltrationBeginner()){
+  const commander=roll<.5;
+  return{elite:false,indoorWhite:false,indoorCommander:commander,frontCommander:commander,indoorWhiteCommander:false};
+ }
  // Half blue commanders; one fifth of the remaining white pool are commanders.
  const blue=roll<.5,whiteCommander=roll>=.9;
  return{elite:!blue,indoorWhite:!blue,indoorCommander:blue,
@@ -1401,7 +1427,7 @@ function indoorPatrolAroundStairs(h,dt){
 function indoorMakeGuardGrid(raw,off){
  // Immutable room/wall/prop occupancy, built once per floor. Dynamic doors are open
  // to planning because a nearby guard opens them; collision still handles actual doors.
- const step=16,origin=indoorAt(70,80,off),cols=Math.ceil(900/step),rows=Math.ceil(1260*INDOOR_SCALE_Y/step);
+ const step=16,origin=indoorAt(70,80,off),cols=Math.ceil(900*INDOOR_SCALE_X/step),rows=Math.ceil(1260*INDOOR_SCALE_Y/step);
  const solid=new Uint8Array(cols*rows),rects=[...raw.walls,...raw.furniture,...raw.explosiveObjects]
    .map(o=>indoorRect(o,off));
  rects.push(indoorStairObstacleBounds(indoorAt(raw.stair.x,raw.stair.y,off),raw.number));
