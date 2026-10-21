@@ -1,5 +1,9 @@
 # Cyan inner-panel door variants
 
+## 2026-10-21 continuous stripe revision (supersedes reinforcing-bar interruptions below)
+
+Built-in imagegen precise-object-edit from both current cyan sprites: make each leaf's cyan stripe uninterrupted across internal reinforcing ribs, leaving the existing unpainted central opening unchanged. Vertical stripe keeps its height. Horizontal stripe extends upward and downward by 25% of the original 20-pixel band, making a 30-pixel band. Preserve outer frames, silhouette, hazards, central seam, front face and transparency. Only the generated stripe regions were composited into the original 512-pixel-wide sprites to retain surrounding artwork. Export dimensions remain 512x75 and 512x206; WebP quality 90. No runtime geometry or AI changes.
+
 Edited with built-in imagegen from automatic_door.webp (top-only vertical source) and automatic_door_horizontal_front10x.webp (horizontal source). Both receive worn light-cyan bands inside their upper recessed panels; frames, hazard markings and horizontal front face remain unpainted. Exported as transparent WebP: automatic_door_cyan.webp 512 × 75 and automatic_door_horizontal_cyan.webp 512 × 206. Runtime widens the vertical artwork and frame by 1.5 while retaining its collider, opening contact, length and center. Horizontal positioning and sizing stay unchanged. Existing source assets are retained.
 
 ## Vertical source prompt
