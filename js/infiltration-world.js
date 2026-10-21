@@ -1701,7 +1701,7 @@ function indoorRefreshAlarm(reason){
  if(indoorAlarmLevel(alarm)<3)return;
  alarm.active=true;alarm.elapsed=0;
  for(const floor of indoorWorld.floors)for(const other of floor.guards||[]){
-  if(other.st&&(other.target==='p'||(other.target==='decoy'&&other.indoorDecoy)))continue;
+  if(other.indoorAllyCombat||(other.st&&(other.target==='p'||(other.target==='decoy'&&other.indoorDecoy))))continue;
   indoorBeginAlarmSweep(other);
  }
 }
@@ -1710,10 +1710,15 @@ function indoorRecordGuardDiscovery(h){
  if(indoorWorld?.alarm?.active||(!lure&&indoorStairProtected()))return; // Completed warning sets stay bounded.
  if(!h?.indoorGuard||!h.alive||!h.st||(!lure&&h.target!=='p')||h.stun>0||h.stunRecover>0||h.houndPinned||h.blastAirT>0||!indoorWorld)return;
  if(lure?(lure.t<=0||lure.indoorFloor!==h.indoorFloor):h.indoorFloor!==indoorWorld.currentFloor+1)return;
+ indoorRecordWitness(h,lure?'偽装に敵兵が反応した':'敵兵に発見された');
+}
+// Player, decoy and friendly sightings share one warning per observing guard.
+function indoorRecordWitness(h,reason){
+ if(!indoorWorld||indoorWorld.alarm?.active)return;
  const alarm=indoorWorld.alarm||(indoorWorld.alarm={active:false,witnesses:new Set(),elapsed:0});
  const firstWitness=!alarm.witnesses.has(h);
  alarm.witnesses.add(h);
- indoorRefreshAlarm(firstWitness?(lure?'偽装に敵兵が反応した':'敵兵に発見された'):null);
+ indoorRefreshAlarm(firstWitness?reason:null);
 }
 // One warning per audible explosion, regardless of how many guards investigate it.
 // Only the current floor hears it; snapshots never reveal the hidden player.
@@ -2179,13 +2184,19 @@ function indoorObserveFoundGuard(h,dt){
  }
  return false;
 }
+function indoorAllyTargetKey(ally){
+ return typeof partner!=='undefined'&&ally===partner?'partner':'ally:'+ally.id;
+}
+function indoorAllyActive(ally){
+ return !!ally&&(indoorAllyTargetKey(ally)==='partner'?!ally.down:ally.alive&&!(ally.chute>0));
+}
 function indoorGuardSeesAlly(h,ally,tracking=false){
- if(!ally?.alive||ally.chute>0||h.indoorFloor!==indoorWorld?.currentFloor+1)return false;
+ if(!indoorAllyActive(ally)||h.indoorFloor!==indoorWorld?.currentFloor+1)return false;
  const nav=indoorWorld.floors[h.indoorFloor-1]?.navigation;
  if(!nav||indoorGuardCell(nav,ally)<0)return false;
  const angle=Math.abs(angD(Math.atan2(ally.y-h.y,ally.x-h.x),h.face)),d=D(h,ally);
  const light=indoorLightLevel(ally.x,ally.y),factor=tracking?Math.max(.78,.5+.5*light):(.36+.64*light);
- const range=detectRange('ally:'+ally.id)*1.2*factor*(h.indoorChatT>0?.5:1);
+ const range=detectRange(indoorAllyTargetKey(ally))*1.2*factor*(h.indoorChatT>0?.5:1);
  return ((angle<=DETECT_CENTER_HALF*1.2&&d<range)||
   (angle<=DETECT_OUTER_HALF*1.2&&d<range*DETECT_OUTER_SCALE))&&los(h,ally);
 }
@@ -2202,12 +2213,13 @@ function indoorUpdateAllyCombat(h,dt){
  // Keep a confirmed, currently visible player as the priority target.
  if(!h.indoorAllyCombat&&h.indoorAlert?.phase==='found'&&h.indoorAlert.visible)return false;
  let fight=h.indoorAllyCombat;
- if(fight&&!fight.ally.alive){indoorEndAllyCombat(h);return false;}
+ if(fight&&!indoorAllyActive(fight.ally)){indoorEndAllyCombat(h);return false;}
  h.indoorAllyCheckT=(h.indoorAllyCheckT||0)-dt;
  if(h.indoorAllyCheckT<=0){
   h.indoorAllyCheckT=.15;
   if(!fight){
    let nearest=null,best=Infinity;
+   if(typeof partner!=='undefined'&&partner&&indoorGuardSeesAlly(h,partner)){nearest=partner;best=D(h,partner);}
    for(const ally of typeof allies==='undefined'?[]:allies){
     const distance=D(h,ally);
     if(distance<best&&indoorGuardSeesAlly(h,ally)){nearest=ally;best=distance;}
@@ -2216,8 +2228,9 @@ function indoorUpdateAllyCombat(h,dt){
     fight=h.indoorAllyCombat={ally:nearest,previousSt:h.st||0,previousTarget:h.target||null,
      visible:true,lastSeen:{x:nearest.x,y:nearest.y},remaining:1.35,travelLeft:3,phase:'found'};
     if(h.indoorChatT>0)indoorCancelAlarmChat(h);
-    h.st=1;h.target='ally:'+nearest.id;h.sus=0;h.burstLeft=0;
+    h.st=1;h.target=indoorAllyTargetKey(nearest);h.sus=0;h.burstLeft=0;
     h.foundPause=Math.max(h.foundPause||0,.35);h.indoorRocketCharge=0;
+    indoorRecordWitness(h,h.target==='partner'?'相棒が敵兵に発見された':'増援の兵士が敵兵に発見された');
    }
   }else{
    fight.visible=indoorGuardSeesAlly(h,fight.ally,true);
@@ -2225,7 +2238,7 @@ function indoorUpdateAllyCombat(h,dt){
   }
  }
  if(!fight)return false;
- h.st=1;h.target='ally:'+fight.ally.id;h.sus=0;
+ h.st=1;h.target=indoorAllyTargetKey(fight.ally);h.sus=0;
  if(!fight.visible)fight.remaining=Math.max(0,fight.remaining-dt);
  if(!fight.visible&&fight.remaining<=0){
   fight.phase='lastSeen';fight.travelLeft-=dt;

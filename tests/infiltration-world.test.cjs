@@ -2021,7 +2021,7 @@ test('indoor guards recognize and shoot reinforcement allies while idle, sweepin
   s.api.update(h,.16);assert.equal(h.target,'ally:9',phase);assert.equal(h.st,1,phase);
   for(let i=0;i<5;i++)s.api.update(h,.1);
   assert.ok(s.sandbox.bullets.length>0,phase+' guard shoots at ally');
-  assert.equal(s.api.world.alarm.witnesses.size,0,'ally sighting is not a player discovery');
+  assert.equal(s.api.world.alarm.witnesses.size,1,'ally sighting adds one warning per observing guard');
   ally.alive=false;s.api.update(h,.1);assert.equal(h.indoorAllyCombat,null);
   if(previous)assert.equal(h.indoorAlert,previous,'existing search is resumed');
  }
@@ -2408,4 +2408,47 @@ test('decoy warning messages distinguish the lure and keep player/decoy per-guar
  assert.deepEqual(s.messages,['偽装に敵兵が反応した']);
  s.sight(h);assert.equal(s.messages.length,1,'the same guard adds no new eye on seeing the player');
  s.sight(guards[1]);assert.deepEqual(s.messages,['偽装に敵兵が反応した','敵兵に発見された']);
+});
+
+test('indoor guards see and attack the partner, report a red eye once and share witness identity with reinforcements',()=>{
+ const s=indoorAllyScenario();s.messages.length=0;
+ s.api.update(s.h,.16);
+ assert.equal(s.api.level(),1);assert.equal(s.messages.at(-1),'増援の兵士が敵兵に発見された');
+ s.ally.alive=false;s.api.update(s.h,.1);
+ const companion=s.sandbox.partner={x:s.h.x+50,y:s.h.y,down:false,stunT:0};
+ s.h.face=0;s.h.indoorAllyCheckT=0;
+ s.api.update(s.h,.16);
+ assert.equal(s.h.target,'partner');assert.equal(s.h.indoorAllyCombat.ally,companion);
+ assert.equal(s.api.level(),1);assert.equal(s.messages.length,1,'switching friendly actors cannot count the same observer twice');
+ const shots=s.sandbox.bullets.length;s.h.cd=0;
+ for(let i=0;i<8;i++)s.api.update(s.h,.1);
+ assert.ok(s.sandbox.bullets.length>shots,'partner is a real combat target');
+ s.sight(s.h);assert.equal(s.api.level(),1,'the same witness cannot count again for the player');
+});
+test('a partner sighting supplies the third warning and keeps active friendly combat when the alarm starts',()=>{
+ const s=indoorAllyScenario(),guards=s.floor.guards;
+ s.ally.alive=false;s.messages.length=0;
+ s.sandbox.partner={x:s.h.x+50,y:s.h.y,down:false,stunT:0};
+ s.sight(guards[1]);s.sight(guards[2]);
+ s.api.update(s.h,.16);
+ assert.equal(s.api.level(),3);assert.equal(s.api.world.alarm.active,true);
+ assert.equal(s.h.target,'partner');assert.equal(s.h.indoorAllyCombat.phase,'found');
+ assert.equal(s.messages.at(-1),'相棒が敵兵に発見された');
+ for(let i=0;i<8;i++)s.api.update(s.h,.1);
+ assert.equal(s.api.world.alarm.witnesses.size,3);assert.equal(s.messages.length,3);
+});
+test('partner discovery needs a conscious partner within the current floor sight cone and unobstructed range',()=>{
+ for(const reason of ['wall','behind','distance','floor','down','outside']){
+  const s=indoorAllyScenario();s.ally.alive=false;
+  const companion=s.sandbox.partner={x:s.h.x+50,y:s.h.y,down:false,stunT:0};
+  s.messages.length=0;
+  if(reason==='wall')s.sandbox.los=()=>false;
+  if(reason==='behind')s.h.face=Math.PI;
+  if(reason==='distance')companion.x+=1000;
+  if(reason==='floor')s.h.indoorFloor=2;
+  if(reason==='down')companion.down=true;
+  if(reason==='outside')companion.y=-99999;
+  s.api.update(s.h,.16);
+  assert.ok(!s.h.indoorAllyCombat,reason);assert.equal(s.api.level(),0,reason);assert.equal(s.messages.length,0,reason);
+ }
 });
