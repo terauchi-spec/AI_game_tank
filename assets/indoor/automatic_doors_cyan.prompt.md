@@ -1,5 +1,9 @@
 # Cyan inner-panel door variants
 
+## 2026-10-21 horizontal cyan brightness refinement
+
+Built-in imagegen precise-object-edit: slightly brighten only the two existing horizontal cyan stripes, retaining matte worn aqua paint without glow. The generated paint was blended into the exact existing painted rectangles to increase average luminance by approximately 10%. Preserve stripe boundaries, 36px height, storage-side extent, central unpainted span, front face, frame, hazard endcaps, alpha and 512x206 dimensions. Unpainted pixels remain unchanged before WebP encoding. Vertical artwork and runtime drawing stay unchanged. WebP quality 90.
+
 ## 2026-10-21 horizontal-only storage-side extension
 
 Built-in imagegen edit of the current horizontal cyan door: extend the existing 30px stripe upward and downward by 10% of its current height (3px each, 36px total). Extend the left stripe toward the left storage-side frame and the right stripe toward the right storage-side frame, up to the inner edges of the hazard endcaps. Preserve the exact central unpainted span, hazard patches, lower front face and silhouette. Only the generated cyan stripe regions were composited: x=29..236 and 275..482, y=17..52, on the unchanged 512x206 footprint. Vertical door unchanged. Transparent WebP, quality 90.
