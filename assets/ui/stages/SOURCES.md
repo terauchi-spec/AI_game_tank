@@ -14,3 +14,5 @@ Shared instructions: New opaque landscape 3:2 environment scene. Faithfully pres
 ## User-supplied infiltration scene
 
 - `infiltration_beginner.webp`: User attachment `697DDBB6-CBE6-4F3C-9077-9A4B50864E8B.jpeg`, the compact rectangular night facility. Direct image conversion with no AI regeneration or visual alterations, preserving the entire 3:2 composition. 432 × 288 WebP, quality 85, lazy-loaded only in the beginner infiltration stage card.
+
+- `infiltration_advanced.webp`: User attachment `5DB513BD-DDC8-462A-8A89-A3ABD87E203F(1).jpeg`, large arched-roof night facility. Direct image conversion with no AI regeneration or visual alterations, preserving the entire 3:2 composition. 432x288 WebP at quality 85, lazy loaded only on the advanced infiltration stage card.
