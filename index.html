@@ -758,10 +758,10 @@ body.stage-open #stageScreen{display:block}
 .stage-card strong{font-size:clamp(18px,3vw,23px);color:#ffdf9d;line-height:1.3}
 .stage-card span{display:block;font-size:13px;line-height:1.5;color:#e5e7d9}
 .stage-card small{display:block;font-size:11px;line-height:1.5;color:#c3d0bd}
-.stage-back{align-self:flex-start;min-height:38px;margin-top:12px;padding:8px 14px;
- background:rgba(9,19,15,.74);border:1px solid rgba(236,218,176,.6);border-radius:7px;
- color:#f4e8cd;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation}
-.stage-back:hover,.stage-back:focus-visible{background:#263e30;outline:2px solid #e6d2a2}
+.stage-header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.stage-header>div{min-width:0}
+#stageScreen #stageBack{flex:none;min-height:44px;font-size:var(--menu-button-font-size);line-height:1.3}
+#stageScreen #stageBack:focus-visible{outline:2px solid #e6d2a2;outline-offset:3px}
 @media(max-width:580px){
  #stageScreen{background-position:center center}
  .stage-shell{min-height:calc(100dvh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom))}
@@ -800,7 +800,6 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 .stage-card:active{transform:translateY(1px)}
 /* 最前線の初級・上級を対にして、2行目へ配置する。 */
 
-.stage-back{border-radius:3px;background:rgba(28,24,18,.84);border-color:#b59b6c}
 @media(max-width:580px){
  #stageScreen{background-position:center 40%;padding: max(14px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
  #stageScreen:before{background:linear-gradient(180deg,rgba(9,9,7,.82) 0%,rgba(9,9,7,.10) 22%,rgba(9,9,7,.02) 45%,rgba(9,9,7,.67) 66%,rgba(9,9,7,.94) 100%)}
@@ -809,7 +808,6 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
  .stage-card{min-height:90px;padding:10px 14px 10px 17px;border-left-width:5px}
  .stage-card strong,.stage-card>span{font-size:22px}
  .stage-shell h1{font-size:29px}
- .stage-back{margin-top:10px}
 }
 @media(max-height:620px) and (min-width:581px){.stage-options{padding-top:18px}.stage-card{min-height:95px;padding-top:10px;padding-bottom:10px}}
 /* Compact operation cards leave the war-room background visible. */
@@ -824,7 +822,6 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 #stageScreen .stage-copy strong,#stageScreen .stage-target{display:block;font-size:20px;font-weight:800;line-height:1.35;letter-spacing:.02em;overflow-wrap:anywhere}
 #stageScreen .stage-art{display:flex;align-items:center;justify-content:center;min-width:0;overflow:hidden;border:1px solid #ac936460;border-radius:3px;background:#242c1d}
 #stageScreen .stage-art img{display:block;width:100%;height:72px;object-fit:contain;image-rendering:auto}
-#stageScreen .stage-back{margin-top:10px}
 @media(max-width:580px){
  #stageScreen .stage-options{gap:7px;padding-top:18px}
  #stageScreen .stage-card{grid-template-columns:32px minmax(0,1fr) 90px;gap:10px;padding:5px 7px 5px 9px;min-height:76px}
@@ -845,7 +842,7 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 <div id="missionBriefing" role="dialog" aria-modal="true" aria-labelledby="missionBriefingTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_hero.webp?v=2026.10.14.1653" alt="円形爆弾を抱えて走る主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionBriefingTitle">ミッション</h1><p id="missionBriefingGoal">敵の拠点にたどりつき、破壊せよ</p><ul class="mission-hud-guide" aria-label="ゲーム画面のアイコン説明"><li><img src="assets/ui/ui_heart_full.png" alt="ハート" decoding="async"><span>残りライフ</span></li><li><img src="assets/ui/ui_bomb_normal.png" alt="爆弾" decoding="async"><span>爆弾の設置状態</span></li><li><svg viewBox="-18 -18 36 36" role="img" aria-label="目に斜線"><path d="M-14 0 C-7-11 7-11 14 0 C7 11-7 11-14 0Z" fill="white" stroke="black" stroke-width="3"/><circle r="5" fill="black"/><path d="M-12 11 12-11" stroke="black" stroke-width="3.5"/><path d="M-12 11 12-11" stroke="#ef3434" stroke-width="2"/></svg><span>敵から隠れている状態</span></li></ul><div id="missionFrontlineRules" hidden><ul class="mission-front-rules" aria-label="最前線の制圧ルール"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V3m0 1c5-4 8 4 14 0v10c-6 4-9-4-14 0"/></svg><span id="missionFrontlineOrder">3拠点を順番に制圧</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 1v4m0 14v4M1 12h4m14 0h4"/></svg><span>円に入り、敵を排除</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><circle cx="4" cy="10" r="2"/><circle cx="20" cy="10" r="2"/><path d="M6 22v-4a6 6 0 0 1 12 0v4M1 21v-5a3 3 0 0 1 4-3m18 8v-5a3 3 0 0 0-4-3"/></svg><span>味方兵と制圧！人数で加速</span></li></ul></div><div id="missionIndoorRules" hidden><ul class="mission-front-rules" aria-label="潜入の作戦ポイント"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2h9l5 5v15H5ZM14 2v6h5M8 12h8M8 16h8"/></svg><span id="missionIndoorDocuments">円に入り、重要資料3か所を回収</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12C7 4 17 4 22 12C17 20 7 20 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><span>赤い目3つで館内アラート発令</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3H3v18h7M7 12h15m-5-5 5 5-5 5"/></svg><span>回収後は施設外のEXITから脱出</span></li></ul></div><button type="button" id="missionBegin">作戦開始</button></div></div></div>
 <div id="stageLoadingScreen" role="status" aria-live="polite" aria-label="ステージを準備中"><div class="stage-loading-content"><div class="stage-loading-kicker">MISSION BRIEFING</div><div class="stage-loading-title">作戦準備中…</div><div class="stage-loading-sub">戦場を生成しています</div><div class="stage-loading-track"><span></span></div></div></div>
 <div id="stageScreen" role="region" aria-label="ステージ選択"><div class="stage-shell">
-<div class="stage-kicker">CHOOSE YOUR MISSION</div><h1>ステージ選択</h1><p id="stageSkill"></p>
+<header class="stage-header"><div><div class="stage-kicker">CHOOSE YOUR MISSION</div><h1>ステージ選択</h1></div><button type="button" class="sk-home" id="stageBack">スキル選択</button></header><p id="stageSkill"></p>
 <div class="stage-options">
 <button type="button" class="stage-card" data-stage="beginner"><span class="stage-number" aria-hidden="true">01</span><span class="stage-copy"><strong>破壊（初級）</strong><span class="stage-target">軍事衛星施設</span></span><span class="stage-art"><img src="assets/ui/stages/satellite.webp" alt="" width="144" height="96" loading="lazy" decoding="async"></span></button>
 <button type="button" class="stage-card" data-stage="indoorBeginner" id="stageInfiltrationBeginner" aria-label="02 潜入（初級）"><span class="stage-number" aria-hidden="true">02</span><span class="stage-copy"><strong>潜入（初級）</strong><span class="stage-target">小型施設・重要資料2箇所を回収</span></span><span class="stage-art"><svg width="144" height="84" viewBox="0 0 144 84" role="img" aria-label="部屋と廊下の見取り図"><rect width="144" height="84" fill="#24382f"/><path d="M18 9h45v23H18zM81 9h45v23H81zM18 43h45v32H18zM81 43h45v32H81z" fill="#526b56" stroke="#b6bea6" stroke-width="2"/><path d="M64 4h16v76H64z" fill="#aaa987"/><path d="M60 21h25M60 58h25" stroke="#f4d17d" stroke-width="5"/><circle cx="71" cy="63" r="5" fill="#e8b65a"/><circle cx="30" cy="19" r="4" fill="#c3503a"/></svg></span></button>
@@ -853,7 +850,7 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 <button type="button" class="stage-card" data-stage="base"><span class="stage-number" aria-hidden="true">04</span><span class="stage-copy"><strong>破壊（上級）</strong><span class="stage-target">軍司令施設</span></span><span class="stage-art"><img src="assets/ui/stages/headquarters.webp" alt="" width="144" height="96" loading="lazy" decoding="async"></span></button>
 <button type="button" class="stage-card" data-stage="indoor" id="stageInfiltrationAdvanced"><span class="stage-number" aria-hidden="true">05</span><span class="stage-copy"><strong>潜入（上級）</strong><span class="stage-target">2階建て施設・重要資料3箇所を回収</span></span><span class="stage-art"><svg width="144" height="84" viewBox="0 0 144 84" role="img" aria-label="部屋と廊下の見取り図"><rect width="144" height="84" fill="#24382f"/><path d="M18 9h45v23H18zM81 9h45v23H81zM18 43h45v32H18zM81 43h45v32H81z" fill="#526b56" stroke="#b6bea6" stroke-width="2"/><path d="M64 4h16v76H64z" fill="#aaa987"/><path d="M60 21h25M60 58h25" stroke="#f4d17d" stroke-width="5"/><circle cx="71" cy="63" r="5" fill="#e8b65a"/><circle cx="30" cy="19" r="4" fill="#c3503a"/></svg></span></button>
 <button type="button" class="stage-card" data-stage="front"><span class="stage-number" aria-hidden="true">06</span><span class="stage-copy"><strong>制圧（上級）</strong><span class="stage-target">戦術アンテナ</span></span><span class="stage-art"><img src="assets/ui/stages/antenna.webp" alt="" width="144" height="96" loading="lazy" decoding="async"></span></button>
-</div><button type="button" class="stage-back" id="stageBack">← スキル選択へ戻る</button></div></div>
+</div></div></div>
 <div id="missionHud" role="status"></div>
 
 <script>
@@ -866,7 +863,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.21.2107',FILE_CREATED_AT='2026/10/21 21:07',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.21.2123',FILE_CREATED_AT='2026/10/21 21:23',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
