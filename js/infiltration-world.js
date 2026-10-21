@@ -2961,7 +2961,7 @@ function drawInfiltrationMission(){
     const distance=D(q,p);
     if(distance<nearest){nearest=distance;target=q;}
   }
-  gm.textAlign='right';gm.font='bold 28px system-ui';gm.fillStyle='#e6e9d8';
+  gm.textAlign='right';gm.font='bold 14px system-ui';gm.fillStyle='#e6e9d8';
   gm.fillText('エリア:'+(indoorWorld.currentFloor+1)+'F',W-12,34);
   if(target){
     const angle=Math.atan2(target.y-p.y,target.x-p.x);
@@ -2972,6 +2972,7 @@ function drawInfiltrationMission(){
     gm.fill();gm.stroke();gm.restore();
   }else{
     const guideFloor=remainingFloors.values().next().value;
+    gm.font='bold 28px system-ui';
     gm.fillStyle=guideFloor?'#ffe1a0':'#a9f3c0';
     gm.fillText(guideFloor?'→'+guideFloor+'F':'→EXIT',W-12,95);
   }
