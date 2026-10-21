@@ -1694,9 +1694,11 @@ function indoorBeginAlarmSweep(h){
 function indoorAlarmLevel(alarm=indoorWorld?.alarm){
  return Math.min(3,(alarm?.witnesses?.size||0)+(alarm?.bodyCount||0)+(alarm?.noiseCount||0));
 }
-function indoorRefreshAlarm(){
+function indoorRefreshAlarm(reason){
  const alarm=indoorWorld?.alarm;
- if(!alarm||alarm.active||indoorAlarmLevel(alarm)<3)return;
+ if(!alarm||alarm.active)return;
+ if(reason)say(reason);
+ if(indoorAlarmLevel(alarm)<3)return;
  alarm.active=true;alarm.elapsed=0;
  for(const floor of indoorWorld.floors)for(const other of floor.guards||[]){
   if(other.st&&(other.target==='p'||(other.target==='decoy'&&other.indoorDecoy)))continue;
@@ -1709,7 +1711,9 @@ function indoorRecordGuardDiscovery(h){
  if(!h?.indoorGuard||!h.alive||!h.st||(!lure&&h.target!=='p')||h.stun>0||h.stunRecover>0||h.houndPinned||h.blastAirT>0||!indoorWorld)return;
  if(lure?(lure.t<=0||lure.indoorFloor!==h.indoorFloor):h.indoorFloor!==indoorWorld.currentFloor+1)return;
  const alarm=indoorWorld.alarm||(indoorWorld.alarm={active:false,witnesses:new Set(),elapsed:0});
- alarm.witnesses.add(h);indoorRefreshAlarm();
+ const firstWitness=!alarm.witnesses.has(h);
+ alarm.witnesses.add(h);
+ indoorRefreshAlarm(firstWitness?(lure?'偽装に敵兵が反応した':'敵兵に発見された'):null);
 }
 // One warning per audible explosion, regardless of how many guards investigate it.
 // Only the current floor hears it; snapshots never reveal the hidden player.
@@ -1727,7 +1731,7 @@ function indoorHearExplosion(x,y,r){
  }
  const alarm=indoorWorld.alarm;
  if(heard&&alarm&&!alarm.active){
-  alarm.noiseCount=Math.min(3,(alarm.noiseCount||0)+1);indoorRefreshAlarm();
+  alarm.noiseCount=Math.min(3,(alarm.noiseCount||0)+1);indoorRefreshAlarm('敵兵が爆発音を聞いた');
  }
 }
 function indoorScanStunnedGuards(dt){
@@ -1750,7 +1754,7 @@ function indoorScanStunnedGuards(dt){
      observer.indoorAlert.travelLeft=4;observer.indoorAlert.remaining=0;
      observer.st=0;observer.target=null;observer.sus=4;observer.susMax=4;
     }
-    indoorRefreshAlarm();break;
+    indoorRefreshAlarm('気絶した兵士が発見された');break;
    }
    if(alarm.active)return;
   }
@@ -2878,14 +2882,14 @@ function drawInfiltrationOpenings(cx,cy){
 }
 
 function drawInfiltrationAlarmEyes(){
- const count=indoorAlarmLevel(),y=48;
- gm.save();gm.lineWidth=2;
+ const count=indoorAlarmLevel(),y=56;
+ gm.save();gm.lineWidth=2.4;
  for(let i=0;i<3;i++){
-  const x=W-82+i*28,color=i<count?'#ff4b45':'rgba(255,100,90,.23)';
-  gm.beginPath();gm.moveTo(x-10,y);gm.quadraticCurveTo(x,y-10,x+10,y);
-  gm.quadraticCurveTo(x,y+10,x-10,y);gm.closePath();
+  const x=W-94+i*32,color=i<count?'#ff4b45':'rgba(255,100,90,.23)';
+  gm.beginPath();gm.moveTo(x-12,y);gm.quadraticCurveTo(x,y-12,x+12,y);
+  gm.quadraticCurveTo(x,y+12,x-12,y);gm.closePath();
   gm.fillStyle='rgba(26,8,8,.65)';gm.fill();gm.strokeStyle=color;gm.stroke();
-  gm.beginPath();gm.arc(x,y,3,0,Math.PI*2);gm.fillStyle=color;gm.fill();
+  gm.beginPath();gm.arc(x,y,3.6,0,Math.PI*2);gm.fillStyle=color;gm.fill();
  }
  gm.restore();
 }

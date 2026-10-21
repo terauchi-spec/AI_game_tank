@@ -615,7 +615,7 @@ function guardScenario(){
  const api=new Function('p','R','D','angD','pauseAfterEnemyDetection','fire','los','cachedLos',
  'debugMode','weather','inTumbleweed','inBush','inWaterAt','detectRange','DETECT_CENTER_HALF','DETECT_OUTER_HALF','DETECT_OUTER_SCALE',
  'patrol','findDetectedTarget','enterHumanFound','mv',
- 'const module={exports:{}};'+src+`
+ 'const module={exports:{}};function say(){}'+src+`
  indoorMoveGuardTo=(h,q,dt,sp)=>{if(movementBlocked())return false;const d=D(h,q),k=Math.min(1,sp*dt/Math.max(.001,d));h.x+=(q.x-h.x)*k;h.y+=(q.y-h.y)*k;return true;};
  indoorGuardSeesPlayer=()=>visibleNow();
  indoorLightLevel=()=>lightNow();
@@ -1334,15 +1334,15 @@ test('a completed mission cannot escape from the upper floor through an emergenc
 function alarmWorld(seed=1771){
  const vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
  const source=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
- const labels=[],rectangles=[],gradients=[],bubbles=[],eyePupils=[],rotations=[],strokes=[];let currentArc=null;
+ const labels=[],rectangles=[],gradients=[],bubbles=[],eyePupils=[],rotations=[],strokes=[],messages=[];let currentArc=null;
  const gm=new Proxy({stroke(){strokes.push(this.strokeStyle);},rotate:angle=>rotations.push(angle),beginPath(){currentArc=null;},arc(...args){currentArc=args;},
-  fill(){if(currentArc&&currentArc[1]===48&&currentArc[2]===3)eyePupils.push({x:currentArc[0],color:this.fillStyle});},
+  fill(){if(currentArc&&currentArc[1]===56&&currentArc[2]===3.6)eyePupils.push({x:currentArc[0],color:this.fillStyle});},
   fillText:t=>labels.push(t),fillRect(...r){rectangles.push({r,style:this.fillStyle});},
   createLinearGradient(...args){const stops=[];const gradient={args,stops,addColorStop:(...s)=>stops.push(s)};gradients.push(gradient);return gradient;}},
   {get:(o,k)=>k in o?o[k]:()=>{}});
  const sandbox={ZONE_STYLE:{'敵迷路基地':{p:[]}},WH:14000,WW:960,W:840,H:720,p:{},scoreStats:{},R:random(seed),
   document:{body:{classList:{remove(){}}},getElementById:()=>({style:{},innerHTML:''})},
-  rebuildSpatialGrid(){},say(){},sfx(){},module:{exports:{}},partner:null,hound:null,
+  rebuildSpatialGrid(){},say:t=>messages.push(t),sfx(){},module:{exports:{}},partner:null,hound:null,
   stageMode:'indoor',state:'play',skill:'partner',patrol:h=>h.face,findDetectedTarget:()=>null,hitsM:()=>false,debugMode:0,detectRange:()=>250,playerDetectedNow:()=>false,performance:{now:()=>1000},
   los:()=>true,drawPatrolChatBubbleAt:(...args)=>bubbles.push(args),
   DETECT_CENTER_HALF:7.5*Math.PI/180,DETECT_OUTER_HALF:52.5*Math.PI/180,DETECT_OUTER_SCALE:.7,
@@ -1358,7 +1358,7 @@ function alarmWorld(seed=1771){
    cancelChat:indoorCancelAlarmChat,scanBodies:indoorScanStunnedGuards,level:indoorAlarmLevel,weapon:indoorUpdateCommanderWeapon,setVisible:h=>{indoorGuardSeesPlayer=q=>q===h;}};`,sandbox);
  sandbox.enterHumanFound=(h,key='p')=>{h.st=1;h.target=key;if(key==='p')sandbox.api.begin(h);};
  const sight=h=>{sandbox.api.world.currentFloor=h.indoorFloor-1;h.st=1;h.target='p';sandbox.api.begin(h);sandbox.api.record(h);};
- return {api:sandbox.api,sandbox,sight,labels,rectangles,gradients,bubbles,eyePupils,rotations,strokes};
+ return {api:sandbox.api,sandbox,sight,labels,rectangles,gradients,bubbles,eyePupils,rotations,strokes,messages};
 }
 test('indoor decoys distract every guard mode and add a unique red eye without player coordinates',()=>{
  for(const phase of ['patrol','suspicion','found','lastSeen','search','sweep']){
@@ -1651,7 +1651,7 @@ test('the upper-right eye slots fill red from zero through three warnings',()=>{
   s.eyePupils.length=0;s.api.draw();
   assert.equal(s.eyePupils.length,3);
   assert.equal(s.eyePupils.filter(q=>q.color==='#ff4b45').length,level);
-  assert.deepEqual(s.eyePupils.map(q=>q.x),[758,786,814]);
+  assert.deepEqual(s.eyePupils.map(q=>q.x),[746,778,810]);
  }
 });
 test('indoor commanders charge and fire bazooka rockets with no outdoor commander state',()=>{
@@ -2383,4 +2383,29 @@ test('lobby lighting crosses a wall-free boundary while remaining excluded from 
  f.lightFixtures=[{x,y,rx:185,ry:185,clipTiles:tiles}];
  const a=s.api.lightLevel(x-1,y),b=s.api.lightLevel(x+1,y);
  assert.ok(a>.9&&b>.9);assert.ok(Math.abs(a-b)<.001,'no vertical lighting cutoff through an open floor');
+});
+
+test('each new indoor red eye reports its cause, including the third warning, without duplicate messages',()=>{
+ const s=bodyDiscoveryPair(),guards=s.api.world.floors[0].guards;
+ s.messages.length=0;
+ guards[3].stunRecover=0;s.sight(guards[3]);
+ s.api.record(guards[3]);
+ assert.deepEqual(s.messages,['敵兵に発見された']);
+ s.api.hearExplosion(s.observer.x,s.observer.y,100);
+ assert.deepEqual(s.messages,['敵兵に発見された','敵兵が爆発音を聞いた']);
+ s.api.scanBodies(.21);
+ assert.equal(s.api.level(),3);assert.equal(s.api.world.alarm.active,true);
+ assert.deepEqual(s.messages,['敵兵に発見された','敵兵が爆発音を聞いた','気絶した兵士が発見された']);
+ s.api.scanBodies(.21);s.api.record(guards[3]);s.api.hearExplosion(s.observer.x,s.observer.y,100);
+ assert.equal(s.messages.length,3,'a completed alarm or repeated observer does not notify again');
+});
+test('decoy warning messages distinguish the lure and keep player/decoy per-guard deduplication',()=>{
+ const s=alarmWorld(),guards=s.api.world.floors[0].guards;
+ s.messages.length=0;
+ const h=guards[0],source={x:h.x,y:h.y,t:5,indoorFloor:1};
+ Object.assign(h,{st:1,target:'decoy',indoorDecoy:{source}});
+ s.api.record(h);s.api.record(h);
+ assert.deepEqual(s.messages,['偽装に敵兵が反応した']);
+ s.sight(h);assert.equal(s.messages.length,1,'the same guard adds no new eye on seeing the player');
+ s.sight(guards[1]);assert.deepEqual(s.messages,['偽装に敵兵が反応した','敵兵に発見された']);
 });
