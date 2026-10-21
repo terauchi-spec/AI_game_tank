@@ -2736,6 +2736,11 @@ function drawInfiltrationFloors(cx,cy){
       g.restore();
       }
     }
+    if(arguments[2]!==false)drawInfiltrationExitsForFloor(f,cx,cy);
+  }
+}
+
+function drawInfiltrationExitsForFloor(f,cx,cy){
     // 前線制圧のような円形の脱出範囲。描画と待機判定は同じ半径を使う。
     for(const q of [f.entrance||f.entrances?.[0],f.emergency].filter(Boolean)){
       const radius=INDOOR_EXIT_RADIUS;
@@ -2752,7 +2757,6 @@ function drawInfiltrationFloors(cx,cy){
       if(active){g.font='bold 15px system-ui';g.fillText(Math.max(0,INDOOR_EXIT_SECONDS-(mission.escapeProgress||0)).toFixed(1)+'s',q.x,q.y+32);}
       g.restore();
     }
-  }
 }
 
 const indoorPropImages=Object.create(null);
