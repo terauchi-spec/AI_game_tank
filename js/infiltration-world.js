@@ -2961,9 +2961,8 @@ function drawInfiltrationMission(){
     const distance=D(q,p);
     if(distance<nearest){nearest=distance;target=q;}
   }
-  const guideFloor=target?indoorWorld.currentFloor+1:[...remainingFloors][0];
-  gm.textAlign='right';gm.font='bold 14px system-ui';gm.fillStyle=guideFloor?'#ffe1a0':'#a9f3c0';
-  gm.fillText(guideFloor?'→'+guideFloor+'F':'→EXIT',W-12,22);
+  gm.textAlign='right';gm.font='bold 28px system-ui';gm.fillStyle='#e6e9d8';
+  gm.fillText('エリア:'+(indoorWorld.currentFloor+1)+'F',W-12,34);
   if(target){
     const angle=Math.atan2(target.y-p.y,target.x-p.x);
     // 黒背景・ラベルを使わない、右上のシンプルな方向矢印のみ。
@@ -2971,6 +2970,10 @@ function drawInfiltrationMission(){
     gm.fillStyle='#ffe1a0';gm.strokeStyle='rgba(51,45,26,.65)';gm.lineWidth=2;
     gm.beginPath();gm.moveTo(20,0);gm.lineTo(-12,-11);gm.lineTo(-5,0);gm.lineTo(-12,11);gm.closePath();
     gm.fill();gm.stroke();gm.restore();
+  }else{
+    const guideFloor=remainingFloors.values().next().value;
+    gm.fillStyle=guideFloor?'#ffe1a0':'#a9f3c0';
+    gm.fillText(guideFloor?'→'+guideFloor+'F':'→EXIT',W-12,95);
   }
   gm.restore();
 }

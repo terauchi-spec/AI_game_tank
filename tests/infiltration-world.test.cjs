@@ -1697,6 +1697,7 @@ test('document guide points to nearest uncollected document on the current floor
   {x:150,y:100,floor:1,done:false},{x:101,y:100,floor:1,done:true},
   {x:100,y:101,floor:2,done:false}];
  s.api.draw();assert.deepEqual(s.rotations,[0],'nearest same-floor target determines direction');
+ assert.ok(s.labels.includes('エリア:1F'));assert.ok(!s.labels.includes('→1F'),'current floor uses the direction arrow only');
  s.sandbox.mission.points[1].done=true;s.rotations.length=0;
  s.api.draw();assert.deepEqual(s.rotations,[Math.PI/2],'guide switches to next remaining document');
 });
@@ -1706,6 +1707,7 @@ test('document guide shows the remaining floor without an arrow and EXIT after c
   s.sandbox.mission.points=[{x:100,y:100,floor,done:true},
    {x:150,y:150,floor:3-floor,done:false}];
   s.api.draw();assert.equal(s.rotations.length,0,'no stair arrow on an empty floor');
+  assert.ok(s.labels.includes('エリア:'+floor+'F'),'current floor stays visible independently of the destination');
   assert.ok(s.labels.includes('→'+(3-floor)+'F'));assert.ok(!s.labels.includes('重要書類'));
   assert.ok(!s.labels.includes('→EXIT'));
   s.sandbox.mission.points[1].done=true;s.labels.length=0;
