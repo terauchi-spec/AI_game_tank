@@ -1,0 +1,3 @@
+# Low military storage chest replacement — 2026-10-21
+
+Generated with built-in imagegen using the main-branch personal_lockers.webp as a material and palette reference. Replaces the front-facing locker bank with two low military equipment storage chests seen directly from above. Broad solid top lids, raised perimeter rims, sparse ribs, recessed carrying handles, subtle edge hinges and latches; weathered olive steel with restrained rust. No grid of upright doors, front-facing vents, tall facade, text, ground or broad shadow. Transparent background; long narrow 194:384 footprint. Export as 194x384 transparent WebP, retaining the existing placement, orientation, size and collision behavior. Original artwork remains in Git history and the existing legacy directory.

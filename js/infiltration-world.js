@@ -2760,7 +2760,7 @@ function indoorPropImage(kind){
   if(!kind)return null;
   if(!Object.prototype.hasOwnProperty.call(indoorPropImages,kind)){
     const image=new Image();image.decoding='async';
-    image.src='assets/indoor/'+kind+'.webp'+(kind==='automatic_door_cyan'||kind==='automatic_door_horizontal_cyan'?'?v=20261021-continuous':INDOOR_PROP_ASPECT[kind]?'?v=20261020-r2':'');indoorPropImages[kind]=image;
+    image.src='assets/indoor/'+kind+'.webp'+(kind==='personal_lockers'?'?v=20261021-storage':kind==='automatic_door_cyan'||kind==='automatic_door_horizontal_cyan'?'?v=20261021-continuous':INDOOR_PROP_ASPECT[kind]?'?v=20261020-r2':'');indoorPropImages[kind]=image;
   }
   const image=indoorPropImages[kind];return assetOK(image)?image:null;
 }
