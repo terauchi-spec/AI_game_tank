@@ -10,3 +10,7 @@ Shared instructions: New opaque landscape 3:2 environment scene. Faithfully pres
 - `headquarters.webp`: Reference `拠点破壊_開いた車庫の工業倉庫アセット.png`. Low rectangular concrete industrial warehouse with green roof, two skylights, fans, pipes and open garage, with rural grass and scattered trees.
 - `supplies.webp`: Reference `最前線_コンテナ大(1).png`. Pair of low heavy olive armored cargo containers with straps, reinforced corners, caution stripes and connecting cables in a grassy forest clearing.
 - `antenna.webp`: Reference `最前線_大きなアンテナ sprite(1).png`. Slender white and red tactical antenna with cross arms, rectangular panels, lattice lower section and industrial base on a green hill.
+
+## User-supplied infiltration scene
+
+- `infiltration_beginner.webp`: User attachment `697DDBB6-CBE6-4F3C-9077-9A4B50864E8B.jpeg`, the compact rectangular night facility. Direct image conversion with no AI regeneration or visual alterations, preserving the entire 3:2 composition. 432 × 288 WebP, quality 85, lazy-loaded only in the beginner infiltration stage card.
