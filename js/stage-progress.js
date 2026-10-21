@@ -6,6 +6,10 @@ const STAGE_ORDER=[
  {id:'base',name:'拠点破壊（上級）',image:'headquarters'},
  {id:'front',name:'前線制圧（上級）',image:'antenna'}
 ];
+// Selection numbering is independent of the existing saved unlock sequence.
+const STAGE_DISPLAY_ORDER=['beginner','indoorBeginner','frontBeginner','base','indoor','front'];
+function stageDisplayNumber(id){return String(STAGE_DISPLAY_ORDER.indexOf(id)+1).padStart(2,'0');}
+function stageSelectionName(name){return name.replace('拠点破壊','破壊').replace('前線制圧','制圧');}
 function currentStageId(){return stageMode==='front'&&frontlineBeginner?'frontBeginner':stageMode==='indoor'&&typeof indoorBeginner!=='undefined'&&indoorBeginner?'indoorBeginner':stageMode;}
 function readStageProgress(){
  let saved;try{saved=JSON.parse(localStorage.getItem(STAGE_PROGRESS_KEY)||'null');}catch(_){}
@@ -30,7 +34,7 @@ function renderStageLocks(){
  const progress=readStageProgress();
  document.querySelectorAll('[data-stage]').forEach(button=>{
   if(button.dataset.stage==='indoor'||button.dataset.stage==='indoorBeginner'){
-   const advanced=button.dataset.stage==='indoor',number=advanced?'06':'05',name=advanced?'潜入（上級）':'潜入（初級）';
+   const advanced=button.dataset.stage==='indoor',number=stageDisplayNumber(button.dataset.stage),name=advanced?'潜入（上級）':'潜入（初級）';
    button.disabled=false;button.classList.toggle('locked',false);
    button.querySelector('.stage-number').textContent=number;
    button.setAttribute('aria-label',number+' '+name);
@@ -38,14 +42,15 @@ function renderStageLocks(){
   }
   const index=STAGE_ORDER.findIndex(s=>s.id===button.dataset.stage),stage=STAGE_ORDER[index],locked=!stageSelectable(stage.id,progress);
   button.disabled=locked;button.classList.toggle('locked',locked);
-  button.querySelector('.stage-number').textContent=String(index+1).padStart(2,'0');
-  button.setAttribute('aria-label',String(index+1).padStart(2,'0')+' '+stage.name+(locked?'・前のステージをクリアすると解放':progress.cleared.includes(stage.id)?'・クリア済み':''));
-  button.title=locked?'前のステージをクリアすると解放':'';
+  const number=stageDisplayNumber(stage.id),name=stageSelectionName(stage.name),requirement=index>0?stageSelectionName(STAGE_ORDER[index-1].name)+'をクリアすると解放':'';
+  button.querySelector('.stage-number').textContent=number;
+  button.setAttribute('aria-label',number+' '+name+(locked?'・'+requirement:progress.cleared.includes(stage.id)?'・クリア済み':''));
+  button.title=locked?requirement:'';
  });
 }
 function renderStageUnlock(s){
  const stage=STAGE_ORDER.find(stage=>stage.id===s.unlockedStage),notice=document.getElementById('resStageUnlock'),image=document.getElementById('resStageUnlockImage');
  notice.hidden=!stage;
- document.getElementById('resStageUnlockName').textContent=stage?String(STAGE_ORDER.indexOf(stage)+1).padStart(2,'0')+' '+stage.name:'';
+ document.getElementById('resStageUnlockName').textContent=stage?stageDisplayNumber(stage.id)+' '+stageSelectionName(stage.name):'';
  if(stage)image.src='assets/ui/stages/'+stage.image+'.webp';else image.removeAttribute('src');
 }

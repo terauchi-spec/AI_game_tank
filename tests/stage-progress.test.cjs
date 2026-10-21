@@ -20,8 +20,8 @@ test('six selection cards render with distinct playable indoor difficulties',()=
  const buttons=['beginner','frontBeginner','base','front','indoorBeginner','indoor'].map(id=>({dataset:{stage:id},classList:{toggle(k,v){this[k]=v;}},number:{textContent:''},querySelector(){return this.number;},setAttribute(k,v){this[k]=v;}}));
  c.document={querySelectorAll:()=>buttons};c.renderStageLocks();
  const beginner=buttons[4],advanced=buttons[5];
- assert.equal(beginner.disabled,false);assert.equal(beginner.title,'小型施設・重要資料2箇所を回収');assert.equal(beginner.number.textContent,'05');assert.equal(beginner['aria-label'],'05 潜入（初級）');
- assert.equal(advanced.disabled,false);assert.equal(advanced.number.textContent,'06');assert.equal(advanced['aria-label'],'06 潜入（上級）');
+ assert.equal(beginner.disabled,false);assert.equal(beginner.title,'小型施設・重要資料2箇所を回収');assert.equal(beginner.number.textContent,'02');assert.equal(beginner['aria-label'],'02 潜入（初級）');
+ assert.equal(advanced.disabled,false);assert.equal(advanced.number.textContent,'05');assert.equal(advanced['aria-label'],'05 潜入（上級）');
  assert.deepEqual(buttons.slice(0,4).map(b=>b.disabled),[false,true,true,true]);
  const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
  assert.doesNotMatch(html,/<button[^>]*data-stage="indoorBeginner"[^>]*disabled[^>]*>/);
@@ -30,3 +30,17 @@ test('six selection cards render with distinct playable indoor difficulties',()=
 });
 
 test('current indoor stage identity separates beginner from advanced',()=>{const c=harness();c.stageMode='indoor';c.indoorBeginner=true;assert.equal(c.currentStageId(),'indoorBeginner');c.indoorBeginner=false;assert.equal(c.currentStageId(),'indoor');});
+
+test('selection order, short labels and unlock notices use the new display numbers without changing saved progress',()=>{
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),cards=[...html.matchAll(/<button[^>]*class="stage-card"[^>]*data-stage="([^"]+)"[^>]*>(.*?)<\/button>/g)];
+ assert.deepEqual(cards.map(m=>[m[1],m[2].match(/class="stage-number"[^>]*>(\d+)/)[1],m[2].match(/<strong>(.*?)<\/strong>/)[1]]),[
+  ['beginner','01','破壊（初級）'],['indoorBeginner','02','潜入（初級）'],['frontBeginner','03','制圧（初級）'],['base','04','破壊（上級）'],['indoor','05','潜入（上級）'],['front','06','制圧（上級）']]);
+ const c=harness(),buttons=cards.map(m=>({dataset:{stage:m[1]},classList:{toggle(){}},number:{},querySelector(){return this.number;},setAttribute(k,v){this[k]=v;}})),nodes={};
+ c.document={querySelectorAll:()=>buttons,getElementById:id=>nodes[id]??={removeAttribute(k){delete this[k];}}};c.renderStageLocks();
+ assert.deepEqual(buttons.map(b=>b.number.textContent),['01','02','03','04','05','06']);
+ assert.ok(buttons.every(b=>!b['aria-label'].includes('拠点破壊')&&!b['aria-label'].includes('前線制圧')));
+ assert.equal(buttons[2].title,'破壊（初級）をクリアすると解放');
+ const notice=clear(c,'beginner');c.renderStageUnlock(notice);
+ assert.equal(nodes.resStageUnlockName.textContent,'03 制圧（初級）');
+ assert.deepEqual(JSON.parse(c.storage.get('tankGameStageProgressV1')).cleared,['beginner']);
+});
