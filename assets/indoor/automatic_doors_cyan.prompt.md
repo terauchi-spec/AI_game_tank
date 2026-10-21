@@ -1,5 +1,9 @@
 # Cyan inner-panel door variants
 
+## 2026-10-21 horizontal stripe thickness and brightness refinement
+
+Built-in imagegen precise-object-edit: narrow the horizontal cyan bands by 20% around their existing centerline and slightly brighten the matte aqua paint. Integrate the generated stripe into x=29..236 and 275..482, y=21..49 (29px, rounded from 36px × 0.8). Restore the exposed margins with original unpainted metal. Calibrate average paint luminance to approximately 8% above the previous horizontal asset. Keep the storage-side lengths, central blank, outer frame, front face, alpha and 512x206 dimensions. Pixels outside the previous stripe rectangles are unchanged before WebP encoding. Vertical artwork and runtime geometry stay unchanged. WebP quality 90; no added draw calls or effects.
+
 ## 2026-10-21 horizontal cyan brightness refinement
 
 Built-in imagegen precise-object-edit: slightly brighten only the two existing horizontal cyan stripes, retaining matte worn aqua paint without glow. The generated paint was blended into the exact existing painted rectangles to increase average luminance by approximately 10%. Preserve stripe boundaries, 36px height, storage-side extent, central unpainted span, front face, frame, hazard endcaps, alpha and 512x206 dimensions. Unpainted pixels remain unchanged before WebP encoding. Vertical artwork and runtime drawing stay unchanged. WebP quality 90.
