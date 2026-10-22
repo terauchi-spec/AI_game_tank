@@ -1,10 +1,10 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const html=fs.readFileSync(require.resolve('../index.html'),'utf8');
-const functions=html.slice(html.indexOf('function activeBuiltWalls(){'),html.indexOf('function cleanBuiltWalls('));
+const functions=html.slice(html.indexOf('function activeBuiltWalls(){'),html.indexOf('function pointSegDistance('));
 const overlap=(a,b,m=0)=>a.x<b.x+b.w+m&&a.x+a.w+m>b.x&&a.y<b.y+b.h+m&&a.y+a.h+m>b.y;
 function harness(){
  const c={p:{x:500,y:500,body:0},covers:[],objects:[],builtWalls:[],water:[],base:{x:-1000,y:-1000,w:1,h:1},
-  WW:3000,WH:3000,stageMode:'base',performance:{now:()=>1000},ov2:overlap,coverHitRect:o=>o.noHit&&!o.indoorDoor?null:o,objectHitRect:o=>o,
+  WW:3000,WH:3000,stageMode:'base',now:1000,performance:{now:()=>c.now},ov2:overlap,coverHitRect:o=>o.noHit&&!o.indoorDoor?null:o,objectHitRect:o=>o,
   circleHitsRect:(x,y,r,q)=>x+r>q.x&&x-r<q.x+q.w&&y+r>q.y&&y-r<q.y+q.h,
   burst(){},sfx(){},say(t){c.message=t;}};
  const segment=(a,b,r,pad)=>{
@@ -54,11 +54,11 @@ test('an enclosed player cannot build through walls and failure adds nothing',()
  const c=harness();c.covers.push({x:480,y:480,w:40,h:4},{x:480,y:516,w:40,h:4},{x:480,y:480,w:4,h:40},{x:516,y:480,w:4,h:40});
  assert.equal(c.placeBuildWall(),false);assert.equal(c.covers.length,4);assert.equal(c.builtWalls.length,0);
 });
-test('ten successful builds are allowed; the eleventh is rejected and destroyed walls free a slot',()=>{
- const c=harness();for(let i=0;i<10;i++){c.p.x=100+i*150;assert.equal(c.placeBuildWall(),true);}
- assert.equal(c.builtWalls.length,10);assert.equal(c.placeBuildWall(),false);assert.match(c.message,/10/);
+test('five successful builds are allowed; the sixth is rejected and destroyed walls free a slot',()=>{
+ const c=harness();for(let i=0;i<5;i++){c.p.x=100+i*150;assert.equal(c.placeBuildWall(),true);}
+ assert.equal(c.builtWalls.length,5);assert.equal(c.placeBuildWall(),false);assert.match(c.message,/5/);
  const gone=c.builtWalls[0].parts;c.covers=c.covers.filter(q=>!gone.includes(q));c.p.x=100;
- assert.equal(c.placeBuildWall(),true);assert.equal(c.builtWalls.length,10);
+ assert.equal(c.placeBuildWall(),true);assert.equal(c.builtWalls.length,5);
 });
 test('placement queries local obstacles only once per press',()=>{
  const c=harness();let coverQueries=0,objectQueries=0;
@@ -90,4 +90,28 @@ test('current-frame travel tracking includes wall slides and clears on a station
  const c={skill:'build',p:{x:500,y:502},buildStartX:500,buildStartY:500};vm.createContext(c);
  vm.runInContext(html.slice(start,end),c);assert.equal(c.p.buildMoveX,0);assert.equal(c.p.buildMoveY,2);
  c.buildStartY=502;vm.runInContext(html.slice(start,end),c);assert.equal(c.p.buildMoveX,0);assert.equal(c.p.buildMoveY,0);
+});
+test('walls survive off-screen until ten seconds, then release collision and their build slot',()=>{
+ const c=harness();c.placeBuildWall();const unrelated={x:20,y:20,w:10,h:10};c.covers.push(unrelated);
+ c.now=10999;c.cleanBuiltWalls(2500,2500);assert.equal(c.builtWalls.length,1);assert.ok(c.covers.length>1);
+ c.now=11000;c.cleanBuiltWalls(500,500);assert.equal(c.builtWalls.length,0);assert.deepEqual(Array.from(c.covers),[unrelated]);
+ assert.equal(c.placeBuildWall(),true);
+});
+test('last 1.5 seconds blink off and on exactly three times without dropping collision',()=>{
+ const c=harness();c.placeBuildWall();const wall=c.builtWalls[0],count=c.covers.length;
+ for(const [age,hidden] of [[0,false],[8499,false],[8500,true],[8750,false],[9000,true],[9250,false],[9500,true],[9750,false],[9999,false]]){
+  c.now=1000+age;c.cleanBuiltWalls(500,500);assert.equal(wall.blinkHidden,hidden,'age '+age);assert.equal(c.covers.length,count);
+ }
+ c.now=11000;c.cleanBuiltWalls(500,500);assert.equal(c.covers.length,0);
+});
+test('damaged wall pieces retain the original expiry and blink together',()=>{
+ const c=harness();c.placeBuildWall();
+ Object.assign(c,{coverFragmentRect:o=>o,coverHitCircle:()=>null,rockHitEllipse:()=>null,FRAG_COLORS:{1:['#777']},CCol:[],
+  markFragmentRenderRemoved(){},markFragmentRenderDirty(){}});
+ vm.runInContext(html.slice(html.indexOf('function carve('),html.indexOf('function useSkill(')),c);
+ const wall=c.builtWalls[0],part=wall.parts[0];c.carve(part.x+part.w/2,part.y+part.h/2,7,false,null);
+ assert.ok(c.covers.length>1);assert.ok(c.covers.every(q=>q.fr&&q.buildGroup===wall));
+ c.now=9500;c.cleanBuiltWalls(500,500);assert.equal(c.builtWalls.length,1);assert.equal(wall.blinkHidden,true);
+ assert.ok(c.covers.every(q=>q.buildGroup.blinkHidden));
+ c.now=11000;c.cleanBuiltWalls(500,500);assert.equal(c.covers.length,0);assert.equal(c.builtWalls.length,0);
 });
