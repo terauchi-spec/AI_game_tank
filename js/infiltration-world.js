@@ -1043,7 +1043,7 @@ function setupInfiltrationWorld(){
   const ground=ZONE_STYLE['敵迷路基地'];
   ZONES=[{n:'敵迷路基地',y0:WH,y1:-400,g:'#202820',p:ground.p.slice(),pat:null,indoor:true}];
   roadBands=[];areaDebugLabels=[];covers=[];objects=[];bushes=[];mud=[];water=[];bridges=[];cars=[];
-  etanks=[];humans=[];bullets=[];parts=[];bombs=[];items=[];waves=[];fx=[];allies=[];
+  enemyDogs=[];etanks=[];humans=[];bullets=[];parts=[];bombs=[];items=[];waves=[];fx=[];allies=[];
   builtWalls=[];tankWrecks=[];buildingGroundMarks=[];decoy=null;radio=null;airstrike=null;airbombs=[];
   weather='clear';weatherT=0;rainIntensity=0;weatherNext=99999;baseSpawnT=99999;
   // Off-map base avoids outdoor destruction / HQ spawning while preserving core state shape.
@@ -1202,6 +1202,7 @@ function setupInfiltrationWorld(){
   for(const h of commanderPool.slice(0,Math.round(commanderPool.length/3))){
     h.indoorCommander=true;h.frontCommander=true;
   }
+  if(!beginner)indoorSpawnDogPatrol();
   const entrance=indoorWorld.floors[0];
   p.x=entrance.entrance.x;p.y=entrance.entrance.y;p.hp=3;p.tank=null;p.body=-Math.PI/2;p.ang=-Math.PI/2;
   scoreStats.startY=p.y;scoreStats.debugUsed=true; // Sample run never unlocks stages or overwrites records.
@@ -1215,6 +1216,31 @@ function setupInfiltrationWorld(){
   patrolRoutesVisible=false;
   rebuildSpatialGrid();
   say('拠点潜入：廊下の物資に身を隠し、重要資料'+INDOOR_FILES_TOTAL+'箇所を回収せよ');
+}
+// One pair per advanced sortie, using an existing whole-building loop on 1F.
+// Setup-only grid sampling; no extra roster slot or recurring dog reinforcement.
+function indoorSpawnDogPatrol(){
+ const floor=indoorWorld.floors[0],grid=floor.navigation.grid;
+ const span=h=>Math.max(...h.path.map(q=>q.y))-Math.min(...h.path.map(q=>q.y));
+ const candidates=floor.guards.filter(h=>!h.indoorPost&&!h.indoorEntrancePatrol&&!h.indoorCommander&&h.loop&&h.path.length>4).sort((a,b)=>span(b)-span(a));
+ for(const h of candidates){
+  for(let radius=75;radius<=120;radius+=15)for(let i=0;i<32;i++){
+   const a=i*Math.PI/16,q={x:h.x+Math.cos(a)*radius,y:h.y+Math.sin(a)*radius};
+   let clear=true;
+   for(let d=0;d<=radius;d+=6){
+    const id=indoorGridPoint(grid,{x:h.x+Math.cos(a)*d,y:h.y+Math.sin(a)*d});
+    if(id<0||grid.solid[id]){clear=false;break;}
+   }
+   if(!clear||floor.guards.some(other=>other!==h&&distance(other,q)<24))continue;
+   Object.assign(h,{dogHandler:true,elite:false,indoorWhite:false,indoorWhiteCommander:false,
+    indoorCommander:false,frontCommander:false});
+   const dog={...q,handler:h,enemyDog:true,indoorGuard:true,indoorFloor:floor.number,
+    col:'#222222',face:h.face,state:'patrol',stun:0,barkT:0,barkCooldown:0,
+    patrolMode:'indoor',lostPhase:0,lostBase:0,avoidSide:1,alertDisabled:false,
+    chaseElapsed:0,rearmRequired:false,rearmKey:null,targetKey:null,walking:false};
+   h.dog=dog;enemyDogs.push(dog);return;
+  }
+ }
 }
 function indoorReduceBeginnerGuards(floor){
  const originalCount=floor.guards.length,target=Math.max(1,Math.round(originalCount*.7));
@@ -2450,6 +2476,7 @@ function updateInfiltrationDoors(dt){
     const players=[p,...floor.guards,...(allies||[])];
     if(partner)players.push(partner);
     if(hound)players.push(hound);
+    if(typeof enemyDogs!=='undefined')players.push(...enemyDogs.filter(d=>d.indoorFloor===floor.number));
     for(const door of floor.doors){
       let near=false;
       for(const a of players){

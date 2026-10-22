@@ -5,7 +5,9 @@ let enemyDogs=[];
 function dogHandlerStepAllowed(h,x,y){
  if(!h.dogHandler||!h.dog||h.dog.handler!==h)return true;
  const next=Math.hypot(x-h.dog.x,y-h.dog.y),current=D(h,h.dog);
- return (next>=DOG_LEASH_MIN&&next<=DOG_LEASH_MAX)||(current>DOG_LEASH_MAX&&next<current)||(current<DOG_LEASH_MIN&&next>current);
+ // Narrow indoor doors require the pair to pass close to each other.
+ const minimum=h.dog.patrolMode==='indoor'?0:DOG_LEASH_MIN;
+ return (next>=minimum&&next<=DOG_LEASH_MAX)||(current>DOG_LEASH_MAX&&next<current)||(current<minimum&&next>current);
 }
 function dogSpawnPosition(spot){
  for(const radius of [90,115,75,135]){
@@ -61,6 +63,7 @@ function dogFindTarget(dog){
  for(const key of ['p','partner']){
   if(dog.rearmRequired&&dog.rearmKey===key)continue;
   const target=dogTargetObject(key);if(!target)continue;
+  if(dog.patrolMode==='indoor'&&(dog.indoorFloor!==indoorWorld?.currentFloor+1||key==='p'&&indoorStairProtected()))continue;
   const d=D(dog,target);if(d<=DOG_DETECT&&d<bestD){best={key,target};bestD=d;}
  }
  return best;
@@ -136,6 +139,15 @@ function dogPickEscape(unit,goal,r,isDog){
  return best?{x:best.x,y:best.y,t:2.2}:null;
 }
 function dogMoveAround(unit,goal,speed,dt,r=7,isDog=true){
+ if(stageMode==='indoor'&&(unit.enemyDog&&unit.patrolMode==='indoor'||unit.dogHandler&&unit.indoorGuard)){
+  const ox=unit.x,oy=unit.y,nav=unit.indoorDogNav||(unit.indoorDogNav={});
+  indoorMoveGuardTo(unit,goal,dt,speed,nav);
+  if(isDog&&unit.handler?.alive){
+   const before=Math.hypot(ox-unit.handler.x,oy-unit.handler.y),after=D(unit,unit.handler);
+   if(after>DOG_LEASH_MAX&&after>before){unit.x=ox;unit.y=oy;}
+  }
+  return Math.hypot(unit.x-ox,unit.y-oy)>.04;
+ }
  if(!unit.enemyDog&&!unit.dogHandler&&unit.commander!=='white'&&!unit.frontAllyNav&&!unit.frontMarch)return dogMoveAroundCore(unit,goal,speed,dt,r,isDog);
  let escape=unit.dogEscape;
  if(escape){escape.t-=dt;if(escape.t<=0||D(unit,escape)<12){escape=unit.dogEscape=null;unit.dogWall=null;}}
@@ -165,7 +177,7 @@ function dogBark(dog){
  dog.barkT=.9;dog.barkCooldown=3;dog.signalX=dog.x;dog.signalY=dog.y;
  // The bark identifies the actual target, including the Partner, to nearby infantry.
  const rallying=commanderRallying;commanderRallying=true;
- try{for(const h of humans)if(h.alive&&(h===dog.handler||D(h,dog)<=500))enterHumanFound(h,key,null,true);}
+ try{for(const h of humans)if(h.alive&&(h===dog.handler||D(h,dog)<=500)){enterHumanFound(h,key,null,true);if(dog.patrolMode==='indoor'&&key==='p')indoorRecordGuardDiscovery(h);}}
  finally{commanderRallying=rallying;}
 }
 function stunEnemyDog(dog){
@@ -201,7 +213,7 @@ function updateEnemyDogs(dt){
    if(!target||D(dog,target)>DOG_DETECT){dog.rearmRequired=false;dog.rearmKey=null;}
   }
   const partnerNear=dogTargetObject('partner');
-  if(Math.abs(dog.y-p.y)>H+600||Math.abs(dog.x-p.x)>W+400){
+  if(dog.patrolMode!=='indoor'&&(Math.abs(dog.y-p.y)>H+600||Math.abs(dog.x-p.x)>W+400)){
    if(!partnerNear||Math.abs(dog.y-partnerNear.y)>H+600||Math.abs(dog.x-partnerNear.x)>W+400)continue;
   }
   const ox=dog.x,oy=dog.y;
@@ -211,7 +223,7 @@ function updateEnemyDogs(dt){
    tone(225,.18,.03,'sawtooth',110);say('猟犬が吠えて犬兵を追い払った！');
   }
   const chaseTarget=dog.state==='chase'?dogTargetObject(dog.targetKey):null;
-  if(dog.state==='chase'&&!chaseTarget)dogEndAlert(dog);
+  if(dog.state==='chase'&&(!chaseTarget||dog.patrolMode==='indoor'&&(dog.indoorFloor!==indoorWorld?.currentFloor+1||dog.targetKey==='p'&&indoorStairProtected())))dogEndAlert(dog);
   else if(dog.handler&&!dog.alertDisabled&&dog.state==='chase'&&dog.chaseElapsed>=DOG_GRACE
    &&(D(dog,chaseTarget)>=DOG_DROP||D(dog.handler,chaseTarget)>=DOG_HANDLER_DROP)){
    const key=dog.targetKey;
@@ -239,6 +251,9 @@ function updateEnemyDogs(dt){
       dogMoveAround(dog,target,150,dt,7,true);
      }
     }
+   }else if(dog.patrolMode==='indoor'){
+    // Follow the handler's wide indoor loop with the cached door-aware navigator.
+    if(D(dog,h)>75)dogMoveAround(dog,h,75,dt,7,true);
    }else if(h.frontMarch){
     dogMoveAround(dog,{x:h.frontLaneX??h.x,y:Math.min(WH-16,h.y+100)},75,dt,7,true);
    }else if(dog.patrolMode==='south'){
