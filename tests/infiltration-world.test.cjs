@@ -2452,3 +2452,37 @@ test('partner discovery needs a conscious partner within the current floor sight
   assert.ok(!s.h.indoorAllyCombat,reason);assert.equal(s.api.level(),0,reason);assert.equal(s.messages.length,0,reason);
  }
 });
+
+test('alarm entrance sentries immediately catch an exposed player passing directly behind at contact range',()=>{
+ const s=entrancePerceptionScenario(),h=s.h;
+ Object.assign(s.sandbox,{recordDecoyLure(){},targetObj:()=>s.sandbox.p,humanMemory:()=>3,foundModePause:()=>.5,commanderWhistle(){},enemyModePaused(){}});
+ const html=require('node:fs').readFileSync(require('node:path').join(__dirname,'../index.html'),'utf8'),start=html.indexOf('function enterHumanFound(');
+ require('node:vm').runInContext(html.slice(start,html.indexOf('function activateStaticTank(',start)),s.sandbox);
+ Object.assign(s.sandbox.p,{x:h.x,y:h.y+24});h.face=-Math.PI/2;
+ s.api.update(h,1/60);
+ assert.equal(h.target,'p');assert.equal(h.indoorAlert.phase,'found');assert.equal(h.sus,0);
+ h.cd=0;for(let i=0;i<10;i++)s.api.update(h,.1);
+ assert.ok(s.sandbox.bullets.length>0,'reacts with actual rifle fire instead of remaining in question-mark mode');
+});
+test('alarm entrance sentries notice close movement behind them without making ordinary guards omnidirectional',()=>{
+ const s=entrancePerceptionScenario(),h=s.h;
+ Object.assign(s.sandbox.p,{x:h.x,y:h.y+55});h.face=-Math.PI/2;
+ for(let i=0;i<90&&h.target!=='p';i++)s.api.update(h,1/60);
+ assert.equal(h.target,'p');
+ const ordinary=entrancePerceptionScenario(),guard=ordinary.h;guard.indoorEntranceGuard=false;
+ Object.assign(ordinary.sandbox.p,{x:guard.x,y:guard.y+24});guard.face=-Math.PI/2;
+ assert.equal(ordinary.sandbox.indoorGuardSeesPlayer(guard),false,'ordinary interior rear blind sector is preserved');
+});
+test('close entrance awareness never sees through walls, concealment, disabled detection or another floor',()=>{
+ for(const reason of ['wall','bush','dig','other-floor','debug']){
+  const s=entrancePerceptionScenario(),h=s.h;
+  Object.assign(s.sandbox.p,{x:h.x,y:h.y+24});h.face=-Math.PI/2;
+  if(reason==='wall')s.sandbox.los=()=>false;
+  if(reason==='bush')s.sandbox.inBush=()=>true;
+  if(reason==='dig')s.sandbox.p.dig=1;
+  if(reason==='other-floor')s.api.world.currentFloor=1;
+  if(reason==='debug')s.sandbox.debugMode=2;
+  for(let i=0;i<30;i++)s.api.update(h,1/60);
+  assert.notEqual(h.target,'p',reason);
+ }
+});

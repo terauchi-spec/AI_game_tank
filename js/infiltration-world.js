@@ -1923,7 +1923,10 @@ function indoorGuardSeesPlayer(h,sample=null){
  const visibilityFactor=tracking?Math.max(.78,.5+.5*illumination):(.36+.64*illumination);
  // Patrol range grows modestly; pursuit release distance is exactly twice its previous value.
  const range=detectRange('p')*(tracking?2.4:1.4)*visibilityFactor*(h.indoorChatT>0?.5:1);
- if(!((a<=DETECT_CENTER_HALF*1.4&&d<range)||
+ // Alert entrance sentries notice exposed movement around their post at close range,
+ // including a player passing directly behind them. Walls and concealment still apply.
+ const closeEntrance=!!h.indoorEntranceGuard&&d<=64;
+ if(!closeEntrance&&!((a<=DETECT_CENTER_HALF*1.4&&d<range)||
        (a<=DETECT_OUTER_HALF*1.4&&d<range*DETECT_OUTER_SCALE)))return false;
  return cachedLos(h,p);
 }
@@ -2179,7 +2182,7 @@ function indoorUpdateGuardNotice(h,dt){
   a.travelLeft=3;a.visible=false;a.sightCheckT=.12;
   h.st=0;h.target=null;h.sus=3;h.susMax=3;return true;
  }
- if(n.visible&&n.exposure>=.9){
+ if(n.visible&&(n.exposure>=.9||h.indoorEntranceGuard&&n.distance<=32)){
   if(!indoorGuardSeesPlayer(h)||!los(h,p)){n.visible=false;n.checkT=0;return true;}
   enterHumanFound(h,'p');
   if(h.indoorAlert&&n.lastDir)h.indoorAlert.lastDir={...n.lastDir};
@@ -2381,7 +2384,7 @@ function updateInfiltrationGuardAI(h,dt){
  // Confirmed pursuit retains its original sight-loss timer and last-seen snapshots.
  if(state.phase!=='found'){
   const n=indoorAdvanceVisualNotice(h,dt,.12+((h.indoorFloor||1)%3)*.01);
-  if(n.visible&&n.exposure>=.55){
+  if(n.visible&&(n.exposure>=.55||h.indoorEntranceGuard&&n.distance<=32)){
    if(indoorGuardSeesPlayer(h)&&los(h,p)){
     enterHumanFound(h,'p');indoorStartGuardPursuit(h);indoorRecordGuardDiscovery(h);h.indoorNotice=null;return true;
    }
