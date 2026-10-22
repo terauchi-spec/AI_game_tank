@@ -1762,7 +1762,7 @@ function indoorRecordGuardDiscovery(h){
  if(indoorWorld?.alarm?.active||(!lure&&indoorStairProtected()))return; // Completed warning sets stay bounded.
  if(!h?.indoorGuard||!h.alive||!h.st||(!lure&&h.target!=='p')||h.stun>0||h.stunRecover>0||h.houndPinned||h.blastAirT>0||!indoorWorld)return;
  if(lure?(lure.t<=0||lure.indoorFloor!==h.indoorFloor):h.indoorFloor!==indoorWorld.currentFloor+1)return;
- indoorRecordWitness(h,lure?'偽装に敵兵が反応した':'敵兵に発見された');
+ indoorRecordWitness((!lure&&h.indoorAlert?.dogWitness)||h,lure?'偽装に敵兵が反応した':'敵兵に発見された');
 }
 // Player, decoy and friendly sightings share one warning per observing guard.
 function indoorRecordWitness(h,reason){

@@ -177,7 +177,18 @@ function dogBark(dog){
  dog.barkT=.9;dog.barkCooldown=3;dog.signalX=dog.x;dog.signalY=dog.y;
  // The bark identifies the actual target, including the Partner, to nearby infantry.
  const rallying=commanderRallying;commanderRallying=true;
- try{for(const h of humans)if(h.alive&&(h===dog.handler||D(h,dog)<=500)){enterHumanFound(h,key,null,true);if(dog.patrolMode==='indoor'&&key==='p')indoorRecordGuardDiscovery(h);}}
+ try{
+  const indoorBark=dog.patrolMode==='indoor'&&key==='p';
+  for(const h of humans)if(h.alive&&(h===dog.handler||D(h,dog)<=500)){
+   enterHumanFound(h,key,null,true);
+   // Reports and the following sighting belong to the same dog-pair discovery.
+   // Keep independent, already-counted witnesses intact.
+   if(indoorBark&&h.indoorGuard&&h.indoorAlert&&!indoorWorld.alarm.witnesses.has(h))
+    h.indoorAlert.dogWitness=dog.handler;
+  }
+  if(indoorBark&&dog.handler?.alive&&dog.indoorFloor===indoorWorld.currentFloor+1&&!indoorStairProtected())
+   indoorRecordWitness(dog.handler,'犬兵に発見された');
+ }
  finally{commanderRallying=rallying;}
 }
 function stunEnemyDog(dog){
@@ -277,11 +288,17 @@ function drawDogBarkWaves(x,y,remaining){
  g.save();g.strokeStyle='#e44949';g.lineWidth=4.5;g.globalAlpha=Math.min(1,phase*10)*(1-phase);
  g.beginPath();g.arc(x,y,200*phase,0,Math.PI*2);g.stroke();g.restore();
 }
-function drawEnemyDogs(){
+// Render all leashes below the infantry pass in every stage.
+function drawEnemyDogLeashes(){
  for(const dog of enemyDogs){
   if(dog.y<cam-230||dog.y>cam+H+230||dog.x<camX-230||dog.x>camX+W+230)continue;
   const h=dog.handler;
   if(h&&h.alive){g.save();g.strokeStyle='#aa9270';g.lineWidth=1.5;g.beginPath();g.moveTo(h.x,h.y);g.lineTo(dog.x+Math.cos(dog.face)*8,dog.y+Math.sin(dog.face)*8);g.stroke();g.restore();}
+ }
+}
+function drawEnemyDogs(){
+ for(const dog of enemyDogs){
+  if(dog.y<cam-230||dog.y>cam+H+230||dog.x<camX-230||dog.x>camX+W+230)continue;
   drawHound(dog);
   if(dog.barkT>0)drawDogBarkWaves(dog.signalX,dog.signalY,dog.barkT);
  }
