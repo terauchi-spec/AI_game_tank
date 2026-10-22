@@ -701,7 +701,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <li><strong>相棒：</strong>青いヘルメットラインの味方が敵司令本部を目指しつつプレイヤーの歩調を模倣します。プレイヤーの行動から潜入・慎重移動・通常前進・突破・戦闘・退避を判断し、約0.35秒ごとに移動先を選びます。草むらや遮蔽物を活用し、速度と距離を調整しながら同行します。交戦時は敵に援護射撃します。画面内にとどまり、敵の攻撃対象にもなります。HP3で、倒れると赤十字の救急箱アイコンが表示され、徒歩で触れると回復します。プレイヤーの設置爆弾の爆風で5秒間気絶し、接触すると早期復帰します。行動モードを問わず100px以内の敵兵に近づき、25px以内で羽交い絞めにして気絶させます。相棒が気絶中は敵兵と同じ星のアイコンが回転します。ルート線上・その50px以内に未搭乗の乗り物があれば、移動途中で搭乗してルートに沿って進みます。戦車は主砲・機銃、装甲車は機銃で援護し、武器を持たないトラックは体当たりで戦います。S短押しで手のひらを上に向けた手招きの吹き出しを出してプレイヤーへ戻るバックアップモード、0.18秒の長押しでプレイヤーだけの吹き出しにグーのハンドサインを表示して移動キーでルートを描き、離すと指差しのハンドサインへ切り替わり、すぐにルート移動を始めます。指差しの吹き出しは1秒間表示します。スキルボタンを押している間はプレイヤーが移動できません。青い破線の先端に進行方向の矢印を表示します。相棒がプレイヤーの乗り物に同乗すると機銃を相棒が担当し、プレイヤーは機銃を撃てません。プレイヤーが相棒の乗り物に同乗すると、相棒が設定済みルートを運転し、プレイヤーが機銃を担当します。同乗アイコンは車体に重ねて表示します。ルート作成中に壁に触れた場合は描き始めへ戻し、移動中に立ち往生した場合も開始地点へ戻ります。ルート確定後は指示線を表示しません。救助待ちや気絶中でも、画面外10秒またはプレイヤーから長時間離れると画面内の救助可能な場所へ復帰します。</li>
 <li><strong>増援：</strong>味方兵士がパラシュート降下して戦闘を援護。同時に最大5人。チャージ6秒。着地後、オブジェクトの爆発や敵戦車の砲撃爆風を受けると吹き飛ばされ、5秒間気絶します。気絶中は移動と射撃を停止し、頭上の星が目印になります。</li>
 <li><strong>突貫：</strong>正面にドリルを展開。持続5秒、終了後は6秒チャージ。遮蔽物の破壊に利用できます。</li>
-<li><strong>建築：</strong>前方にコンクリート防護壁を設置。最大5枚、チャージ1.5秒。</li>
+<li><strong>建築：</strong>周囲の空きに合わせて位置・サイズを調整し、コンクリート防護壁を設置。最大10枚、チャージ1.5秒。</li>
 <li><strong>火炎：</strong>前方約20mまで火炎を伸ばし、長押しで連続放射。最大3秒分を蓄積し、消費分が徐々に回復します。</li>
 <li><strong>猟犬：</strong>犬がプレイヤーに追従。Sで前方へ走らせ、近くの敵兵に突撃して気絶させます。</li>
 <li><strong>狙撃：</strong>ライフルを展開し、1秒静止後にスコープで遠距離を狙います。倍率は1.5／2.5／3.5倍。射撃後の再装填は3秒。敵歩兵は貫通して一撃で倒せますが、地形・オブジェクト・戦車で弾が止まります。</li>
@@ -863,7 +863,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.22.0902',FILE_CREATED_AT='2026/10/22 09:02',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.22.0918',FILE_CREATED_AT='2026/10/22 09:18',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -1800,7 +1800,7 @@ const SK=[
  {id:'decoy',n:'偽装',d:'身代わりを設置して\n敵の注意を5秒間そらす'},
  {id:'buddy',n:'増援',d:'味方兵士がパラシュート降下\n最大5人まで同時に援護\n移動速度は歩兵の90%'},
  {id:'drill',n:'突貫',d:'正面にドリルを展開\n0.5秒で遮蔽物を破壊\n持続5秒'},
- {id:'build',n:'建築',d:'正面にコンクリート防護壁を設置\n最大5枚／チャージ1.5秒\n画面外へ流れると消滅'},
+ {id:'build',n:'建築',d:'空きに合わせて位置・サイズを調整\n最大10枚／チャージ1.5秒\n画面外へ流れると消滅'},
  {id:'flame',n:'火炎',d:'正面20mへ火炎放射（先端到達1秒）\n最大3秒・使用分×4秒で全回復\n回復中も再使用可能'},
  {id:'hound',n:'猟犬',d:'猟犬が斜め後ろを追従\nSで正面へ3m自動ダッシュ（長押しで延長）→周囲10mの敵兵へ突撃\n敵がいなければ帰還／3秒噛みついて気絶\n帰還中に障害物へ当たるとS字で迷子→前方120°・50m＋全周15mで再発見'},
  {id:'sniper',n:'狙撃',d:'伏せてライフル展開→1秒静止後にスコープへ\n←→で視点移動／↑↓で1.5倍・2.5倍・3.5倍のレンズ切替\nSで狙撃／Aで解除。敵兵・エリートは1発撃破'},
@@ -4750,20 +4750,54 @@ function activeBuiltWalls(){
  builtWalls=builtWalls.filter(g=>{g.parts=g.parts.filter(c=>covers.includes(c));return g.parts.length>0;});
  return builtWalls;
 }
-function placeBuildWall(){
- if(activeBuiltWalls().length>=5){say('防護壁は最大5枚まで');return false;}
- const step=Math.PI/4,a=Math.round(p.body/step)*step,front=62,cx=p.x+Math.cos(a)*front,cy=p.y+Math.sin(a)*front,wa=a+Math.PI/2;
- const diag=Math.abs(Math.sin(wa)*Math.cos(wa))>.2,parts=[],born=performance.now();
+function buildWallParts(cx,cy,wa,length,born){
+ const diag=Math.abs(Math.sin(wa)*Math.cos(wa))>.2,parts=[];
  if(diag){
-  const n=7,spacing=13,size=17;
-  for(let i=0;i<n;i++){const off=(i-(n-1)/2)*spacing,px=cx+Math.cos(wa)*off-size/2,py=cy+Math.sin(wa)*off-size/2;parts.push({kd:1,x:px,y:py,w:size,h:size,playerBuilt:1,born});}
+  const n=Math.max(1,Math.round(length/13)),spacing=13,size=length<24?12:17;
+  for(let i=0;i<n;i++){
+   const off=(i-(n-1)/2)*spacing;
+   parts.push({kd:1,x:cx+Math.cos(wa)*off-size/2,y:cy+Math.sin(wa)*off-size/2,w:size,h:size,playerBuilt:1,born});
+  }
  }else{
-  const horiz=Math.abs(Math.cos(wa))>Math.abs(Math.sin(wa)),w=horiz?88:18,h=horiz?18:88;
+  const horiz=Math.abs(Math.cos(wa))>Math.abs(Math.sin(wa)),thickness=length<24?12:18;
+  const w=horiz?length:thickness,h=horiz?thickness:length;
   parts.push({kd:1,x:cx-w/2,y:cy-h/2,w,h,playerBuilt:1,born});
  }
- const bad=parts.some(c=>c.x<6||c.x+c.w>WW-6||c.y<6||c.y+c.h>WH-6||covers.some(o=>{const rc=coverHitRect(o);return !!rc&&ov2(rc,c,7);})||(objects||[]).some(o=>ov2(objectHitRect(o),c,7))||water.some(o=>ov2(o,c,7))||ov2(c,base,18));
- if(bad){say('ここには建築できない');return false;}
- covers.push(...parts);builtWalls.push({parts,born});burst(cx,cy,12,'#c6c9c5',75);sfx('skill');say('コンクリート防護壁を設置');return true;
+ return parts;
+}
+function placeBuildWall(){
+ if(activeBuiltWalls().length>=10){say('防護壁は最大10枚まで');return false;}
+ const step=Math.PI/4,a=Math.round(p.body/step)*step,wa=a+Math.PI/2,born=performance.now();
+ // Search only on a skill press, using one bounded spatial query per obstacle type.
+ const localCovers=coversInBox(p.x-180,p.y-180,p.x+180,p.y+180);
+ const localObjects=objectsInBox(p.x-180,p.y-180,p.x+180,p.y+180);
+ const blockers=localCovers.map(o=>({o,rect:o.indoorDoor?o:coverHitRect(o)})).filter(q=>q.rect);
+ const objectRects=localObjects.map(objectHitRect),anchors=[];
+ const sides=[0,16,-16,32,-32,48,-48,64,-64];
+ const turns=[0,1,-1,2,-2,3,-3,4,-4,5,-5,6,-6,7,-7,8];
+ for(const turn of turns)for(const front of [62,46,78,30,94])for(const side of sides){
+  const angle=a+turn*Math.PI/8;
+  const x=p.x+Math.cos(angle)*front+Math.cos(wa)*side,y=p.y+Math.sin(angle)*front+Math.sin(wa)*side;
+  if(Math.hypot(x-p.x,y-p.y)>112)continue;
+  anchors.push({x,y,reachable:null});
+ }
+ // Prefer the original full wall. Shorten it progressively only when no nearby full wall fits.
+ for(const length of [88,72,56,40,24,16])for(const center of anchors){
+  if(center.reachable===null)center.reachable=
+   !localCovers.some(o=>segmentHitsCover(p,center,o,2))&&
+   !localObjects.some(o=>segmentHitsObject(p,center,o,2));
+  if(!center.reachable)continue;
+  const parts=buildWallParts(center.x,center.y,wa,length,born);
+  const bad=parts.some(c=>c.x<6||c.x+c.w>WW-6||c.y<6||c.y+c.h>WH-6||
+   circleHitsRect(p.x,p.y,14,c)||
+   stageMode==='indoor'&&(indoorFloorEdgeBlocked(p,c.x,c.y,0)||indoorFloorEdgeBlocked(p,c.x+c.w,c.y+c.h,0))||
+   blockers.some(q=>ov2(q.rect,c,2))||objectRects.some(o=>ov2(o,c,2))||
+   water.some(o=>ov2(o,c,2))||ov2(c,base,18));
+  if(bad)continue;
+  covers.push(...parts);builtWalls.push({parts,born});
+  burst(center.x,center.y,12,'#c6c9c5',75);sfx('skill');say('コンクリート防護壁を設置');return true;
+ }
+ say('ここには建築できない');return false;
 }
 function cleanBuiltWalls(cy,cx){
  const keep=[];
