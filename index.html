@@ -863,7 +863,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.22.1115',FILE_CREATED_AT='2026/10/22 11:15',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.22.1155',FILE_CREATED_AT='2026/10/22 11:55',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -7026,52 +7026,72 @@ function drawSkillBottomHud(){
   g.fillStyle='rgba(8,10,7,.72)';g.fillRect(gx-3,gy-18,gw+6,29);g.fillStyle='#34392d';g.fillRect(gx,gy,gw,gh);g.fillStyle=p.scd>0?'#d8a84b':'#9be07a';g.fillRect(gx,gy,gw*ratio,gh);g.strokeStyle='rgba(230,233,216,.35)';g.strokeRect(gx+.5,gy+.5,gw-1,gh-1);g.fillStyle='#e6e9d8';g.font='bold 11px system-ui';g.textAlign='left';g.fillText(SKN[skill]+' '+(p.scd>0?Math.ceil(p.scd)+'s':'READY'),gx,gy-5);
  }
 }
-function drawVehicleBottomHud(){
- if(!p.tank)return;const v=p.tank;
- g.save();g.textAlign='left';
- if(v.t.id==='armored'){
-  const x=8,y=TOUCH?70:H-82,w=TOUCH?218:236,h=74;
-  g.fillStyle='rgba(8,10,7,.80)';g.fillRect(x,y,w,h);g.strokeStyle='rgba(230,233,216,.28)';g.strokeRect(x+.5,y+.5,w-1,h-1);
-  g.fillStyle='#e6e9d8';g.font='bold 11px system-ui';g.fillText('装甲車  耐久 '+Math.max(0,v.t.armor-(v.ch||0)).toFixed(2)+'/'+v.t.armor,x+8,y+16);
-  g.fillStyle='#d8e7ff';g.fillText('D / S  SMG '+((areaDebugEnabled||v.debugInfinite)?'∞':v.v+'/'+v.t.vmax),x+8,y+33);
-  g.fillStyle='#34392d';g.fillRect(x+8,y+42,w-16,7);g.fillStyle=v.f>v.t.fmax*.25?'#dce7b8':'#ffd27a';g.fillRect(x+8,y+42,(w-16)*Math.max(0,v.f)/v.t.fmax,7);
-  g.fillStyle='#e6e9d8';g.font='10px system-ui';g.fillText('燃料 '+Math.ceil(v.f)+' / '+v.t.fmax,x+8,y+66);g.restore();return;
- }
- if(TOUCH){
-  const x=8,y=70,w=218;
-  if(v.kind==='fighter'){
-   const h=58,fmax=v.t.fmax||100,fr=Math.max(0,v.f)/fmax;g.fillStyle='rgba(8,10,7,.80)';g.fillRect(x,y,w,h);g.strokeStyle='rgba(230,233,216,.28)';g.strokeRect(x+.5,y+.5,w-1,h-1);
-   g.fillStyle='#d9efff';g.font='bold 10px system-ui';g.fillText('戦闘機  機体 '+Math.max(0,Math.ceil(v.hp))+'/'+FIGHTER_TYPE.hp,x+8,y+14);g.fillStyle=p.cc<=0?'#ffd27a':'#9aa7b2';g.fillText('D '+(p.cc<=0?'爆撃 READY':'爆撃 CHARGE'),x+8,y+29);
-   g.fillStyle='#34392d';g.fillRect(x+8,y+36,w-16,7);g.fillStyle=fr>.25?'#dce7b8':v.f>0?'#ffd27a':'#ff7666';g.fillRect(x+8,y+36,(w-16)*fr,7);g.fillStyle='#e6e9d8';g.font='9px system-ui';g.fillText(debugMode>=3?'燃料 ∞':'燃料 '+Math.ceil(v.f)+' / '+Math.ceil(fmax),x+8,y+54);
-  }else if(v.kind==='truck'){
-   const h=48,fmax=v.t.fmax||100,fr=Math.max(0,v.f)/fmax;g.fillStyle='rgba(8,10,7,.80)';g.fillRect(x,y,w,h);g.strokeStyle='rgba(230,233,216,.28)';g.strokeRect(x+.5,y+.5,w-1,h-1);
-   g.fillStyle='#e6e9d8';g.font='bold 10px system-ui';g.fillText('トラック  耐久 '+Math.max(0,5-(v.mgHits||0))+'/5',x+8,y+14);g.fillStyle='#34392d';g.fillRect(x+8,y+22,w-16,7);g.fillStyle=fr>.25?'#dce7b8':v.f>0?'#ffd27a':'#ff7666';g.fillRect(x+8,y+22,(w-16)*fr,7);g.fillStyle='#e6e9d8';g.font='9px system-ui';g.fillText((areaDebugEnabled||v.debugInfinite)?'燃料 ∞':'燃料 '+Math.ceil(v.f)+' / '+Math.ceil(fmax),x+8,y+43);
-  }else{
-   const h=64,armorMax=v.t.armor||3,fmax=v.t.fmax||100,cmax=v.t.cmax||10,vmax=v.t.vmax||60,fr=Math.max(0,v.f)/fmax;g.fillStyle='rgba(8,10,7,.80)';g.fillRect(x,y,w,h);g.strokeStyle='rgba(230,233,216,.28)';g.strokeRect(x+.5,y+.5,w-1,h-1);
-   g.fillStyle='#e6e9d8';g.font='bold 10px system-ui';g.fillText(v.t.n+'  耐久 '+Math.max(0,armorMax-(v.ch||0)).toFixed(2)+'/'+armorMax,x+8,y+14);
-   g.fillStyle='#ffd27a';g.fillText((areaDebugEnabled||v.debugInfinite)?'D 砲弾 ∞':'D '+String(v.c).padStart(2,'0')+'/'+cmax,x+8,y+29);g.fillStyle='#d8e7ff';g.fillText((areaDebugEnabled||v.debugInfinite)?'S MG ∞':'S '+String(v.v).padStart(3,'0')+'/'+vmax,x+108,y+29);
-   g.fillStyle='#34392d';g.fillRect(x+8,y+36,w-16,7);g.fillStyle=fr>.25?'#dce7b8':v.f>0?'#ffd27a':'#ff7666';g.fillRect(x+8,y+36,(w-16)*fr,7);g.fillStyle='#e6e9d8';g.font='9px system-ui';g.fillText((areaDebugEnabled||v.debugInfinite)?'燃料 ∞':'燃料 '+Math.ceil(v.f)+' / '+Math.ceil(fmax),x+8,y+58);g.fillStyle='#34392d';g.fillRect(x+124,y+52,84,4);g.fillStyle=p.cc<=0?'#ffd27a':'#8f8159';g.fillRect(x+124,y+52,84*(1-Math.max(0,p.cc)/v.t.ccd),4);
+function drawVehicleHudIcon(kind,x,y,color){
+ g.save();g.translate(x,y);g.fillStyle=color;g.strokeStyle='#171d16';g.lineWidth=1.6;g.lineJoin='round';
+ if(kind==='shield'){
+  g.beginPath();g.moveTo(0,-10);g.lineTo(8,-6);g.lineTo(7,3);g.quadraticCurveTo(5,8,0,11);
+  g.quadraticCurveTo(-5,8,-7,3);g.lineTo(-8,-6);g.closePath();g.fill();g.stroke();
+  g.strokeStyle='rgba(255,255,255,.65)';g.beginPath();g.moveTo(0,-6);g.lineTo(0,6);g.stroke();
+ }else if(kind==='shell'){
+  g.beginPath();g.moveTo(-4,7);g.lineTo(-4,-3);g.quadraticCurveTo(-3,-8,0,-11);
+  g.quadraticCurveTo(3,-8,4,-3);g.lineTo(4,7);g.closePath();g.fill();g.stroke();
+  g.fillRect(-5,7,10,3);g.strokeRect(-5,7,10,3);
+  g.beginPath();g.moveTo(-4,-2);g.lineTo(4,-2);g.stroke();
+ }else if(kind==='ammo'){
+  for(let i=0;i<3;i++){
+   const xx=(i-1)*6,top=i===1?-10:-7;
+   g.beginPath();g.moveTo(xx-2,8);g.lineTo(xx-2,top+4);g.lineTo(xx,top);
+   g.lineTo(xx+2,top+4);g.lineTo(xx+2,8);g.closePath();g.fill();g.stroke();
+   g.beginPath();g.moveTo(xx-2,5);g.lineTo(xx+2,5);g.stroke();
   }
-  g.restore();return;
+ }else if(kind==='fuel'){
+  g.beginPath();g.moveTo(-7,-5);g.lineTo(-2,-9);g.lineTo(7,-7);g.lineTo(8,9);
+  g.lineTo(-8,9);g.closePath();g.fill();g.stroke();
+  g.strokeStyle='#171d16';g.lineWidth=2;
+  g.beginPath();g.moveTo(-4,-1);g.lineTo(4,5);g.moveTo(4,-1);g.lineTo(-4,5);g.stroke();
+  g.beginPath();g.moveTo(0,-6);g.lineTo(4,-5);g.stroke();
+  g.fillRect(-6,-10,5,3);g.strokeRect(-6,-10,5,3);
  }
- const baseBottom=H-8,w=236;
- if(v.kind==='fighter'){
-  const h=70,y=baseBottom-h;g.fillStyle='rgba(8,10,7,.78)';g.fillRect(8,y,w,h);g.strokeStyle='rgba(230,233,216,.28)';g.strokeRect(8.5,y+.5,w-1,h-1);
-  g.fillStyle='#d9efff';g.font='bold 12px system-ui';g.fillText('戦闘機  機体 '+Math.max(0,Math.ceil(v.hp))+'/'+FIGHTER_TYPE.hp,16,y+16);
-  g.fillStyle=p.cc<=0?'#ffd27a':'#9aa7b2';g.font='bold 12px system-ui';g.fillText('D  '+(p.cc<=0?'爆撃 READY':'爆撃 CHARGE'),16,y+34);
-  g.fillStyle='#34392d';g.fillRect(126,y+25,102,7);g.fillStyle=p.cc<=0?'#ffd27a':'#718093';g.fillRect(126,y+25,102*(1-Math.max(0,p.cc)/v.t.ccd),7);
-  const fmax=v.t.fmax||100,fr=Math.max(0,v.f)/fmax;g.fillStyle='#34392d';g.fillRect(16,y+45,212,9);g.fillStyle=fr>.25?'#dce7b8':v.f>0?'#ffd27a':'#ff7666';g.fillRect(16,y+45,212*fr,9);g.fillStyle='#e6e9d8';g.font='bold 10px system-ui';g.fillText(debugMode>=3?'燃料 ∞':'燃料 '+Math.ceil(v.f)+' / '+Math.ceil(fmax),16,y+66);
- }else if(v.kind==='truck'){
-  const h=54,y=baseBottom-h,fmax=v.t.fmax||100,fr=Math.max(0,v.f)/fmax;g.fillStyle='rgba(8,10,7,.78)';g.fillRect(8,y,w,h);g.strokeStyle='rgba(230,233,216,.28)';g.strokeRect(8.5,y+.5,w-1,h-1);
-  g.fillStyle='#e6e9d8';g.font='bold 12px system-ui';g.fillText('トラック  耐久 '+Math.max(0,5-(v.mgHits||0))+'/5',16,y+16);g.fillStyle='#34392d';g.fillRect(16,y+25,212,9);g.fillStyle=fr>.25?'#dce7b8':v.f>0?'#ffd27a':'#ff7666';g.fillRect(16,y+25,212*fr,9);g.fillStyle='#e6e9d8';g.font='bold 10px system-ui';g.fillText((areaDebugEnabled||v.debugInfinite)?'燃料 ∞':'燃料 '+Math.ceil(v.f)+' / '+Math.ceil(fmax),16,y+49);
- }else{
-  const h=78,y=baseBottom-h,armorMax=v.t.armor||3,fmax=v.t.fmax||100,cmax=v.t.cmax||10,vmax=v.t.vmax||60,fr=Math.max(0,v.f)/fmax;
-  g.fillStyle='rgba(8,10,7,.78)';g.fillRect(8,y,w,h);g.strokeStyle='rgba(230,233,216,.28)';g.strokeRect(8.5,y+.5,w-1,h-1);
-  g.fillStyle='#e6e9d8';g.font='bold 11px system-ui';g.fillText(v.t.n+'  耐久 '+Math.max(0,armorMax-(v.ch||0)).toFixed(2)+'/'+armorMax,16,y+15);
-  g.font='bold 12px system-ui';g.fillStyle='#ffd27a';g.fillText((areaDebugEnabled||v.debugInfinite)?'D 砲弾 ∞':'D 砲弾 '+String(v.c).padStart(2,'0')+'/'+cmax,16,y+34);g.fillStyle='#d8e7ff';g.fillText((areaDebugEnabled||v.debugInfinite)?'S MG ∞':'S MG '+String(v.v).padStart(3,'0')+'/'+vmax,125,y+34);
-  g.fillStyle='#34392d';g.fillRect(16,y+43,212,9);g.fillStyle=fr>.25?'#dce7b8':v.f>0?'#ffd27a':'#ff7666';g.fillRect(16,y+43,212*fr,9);g.strokeStyle='rgba(255,255,255,.28)';g.strokeRect(16.5,y+43.5,211,8);
-  g.fillStyle='#e6e9d8';g.font='bold 10px system-ui';g.fillText((areaDebugEnabled||v.debugInfinite)?'燃料 ∞':'燃料 '+Math.ceil(v.f)+' / '+Math.ceil(fmax),16,y+67);g.fillStyle='#34392d';g.fillRect(132,y+61,96,5);g.fillStyle=p.cc<=0?'#ffd27a':'#8f8159';g.fillRect(132,y+61,96*(1-Math.max(0,p.cc)/v.t.ccd),5);
+ g.restore();
+}
+function drawVehicleHudGauge(x,y,w,ratio,color){
+ const fill=Math.max(0,Math.min(1,Number.isFinite(ratio)?ratio:0));
+ g.fillStyle='#34392d';g.fillRect(x,y,w,8);g.fillStyle=color;g.fillRect(x,y,w*fill,8);
+ g.strokeStyle='rgba(230,233,216,.38)';g.lineWidth=1;g.strokeRect(x+.5,y+.5,w-1,7);
+}
+function drawVehicleBottomHud(){
+ if(!p.tank)return;
+ const v=p.tank,t=v.t,truck=v.kind==='truck',fighter=v.kind==='fighter',armored=t.id==='armored';
+ const x=8,w=TOUCH?218:236,h=truck?78:102,y=TOUCH?70:H-8-h;
+ const infinite=fighter?debugMode>=3:!!(areaDebugEnabled||v.debugInfinite);
+ const armorMax=fighter?(t.hp||8):truck?5:(t.armor||3);
+ const armor=fighter?(v.hp||0):truck?5-(v.mgHits||0):armorMax-(v.ch||0);
+ const armorRatio=Math.max(0,Math.min(1,armor/armorMax));
+ const armorColor=armorRatio>.5?'#9bd477':armorRatio>.25?'#ffd27a':'#ff7666';
+ const fuelRatio=Math.max(0,Math.min(1,(v.f||0)/(t.fmax||100)));
+ const fuelColor=fuelRatio>.25?'#dce7b8':fuelRatio>0?'#ffd27a':'#ff7666';
+ const ammo=(count,max)=>infinite?'∞/'+max:Math.max(0,Math.ceil(count||0))+'/'+max;
+ g.save();g.textAlign='left';
+ g.fillStyle='rgba(8,10,7,.80)';g.fillRect(x,y,w,h);
+ g.strokeStyle='rgba(230,233,216,.28)';g.lineWidth=1;g.strokeRect(x+.5,y+.5,w-1,h-1);
+ g.fillStyle=fighter?'#d9efff':'#e6e9d8';g.font='bold 12px system-ui';g.fillText(t.n,x+8,y+17);
+ drawVehicleHudIcon('shield',x+18,y+35,'#c8d7df');
+ drawVehicleHudGauge(x+36,y+31,w-48,armorRatio,armorColor);
+ if(!truck){
+  g.font='bold 13px system-ui';
+  if(fighter){
+   g.fillStyle=p.cc<=0?'#ffd27a':'#9aa7b2';g.fillText(p.cc<=0?'D  爆撃 READY':'D  爆撃 CHARGE',x+8,y+61);
+  }else if(armored){
+   drawVehicleHudIcon('ammo',x+18,y+58,'#d8e7ff');g.fillStyle='#d8e7ff';g.fillText(ammo(v.v,t.vmax||120),x+34,y+63);
+  }else{
+   drawVehicleHudIcon('shell',x+18,y+58,'#ffd27a');g.fillStyle='#ffd27a';g.fillText(ammo(v.c,t.cmax||10),x+34,y+63);
+   const right=x+Math.floor(w/2)+6;
+   drawVehicleHudIcon('ammo',right,y+58,'#d8e7ff');g.fillStyle='#d8e7ff';g.fillText(ammo(v.v,t.vmax||60),right+16,y+63);
+  }
  }
+ const fuelY=y+(truck?59:83);
+ drawVehicleHudIcon('fuel',x+18,fuelY,fuelColor);drawVehicleHudGauge(x+36,fuelY-4,w-48,fuelRatio,fuelColor);
+ if(infinite){g.font='bold 13px system-ui';g.fillStyle='#e6e9d8';g.fillText('∞',x+w-21,fuelY+15);}
  g.restore();
 }
 const STATIC_COVER_DRAW_COLORS=[['#8a7a55','#6a5d40'],['#8c8c86','#6a6a66'],['#7a5f3a','#4e3c24'],['#55504a','#35322e'],['#b9ab8a','#8f8263'],['#7a5f3a','#4e3c24'],['#2f6b34','#1d4a22'],['#4a5a4a','#33403a'],['#7a7468','#57534a'],['#666865','#4e514e'],['#b9ab8a','#8f8263']];
