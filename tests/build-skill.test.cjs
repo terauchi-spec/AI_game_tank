@@ -65,3 +65,29 @@ test('placement queries local obstacles only once per press',()=>{
  c.coversInBox=()=>{coverQueries++;return[]};c.objectsInBox=()=>{objectQueries++;return[]};
  assert.equal(c.placeBuildWall(),true);assert.equal(coverQueries,1);assert.equal(objectQueries,1);
 });
+test('moving builds behind actual travel in eight directions, even when facing elsewhere',()=>{
+ for(let i=0;i<8;i++){
+  const c=harness(),angle=i*Math.PI/4;
+  c.p.body=angle+Math.PI/2;c.p.buildMoveX=Math.cos(angle)*2;c.p.buildMoveY=Math.sin(angle)*2;
+  assert.equal(c.placeBuildWall(),true);safe(c,[]);
+  for(const q of c.builtWalls[0].parts)for(const x of [q.x,q.x+q.w])for(const y of [q.y,q.y+q.h])
+   assert.ok((x-c.p.x)*Math.cos(angle)+(y-c.p.y)*Math.sin(angle)<0,'entire wall behind travel');
+ }
+});
+test('stopping immediately restores front placement without remembering previous travel',()=>{
+ const c=harness();c.p.buildMoveX=2;assert.equal(c.placeBuildWall(),true);
+ assert.ok(c.builtWalls[0].parts.every(q=>q.x+q.w<c.p.x));
+ c.p.buildMoveX=0;c.p.buildMoveY=0;assert.equal(c.placeBuildWall(),true);
+ assert.ok(c.builtWalls[1].parts.every(q=>q.x>c.p.x));
+});
+test('rear obstruction adapts behind the player instead of switching to the front',()=>{
+ const c=harness();c.p.buildMoveX=2;const obstacle={x:424,y:450,w:30,h:100};c.covers.push(obstacle);
+ assert.equal(c.placeBuildWall(),true);safe(c,[obstacle]);
+ assert.ok(c.builtWalls[0].parts.every(q=>q.x+q.w<c.p.x));
+});
+test('current-frame travel tracking includes wall slides and clears on a stationary frame',()=>{
+ const start=html.indexOf(" if(skill==='build'){p.buildMoveX="),end=html.indexOf('\n',start);
+ const c={skill:'build',p:{x:500,y:502},buildStartX:500,buildStartY:500};vm.createContext(c);
+ vm.runInContext(html.slice(start,end),c);assert.equal(c.p.buildMoveX,0);assert.equal(c.p.buildMoveY,2);
+ c.buildStartY=502;vm.runInContext(html.slice(start,end),c);assert.equal(c.p.buildMoveX,0);assert.equal(c.p.buildMoveY,0);
+});
