@@ -857,9 +857,9 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 <button type="button" class="stage-card" data-stage="indoorBeginner" id="stageInfiltrationBeginner" aria-label="02 潜入（初級）"><span class="stage-number" aria-hidden="true">02</span><span class="stage-copy"><strong>潜入（初級）</strong><span class="stage-target">軍司令施設（南部）</span></span><span class="stage-art"><img src="assets/ui/stages/infiltration_beginner.webp" alt="夜の小型軍事施設" width="144" height="96" loading="lazy" decoding="async"></span></button>
 <button type="button" class="stage-card" data-stage="frontBeginner"><span class="stage-number" aria-hidden="true">03</span><span class="stage-copy"><strong>制圧（初級）</strong><span class="stage-target">軍需物資</span></span><span class="stage-art"><img src="assets/ui/stages/supplies.webp" alt="" width="144" height="96" loading="lazy" decoding="async"></span></button>
 <button type="button" class="stage-card" data-stage="base"><span class="stage-number" aria-hidden="true">04</span><span class="stage-copy"><strong>破壊（上級）</strong><span class="stage-target">軍司令施設（北部）</span></span><span class="stage-art"><img src="assets/ui/stages/headquarters.webp" alt="" width="144" height="96" loading="lazy" decoding="async"></span></button>
-<button type="button" class="stage-card" data-stage="areaDebug"><span class="stage-number" aria-hidden="true">EX</span><span class="stage-copy"><strong>エリアデバッグ</strong><span class="stage-target">エリアを選んで地形・遮蔽物を確認</span></span><span class="stage-art stage-debug-art" aria-hidden="true">⚙</span></button>
 <button type="button" class="stage-card" data-stage="indoor" id="stageInfiltrationAdvanced"><span class="stage-number" aria-hidden="true">05</span><span class="stage-copy"><strong>潜入（上級）</strong><span class="stage-target">軍需格納庫</span></span><span class="stage-art"><img src="assets/ui/stages/infiltration_advanced.webp" alt="夜のアーチ屋根の大型軍事施設" width="144" height="96" loading="lazy" decoding="async"></span></button>
 <button type="button" class="stage-card" data-stage="front"><span class="stage-number" aria-hidden="true">06</span><span class="stage-copy"><strong>制圧（上級）</strong><span class="stage-target">戦術アンテナ</span></span><span class="stage-art"><img src="assets/ui/stages/antenna.webp" alt="" width="144" height="96" loading="lazy" decoding="async"></span></button>
+<button type="button" class="stage-card" data-stage="areaDebug"><span class="stage-number" aria-hidden="true">EX</span><span class="stage-copy"><strong>エリアデバッグ</strong><span class="stage-target">エリアを選んで地形・遮蔽物を確認</span></span><span class="stage-art stage-debug-art" aria-hidden="true">⚙</span></button>
 </div><footer class="sk-bottom stage-bottom"><button type="button" class="sk-toggle" id="stageDebugAll" aria-pressed="false">全ステージを表示</button><button type="button" class="sk-deploy" id="stageDeploy" disabled>ステージを選択してください</button></footer></div></div>
 <div id="missionHud" role="status"></div>
 
@@ -873,7 +873,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.23.0824',FILE_CREATED_AT='2026/10/23 08:24',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.23.0834',FILE_CREATED_AT='2026/10/23 08:34',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;

@@ -44,7 +44,7 @@ test('current stage identity separates both difficulty pairs',()=>{
  const c=harness();for(const id of order){clear(c,id);assert.equal(c.currentStageId(),id);}
 });
 test('six HTML selection cards match the canonical unlock order and launch paths enforce it',()=>{
- const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),data=[...html.matchAll(/<button[^>]*class="stage-card"[^>]*data-stage="([^"]+)"[^>]*>(.*?)<\/button>/g)];assert.deepEqual(data.map(m=>m[1]),['beginner','indoorBeginner','frontBeginner','base','areaDebug','indoor','front']);
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),data=[...html.matchAll(/<button[^>]*class="stage-card"[^>]*data-stage="([^"]+)"[^>]*>(.*?)<\/button>/g)];assert.deepEqual(data.map(m=>m[1]),['beginner','indoorBeginner','frontBeginner','base','indoor','front','areaDebug']);
  assert.deepEqual(data.filter(m=>m[1]!=='areaDebug').map(m=>m[2].match(/class="stage-number"[^>]*>(\d+)/)[1]),['01','02','03','04','05','06']);assert.match(html,/if\(setSelectedStage\(b.dataset.stage\)\)/);assert.match(html,/!areaDebugEnabled&&!stageAvailableForSelection\(currentStageId\(\)\)/);assert.ok(!html.includes('潜入は初級・上級とも最初から選べます'));
 });
 
