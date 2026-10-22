@@ -863,7 +863,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.22.1008',FILE_CREATED_AT='2026/10/22 10:08',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.22.1035',FILE_CREATED_AT='2026/10/22 10:35',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -5503,7 +5503,7 @@ function update(dt){
  if(p.dig>0){p.digElapsed=(p.digElapsed||0)+dt;p.dig-=dt;if(R()<.6){const wet=digUsesWaterFx(p.x,p.y);trimParts(1);parts.push({x:p.x,y:p.y,vx:(R()-.5)*60,vy:(R()-.5)*60,life:.35,col:wet?(R()<.5?'#8ed3ef':'#d4f4ff'):'#7a5a38',sz:wet?2+R()*3:4+R()*3});}if(p.dig<=0)finishDig('潜航解除：地上に出た');}
  if(p.grappleT>0||playerAir){skillReq=false;bombReq=false;interact=false;}
  if(skillReq){skillReq=false;if(p.sniperMode){if(!(p.sniperExitT>0))fireSniper();}else if(p.sniperEnterT>0||p.sniperReadyT>0){}else if(T)say('スキルは歩兵のときに使える');else if(skill==='hound'&&hound&&hound.stun>0){say('猟犬は気絶中');}else if(skill==='hound'&&hound&&hound.state!=='follow'){say('猟犬は行動中');}else if(skill==='dig'&&p.dig>0){finishDig('潜航解除：地上に出た');}else if(skill==='dig'&&p.digPrep>0){say('潜伏準備中');}else if(skill==='flame'){}else if(skill==='throw'){const pb=bombs.findIndex(b=>b.own==='p');if(pb>=0&&!(bombs[pb].fly>0)){bombBlast(bombs[pb].x,bombs[pb].y);bombs.splice(pb,1);say('起爆!');}else if(p.scd>0)say('スキル準備中');else if(p.dig<=0&&p.digPrep<=0)useSkill(wx,wy);}else if(p.scd>0)say('スキル準備中');else if(p.dig<=0&&p.digPrep<=0&&p.drill<=0)useSkill(wx,wy);}
- if(bombReq){bombReq=false;if(!T&&!(p.dig>0)&&!(p.digPrep>0)){const pb=bombs.findIndex(b=>b.own==='p');if(pb<0){bombs.push({x:p.x,y:p.y,own:'p',armed:false});sfx('skill');say('爆弾を設置(D（スマホ：B）で起爆)');}else if(!(bombs[pb].fly>0)){bombBlast(bombs[pb].x,bombs[pb].y);bombs.splice(pb,1);}}}
+ if(bombReq){bombReq=false;if(!T&&!(p.dig>0)&&!(p.digPrep>0)){const pb=bombs.findIndex(b=>b.own==='p');if(pb<0){bombs.push({x:p.x,y:p.y,own:'p',armed:false,hudPlacedAt:performance.now()});sfx('skill');say('爆弾を設置(D（スマホ：B）で起爆)');}else if(!(bombs[pb].fly>0)){bombBlast(bombs[pb].x,bombs[pb].y);bombs.splice(pb,1);}}}
  let near=null;if(!sniperLocked&&!T&&!(p.digPrep>0))near=cars.find(c=>D(c,p)<(c.kind==='fighter'?76:58));
  if(!sniperLocked&&!T&&!(p.digPrep>0)&&skill==='partner'&&partner&&partner.vehicle&&!partner.down&&!(partner.stunT>0)&&D(partner,p)<(partner.vehicle.kind==='fighter'?76:58)&&(!near||D(partner,p)<D(near,p)))near=partner.vehicle;
  const nearHuman=!sniperLocked&&!T&&!(p.dig>0)&&!(p.digPrep>0)&&!(p.drill>0)?humans.filter(h=>h.alive&&!(h.stun>0)&&D(h,p)<38).sort((a,b)=>D(a,p)-D(b,p))[0]:null;
@@ -5635,7 +5635,7 @@ function update(dt){
  detectPatrolChats(dt);
  // 爆弾
  for(let i=bombs.length-1;i>=0;i--){const b=bombs[i];
-  if(b.fly>0){b.fly-=dt;const k=1-Math.max(0,b.fly)/.35;b.x=b.sx+(b.tx-b.sx)*k;b.y=b.sy+(b.ty-b.sy)*k;if(b.fly>0)continue;b.x=b.tx;b.y=b.ty;}
+  if(b.fly>0){b.fly-=dt;const k=1-Math.max(0,b.fly)/.35;b.x=b.sx+(b.tx-b.sx)*k;b.y=b.sy+(b.ty-b.sy)*k;if(b.fly>0)continue;b.x=b.tx;b.y=b.ty;if(b.own==='p')b.hudPlacedAt=performance.now();}
   if(b.own==='e'){b.t-=dt;
    const houndStep=hound&&hound.stun<=0&&D(hound,b)<14;if(houndStep){stunHound(5);sfx('explosion');fb(b.x,b.y,28);burst(b.x,b.y,34,'#ff8a3a',300);shake=Math.max(shake,10);bombs.splice(i,1);continue;}
    const allyStep=(allies||[]).find(a=>a.alive&&!(a.chute>0)&&D(a,b)<14);if(allyStep){for(const a of (allies||[]))if(a.alive&&!(a.chute>0)&&D(a,b)<34){a.alive=false;burst(a.x,a.y,18,'#8fd7ff',180);}sfx('explosion');fb(b.x,b.y,28);burst(b.x,b.y,34,'#ff8a3a',300);shake=Math.max(shake,10);bombs.splice(i,1);say('増援が地雷でやられた!');continue;}
@@ -6956,7 +6956,21 @@ function drawHudHeart(x,y,fillRatio){
 }
 function drawHudBomb(x,y,planted){
  const im=planted?HUD_ICONS.bombOn:HUD_ICONS.bombOff;
- if(im&&im.complete&&im.naturalWidth>0)g.drawImage(im,x-13.5,y-13.5,27,27);
+ const age=planted&&Number.isFinite(planted.hudPlacedAt)?performance.now()-planted.hudPlacedAt:Infinity;
+ const active=age>=0&&age<700,progress=age/700;
+ const scale=active?1+.5*Math.sin(Math.PI*Math.min(1,age/400)):1,size=27*scale;
+ if(active){
+  // One short canvas effect, with no extra sprites, gradients or blur passes.
+  g.save();g.globalAlpha*=1-progress;g.strokeStyle='#ffe49a';g.lineWidth=2.5*(1-progress)+.5;
+  g.beginPath();g.arc(x,y,17+13*progress,0,Math.PI*2);g.stroke();
+  for(let i=0;i<4;i++){
+   const a=Math.PI/4+i*Math.PI/2,inner=20+8*progress,outer=inner+5*(1-progress);
+   g.beginPath();g.moveTo(x+Math.cos(a)*inner,y+Math.sin(a)*inner);
+   g.lineTo(x+Math.cos(a)*outer,y+Math.sin(a)*outer);g.stroke();
+  }
+  g.restore();
+ }
+ if(im&&im.complete&&im.naturalWidth>0)g.drawImage(im,x-size/2,y-size/2,size,size);
 }
 function drawStealthHudIcon(x,y,col){
  const waiting=col==='#ffd27a';
@@ -6982,7 +6996,7 @@ function drawInfantryBottomHud(){
  const detected=stealth&&(humans.some(h=>h.alive&&h.st&&h.target==='p')||etanks.some(e=>e.alive&&e.st&&e.target==='p'));
  // UIアイコンはゲーム背景上に直接表示し、背後の黒い板・枠線を描画しない。
  g.save();
- drawHudHeart(x+14,cy,Math.min(1,p.hp));drawHudHeart(x+43,cy,Math.max(0,Math.min(1,p.hp-1)));drawHudHeart(x+72,cy,Math.max(0,Math.min(1,p.hp-2)));drawHudBomb(x+109,cy,!!bombs.some(b=>b.own==='p'));
+ drawHudHeart(x+14,cy,Math.min(1,p.hp));drawHudHeart(x+43,cy,Math.max(0,Math.min(1,p.hp-1)));drawHudHeart(x+72,cy,Math.max(0,Math.min(1,p.hp-2)));drawHudBomb(x+109,cy,bombs.find(b=>b.own==='p'));
  if(stealth)drawStealthHudIcon(x+148,cy,detected?'#ffd27a':'#9be07a');g.restore();
 }
 function skillGaugeStatus(){
