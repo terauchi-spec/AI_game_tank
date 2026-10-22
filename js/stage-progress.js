@@ -9,10 +9,11 @@ const STAGE_ORDER=[
  {id:'indoor',name:'潜入（上級）',image:'infiltration_advanced'},
  {id:'front',name:'制圧（上級）',image:'antenna'}
 ];
+const TEST_STAGES=[{id:'frontOni',name:'制圧（鬼）',image:'antenna'}];
 const STAGE_DISPLAY_ORDER=STAGE_ORDER.map(stage=>stage.id);
 function stageDisplayNumber(id){return String(STAGE_DISPLAY_ORDER.indexOf(id)+1).padStart(2,'0');}
 function stageSelectionName(name){return name.replace('拠点破壊','破壊').replace('前線制圧','制圧');}
-function currentStageId(){return stageMode==='front'&&frontlineBeginner?'frontBeginner':stageMode==='indoor'&&typeof indoorBeginner!=='undefined'&&indoorBeginner?'indoorBeginner':stageMode;}
+function currentStageId(){return stageMode==='front'&&typeof frontlineOni!=='undefined'&&frontlineOni?'frontOni':stageMode==='front'&&frontlineBeginner?'frontBeginner':stageMode==='indoor'&&typeof indoorBeginner!=='undefined'&&indoorBeginner?'indoorBeginner':stageMode;}
 function readStageProgress(){
  let saved;try{saved=JSON.parse(localStorage.getItem(STAGE_PROGRESS_KEY)||'null');}catch(_){}
  const earned=new Set();
@@ -41,13 +42,13 @@ function unlockStageOnClear(s){
 }
 // Debug visibility affects selection only; canonical progression still uses stageSelectable().
 function stageAvailableForSelection(id,progress=readStageProgress()){
- return id==='areaDebug'||(STAGE_ORDER.some(stage=>stage.id===id)&&(stageDebugAll||stageSelectable(id,progress)));
+ return id==='areaDebug'||(TEST_STAGES.some(stage=>stage.id===id)&&stageDebugAll)||(STAGE_ORDER.some(stage=>stage.id===id)&&(stageDebugAll||stageSelectable(id,progress)));
 }
 function setSelectedStage(id){
  if(!stageAvailableForSelection(id))return false;
  selectedStageId=id;
  document.querySelectorAll('[data-stage]').forEach(card=>{const chosen=card.dataset.stage===id;card.classList.toggle('selected',chosen);card.setAttribute('aria-pressed',String(chosen));});
- const stage=STAGE_ORDER.find(stage=>stage.id===id),button=document.getElementById('stageDeploy');
+ const stage=[...STAGE_ORDER,...TEST_STAGES].find(stage=>stage.id===id),button=document.getElementById('stageDeploy');
  button.disabled=typeof gameBuildQueued!=='undefined'&&gameBuildQueued;
  button.textContent=id==='areaDebug'?'エリアデバッグへ':stage.name.replace(/[（）]/g,'')+'で出撃';
  return true;
@@ -55,8 +56,8 @@ function setSelectedStage(id){
 function deploySelectedStage(){
  if(state!=='stage'||gameBuildQueued||!stageAvailableForSelection(selectedStageId))return false;
  const id=selectedStageId;selectedAreaDebug=null;
- areaDebugEnabled=id==='areaDebug';frontlineBeginner=id==='frontBeginner';indoorBeginner=id==='indoorBeginner';
- stageMode=areaDebugEnabled?'base':frontlineBeginner?'front':indoorBeginner?'indoor':id;
+ areaDebugEnabled=id==='areaDebug';frontlineOni=id==='frontOni';frontlineBeginner=id==='frontBeginner';indoorBeginner=id==='indoorBeginner';
+ stageMode=areaDebugEnabled?'base':frontlineBeginner||frontlineOni?'front':indoorBeginner?'indoor':id;
  if(areaDebugEnabled){state='areaPick';sfx('skill');return true;}
  return selectSkillIndex(skillMenuList().findIndex(skill=>skill.id===selectedSkillId),true);
 }
@@ -66,6 +67,12 @@ function renderStageLocks(){
   const id=button.dataset.stage,index=STAGE_ORDER.findIndex(stage=>stage.id===id),stage=STAGE_ORDER[index];
   if(id==='areaDebug'){
    button.disabled=false;button.classList.toggle('locked',false);button.setAttribute('aria-label','エリアデバッグ');return;
+  }
+  const testStage=TEST_STAGES.find(stage=>stage.id===id);
+  if(testStage){
+   button.disabled=!stageDebugAll;button.classList.toggle('locked',!stageDebugAll);
+   button.querySelector('.stage-number').textContent='鬼';button.setAttribute('aria-label',testStage.name+'（テスト）'+(stageDebugAll?'':'・全ステージを表示で選択'));
+   button.title=stageDebugAll?'制圧上級と同じ3拠点・敵兵の出現数3倍':'全ステージを表示で選択できるテストステージ';return;
   }
   if(!stage)return;
   const locked=!stageAvailableForSelection(id,progress);

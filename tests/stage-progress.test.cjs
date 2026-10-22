@@ -44,8 +44,8 @@ test('current stage identity separates both difficulty pairs',()=>{
  const c=harness();for(const id of order){clear(c,id);assert.equal(c.currentStageId(),id);}
 });
 test('six HTML selection cards match the canonical unlock order and launch paths enforce it',()=>{
- const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),data=[...html.matchAll(/<button[^>]*class="stage-card"[^>]*data-stage="([^"]+)"[^>]*>(.*?)<\/button>/g)];assert.deepEqual(data.map(m=>m[1]),['beginner','indoorBeginner','frontBeginner','base','indoor','front','areaDebug']);
- assert.deepEqual(data.filter(m=>m[1]!=='areaDebug').map(m=>m[2].match(/class="stage-number"[^>]*>(\d+)/)[1]),['01','02','03','04','05','06']);assert.match(html,/if\(setSelectedStage\(b.dataset.stage\)\)/);assert.match(html,/!areaDebugEnabled&&!stageAvailableForSelection\(currentStageId\(\)\)/);assert.ok(!html.includes('潜入は初級・上級とも最初から選べます'));
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),data=[...html.matchAll(/<button[^>]*class="stage-card"[^>]*data-stage="([^"]+)"[^>]*>(.*?)<\/button>/g)];assert.deepEqual(data.map(m=>m[1]),['beginner','indoorBeginner','frontBeginner','base','indoor','front','frontOni','areaDebug']);
+ assert.deepEqual(data.filter(m=>m[1]!=='areaDebug'&&m[1]!=='frontOni').map(m=>m[2].match(/class="stage-number"[^>]*>(\d+)/)[1]),['01','02','03','04','05','06']);assert.match(html,/if\(setSelectedStage\(b.dataset.stage\)\)/);assert.match(html,/!areaDebugEnabled&&!stageAvailableForSelection\(currentStageId\(\)\)/);assert.ok(!html.includes('潜入は初級・上級とも最初から選べます'));
 });
 
 
@@ -65,4 +65,13 @@ test('area debug opens its picker only after confirmation and cannot grant stage
 });
 test('fixed menu, area debug navigation and removed skill toggle are wired to the new screens',()=>{
  const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),canyon=fs.readFileSync(path.join(__dirname,'../js/canyon.js'),'utf8');assert.ok(!html.includes('skAreaDebug'));assert.match(html,/<footer class="sk-bottom stage-bottom">/);assert.match(html,/id="stageDebugAll"[^>]*>全ステージを表示/);assert.match(html,/id="stageDeploy"/);assert.match(html,/padding-bottom:calc\(150px \+ env\(safe-area-inset-bottom\)\)/);assert.match(canyon,/state='stage';areaDebugEnabled=false;selectedAreaDebug=null/);
+});
+
+
+test('Oni is a test-only selection after advanced capture, with no normal unlock or achievement credit',()=>{
+ const c=harness(),{buttons,nodes}=cards(c),oni={dataset:{stage:'frontOni'},number:{},classList:{toggle(k,v){this[k]=v;}},querySelector(){return this.number;},setAttribute(k,v){this[k]=v;}};buttons.push(oni);c.renderStageLocks();assert.equal(oni.disabled,true);assert.equal(c.stageSelectable('frontOni'),false);assert.equal(c.stageAvailableForSelection('frontOni'),false);
+ vm.runInContext('stageDebugAll=true',c);c.renderStageLocks();assert.equal(oni.disabled,false);assert.equal(oni.number.textContent,'鬼');assert.equal(c.setSelectedStage('frontOni'),true);assert.equal(nodes.stageDeploy.textContent,'制圧鬼で出撃');
+ Object.assign(c,{state:'stage',gameBuildQueued:false,skillDebugAll:false,selectedSkillId:'throw',skillMenuList:()=>[{id:'throw'}],selectSkillIndex:()=>true});c.deploySelectedStage();assert.equal(c.stageMode,'front');assert.equal(c.frontlineOni,true);assert.equal(c.frontlineBeginner,false);assert.equal(c.currentStageId(),'frontOni');
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');vm.runInContext(html.slice(html.indexOf('function newScoreStats()'),html.indexOf('function playerDetectedNow()')),c);assert.equal(c.newScoreStats().debugUsed,true);
+ c.setSelectedStage('beginner');c.deploySelectedStage();assert.equal(c.frontlineOni,false);assert.equal(c.stageMode,'beginner');
 });

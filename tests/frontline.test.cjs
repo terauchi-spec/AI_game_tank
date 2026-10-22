@@ -4,7 +4,7 @@ function harness(){
  let seed=3;const calls=[];
  const gm=new Proxy({}, {get:(o,k)=>o[k]||((...args)=>calls.push([k,...args])),set:(o,k,v)=>(o[k]=v,true)});
  const c={WW:960,WH:12800,W:480,H:800,TANK_HIT:28,cars:[],etanks:[],p:{x:480,y:10000,body:0},stageMode:'front',debugMode:0,weather:'clear',areaDebugEnabled:false,mission:{points:[],index:0,enemyRoster:[],enemyRosterIndex:0},humans:[],enemyDogs:[],allies:[],allySeq:0,covers:[],bridges:[],gm,
- performance:{now:()=>1000},patrolRoutePlanAt:0,PATROL_SEARCH_PENDING:Symbol('pending'),findPatrolReturnPath:()=>null,R:()=>((seed=(seed*1664525+1013904223)>>>0)/2**32),D:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),hitsM:()=>false,hitsC:()=>false,inWaterAt:()=>false,inBase:()=>false,patrolLineClear:()=>true,missionSpot:(x,y)=>({x,y}),rebuildSpatialGrid(){},setSkillCooldown(){},sfx(){},say(){},
+ performance:{now:()=>1000},patrolRoutePlanAt:0,PATROL_SEARCH_PENDING:Symbol('pending'),findPatrolReturnPath:()=>null,R:()=>((seed=(seed*1664525+1013904223)>>>0)/2**32),D:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),hitsM:()=>false,hitsC:()=>false,inWaterAt:()=>false,inBase:()=>false,patrolLineClear:()=>true,missionSpot:(x,y)=>({x,y}),rebuildSpatialGrid(){},ensureEnemyTankSpawns(){},setSkillCooldown(){},sfx(){},say(){},
  mv:(a,dx,dy)=>{a.x+=dx;a.y+=dy;},dogMoveAround:(h,q,sp,dt)=>{const angle=Math.atan2(q.y-h.y,q.x-h.x);h.x+=Math.cos(angle)*sp*dt;h.y+=Math.sin(angle)*sp*dt;}};
  vm.createContext(c);vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/frontline.js'),'utf8'),c);
  vm.runInContext(html.slice(html.indexOf('function missionAllies('),html.indexOf('function setupMission(')),c);
@@ -688,4 +688,36 @@ test('evaluation records personal and joint capture participation but not remote
   vm.runInContext(html.slice(html.indexOf('function updateMission('),html.indexOf('let missionHudNextAt=')),c);c.updateMission(3);
   assert.equal(c.mission.index,1);assert.equal(c.scoreStats.capturePoints,Number(present));assert.equal(c.scoreStats.captureSeconds||0,present?3:0);assert.equal(c.scoreStats.jointObjectiveSeconds||0,present?3:0);assert.equal(c.scoreStats.objectiveProgress,.5);
  }
+});
+
+test('Oni triples initial enemy entry and regular waves while retaining advanced timing',()=>{
+ const normal=harness(),oni=harness();oni.frontlineOni=true;
+ for(const c of [normal,oni]){c.mission.enemyWavesStarted=false;c.mission.enemyEntryY=c.p.y;c.updateFrontlineEnemyEntry();}
+ assert.equal(normal.humans.length,6);assert.equal(oni.humans.length,18);assert.equal(oni.mission.waveT,normal.mission.waveT);
+ for(const c of [normal,oni]){c.humans=[];c.mission.waveT=0;c.mission.waveCheckT=1;c.mission.nearbyEnemies=c===oni?12:4;c.updateFrontlineWaves(.1);}
+ assert.equal(normal.humans.length,2);assert.equal(oni.humans.length,6);assert.equal(oni.mission.waveT,normal.mission.waveT);
+});
+test('Oni triples counterattack troops and commanders and defers them at the 48-person limit',()=>{
+ const c=harness();c.frontlineOni=true;const q={x:c.p.x,y:c.p.y};c.humans=Array.from({length:48},()=>({alive:true,x:100,y:100}));c.updateFrontlineCounterattack(q,.1);assert.equal(q.counterPending,18);assert.equal(q.counterBluePending,6);assert.equal(c.humans.length,48);
+ c.humans=[];c.updateFrontlineCounterattack(q,1);assert.equal(c.humans.length,18);assert.equal(q.counterPending,0);assert.equal(q.counterBluePending,0);assert.ok(c.humans.filter(h=>h.commander==='blue').length>=6);
+});
+test('Oni reserve classes and dog handlers have three independent copies',()=>{
+ const c=harness();c.frontlineOni=true;const dog={},handler={alive:true,dogHandler:true,dog},blue={alive:true,commander:'blue'},white={alive:true,elite:true,commander:'white'};dog.handler=handler;c.humans=[handler,blue,white];c.enemyDogs=[dog];c.setupFrontlineArmy();const roster=c.mission.enemyRoster;
+ assert.equal(roster.length,9);assert.equal(new Set(roster).size,9);assert.equal(roster.filter(h=>h.commander==='blue').length,3);assert.equal(roster.filter(h=>h.commander==='white').length,3);const handlers=roster.filter(h=>h.dogHandler);assert.equal(new Set(handlers.map(h=>h.dog)).size,3);assert.ok(handlers.every(h=>h.dog.handler===h));assert.equal(c.humans.length,0);assert.equal(c.enemyDogs.length,0);
+});
+test('Oni cannot exceed 48 active infantry; beginner and other stages keep their original settings',()=>{
+ const c=harness();c.W=960;c.frontlineOni=true;for(let i=0;i<10;i++){for(const h of c.humans)h.y+=200;c.spawnFrontlineWave(100);}assert.equal(c.humans.length,48);assert.equal(c.frontlineEnemyLimit(),48);
+ c.frontlineOni=false;c.frontlineBeginner=true;assert.equal(c.frontlineEnemyLimit(),10);assert.equal(c.frontlineEnemyMultiplier(),1);c.frontlineBeginner=false;assert.equal(c.frontlineEnemyLimit(),16);
+ c.frontlineOni=true;c.stageMode='base';assert.equal(c.isFrontlineOni(),false);assert.equal(c.frontlineEnemyMultiplier(),1);c.stageMode='front';c.areaDebugEnabled=true;assert.equal(c.isFrontlineOni(),false);
+});
+
+test('Oni triples placed enemy tanks with independent patrol routes and reruns placement correction',()=>{
+ const c=harness();c.frontlineOni=true;const a={x:100,y:5000,alive:true,path:[{x:100,y:5000},{x:200,y:5000}]},b={x:200,y:7000,alive:true,static:true,path:[{x:200,y:7000}]};c.etanks=[a,b];let placements=0;c.ensureEnemyTankSpawns=()=>{placements++;};c.setupFrontlineArmy();assert.equal(c.etanks.length,6);assert.equal(placements,1);assert.equal(new Set(c.etanks).size,6);assert.equal(new Set(c.etanks.map(e=>e.path)).size,6);assert.equal(c.etanks.filter(e=>e.static).length,3);c.etanks[2].path[0].x=999;assert.equal(a.path[0].x,100);
+ const normal=harness();normal.etanks=[a,b];normal.setupFrontlineArmy();assert.equal(normal.etanks.length,2);
+});
+test('tripled tanks use real startup placement to remain separate and outside the starting safety radius',()=>{
+ const c=harness();c.frontlineOni=true;c.zoneAt=()=>({n:'草原'});c.pOK=()=>true;
+ vm.runInContext(html.slice(html.indexOf('function ensureEnemyTankSpawns('),html.indexOf('function pOK(')),c);
+ c.etanks=[{x:400,y:9200,alive:true,path:[{x:400,y:9200},{x:450,y:9200}]},{x:600,y:9000,alive:true,path:[{x:600,y:9000}]}];c.setupFrontlineArmy();assert.equal(c.etanks.length,6);
+ for(let i=0;i<c.etanks.length;i++){const a=c.etanks[i];assert.ok(c.D(a,c.p)>=700);for(const b of c.etanks.slice(i+1))assert.ok(c.D(a,b)>=c.TANK_HIT*2+10);}
 });
