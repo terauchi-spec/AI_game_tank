@@ -863,7 +863,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.22.1006',FILE_CREATED_AT='2026/10/22 10:06',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.22.1008',FILE_CREATED_AT='2026/10/22 10:08',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -7636,7 +7636,7 @@ function renderResultScreen(){const s=scoreStats,r=s&&s.final;if(!r)return;
  const el=id=>document.getElementById(id),kills=s.humanKills+s.eliteKills+s.tankKills;
  const metrics=resultMetrics(s,r),levels=metrics.map(resLevel),sty=resultStyle(levels,s);
  el('resStatus').textContent=r.cleared?'作戦成功':'作戦失敗';el('resStatus').style.color=r.cleared?'#dff3b0':'#ffb0a0';
-  const stageArt=stageMode==='front'?(frontlineBeginner?'supplies':'antenna'):stageMode==='beginner'?'satellite':stageMode==='base'?'headquarters':null;
+  const stageArt=stageMode==='indoor'?(indoorBeginner?'infiltration_beginner':'infiltration_advanced'):stageMode==='front'?(frontlineBeginner?'supplies':'antenna'):stageMode==='beginner'?'satellite':stageMode==='base'?'headquarters':null;
   const stageImage=el('resStageImage');stageImage.hidden=!stageArt;if(stageArt)stageImage.src='assets/ui/stages/'+stageArt+'.webp';
  const zone=(ZONES||[]).find(z=>p&&p.y>=z.y0&&p.y<=z.y1);
  el('resArea').textContent='作戦：'+STAGE_NAMES[stageMode];
