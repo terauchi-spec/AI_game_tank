@@ -721,3 +721,15 @@ test('tripled tanks use real startup placement to remain separate and outside th
  c.etanks=[{x:400,y:9200,alive:true,path:[{x:400,y:9200},{x:450,y:9200}]},{x:600,y:9000,alive:true,path:[{x:600,y:9000}]}];c.setupFrontlineArmy();assert.equal(c.etanks.length,6);
  for(let i=0;i<c.etanks.length;i++){const a=c.etanks[i];assert.ok(c.D(a,c.p)>=700);for(const b of c.etanks.slice(i+1))assert.ok(c.D(a,b)>=c.TANK_HIT*2+10);}
 });
+
+test('Oni doubles stage squads and their live cap without crowding twelve troops beyond the map edge',()=>{
+ const c=harness();c.frontlineOni=true;c.missionAllies(9000);assert.equal(c.allies.length,12);assert.equal(new Set(c.allies.map(a=>a.x+','+a.y)).size,12);assert.ok(c.allies.every(a=>a.x>0&&a.x<c.WW));assert.equal(new Set(c.allies.map(a=>a.y)).size,2);
+ c.missionAllies(8500);assert.equal(c.allies.length,20);c.missionAllies(8000);assert.equal(c.allies.length,20);c.allies[0].alive=false;c.missionAllies(7500);assert.equal(c.allies.filter(a=>a.alive).length,20);
+ for(const mode of ['front','base','indoor']){const normal=harness();normal.stageMode=mode;normal.frontlineOni=mode!=='front';normal.missionAllies(9000);assert.equal(normal.allies.length,6);normal.missionAllies(8500);assert.equal(normal.allies.length,10);}
+});
+test('Oni automatic replenishment triggers below eight allies, retaining the usual timer',()=>{
+ for(const alive of [7,8]){
+  const c=harness();c.frontlineOni=true;c.p.y=10400;const q={x:480,y:10000,counterTriggered:true};c.mission={points:[q],index:0,progress:0,waveT:999,reinforceT:0};c.allies=Array.from({length:alive},(_,i)=>({x:200+i*50,y:10000,alive:true,frontline:true}));
+  vm.runInContext(html.slice(html.indexOf('function updateMission('),html.indexOf('let missionHudNextAt=')),c);c.updateMission(.1);assert.equal(c.allies.length,alive===7?19:8);assert.equal(c.mission.reinforceT,18);
+ }
+});
