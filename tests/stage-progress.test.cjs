@@ -10,7 +10,7 @@ test('failed storage writes do not announce an unlock that would be lost',()=>{c
 test('both indoor difficulties stay selectable without changing the four-stage progression',()=>{
  const c=harness();
  assert.equal(c.stageSelectable('indoor'),true);assert.equal(c.stageSelectable('indoorBeginner'),true);
- clear(c,'indoor');clear(c,'indoorBeginner');assert.deepEqual(c.ids(),['beginner']);assert.equal(c.storage.size,0);
+ clear(c,'indoor');clear(c,'indoorBeginner');assert.deepEqual(c.ids(),['beginner']);assert.deepEqual(JSON.parse(c.storage.get('tankGameStageProgressV1')).indoorCleared,['indoor','indoorBeginner']);
  for(const id of ['beginner','frontBeginner','base','front'])clear(c,id);
  assert.equal(c.stageSelectable('indoor'),true);assert.equal(c.stageSelectable('indoorBeginner'),true);
  assert.deepEqual(JSON.parse(c.storage.get('tankGameStageProgressV1')).cleared,['beginner','frontBeginner','base','front']);
@@ -43,4 +43,19 @@ test('selection order, short labels and unlock notices use the new display numbe
  const notice=clear(c,'beginner');c.renderStageUnlock(notice);
  assert.equal(nodes.resStageUnlockName.textContent,'03 制圧（初級）');
  assert.deepEqual(JSON.parse(c.storage.get('tankGameStageProgressV1')).cleared,['beginner']);
+});
+
+
+test('official indoor clear records persist independently and preserve the main unlock sequence',()=>{
+ const c=harness();clear(c,'beginner');c.stageMode='indoor';c.indoorBeginner=true;const s={final:{cleared:true}};c.unlockStageOnClear(s);c.unlockStageOnClear(s);
+ let saved=JSON.parse(c.storage.get('tankGameStageProgressV1'));assert.deepEqual(saved.cleared,['beginner']);assert.deepEqual(saved.indoorCleared,['indoorBeginner']);
+ const reloaded=harness(JSON.stringify(saved));assert.equal(reloaded.stageSelectable('indoor'),true);assert.deepEqual(reloaded.ids(),['beginner','frontBeginner']);
+ reloaded.stageMode='indoor';reloaded.indoorBeginner=false;reloaded.unlockStageOnClear({final:{cleared:true}});saved=JSON.parse(reloaded.storage.get('tankGameStageProgressV1'));assert.deepEqual(saved.indoorCleared,['indoorBeginner','indoor']);
+ clear(reloaded,'frontBeginner');saved=JSON.parse(reloaded.storage.get('tankGameStageProgressV1'));assert.deepEqual(saved.cleared,['beginner','frontBeginner']);assert.equal(saved.indoorCleared.length,2);
+ const buttons=['indoorBeginner','indoor'].map(id=>({dataset:{stage:id},classList:{toggle(k,v){this[k]=v;}},querySelector:()=>({}),setAttribute(k,v){this[k]=v;}}));reloaded.document={querySelectorAll:()=>buttons};reloaded.renderStageLocks();assert.ok(buttons.every(b=>b['aria-label'].includes('クリア済み')&&b.classList['stage-cleared']));
+});
+test('indoor failures and debug runs never save formal clear records',()=>{
+ const c=harness();c.stageMode='indoor';c.indoorBeginner=true;for(const s of [{final:{cleared:false}},{final:{cleared:true},debugUsed:true}])c.unlockStageOnClear(s);assert.equal(c.storage.size,0);
+ c.areaDebugEnabled=true;c.unlockStageOnClear({final:{cleared:true}});assert.equal(c.storage.size,0);
+ c.areaDebugEnabled=false;c.localStorage.setItem=()=>{throw Error('quota')};const s={final:{cleared:true}};c.unlockStageOnClear(s);assert.equal(s.stageUnlockSaveFailed,true);assert.equal(s.unlockedStage,undefined);
 });

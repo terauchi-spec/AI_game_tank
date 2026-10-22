@@ -16,7 +16,8 @@ function readStageProgress(){
  const cleared=[];
  // Only a continuous sequence of clears can open the next operation.
  for(const stage of STAGE_ORDER){if(!Array.isArray(saved?.cleared)||!saved.cleared.includes(stage.id))break;cleared.push(stage.id);}
- return{cleared};
+ const indoorCleared=['indoorBeginner','indoor'].filter(id=>Array.isArray(saved?.indoorCleared)&&saved.indoorCleared.includes(id));
+ return{cleared,indoorCleared};
 }
 function stageSelectable(id,progress=readStageProgress()){
  if(id==='indoor'||id==='indoorBeginner')return true; // 潜入は両難易度とも解放。既存4ステージの進行には干渉しない。
@@ -25,6 +26,13 @@ function stageSelectable(id,progress=readStageProgress()){
 function unlockStageOnClear(s){
  if(!s?.final?.cleared||s.debugUsed||areaDebugEnabled||s.stageProgressRecorded)return;
  s.stageProgressRecorded=true;const progress=readStageProgress(),id=currentStageId(),index=STAGE_ORDER.findIndex(stage=>stage.id===id);
+ // 潜入は常時選択可能な正式ステージ。既存4ステージの解放順と分けてクリアを保存する。
+ if(id==='indoorBeginner'||id==='indoor'){
+  if(progress.indoorCleared.includes(id))return;
+  progress.indoorCleared.push(id);
+  try{localStorage.setItem(STAGE_PROGRESS_KEY,JSON.stringify(progress));}catch(_){s.stageUnlockSaveFailed=true;}
+  return;
+ }
  if(index<0||index!==progress.cleared.length)return;
  progress.cleared.push(id);
  try{localStorage.setItem(STAGE_PROGRESS_KEY,JSON.stringify(progress));}catch(_){s.stageUnlockSaveFailed=true;return;}
@@ -36,8 +44,9 @@ function renderStageLocks(){
   if(button.dataset.stage==='indoor'||button.dataset.stage==='indoorBeginner'){
    const advanced=button.dataset.stage==='indoor',number=stageDisplayNumber(button.dataset.stage),name=advanced?'潜入（上級）':'潜入（初級）';
    button.disabled=false;button.classList.toggle('locked',false);
+   button.classList.toggle('stage-cleared',progress.indoorCleared.includes(button.dataset.stage));
    button.querySelector('.stage-number').textContent=number;
-   button.setAttribute('aria-label',number+' '+name);
+   button.setAttribute('aria-label',number+' '+name+(progress.indoorCleared.includes(button.dataset.stage)?'・クリア済み':''));
    button.title=advanced?'2階建て施設・重要資料3箇所を回収':'小型施設・重要資料2箇所を回収';return;
   }
   const index=STAGE_ORDER.findIndex(s=>s.id===button.dataset.stage),stage=STAGE_ORDER[index],locked=!stageSelectable(stage.id,progress);
