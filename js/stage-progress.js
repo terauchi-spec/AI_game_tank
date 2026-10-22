@@ -1,4 +1,5 @@
 // Stage progress is independent of skill unlocks and never changes in debug runs.
+let selectedStageId=null,stageDebugAll=false;
 const STAGE_PROGRESS_KEY='tankGameStageProgressV1';
 const STAGE_ORDER=[
  {id:'beginner',name:'破壊（初級）',image:'satellite'},
@@ -38,17 +39,49 @@ function unlockStageOnClear(s){
  const next=STAGE_ORDER.find(stage=>!progress.cleared.includes(stage.id)&&!stageSelectable(stage.id,before)&&stageSelectable(stage.id,progress));
  if(next)s.unlockedStage=next.id;
 }
+// Debug visibility affects selection only; canonical progression still uses stageSelectable().
+function stageAvailableForSelection(id,progress=readStageProgress()){
+ return id==='areaDebug'||(STAGE_ORDER.some(stage=>stage.id===id)&&(stageDebugAll||stageSelectable(id,progress)));
+}
+function setSelectedStage(id){
+ if(!stageAvailableForSelection(id))return false;
+ selectedStageId=id;
+ document.querySelectorAll('[data-stage]').forEach(card=>{const chosen=card.dataset.stage===id;card.classList.toggle('selected',chosen);card.setAttribute('aria-pressed',String(chosen));});
+ const stage=STAGE_ORDER.find(stage=>stage.id===id),button=document.getElementById('stageDeploy');
+ button.disabled=typeof gameBuildQueued!=='undefined'&&gameBuildQueued;
+ button.textContent=id==='areaDebug'?'エリアデバッグへ':stage.name.replace(/[（）]/g,'')+'で出撃';
+ return true;
+}
+function deploySelectedStage(){
+ if(state!=='stage'||gameBuildQueued||!stageAvailableForSelection(selectedStageId))return false;
+ const id=selectedStageId;selectedAreaDebug=null;
+ areaDebugEnabled=id==='areaDebug';frontlineBeginner=id==='frontBeginner';indoorBeginner=id==='indoorBeginner';
+ stageMode=areaDebugEnabled?'base':frontlineBeginner?'front':indoorBeginner?'indoor':id;
+ if(areaDebugEnabled){state='areaPick';sfx('skill');return true;}
+ return selectSkillIndex(skillMenuList().findIndex(skill=>skill.id===selectedSkillId),true);
+}
 function renderStageLocks(){
  const progress=readStageProgress();
  document.querySelectorAll('[data-stage]').forEach(button=>{
-  const index=STAGE_ORDER.findIndex(s=>s.id===button.dataset.stage),stage=STAGE_ORDER[index],locked=!stageSelectable(stage.id,progress);
+  const id=button.dataset.stage,index=STAGE_ORDER.findIndex(stage=>stage.id===id),stage=STAGE_ORDER[index];
+  if(id==='areaDebug'){
+   button.disabled=false;button.classList.toggle('locked',false);button.setAttribute('aria-label','エリアデバッグ');return;
+  }
+  if(!stage)return;
+  const locked=!stageAvailableForSelection(id,progress);
   button.disabled=locked;button.classList.toggle('locked',locked);
-  button.classList.toggle('stage-cleared',progress.cleared.includes(stage.id));
-  const number=stageDisplayNumber(stage.id),name=stageSelectionName(stage.name),requirement=index>0?stageSelectionName(STAGE_ORDER[index-1].name)+'をクリアすると解放':'';
+  button.classList.toggle('stage-cleared',progress.cleared.includes(id));
+  const number=stageDisplayNumber(id),name=stageSelectionName(stage.name),requirement=index>0?stageSelectionName(STAGE_ORDER[index-1].name)+'をクリアすると解放':'';
   button.querySelector('.stage-number').textContent=number;
-  button.setAttribute('aria-label',number+' '+name+(locked?'・'+requirement:progress.cleared.includes(stage.id)?'・クリア済み':''));
+  button.setAttribute('aria-label',number+' '+name+(locked?'・'+requirement:progress.cleared.includes(id)?'・クリア済み':''));
   button.title=locked?requirement:'';
  });
+ const toggle=document.getElementById('stageDebugAll');
+ if(toggle){toggle.textContent=stageDebugAll?'解放済みに戻す':'全ステージを表示';toggle.classList.toggle('enabled',stageDebugAll);toggle.setAttribute('aria-pressed',String(stageDebugAll));}
+ if(document.getElementById('stageDeploy')){
+  const fallback=STAGE_ORDER.find(stage=>stageAvailableForSelection(stage.id,progress)&&!progress.cleared.includes(stage.id))||STAGE_ORDER[0];
+  setSelectedStage(stageAvailableForSelection(selectedStageId,progress)?selectedStageId:fallback.id);
+ }
 }
 function renderStageUnlock(s){
  const stage=STAGE_ORDER.find(stage=>stage.id===s.unlockedStage),notice=document.getElementById('resStageUnlock'),image=document.getElementById('resStageUnlockImage');

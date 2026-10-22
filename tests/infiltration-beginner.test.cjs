@@ -59,14 +59,15 @@ module.exports={harness};
 test('selection maps each indoor card to the shared indoor loop with the correct difficulty and opening file count',()=>{
  const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),cards=['indoorBeginner','indoor','frontBeginner','base'].map(stage=>({dataset:{stage},addEventListener(_name,callback){this.click=callback;}})),nodes={};
  const element=id=>nodes[id]??={hidden:false,textContent:'',src:'',classList:{toggle(){}},focus(){},getAttribute(k){return this[k];},querySelector(selector){return element(selector);}};
- const c={document:{querySelectorAll:()=>cards,getElementById:element,body:{classList:{remove(){},contains:()=>false,toggle(){}}}},stageSelectable:()=>true,skillMenuList:()=>[{id:'throw'}],selectedSkillId:'throw',selectSkillIndex(){},isFrontlineBeginner:()=>false};vm.createContext(c);
+ const c={document:{querySelectorAll:()=>cards,getElementById:element,body:{classList:{remove(){},contains:()=>false,toggle(){}}}},stageSelectable:()=>true,skillMenuList:()=>[{id:'throw'}],state:'stage',gameBuildQueued:false,selectedSkillId:'throw',selectedAreaDebug:null,stageAvailableForSelection:()=>true,setSelectedStage(id){c.selectedStageId=id;return true;},sfx(){},selectSkillIndex(){},isFrontlineBeginner:()=>false};vm.createContext(c);
  vm.runInContext([html.match(/^let stageMode=.*$/m)[0],html.match(/^const STAGE_NAMES=.*$/m)[0],html.match(/^document.querySelectorAll\('\[data-stage\]'\).*$/m)[0]].join('\n'),c);
+ const progress=fs.readFileSync(path.join(__dirname,'../js/stage-progress.js'),'utf8');vm.runInContext(progress.slice(progress.indexOf('function deploySelectedStage(){'),progress.indexOf('function renderStageLocks(){')),c);
  const a=html.indexOf('function syncMissionBriefing(){'),b=html.indexOf("document.getElementById('missionBegin').addEventListener",a);vm.runInContext(html.slice(a,b),c);
  for(const [card,title,total,id]of[[cards[0],'潜入（初級）',2,'indoorBeginner'],[cards[1],'潜入（上級）',3,'indoor'],[cards[0],'潜入（初級）',2,'indoorBeginner']]){
-  card.click();vm.runInContext("state='briefing';syncMissionBriefing();snapshot={mode:stageMode,beginner:indoorBeginner,name:STAGE_NAMES[stageMode]};",c);
+  c.state='stage';card.click();c.deploySelectedStage();vm.runInContext("state='briefing';syncMissionBriefing();snapshot={mode:stageMode,beginner:indoorBeginner,name:STAGE_NAMES[stageMode]};",c);
   assert.equal(c.snapshot.mode,'indoor');assert.equal(c.snapshot.beginner,id==='indoorBeginner');assert.equal(c.snapshot.name,title+'：重要資料'+total+'箇所');
   assert.equal(nodes.missionBriefingTitle.textContent,title);assert.equal(nodes.missionIndoorDocuments.textContent,'円に入り、重要資料'+total+'か所を回収');assert.equal(nodes.missionIndoorRules.hidden,false);
  }
- cards[2].click();vm.runInContext('snapshot={mode:stageMode,beginner:indoorBeginner,front:frontlineBeginner}',c);assert.equal(c.snapshot.mode,'front');assert.equal(c.snapshot.beginner,false);assert.equal(c.snapshot.front,true);
- cards[3].click();vm.runInContext('snapshot={mode:stageMode,beginner:indoorBeginner}',c);assert.equal(c.snapshot.mode,'base');assert.equal(c.snapshot.beginner,false);
+ c.state='stage';cards[2].click();c.deploySelectedStage();vm.runInContext('snapshot={mode:stageMode,beginner:indoorBeginner,front:frontlineBeginner}',c);assert.equal(c.snapshot.mode,'front');assert.equal(c.snapshot.beginner,false);assert.equal(c.snapshot.front,true);
+ c.state='stage';cards[3].click();c.deploySelectedStage();vm.runInContext('snapshot={mode:stageMode,beginner:indoorBeginner}',c);assert.equal(c.snapshot.mode,'base');assert.equal(c.snapshot.beginner,false);
 });

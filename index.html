@@ -714,11 +714,11 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <ul><li>クリアまたは失敗後の評価画面に、総合スコアと<strong>F〜Sの7段階ランク</strong>を表示します。</li><li>スコアは潜入・戦闘・任務達成・クリア時間などをもとに計算します。前線制圧では自分の撃破を中心に評価し、味方の撃破は上限付きの支援点として加算します。継続増援の大量撃破や安全な移動だけで得点が過度に伸びないよう補正します。到達距離は出撃開始地点からの最大前進距離です。距離表示はすべてm単位です。</li><li>プレイスタイルを<strong>隠密／精密／強襲／爆破／破壊／機動／戦術／連携</strong>の8軸（Lv0〜5）で評価します。隠密は未発見の前進、精密は武器別の撃破効率、強襲は発見状態での撃破、爆破は爆発による撃破、破壊は遮蔽物・木の破壊、機動は車両での新たな前進と撃破、戦術は誘導・防御・組み付きの成功、連携は味方の戦果や救助を指標にします。使用回数や待機時間だけでは伸びません。</li><li><strong>マルチキル：</strong>撃破間隔4秒以内で続けて敵を撃破すること。<strong>ワンショットキル：</strong>同一攻撃で複数の敵を撃破すること。無線支援爆撃とその連鎖爆発は、マルチキル・ワンショットキルの対象外です。</li><li>新しい8軸に対応した単独・複合・伝説級の称号と勲章を獲得できます。条件を満たすと称号・勲章を獲得。タイトル画面の「称号」からコレクションと累計戦績を確認できます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-save"><h2>11. スキル解放・保存・デバッグ</h2>
-<ul><li>破壊・制圧・潜入は、いずれも評価・実績保存の対象です。ステージは01から順番に、ひとつ前をクリアすると解放されます。</li><li>初期解放スキルは<strong>遠投</strong>。通常プレイでクリアするたびに、新しいスキルが順番に1種類ずつ解放されます。</li><li>スキル解放・称号・勲章・ハイスコア・戦績などは、このブラウザ内に保存されます。</li><li>称号画面の「戦績」から保存データを初期化できます。初期化は取り消せません。</li><li>デバッグではPキー（スマホは上部アイコン）で「無敵→無敵＋索敵解除→無敵＋戦闘機（燃料無限）→通常」を切り替え、描画診断ではAI・衝突等の更新を止め、最初の15秒はゲーム画面全体、次の15秒は背景だけを、同じ経路で自動スクロールします。終了後は無敵＋戦闘機に戻ります。Oキーで前方に戦車を出現、Lキーで巡回ルート表示を切り替えられます。スキル選択画面には全スキル表示とエリアデバッグがあります。エリアデバッグでは全エリアの遮蔽物・静止した敵のサンプルを確認でき、出発地点付近にガソリンと無線を配置しています。デバッグ用ガソリンは徒歩でも表示され、取得には乗車が必要です。デバッグプレイの実績は通常の称号・勲章・戦績やスキル解放の対象外です。</li></ul>
+<ul><li>破壊・制圧・潜入は、いずれも評価・実績保存の対象です。ステージは01から順番に、ひとつ前をクリアすると解放されます。</li><li>初期解放スキルは<strong>遠投</strong>。通常プレイでクリアするたびに、新しいスキルが順番に1種類ずつ解放されます。</li><li>スキル解放・称号・勲章・ハイスコア・戦績などは、このブラウザ内に保存されます。</li><li>称号画面の「戦績」から保存データを初期化できます。初期化は取り消せません。</li><li>デバッグではPキー（スマホは上部アイコン）で「無敵→無敵＋索敵解除→無敵＋戦闘機（燃料無限）→通常」を切り替え、描画診断ではAI・衝突等の更新を止め、最初の15秒はゲーム画面全体、次の15秒は背景だけを、同じ経路で自動スクロールします。終了後は無敵＋戦闘機に戻ります。Oキーで前方に戦車を出現、Lキーで巡回ルート表示を切り替えられます。スキル選択画面には全スキル表示、ステージ選択画面には全ステージ表示とエリアデバッグがあります。エリアデバッグでは全エリアの遮蔽物・静止した敵のサンプルを確認でき、出発地点付近にガソリンと無線を配置しています。デバッグ用ガソリンは徒歩でも表示され、取得には乗車が必要です。デバッグプレイの実績は通常の称号・勲章・戦績やスキル解放の対象外です。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <p class="spec-foot">仕様は Ver.<span id="specVersion"></span> 時点の内容です。ゲームの更新に伴い変更される場合があります。</p>
 </div></div>
-<div id="skillScreen" aria-label="スキル選択" role="region"><div class="sk-shell"><header class="sk-top"><div><div class="sk-eyebrow">PREPARE YOUR MISSION</div><h1 class="sk-heading">スキル選択</h1></div><button type="button" class="sk-home" id="skHome">タイトル</button></header><div class="sk-scroll" id="skScroll" aria-label="スキル候補"></div><footer class="sk-bottom"><button type="button" class="sk-toggle" id="skDebugAll">全スキル表示</button><button type="button" class="sk-toggle" id="skAreaDebug">エリアデバッグ OFF</button><button type="button" class="sk-deploy" id="skDeploy">出撃</button></footer></div></div>
+<div id="skillScreen" aria-label="スキル選択" role="region"><div class="sk-shell"><header class="sk-top"><div><div class="sk-eyebrow">PREPARE YOUR MISSION</div><h1 class="sk-heading">スキル選択</h1></div><button type="button" class="sk-home" id="skHome">タイトル</button></header><div class="sk-scroll" id="skScroll" aria-label="スキル候補"></div><footer class="sk-bottom"><button type="button" class="sk-toggle" id="skDebugAll">全スキル表示</button><button type="button" class="sk-deploy" id="skDeploy">出撃</button></footer></div></div>
 <div id="trophyScreen" aria-label="獲得した称号と勲章" role="region"><div class="trophy-shell">
  <div class="trophy-nav"><div class="trophy-heading">称号・勲章コレクション</div></div>
  <div class="trophy-overview" id="trophyOverview" aria-live="polite"></div><div class="trophy-tabs"><button id="trophyTabTitles" class="trophy-tab active" type="button">称号</button><button id="trophyTabMedals" class="trophy-tab" type="button">勲章</button><button id="trophyTabStats" class="trophy-tab" type="button">戦績</button></div>
@@ -839,7 +839,15 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 </style>
 <div id="missionSuccess" role="dialog" aria-modal="true" aria-labelledby="missionSuccessTitle"><div class="mission-fireworks" aria-hidden="true"><i class="mission-firework" style="left:18%;top:24%;--burst-delay:0.15s"></i><i class="mission-firework" style="left:78%;top:20%;--burst-delay:0.45s"></i><i class="mission-firework" style="left:48%;top:12%;--burst-delay:0.75s"></i><i class="mission-firework" style="left:22%;top:60%;--burst-delay:1.05s"></i><i class="mission-firework" style="left:81%;top:55%;--burst-delay:1.35s"></i></div><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_success.webp?v=2026.10.14.1653" alt="笑顔でジャンプする主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionSuccessTitle">ミッション 成功</h1><button type="button" id="missionSuccessEvaluate">作戦評価</button></div></div></div>
 <div id="missionFailure" role="dialog" aria-modal="true" aria-labelledby="missionFailureTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_failed.webp?v=2026.10.14.1653" alt="倒れてふらつく主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionFailureTitle">ミッション 失敗</h1><button type="button" id="missionEvaluate">作戦評価</button></div></div></div>
-<section id="areaDebugPicker" aria-labelledby="areaDebugHeading"><div class="area-debug-panel"><h1 id="areaDebugHeading">テストするエリア</h1><p>無敵で地形や遮蔽物を確認できます。<br>開始地点の戦車は弾数・燃料無制限です。</p><div id="areaDebugList"></div><button id="areaDebugBack" type="button">スキル選択に戻る</button></div></section>
+<style>
+#stageScreen .stage-shell{padding-bottom:calc(150px + env(safe-area-inset-bottom))}
+#stageScreen .stage-bottom{z-index:5;grid-template-columns:1fr;width:min(100%,770px);gap:7px;padding:9px 12px calc(10px + env(safe-area-inset-bottom));background:#131c15f5;border:1px solid #52634e;border-bottom:0;box-shadow:0 -12px 25px #0009}
+#stageScreen .stage-card.selected{border-color:#ffe2a1;border-left-color:#f0c36c;background:linear-gradient(135deg,#655035,#2c3928);box-shadow:0 0 0 1px #ffe2a1}
+#stageScreen .stage-debug-art{font-size:36px;color:#d5c38f;min-height:62px}
+#skillScreen .sk-bottom{grid-template-columns:1fr}
+#stageScreen .stage-card.stage-cleared .stage-number{border-color:#b3db9c;color:#c8e9a5}
+</style>
+<section id="areaDebugPicker" aria-labelledby="areaDebugHeading"><div class="area-debug-panel"><h1 id="areaDebugHeading">テストするエリア</h1><p>無敵で地形や遮蔽物を確認できます。<br>開始地点の戦車は弾数・燃料無制限です。</p><div id="areaDebugList"></div><button id="areaDebugBack" type="button">ステージ選択に戻る</button></div></section>
 <div id="missionBriefing" role="dialog" aria-modal="true" aria-labelledby="missionBriefingTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_hero.webp?v=2026.10.14.1653" alt="円形爆弾を抱えて走る主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionBriefingTitle">ミッション</h1><p id="missionBriefingGoal">敵の拠点にたどりつき、破壊せよ</p><ul class="mission-hud-guide" aria-label="ゲーム画面のアイコン説明"><li><img src="assets/ui/ui_heart_full.png" alt="ハート" decoding="async"><span>残りライフ</span></li><li><img src="assets/ui/ui_bomb_normal.png" alt="爆弾" decoding="async"><span>爆弾の設置状態</span></li><li><svg viewBox="-18 -18 36 36" role="img" aria-label="目に斜線"><path d="M-14 0 C-7-11 7-11 14 0 C7 11-7 11-14 0Z" fill="white" stroke="black" stroke-width="3"/><circle r="5" fill="black"/><path d="M-12 11 12-11" stroke="black" stroke-width="3.5"/><path d="M-12 11 12-11" stroke="#ef3434" stroke-width="2"/></svg><span>敵から隠れている状態</span></li></ul><div id="missionFrontlineRules" hidden><ul class="mission-front-rules" aria-label="最前線の制圧ルール"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V3m0 1c5-4 8 4 14 0v10c-6 4-9-4-14 0"/></svg><span id="missionFrontlineOrder">3拠点を順番に制圧</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 1v4m0 14v4M1 12h4m14 0h4"/></svg><span>円に入り、敵を排除</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><circle cx="4" cy="10" r="2"/><circle cx="20" cy="10" r="2"/><path d="M6 22v-4a6 6 0 0 1 12 0v4M1 21v-5a3 3 0 0 1 4-3m18 8v-5a3 3 0 0 0-4-3"/></svg><span>味方兵と制圧！人数で加速</span></li></ul></div><div id="missionIndoorRules" hidden><ul class="mission-front-rules" aria-label="潜入の作戦ポイント"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2h9l5 5v15H5ZM14 2v6h5M8 12h8M8 16h8"/></svg><span id="missionIndoorDocuments">円に入り、重要資料3か所を回収</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12C7 4 17 4 22 12C17 20 7 20 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><span>赤い目3つで館内アラート発令</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3H3v18h7M7 12h15m-5-5 5 5-5 5"/></svg><span>回収後は施設外のEXITから脱出</span></li></ul></div><button type="button" id="missionBegin">作戦開始</button></div></div></div>
 <div id="stageLoadingScreen" role="status" aria-live="polite" aria-label="ステージを準備中"><div class="stage-loading-content"><div class="stage-loading-kicker">MISSION BRIEFING</div><div class="stage-loading-title">作戦準備中…</div><div class="stage-loading-sub">戦場を生成しています</div><div class="stage-loading-track"><span></span></div></div></div>
 <div id="stageScreen" role="region" aria-label="ステージ選択"><div class="stage-shell">
@@ -849,9 +857,10 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 <button type="button" class="stage-card" data-stage="indoorBeginner" id="stageInfiltrationBeginner" aria-label="02 潜入（初級）"><span class="stage-number" aria-hidden="true">02</span><span class="stage-copy"><strong>潜入（初級）</strong><span class="stage-target">軍司令施設（南部）</span></span><span class="stage-art"><img src="assets/ui/stages/infiltration_beginner.webp" alt="夜の小型軍事施設" width="144" height="96" loading="lazy" decoding="async"></span></button>
 <button type="button" class="stage-card" data-stage="frontBeginner"><span class="stage-number" aria-hidden="true">03</span><span class="stage-copy"><strong>制圧（初級）</strong><span class="stage-target">軍需物資</span></span><span class="stage-art"><img src="assets/ui/stages/supplies.webp" alt="" width="144" height="96" loading="lazy" decoding="async"></span></button>
 <button type="button" class="stage-card" data-stage="base"><span class="stage-number" aria-hidden="true">04</span><span class="stage-copy"><strong>破壊（上級）</strong><span class="stage-target">軍司令施設（北部）</span></span><span class="stage-art"><img src="assets/ui/stages/headquarters.webp" alt="" width="144" height="96" loading="lazy" decoding="async"></span></button>
+<button type="button" class="stage-card" data-stage="areaDebug"><span class="stage-number" aria-hidden="true">EX</span><span class="stage-copy"><strong>エリアデバッグ</strong><span class="stage-target">エリアを選んで地形・遮蔽物を確認</span></span><span class="stage-art stage-debug-art" aria-hidden="true">⚙</span></button>
 <button type="button" class="stage-card" data-stage="indoor" id="stageInfiltrationAdvanced"><span class="stage-number" aria-hidden="true">05</span><span class="stage-copy"><strong>潜入（上級）</strong><span class="stage-target">軍需格納庫</span></span><span class="stage-art"><img src="assets/ui/stages/infiltration_advanced.webp" alt="夜のアーチ屋根の大型軍事施設" width="144" height="96" loading="lazy" decoding="async"></span></button>
 <button type="button" class="stage-card" data-stage="front"><span class="stage-number" aria-hidden="true">06</span><span class="stage-copy"><strong>制圧（上級）</strong><span class="stage-target">戦術アンテナ</span></span><span class="stage-art"><img src="assets/ui/stages/antenna.webp" alt="" width="144" height="96" loading="lazy" decoding="async"></span></button>
-</div></div></div>
+</div><footer class="sk-bottom stage-bottom"><button type="button" class="sk-toggle" id="stageDebugAll" aria-pressed="false">全ステージを表示</button><button type="button" class="sk-deploy" id="stageDeploy" disabled>ステージを選択してください</button></footer></div></div>
 <div id="missionHud" role="status"></div>
 
 <script>
@@ -864,7 +873,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.23.0029',FILE_CREATED_AT='2026/10/23 00:29',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.23.0824',FILE_CREATED_AT='2026/10/23 08:24',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -1820,7 +1829,7 @@ function readSkillProgress(){
 function rollSkillChoices(){
  // 通常時は解放済みだけ選択可能。デバッグの全スキル表示中は未解放スキルも選択可能。
  const saved=readSkillProgress();skillChoices=SK.filter(k=>saved.unlocked.includes(k.id)).map(k=>k.id);
- skillDebugAll=false;skillMenuDirty=true;
+ skillDebugAll=false;if(typeof stageDebugAll!=='undefined')stageDebugAll=false;areaDebugEnabled=false;skillMenuDirty=true;
 }
 function skillMenuList(){return skillDebugAll?SK:skillChoices.map(id=>SK.find(k=>k.id===id)).filter(Boolean);}
 function unlockSkillOnClear(s){
@@ -1835,7 +1844,7 @@ function skillMenuLayout(){return skillDebugAll?{sy0:88,ch:56,h:52,debugY:602,de
 let gameBuildQueued=false,gameBuildGeneration=0;
 function selectSkillIndex(i,deploy=false){
  const list=skillMenuList();if(i<0||i>=list.length||gameBuildQueued)return false;
- const selected=list[i].id;if(!skillSelectable(selected))return false;if(areaDebugEnabled&&!deploy){selectedSkillId=selected;skill=selected;selectedAreaDebug=null;state='areaPick';sfx('skill');return true;}if(!deploy){selectedSkillId=selected;skill=selected;state='stage';sfx('skill');return true;}if(!areaDebugEnabled&&!stageSelectable(currentStageId()))return false;const buildGen=++gameBuildGeneration;skill=selected;
+ const selected=list[i].id;if(!skillSelectable(selected))return false;if(!deploy){selectedSkillId=selected;skill=selected;areaDebugEnabled=false;selectedAreaDebug=null;selectedStageId=null;state='stage';sfx('skill');return true;}if(!areaDebugEnabled&&!stageAvailableForSelection(currentStageId()))return false;const buildGen=++gameBuildGeneration;skill=selected;
  state='preparing';bombReq=false;cannonReq=false;interact=false;skillReq=false;mdown=false;gameBuildQueued=true;sfx('skill');
  // 先に「準備中」を1フレーム描画してから重いステージ生成を行う。
  // その間にタイトルへ戻った場合は世代番号で予約済み生成を無効化する。
@@ -1852,9 +1861,8 @@ function chooseSkillByNumber(n){return selectSkillIndex(n-1);}
 function handleSkillMenuPointer(px,py){
  const L=skillMenuLayout(),list=skillMenuList();
  for(let i=0;i<list.length;i++){const y=L.sy0+i*L.ch;if(px>=35&&px<=W-35&&py>=y&&py<y+L.h)return selectSkillIndex(i);}
- const gap=10,bw=(W-80-gap)/2,left={x:35,y:L.debugY,w:bw,h:L.debugH},right={x:35+bw+gap,y:L.debugY,w:bw,h:L.debugH};
+ const left={x:35,y:L.debugY,w:W-70,h:L.debugH};
  if(hitRect(px,py,left)){skillDebugAll=!skillDebugAll;sfx('skill');return true;}
- if(hitRect(px,py,right)){areaDebugEnabled=!areaDebugEnabled;sfx('skill');return true;}
  return false;
 }
 function titleButtonRects(){
@@ -3405,7 +3413,7 @@ function newScoreStats(){return{
  blastMaxOneShot:0,blastActionKills:{},
  unseenForwardStreak:0,maxUnseenForwardStreak:0,
  detections:0,foundEntries:0,suspicionEntries:0,stuns:0,
- humanKills:0,eliteKills:0,tankKills:0, shots:0, sniperShots:0, cannonShots:0, mgShots:0, skillUses:0, bombBlasts:0, vehicleTime:0, vehicleKinds:{}, vehicleBoards:0, damageHits:0, totalTravel:0, detectedTime:0, maxProgress:0, sniperKills:0, mgKills:0, cannonKills:0, rangedKills:0, bombKills:0, explosiveKills:0, tankVehicleKills:0, actionKinds:{}, debugUsed:!!(areaDebugEnabled||skillDebugAll),
+ humanKills:0,eliteKills:0,tankKills:0, shots:0, sniperShots:0, cannonShots:0, mgShots:0, skillUses:0, bombBlasts:0, vehicleTime:0, vehicleKinds:{}, vehicleBoards:0, damageHits:0, totalTravel:0, detectedTime:0, maxProgress:0, sniperKills:0, mgKills:0, cannonKills:0, rangedKills:0, bombKills:0, explosiveKills:0, tankVehicleKills:0, actionKinds:{}, debugUsed:!!(areaDebugEnabled||skillDebugAll||(typeof stageDebugAll!=='undefined'&&stageDebugAll)),
  actionSeq:0,actionKills:{},multiKillBonus:0,maxOneShotKills:0,oneShotEvents:0,
  lastPlayerKillTime:-999,killChain:0,maxKillChain:0,alertCombatKills:0,
  wasDetected:false,final:null,finalized:false,newHigh:false
@@ -6949,12 +6957,10 @@ function drawMenuOnlyState(){
    const tx=skillDebugAll?112:132;g.textAlign='left';g.fillStyle='#ffd27a';g.font=skillDebugAll?'bold 16px system-ui':'bold 20px system-ui';g.fillText('['+(i+1)+'] '+k.n,tx,y+(skillDebugAll?22:30));
    g.fillStyle='#e6e9d8';g.font=skillDebugAll?'10px system-ui':'11px system-ui';k.d.split('\n').slice(0,skillDebugAll?2:3).forEach((t,j)=>g.fillText(t,tx,y+(skillDebugAll?39:51)+j*(skillDebugAll?12:15)));
   });
-  const gap=10,bw=(W-80-gap)/2,DL={x:35,y:L.debugY,w:bw,h:L.debugH},DR={x:35+bw+gap,y:L.debugY,w:bw,h:L.debugH};
-  const dh=hitRect(mx,my,DL),ah=hitRect(mx,my,DR);
+  const DL={x:35,y:L.debugY,w:W-70,h:L.debugH};
+  const dh=hitRect(mx,my,DL);
   g.fillStyle=dh?'rgba(255,210,122,.17)':'rgba(255,255,255,.05)';g.fillRect(DL.x,DL.y,DL.w,DL.h);g.strokeStyle=dh?'#ffd27a':'#59604d';g.lineWidth=1.5;g.strokeRect(DL.x+.5,DL.y+.5,DL.w-1,DL.h-1);
-  g.fillStyle=ah?'rgba(255,210,122,.17)':areaDebugEnabled?'rgba(83,128,66,.26)':'rgba(255,255,255,.05)';g.fillRect(DR.x,DR.y,DR.w,DR.h);g.strokeStyle=ah?'#ffd27a':areaDebugEnabled?'#9bd477':'#59604d';g.strokeRect(DR.x+.5,DR.y+.5,DR.w-1,DR.h-1);
   g.textAlign='center';g.font='bold 11px system-ui';g.fillStyle=dh?'#ffd27a':'#b9c19a';g.fillText(skillDebugAll?'解放済みに戻す':'全スキル表示',DL.x+DL.w/2,DL.y+DL.h/2+4);
-  g.fillStyle=ah?'#ffd27a':areaDebugEnabled?'#bfe6a8':'#b9c19a';g.fillText('エリアデバッグ '+(areaDebugEnabled?'ON':'OFF'),DR.x+DR.w/2,DR.y+DR.h/2+4);
   // v81: 未定義の stagePreloadState を参照すると、スキル選択画面の描画ループが停止するため廃止。
   const menuAssetsReady=assetInitStarted&&!assetsLoading();
   g.font='10px system-ui';g.fillStyle=menuAssetsReady?'#9bd477':'#8f987b';
@@ -7371,12 +7377,10 @@ function draw(near){
    const tx=skillDebugAll?112:132;g.textAlign='left';g.fillStyle='#ffd27a';g.font=skillDebugAll?'bold 16px system-ui':'bold 20px system-ui';g.fillText('['+(i+1)+'] '+k.n,tx,y+(skillDebugAll?22:30));
    g.fillStyle='#e6e9d8';g.font=skillDebugAll?'10px system-ui':'11px system-ui';k.d.split('\n').slice(0,skillDebugAll?2:3).forEach((t,j)=>g.fillText(t,tx,y+(skillDebugAll?39:51)+j*(skillDebugAll?12:15)));
   });
-  const gap=10,bw=(W-80-gap)/2,DL={x:35,y:L.debugY,w:bw,h:L.debugH},DR={x:35+bw+gap,y:L.debugY,w:bw,h:L.debugH};
-  const dh=hitRect(mx,my,DL),ah=hitRect(mx,my,DR);
+  const DL={x:35,y:L.debugY,w:W-70,h:L.debugH};
+  const dh=hitRect(mx,my,DL);
   g.fillStyle=dh?'rgba(255,210,122,.17)':'rgba(255,255,255,.05)';g.fillRect(DL.x,DL.y,DL.w,DL.h);g.strokeStyle=dh?'#ffd27a':'#59604d';g.lineWidth=1.5;g.strokeRect(DL.x+.5,DL.y+.5,DL.w-1,DL.h-1);
-  g.fillStyle=ah?'rgba(255,210,122,.17)':areaDebugEnabled?'rgba(83,128,66,.26)':'rgba(255,255,255,.05)';g.fillRect(DR.x,DR.y,DR.w,DR.h);g.strokeStyle=ah?'#ffd27a':areaDebugEnabled?'#9bd477':'#59604d';g.strokeRect(DR.x+.5,DR.y+.5,DR.w-1,DR.h-1);
   g.textAlign='center';g.font='bold 11px system-ui';g.fillStyle=dh?'#ffd27a':'#b9c19a';g.fillText(skillDebugAll?'解放済みに戻す':'全スキル表示',DL.x+DL.w/2,DL.y+DL.h/2+4);
-  g.fillStyle=ah?'#ffd27a':areaDebugEnabled?'#bfe6a8':'#b9c19a';g.fillText('エリアデバッグ '+(areaDebugEnabled?'ON':'OFF'),DR.x+DR.w/2,DR.y+DR.h/2+4);
  }
  else if(state==='preparing'){
   g.fillStyle='rgba(7,9,6,.96)';g.fillRect(0,0,W,H);g.textAlign='center';
@@ -7835,7 +7839,6 @@ function skillArtSrc(id,name=''){
 }
 document.getElementById('skHome').addEventListener('click',()=>{state='title';sfx('skill');});
 document.getElementById('skDebugAll').addEventListener('click',()=>{skillDebugAll=!skillDebugAll;skillMenuDirty=true;sfx('skill');});
-document.getElementById('skAreaDebug').addEventListener('click',()=>{areaDebugEnabled=!areaDebugEnabled;skillMenuDirty=true;sfx('skill');});
 document.getElementById('titleStart').addEventListener('click',()=>{rollSkillChoices();state='skill';sfx('skill');});
 document.getElementById('titleHelp').addEventListener('click',()=>{state='help';sfx('skill');});
 document.getElementById('titleSpecs').addEventListener('click',()=>{state='spec';sfx('skill');});
@@ -7922,8 +7925,6 @@ function renderSkillCards(){
  setSelectedSkill(list.some(k=>k.id===keep&&skillSelectable(k.id))?keep:list.find(k=>skillSelectable(k.id))?.id);
  document.getElementById('skDebugAll').textContent=skillDebugAll?'解放済みに戻す':'全スキル表示';
  document.getElementById('skDebugAll').classList.toggle('enabled',skillDebugAll);
- document.getElementById('skAreaDebug').textContent='エリアデバッグ '+(areaDebugEnabled?'ON':'OFF');
- document.getElementById('skAreaDebug').classList.toggle('enabled',areaDebugEnabled);
  skillMenuDirty=false;
 }
 function syncSkillScreen(){
@@ -7963,8 +7964,10 @@ document.getElementById('specVersion').textContent=GAME_VERSION;
 
 let stageMode='beginner',frontlineBeginner=false,indoorBeginner=false,mission=null;
 const STAGE_NAMES={beginner:'拠点破壊（初級）：軍事衛星施設',base:'拠点破壊（上級）：軍司令施設',get front(){return frontlineBeginner?'前線制圧（初級）：軍需物資':'前線制圧（上級）：戦術アンテナ';},stealth:'潜入',indoorBeginner:'潜入（初級）：重要資料2箇所',get indoor(){return indoorBeginner?'潜入（初級）：重要資料2箇所':'潜入（上級）：重要資料3箇所';}};
-document.querySelectorAll('[data-stage]').forEach(b=>b.addEventListener('click',()=>{if(!stageSelectable(b.dataset.stage))return;frontlineBeginner=b.dataset.stage==='frontBeginner';indoorBeginner=b.dataset.stage==='indoorBeginner';stageMode=frontlineBeginner?'front':indoorBeginner?'indoor':b.dataset.stage;document.body.classList.remove('stage-open');selectSkillIndex(skillMenuList().findIndex(k=>k.id===selectedSkillId),true);}));
-document.getElementById('stageBack').onclick=()=>{state='skill';};
+document.querySelectorAll('[data-stage]').forEach(b=>b.addEventListener('click',()=>{if(state!=='stage')return;if(setSelectedStage(b.dataset.stage))sfx('skill');}));
+document.getElementById('stageDeploy').addEventListener('click',()=>{deploySelectedStage();});
+document.getElementById('stageDebugAll').addEventListener('click',()=>{if(state!=='stage')return;stageDebugAll=!stageDebugAll;renderStageLocks();sfx('skill');});
+document.getElementById('stageBack').onclick=()=>{areaDebugEnabled=false;selectedAreaDebug=null;state='skill';};
 let briefingFrameDrawn=false;
 let successFrameDrawn=false;
 function syncMissionSuccess(){
@@ -8012,7 +8015,7 @@ document.getElementById('missionBegin').addEventListener('click',()=>{
 function syncStageScreen(){
  document.body.classList.toggle('stage-preparing',state==='preparing');
  const active=state==='stage';if(active&&!document.body.classList.contains('stage-open'))renderStageLocks();if(document.body.classList.contains('stage-open')!==active)document.body.classList.toggle('stage-open',active);
- if(active){const el=document.getElementById('stageSkill'),text='選択スキル：'+(SKN[skill]||skill)+'　／　作戦を選んで出撃';if(el.textContent!==text)el.textContent=text;}
+ if(active){const el=document.getElementById('stageSkill'),text='選択スキル：'+(SKN[skill]||skill)+'　／　作戦を選び、下のボタンで出撃';if(el.textContent!==text)el.textContent=text;}
 }
 function missionSpot(x,y,r=22){
  // Prefer a verified dry, open location. Never silently place an objective inside cover.
@@ -8211,14 +8214,14 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/stage-progress.js?v=2026.10.23.0029"></script>
+<script src="js/stage-progress.js?v=2026.10.23.0824"></script>
 <script src="js/frontline.js?v=2026.10.17.2030"></script>
 <script src="js/award-icons.js?v=2026.10.23.0018"></script>
 <script src="js/characters.js?v=2026.10.19.1032"></script>
 <script src="js/enemy-dogs.js?v=2026.10.22.0945"></script>
 <script src="js/partner.js?v=2026.10.17.2030"></script>
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
-<script src="js/canyon.js?v=2026.10.14.1836"></script>
+<script src="js/canyon.js?v=2026.10.23.0824"></script>
 <script src="js/vegetation.js?v=2026.10.14.1653"></script>
 <script src="js/infiltration-world.js?v=2026.10.23.0018"></script>
 <script src="js/infiltration-render.js?v=2026.10.21.1139"></script>

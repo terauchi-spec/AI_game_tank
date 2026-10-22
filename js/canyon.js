@@ -255,4 +255,4 @@ function setupSelectedAreaDebugStage(){
 function syncAreaDebugPicker(){document.body.classList.toggle('area-picker-open',state==='areaPick');}
 const areaList=document.getElementById('areaDebugList');
 for(const name of AREA_DEBUG_ORDER){const b=document.createElement('button');b.type='button';b.textContent=name;b.addEventListener('click',()=>{if(state!=='areaPick')return;selectedAreaDebug=name;stageMode='base';const i=skillMenuList().findIndex(k=>k.id===selectedSkillId);selectSkillIndex(i,true);});areaList.append(b);}
-document.getElementById('areaDebugBack').addEventListener('click',()=>{if(state==='areaPick'){state='skill';selectedAreaDebug=null;}});
+document.getElementById('areaDebugBack').addEventListener('click',()=>{if(state==='areaPick'){state='stage';areaDebugEnabled=false;selectedAreaDebug=null;}});

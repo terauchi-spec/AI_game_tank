@@ -3,7 +3,7 @@ const source=fs.readFileSync(path.join(__dirname,'../js/stage-progress.js'),'utf
 const order=['beginner','indoorBeginner','frontBeginner','base','indoor','front'];
 function harness(saved){const storage=new Map(saved?[['tankGameStageProgressV1',saved]]:[]),c={stageMode:'beginner',frontlineBeginner:false,indoorBeginner:false,areaDebugEnabled:false,localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)}};vm.createContext(c);vm.runInContext(source,c);c.storage=storage;c.ids=()=>order.filter(id=>c.stageSelectable(id));return c;}
 function clear(c,id){c.frontlineBeginner=id==='frontBeginner';c.indoorBeginner=id==='indoorBeginner';c.stageMode=c.frontlineBeginner?'front':c.indoorBeginner?'indoor':id;const s={final:{cleared:true}};c.unlockStageOnClear(s);return s;}
-function cards(c){const buttons=order.map(id=>({dataset:{stage:id},classList:{toggle(k,v){this[k]=v;}},number:{},querySelector(){return this.number;},setAttribute(k,v){this[k]=v;}})),nodes={};c.document={querySelectorAll:()=>buttons,getElementById:id=>nodes[id]??={removeAttribute(k){delete this[k];}}};return{buttons,nodes};}
+function cards(c){const buttons=order.map(id=>({dataset:{stage:id},classList:{toggle(k,v){this[k]=v;}},number:{},querySelector(){return this.number;},setAttribute(k,v){this[k]=v;}})),nodes={};c.document={querySelectorAll:()=>buttons,getElementById:id=>nodes[id]??={classList:{toggle(k,v){this[k]=v;}},setAttribute(k,v){this[k]=v;},removeAttribute(k){delete this[k];}}};return{buttons,nodes};}
 test('only 01 starts open and all six stages unlock exactly in display order',()=>{
  const c=harness();assert.deepEqual(c.ids(),['beginner']);assert.equal(c.stageSelectable('unknown'),false);
  for(let i=0;i<order.length;i++){const s=clear(c,order[i]);assert.equal(s.unlockedStage,order[i+1]);assert.deepEqual(c.ids(),order.slice(0,Math.min(order.length,i+2)));assert.equal(clear(c,order[i]).unlockedStage,undefined);}
@@ -44,6 +44,25 @@ test('current stage identity separates both difficulty pairs',()=>{
  const c=harness();for(const id of order){clear(c,id);assert.equal(c.currentStageId(),id);}
 });
 test('six HTML selection cards match the canonical unlock order and launch paths enforce it',()=>{
- const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),data=[...html.matchAll(/<button[^>]*class="stage-card"[^>]*data-stage="([^"]+)"[^>]*>(.*?)<\/button>/g)];assert.deepEqual(data.map(m=>m[1]),order);
- assert.deepEqual(data.map(m=>m[2].match(/class="stage-number"[^>]*>(\d+)/)[1]),['01','02','03','04','05','06']);assert.match(html,/if\(!stageSelectable\(b.dataset.stage\)\)return/);assert.match(html,/!areaDebugEnabled&&!stageSelectable\(currentStageId\(\)\)/);assert.ok(!html.includes('潜入は初級・上級とも最初から選べます'));
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),data=[...html.matchAll(/<button[^>]*class="stage-card"[^>]*data-stage="([^"]+)"[^>]*>(.*?)<\/button>/g)];assert.deepEqual(data.map(m=>m[1]),['beginner','indoorBeginner','frontBeginner','base','areaDebug','indoor','front']);
+ assert.deepEqual(data.filter(m=>m[1]!=='areaDebug').map(m=>m[2].match(/class="stage-number"[^>]*>(\d+)/)[1]),['01','02','03','04','05','06']);assert.match(html,/if\(setSelectedStage\(b.dataset.stage\)\)/);assert.match(html,/!areaDebugEnabled&&!stageAvailableForSelection\(currentStageId\(\)\)/);assert.ok(!html.includes('潜入は初級・上級とも最初から選べます'));
+});
+
+
+test('stage selection only highlights the card; deployment starts the chosen difficulty once confirmed',()=>{
+ const c=harness(),{buttons,nodes}=cards(c);let deployments=0;Object.assign(c,{state:'stage',gameBuildQueued:false,selectedSkillId:'throw',skillMenuList:()=>[{id:'throw'}],selectSkillIndex(i,deploy){assert.equal(i,0);assert.equal(deploy,true);deployments++;c.state='preparing';return true;},sfx(){}});
+ c.renderStageLocks();assert.equal(nodes.stageDeploy.textContent,'破壊初級で出撃');assert.equal(c.setSelectedStage('front'),false);assert.equal(deployments,0);assert.equal(c.state,'stage');
+ assert.equal(c.deploySelectedStage(),true);assert.equal(deployments,1);assert.equal(c.stageMode,'beginner');assert.equal(c.deploySelectedStage(),false);
+ c.state='stage';clear(c,'beginner');c.state='stage';c.setSelectedStage('indoorBeginner');assert.equal(c.stageMode,'beginner');assert.equal(deployments,1);assert.equal(nodes.stageDeploy.textContent,'潜入初級で出撃');c.deploySelectedStage();assert.equal(c.stageMode,'indoor');assert.equal(c.indoorBeginner,true);assert.equal(deployments,2);
+});
+test('all-stage debug selection never grants normal unlocks and turning it off restores locks and selection',()=>{
+ const c=harness(),{buttons,nodes}=cards(c);vm.runInContext('stageDebugAll=true',c);c.renderStageLocks();assert.ok(buttons.every(b=>!b.disabled));assert.equal(c.stageSelectable('front'),false);assert.equal(c.setSelectedStage('front'),true);assert.equal(nodes.stageDeploy.textContent,'制圧上級で出撃');
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');c.skillDebugAll=false;vm.runInContext(html.slice(html.indexOf('function newScoreStats()'),html.indexOf('function playerDetectedNow()')),c);const stats=c.newScoreStats();assert.equal(stats.debugUsed,true);stats.final={cleared:true};c.unlockStageOnClear(stats);assert.equal(c.storage.size,0);
+ vm.runInContext('stageDebugAll=false',c);c.renderStageLocks();assert.equal(buttons[5].disabled,true);assert.equal(nodes.stageDeploy.textContent,'破壊初級で出撃');assert.equal(buttons[0].classList.selected,true);
+});
+test('area debug opens its picker only after confirmation and cannot grant stage progress',()=>{
+ const c=harness(),{buttons,nodes}=cards(c),ex={dataset:{stage:'areaDebug'},classList:{toggle(){}},setAttribute(){}};buttons.push(ex);let deployments=0;Object.assign(c,{state:'stage',gameBuildQueued:false,selectSkillIndex(){deployments++;},sfx(){}});c.renderStageLocks();assert.equal(ex.disabled,false);c.setSelectedStage('areaDebug');assert.equal(c.areaDebugEnabled,false);assert.equal(c.state,'stage');assert.equal(nodes.stageDeploy.textContent,'エリアデバッグへ');c.deploySelectedStage();assert.equal(c.state,'areaPick');assert.equal(c.areaDebugEnabled,true);assert.equal(c.selectedAreaDebug,null);assert.equal(deployments,0);clear(c,'beginner');assert.equal(c.storage.size,0);
+});
+test('fixed menu, area debug navigation and removed skill toggle are wired to the new screens',()=>{
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),canyon=fs.readFileSync(path.join(__dirname,'../js/canyon.js'),'utf8');assert.ok(!html.includes('skAreaDebug'));assert.match(html,/<footer class="sk-bottom stage-bottom">/);assert.match(html,/id="stageDebugAll"[^>]*>全ステージを表示/);assert.match(html,/id="stageDeploy"/);assert.match(html,/padding-bottom:calc\(150px \+ env\(safe-area-inset-bottom\)\)/);assert.match(canyon,/state='stage';areaDebugEnabled=false;selectedAreaDebug=null/);
 });
