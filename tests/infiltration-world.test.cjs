@@ -2486,3 +2486,11 @@ test('close entrance awareness never sees through walls, concealment, disabled d
   assert.notEqual(h.target,'p',reason);
  }
 });
+
+test('real document collection records quiet and partner contribution once and retains normal run eligibility',()=>{
+ const s=assistedDocumentScenario(),stats=s.sandbox.scoreStats;assert.notEqual(stats.debugUsed,true);s.api.updateMission(4);
+ assert.equal(stats.documents,1);assert.equal(stats.hiddenDocuments,1);assert.equal(stats.partnerDocuments,1);assert.equal(stats.objectiveProgress,.75/s.sandbox.mission.points.length);s.api.updateMission(1);assert.equal(stats.documents,1);
+});
+test('an indoor alarm is retained in evaluation statistics after its activation',()=>{
+ const s=alarmWorld();s.api.world.alarm.active=true;s.api.updateMission(.1);assert.equal(s.sandbox.scoreStats.indoorAlarm,true);
+});

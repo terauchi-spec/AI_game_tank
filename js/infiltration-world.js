@@ -1205,7 +1205,8 @@ function setupInfiltrationWorld(){
   if(!beginner)indoorSpawnDogPatrol();
   const entrance=indoorWorld.floors[0];
   p.x=entrance.entrance.x;p.y=entrance.entrance.y;p.hp=3;p.tank=null;p.body=-Math.PI/2;p.ang=-Math.PI/2;
-  scoreStats.startY=p.y;scoreStats.debugUsed=true; // Sample run never unlocks stages or overwrites records.
+  scoreStats.startY=p.y;scoreStats.stage='indoor'; // Normal infiltration runs save achievements; actual debug flags remain unchanged.
+  scoreStats.documentTotal=INDOOR_FILES_TOTAL;scoreStats.objectiveTotal=INDOOR_FILES_TOTAL;
   indoorWorld.exit={...entrance.entrance};
   indoorWorld.entrance={...entrance.entrance};
   indoorWorld.emergency=entrance.emergency?{...entrance.emergency}:null;
@@ -2518,7 +2519,7 @@ function updateInfiltrationMission(dt){
   if(!indoorWorld||!mission||state!=='play')return;
   const w=indoorWorld,m=mission;
   indoorTickStairSanctuary(dt);
-  if(w.alarm?.active)w.alarm.elapsed+=dt;
+  if(w.alarm?.active){w.alarm.elapsed+=dt;if(typeof scoreStats!=='undefined'&&scoreStats)scoreStats.indoorAlarm=true;}
   const detected=playerDetectedNow();
   m.detected=detected;
   indoorReplenishGuards(dt);
@@ -2535,6 +2536,7 @@ function updateInfiltrationMission(dt){
     w.currentFloor=1-w.currentFloor;
     const target=w.floors[w.currentFloor];
     Object.assign(p,indoorStairLanding(target));
+    if(typeof scoreStats!=='undefined'&&scoreStats)scoreStats.lastY=p.y;
     indoorPartnerStairLanding(target);
     indoorBeginStairSanctuary(target);
     w.stairsCooldown=2;w.stairEntryFloor=null;w.stairMoveLock=.5;
@@ -2548,9 +2550,18 @@ function updateInfiltrationMission(dt){
     if(q.done||q.floor!==w.currentFloor+1)continue;
     const playerHere=!p.tank&&D(p,q)<INDOOR_ACQUIRE_RADIUS,partnerHere=indoorPartnerAssistsDocument(q);
     const workers=(playerHere?1:0)+(partnerHere?1:0);if(!workers)continue;
+    if(playerHere)q.playerContributed=true;if(partnerHere)q.partnerContributed=true;
+    if(detected||w.alarm?.active)q.scoreExposed=true;
     q.progress=Math.min(INDOOR_ACQUIRE_SECONDS,(q.progress||0)+dt*workers);
     if(q.progress>=INDOOR_ACQUIRE_SECONDS){
       q.done=true;q.collectedT=.9;m.index++;sfx('pickup');
+      if(typeof scoreStats!=='undefined'&&scoreStats&&!scoreStats.finalized){
+       scoreStats.documents=(scoreStats.documents||0)+1;scoreStats.documentTotal=m.points.length;
+       scoreStats.hiddenDocuments=(scoreStats.hiddenDocuments||0)+Number(!q.scoreExposed);
+       scoreStats.partnerDocuments=(scoreStats.partnerDocuments||0)+Number(!!q.partnerContributed);
+       scoreStats.jointObjectiveSeconds=(scoreStats.jointObjectiveSeconds||0)+(q.playerContributed&&q.partnerContributed?INDOOR_ACQUIRE_SECONDS:0);
+       scoreStats.objectiveProgress=.75*m.index/m.points.length;
+      }
       say('重要資料回収 '+m.index+'/'+m.points.length);
       if(m.index===m.points.length)say(w.emergency?'全資料回収！ 1階の玄関か非常口で5秒待機せよ':'全資料回収！ 1階の玄関で5秒待機せよ');
     }else if(!m.current||playerHere){

@@ -681,3 +681,11 @@ test('skill commanders can broadcast to allies outside frontline stages',()=>{
  c.updateFrontlineCommander(a,enemy,.1);c.updateCommanderSignals(1);assert.equal(friend.frontMode,'found');assert.equal(friend._combatTarget,enemy);
  c.updateCommanderSignals(1.5);a.frontRadioCooldown=5;c.updateFrontlineCommander(a,enemy,.5);assert.equal(c.bullets.length,1);assert.equal(c.bullets[0].commanderRocket,true);
 });
+
+test('evaluation records personal and joint capture participation but not remote allied capture',()=>{
+ for(const present of [false,true]){
+  const c=harness(),q={x:480,y:10000,counterTriggered:true,playerEntered:true};c.mission={points:[q,{x:480,y:6500}],index:0,progress:46,waveT:999,reinforceT:999};c.p.y=present?10000:10400;c.scoreStats={};c.allies=[{x:480,y:10000,alive:true,frontline:true}];
+  vm.runInContext(html.slice(html.indexOf('function updateMission('),html.indexOf('let missionHudNextAt=')),c);c.updateMission(3);
+  assert.equal(c.mission.index,1);assert.equal(c.scoreStats.capturePoints,Number(present));assert.equal(c.scoreStats.captureSeconds||0,present?3:0);assert.equal(c.scoreStats.jointObjectiveSeconds||0,present?3:0);assert.equal(c.scoreStats.objectiveProgress,.5);
+ }
+});

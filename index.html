@@ -863,7 +863,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.22.1231',FILE_CREATED_AT='2026/10/22 12:31',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.23.0018',FILE_CREATED_AT='2026/10/23 00:18',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -3125,9 +3125,13 @@ function carveBaseFragments(ix,iy,rr=20){
  if(removed){b.damageVersion++;b._damageCanvas=null;b._damageCanvasKey='';}
  return removed;
 }
-function damageBase(amount,ix,iy,rr=20,multi=1){
+function damageBase(amount,ix,iy,rr=20,multi=1,cause='player'){
  const b=ensureBaseState();if(!b||b.hp<=0)return 0;
- b.hp=Math.max(0,b.hp-amount);
+ const actual=Math.min(b.hp,amount);b.hp=Math.max(0,b.hp-amount);
+ if(scoreStats&&!scoreStats.finalized){
+  if(cause!=='support')scoreStats.objectiveDamage=(scoreStats.objectiveDamage||0)+actual/(b.maxHp||30);
+  if(cause==='bomb'){scoreStats.bombObjectiveDamage=(scoreStats.bombObjectiveDamage||0)+actual/(b.maxHp||30);if(b.hp<=0)scoreStats.bombObjectiveFinish=true;}
+ }
  // 他の建築物と同じく、着弾範囲内の細かな建物片だけを消す。
  // multi は爆発系の広がりにだけ使い、HP0時に追加崩壊はさせない。
  const hits=Math.max(1,multi|0),baseR=Math.max(16,rr);let removed=0;
@@ -3393,6 +3397,7 @@ function saveHighScore(score,rank){
  return true;
 }
 function newScoreStats(){return{
+ stage:typeof stageMode==='undefined'?'base':stageMode,objectiveProgress:0,objectiveAdvance:0,hiddenObjectiveAdvance:0,documents:0,hiddenDocuments:0,partnerDocuments:0,capturePoints:0,captureSeconds:0,jointObjectiveSeconds:0,captureDefenseKills:0,objectiveDamage:0,bombObjectiveDamage:0,bombObjectiveFinish:false,indoorAlarm:false,playerDamage:0,vehicleDamage:0,playerTankKills:0,
  time:0,playerKillPoints:0,supportKillPoints:0,unseenDist:0,forwardDist:0,startY:null,lastY:null,coverDestroyed:0,
  styleDestroyed:0,vehicleAdvance:0,vehicleKills:0,playerKills:0,assaultKills:0,stealthStuns:0,tacticalStuns:0,
  decoyLures:0,wallBlocks:0,allyKills:0,allyStuns:0,partnerRescues:0,jointKills:0,sharedSupportKills:0,supportKinds:{},
@@ -3432,8 +3437,8 @@ function recordDecoyLure(o,key){
 }
 function recordPlayerKill(actionId=0,weapon="",victim=null){
  if(!scoreStats||scoreStats.finalized)return;
- recordScoringKill('player',victim);
  const kind=weapon||scoreStats.actionKinds[actionId]||'';
+ recordScoringKill(kind==='radioBomb'?'support':'player',victim);
  if(kind==='sniper')scoreStats.sniperKills++;
  if(kind==='mg')scoreStats.mgKills++;
  if(kind==='cannon')scoreStats.cannonKills++;
@@ -3444,7 +3449,10 @@ function recordPlayerKill(actionId=0,weapon="",victim=null){
  // 無線支援爆撃と、その爆撃を起点とした連鎖爆発はマルチキル・ワンショットキルの対象外。
  // 通常の撃破人数・総合戦績への計上は trackEnemyDeaths() に任せる。
  if(kind==='radioBomb')return;
- scoreStats.playerKills++;
+ scoreStats.playerKills++;if(victim&&(etanks||[]).includes(victim))scoreStats.playerTankKills=(scoreStats.playerTankKills||0)+1;
+ if(scoreStats.stage==='front'&&victim&&typeof mission!=='undefined'){
+  const q=mission?.points[mission.index];if(q&&Math.hypot(victim.x-q.x,victim.y-q.y)<frontlineCaptureRadius(q)+30)scoreStats.captureDefenseKills++;
+ }
  if(p?.tank||kind==='vehicleCrush'||kind==='truckRam')scoreStats.vehicleKills++;
  if(p?.tank&&partner&&!partner.down&&(partner.passengerVehicle===p.tank||partner.vehicle===p.tank))scoreStats.jointKills++;
  if(kind==='bomb'||kind==='cannon'||kind==='objectBlast'){
@@ -3473,16 +3481,35 @@ function trackEnemyDeaths(){
  for(const h of (humans||[]))if(!h.alive&&!h.scoreCounted){h.scoreCounted=true;if(h.elite)scoreStats.eliteKills++;else scoreStats.humanKills++;}
  for(const e of (etanks||[]))if(!e.alive&&!e.scoreCounted){e.scoreCounted=true;scoreStats.tankKills++;}
 }
+function recordPlayerDamage(amount,vehicle=false){
+ if(!scoreStats||scoreStats.finalized||!(amount>0))return;
+ if(vehicle&&p.tank){const v=p.tank,remaining=v.kind==='truck'?1-(v.mgHits||0)/5:v.kind==='fighter'?v.hp/FIGHTER_TYPE.hp:1-(v.ch||0)/(v.t?.armor||3);amount=Math.min(amount,Math.max(0,remaining));if(!(amount>0))return;}
+ scoreStats.damageHits++;const key=vehicle?'vehicleDamage':'playerDamage';
+ scoreStats[key]=(scoreStats[key]||0)+amount;
+ if(vehicle&&p.tank)p.tank.scoreDamageRecorded=(p.tank.scoreDamageRecorded||0)+amount;
+}
+function trackObjectiveMovement(moved,detected){
+ const s=scoreStats;if(!(moved>0)||typeof mission==='undefined'||!mission)return;
+ const m=mission,indoor=s.stage==='indoor';
+ const q=indoor?(m.points.find(q=>!q.done&&q.floor===(typeof indoorWorld!=='undefined'?indoorWorld?.currentFloor+1:0))||(m.points.every(q=>q.done)&&typeof indoorWorld!=='undefined'&&indoorWorld?.currentFloor===0?m.exit:null)):m.points[m.index];
+ if(!q)return;
+ const distance=Math.hypot(p.x-q.x,p.y-q.y);
+ if(!q.scoreApproach)q.scoreApproach={start:distance,best:distance};
+ const a=q.scoreApproach,step=Math.min(moved,Math.max(0,a.best-distance));a.best=Math.min(a.best,distance);
+ s.objectiveAdvance=(s.objectiveAdvance||0)+step;
+ if(!detected)s.hiddenObjectiveAdvance=(s.hiddenObjectiveAdvance||0)+step;
+}
 function updateScoreTracking(dt,moved=0){
  if(!scoreStats||scoreStats.finalized)return;
  chainToastT=Math.max(0,chainToastT-dt);oneShotToastT=Math.max(0,oneShotToastT-dt);
  const previousProgress=scoreStats.maxProgress;
- scoreStats.time+=dt;scoreStats.totalTravel+=Math.max(0,moved);scoreStats.maxProgress=Math.max(scoreStats.maxProgress,Math.max(0,scoreStats.startY-p.y));if(p.tank){scoreStats.vehicleTime+=dt;scoreStats.vehicleKinds[vehicleStyleKind(p.tank)]=true;}
+ const indoor=scoreStats.stage==='indoor';
+ scoreStats.time+=dt;scoreStats.totalTravel+=Math.max(0,moved);if(!indoor)scoreStats.maxProgress=Math.max(scoreStats.maxProgress,Math.max(0,scoreStats.startY-p.y));if(p.tank){scoreStats.vehicleTime+=dt;scoreStats.vehicleKinds[vehicleStyleKind(p.tank)]=true;}
  let forwardStep=0;
  if(scoreStats.lastY==null)scoreStats.lastY=p.y;
- else{forwardStep=Math.max(0,scoreStats.lastY-p.y);scoreStats.forwardDist+=forwardStep;scoreStats.lastY=p.y;}
+ else{forwardStep=indoor?0:Math.min(Math.max(0,moved),Math.max(0,scoreStats.lastY-p.y));scoreStats.forwardDist+=forwardStep;scoreStats.lastY=p.y;}
  if(p.tank)scoreStats.vehicleAdvance+=Math.max(0,scoreStats.maxProgress-previousProgress);
- const detected=playerDetectedNow();if(detected)scoreStats.detectedTime+=dt;
+ const detected=playerDetectedNow();trackObjectiveMovement(moved,detected);if(detected)scoreStats.detectedTime+=dt;
  if(!detected){
   scoreStats.unseenDist+=Math.max(0,moved);
   scoreStats.unseenForwardStreak+=forwardStep;
@@ -3495,6 +3522,7 @@ function updateScoreTracking(dt,moved=0){
 function scoreGrade(v,a,b){return v>=a?'A':v>=b?'B':'C';}
 function overallRank(v){return v>=10000?'S':v>=7500?'A':v>=5000?'B':v>=2500?'C':v>=1200?'D':v>=400?'E':'F';}
 function formatRunTime(sec){sec=Math.max(0,Math.round(sec));return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');}
+function tacticalScore(s){return Math.min(500,((s.decoyLures||0)+(s.wallBlocks||0)+(s.tacticalStuns||0))*50);}
 function calculateScore(s,cleared,front=false){
  const alertControlBonus=Math.round(Math.max(0,300-s.foundEntries*35-s.suspicionEntries*12)*(front?.5:1));
  const unseenStreakBonus=Math.round(Math.min(400,Math.round(s.maxUnseenForwardStreak/6))*(front?.65:1));
@@ -3511,15 +3539,20 @@ function calculateScore(s,cleared,front=false){
  const supportCombatPoints=front?Math.round(Math.min(600,(s.supportKillPoints||0)*.2)):null;
  const killPoints=front?playerCombatPoints+supportCombatPoints:s.humanKills*100+s.eliteKills*250+s.tankKills*400;
  const combat=killPoints+forwardPaceBonus+destructionBonus+s.multiKillBonus+chainBonus+alertCombatBonus;
- const stealthRank=scoreGrade(stealth,2250,1125),combatRank=scoreGrade(combat,4000,1750);
- const hqBonus=cleared?1000:0;
+  const hqBonus=cleared?1000:0;
  let timeBonus=0;if(cleared){const t=s.time;timeBonus=t<=180?1000:t<=300?700:t<=480?400:t<=720?200:0;}
- const bonus=hqBonus+timeBonus,total=stealth+combat+bonus,rank=overallRank(total);
- return{playerCombatPoints,supportCombatPoints,cleared,total,rank,stealth,stealthRank,combat,combatRank,hqBonus,timeBonus,bonus,alertControlBonus,unseenStreakBonus,forwardPace,forwardPaceBonus,destructionBonus,multiKillBonus:s.multiKillBonus,chainBonus,alertCombatBonus,time:s.time};
+ let bonus=hqBonus+timeBonus,total=stealth+combat+bonus,displayStealth=stealth,displayCombat=combat;
+ if(s.stage==='indoor'){
+  const progress=cleared?1:(s.objectiveProgress||0),hidden=(s.hiddenDocuments||0)/Math.max(1,s.documentTotal||0);
+  const objectiveScore=Math.round(5000*progress),quietScore=Math.round(2000*hidden+(cleared&&s.detections===0&&!s.indoorAlarm?1000:0));
+  bonus=objectiveScore+(cleared?1000:0)+timeBonus;displayStealth=quietScore;displayCombat=Math.min(1000,(s.playerKillPoints||0)+tacticalScore(s));total=bonus+displayStealth+displayCombat;
+ }else if(front){bonus+=Math.round(1500*Math.min(1,(s.captureSeconds||0)/24));total=stealth+combat+bonus;}
+ const rank=overallRank(total);
+ return{playerCombatPoints,supportCombatPoints,cleared,total,rank,stealth:displayStealth,stealthRank:scoreGrade(displayStealth,2250,1125),combat:displayCombat,combatRank:scoreGrade(displayCombat,4000,1750),hqBonus,timeBonus,bonus,alertControlBonus,unseenStreakBonus,forwardPace,forwardPaceBonus,destructionBonus,multiKillBonus:s.multiKillBonus,chainBonus,alertCombatBonus,time:s.time};
 }
 function finalizeScore(cleared){
  if(!scoreStats||scoreStats.finalized)return;
- trackEnemyDeaths();scoreStats.finalized=true;
+ trackEnemyDeaths();if(scoreStats.stage==='indoor'&&typeof indoorWorld!=='undefined'&&indoorWorld?.alarm?.active)scoreStats.indoorAlarm=true;scoreStats.finalized=true;
  scoreStats.final=calculateScore(scoreStats,cleared,stageMode==='front');
  const {total,rank}=scoreStats.final;
  scoreStats.newHigh=!(scoreStats.debugUsed||areaDebugEnabled)&&saveHighScore(total,rank);
@@ -3771,11 +3804,11 @@ function commanderRocketBlast(x,y){
  if(state!=='play'||p.dig>0||Math.hypot(p.x-x,p.y-y)>=COMMANDER_BLAST_RADIUS)return;
  if(p.tank){
   if(p.tank.kind==='truck'){wreck();return;}
-  if(p.tank.kind==='fighter'){p.tank.hp-=1.5;sfx('vehicleHit');shake=Math.max(shake,7);if(p.tank.hp<=0)wreck();return;}
-  p.tank.ch=(p.tank.ch||0)+.55;sfx('vehicleHit');shake=Math.max(shake,7);if(p.tank.ch>=(p.tank.t.armor||3))wreck();
+  if(p.tank.kind==='fighter'){recordPlayerDamage(Math.min(p.tank.hp,1.5)/FIGHTER_TYPE.hp,true);p.tank.hp-=1.5;sfx('vehicleHit');shake=Math.max(shake,7);if(p.tank.hp<=0)wreck();return;}
+  recordPlayerDamage(.55/(p.tank.t.armor||3),true);p.tank.ch=(p.tank.ch||0)+.55;sfx('vehicleHit');shake=Math.max(shake,7);if(p.tank.ch>=(p.tank.t.armor||3))wreck();
  }else{
   if(debugInvincible){shake=Math.max(shake,3);return;}
-  if(scoreStats)scoreStats.damageHits++;p.hp-=stageMode==='front'?.5:1;beginBlastFlight(p,x,y,COMMANDER_BLAST_RADIUS,82,8,0);if(p.hp<=0)triggerPlayerDeath();
+  recordPlayerDamage(Math.min(p.hp,stageMode==='front'?.5:1)/3);p.hp-=stageMode==='front'?.5:1;beginBlastFlight(p,x,y,COMMANDER_BLAST_RADIUS,82,8,0);if(p.hp<=0)triggerPlayerDeath();
  }
 }
 function updateCommanderRocket(b,ox,oy,expired){
@@ -4119,12 +4152,12 @@ function toggleDebugInvincible(){
 function triggerPlayerDeath(){
  if(state!=='play')return;
  if(debugInvincible||areaDebugEnabled){p.hp=Math.max(3,p.hp||0);shake=Math.max(shake,3);flash=Math.max(flash,.12);return;}
- p.hp=0;state='dying';deathT=1.35;p.drill=0;p.dig=0;p.digPrep=0;shake=Math.max(shake,16);flash=.65;sfx('deathHit');fb(p.x,p.y,38);burst(p.x,p.y,34,'#ff8a4a',260);burst(p.x,p.y,14,'#fff0a0',330);
+ recordPlayerDamage(Math.max(0,p.hp||0)/3);p.hp=0;state='dying';deathT=1.35;p.drill=0;p.dig=0;p.digPrep=0;shake=Math.max(shake,16);flash=.65;sfx('deathHit');fb(p.x,p.y,38);burst(p.x,p.y,34,'#ff8a4a',260);burst(p.x,p.y,14,'#fff0a0',330);
 }
 function damagePlayerByOwnBomb(){
  if(state!=='play'||p.tank||p.dig>0)return false;
  if(debugInvincible){shake=Math.max(shake,3);flash=Math.max(flash,.12);return true;}
- if(scoreStats)scoreStats.damageHits++;p.hp=Math.max(0,(p.hp||0)-1);
+ recordPlayerDamage(Math.min(1,p.hp||0)/3);p.hp=Math.max(0,(p.hp||0)-1);
  if(p.hp<=0){triggerPlayerDeath();return true;}
  shake=Math.max(shake,9);flash=Math.max(flash,.32);sfx('vehicleHit');fb(p.x,p.y,20);burst(p.x,p.y,18,'#ff8a4a',150);say('爆風でハートが1つ減った');return true;
 }
@@ -4255,6 +4288,7 @@ function wreck(){
   if(p.tank.kind==='fighter')p.tank.hp=FIGHTER_TYPE.hp;
   shake=Math.max(shake,4);flash=Math.max(flash,.14);return;
  }
+ if(p.tank)recordPlayerDamage(Math.max(0,1-(p.tank.scoreDamageRecorded||0)),true);
  const veh=p.tank,kind=veh&&veh.kind,wasTruck=kind==='truck',wasFighter=kind==='fighter';if(kind==='tank'||wasTruck)spawnVehicleWreck(veh,p.x,p.y,p.body,p.ang);sfx('explosion');fb(p.x,p.y,50);burst(p.x,p.y,50,wasTruck?'#d48a52':wasFighter?'#9fc8e8':'#ff7b3a',330);releasePartnerSharedWreck(veh);p.partnerDriver=false;p.tank=null;p.hp=3;p.cc=0;p.vc=0;shake=16;flash=.5;say(veh&&veh.t.id==='armored'?'装甲車大破! 歩兵として脱出':wasTruck?'トラック大破! 歩兵として脱出':wasFighter?'戦闘機撃墜! 歩兵として脱出':'戦車大破!歩兵として脱出');
 }
 function truckTankCrashFx(x,y,e,actionId=0){
@@ -4620,7 +4654,7 @@ function airBombBlast(x,y,kind='radio'){
  try{
   carve(x,y,100,true,'impact');explode(x,y,88,true,isRadio?'air':'',actionId);
   const br=baseHitRect(),nx=Math.max(br.x,Math.min(br.x+br.w,x)),ny=Math.max(br.y,Math.min(br.y+br.h,y));
-  if(Math.hypot(nx-x,ny-y)<88&&base.hp>0)damageBase(4,nx,ny,24,2);
+  if(Math.hypot(nx-x,ny-y)<88&&base.hp>0)damageBase(4,nx,ny,24,2,isRadio?'support':'player');
   shake=Math.max(shake,15);
  }finally{if(isRadio)radioStrikeKillContext--;}
 }
@@ -5655,7 +5689,7 @@ function update(dt){
   if(playerBulletHit){b.x=playerBulletHit.x;b.y=playerBulletHit.y;dead=false;}if(dead&&b.k==='c'&&!b.commanderRocket)cannonImpact(b.x,b.y,b.from);
   if(b.commanderRocket){if(updateCommanderRocket(b,ox,oy,dead))bullets.splice(i,1);continue;}
   if(b.from==='p'&&b.k==='s'){if(updateSniperPiercingBullet(b,ox,oy)||dead)bullets.splice(i,1);continue;}
-  if(!dead){const bp=segmentBaseImpact({x:ox,y:oy},{x:b.x,y:b.y},b.k==='c'?2:1);if(bp){dead=true;b.x=bp.x;b.y=bp.y;if(b.k==='c'){cannonImpact(b.x,b.y,b.from);let removedBaseTiles=0;if(b.from==='p'||b.from==='ally'){const hqDmg=b.from==='p'?b.dmg*1.5:b.dmg;removedBaseTiles=damageBase(hqDmg,b.x,b.y,24,1);}if(b.from==='p'&&removedBaseTiles>0)cannonCoverDebris(b.x,b.y,'#666865',Math.max(2,Math.min(6,Math.ceil(removedBaseTiles*.8))));explode(b.x,b.y,20,true,b.from,b.from==='p'?b.actionId:0,b.from==='p'?95:20);}else burst(b.x,b.y,3,b.from==='e'?'#ffb08a':'#ffe28a',90);}}
+  if(!dead){const bp=segmentBaseImpact({x:ox,y:oy},{x:b.x,y:b.y},b.k==='c'?2:1);if(bp){dead=true;b.x=bp.x;b.y=bp.y;if(b.k==='c'){cannonImpact(b.x,b.y,b.from);let removedBaseTiles=0;if(b.from==='p'||b.from==='ally'){const hqDmg=b.from==='p'?b.dmg*1.5:b.dmg;removedBaseTiles=damageBase(hqDmg,b.x,b.y,24,1,b.from==='p'?'player':'support');}if(b.from==='p'&&removedBaseTiles>0)cannonCoverDebris(b.x,b.y,'#666865',Math.max(2,Math.min(6,Math.ceil(removedBaseTiles*.8))));explode(b.x,b.y,20,true,b.from,b.from==='p'?b.actionId:0,b.from==='p'?95:20);}else burst(b.x,b.y,3,b.from==='e'?'#ffb08a':'#ffe28a',90);}}
   // 最適化後も砲弾が薄い遮蔽物をすり抜けないよう、前フレーム位置→現在位置の線分で判定する。
   if(!dead){const minX=Math.min(ox,b.x)-4,maxX=Math.max(ox,b.x)+4,minY=Math.min(oy,b.y)-4,maxY=Math.max(oy,b.y)+4,segA={x:ox,y:oy},segB={x:b.x,y:b.y};
    const hitObject=objectsInBox(minX,minY,maxX,maxY).find(o=>segmentHitsObject(segA,segB,o,b.k==='c'?2:0));
@@ -5696,11 +5730,11 @@ function update(dt){
    if(!dead){const hitAlly=(allies||[]).find(a=>a.alive&&D(b,a)<10);if(hitAlly){dead=true;if(b.k==='c')cannonImpact(b.x,b.y,b.from);hitAlly.alive=false;burst(hitAlly.x,hitAlly.y,18,'#8fd7ff',180);say('増援がやられた!');}}
    if(!dead&&decoy&&D(b,decoy)<10){dead=true;if(b.k==='c')cannonImpact(b.x,b.y,b.from);burst(b.x,b.y,8,'#ff5a5a',150);}
    if(!dead&&playerBulletHit){dead=true;if(b.k==='c')cannonImpact(b.x,b.y,b.from);burst(b.x,b.y,8,'#ff5a5a',150);
-    if(p.tank){if(p.tank.kind==='truck'){if(b.k==='c'){wreck();}else{p.tank.mgHits=(p.tank.mgHits||0)+1;sfx('vehicleHit');shake=Math.max(shake,3);if(p.tank&&p.tank.mgHits>=5)wreck();}}else if(p.tank.kind==='fighter'){if(b.k==='c')p.tank.hp-=3;else p.tank.hp-=1;sfx('vehicleHit');shake=Math.max(shake,b.k==='c'?9:3);if(p.tank&&p.tank.hp<=0)wreck();}else{const armor=p.tank.t.armor||3;if(b.k==='c')sfx('vehicleHit');if(b.k==='c')p.tank.ch=(p.tank.ch||0)+1.1;else if(b.k==='v'||p.tank.t.id==='armored')p.tank.ch=(p.tank.ch||0)+(p.tank.t.id==='armored'?armor/7.5:.066);shake=Math.max(shake,b.k==='c'?10:2);if((p.tank.ch||0)>=armor-1e-9)wreck();}}
-    else{if(scoreStats)scoreStats.damageHits++;p.hp-=({c:3,v:.5,r:1})[b.k];shake=6;if(p.hp<=0)triggerPlayerDeath();}}
+    if(p.tank){if(p.tank.kind==='truck'){if(b.k==='c'){wreck();}else{recordPlayerDamage(.2,true);p.tank.mgHits=(p.tank.mgHits||0)+1;sfx('vehicleHit');shake=Math.max(shake,3);if(p.tank&&p.tank.mgHits>=5)wreck();}}else if(p.tank.kind==='fighter'){recordPlayerDamage(Math.min(p.tank.hp,b.k==='c'?3:1)/FIGHTER_TYPE.hp,true);if(b.k==='c')p.tank.hp-=3;else p.tank.hp-=1;sfx('vehicleHit');shake=Math.max(shake,b.k==='c'?9:3);if(p.tank&&p.tank.hp<=0)wreck();}else{const armor=p.tank.t.armor||3;recordPlayerDamage(b.k==='c'?1.1/armor:b.k==='v'||p.tank.t.id==='armored'?(p.tank.t.id==='armored'?1/7.5:.066/armor):0,true);if(b.k==='c')sfx('vehicleHit');if(b.k==='c')p.tank.ch=(p.tank.ch||0)+1.1;else if(b.k==='v'||p.tank.t.id==='armored')p.tank.ch=(p.tank.ch||0)+(p.tank.t.id==='armored'?armor/7.5:.066);shake=Math.max(shake,b.k==='c'?10:2);if((p.tank.ch||0)>=armor-1e-9)wreck();}}
+    else{recordPlayerDamage(Math.min(p.hp,({c:3,v:.5,r:1})[b.k])/3);p.hp-=({c:3,v:.5,r:1})[b.k];shake=6;if(p.hp<=0)triggerPlayerDeath();}}
   }
   if(dead)bullets.splice(i,1);}
- for(const w of waves){w.r+=260*dt;if(!w.houndHit&&hound&&D(w,hound)<w.r){w.houndHit=true;stunHound(5);}if(!w.bh){const br=baseHitRect(),nx=Math.max(br.x,Math.min(br.x+br.w,w.x)),ny=Math.max(br.y,Math.min(br.y+br.h,w.y));if(Math.hypot(nx-w.x,ny-w.y)<w.r){w.bh=true;damageBase(6,nx,ny,30,1);fb(nx,ny,34);burst(nx,ny,30,'#ffb347',300);shake=Math.max(shake,10);}}for(const h of humans)if(h.alive&&Math.hypot(h.x-w.x,h.y-w.y)<w.r){h.alive=false;recordPlayerKill(w.actionId||0,'',h);burst(h.x,h.y,12,'#c05a3a',180);}
+ for(const w of waves){w.r+=260*dt;if(!w.houndHit&&hound&&D(w,hound)<w.r){w.houndHit=true;stunHound(5);}if(!w.bh){const br=baseHitRect(),nx=Math.max(br.x,Math.min(br.x+br.w,w.x)),ny=Math.max(br.y,Math.min(br.y+br.h,w.y));if(Math.hypot(nx-w.x,ny-w.y)<w.r){w.bh=true;damageBase(6,nx,ny,30,1,'bomb');fb(nx,ny,34);burst(nx,ny,30,'#ffb347',300);shake=Math.max(shake,10);}}for(const h of humans)if(h.alive&&Math.hypot(h.x-w.x,h.y-w.y)<w.r){h.alive=false;recordPlayerKill(w.actionId||0,'',h);burst(h.x,h.y,12,'#c05a3a',180);}
   if(!w.hit&&!p.tank&&!(p.dig>0)&&D(w,p)<w.r){w.hit=true;damagePlayerByOwnBomb();}}waves=waves.filter(w=>w.r<w.max);
  updateAlly(dt);updatePartner(dt);syncPartnerDriverPassenger();updateAirstrike(dt);
  // 水面アニメーションと同じ向きの流れを地上ユニットへ反映する。
@@ -7393,109 +7427,178 @@ function draw(near){
  drawLoadingOverlay();
 }
 // Responsive result display. Existing score calculation is preserved.
-const RES_AXES=['隠密','精密','強襲','爆破','破壊','機動','戦術','連携'];
-const RES_AXIS_NOTES=['未発見の前進・静かな無力化','武器別の発射数に対する撃破効率','発見状態での撃破・連続撃破','爆発による撃破・まとめ撃破','遮蔽物や木の破壊（自作壁を除く）','車両での新たな前進・撃破','偽装の誘導・防護壁の防御・組み付き','味方の撃破・気絶・救助・共同戦果'];
+const RES_AXES=['任務遂行','隠密','戦闘','爆破','機動','戦術','連携','生存'];
+const RES_AXIS_NOTES=['施設破壊・制圧・資料回収と脱出','未発見での目標接近・回収','自分の撃破・敵の強さ・武器別の効率','目標への爆破・爆発撃破・まとめ撃破','徒歩・車両での目標への前進と帰還','偽装の誘導・防護壁の防御・組み付き','共同制圧・共同回収・救助・共同撃破','任務への参加・生還と累積ダメージ'];
 const resClamp=v=>Math.max(0,Math.min(100,Math.round(Number.isFinite(v)?v:0)));
 const resLevel=v=>v<=0?0:v>=97?5:v>=82?4:v>=55?3:v>=32?2:1;
 function vehicleStyleKind(v){return v?.t?.id==='armored'?'armored':v?.kind||'unknown';}
 function tacticalSuccesses(s){return (s.decoyLures||0)+(s.wallBlocks||0)+(s.tacticalStuns||0);}
 function supportSuccesses(s){return (s.allyKills||0)+(s.allyStuns||0)+(s.partnerRescues||0);}
-function teamworkSuccesses(s){return supportSuccesses(s)+(s.jointKills||0)-(s.sharedSupportKills||0);}
-function resultMetrics(s,r){
- const unseen=s.maxUnseenForwardStreak||0;
- const stealth=unseen>=30||(s.stealthStuns||0)>0?resClamp(55*Math.min(1,unseen/3000)+30*Math.min(1,(s.unseenDist||0)/Math.max(100,s.totalTravel||0))+15*Math.min(1,unseen/5000+(s.stealthStuns||0)/3)):0;
- // 武器ごとに効率を比較。連射武器を狙撃と同じ弾数基準で不利にしない。
- const precision=Math.max(...[[s.sniperKills,s.sniperShots,.8],[s.mgKills,s.mgShots,.12],[s.cannonKills,s.cannonShots,.7]].map(([k,n,target])=>k>0&&n>0?resClamp(60*Math.min(1,k/8)+40*Math.min(1,k/n/target)):0));
- const alert=s.assaultKills||0;
- const assault=alert>0?resClamp(75*Math.min(1,alert/12)+25*Math.min(1,(s.maxKillChain||0)/5)):0;
- const explosive=s.explosiveKills||0;
- const blast=explosive>0?resClamp(75*Math.min(1,explosive/10)+25*Math.min(1,Math.max(0,(s.blastMaxOneShot||0)-1)/3)):0;
- const destroyed=s.styleDestroyed||0;
- const destruction=destroyed>0?resClamp(100*Math.min(1,Math.sqrt(destroyed/60000))):0;
- const advance=s.vehicleAdvance||0,vkills=s.vehicleKills||0;
- const mobility=advance>0||vkills>0?resClamp(65*Math.min(1,advance/3500)+35*Math.min(1,vkills/6)):0;
+function teamworkSuccesses(s){return (s.partnerRescues||0)*3+(s.jointKills||0)+(s.partnerDocuments||0)*4+Math.min(8,(s.jointObjectiveSeconds||0)/4);}
+function resultMetrics(s,r={}){
+ r=r||{};const indoor=s.stage==='indoor',front=s.stage==='front',clear=!!r.cleared;
+ const progress=clear?1:Math.min(1,indoor?(s.objectiveProgress||0):front?(s.objectiveProgress||0):(s.objectiveDamage||0));
+ const mission=resClamp(progress*100);
+ const advance=indoor?(s.objectiveAdvance||0):front?(s.objectiveAdvance||0):(s.maxProgress||0);
+ const hidden=indoor?(s.hiddenObjectiveAdvance||0):front?(s.hiddenObjectiveAdvance||0):Math.min(s.maxUnseenForwardStreak||0,advance);
+ const stealth=indoor?resClamp(70*((s.hiddenDocuments||0)/Math.max(1,s.documentTotal||0))+30*(clear&&s.detections===0&&!s.indoorAlarm?1:Math.min(1,hidden/1200))-Math.min(40,(s.detections||0)*10+(s.indoorAlarm?20:0))):resClamp(75*Math.min(1,hidden/(front?2000:4000))+25*Math.min(1,(s.stealthStuns||0)/3+hidden/(front?3500:6000)));
+ const accuracy=Math.max(0,...[[s.sniperKills,s.sniperShots,.8],[s.mgKills,s.mgShots,.12],[s.cannonKills,s.cannonShots,.7]].map(([k,n,t])=>k>0&&n>0?Math.min(1,k/n/t):0));
+ const kills=s.playerKills||0,combat=kills>0?resClamp(65*Math.min(1,(s.playerKillPoints||kills*100)/(indoor?1000:front?2400:2000))+20*accuracy+15*Math.min(1,(s.maxKillChain||0)/5)):0;
+ const explosive=s.explosiveKills||0,bombGoal=s.bombObjectiveDamage||0;
+ const blast=explosive>0||bombGoal>0?resClamp(60*Math.min(1,explosive/(indoor?5:10)+bombGoal)+25*Math.min(1,Math.max(0,(s.blastMaxOneShot||0)-1)/3)+15*Number(bombGoal>0||s.blastMaxOneShot>=3)):0;
+ const goalBlast=resClamp(bombGoal*100);
+ const mobility=resClamp(100*Math.min(1,advance/(indoor?2400:front?4500:8500)));
  const tactical=tacticalSuccesses(s),variety=Number((s.decoyLures||0)>0)+Number((s.wallBlocks||0)>0)+Number((s.tacticalStuns||0)>0);
- const tactics=tactical>0?resClamp(85*Math.min(1,tactical/10)+15*Math.min(1,variety/2)):0;
- const support=supportSuccesses(s),joint=s.jointKills||0,team=teamworkSuccesses(s);
- const teamwork=support>0||joint>0?resClamp(85*Math.min(1,team/12)+15*Math.min(1,((s.partnerRescues||0)+joint)/3+support/12)):0;
- return [stealth,precision,assault,blast,destruction,mobility,tactics,teamwork];
+ const tactics=tactical>0?resClamp(85*Math.min(1,tactical/(indoor?6:10))+15*Math.min(1,variety/2)):0;
+ const team=teamworkSuccesses(s),teamwork=team>0?resClamp(100*Math.min(1,team/(indoor?8:12))):0;
+ const active=clear||progress>0||advance>100||kills>0||tactical>0;
+ const damage=(s.playerDamage||0)+(s.vehicleDamage||0);
+ const survival=active?resClamp((clear?100:Math.min(60,progress*60+advance/(indoor?2400:8500)*30))*Math.max(0,1-damage*.35)):0;
+ return [mission,stealth,combat,Math.max(blast,goalBlast),mobility,tactics,teamwork,survival];
 }
 const TITLE_ARCHIVE_KEY='tankGameTitleArchiveV1';
 // 削除対象の旧版IDだけを移行時に整理し、新称号・勲章・戦績は保持する。
 const RETIRED_TITLE_IDS=["single_0_normal","single_0_elite","single_1_normal","single_1_elite","single_2_normal","single_2_elite","single_3_normal","single_3_elite","single_4_normal","single_4_elite","single_5_normal","single_5_elite","single_6_normal","single_6_elite","single_7_normal","single_7_elite","ghost_sniper","shadow_scout","silent_saboteur","first_strike","battle_schemer","demolition_expert","armored_assault","unyielding_fighter","lightning_demolition","maneuver_ace","no_results","challenger","allrounder","lone_infantry","chain_master","one_shot_master","legend_0","legend_1","legend_2","legend_3","legend_4","legend_5","legend_6","legend_7"];
-const TITLE_BASE=[['隠密','隠密兵','ゴースト'],['精密','射撃手','精密射手'],['強襲','突撃兵','戦場の猛者'],['爆破','爆破兵','爆炎の達人'],['破壊','突破工兵','破壊の化身'],['機動','機動兵','機動戦のエース'],['戦術','戦術家','戦場の知将'],['連携','連携兵','絆の指揮官']];
+const TITLE_BASE=[['任務遂行','任務遂行者','完遂の達人'],['隠密','隠密兵','ゴースト'],['戦闘','戦闘兵','戦場の猛者'],['爆破','爆破兵','爆炎の達人'],['機動','機動兵','機動戦のエース'],['戦術','戦術家','戦場の知将'],['連携','連携兵','絆の指揮官'],['生存','生還者','不屈の生還者']];
 const TITLE_AXIS_REQUIREMENTS=[
- {normal:s=>s.maxUnseenForwardStreak>=600,elite:s=>s.maxUnseenForwardStreak>=2300,normalNote:'未発見の連続前進60m以上',eliteNote:'未発見の連続前進230m以上'},
- {normal:s=>(s.rangedKills||0)>=3,elite:s=>(s.rangedKills||0)>=8,normalNote:'射撃による撃破3体以上',eliteNote:'射撃による撃破8体以上'},
- {normal:s=>s.assaultKills>=4,elite:s=>s.assaultKills>=12,normalNote:'発見状態で4体以上撃破',eliteNote:'発見状態で12体以上撃破'},
- {normal:s=>s.explosiveKills>=3,elite:s=>s.explosiveKills>=10&&s.blastMaxOneShot>=4,normalNote:'爆発による撃破3体以上',eliteNote:'爆発撃破10体以上・同一爆発で4体以上撃破'},
- {normal:s=>s.styleDestroyed>=18000,elite:s=>s.styleDestroyed>=57000,normalNote:'遮蔽物・木の破壊面積180m²以上',eliteNote:'遮蔽物・木の破壊面積570m²以上'},
- {normal:s=>s.vehicleAdvance>=1200&&s.vehicleKills>=2,elite:s=>s.vehicleAdvance>=3300&&s.vehicleKills>=6,normalNote:'車両で新たに120m前進・車両で2体以上撃破',eliteNote:'車両で新たに330m前進・車両で6体以上撃破'},
- {normal:s=>tacticalSuccesses(s)>=5,elite:s=>tacticalSuccesses(s)>=10,normalNote:'誘導・防御・組み付きの成功5回以上',eliteNote:'誘導・防御・組み付きの成功10回以上'},
- {normal:s=>teamworkSuccesses(s)>=6,elite:s=>teamworkSuccesses(s)>=12,normalNote:'味方の戦果・救助・共同戦果6回以上',eliteNote:'味方の戦果・救助・共同戦果12回以上'}
+ {normal:(s,r)=>!!r.cleared||(s.objectiveProgress||s.objectiveDamage||0)>=.55,elite:(s,r)=>!!r.cleared,normalNote:'任務の半分以上を達成',eliteNote:'任務を完遂'},
+ {normal:s=>(s.hiddenDocuments||0)>0||(s.hiddenObjectiveAdvance||s.maxUnseenForwardStreak||0)>=600,elite:(s,r)=>s.detections===0&&(s.stage==='indoor'?r.cleared&&!s.indoorAlarm:(s.hiddenObjectiveAdvance||s.maxUnseenForwardStreak||0)>=3000),normalNote:'未発見で資料回収または目標に60m接近',eliteNote:'未発見で潜入完遂、または目標に300m接近'},
+ {normal:s=>s.playerKills>=3,elite:s=>s.playerKills>=8,normalNote:'自分の攻撃で3体以上撃破',eliteNote:'自分の攻撃で8体以上撃破'},
+ {normal:s=>s.explosiveKills>=3||s.bombObjectiveDamage>0,elite:s=>s.bombObjectiveFinish||s.explosiveKills>=10,normalNote:'爆発で3体撃破または任務施設に爆破ダメージ',eliteNote:'爆破で任務施設を破壊、または爆発で10体撃破'},
+ {normal:s=>(s.objectiveAdvance||s.maxProgress||0)>=600,elite:s=>(s.objectiveAdvance||s.maxProgress||0)>=2000,normalNote:'目標へ徒歩・車両で60m以上接近',eliteNote:'目標へ徒歩・車両で200m以上接近'},
+ {normal:s=>tacticalSuccesses(s)>=3,elite:s=>tacticalSuccesses(s)>=6,normalNote:'誘導・防御・組み付きに3回成功',eliteNote:'誘導・防御・組み付きに6回成功'},
+ {normal:s=>teamworkSuccesses(s)>=4,elite:s=>teamworkSuccesses(s)>=8,normalNote:'共同作戦・救助・共同撃破で連携実績4以上',eliteNote:'共同作戦・救助・共同撃破で連携実績8以上'},
+ {normal:(s,r)=>!!r.cleared,elite:(s,r)=>!!r.cleared&&!s.damageHits&&!s.playerDamage&&!s.vehicleDamage,normalNote:'任務を生きて完遂',eliteNote:'歩兵・搭乗車両とも無傷で完遂'}
 ];
 const TITLE_COMBOS=[
- {id:'v2_ghost_sniper',name:'ゴーストスナイパー',axes:[0,1],note:'隠密と精密を両立・狙撃撃破3体以上',valid:s=>s.sniperKills>=3},
- {id:'v2_silent_bomber',name:'影の爆破兵',axes:[0,3],note:'隠密前進80m以上・爆発撃破4体以上',valid:s=>s.maxUnseenForwardStreak>=800&&s.explosiveKills>=4},
- {id:'v2_shadow_pair',name:'影の相棒',axes:[0,7],note:'隠密前進80m以上・味方の戦果6回以上',valid:s=>s.maxUnseenForwardStreak>=800&&supportSuccesses(s)>=6},
- {id:'v2_armored_assault',name:'鋼鉄の突撃兵',axes:[2,5],note:'戦車搭乗・発見状態で6体以上撃破',valid:s=>!!s.vehicleKinds?.tank&&s.assaultKills>=6},
- {id:'v2_blast_breach',name:'爆炎の開拓者',axes:[3,4],note:'爆発撃破5体以上・破壊面積300m²以上',valid:s=>s.explosiveKills>=5&&s.styleDestroyed>=30000},
- {id:'v2_mobile_bomber',name:'電撃爆破兵',axes:[3,5],note:'爆発撃破5体以上・車両で新たに150m前進',valid:s=>s.explosiveKills>=5&&s.vehicleAdvance>=1500},
- {id:'v2_breach_tactician',name:'突破の設計者',axes:[4,6],note:'破壊面積300m²以上・戦術成功6回以上',valid:s=>s.styleDestroyed>=30000&&tacticalSuccesses(s)>=6},
- {id:'v2_pack_leader',name:'戦場の指揮官',axes:[2,7],note:'発見状態で6体以上撃破・味方の戦果6回以上',valid:s=>s.assaultKills>=6&&supportSuccesses(s)>=6},
- {id:'v2_crew_ace',name:'鋼鉄の名コンビ',axes:[5,7],note:'車両で新たに150m前進・同乗中の共同撃破3体以上',valid:s=>s.vehicleAdvance>=1500&&s.jointKills>=3},
- {id:'v2_tactical_marksman',name:'策謀の射手',axes:[1,6],note:'射撃撃破5体以上・戦術成功6回以上',valid:s=>s.rangedKills>=5&&tacticalSuccesses(s)>=6}
+ {id:'v3_ghost_sniper',name:'ゴーストスナイパー',axes:[1,2],note:'隠密と戦闘を両立・狙撃撃破3体以上',valid:s=>s.sniperKills>=3},
+ {id:'v3_ghost_agent',name:'幽霊工作員',axes:[0,1],note:'未発見のまま任務を完遂',valid:(s,r)=>r.cleared&&s.detections===0&&!s.indoorAlarm},
+ {id:'v3_blast_breach',name:'爆炎の突破者',axes:[3,5],note:'爆発撃破5体以上・戦術成功6回以上',valid:s=>s.explosiveKills>=5&&tacticalSuccesses(s)>=6},
+ {id:'v3_armored_assault',name:'鋼鉄の突撃兵',axes:[2,4],note:'戦車搭乗・自分で8体以上撃破',valid:s=>!!s.vehicleKinds?.tank&&s.playerKills>=8},
+ {id:'v3_front_commander',name:'最前線の指揮官',axes:[0,6],note:'制圧作戦を完遂・共同制圧24秒以上',valid:(s,r)=>s.stage==='front'&&r.cleared&&s.jointObjectiveSeconds>=24},
+ {id:'v3_shadow_pair',name:'影の相棒',axes:[1,6],note:'潜入を無発見で完遂・相棒が資料回収に参加',valid:(s,r)=>s.stage==='indoor'&&r.cleared&&s.detections===0&&s.partnerDocuments>0}
 ];
 const TITLE_SPECIAL=[
- {id:'v2_no_results',name:'戦果なし',note:'評価対象の行動・成果がなかった',priority:1000,valid:lv=>lv.every(v=>v===0)},
- {id:'v2_challenger',name:'戦場の挑戦者',note:'戦果はあったが、ほかの称号条件には届かなかった',priority:100,valid:lv=>lv.some(v=>v>0)&&lv.every(v=>v<=2)},
- {id:'v2_versatile',name:'多彩な戦士',note:'異なる5軸でLv3以上',priority:360,valid:lv=>lv.filter(v=>v>=3).length>=5},
- {id:'v2_infantry',name:'孤高の歩兵',note:'搭乗せず、自分の攻撃で3体以上撃破してクリア',priority:370,valid:(lv,s,r)=>!!r.cleared&&s.vehicleBoards===0&&(s.playerKills||0)>=3&&!(s.allyKills||0)&&!(s.allyStuns||0)},
- {id:'v2_chain',name:'マルチキルの達人',note:'4秒以内に続けて6体以上撃破',priority:450,valid:(lv,s)=>s.maxKillChain>=6},
- {id:'v2_one_shot',name:'ワンショットキルの達人',note:'一度の攻撃で4体以上撃破',priority:470,valid:(lv,s)=>s.maxOneShotKills>=4}
+ {id:'v3_no_results',name:'戦果なし',note:'評価対象の行動・成果がなかった',priority:1000,valid:lv=>lv.every(v=>v===0)},
+ {id:'v3_challenger',name:'戦場の挑戦者',note:'戦果はあったが、ほかの称号条件には届かなかった',priority:100,valid:lv=>lv.some(v=>v>0)&&lv.every(v=>v<=2)},
+ {id:'v3_versatile',name:'多彩な戦士',note:'異なる5軸でLv3以上',priority:360,valid:lv=>lv.filter(v=>v>=3).length>=5},
+ {id:'v3_infantry',name:'孤高の歩兵',note:'破壊・制圧で搭乗せず、自分で3体以上撃破して完遂',priority:370,valid:(lv,s,r)=>s.stage!=='indoor'&&r.cleared&&s.vehicleBoards===0&&s.playerKills>=3&&!s.allyKills&&!s.allyStuns},
+ {id:'v3_chain',name:'マルチキルの達人',note:'4秒以内に続けて6体以上撃破',priority:450,valid:(lv,s)=>s.maxKillChain>=6},
+ {id:'v3_one_shot',name:'ワンショットキルの達人',note:'一度の攻撃で4体以上撃破',priority:470,valid:(lv,s)=>s.maxOneShotKills>=4}
 ];
 const TITLE_CATALOG=[
  ...TITLE_BASE.flatMap(([axis,normal,elite],i)=>[
-  {id:'v2_single_'+i+'_normal',name:normal,type:'単独実績',note:axis+' Lv3以上・'+TITLE_AXIS_REQUIREMENTS[i].normalNote,priority:120,axis:i,threshold:3,evidence:'normal'},
-  {id:'v2_single_'+i+'_elite',name:elite,type:'上級実績',note:axis+' Lv5・'+TITLE_AXIS_REQUIREMENTS[i].eliteNote,priority:220,axis:i,threshold:5,evidence:'elite'}
- ]),
+ {id:'v3_single_'+i+'_normal',name:normal,type:'単独実績',note:axis+' Lv3以上・'+TITLE_AXIS_REQUIREMENTS[i].normalNote,priority:120,axis:i,threshold:3,evidence:'normal'},
+ {id:'v3_single_'+i+'_elite',name:elite,type:'上級実績',note:axis+' Lv5・'+TITLE_AXIS_REQUIREMENTS[i].eliteNote,priority:220,axis:i,threshold:5,evidence:'elite'}]),
  ...TITLE_COMBOS.map(c=>({...c,type:'複合プレイ',priority:410,note:c.note+'（2軸Lv4以上・うち1軸Lv5）'})),
  ...TITLE_SPECIAL.map(c=>({...c,type:'特殊実績'}))
 ];
-const legendNames=['幽影の覇者','神業の射手','戦場の覇王','爆炎の支配者','戦場の開拓神','疾風迅雷','神算鬼謀','不滅の絆'];
-const TITLE_LEGENDS=Object.freeze(TITLE_BASE.map(([axis],i)=>({id:'v2_legend_'+i,name:legendNames[i],from:'v2_single_'+i+'_elite',axis:i,flavor:axis+'の戦い方を極め、幾度も戦果を重ねた伝説の兵士'})));
+const legendNames=['任務の覇者','幽影の覇者','戦場の覇王','爆炎の支配者','疾風迅雷','神算鬼謀','不滅の絆','不死鳥'];
+const TITLE_LEGENDS=Object.freeze(TITLE_BASE.map(([axis],i)=>({id:'v3_legend_'+i,name:legendNames[i],from:'v3_single_'+i+'_elite',axis:i,flavor:axis+'を極め、幾度も戦果を重ねた伝説の兵士'})));
 for(const t of TITLE_LEGENDS)TITLE_CATALOG.push({id:t.id,name:t.name,type:'伝説級',priority:650,note:'上級称号「'+TITLE_BASE[t.axis][2]+'」を累計3回獲得',legendFrom:t.from,axis:t.axis,threshold:5,evidence:'elite'});
-const TITLE_FLAVOR=Object.freeze({
- ...Object.fromEntries(TITLE_BASE.flatMap(([axis],i)=>[['v2_single_'+i+'_normal',RES_AXIS_NOTES[i]+'で戦場に足跡を残した'],['v2_single_'+i+'_elite',axis+'を極め、突出した戦果を残した']])),
- ...Object.fromEntries(TITLE_LEGENDS.map(t=>[t.id,t.flavor])),
- ...Object.fromEntries(TITLE_COMBOS.map(t=>[t.id,t.note]))
-});
+const TITLE_FLAVOR=Object.freeze(Object.fromEntries(TITLE_LEGENDS.map(t=>[t.id,t.flavor])));
 const MEDAL_CATALOG=[
- {id:'mission_clear',name:'初任務完了',icon:'★',note:'作戦目標を達成してクリアする',valid:(s,r)=>!!r.cleared},
- {id:'untouched',name:'無傷の英雄',icon:'◆',note:'被弾せずにゲームをクリアする',valid:(s,r)=>!!r.cleared&&s.damageHits===0},
- {id:'undetected',name:'完全潜入',icon:'◈',note:'一度も発見されず、未発見移動30m以上でクリアする',valid:(s,r)=>!!r.cleared&&s.detections===0&&s.unseenDist>=300},
- {id:'tank_hunter',name:'戦車キラー',icon:'✦',note:'1回のプレイで敵戦車を3台以上撃破する',valid:s=>s.tankKills>=3},
- {id:'chain_five',name:'連撃の達人',icon:'⚔',note:'4秒以内に続けて敵5体以上を撃破する',valid:s=>s.maxKillChain>=5},
- {id:'sniper_three',name:'一発必中の狩人',icon:'◎',note:'狙撃で敵を3体以上撃破する',valid:s=>s.sniperKills>=3},
- {id:'bomb_three',name:'爆破の名手',icon:'✹',note:'設置・遠投爆弾で敵を3体以上撃破する',valid:s=>s.bombKills>=3},
- {id:'three_vehicles',name:'乗り物の達人',icon:'➤',note:'トラック・装甲車・戦車の3種類に搭乗する',valid:s=>['truck','armored','tank'].every(k=>s.vehicleKinds?.[k])},
- {id:'infantry_hero',name:'歩兵の英雄',icon:'♜',note:'一度も搭乗せずに作戦をクリアする',valid:(s,r)=>!!r.cleared&&s.vehicleBoards===0},
- {id:'one_shot_three',name:'ワンショットキル',icon:'✹',note:'一度の攻撃で敵3体以上を撃破する',valid:s=>s.maxOneShotKills>=3},
- {id:'v2_stealth',name:'影の進軍',icon:'◈',note:'未発見の連続前進150m以上を達成する',valid:s=>s.maxUnseenForwardStreak>=1500},
- {id:'v2_precision',name:'狙い澄ました一撃',icon:'◎',note:'精密Lv4以上・射撃撃破5体以上',valid:(s,r)=>resLevel(resultMetrics(s,r)[1])>=4&&s.rangedKills>=5},
- {id:'v2_assault',name:'最前線の勇士',icon:'⚔',note:'発見状態で敵6体以上を撃破する',valid:s=>s.assaultKills>=6},
- {id:'v2_blast',name:'爆風の一掃',icon:'✹',note:'同一の爆発攻撃で敵3体以上を撃破する（支援爆撃を除く）',valid:s=>s.blastMaxOneShot>=3},
- {id:'v2_destruction',name:'道を切り開く者',icon:'◆',note:'遮蔽物・木の破壊面積300m²以上（自作壁を除く）',valid:s=>s.styleDestroyed>=30000},
- {id:'v2_mobility',name:'機動突破',icon:'➤',note:'車両で新たに150m前進・車両で3体以上撃破',valid:s=>s.vehicleAdvance>=1500&&s.vehicleKills>=3},
- {id:'v2_tactics',name:'策を実らせる者',icon:'♜',note:'誘導・防御・組み付きの成功を合計6回達成する',valid:s=>tacticalSuccesses(s)>=6},
- {id:'v2_teamwork',name:'共闘の証',icon:'★',note:'味方の撃破・気絶・救助・共同戦果を合計6回達成する',valid:s=>teamworkSuccesses(s)>=6},
- {id:'v2_decoy',name:'陽動の名手',icon:'◈',note:'偽装で異なる敵5体以上の注意を引く',valid:s=>s.decoyLures>=5},
- {id:'v2_wall',name:'守りの要',icon:'◆',note:'自作防護壁で敵弾を8発以上防ぐ',valid:s=>s.wallBlocks>=8},
- {id:'v2_rescue',name:'戦友の救い手',icon:'★',note:'倒れた相棒を1回以上救助する',valid:s=>s.partnerRescues>=1},
- {id:'v2_crew',name:'二人三脚',icon:'➤',note:'相棒と同じ車両に乗った状態で3体以上撃破する',valid:s=>s.jointKills>=3}
+ {id:'v3_mission_clear',name:'初任務完了',icon:'★',note:'作戦目標を達成してクリアする',valid:(s,r)=>!!r.cleared},
+ {id:'v3_untouched',name:'無傷の英雄',icon:'◆',note:'歩兵・搭乗車両ともダメージを受けずに完遂',valid:(s,r)=>!!r.cleared&&!s.damageHits&&!s.playerDamage&&!s.vehicleDamage},
+ {id:'v3_undetected',name:'完全潜入',icon:'◈',note:'一度も発見されず、未発見移動30m以上でクリアする',valid:(s,r)=>!!r.cleared&&s.detections===0&&s.unseenDist>=300},
+ {id:'v3_tank_hunter',name:'戦車キラー',icon:'✦',note:'1回のプレイで敵戦車を自分の攻撃で3台以上撃破する',valid:s=>s.playerTankKills>=3},
+ {id:'v3_chain_five',name:'連撃の達人',icon:'⚔',note:'4秒以内に続けて敵5体以上を撃破する',valid:s=>s.maxKillChain>=5},
+ {id:'v3_sniper_three',name:'一発必中の狩人',icon:'◎',note:'狙撃で敵を3体以上撃破する',valid:s=>s.sniperKills>=3},
+ {id:'v3_bomb_three',name:'爆破の名手',icon:'✹',note:'設置・遠投爆弾で敵を3体以上撃破する',valid:s=>s.bombKills>=3},
+ {id:'v3_three_vehicles',name:'乗り物の達人',icon:'➤',note:'トラック・装甲車・戦車の3種類に搭乗する',valid:s=>['truck','armored','tank'].every(k=>s.vehicleKinds?.[k])},
+ {id:'v3_infantry_hero',name:'歩兵の英雄',icon:'♜',note:'破壊・制圧で一度も搭乗せずに完遂',valid:(s,r)=>s.stage!=='indoor'&&!!r.cleared&&s.vehicleBoards===0},
+ {id:'v3_one_shot_three',name:'ワンショットキル',icon:'✹',note:'一度の攻撃で敵3体以上を撃破する',valid:s=>s.maxOneShotKills>=3},
+ {id:'v3_stealth',name:'影の進軍',icon:'◈',note:'未発見で目標へ150m以上接近',valid:s=>(s.hiddenObjectiveAdvance||s.maxUnseenForwardStreak||0)>=1500},
+ {id:'v3_precision',name:'狙い澄ました一撃',icon:'◎',note:'武器別の発射数に対し撃破効率60%以上・射撃撃破5体以上',valid:(s,r)=>s.rangedKills/Math.max(1,s.sniperShots+s.cannonShots+s.mgShots*.15)>=.6&&s.rangedKills>=5},
+ {id:'v3_assault',name:'最前線の勇士',icon:'⚔',note:'発見状態で敵6体以上を撃破する',valid:s=>s.assaultKills>=6},
+ {id:'v3_blast',name:'爆風の一掃',icon:'✹',note:'同一の爆発攻撃で敵3体以上を撃破する（支援爆撃を除く）',valid:s=>s.blastMaxOneShot>=3},
+ {id:'v3_destruction',name:'目標への突破口',icon:'◆',note:'任務施設の耐久を自分の攻撃で半分以上削る',valid:s=>(s.stage==='base'||s.stage==='beginner')&&s.objectiveDamage>=.5},
+ {id:'v3_mobility',name:'機動突破',icon:'➤',note:'車両で新たに150m前進・車両で3体以上撃破',valid:s=>s.vehicleAdvance>=1500&&s.vehicleKills>=3},
+ {id:'v3_tactics',name:'策を実らせる者',icon:'♜',note:'誘導・防御・組み付きの成功を合計6回達成する',valid:s=>tacticalSuccesses(s)>=6},
+ {id:'v3_teamwork',name:'共闘の証',icon:'★',note:'共同制圧・共同回収・救助・共同撃破で連携実績6以上',valid:s=>teamworkSuccesses(s)>=6},
+ {id:'v3_decoy',name:'陽動の名手',icon:'◈',note:'偽装で異なる敵5体以上の注意を引く',valid:s=>s.decoyLures>=5},
+ {id:'v3_wall',name:'守りの要',icon:'◆',note:'自作防護壁で敵弾を8発以上防ぐ',valid:s=>s.wallBlocks>=8},
+ {id:'v3_rescue',name:'戦友の救い手',icon:'★',note:'倒れた相棒を1回以上救助する',valid:s=>s.partnerRescues>=1},
+ {id:'v3_crew',name:'二人三脚',icon:'➤',note:'相棒と同じ車両に乗った状態で3体以上撃破する',valid:s=>s.jointKills>=3}
+,
+ {id:'v3_bomb_objective',name:'爆破完遂',icon:'✹',note:'破壊作戦の施設に設置・遠投爆弾でとどめを刺して完遂',valid:(s,r)=>(s.stage==='base'||s.stage==='beginner')&&r.cleared&&s.bombObjectiveFinish},
+ {id:'v3_capture_leader',name:'奪還の先導者',icon:'★',note:'制圧作戦で全拠点の制圧に自ら参加して完遂',valid:(s,r)=>s.stage==='front'&&r.cleared&&s.capturePoints===s.objectiveTotal&&s.objectiveTotal>0},
+ {id:'v3_capture_defense',name:'援護の要',icon:'◆',note:'制圧を妨げる敵を自ら5体以上排除',valid:s=>s.stage==='front'&&s.captureDefenseKills>=5},
+ {id:'v3_quiet_recovery',name:'無警報の回収者',icon:'◈',note:'館内の全体警報を発動させず全資料回収・脱出',valid:(s,r)=>s.stage==='indoor'&&r.cleared&&!s.indoorAlarm&&s.documents===s.documentTotal},
+ {id:'v3_shadow_return',name:'影の帰還',icon:'◈',note:'敵を一人も倒さず全資料回収・脱出（味方の撃破も含む）',valid:(s,r)=>s.stage==='indoor'&&r.cleared&&s.documents===s.documentTotal&&s.humanKills+s.eliteKills+s.tankKills===0},
+ {id:'v3_joint_recovery',name:'共同回収',icon:'★',note:'相棒が資料回収に参加して潜入を完遂',valid:(s,r)=>s.stage==='indoor'&&r.cleared&&s.partnerDocuments>0}
 ];
+const LEGACY_TITLE_CATALOG=[
+ {"id":"v2_single_0_normal","name":"隠密兵","type":"単独実績","note":"隠密 Lv3以上・未発見の連続前進60m以上","priority":120,"axis":0,"threshold":3,"evidence":"normal"},
+ {"id":"v2_single_0_elite","name":"ゴースト","type":"上級実績","note":"隠密 Lv5・未発見の連続前進230m以上","priority":220,"axis":0,"threshold":5,"evidence":"elite"},
+ {"id":"v2_single_1_normal","name":"射撃手","type":"単独実績","note":"精密 Lv3以上・射撃による撃破3体以上","priority":120,"axis":1,"threshold":3,"evidence":"normal"},
+ {"id":"v2_single_1_elite","name":"精密射手","type":"上級実績","note":"精密 Lv5・射撃による撃破8体以上","priority":220,"axis":1,"threshold":5,"evidence":"elite"},
+ {"id":"v2_single_2_normal","name":"突撃兵","type":"単独実績","note":"強襲 Lv3以上・発見状態で4体以上撃破","priority":120,"axis":2,"threshold":3,"evidence":"normal"},
+ {"id":"v2_single_2_elite","name":"戦場の猛者","type":"上級実績","note":"強襲 Lv5・発見状態で12体以上撃破","priority":220,"axis":2,"threshold":5,"evidence":"elite"},
+ {"id":"v2_single_3_normal","name":"爆破兵","type":"単独実績","note":"爆破 Lv3以上・爆発による撃破3体以上","priority":120,"axis":3,"threshold":3,"evidence":"normal"},
+ {"id":"v2_single_3_elite","name":"爆炎の達人","type":"上級実績","note":"爆破 Lv5・爆発撃破10体以上・同一爆発で4体以上撃破","priority":220,"axis":3,"threshold":5,"evidence":"elite"},
+ {"id":"v2_single_4_normal","name":"突破工兵","type":"単独実績","note":"破壊 Lv3以上・遮蔽物・木の破壊面積180m²以上","priority":120,"axis":4,"threshold":3,"evidence":"normal"},
+ {"id":"v2_single_4_elite","name":"破壊の化身","type":"上級実績","note":"破壊 Lv5・遮蔽物・木の破壊面積570m²以上","priority":220,"axis":4,"threshold":5,"evidence":"elite"},
+ {"id":"v2_single_5_normal","name":"機動兵","type":"単独実績","note":"機動 Lv3以上・車両で新たに120m前進・車両で2体以上撃破","priority":120,"axis":5,"threshold":3,"evidence":"normal"},
+ {"id":"v2_single_5_elite","name":"機動戦のエース","type":"上級実績","note":"機動 Lv5・車両で新たに330m前進・車両で6体以上撃破","priority":220,"axis":5,"threshold":5,"evidence":"elite"},
+ {"id":"v2_single_6_normal","name":"戦術家","type":"単独実績","note":"戦術 Lv3以上・誘導・防御・組み付きの成功5回以上","priority":120,"axis":6,"threshold":3,"evidence":"normal"},
+ {"id":"v2_single_6_elite","name":"戦場の知将","type":"上級実績","note":"戦術 Lv5・誘導・防御・組み付きの成功10回以上","priority":220,"axis":6,"threshold":5,"evidence":"elite"},
+ {"id":"v2_single_7_normal","name":"連携兵","type":"単独実績","note":"連携 Lv3以上・味方の戦果・救助・共同戦果6回以上","priority":120,"axis":7,"threshold":3,"evidence":"normal"},
+ {"id":"v2_single_7_elite","name":"絆の指揮官","type":"上級実績","note":"連携 Lv5・味方の戦果・救助・共同戦果12回以上","priority":220,"axis":7,"threshold":5,"evidence":"elite"},
+ {"id":"v2_ghost_sniper","name":"ゴーストスナイパー","axes":[0,1],"note":"隠密と精密を両立・狙撃撃破3体以上（2軸Lv4以上・うち1軸Lv5）","type":"複合プレイ","priority":410},
+ {"id":"v2_silent_bomber","name":"影の爆破兵","axes":[0,3],"note":"隠密前進80m以上・爆発撃破4体以上（2軸Lv4以上・うち1軸Lv5）","type":"複合プレイ","priority":410},
+ {"id":"v2_shadow_pair","name":"影の相棒","axes":[0,7],"note":"隠密前進80m以上・味方の戦果6回以上（2軸Lv4以上・うち1軸Lv5）","type":"複合プレイ","priority":410},
+ {"id":"v2_armored_assault","name":"鋼鉄の突撃兵","axes":[2,5],"note":"戦車搭乗・発見状態で6体以上撃破（2軸Lv4以上・うち1軸Lv5）","type":"複合プレイ","priority":410},
+ {"id":"v2_blast_breach","name":"爆炎の開拓者","axes":[3,4],"note":"爆発撃破5体以上・破壊面積300m²以上（2軸Lv4以上・うち1軸Lv5）","type":"複合プレイ","priority":410},
+ {"id":"v2_mobile_bomber","name":"電撃爆破兵","axes":[3,5],"note":"爆発撃破5体以上・車両で新たに150m前進（2軸Lv4以上・うち1軸Lv5）","type":"複合プレイ","priority":410},
+ {"id":"v2_breach_tactician","name":"突破の設計者","axes":[4,6],"note":"破壊面積300m²以上・戦術成功6回以上（2軸Lv4以上・うち1軸Lv5）","type":"複合プレイ","priority":410},
+ {"id":"v2_pack_leader","name":"戦場の指揮官","axes":[2,7],"note":"発見状態で6体以上撃破・味方の戦果6回以上（2軸Lv4以上・うち1軸Lv5）","type":"複合プレイ","priority":410},
+ {"id":"v2_crew_ace","name":"鋼鉄の名コンビ","axes":[5,7],"note":"車両で新たに150m前進・同乗中の共同撃破3体以上（2軸Lv4以上・うち1軸Lv5）","type":"複合プレイ","priority":410},
+ {"id":"v2_tactical_marksman","name":"策謀の射手","axes":[1,6],"note":"射撃撃破5体以上・戦術成功6回以上（2軸Lv4以上・うち1軸Lv5）","type":"複合プレイ","priority":410},
+ {"id":"v2_no_results","name":"戦果なし","note":"評価対象の行動・成果がなかった","priority":1000,"type":"特殊実績"},
+ {"id":"v2_challenger","name":"戦場の挑戦者","note":"戦果はあったが、ほかの称号条件には届かなかった","priority":100,"type":"特殊実績"},
+ {"id":"v2_versatile","name":"多彩な戦士","note":"異なる5軸でLv3以上","priority":360,"type":"特殊実績"},
+ {"id":"v2_infantry","name":"孤高の歩兵","note":"搭乗せず、自分の攻撃で3体以上撃破してクリア","priority":370,"type":"特殊実績"},
+ {"id":"v2_chain","name":"マルチキルの達人","note":"4秒以内に続けて6体以上撃破","priority":450,"type":"特殊実績"},
+ {"id":"v2_one_shot","name":"ワンショットキルの達人","note":"一度の攻撃で4体以上撃破","priority":470,"type":"特殊実績"},
+ {"id":"v2_legend_0","name":"幽影の覇者","type":"伝説級","priority":650,"note":"上級称号「ゴースト」を累計3回獲得","legendFrom":"v2_single_0_elite","axis":0,"threshold":5,"evidence":"elite"},
+ {"id":"v2_legend_1","name":"神業の射手","type":"伝説級","priority":650,"note":"上級称号「精密射手」を累計3回獲得","legendFrom":"v2_single_1_elite","axis":1,"threshold":5,"evidence":"elite"},
+ {"id":"v2_legend_2","name":"戦場の覇王","type":"伝説級","priority":650,"note":"上級称号「戦場の猛者」を累計3回獲得","legendFrom":"v2_single_2_elite","axis":2,"threshold":5,"evidence":"elite"},
+ {"id":"v2_legend_3","name":"爆炎の支配者","type":"伝説級","priority":650,"note":"上級称号「爆炎の達人」を累計3回獲得","legendFrom":"v2_single_3_elite","axis":3,"threshold":5,"evidence":"elite"},
+ {"id":"v2_legend_4","name":"戦場の開拓神","type":"伝説級","priority":650,"note":"上級称号「破壊の化身」を累計3回獲得","legendFrom":"v2_single_4_elite","axis":4,"threshold":5,"evidence":"elite"},
+ {"id":"v2_legend_5","name":"疾風迅雷","type":"伝説級","priority":650,"note":"上級称号「機動戦のエース」を累計3回獲得","legendFrom":"v2_single_5_elite","axis":5,"threshold":5,"evidence":"elite"},
+ {"id":"v2_legend_6","name":"神算鬼謀","type":"伝説級","priority":650,"note":"上級称号「戦場の知将」を累計3回獲得","legendFrom":"v2_single_6_elite","axis":6,"threshold":5,"evidence":"elite"},
+ {"id":"v2_legend_7","name":"不滅の絆","type":"伝説級","priority":650,"note":"上級称号「絆の指揮官」を累計3回獲得","legendFrom":"v2_single_7_elite","axis":7,"threshold":5,"evidence":"elite"}
+];
+const LEGACY_MEDAL_CATALOG=[
+ {"id":"mission_clear","name":"初任務完了","icon":"★","note":"作戦目標を達成してクリアする"},
+ {"id":"untouched","name":"無傷の英雄","icon":"◆","note":"被弾せずにゲームをクリアする"},
+ {"id":"undetected","name":"完全潜入","icon":"◈","note":"一度も発見されず、未発見移動30m以上でクリアする"},
+ {"id":"tank_hunter","name":"戦車キラー","icon":"✦","note":"1回のプレイで敵戦車を3台以上撃破する"},
+ {"id":"chain_five","name":"連撃の達人","icon":"⚔","note":"4秒以内に続けて敵5体以上を撃破する"},
+ {"id":"sniper_three","name":"一発必中の狩人","icon":"◎","note":"狙撃で敵を3体以上撃破する"},
+ {"id":"bomb_three","name":"爆破の名手","icon":"✹","note":"設置・遠投爆弾で敵を3体以上撃破する"},
+ {"id":"three_vehicles","name":"乗り物の達人","icon":"➤","note":"トラック・装甲車・戦車の3種類に搭乗する"},
+ {"id":"infantry_hero","name":"歩兵の英雄","icon":"♜","note":"一度も搭乗せずに作戦をクリアする"},
+ {"id":"one_shot_three","name":"ワンショットキル","icon":"✹","note":"一度の攻撃で敵3体以上を撃破する"},
+ {"id":"v2_stealth","name":"影の進軍","icon":"◈","note":"未発見の連続前進150m以上を達成する"},
+ {"id":"v2_precision","name":"狙い澄ました一撃","icon":"◎","note":"精密Lv4以上・射撃撃破5体以上"},
+ {"id":"v2_assault","name":"最前線の勇士","icon":"⚔","note":"発見状態で敵6体以上を撃破する"},
+ {"id":"v2_blast","name":"爆風の一掃","icon":"✹","note":"同一の爆発攻撃で敵3体以上を撃破する（支援爆撃を除く）"},
+ {"id":"v2_destruction","name":"道を切り開く者","icon":"◆","note":"遮蔽物・木の破壊面積300m²以上（自作壁を除く）"},
+ {"id":"v2_mobility","name":"機動突破","icon":"➤","note":"車両で新たに150m前進・車両で3体以上撃破"},
+ {"id":"v2_tactics","name":"策を実らせる者","icon":"♜","note":"誘導・防御・組み付きの成功を合計6回達成する"},
+ {"id":"v2_teamwork","name":"共闘の証","icon":"★","note":"味方の撃破・気絶・救助・共同戦果を合計6回達成する"},
+ {"id":"v2_decoy","name":"陽動の名手","icon":"◈","note":"偽装で異なる敵5体以上の注意を引く"},
+ {"id":"v2_wall","name":"守りの要","icon":"◆","note":"自作防護壁で敵弾を8発以上防ぐ"},
+ {"id":"v2_rescue","name":"戦友の救い手","icon":"★","note":"倒れた相棒を1回以上救助する"},
+ {"id":"v2_crew","name":"二人三脚","icon":"➤","note":"相棒と同じ車両に乗った状態で3体以上撃破する"}
+];
+TITLE_CATALOG.push(...LEGACY_TITLE_CATALOG.map(t=>({...t,legacy:true,type:'過去の実績',note:'旧評価で獲得：'+t.note})));
+MEDAL_CATALOG.push(...LEGACY_MEDAL_CATALOG.map(m=>({...m,legacy:true,note:'旧評価で獲得：'+m.note})));
 function evaluateRunTitles(levels,metrics,s,r,archive=readTitleArchive()){
  const eligible=TITLE_CATALOG.filter(t=>{
+  if(t.legacy)return false;
   // 直前までに2回以上獲得し、今回もその上級称号の条件を達成した場合に伝説級を授与。
   if(t.legendFrom)return titleAcquisitionCount(archive.titles[t.legendFrom])>=2&&levels[t.axis]>=5&&TITLE_AXIS_REQUIREMENTS[t.axis].elite(s,r);
   if(t.axis!=null)return levels[t.axis]>=t.threshold&&TITLE_AXIS_REQUIREMENTS[t.axis][t.evidence](s,r);
@@ -7545,7 +7648,7 @@ function titleAcquisitionCount(record){
 function recordRunAchievements(s){
  if(!s||!s.final||s.awards)return; // 同じリザルトを二重計上しない
  const r=s.final,metrics=resultMetrics(s,r),levels=metrics.map(resLevel),evals=evaluateRunTitles(levels,metrics,s,r);
- const earnedMedals=MEDAL_CATALOG.filter(m=>m.valid(s,r));
+ const earnedMedals=MEDAL_CATALOG.filter(m=>!m.legacy&&m.valid(s,r));
  const result={primary:evals.primary.id,titles:evals.titles.map(v=>v.id),medals:earnedMedals.map(v=>v.id),newTitles:[],repeatTitles:[],titleCounts:{},newMedals:[],disabled:false};
  // 無敵モード・エリアデバッグは実績保存対象外。スコアの既存仕様は変えない。
  if(s.debugUsed||areaDebugEnabled){result.disabled=true;s.awards=result;return;}
@@ -7588,10 +7691,11 @@ function renderTrophyArchive(){
  document.getElementById('trophyGrid').hidden=statsMode;
  document.getElementById('trophyTabStats').classList.toggle('active',statsMode);
  if(statsMode){renderTrophyStats();return;}
- const archive=readTitleArchive(),isTitle=trophyTab==='title',found=isTitle?archive.titles:archive.medals,data=isTitle?TITLE_CATALOG:MEDAL_CATALOG;
- const order=[...data].sort((a,b)=>Number(!!found[b.id])-Number(!!found[a.id]));
+ const archive=readTitleArchive(),isTitle=trophyTab==='title',found=isTitle?archive.titles:archive.medals,data=(isTitle?TITLE_CATALOG:MEDAL_CATALOG).filter(d=>!d.legacy||found[d.id]);
+ const visible=data.filter(d=>!d.legacy||found[d.id]);
+ const order=[...visible].sort((a,b)=>Number(!!found[b.id])-Number(!!found[a.id]));
  const titleEarned=TITLE_CATALOG.filter(v=>!!archive.titles[v.id]).length,medalEarned=MEDAL_CATALOG.filter(v=>!!archive.medals[v.id]).length;
- document.getElementById('trophyOverview').innerHTML='<span class="trophy-total">総獲得 <strong>'+ (titleEarned+medalEarned) +'</strong> / '+(TITLE_CATALOG.length+MEDAL_CATALOG.length)+'</span><span>称号 <strong>'+titleEarned+'</strong> / '+TITLE_CATALOG.length+'</span><span>勲章 <strong>'+medalEarned+'</strong> / '+MEDAL_CATALOG.length+'</span>';
+ document.getElementById('trophyOverview').innerHTML='<span class="trophy-total">総獲得 <strong>'+ (titleEarned+medalEarned) +'</strong> / '+(TITLE_CATALOG.filter(v=>!v.legacy||archive.titles[v.id]).length+MEDAL_CATALOG.filter(v=>!v.legacy||archive.medals[v.id]).length)+'</span><span>称号 <strong>'+titleEarned+'</strong> / '+TITLE_CATALOG.filter(v=>!v.legacy||archive.titles[v.id]).length+'</span><span>勲章 <strong>'+medalEarned+'</strong> / '+MEDAL_CATALOG.filter(v=>!v.legacy||archive.medals[v.id]).length+'</span>';
  document.getElementById('trophyCount').textContent=(isTitle?'獲得した称号 ':'獲得した勲章 ')+data.filter(v=>!!found[v.id]).length+' / '+data.length+'　・　プレイ記録 '+archive.runs+'回';
  document.getElementById('trophyTabTitles').classList.toggle('active',isTitle);
  document.getElementById('trophyTabMedals').classList.toggle('active',!isTitle);
@@ -7599,7 +7703,7 @@ function renderTrophyArchive(){
  for(const d of order){
   const got=!!found[d.id],card=document.createElement('article');card.className='trophy-card'+(got?'':' locked');
   if(isTitle&&d.type==='伝説級')card.classList.add('legendary');
-  const type=document.createElement('div');type.className='tc-type';type.textContent=isTitle?d.type:'MISSION MEDAL';
+  const type=document.createElement('div');type.className='tc-type';type.textContent=d.legacy?'過去の実績':isTitle?d.type:'MISSION MEDAL';
   const mark=document.createElement('div');mark.className='tc-mark';mark.innerHTML=awardIcon(d,isTitle?'title':'medal');
   const name=document.createElement('div');name.className='tc-name';name.textContent=got?d.name:'？？？';
   const flavor=document.createElement('div');flavor.className='tc-flavor';flavor.textContent=isTitle?(TITLE_FLAVOR[d.id]||''):'';
@@ -7678,9 +7782,9 @@ function renderResultScreen(){const s=scoreStats,r=s&&s.final;if(!r)return;
  el('resRadar').innerHTML=resultRadar(levels);
  el('resAxes').innerHTML=RES_AXES.map((name,i)=>`<div class="res-axis" title="${RES_AXIS_NOTES[i]}"><span>${name}<small class="res-axis-note">${RES_AXIS_NOTES[i]}</small></span><span class="res-stars" aria-label="レベル${levels[i]}">${'★'.repeat(levels[i])}<span style="color:#65705d">${'☆'.repeat(5-levels[i])}</span></span></div>`).join('');
  el('resTitle').innerHTML=awardIcon(sty[2],'title')+'<span>'+escapeAwardText(sty[0])+'</span>';el('resTitleFlavor').textContent=TITLE_FLAVOR[sty[2].id]||sty[1];renderAwardResult(s);
- const quick=[['プレイ時間',formatRunTime(s.time)],['到達距離',distanceMeters(s.maxProgress)+'m'],['総撃破数',kills],['発見回数',s.detections],['被弾回数',s.damageHits],['気絶数',s.stuns]];
+ const quick=[['プレイ時間',formatRunTime(s.time)],[s.stage==='indoor'?'資料回収':'到達距離',s.stage==='indoor'?(s.documents||0)+' / '+(s.documentTotal||0):distanceMeters(s.maxProgress)+'m'],['総撃破数',kills],['発見回数',s.detections],['被弾回数',s.damageHits],['気絶数',s.stuns]];
  el('resQuick').innerHTML=quick.map(([n,v])=>`<div class="res-stat"><label>${n}</label><strong>${v}</strong></div>`).join('');
- const entries=[['発見状態での撃破',s.assaultKills],['評価対象の破壊面積',Math.round(s.styleDestroyed/100)+'m²'],['車両での新たな前進',distanceMeters(s.vehicleAdvance)+'m'],['車両での撃破',s.vehicleKills],['偽装で誘導した敵',s.decoyLures],['防護壁で防いだ弾',s.wallBlocks],['組み付き成功',s.tacticalStuns],['味方による撃破',s.allyKills],['味方による気絶',s.allyStuns],['相棒の救助',s.partnerRescues],['同乗中の共同撃破',s.jointKills],['歩兵撃破',s.humanKills],['エリート撃破',s.eliteKills],['戦車撃破',s.tankKills],['最大マルチキル',s.maxKillChain],['最大ワンショットキル',s.maxOneShotKills||0],['ワンショットキル発生数',s.oneShotEvents||0],['未発見移動距離',distanceMeters(s.unseenDist)+'m'],['累計移動距離',distanceMeters(s.totalTravel)+'m'],['発見状態の累計時間',formatRunTime(s.detectedTime)],['疑惑状態の発生',s.suspicionEntries],['遮蔽物破壊面積',Math.round(s.coverDestroyed/100)+'m²'],['射撃数（記録対象）',s.shots],['狙撃発射数',s.sniperShots],['狙撃撃破数',s.sniperKills],['爆弾撃破数',s.bombKills],['爆発による撃破',s.explosiveKills],['主砲発射数',s.cannonShots],['MG等発射数',s.mgShots],['爆弾爆発数',s.bombBlasts],['スキル発動数（記録対象）',s.skillUses],['乗り物搭乗回数',s.vehicleBoards],['乗り物利用時間',formatRunTime(s.vehicleTime)],['乗り物の種類数',Object.keys(s.vehicleKinds).length],['潜入スコア',r.stealth],['戦闘スコア',r.combat],...(stageMode==='front'?[['自分の撃破による得点',r.playerCombatPoints],['味方の支援による得点',r.supportCombatPoints]]:[]),['マルチキルボーナス',r.chainBonus],['ワンショットキルボーナス',r.multiKillBonus],['任務達成・タイムボーナス',r.bonus]];
+ const entries=[['任務達成率',metrics[0]+'%'],['目標への接近・帰還',distanceMeters(s.objectiveAdvance||0)+'m'],['歩兵の累積ダメージ',Math.round((s.playerDamage||0)*100)+'%'],['搭乗車両の累積ダメージ',Math.round((s.vehicleDamage||0)*100)+'%'],...(s.stage==='indoor'?[['未発見で回収した資料',s.hiddenDocuments||0],['相棒が参加した資料',s.partnerDocuments||0],['館内警報',s.indoorAlarm?'発動':'未発動']]:s.stage==='front'?[['自分が参加した制圧',s.capturePoints||0],['共同制圧の時間',formatRunTime(s.jointObjectiveSeconds||0)],['制圧妨害の敵を排除',s.captureDefenseKills||0]]:[]),['発見状態での撃破',s.assaultKills],['遮蔽物・木の破壊面積',Math.round(s.styleDestroyed/100)+'m²'],['車両での新たな前進',distanceMeters(s.vehicleAdvance)+'m'],['車両での撃破',s.vehicleKills],['偽装で誘導した敵',s.decoyLures],['防護壁で防いだ弾',s.wallBlocks],['組み付き成功',s.tacticalStuns],['味方による撃破',s.allyKills],['味方による気絶',s.allyStuns],['相棒の救助',s.partnerRescues],['同乗中の共同撃破',s.jointKills],['歩兵撃破',s.humanKills],['エリート撃破',s.eliteKills],['戦車撃破',s.tankKills],['最大マルチキル',s.maxKillChain],['最大ワンショットキル',s.maxOneShotKills||0],['ワンショットキル発生数',s.oneShotEvents||0],['未発見移動距離',distanceMeters(s.unseenDist)+'m'],['累計移動距離',distanceMeters(s.totalTravel)+'m'],['発見状態の累計時間',formatRunTime(s.detectedTime)],['疑惑状態の発生',s.suspicionEntries],['遮蔽物破壊面積',Math.round(s.coverDestroyed/100)+'m²'],['射撃数（記録対象）',s.shots],['狙撃発射数',s.sniperShots],['狙撃撃破数',s.sniperKills],['爆弾撃破数',s.bombKills],['爆発による撃破',s.explosiveKills],['主砲発射数',s.cannonShots],['MG等発射数',s.mgShots],['爆弾爆発数',s.bombBlasts],['スキル発動数（記録対象）',s.skillUses],['乗り物搭乗回数',s.vehicleBoards],['乗り物利用時間',formatRunTime(s.vehicleTime)],['乗り物の種類数',Object.keys(s.vehicleKinds).length],['潜入スコア',r.stealth],['戦闘スコア',r.combat],...(stageMode==='front'?[['自分の撃破による得点',r.playerCombatPoints],['味方の支援による得点',r.supportCombatPoints]]:[]),['マルチキルボーナス',r.chainBonus],['ワンショットキルボーナス',r.multiKillBonus],['任務達成・タイムボーナス',r.bonus]];
  el('resDetail').innerHTML=entries.map(([n,v])=>`<div class="res-detail-row"><span>${n}</span><strong>${v}</strong></div>`).join('');
 }
 let resultScoreAnimId=0;
@@ -7963,12 +8067,18 @@ function updateMission(dt){
   for(const e of etanks)if(e.alive){const d=D(e,q);if(d<radius+30)foes++;if(d<radius)enemiesInside++;}
   m.enemiesInside=enemiesInside>0;
   m.captureCount=frontlineCaptureCount(q);m.captureRate=m.captureCount;
+  if(typeof scoreStats!=='undefined'&&scoreStats){scoreStats.objectiveTotal=m.points.length;scoreStats.objectiveProgress=(m.index+Math.min(1,m.progress/FRONTLINE_CAPTURE_SECONDS))/m.points.length;}
   m.capturing=m.captureReady&&m.captureCount>0&&!foes;m.contested=foes>0;
   if(m.capturing)m.progress=Math.min(FRONTLINE_CAPTURE_SECONDS,m.progress+dt*m.captureRate);else if(foes)m.progress=Math.max(0,m.progress-dt*.35);
-  if(m.capturing&&m.progress>0)q.captureStarted=true;
+  if(m.capturing&&m.progress>0){q.captureStarted=true;
+   if(typeof scoreStats!=='undefined'&&scoreStats&&!scoreStats.finalized&&D(p,q)<radius&&!(p.tank?.kind==='fighter')&&!(p.dig>0)){
+    q.playerContributed=true;scoreStats.captureSeconds=(scoreStats.captureSeconds||0)+dt;
+    if(m.captureCount>1)scoreStats.jointObjectiveSeconds=(scoreStats.jointObjectiveSeconds||0)+dt;
+   }
+  }
   updateFrontlineWaves(dt);m.reinforceT-=dt;
   if(m.reinforceT<=0){m.reinforceT=18;if(allies.filter(a=>a.alive&&a.frontline).length<4)missionAllies(Math.max(q.y+250,Math.min(p.y+120,WH-200)));}
-  if(m.progress>=FRONTLINE_CAPTURE_SECONDS){q.done=true;m.index++;m.progress=0;p.hp=3;say('拠点を制圧！');if(m.index===m.points.length){completeMission();return;}missionAllies(q.y);}
+  if(m.progress>=FRONTLINE_CAPTURE_SECONDS){q.done=true;if(typeof scoreStats!=='undefined'&&scoreStats){scoreStats.capturePoints=(scoreStats.capturePoints||0)+Number(!!q.playerContributed);scoreStats.objectiveProgress=(m.index+1)/m.points.length;}m.index++;m.progress=0;p.hp=3;say('拠点を制圧！');if(m.index===m.points.length){completeMission();return;}missionAllies(q.y);}
  }else{
   m.alarm=Math.max(0,Math.min(100,m.alarm+dt*(detected?12:-5)));m.waveT-=dt;
   if(m.alarm>=65&&m.waveT<=0){m.waveT=24;m.alertCount++;if(humans.filter(h=>h.alive&&D(h,p)<650).length<12)for(let i=0;i<3;i++)missionEnemy(p.x+(i-1)*110,p.y-340,true);say('警戒部隊が接近！ 草むらや遮蔽物へ');}
@@ -8102,14 +8212,14 @@ function reportGameError(error){
 </script>
 <script src="js/stage-progress.js?v=2026.10.21.2107"></script>
 <script src="js/frontline.js?v=2026.10.17.2030"></script>
-<script src="js/award-icons.js?v=2026.10.17.0743"></script>
+<script src="js/award-icons.js?v=2026.10.23.0018"></script>
 <script src="js/characters.js?v=2026.10.19.1032"></script>
 <script src="js/enemy-dogs.js?v=2026.10.22.0945"></script>
 <script src="js/partner.js?v=2026.10.17.2030"></script>
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/canyon.js?v=2026.10.14.1836"></script>
 <script src="js/vegetation.js?v=2026.10.14.1653"></script>
-<script src="js/infiltration-world.js?v=2026.10.22.1006"></script>
+<script src="js/infiltration-world.js?v=2026.10.23.0018"></script>
 <script src="js/infiltration-render.js?v=2026.10.21.1139"></script>
 <script>
 (function(){

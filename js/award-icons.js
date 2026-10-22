@@ -1,6 +1,7 @@
 // Static SVG award emblems. Used only while rendering results / the collection.
 // No bitmaps, filters, animation loops or gameplay-time entity searches.
-const AWARD_AXIS_SYMBOLS=['stealth','precision','assault','blast','destruction','mobility','tactics','teamwork'];
+const AWARD_AXIS_SYMBOLS=['flag','stealth','assault','blast','footsteps','tactics','teamwork','survival'];
+const AWARD_V2_SYMBOLS=['stealth','precision','assault','blast','destruction','mobility','tactics','teamwork'];
 const AWARD_LEGACY_SYMBOLS=['stealth','recon','precision','assault','blast','mobility','tactics','survival'];
 const AWARD_SYMBOLS=Object.freeze({
  stealth:'<path d="M5 25V15a11 11 0 0 1 22 0v10l-5-3-6 5-6-5Z"/><path d="m9 16 4 1m6 0 4-1M12 9l4-2 4 2"/>',
@@ -37,6 +38,7 @@ const AWARD_SYMBOLS=Object.freeze({
 const AWARD_COLORS=Object.freeze({stealth:'#a8d8b6',precision:'#a9d9ed',assault:'#f2ab91',blast:'#f2c078',destruction:'#d5c3a3',mobility:'#e6d28d',tactics:'#c8b5ea',teamwork:'#a5d9db',recon:'#a9d9ed',survival:'#b7d4a2'});
 // Every medal has its own composition, rather than a shared star or emoji.
 const AWARD_MEDAL_ICONS=Object.freeze({
+ v3_bomb_objective:{main:'bomb',secondary:'flag'},v3_capture_leader:{main:'flag',secondary:'boot'},v3_capture_defense:{main:'shield',secondary:'rifle'},v3_quiet_recovery:{main:'unseen',secondary:'boot'},v3_shadow_return:{main:'unseen',secondary:'arrow'},v3_joint_recovery:{main:'teamwork',secondary:'flag'},
  mission_clear:{main:'flag'},untouched:{main:'shield',secondary:'star'},undetected:{main:'unseen',secondary:'flag'},
  tank_hunter:{main:'tank',secondary:'precision'},chain_five:{main:'chain',number:5},sniper_three:{main:'rifle',number:3},
  bomb_three:{main:'bomb',number:3},three_vehicles:{main:'fleet',number:3},infantry_hero:{main:'boot',secondary:'flag'},one_shot_three:{main:'multihit',number:3},
@@ -55,15 +57,15 @@ const AWARD_SPECIAL_ICONS=Object.freeze({
 const AWARD_LEGACY_COMBOS=Object.freeze({ghost_sniper:[0,2],shadow_scout:[0,1],silent_saboteur:[0,4],first_strike:[1,2],battle_schemer:[1,6],demolition_expert:[3,4],armored_assault:[3,5],unyielding_fighter:[3,7],lightning_demolition:[4,5],maneuver_ace:[5,6]});
 function awardIconSpec(entry,kind='title'){
  if(!entry)return null;
- if(kind==='medal'){const spec=AWARD_MEDAL_ICONS[entry.id];return spec?{...spec,tier:'medal'}:null;}
- let m=entry.id.match(/^(v2_)?single_([0-7])_(normal|elite)$/);
- if(m){const symbols=m[1]?AWARD_AXIS_SYMBOLS:AWARD_LEGACY_SYMBOLS;return{main:symbols[+m[2]],tier:m[3],legacy:!m[1]};}
- m=entry.id.match(/^(v2_)?legend_([0-7])$/);
- if(m){const symbols=m[1]?AWARD_AXIS_SYMBOLS:AWARD_LEGACY_SYMBOLS;return{main:symbols[+m[2]],tier:'legend',legacy:!m[1]};}
- if(entry.axes)return{main:AWARD_AXIS_SYMBOLS[entry.axes[0]],secondary:AWARD_AXIS_SYMBOLS[entry.axes[1]],tier:'combo'};
+ if(kind==='medal'){const spec=AWARD_MEDAL_ICONS[entry.id]||AWARD_MEDAL_ICONS[entry.id.replace(/^v3_/,'v2_')]||AWARD_MEDAL_ICONS[entry.id.replace(/^v3_/,'')];return spec?{...spec,tier:'medal'}:null;}
+ let m=entry.id.match(/^(v[23]_)?single_([0-7])_(normal|elite)$/);
+ if(m){const symbols=m[1]==='v3_'?AWARD_AXIS_SYMBOLS:m[1]?AWARD_V2_SYMBOLS:AWARD_LEGACY_SYMBOLS;return{main:symbols[+m[2]],tier:m[3],legacy:!m[1]};}
+ m=entry.id.match(/^(v[23]_)?legend_([0-7])$/);
+ if(m){const symbols=m[1]==='v3_'?AWARD_AXIS_SYMBOLS:m[1]?AWARD_V2_SYMBOLS:AWARD_LEGACY_SYMBOLS;return{main:symbols[+m[2]],tier:'legend',legacy:!m[1]};}
+ if(entry.axes){const symbols=entry.legacy?AWARD_V2_SYMBOLS:AWARD_AXIS_SYMBOLS;return{main:symbols[entry.axes[0]],secondary:symbols[entry.axes[1]],tier:'combo'};}
  const axes=AWARD_LEGACY_COMBOS[entry.id];
  if(axes)return{main:AWARD_LEGACY_SYMBOLS[axes[0]],secondary:AWARD_LEGACY_SYMBOLS[axes[1]],tier:'combo',legacy:true};
- const spec=AWARD_SPECIAL_ICONS[entry.id];return spec?{...spec,tier:'special',legacy:!!entry.legacy}:null;
+ const spec=AWARD_SPECIAL_ICONS[entry.id.replace(/^v3_/,'v2_')];return spec?{...spec,tier:'special',legacy:!!entry.legacy}:null;
 }
 function escapeAwardText(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 const awardIconCache=new Map();

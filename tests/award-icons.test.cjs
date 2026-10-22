@@ -6,9 +6,9 @@ const c={};vm.createContext(c);
 vm.runInContext(html.slice(html.indexOf('const RES_AXES='),html.indexOf('function evaluateRunTitles(')),c);
 vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/award-icons.js'),'utf8'),c);
 const read=code=>vm.runInContext(code,c);
-const titles=read('TITLE_CATALOG'),medals=read('MEDAL_CATALOG');
-test('all 40 current titles and 22 medals have complete icon definitions',()=>{
- assert.equal(titles.length,40);assert.equal(medals.length,22);assert.ok(titles.every(t=>t.id.startsWith('v2_')));
+const titles=read('TITLE_CATALOG.filter(t=>!t.legacy)'),medals=read('MEDAL_CATALOG.filter(m=>!m.legacy)');
+test('all 36 current titles and 28 medals have complete icon definitions',()=>{
+ assert.equal(titles.length,36);assert.equal(medals.length,28);assert.ok(titles.every(t=>t.id.startsWith('v3_')));
  for(const [kind,entries] of [['title',titles],['medal',medals]])for(const entry of entries){const spec=c.awardIconSpec(entry,kind);assert.ok(spec,`${kind} ${entry.id}`);assert.ok(read(`AWARD_SYMBOLS[${JSON.stringify(spec.main)}]`));if(spec.secondary)assert.ok(read(`AWARD_SYMBOLS[${JSON.stringify(spec.secondary)}]`));const svg=c.awardIcon(entry,kind);assert.ok(svg.startsWith('<svg'));assert.ok(!svg.includes('undefined'));assert.match(svg,/aria-hidden="true"/);}
 });
 test('all current titles and medals have distinct visual compositions',()=>{
@@ -16,7 +16,7 @@ test('all current titles and medals have distinct visual compositions',()=>{
  const m=medals.map(t=>c.awardIcon(t,'medal'));assert.equal(new Set(m).size,m.length);
 });
 test('every axis has distinct normal, elite and legendary emblems; combinations use two axis symbols',()=>{
- for(let i=0;i<8;i++){const entries=[`v2_single_${i}_normal`,`v2_single_${i}_elite`,`v2_legend_${i}`].map(id=>titles.find(t=>t.id===id));assert.equal(new Set(entries.map(e=>c.awardIcon(e))).size,3);assert.equal(new Set(entries.map(e=>c.awardIconSpec(e).main)).size,1);}
+ for(let i=0;i<8;i++){const entries=[`v3_single_${i}_normal`,`v3_single_${i}_elite`,`v3_legend_${i}`].map(id=>titles.find(t=>t.id===id));assert.equal(new Set(entries.map(e=>c.awardIcon(e))).size,3);assert.equal(new Set(entries.map(e=>c.awardIconSpec(e).main)).size,1);}
  for(const entry of titles.filter(t=>t.axes)){const spec=c.awardIconSpec(entry);assert.equal(spec.main,read(`AWARD_AXIS_SYMBOLS[${entry.axes[0]}]`));assert.equal(spec.secondary,read(`AWARD_AXIS_SYMBOLS[${entry.axes[1]}]`));}
 });
 test('result chips retain readable names and NEW state alongside an icon, with escaped text',()=>{
