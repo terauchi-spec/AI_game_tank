@@ -2,6 +2,10 @@
 function enemyBomberEnabled(){
  return stageMode==='front'&&!areaDebugEnabled&&!isFrontlineBeginner()&&!isFrontlineOni();
 }
+// Only the shuffled middle areas qualify; a later grassland is still eligible.
+function enemyBomberInRandomArea(){
+ return ZONES.length>2&&p.y<ZONES[1].y0&&p.y>ZONES[ZONES.length-2].y1;
+}
 function setupEnemyBomber(){
  if(!enemyBomberEnabled()||!mission)return;
  mission.enemyAirRaid={remaining:R()<.5?1:2,passes:0,phase:'idle',timer:0,lane:1,plane:null,bombs:[],gradient:null,gradientHeight:0};
@@ -14,17 +18,18 @@ function updateEnemyBomber(dt){
   if(bomb.t<=0){raid.bombs.splice(i,1);enemyBomberBlast(bomb.x,bomb.y);if(state!=='play')return;}
  }
  if(raid.phase==='idle'){
-  if(!mission.enemyWavesStarted||!raid.remaining||raid.passes>0&&mission.index<1)return;
+  if(!mission.enemyWavesStarted||!raid.remaining||raid.passes>0&&mission.index<1||!enemyBomberInRandomArea())return;
   raid.lane=Math.min(2,Math.floor(R()*3));raid.phase='warning';raid.timer=8;sfx('radio');return;
  }
  if(raid.phase==='cooldown'){
   raid.timer=Math.max(0,raid.timer-dt);if(raid.timer===0)raid.phase='idle';return;
  }
  if(raid.phase==='warning'){
+  if(!enemyBomberInRandomArea()){raid.phase='idle';raid.timer=0;return;}
   raid.timer=Math.max(0,raid.timer-dt);
   if(raid.timer>1e-9)return;
   const view=frontlineView();
-  raid.plane={x:view.x+(raid.lane+.5)*view.w/3,y:view.y-180,endY:view.y+view.h+180,drop:.05,drops:0,maxDrops:25};
+  raid.plane={x:view.x+(raid.lane+.5)*view.w/3,y:Math.max(ZONES[ZONES.length-2].y1+1,Math.min(ZONES[1].y0-1,view.y-180)),endY:view.y+view.h+180,drop:.05,drops:0,maxDrops:25};
   raid.remaining--;raid.passes++;raid.phase='flight';return;
  }
  if(raid.phase!=='flight')return;

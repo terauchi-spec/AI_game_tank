@@ -3,7 +3,7 @@ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),source=f
 function harness(rolls=[0,.5]){
  const sounds=[],rects=[],texts=[],gradients=[],damage=[],draws=[],terrain=[];let blasts=0,wrecks=0;
  const gm={save(){},restore(){},setTransform(){},beginPath(){},ellipse(){},arc(){},fill(){},stroke(){},fillRect(...args){rects.push(args);},strokeText(){},fillText(...args){texts.push(args[0]);},createLinearGradient(...args){const stops=[];const gradient={args,stops,addColorStop(...s){stops.push(s);}};gradients.push(gradient);return gradient;}};
- const c={stageMode:'front',areaDebugEnabled:false,frontlineBeginner:false,frontlineOni:false,state:'play',WW:960,W:480,H:800,mission:{index:0,enemyWavesStarted:false},view:{x:0,y:8500,w:480,h:800},p:{x:900,y:12000,hp:3,dig:0,tank:null},allies:[],partner:null,hound:null,humans:[],etanks:[],enemyDogs:[],objects:[],debugInvincible:false,shake:0,flash:0,FIGHTER_TYPE:{hp:8},performance:{now:()=>1000},
+ const c={ZONES:[{n:'草原',y0:13200,y1:10800},{n:'森林',y0:10800,y1:7000},{n:'草原',y0:7000,y1:2000},{n:'敵司令本部',y0:2000,y1:-400}],stageMode:'front',areaDebugEnabled:false,frontlineBeginner:false,frontlineOni:false,state:'play',WW:960,W:480,H:800,mission:{index:0,enemyWavesStarted:false},view:{x:0,y:8500,w:480,h:800},p:{x:900,y:9000,hp:3,dig:0,tank:null},allies:[],partner:null,hound:null,humans:[],etanks:[],enemyDogs:[],objects:[],debugInvincible:false,shake:0,flash:0,FIGHTER_TYPE:{hp:8},performance:{now:()=>1000},
  R:()=>rolls.length?rolls.shift():.5,isFrontlineBeginner:()=>c.frontlineBeginner,isFrontlineOni:()=>c.frontlineOni,frontlineView:()=>c.view,sfx:s=>sounds.push(s),fb(){blasts++;},burst(){},scatterSpinifexAt(){},damageObjectsInRadius(){},carve(...args){terrain.push(args);},recordPlayerDamage(...args){damage.push(args);},beginBlastFlight(){},triggerPlayerDeath(){c.state='dying';},wreck(){wrecks++;c.p.tank=null;},stunHound(t){c.hound.stun=t;},partnerVehicleDestroyed(q){q.vehicle=null;q.down=true;},gm,g:gm,drawSupportBomber(...args){draws.push(args);}};
  vm.createContext(c);vm.runInContext(source,c);return{c,sounds,rects,texts,gradients,damage,draws,terrain,get blasts(){return blasts;},get wrecks(){return wrecks;}};
 }
@@ -13,6 +13,23 @@ function objects(s){const c=s.c;Object.assign(c,{nearbyObjects:()=>c.objects,obj
 test('enemy bombers are scheduled only in advanced capture, excluding beginner, Oni, debug and other stages',()=>{
  for(const settings of [{stageMode:'base'},{stageMode:'beginner'},{stageMode:'indoor'},{frontlineBeginner:true},{frontlineOni:true},{areaDebugEnabled:true}]){const s=harness();Object.assign(s.c,settings);s.c.setupEnemyBomber();assert.equal(s.c.mission.enemyAirRaid,undefined);s.c.updateEnemyBomber(100);s.c.drawEnemyBomberWarning();assert.equal(s.rects.length,0);}
  const s=harness();s.c.setupEnemyBomber();assert.ok(s.c.mission.enemyAirRaid);s.c.updateEnemyBomber(100);assert.equal(s.c.mission.enemyAirRaid.phase,'idle');assert.equal(s.sounds.length,0);
+});
+test('only shuffled areas trigger warnings, including shuffled grassland but excluding the start and HQ',()=>{
+ for(const [y,expected] of [[13200,'idle'],[12000,'idle'],[10800,'idle'],[10799,'warning'],[7000,'warning'],[5000,'warning'],[2001,'warning'],[2000,'idle'],[1000,'idle']]){
+  const s=harness(),c=s.c;c.p.y=y;c.mission.enemyWavesStarted=true;c.setupEnemyBomber();c.updateEnemyBomber(.1);
+  assert.equal(c.mission.enemyAirRaid.phase,expected,`player y=${y}`);
+ }
+});
+test('retreating during a warning defers the pass without spending it and restarts the full warning',()=>{
+ const s=harness(),c=s.c;c.setupEnemyBomber();c.mission.enemyWavesStarted=true;c.updateEnemyBomber(.1);c.updateEnemyBomber(7.9);
+ const raid=c.mission.enemyAirRaid;c.p.y=12000;c.updateEnemyBomber(.1);assert.equal(raid.phase,'idle');assert.equal(raid.plane,null);assert.equal(raid.remaining,1);assert.equal(raid.passes,0);
+ run(s,20);assert.equal(raid.phase,'idle');c.p.y=5000;c.updateEnemyBomber(.1);assert.equal(raid.timer,8);c.updateEnemyBomber(7.99);assert.equal(raid.plane,null);c.updateEnemyBomber(.01);assert.equal(raid.phase,'flight');assert.equal(raid.passes,1);
+});
+test('aircraft spawn stays inside the random area band even at its edge or after a camera retreat',()=>{
+ for(const [playerY,viewY] of [[2001,1400],[10799,11000]]){
+  const s=harness(),c=s.c;c.p.y=playerY;c.view.y=viewY;c.setupEnemyBomber();c.mission.enemyWavesStarted=true;c.updateEnemyBomber(.1);c.updateEnemyBomber(8);
+  assert.ok(c.mission.enemyAirRaid.plane.y>2000);assert.ok(c.mission.enemyAirRaid.plane.y<10800);
+ }
 });
 test('the exact warning messages precede aircraft appearance by eight seconds',()=>{
  const s=harness([0,.99]),c=s.c;c.setupEnemyBomber();c.mission.enemyWavesStarted=true;c.updateEnemyBomber(.02);const raid=c.mission.enemyAirRaid;assert.equal(raid.phase,'warning');assert.equal(raid.timer,8);c.drawEnemyBomberWarning();assert.deepEqual(s.texts,['敵の通信を傍受！','敵の爆撃機がそちらに向かっている']);
