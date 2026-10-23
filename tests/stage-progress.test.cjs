@@ -75,3 +75,25 @@ test('Oni is a test-only selection after advanced capture, with no normal unlock
  const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');vm.runInContext(html.slice(html.indexOf('function newScoreStats()'),html.indexOf('function playerDetectedNow()')),c);assert.equal(c.newScoreStats().debugUsed,true);
  c.setSelectedStage('beginner');c.deploySelectedStage();assert.equal(c.frontlineOni,false);assert.equal(c.stageMode,'beginner');
 });
+
+test('stage records count actual starts once, retain per-stage bests across reloads, and snapshot difficulty',()=>{
+ const c=harness();let s={};c.recordStageSortie(s);c.recordStageSortie(s);assert.equal(c.readStageRecords().stages.beginner.sorties,1);
+ c.stageMode='front';c.frontlineBeginner=true;s.final={total:5300,rank:'B'};c.recordStageResult(s);c.recordStageResult(s);assert.equal(c.readStageRecords().stages.beginner.bestScore,5300);assert.equal(c.readStageRecords().stages.frontBeginner.bestScore,null);
+ c.stageMode='beginner';c.frontlineBeginner=false;s={};c.recordStageSortie(s);s.final={total:1200,rank:'D'};c.recordStageResult(s);let r=c.readStageRecords().stages.beginner;assert.equal(r.sorties,2);assert.equal(r.bestScore,5300);assert.equal(r.bestRank,'B');
+ s={};c.recordStageSortie(s);s.final={total:10500,rank:'S'};c.recordStageResult(s);const restored=harness();restored.storage.set('tankGameStageRecordsV1',c.storage.get('tankGameStageRecordsV1'));r=restored.readStageRecords().stages.beginner;assert.equal(r.sorties,3);assert.equal(r.bestScore,10500);assert.equal(r.bestRank,'S');
+ for(const id of order){c.frontlineBeginner=id==='frontBeginner';c.indoorBeginner=id==='indoorBeginner';c.stageMode=c.frontlineBeginner?'front':c.indoorBeginner?'indoor':id;const run={};c.recordStageSortie(run);assert.equal(run.stageRecordId,id);}
+});
+test('stage record counts survive an abandoned run and exclude debug, test and malformed data',()=>{
+ const c=harness();c.recordStageSortie({});assert.equal(c.readStageRecords().stages.beginner.sorties,1);assert.equal(c.readStageRecords().stages.beginner.bestRank,null);
+ c.recordStageSortie({debugUsed:true});c.recordStageResult({debugUsed:true,final:{total:99999,rank:'S'}});c.areaDebugEnabled=true;c.recordStageSortie({});c.areaDebugEnabled=false;c.stageMode='front';c.frontlineOni=true;c.recordStageSortie({});assert.equal(c.readStageRecords().stages.beginner.sorties,1);
+ c.storage.set('tankGameStageRecordsV1','{"stages":{"beginner":{"sorties":-4,"bestScore":"9000","bestRank":"<img>"}}}');let r=c.readStageRecords().stages.beginner;assert.equal(r.sorties,0);assert.equal(r.bestScore,null);assert.equal(r.bestRank,null);
+ c.storage.set('tankGameStageRecordsV1','broken');assert.equal(c.readStageRecords().stages.beginner.sorties,0);
+ c.frontlineOni=false;c.stageMode='beginner';c.localStorage.setItem=()=>{throw Error('quota');};const s={};c.recordStageSortie(s);assert.equal(s.stageRecordSaveFailed,true);assert.equal(s.stageSortieRecorded,undefined);
+});
+test('selected stage records open, toggle closed and switch with matching score, rank artwork and sortie count',()=>{
+ const c=harness(),{buttons}=cards(c),panels={};
+ for(const card of buttons){const entries={};for(const key of ['.stage-record-metrics','.stage-record-note','.stage-record-score','.stage-record-count','.stage-record-rank','img'])entries[key]={removeAttribute(k){delete this[k];}};const panel={hidden:true,entries,querySelector:k=>entries[k]};panels[card.dataset.stage]=panel;card.querySelector=sel=>sel==='.stage-records'?panel:card.number;}
+ c.storage.set('tankGameStageRecordsV1',JSON.stringify({stages:{beginner:{sorties:12,bestScore:8000,bestRank:'A'}}}));c.renderStageLocks();assert.equal(panels.beginner.hidden,true);c.setSelectedStage('beginner');let panel=panels.beginner;assert.equal(panel.hidden,false);assert.equal(panel.entries['.stage-record-score'].textContent,'8,000');assert.equal(panel.entries['.stage-record-count'].textContent,'12回');assert.match(panel.entries.img.src,/rank_a\.webp/);
+ c.setSelectedStage('beginner');assert.equal(panel.hidden,true);c.renderStageLocks();assert.equal(panel.hidden,true);clear(c,'beginner');c.setSelectedStage('indoorBeginner');assert.equal(panel.hidden,true);panel=panels.indoorBeginner;assert.equal(panel.hidden,false);assert.equal(panel.entries['.stage-record-score'].textContent,'—');assert.equal(panel.entries.img.hidden,true);assert.equal(panel.entries['.stage-record-count'].textContent,'0回');
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');assert.match(html,/recordStageSortie\(scoreStats\);\s*state='play'/);assert.match(html,/recordStageResult\(scoreStats\)/);assert.match(html,/STAGE_PROGRESS_KEY,STAGE_RECORDS_KEY/);assert.equal((html.match(/class="stage-records" hidden/g)||[]).length,8);
+});

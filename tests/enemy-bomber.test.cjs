@@ -21,25 +21,25 @@ test('only shuffled areas trigger warnings, including shuffled grassland but exc
  }
 });
 test('retreating during a warning defers the pass without spending it and restarts the full warning',()=>{
- const s=harness(),c=s.c;c.setupEnemyBomber();c.mission.enemyWavesStarted=true;c.updateEnemyBomber(.1);c.updateEnemyBomber(7.9);
+ const s=harness(),c=s.c;c.setupEnemyBomber();c.mission.enemyWavesStarted=true;c.updateEnemyBomber(.1);c.updateEnemyBomber(4.9);
  const raid=c.mission.enemyAirRaid;c.p.y=12000;c.updateEnemyBomber(.1);assert.equal(raid.phase,'idle');assert.equal(raid.plane,null);assert.equal(raid.remaining,1);assert.equal(raid.passes,0);
- run(s,20);assert.equal(raid.phase,'idle');c.p.y=5000;c.updateEnemyBomber(.1);assert.equal(raid.timer,8);c.updateEnemyBomber(7.99);assert.equal(raid.plane,null);c.updateEnemyBomber(.01);assert.equal(raid.phase,'flight');assert.equal(raid.passes,1);
+ run(s,20);assert.equal(raid.phase,'idle');c.p.y=5000;c.updateEnemyBomber(.1);assert.equal(raid.timer,5);c.updateEnemyBomber(4.99);assert.equal(raid.plane,null);c.updateEnemyBomber(.01);assert.equal(raid.phase,'flight');assert.equal(raid.passes,1);
 });
 test('aircraft spawn stays inside the random area band even at its edge or after a camera retreat',()=>{
  for(const [playerY,viewY] of [[2001,1400],[10799,11000]]){
-  const s=harness(),c=s.c;c.p.y=playerY;c.view.y=viewY;c.setupEnemyBomber();c.mission.enemyWavesStarted=true;c.updateEnemyBomber(.1);c.updateEnemyBomber(8);
+  const s=harness(),c=s.c;c.p.y=playerY;c.view.y=viewY;c.setupEnemyBomber();c.mission.enemyWavesStarted=true;c.updateEnemyBomber(.1);c.updateEnemyBomber(5);
   assert.ok(c.mission.enemyAirRaid.plane.y>2000);assert.ok(c.mission.enemyAirRaid.plane.y<10800);
  }
 });
-test('the exact warning messages precede aircraft appearance by eight seconds',()=>{
- const s=harness([0,.99]),c=s.c;c.setupEnemyBomber();c.mission.enemyWavesStarted=true;c.updateEnemyBomber(.02);const raid=c.mission.enemyAirRaid;assert.equal(raid.phase,'warning');assert.equal(raid.timer,8);c.drawEnemyBomberWarning();assert.deepEqual(s.texts,['敵の通信を傍受！','敵の爆撃機がそちらに向かっている']);
- c.updateEnemyBomber(7.999);assert.equal(raid.plane,null);assert.equal(raid.bombs.length,0);c.updateEnemyBomber(.001);assert.equal(raid.phase,'flight');assert.equal(raid.plane.x,396.8);assert.equal(raid.plane.y,8320);assert.equal(raid.bombs.length,0);
+test('the exact warning messages precede aircraft appearance by five seconds',()=>{
+ const s=harness([0,.99]),c=s.c;c.setupEnemyBomber();c.mission.enemyWavesStarted=true;c.updateEnemyBomber(.02);const raid=c.mission.enemyAirRaid;assert.equal(raid.phase,'warning');assert.equal(raid.timer,5);c.drawEnemyBomberWarning();assert.deepEqual(s.texts,['敵の通信を傍受！','敵の爆撃機がそちらに向かっている']);
+ c.updateEnemyBomber(4.999);assert.equal(raid.plane,null);assert.equal(raid.bombs.length,0);c.updateEnemyBomber(.001);assert.equal(raid.phase,'flight');assert.equal(raid.plane.x,396.8);assert.equal(raid.plane.y,8320);assert.equal(raid.bombs.length,0);
 });
 test('continuous horizontal positions align warnings and flights, retaining the cached gradient',()=>{
  for(const roll of [0,.125,.25,.375,.5,.625,.75,.875,1]){
   const left=roll*320;
   const s=harness([0,roll]),c=s.c;c.setupEnemyBomber();c.mission.enemyWavesStarted=true;c.updateEnemyBomber(.1);c.drawEnemyBomberWarning();assert.ok(Math.abs(s.rects[0][0]-left)<1e-9);assert.equal(s.rects[0][1],0);assert.ok(Math.abs(s.rects[0][2]-160)<1e-9);assert.equal(s.rects[0][3],150);assert.deepEqual(s.gradients[0].stops,[[0,'rgba(190,22,18,.48)'],[1,'rgba(190,22,18,0)']]);c.drawEnemyBomberWarning();assert.equal(s.gradients.length,1);
-  c.updateEnemyBomber(8);assert.ok(Math.abs(c.mission.enemyAirRaid.plane.x-(80+roll*320))<1e-9);c.view.x=40;s.rects.length=0;c.drawEnemyBomberWarning();const [x,,width]=s.rects[0];assert.ok(Math.abs(x-Math.max(0,left-40))<1e-9);assert.ok(Math.abs(width-(left<40?120+left:160))<1e-9);assert.equal(s.texts.at(-1),'敵爆撃機 通過中');
+  c.updateEnemyBomber(5);assert.ok(Math.abs(c.mission.enemyAirRaid.plane.x-(80+roll*320))<1e-9);c.view.x=40;s.rects.length=0;c.drawEnemyBomberWarning();const [x,,width]=s.rects[0];assert.ok(Math.abs(x-Math.max(0,left-40))<1e-9);assert.ok(Math.abs(width-(left<40?120+left:160))<1e-9);assert.equal(s.texts.at(-1),'敵爆撃機 通過中');
  }
 });
 test('a full run contains one or two complete 25-bomb carpet passes, with bounded in-flight bombs',()=>{
@@ -50,7 +50,7 @@ test('a full run contains one or two complete 25-bomb carpet passes, with bounde
  }
 });
 test('warning remains active during the aircraft pass and resets cleanly for a new mission',()=>{
- const s=harness(),c=s.c;c.setupEnemyBomber();c.mission.enemyWavesStarted=true;c.updateEnemyBomber(.01);c.updateEnemyBomber(8);run(s,1);assert.equal(c.mission.enemyAirRaid.phase,'flight');c.drawEnemyBomberAircraft();assert.ok(s.draws.some(args=>args[2]===true));c.drawEnemyBomberWarning();assert.ok(s.rects.length>0);
+ const s=harness(),c=s.c;c.setupEnemyBomber();c.mission.enemyWavesStarted=true;c.updateEnemyBomber(.01);c.updateEnemyBomber(5);run(s,1);assert.equal(c.mission.enemyAirRaid.phase,'flight');c.drawEnemyBomberAircraft();assert.ok(s.draws.some(args=>args[2]===true));c.drawEnemyBomberWarning();assert.ok(s.rects.length>0);
  c.state='dying';const y=c.mission.enemyAirRaid.plane.y;c.updateEnemyBomber(10);assert.equal(c.mission.enemyAirRaid.plane.y,y);s.rects.length=0;c.drawEnemyBomberWarning();assert.equal(s.rects.length,0);
  c.state='play';c.setupEnemyBomber();assert.equal(c.mission.enemyAirRaid.phase,'idle');assert.equal(c.mission.enemyAirRaid.passes,0);assert.equal(c.mission.enemyAirRaid.bombs.length,0);
 });

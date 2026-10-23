@@ -19,7 +19,7 @@ function updateEnemyBomber(dt){
  }
  if(raid.phase==='idle'){
   if(!mission.enemyWavesStarted||!raid.remaining||raid.passes>0&&mission.index<1||!enemyBomberInRandomArea())return;
-  raid.position=1/6+R()*2/3;raid.phase='warning';raid.timer=8;sfx('radio');return;
+  raid.position=1/6+R()*2/3;raid.phase='warning';raid.timer=5;sfx('radio');return;
  }
  if(raid.phase==='cooldown'){
   raid.timer=Math.max(0,raid.timer-dt);if(raid.timer===0)raid.phase='idle';return;

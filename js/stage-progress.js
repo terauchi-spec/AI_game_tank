@@ -1,5 +1,5 @@
 // Stage progress is independent of skill unlocks and never changes in debug runs.
-let selectedStageId=null,stageDebugAll=false;
+let selectedStageId=null,expandedStageId=null,stageDebugAll=false;
 const STAGE_PROGRESS_KEY='tankGameStageProgressV1';
 const STAGE_ORDER=[
  {id:'beginner',name:'破壊（初級）',image:'satellite'},
@@ -44,13 +44,58 @@ function unlockStageOnClear(s){
 function stageAvailableForSelection(id,progress=readStageProgress()){
  return id==='areaDebug'||(TEST_STAGES.some(stage=>stage.id===id)&&stageDebugAll)||(STAGE_ORDER.some(stage=>stage.id===id)&&(stageDebugAll||stageSelectable(id,progress)));
 }
-function setSelectedStage(id){
+const STAGE_RECORDS_KEY='tankGameStageRecordsV1';
+const STAGE_RECORD_RANKS=['S','A','B','C','D','E','F'];
+function readStageRecords(){
+ let saved;try{saved=JSON.parse(localStorage.getItem(STAGE_RECORDS_KEY)||'null');}catch(_){}
+ const stages={};
+ for(const {id} of STAGE_ORDER){
+  const v=saved?.stages?.[id];
+  stages[id]={sorties:Number.isSafeInteger(v?.sorties)&&v.sorties>=0?v.sorties:0,bestScore:Number.isFinite(v?.bestScore)&&v.bestScore>=0?Math.round(v.bestScore):null,bestRank:STAGE_RECORD_RANKS.includes(v?.bestRank)?v.bestRank:null};
+ }
+ return{version:1,stages};
+}
+function recordStageSortie(s){
+ if(!s||s.stageSortieRecorded||s.debugUsed||areaDebugEnabled)return;
+ const id=currentStageId();if(!STAGE_ORDER.some(stage=>stage.id===id))return;
+ const data=readStageRecords();data.stages[id].sorties++;
+ try{localStorage.setItem(STAGE_RECORDS_KEY,JSON.stringify(data));s.stageSortieRecorded=true;s.stageRecordId=id;}catch(_){s.stageRecordSaveFailed=true;}
+}
+function recordStageResult(s){
+ if(!s?.final||s.stageResultRecorded||s.debugUsed||areaDebugEnabled)return;
+ recordStageSortie(s);
+ const id=s.stageRecordId;if(!STAGE_ORDER.some(stage=>stage.id===id))return;
+ const data=readStageRecords(),v=data.stages[id],score=s.final.total,rank=s.final.rank;
+ if(Number.isFinite(score)&&score>=0)v.bestScore=Math.max(v.bestScore??0,Math.round(score));
+ if(STAGE_RECORD_RANKS.includes(rank)&&(!v.bestRank||STAGE_RECORD_RANKS.indexOf(rank)<STAGE_RECORD_RANKS.indexOf(v.bestRank)))v.bestRank=rank;
+ try{localStorage.setItem(STAGE_RECORDS_KEY,JSON.stringify(data));s.stageResultRecorded=true;}catch(_){s.stageRecordSaveFailed=true;}
+}
+function renderStageRecords(){
+ const data=readStageRecords();
+ document.querySelectorAll('[data-stage]').forEach(card=>{
+  const panel=card.querySelector?.('.stage-records');if(!panel?.querySelector)return;
+  const id=card.dataset.stage,open=expandedStageId===id,v=data.stages[id];
+  panel.hidden=!open;card.setAttribute('aria-expanded',String(open));
+  if(!open)return;
+  const metrics=panel.querySelector('.stage-record-metrics'),note=panel.querySelector('.stage-record-note');
+  metrics.hidden=!v;note.textContent=v?'ステージ別の記録は今回の更新以降に集計':'デバッグ・テストステージは記録対象外';
+  if(!v)return;
+  panel.querySelector('.stage-record-score').textContent=v.bestScore===null?'—':v.bestScore.toLocaleString('ja-JP');
+  panel.querySelector('.stage-record-count').textContent=v.sorties.toLocaleString('ja-JP')+'回';
+  panel.querySelector('.stage-record-rank').textContent=v.bestRank||'—';
+  const image=panel.querySelector('img');image.hidden=!v.bestRank;
+  if(v.bestRank){image.src='assets/ui/ranks/rank_'+v.bestRank.toLowerCase()+'.webp?v=2026.10.17';image.alt=v.bestRank+'ランク';}else image.removeAttribute('src');
+ });
+}
+function setSelectedStage(id,toggle=true){
  if(!stageAvailableForSelection(id))return false;
+ if(toggle)expandedStageId=expandedStageId===id?null:id;else if(selectedStageId!==id)expandedStageId=null;
  selectedStageId=id;
  document.querySelectorAll('[data-stage]').forEach(card=>{const chosen=card.dataset.stage===id;card.classList.toggle('selected',chosen);card.setAttribute('aria-pressed',String(chosen));});
  const stage=[...STAGE_ORDER,...TEST_STAGES].find(stage=>stage.id===id),button=document.getElementById('stageDeploy');
  button.disabled=typeof gameBuildQueued!=='undefined'&&gameBuildQueued;
  button.textContent=id==='areaDebug'?'エリアデバッグへ':stage.name.replace(/[（）]/g,'')+'で出撃';
+ renderStageRecords();
  return true;
 }
 function deploySelectedStage(){
@@ -87,7 +132,7 @@ function renderStageLocks(){
  if(toggle){toggle.textContent=stageDebugAll?'解放済みに戻す':'全ステージを表示';toggle.classList.toggle('enabled',stageDebugAll);toggle.setAttribute('aria-pressed',String(stageDebugAll));}
  if(document.getElementById('stageDeploy')){
   const fallback=STAGE_ORDER.find(stage=>stageAvailableForSelection(stage.id,progress)&&!progress.cleared.includes(stage.id))||STAGE_ORDER[0];
-  setSelectedStage(stageAvailableForSelection(selectedStageId,progress)?selectedStageId:fallback.id);
+  setSelectedStage(stageAvailableForSelection(selectedStageId,progress)?selectedStageId:fallback.id,false);
  }
 }
 function renderStageUnlock(s){
