@@ -36,8 +36,10 @@ function bombContext(){
 test('placed bomb contact catches a tank 40px away while a 43px miss does not trigger it',()=>{
  for(const [distance,hit] of [[40,true],[43,false]]){const {c,kills}=bombContext();c.bombs=[{x:distance,y:0,own:'p',armed:true}];c.etanks=[{x:0,y:0,alive:true}];c.updateBombs(.016);assert.equal(c.etanks[0].alive,!hit);assert.equal(c.bombs.length,hit?0:1);assert.equal(kills.length,hit?1:0);}
 });
-test('manually detonated bomb waves hit the tank body within the visible blast and credit each kill once',()=>{
- const {c,kills}=bombContext();c.waves=[{x:0,y:0,r:0,max:95,actionId:7}];c.etanks=[{x:120,y:0,alive:true},{x:124,y:0,alive:true}];c.updateWaves(.36);assert.equal(c.etanks[0].alive,false);assert.equal(c.etanks[1].alive,true);assert.equal(kills[0][0],7);c.updateWaves(.1);assert.equal(kills.length,1);assert.equal(c.etanks[1].alive,true);
+test('placed bomb blast waves never destroy tanks or award tank kills, even within the blast center',()=>{
+ const {c,kills}=bombContext();c.waves=[{x:0,y:0,r:0,max:95,actionId:7}];c.etanks=[0,40,80,120].map(x=>({x,y:0,alive:true}));
+ for(let i=0;i<30;i++)c.updateWaves(1/60);
+ assert.equal(c.waves.length,0);assert.ok(c.etanks.every(e=>e.alive));assert.equal(kills.length,0);
 });
 test('bomb and burn bridge destruction launch capped rotating wooden fragments with gravity',()=>{
  const c={Math,R:()=>.5,MAX_PARTS:24,parts:[],bridges:[],water:[],shake:0,riverFlowDir:()=>1,riverFlowSpeed:()=>8};vm.createContext(c);
