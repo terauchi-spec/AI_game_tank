@@ -681,7 +681,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <ul><li>通常の巡回戦車と停止して待ち構える戦車があります。探索型は砲塔を左右に振って索敵します。停止戦車も発見後は移動できる状態へ切り替わります。</li>
 <li>疑惑中は車体を止め、音の発生方向へ砲塔を旋回させて左右を調べます。発見していない間は走行・射撃しません。</li>
 <li>発見後は静止時間を挟んで攻撃します。標的が190pxより遠いと接近し、120pxより近いと後退して距離を調整します。</li>
-<li>主砲は射程480px、射撃間隔は約2.8秒。200px以内ではMGも使用します。標的との間に遮蔽物がある場合は、主砲で遮蔽物を破壊しようとします。</li></ul>
+<li>主砲は射程480px、射撃間隔は約2.8秒。砲塔は約90度／秒で回頭し、照準が合うまで主砲を発射しません。200px以内ではMGも使用し、MGは素早く標的を追います。標的との間に遮蔽物がある場合は、主砲で遮蔽物を破壊しようとします。</li></ul>
 <h3>司令本部の増援</h3>
 <p>司令本部から出る敵兵は巡回モードで登場します。10%の確率で青兵指揮官が出現します。通常配置の青兵指揮官4体・白兵指揮官2体とは別の増援です。</p>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
@@ -690,7 +690,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-combat"><h2>7. 武器・爆発・破壊</h2>
 <ul><li><strong>歩兵の設置爆弾：</strong>D（スマホ：B）で設置し、再度D（スマホ：B）で起爆。爆風で敵・オブジェクトを攻撃できます。川の中では水流の向きに流速の2倍で流れ、陸に出ると止まります。</li><li><strong>戦車主砲：</strong>壁や建物などに当たると炸裂。プレイヤーの主砲が壁に着弾したときは、着弾点から約9.5m以内の敵歩兵を撃破できます。</li><li><strong>MG・ライフル：</strong>弾の種類に応じた射程・被弾処理があります。狙撃弾は敵兵を貫通できます。</li><li>木と岩石の画像は各2種類。配置位置に応じて約半々で固定選択し、サイズ・当たり判定・破壊処理は共通です。</li><li>建物・岩石・司令本部の足元には背景の上に薄い影を描画し、破壊後も地面の暗い跡として残します。</li><li><strong>一般車両：</strong>乗車できない駐車車両です。現在は出現を一時停止しています。赤・青・白・黄の4色で、当たり判定・炎上・爆発は既存オブジェクトと同様です。</li><li><strong>破壊可能オブジェクト：</strong>木箱やドラム缶などは被弾・炎上・爆発に反応し、状況によって連鎖爆発も発生します。</li><li>爆風によって敵やプレイヤーが押し飛ばされ、気絶する場合があります。</li></ul>
-<h3>アイテムと支援爆撃</h3><ul><li><strong>ガソリン：</strong>赤い携行缶。通常マップに5個配置され、乗車中のみ表示・取得できます。取得すると搭乗車両の燃料が満タンになります。</li><li><strong>無線：</strong>通常マップに1個配置。徒歩・乗車どちらでも取得でき、支援爆撃を自動で要請します。</li><li><strong>支援爆撃機：</strong>大きな主翼と細い胴体を持つ六発機。画面上方向へ飛び、3列に計25発の爆弾を投下します。直近の変更で進行方向の爆撃範囲を約160〜170px延長しました。投下間隔は約0.14秒で、爆弾は約0.48秒後に炸裂します。乗り物より上に描画されます。敵・味方どちらの爆撃機の爆弾でも橋を破壊できます。</li><li><strong>敵爆撃機（制圧上級）：</strong>青い爆撃機が開始草原を除くランダムエリアで1〜2回飛来します。通信傍受のメッセージから8秒後、左右の間でランダムに選ばれた位置を絨毯爆撃します。上部の赤い警告は飛来位置に合わせて表示されます。警告は通過まで続き、敵兵にはダメージを与えません。</li></ul>
+<h3>アイテムと支援爆撃</h3><ul><li><strong>ガソリン：</strong>赤い携行缶。通常マップに5個配置され、乗車中のみ表示・取得できます。取得すると搭乗車両の燃料が満タンになります。</li><li><strong>無線：</strong>通常マップに1個配置。徒歩・乗車どちらでも取得でき、支援爆撃を自動で要請します。</li><li><strong>支援爆撃機：</strong>大きな主翼と細い胴体を持つ六発機。画面上方向へ飛び、3列に計25発の爆弾を投下します。直近の変更で進行方向の爆撃範囲を約160〜170px延長しました。投下間隔は約0.14秒で、爆弾は約0.48秒後に炸裂します。乗り物より上に描画されます。敵・味方どちらの爆撃機の爆弾でも橋を破壊できます。橋が壊れると木片が回転しながら飛び散ります。</li><li><strong>敵爆撃機（制圧上級）：</strong>青い爆撃機が開始草原を除くランダムエリアで1〜2回飛来します。通信傍受のメッセージから8秒後、左右の間でランダムに選ばれた位置を絨毯爆撃します。上部の赤い警告は飛来位置に合わせて表示されます。警告は通過まで続き、敵兵にはダメージを与えません。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-skills"><h2>8. 10種類のスキル</h2>
 <p>通常プレイでは出撃前に<strong>解放済みスキルから1種類</strong>を選択します。スキルごとに使用方法・持続時間・チャージが異なります。</p>
@@ -874,7 +874,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.23.1327',FILE_CREATED_AT='2026/10/23 13:27',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.23.1446',FILE_CREATED_AT='2026/10/23 14:46',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -1973,7 +1973,7 @@ function drawLabels(cx,cy){gm.textAlign='center';for(const l of labels){gm.font=
 let chainToast='',chainToastT=0,oneShotToast='',oneShotToastT=0;
 let roadBands=[];
 let state,p,cars,etanks,humans,covers,objects,bullets,parts,base,shake,flash,msg,msgT,bombs,items,waves,water,bridges,mud,fx,bushes,decoy,allies,hound=null,houndTrail=[],radio,airstrike,airbombs,weather,weatherT,weatherNext,rainIntensity=0,baseSpawnT,deathT=0,cam=0,camX=0,blastT,bq,skillReq,lastMouse=0,allySeq=0,builtWalls=[],buildingGroundMarks=[],tankWrecks=[],scoreStats=null,highScoreData=null,resultAnimT=0,vehicleNameT=0,debugMode=0,debugInvincible=false,touchTurretAngle=null;
-const DETECT_RANGE_BASE=315,DETECT_CENTER_HALF=7.5*Math.PI/180,DETECT_OUTER_HALF=52.5*Math.PI/180,DETECT_OUTER_SCALE=.7,DETECT_MEMORY=3,TANK_DRAW=30,TANK_HIT=28,LOG_LONG=126,LOG_SHORT=39,CRATE_W=74.8,CRATE_H=74.8,BARREL_SIZE=39.1,CONCRETE_W=264,CONCRETE_H=183.7,WOOD_W=278.3,WOOD_H=223.85,MINI_CONCRETE_W=151.3,MINI_CONCRETE_H=151.3,MINI_WOOD_W=213.6,MINI_WOOD_H=213.6,CONCRETE_MINI_W=151.3,CONCRETE_MINI_H=151.3,WOOD_MINI_W=213.6,WOOD_MINI_H=213.6,TREE_BOX=83,TREE_BOX_MAX=124.5,ROCK_W=58,ROCK_H=40,BARRIER_LONG=208,BARRIER_SHORT=52,FENCE_LONG=188,FENCE_SHORT=81,COMMAND_BASE_W=390,COMMAND_BASE_H=336.7;
+const DETECT_RANGE_BASE=315,DETECT_CENTER_HALF=7.5*Math.PI/180,DETECT_OUTER_HALF=52.5*Math.PI/180,DETECT_OUTER_SCALE=.7,DETECT_MEMORY=3,TANK_DRAW=30,TANK_HIT=28,TANK_BOMB_HIT=42,LOG_LONG=126,LOG_SHORT=39,CRATE_W=74.8,CRATE_H=74.8,BARREL_SIZE=39.1,CONCRETE_W=264,CONCRETE_H=183.7,WOOD_W=278.3,WOOD_H=223.85,MINI_CONCRETE_W=151.3,MINI_CONCRETE_H=151.3,MINI_WOOD_W=213.6,MINI_WOOD_H=213.6,CONCRETE_MINI_W=151.3,CONCRETE_MINI_H=151.3,WOOD_MINI_W=213.6,WOOD_MINI_H=213.6,TREE_BOX=83,TREE_BOX_MAX=124.5,ROCK_W=58,ROCK_H=40,BARRIER_LONG=208,BARRIER_SHORT=52,FENCE_LONG=188,FENCE_SHORT=81,COMMAND_BASE_W=390,COMMAND_BASE_H=336.7;
 const playerMoving=()=>!!(p&&(keys.ArrowUp||keys.ArrowDown||keys.ArrowLeft||keys.ArrowRight)&&(!p.tank||p.tank.f>0));
 const detectRange=(key='p')=>DETECT_RANGE_BASE*((key==='p'&&p&&p.tank)?2:1)*((key==='p'&&!playerMoving())?.8:1)*(weather==='sandstorm'?.55:weather==='rain'?.75:1),detectOuterRange=(key='p')=>detectRange(key)*DETECT_OUTER_SCALE,detectDropRange=(key='p')=>detectRange(key)*1.5;
 const D=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),R=Math.random;
@@ -3911,13 +3911,26 @@ function activateStaticTank(e){
 function enterTankFound(e,key,pause=null){
  if(!e||!e.alive||(key==='p'&&debugMode>=2))return false;
  recordDecoyLure(e,key);
- const fresh=!e.st,tg=targetObj(key);e.sus=0;e.susPhase=0;e.susHold=0;e.st=1;e.target=key;e.lost=DETECT_MEMORY;
- if(tg)e.ang=Math.atan2(tg.y-e.y,tg.x-e.x);
+ const fresh=!e.st;e.sus=0;e.susPhase=0;e.susHold=0;e.st=1;e.target=key;e.lost=DETECT_MEMORY;
  if(fresh){
   const react=foundModePause();e.foundPause=Math.max(e.foundPause||0,react);e.firePause=Math.max(e.firePause||0,react);enemyModePaused(e);activateStaticTank(e);
   if(key==='p'&&scoreStats&&!scoreStats.finalized)scoreStats.foundEntries++;
  }
  return fresh;
+}
+// Main gun follows the rendered turret at 90 degrees/second; MG keeps fast tracking.
+function turnEnemyTankTurret(e,desired,dt){
+ const step=Math.PI/2*dt;e.ang+=Math.max(-step,Math.min(step,angD(desired,e.ang)));
+}
+function updateEnemyTankWeapons(e,tg,d,toT,vis,canFire,dt){
+ const block=canFire&&!vis&&e.cc<=0?firstBlockingCover(e,tg,300):null;
+ const aim=block?Math.atan2(block.y+block.h/2-e.y,block.x+block.w/2-e.x):toT;
+ turnEnemyTankTurret(e,aim,dt);
+ if(!canFire)return;
+ if(e.cc<=0&&(block||vis&&d<detectDropRange(e.target))&&Math.abs(angD(aim,e.ang))<=Math.PI/30){
+  e.cc=2.8;fire(e.x+Math.cos(e.ang)*38,e.y+Math.sin(e.ang)*38,e.ang+(R()-.5)*(block?.035:.08),'e','c',enemyCannonSpeed(),block?340:480);
+ }
+ if(vis&&d<200&&e.vc<=0){e.vc=.16;fire(e.x+Math.cos(toT)*32,e.y+Math.sin(toT)*32,toT+(R()-.5)*.2,'e','v',420,200);}
 }
 // 戦車の疑惑モード：音の発生点を記憶し、車体を止めて砲塔だけで調べる。
 // 「音を聞いた」だけではプレイヤーを発見した扱いにしない。
@@ -4187,7 +4200,7 @@ function damageBridgeByBomb(x,y,r=42){
   if(topH>=14)next.push({...br,h:topH,burnT:undefined,bridgeBurn:false});
   if(bottomH>=14)next.push({...br,y:bottomY,h:bottomH,burnT:undefined,bridgeBurn:false});
   water.push({x:br.x,y:holeTop,w:bw,h:holeH,flowDir:riverFlowDir(br),flowSpeed:riverFlowSpeed(br)});
-  burst(br.x+bw/2,(holeTop+holeBottom)/2,22,'#7a4a25',180);
+  cannonCoverDebris(br.x+bw/2,(holeTop+holeBottom)/2,'#7a4a25',8);
  }
  if(damaged){bridges=next;shake=Math.max(shake,10);}
  return damaged;
@@ -4925,7 +4938,7 @@ function updateBurningNature(dt){
   if(br.burnT!==undefined&&br.burnT<=0){
    const w=br.w||100,h=br.h||100;
    water.push({x:br.x,y:br.y,w,h,flowDir:riverFlowDir(br),flowSpeed:riverFlowSpeed(br)});
-   burst(br.x+w/2,br.y+h/2,24,'#7a4a25',150);
+   cannonCoverDebris(br.x+w/2,br.y+h/2,'#7a4a25',8);
    continue;
   }
   survivingBridges.push(br);
@@ -5650,10 +5663,9 @@ function update(dt){
   let tg=targetObj(e.target);if(e.st&&!tg){e.st=0;e.target=null;e.foundPause=0;pauseAfterEnemyDetection(e);}tg=targetObj(e.target);
   if(e.st&&tg){const d=D(e,tg),toT=Math.atan2(tg.y-e.y,tg.x-e.x),vis=cachedLos(e,tg);
    if(!detected){e.lost-=dt;if(e.lost<=0||d>detectDropRange(e.target)*frontlineTankSightScale(e)){e.st=0;e.target=null;e.foundPause=0;pauseAfterEnemyDetection(e);}}
-   if(e.st){e.cc-=dt;e.vc-=dt;e.firePause=Math.max(0,(e.firePause||0)-dt);const foundPause=(e.foundPause||0)>0;if(foundPause)e.foundPause=Math.max(0,e.foundPause-dt);e.ang=(foundPause&&p)?Math.atan2(p.y-e.y,p.x-e.x):toT;if(!foundPause&&!e.static&&d>190){mv(e,Math.cos(toT)*55*dt,Math.sin(toT)*55*dt,TANK_HIT);e.body=toT;}else if(!foundPause&&!e.static&&d<120){mv(e,-Math.cos(toT)*40*dt,-Math.sin(toT)*40*dt,TANK_HIT);}
+   if(e.st){e.cc-=dt;e.vc-=dt;e.firePause=Math.max(0,(e.firePause||0)-dt);const foundPause=(e.foundPause||0)>0;if(foundPause)e.foundPause=Math.max(0,e.foundPause-dt);if(!foundPause&&!e.static&&d>190){mv(e,Math.cos(toT)*55*dt,Math.sin(toT)*55*dt,TANK_HIT);e.body=toT;}else if(!foundPause&&!e.static&&d<120){mv(e,-Math.cos(toT)*40*dt,-Math.sin(toT)*40*dt,TANK_HIT);}
     const canFire=(e.firePause||0)<=0;
-    if(canFire&&!vis&&e.cc<=0){const block=firstBlockingCover(e,tg,300);if(block){const bx=block.x+block.w/2,by=block.y+block.h/2,ba=Math.atan2(by-e.y,bx-e.x);e.cc=2.8;fire(e.x+Math.cos(ba)*38,e.y+Math.sin(ba)*38,ba+(R()-.5)*.035,'e','c',enemyCannonSpeed(),340);}}
-    else if(canFire&&vis){if(d<detectDropRange(e.target)&&e.cc<=0){e.cc=2.8;fire(e.x+Math.cos(toT)*38,e.y+Math.sin(toT)*38,toT+(R()-.5)*.08,'e','c',enemyCannonSpeed(),480);}if(d<200&&e.vc<=0){e.vc=.16;fire(e.x+Math.cos(toT)*32,e.y+Math.sin(toT)*32,toT+(R()-.5)*.2,'e','v',420,200);}}}
+    updateEnemyTankWeapons(e,tg,d,toT,vis,canFire,dt);}
   }
   if(!e.st&&e.sus>0){
    // 車体は現在位置と向きのまま停止。砲塔が音源に向き、左右をゆっくり走査する。
@@ -5673,7 +5685,7 @@ function update(dt){
     const desired=e.body+Math.sin(e.scanPhase)*75*Math.PI/180;
     const turn=Math.max(-.42*dt,Math.min(.42*dt,angD(desired,e.ang)));
     e.ang+=turn;
-   }else e.ang=e.body;
+   }else turnEnemyTankTurret(e,e.body,dt);
   }
  }
  // 敵同士は歩兵・戦車を問わず重ならないよう、移動後にも位置を分離する。
@@ -5692,10 +5704,10 @@ function update(dt){
    else if(b.t<=0){stunHoundAtBlast(b.x,b.y,95);bombs.splice(i,1);burst(b.x,b.y,30,'#ff9a2a',240);burst(b.x,b.y,10,'#fff3b0',300);}
    continue;}
   if(!b.armed&&D(b,p)>36)b.armed=true;
-  const stepped=b.armed&&!(p.dig>0)&&(!p.tank||p.tank.kind!=='fighter')&&D(b,p)<(p.tank?TANK_HIT:14),tk=etanks.some(e=>e.alive&&Math.hypot(e.x-b.x,e.y-b.y)<TANK_HIT),hm=humans.some(h=>h.alive&&Math.hypot(h.x-b.x,h.y-b.y)<14);
+  const stepped=b.armed&&!(p.dig>0)&&(!p.tank||p.tank.kind!=='fighter')&&D(b,p)<(p.tank?TANK_HIT:14),tk=etanks.some(e=>e.alive&&Math.hypot(e.x-b.x,e.y-b.y)<TANK_BOMB_HIT),hm=humans.some(h=>h.alive&&Math.hypot(h.x-b.x,h.y-b.y)<14);
   if(stepped||tk||hm){bombs.splice(i,1);
    const actionId=newCombatAction('bomb');
-   for(const e of etanks)if(e.alive&&Math.hypot(e.x-b.x,e.y-b.y)<TANK_HIT){destroyEnemyTank(e,b.x,b.y);recordPlayerKill(actionId,'',e);burst(e.x,e.y,40,'#ff6a2a',350);}
+   for(const e of etanks)if(e.alive&&Math.hypot(e.x-b.x,e.y-b.y)<TANK_BOMB_HIT){destroyEnemyTank(e,b.x,b.y);recordPlayerKill(actionId,'',e);burst(e.x,e.y,40,'#ff6a2a',350);}
    bombBlast(b.x,b.y,actionId,stepped&&!p.tank);if(stepped){if(p.tank)wreck();else damagePlayerByOwnBomb();}}}
  // 弾
  for(let i=bullets.length-1;i>=0;i--){const b=bullets[i],ox=b.x,oy=b.y,travelDt=Math.min(dt,Math.max(0,b.life));b.x+=b.vx*travelDt;b.y+=b.vy*travelDt;b.life-=dt;let dead=b.life<=0;
@@ -5749,6 +5761,7 @@ function update(dt){
   }
   if(dead)bullets.splice(i,1);}
  for(const w of waves){w.r+=260*dt;if(!w.houndHit&&hound&&D(w,hound)<w.r){w.houndHit=true;stunHound(5);}if(!w.bh){const br=baseHitRect(),nx=Math.max(br.x,Math.min(br.x+br.w,w.x)),ny=Math.max(br.y,Math.min(br.y+br.h,w.y));if(Math.hypot(nx-w.x,ny-w.y)<w.r){w.bh=true;damageBase(6,nx,ny,30,1,'bomb');fb(nx,ny,34);burst(nx,ny,30,'#ffb347',300);shake=Math.max(shake,10);}}for(const h of humans)if(h.alive&&Math.hypot(h.x-w.x,h.y-w.y)<w.r){h.alive=false;recordPlayerKill(w.actionId||0,'',h);burst(h.x,h.y,12,'#c05a3a',180);}
+  for(const e of etanks)if(e.alive&&Math.hypot(e.x-w.x,e.y-w.y)<Math.min(w.r,w.max)+TANK_HIT){destroyEnemyTank(e,w.x,w.y);recordPlayerKill(w.actionId||0,'',e);burst(e.x,e.y,40,'#ff6a2a',350);}
   if(!w.hit&&!p.tank&&!(p.dig>0)&&D(w,p)<w.r){w.hit=true;damagePlayerByOwnBomb();}}waves=waves.filter(w=>w.r<w.max);
  updateAlly(dt);updatePartner(dt);syncPartnerDriverPassenger();updateAirstrike(dt);
  // 水面アニメーションと同じ向きの流れを地上ユニットへ反映する。
@@ -8223,7 +8236,7 @@ function reportGameError(error){
 <script src="js/stage-progress.js?v=2026.10.23.0846"></script>
 <script src="js/frontline.js?v=2026.10.23.0853"></script>
 <script src="js/award-icons.js?v=2026.10.23.0018"></script>
-<script src="js/enemy-bomber.js?v=2026.10.23.1327"></script>
+<script src="js/enemy-bomber.js?v=2026.10.23.1446"></script>
 <script src="js/characters.js?v=2026.10.19.1032"></script>
 <script src="js/enemy-dogs.js?v=2026.10.22.0945"></script>
 <script src="js/partner.js?v=2026.10.17.2030"></script>
