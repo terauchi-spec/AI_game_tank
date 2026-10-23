@@ -4,7 +4,7 @@ function harness(rolls=[0,.5]){
  const sounds=[],rects=[],texts=[],gradients=[],damage=[],draws=[],terrain=[];let blasts=0,wrecks=0;
  const gm={save(){},restore(){},setTransform(){},beginPath(){},ellipse(){},arc(){},fill(){},stroke(){},fillRect(...args){rects.push(args);},strokeText(){},fillText(...args){texts.push(args[0]);},createLinearGradient(...args){const stops=[];const gradient={args,stops,addColorStop(...s){stops.push(s);}};gradients.push(gradient);return gradient;}};
  const c={ZONES:[{n:'草原',y0:13200,y1:10800},{n:'森林',y0:10800,y1:7000},{n:'草原',y0:7000,y1:2000},{n:'敵司令本部',y0:2000,y1:-400}],stageMode:'front',areaDebugEnabled:false,frontlineBeginner:false,frontlineOni:false,state:'play',WW:960,W:480,H:800,mission:{index:0,enemyWavesStarted:false},view:{x:0,y:8500,w:480,h:800},p:{x:900,y:9000,hp:3,dig:0,tank:null},allies:[],partner:null,hound:null,humans:[],etanks:[],enemyDogs:[],objects:[],debugInvincible:false,shake:0,flash:0,FIGHTER_TYPE:{hp:8},performance:{now:()=>1000},
- R:()=>rolls.length?rolls.shift():.5,isFrontlineBeginner:()=>c.frontlineBeginner,isFrontlineOni:()=>c.frontlineOni,frontlineView:()=>c.view,sfx:s=>sounds.push(s),fb(){blasts++;},burst(){},scatterSpinifexAt(){},damageObjectsInRadius(){},carve(...args){terrain.push(args);},recordPlayerDamage(...args){damage.push(args);},beginBlastFlight(){},triggerPlayerDeath(){c.state='dying';},wreck(){wrecks++;c.p.tank=null;},stunHound(t){c.hound.stun=t;},partnerVehicleDestroyed(q){q.vehicle=null;q.down=true;},gm,g:gm,drawSupportBomber(...args){draws.push(args);}};
+ R:()=>rolls.length?rolls.shift():.5,isFrontlineBeginner:()=>c.frontlineBeginner,isFrontlineOni:()=>c.frontlineOni,frontlineView:()=>c.view,sfx:s=>sounds.push(s),fb(){blasts++;},burst(){},scatterSpinifexAt(){},damageBridgeByBomb(){},damageObjectsInRadius(){},carve(...args){terrain.push(args);},recordPlayerDamage(...args){damage.push(args);},beginBlastFlight(){},triggerPlayerDeath(){c.state='dying';},wreck(){wrecks++;c.p.tank=null;},stunHound(t){c.hound.stun=t;},partnerVehicleDestroyed(q){q.vehicle=null;q.down=true;},gm,g:gm,drawSupportBomber(...args){draws.push(args);}};
  vm.createContext(c);vm.runInContext(source,c);return{c,sounds,rects,texts,gradients,damage,draws,terrain,get blasts(){return blasts;},get wrecks(){return wrecks;}};
 }
 function run(s,seconds,step=.05){for(let t=0;t<seconds-1e-9;t+=step)s.c.updateEnemyBomber(Math.min(step,seconds-t));}
@@ -75,4 +75,26 @@ test('enemy artwork reuses the support bomber geometry with a blue palette and r
 });
 test('setup, world drawing and screen-space alerts are integrated without altering friendly carpet bombing',()=>{
  assert.match(html,/setupFrontlineBoundary\(\);if\(typeof setupEnemyBomber/);assert.match(html,/updateFrontlineWaves\(dt\);if\(typeof updateEnemyBomber/);assert.match(html,/drawEnemyBomberAircraft\(\)/);assert.match(html,/drawFrontlineVictorySignal\(\);if\(typeof drawEnemyBomberWarning==='function'\)drawEnemyBomberWarning\(\)/);assert.match(html,/<script src="js\/enemy-bomber.js\?v=/);assert.match(html,/maxDrops:25/);assert.match(html,/airstrike\.drop=\.14/);
+});
+
+test('friendly and enemy aircraft bombs break bridges into river gaps while preserving surviving spans and current',()=>{
+ for(const kind of ['radio','fighter','enemy']){
+  const s=harness(),c=s.c;
+  Object.assign(c,{bridges:[{x:100,y:200,w:100,h:200,flowDir:-1,flowSpeed:14,burnT:2,bridgeBurn:true},{x:600,y:200,w:100,h:200}],water:[],riverFlowDir:b=>b.flowDir,riverFlowSpeed:b=>b.flowSpeed,newCombatAction:()=>1,stunHoundAtBlast(){},radioStrikeKillContext:0,explode(){},baseHitRect:()=>({x:0,y:0,w:1,h:1}),base:{hp:0}});
+  vm.runInContext(html.slice(html.indexOf('function damageBridgeByBomb('),html.indexOf('function bombBlast(')),c);
+  vm.runInContext(html.slice(html.indexOf('function airBombBlast('),html.indexOf('function fighterBomb(')),c);
+  const blast=()=>kind==='enemy'?c.enemyBomberBlast(150,300):c.airBombBlast(150,300,kind);
+  blast();assert.equal(c.bridges.length,3,kind);assert.deepEqual(Array.from(c.bridges,b=>[b.x,b.y,b.h]),[[100,200,58],[100,342,58],[600,200,200]]);
+  assert.equal(c.water.length,1);assert.deepEqual(JSON.parse(JSON.stringify(c.water[0])),{x:100,y:258,w:100,h:84,flowDir:-1,flowSpeed:14});
+  assert.ok(c.bridges.slice(0,2).every(b=>b.burnT===undefined&&b.bridgeBurn===false));
+  blast();assert.equal(c.water.length,1,'repeated blast in an open gap does not add duplicate water');assert.equal(c.radioStrikeKillContext,0);
+ }
+});
+test('aircraft bomb misses leave bridges and river unchanged; direct hits remove a narrow bridge completely',()=>{
+ for(const kind of ['radio','enemy']){
+  const s=harness(),c=s.c;Object.assign(c,{bridges:[{x:100,y:270,w:100,h:60,flowDir:1,flowSpeed:8}],water:[],riverFlowDir:b=>b.flowDir,riverFlowSpeed:b=>b.flowSpeed,newCombatAction:()=>1,stunHoundAtBlast(){},radioStrikeKillContext:0,explode(){},baseHitRect:()=>({x:0,y:0,w:1,h:1}),base:{hp:0}});
+  vm.runInContext(html.slice(html.indexOf('function damageBridgeByBomb('),html.indexOf('function bombBlast(')),c);vm.runInContext(html.slice(html.indexOf('function airBombBlast('),html.indexOf('function fighterBomb(')),c);
+  const blast=(x,y)=>kind==='enemy'?c.enemyBomberBlast(x,y):c.airBombBlast(x,y);
+  blast(500,300);assert.equal(c.bridges.length,1);assert.equal(c.water.length,0);blast(150,300);assert.equal(c.bridges.length,0);assert.equal(c.water.length,1);assert.equal(c.water[0].h,60);
+ }
 });

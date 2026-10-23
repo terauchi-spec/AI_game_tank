@@ -60,6 +60,7 @@ function enemyBomberBlast(x,y,radius=88){
  // Separate damage ownership: neither direct bombs nor their object chains hurt enemies.
  sfx('airExplosion');fb(x,y,46);burst(x,y,60,'#ff8a3a',400);burst(x,y,25,'#fff3b0',500);
  shake=Math.max(shake,15);flash=Math.max(flash,.5);
+ damageBridgeByBomb(x,y,Math.min(42,radius));
  scatterSpinifexAt(x,y,radius);damageObjectsInRadius(x,y,100,'enemyBomb');carve(x,y,100,false,null);
  const hit=actor=>Math.hypot(actor.x-x,actor.y-y)<radius;
  for(const ally of allies||[])if(ally.alive&&!(ally.chute>0)&&hit(ally)){ally.alive=false;burst(ally.x,ally.y,10,'#8fd7ff',160);}
