@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.23.2253</title>
+<title>こっそり戦車大作戦 2026.10.23.2255</title>
 
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
@@ -439,7 +439,7 @@ body.area-picker-open #pad,body.area-picker-open #resetBtn,body.area-picker-open
 .trophy-card .tc-copy .tc-state{margin-top:3px;line-height:1.5;max-width:100%}
 .trophy-card .tc-mark{position:relative;float:none;margin:0;min-width:0;min-height:152px;overflow:hidden;line-height:1}
 .trophy-card .tc-mark .award-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(.85);width:150%;height:100%;max-width:none;object-fit:contain}
-.trophy-card.locked .award-icon{opacity:.4;filter:none}
+.trophy-card.locked .award-icon{opacity:.65;filter:brightness(0)}
 @media(max-width:380px){.res-title-name{gap:8px;font-size:19px}.res-title-name .award-icon{width:60px;height:60px}.trophy-card{gap:9px;grid-template-columns:minmax(0,1fr) minmax(100px,40%)}}
 </style>
 <style>
@@ -894,7 +894,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.23.2253',FILE_CREATED_AT='2026/10/23 22:53',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.23.2255',FILE_CREATED_AT='2026/10/23 22:55',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
