@@ -6,14 +6,13 @@ const c={};vm.createContext(c);
 vm.runInContext(html.slice(html.indexOf('const RES_AXES='),html.indexOf('function evaluateRunTitles(')),c);
 vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/award-icons.js'),'utf8'),c);
 const read=code=>vm.runInContext(code,c);
-const titles=read('TITLE_CATALOG.filter(t=>!t.legacy)'),medals=read('MEDAL_CATALOG.filter(m=>!m.legacy)');
-test('all 36 current titles and 28 medals have complete icon definitions',()=>{
- assert.equal(titles.length,36);assert.equal(medals.length,28);assert.ok(titles.every(t=>t.id.startsWith('v3_')));
- for(const [kind,entries] of [['title',titles],['medal',medals]])for(const entry of entries){const spec=c.awardIconSpec(entry,kind);assert.ok(spec,`${kind} ${entry.id}`);assert.ok(read(`AWARD_SYMBOLS[${JSON.stringify(spec.main)}]`));if(spec.secondary)assert.ok(read(`AWARD_SYMBOLS[${JSON.stringify(spec.secondary)}]`));const svg=c.awardIcon(entry,kind);assert.ok(svg.startsWith('<svg'));assert.ok(!svg.includes('undefined'));assert.match(svg,/aria-hidden="true"/);}
+const titles=read('TITLE_CATALOG.filter(t=>!t.legacy)');
+test('all 32 current titles have complete icon definitions',()=>{
+ assert.equal(titles.length,32);assert.ok(titles.every(t=>t.id.startsWith('v3_')));
+ for(const [kind,entries] of [['title',titles]])for(const entry of entries){const spec=c.awardIconSpec(entry,kind);assert.ok(spec,`${kind} ${entry.id}`);assert.ok(read(`AWARD_SYMBOLS[${JSON.stringify(spec.main)}]`));if(spec.secondary)assert.ok(read(`AWARD_SYMBOLS[${JSON.stringify(spec.secondary)}]`));const svg=c.awardIcon(entry,kind);assert.ok(svg.startsWith('<svg'));assert.ok(!svg.includes('undefined'));assert.match(svg,/aria-hidden="true"/);}
 });
-test('all current titles and medals have distinct visual compositions',()=>{
+test('all current titles have distinct visual compositions',()=>{
  const t=titles.filter(t=>!t.legacy).map(t=>c.awardIcon(t));assert.equal(new Set(t).size,t.length);
- const m=medals.map(t=>c.awardIcon(t,'medal'));assert.equal(new Set(m).size,m.length);
 });
 test('every axis has distinct normal, elite and legendary emblems; combinations use two axis symbols',()=>{
  for(let i=0;i<8;i++){const entries=[`v3_single_${i}_normal`,`v3_single_${i}_elite`,`v3_legend_${i}`].map(id=>titles.find(t=>t.id===id));assert.equal(new Set(entries.map(e=>c.awardIcon(e))).size,3);assert.equal(new Set(entries.map(e=>c.awardIconSpec(e).main)).size,1);}
@@ -30,18 +29,13 @@ function resultAwards(awards){
  const nodes=new Map();c.document={getElementById:id=>{if(!nodes.has(id))nodes.set(id,{});return nodes.get(id);}};
  vm.runInContext(html.slice(html.indexOf('function renderAwardResult('),html.indexOf("let trophyTab='title';")),c);c.renderAwardResult({awards});return id=>nodes.get(id);
 }
-test('result shows three medals with first acquisitions first, without losing other awards or duplicating the primary title',()=>{
- const aw={primary:titles[0].id,titles:titles.slice(0,6).map(t=>t.id),medals:medals.slice(0,7).map(m=>m.id),newTitles:[titles[1].id],newMedals:[medals[5].id],disabled:false};
- const el=resultAwards(aw),main=el('resMedals').innerHTML;
- assert.equal((main.match(/class="res-award/g)||[]).length,3);assert.ok(main.indexOf(medals[5].name)<main.indexOf(medals[0].name));
- assert.ok(!el('resNewTitles').innerHTML.includes(titles[0].name));
- for(const t of titles.slice(1,6))assert.ok(el('resNewTitles').innerHTML.includes(t.name));
- for(const m of medals.slice(0,7))assert.ok((main+el('resOtherMedals').innerHTML).includes(m.name));
- assert.equal(el('resOtherAwards').hidden,false);assert.match(el('resOtherAwardsLabel').textContent,/9件/);
+test('all secondary titles render once with first acquisitions first',()=>{
+ const aw={primary:titles[0].id,titles:titles.slice(0,6).map(t=>t.id),newTitles:[titles[5].id],disabled:false};
+ const el=resultAwards(aw),main=el('resEarnedTitles').innerHTML;assert.equal((main.match(/class="res-award/g)||[]).length,5);assert.ok(main.indexOf(titles[5].name)<main.indexOf(titles[1].name));assert.ok(!main.includes(titles[0].name));for(const t of titles.slice(1,6))assert.ok(main.includes(t.name));
 });
-test('empty result hides extra awards and preserves debug and save-failure notices',()=>{
- for(const flag of ['disabled','saveFailed']){
-  const el=resultAwards({titles:[],medals:[],newTitles:[],newMedals:[],[flag]:true});
-  assert.equal(el('resOtherAwards').hidden,true);assert.match(el('resMedals').innerHTML,/獲得なし/);assert.match(el('resMedalNote').textContent,flag==='disabled'?/デバッグ/:/保存できません/);
- }
+test('empty result preserves debug and save-failure notices',()=>{
+ for(const flag of ['disabled','saveFailed']){const el=resultAwards({titles:[],newTitles:[],[flag]:true});assert.match(el('resEarnedTitles').innerHTML,/獲得なし/);assert.match(el('resAwardNote').textContent,flag==='disabled'?/デバッグ/:/保存できません/);}
+});
+test('UI contains no medal tab or removed result element references',()=>{
+ assert.ok(!html.includes('trophyTabMedals'));for(const id of ['resMedals','resOtherAwards','resOtherMedals','resMedalNote'])assert.ok(!html.includes("'"+id+"'"));assert.ok(html.includes('全32種'));
 });
