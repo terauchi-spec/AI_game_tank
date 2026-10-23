@@ -8,7 +8,7 @@ function enemyBomberInRandomArea(){
 }
 function setupEnemyBomber(){
  if(!enemyBomberEnabled()||!mission)return;
- mission.enemyAirRaid={remaining:R()<.5?1:2,passes:0,phase:'idle',timer:0,position:.5,plane:null,bombs:[],gradient:null,gradientHeight:0};
+ mission.enemyAirRaid={remaining:R()<.5?1:2,passes:0,phase:'idle',timer:0,route:null,plane:null,bombs:[],gradient:null,gradientHeight:0};
 }
 function updateEnemyBomber(dt){
  if(!enemyBomberEnabled()||state!=='play'||!mission?.enemyAirRaid)return;
@@ -19,17 +19,18 @@ function updateEnemyBomber(dt){
  }
  if(raid.phase==='idle'){
   if(!mission.enemyWavesStarted||!raid.remaining||raid.passes>0&&mission.index<1||!enemyBomberInRandomArea())return;
-  raid.position=1/6+R()*2/3;raid.phase='warning';raid.timer=5;sfx('radio');return;
+  const view=frontlineView();
+  // Lock the world-space route when warning starts; camera movement never retargets it.
+  raid.route={x:R()*WW,y:Math.max(ZONES[ZONES.length-2].y1+1,Math.min(ZONES[1].y0-1,view.y-180)),endY:view.y+view.h+180};
+  raid.phase='warning';raid.timer=5;sfx('radio');return;
  }
  if(raid.phase==='cooldown'){
   raid.timer=Math.max(0,raid.timer-dt);if(raid.timer===0)raid.phase='idle';return;
  }
  if(raid.phase==='warning'){
-  if(!enemyBomberInRandomArea()){raid.phase='idle';raid.timer=0;return;}
   raid.timer=Math.max(0,raid.timer-dt);
   if(raid.timer>1e-9)return;
-  const view=frontlineView();
-  raid.plane={x:view.x+raid.position*view.w,y:Math.max(ZONES[ZONES.length-2].y1+1,Math.min(ZONES[1].y0-1,view.y-180)),endY:view.y+view.h+180,drop:.05,drops:0,maxDrops:25};
+  raid.plane={...raid.route,drop:.05,drops:0,maxDrops:25};
   raid.remaining--;raid.passes++;raid.phase='flight';return;
  }
  if(raid.phase!=='flight')return;
@@ -40,7 +41,7 @@ function updateEnemyBomber(dt){
   plane.drops++;plane.drop=.14;
  }
  // Keep the warning until both the complete aircraft and its drop run have passed.
- if(plane.y>Math.max(plane.endY,frontlineView().y+H+180)&&plane.drops===plane.maxDrops){
+ if(plane.y>plane.endY&&plane.drops===plane.maxDrops){
   raid.plane=null;raid.phase=raid.remaining?'cooldown':'done';raid.timer=22+R()*16;
  }
 }
@@ -89,7 +90,7 @@ function drawEnemyBomberAircraft(){
 function drawEnemyBomberWarning(){
  if(!enemyBomberEnabled()||state!=='play'||!mission?.enemyAirRaid)return;
  const raid=mission.enemyAirRaid;if(raid.phase!=='warning'&&raid.phase!=='flight')return;
- const width=W/3,view=frontlineView(),left=raid.plane?raid.plane.x-view.x-width/2:raid.position*W-width/2;
+ const width=WW/3,view=frontlineView(),left=(raid.plane||raid.route).x-view.x-width/2;
  const x=Math.max(0,left),right=Math.min(W,left+width),height=Math.min(150,H*.2);
  gm.save();gm.setTransform(1,0,0,1,0,0);
  if(right>x){
