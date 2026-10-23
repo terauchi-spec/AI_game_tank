@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.24.0704</title>
+<title>こっそり戦車大作戦 2026.10.24.0707</title>
 
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
@@ -787,16 +787,8 @@ body.stage-open #stageScreen{display:block}
 /* Keep the selected war-room artwork visible while building the stage. */
 #stageLoadingScreen{display:none;position:fixed;inset:0;z-index:72;box-sizing:border-box;background:#17150f url('stage_map.webp') center 46%/cover no-repeat;color:#fff0cc;font-family:system-ui,-apple-system,'Hiragino Sans',sans-serif}
 body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify-content:center}
-#stageLoadingScreen:before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,8,6,.3),rgba(8,8,6,.2) 35%,rgba(8,8,6,.78))}
-.stage-loading-content{position:relative;text-align:center;width:min(86vw,450px);padding:30px 20px;background:rgba(23,24,18,.82);border:1px solid rgba(224,185,116,.7);box-shadow:0 12px 50px #000b;box-sizing:border-box}
-.stage-loading-kicker{font-size:11px;letter-spacing:.25em;color:#e3c084;font-weight:800}
-.stage-loading-title{font-size:clamp(22px,5vw,32px);font-weight:900;margin:12px 0 8px}
-.stage-loading-sub{font-size:13px;color:#e3d6b9}
-.stage-loading-track{height:5px;background:#514632;margin-top:24px;overflow:hidden}
-.stage-loading-track span{display:block;height:100%;width:36%;background:#dfbd7c;animation:stageLoadingSweep 1.5s ease-in-out infinite alternate}
-@keyframes stageLoadingSweep{from{transform:translateX(-110%)}to{transform:translateX(300%)}}
-@media(max-width:580px){#stageLoadingScreen{background-position:center 40%}.stage-loading-content{padding:24px 16px}}
-@media(prefers-reduced-motion:reduce){.stage-loading-track span{animation:none;width:60%}}
+.stage-loading-title{text-align:center;font-size:clamp(22px,5vw,32px);font-weight:900;margin:0;padding:16px;text-shadow:0 2px 5px #000,0 0 18px #000}
+@media(max-width:580px){#stageLoadingScreen{background-position:center 40%}}
 /* Mission briefing: photographic war-room map and tactile paper operation cards. */
 #stageScreen{background-color:#17150f;background-size:cover;background-position:center 46%}
 #stageScreen:before{background:linear-gradient(180deg,rgba(10,10,8,.79) 0%,rgba(9,10,9,.15) 27%,rgba(7,9,8,.04) 47%,rgba(10,9,7,.40) 68%,rgba(9,8,6,.89) 100%)}
@@ -875,7 +867,7 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 </style>
 <section id="areaDebugPicker" aria-labelledby="areaDebugHeading"><div class="area-debug-panel"><h1 id="areaDebugHeading">テストするエリア</h1><p>無敵で地形や遮蔽物を確認できます。<br>開始地点の戦車は弾数・燃料無制限です。</p><div id="areaDebugList"></div><button id="areaDebugBack" type="button">ステージ選択に戻る</button></div></section>
 <div id="missionBriefing" role="dialog" aria-modal="true" aria-labelledby="missionBriefingTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_hero.webp?v=2026.10.14.1653" alt="円形爆弾を抱えて走る主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionBriefingTitle">ミッション</h1><p id="missionBriefingGoal">敵の拠点にたどりつき、破壊せよ</p><ul class="mission-hud-guide" aria-label="ゲーム画面のアイコン説明"><li><img src="assets/ui/ui_heart_full.png" alt="ハート" decoding="async"><span>残りライフ</span></li><li><img src="assets/ui/ui_bomb_normal.png" alt="爆弾" decoding="async"><span>爆弾の設置状態</span></li><li><svg viewBox="-18 -18 36 36" role="img" aria-label="目に斜線"><path d="M-14 0 C-7-11 7-11 14 0 C7 11-7 11-14 0Z" fill="white" stroke="black" stroke-width="3"/><circle r="5" fill="black"/><path d="M-12 11 12-11" stroke="black" stroke-width="3.5"/><path d="M-12 11 12-11" stroke="#ef3434" stroke-width="2"/></svg><span>敵から隠れている状態</span></li></ul><div id="missionFrontlineRules" hidden><ul class="mission-front-rules" aria-label="最前線の制圧ルール"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V3m0 1c5-4 8 4 14 0v10c-6 4-9-4-14 0"/></svg><span id="missionFrontlineOrder">3拠点を順番に制圧</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 1v4m0 14v4M1 12h4m14 0h4"/></svg><span>円に入り、敵を排除</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><circle cx="4" cy="10" r="2"/><circle cx="20" cy="10" r="2"/><path d="M6 22v-4a6 6 0 0 1 12 0v4M1 21v-5a3 3 0 0 1 4-3m18 8v-5a3 3 0 0 0-4-3"/></svg><span>味方兵と制圧！人数で加速</span></li></ul></div><div id="missionIndoorRules" hidden><ul class="mission-front-rules" aria-label="潜入の作戦ポイント"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2h9l5 5v15H5ZM14 2v6h5M8 12h8M8 16h8"/></svg><span id="missionIndoorDocuments">円に入り、重要資料3か所を回収</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12C7 4 17 4 22 12C17 20 7 20 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><span>赤い目3つで館内アラート発令</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3H3v18h7M7 12h15m-5-5 5 5-5 5"/></svg><span>回収後は施設外のEXITから脱出</span></li></ul></div><button type="button" id="missionBegin">作戦開始</button></div></div></div>
-<div id="stageLoadingScreen" role="status" aria-live="polite" aria-label="ステージを準備中"><div class="stage-loading-content"><div class="stage-loading-kicker">MISSION BRIEFING</div><div class="stage-loading-title">作戦準備中…</div><div class="stage-loading-sub">戦場を生成しています</div><div class="stage-loading-track"><span></span></div></div></div>
+<div id="stageLoadingScreen" role="status" aria-live="polite"><div class="stage-loading-title">作戦準備中…</div></div>
 <div id="stageScreen" role="region" aria-label="ステージ選択"><div class="stage-shell">
 <header class="stage-header"><div><div class="stage-kicker">CHOOSE YOUR MISSION</div><h1>ステージ選択</h1></div><button type="button" class="sk-home" id="stageBack">スキル選択</button></header><p id="stageSkill"></p>
 <div class="stage-options">
@@ -900,7 +892,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.24.0704',FILE_CREATED_AT='2026/10/24 07:04',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.24.0707',FILE_CREATED_AT='2026/10/24 07:07',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -8173,9 +8165,9 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/stage-progress.js?v=2026.10.24.0704"></script>
+<script src="js/stage-progress.js?v=2026.10.24.0707"></script>
 <script src="js/frontline.js?v=2026.10.23.0853"></script>
-<script src="js/award-icons.js?v=2026.10.24.0704"></script>
+<script src="js/award-icons.js?v=2026.10.24.0707"></script>
 <script src="js/enemy-bomber.js?v=2026.10.23.1833"></script>
 <script src="js/characters.js?v=2026.10.19.1032"></script>
 <script src="js/enemy-dogs.js?v=2026.10.22.0945"></script>
