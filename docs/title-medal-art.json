@@ -198,6 +198,13 @@
       "design": "LEGENDARY tier, ornate luminous gold and platinum rim, gold and ivory-crimson ribbon, dark emerald enamel. Central phoenix with uplifted wings rising from flame around an intact heart-shaped shield, fuller laurel wreath."
     },
     {
+      "id": "v3_all_stages_clear",
+      "name": "全戦域の覇者",
+      "file": "assets/ui/titles/v3_all_stages_clear.webp",
+      "design": "伝説級。全戦域の踏破を示す地球儀・勝利の旗・6つの星、金とプラチナの豪華な綬つき勲章。",
+      "prompt": "Use case: stylized-concept. Asset type: ONE individual LEGENDARY collectible military medal icon for a Japanese stealth tank game. Meaning: conquer every battlefield / clear all six normal stages, title 'Conqueror of All Battlefields'. Centered straight-on front view, square canvas, genuinely transparent background, full medal entirely visible with generous 8% transparent margins. Unified premium game-medal construction: short folded woven ribbon at top in emerald, royal blue and gold stripes; small gold suspension ring; large circular pendant with faceted octagonal GOLD and PLATINUM outer rim; rich deep emerald-blue enamel, full gold laurel wreath. Central sculpted relief: a prominent golden victory flag planted above a golden globe / compass, with SIX small clear gold stars arranged around the globe to symbolize six completed stages. Beneath the flag, restrained tiny heraldic motifs of a fortress gate, a closed document dossier and a capture-point pennant, all integrated into one clean coherent relief, no separate badges. Highest legendary tier, prestigious, polished, bold and readable at 76px, warm metallic reflections and precise engraved details, elegant royal color accents but less rainbow extravagance than a supreme mythic award. Lighting from upper left. No lettering, no numbers, no logos, no real-world flags, no external background scene, no detached sparkles or shadow outside the object. This award DOES have its short woven ribbon, like a traditional military decoration."
+    },
+    {
       "id": "v3_mythic_complete",
       "name": "戦場の神話",
       "file": "assets/ui/titles/v3_mythic_complete.webp",
