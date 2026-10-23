@@ -1,6 +1,6 @@
 // WebP title medals are fetched only when results or the collection render.
 const TITLE_WEBP_IDS=new Set(["v3_single_0_normal", "v3_single_0_elite", "v3_single_1_normal", "v3_single_1_elite", "v3_single_2_normal", "v3_single_2_elite", "v3_single_3_normal", "v3_single_3_elite", "v3_single_4_normal", "v3_single_4_elite", "v3_single_5_normal", "v3_single_5_elite", "v3_single_6_normal", "v3_single_6_elite", "v3_single_7_normal", "v3_single_7_elite", "v3_ghost_sniper", "v3_armored_assault", "v3_front_commander", "v3_shadow_pair", "v3_versatile", "v3_infantry", "v3_chain", "v3_one_shot", "v3_legend_0", "v3_legend_1", "v3_legend_2", "v3_legend_3", "v3_legend_4", "v3_legend_5", "v3_legend_6", "v3_legend_7", "v3_mythic_complete"]);
-const TITLE_WEBP_VERSION="2026.10.23.medals1";
+const TITLE_WEBP_VERSION="2026.10.24.0003";
 // Static SVG award emblems. Used only while rendering results / the collection.
 // No bitmaps, filters, animation loops or gameplay-time entity searches.
 const AWARD_AXIS_SYMBOLS=['flag','stealth','assault','blast','footsteps','tactics','teamwork','survival'];
