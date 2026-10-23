@@ -1,0 +1,201 @@
+{
+  "format": "WebP",
+  "size": 256,
+  "background": "transparent",
+  "generator": "built-in image_gen",
+  "prompt": "Use case: stylized-concept. Asset type: individual collectible military medal icon for a Japanese stealth tank game. One single medal, centered front view, entire hanging ribbon and pendant fully visible, square canvas with 8% transparent margin. Premium stylized game illustration with sculpted metal relief, bold readable emblem, subtle bevels and tactile woven ribbon. Consistent graphic design: short folded ribbon at top, small suspension ring, large circular pendant with octagonal outer rim and restrained laurel trim. Studio light from upper left, polished highlights, no cast shadow outside the object. Icon must read at 64px. No letters, text, numerals, logos, flags, background scene, or extra badges. Background truly transparent. ",
+  "titles": [
+    {
+      "id": "v3_single_0_normal",
+      "name": "任務遂行者",
+      "file": "assets/ui/titles/v3_single_0_normal.webp",
+      "design": "BRONZE standard tier, antique bronze rim, olive and cream ribbon, dark olive enamel. Central raised bronze mission pennant above a small completed objective checkmark."
+    },
+    {
+      "id": "v3_single_0_elite",
+      "name": "完遂の達人",
+      "file": "assets/ui/titles/v3_single_0_elite.webp",
+      "design": "SILVER elite tier, bright brushed silver rim, olive and gold ribbon, deep green enamel. Central silver mission flag planted over a fortress gate, two small gold stars."
+    },
+    {
+      "id": "v3_single_1_normal",
+      "name": "隠密兵",
+      "file": "assets/ui/titles/v3_single_1_normal.webp",
+      "design": "BRONZE standard tier, antique bronze rim, forest green and black ribbon, dark green enamel. Central hooded scout silhouette with narrowed eyes and one leaf, stealth infiltration."
+    },
+    {
+      "id": "v3_single_1_elite",
+      "name": "ゴースト",
+      "file": "assets/ui/titles/v3_single_1_elite.webp",
+      "design": "SILVER elite tier, silver rim, emerald and black ribbon, near-black enamel. Central spectral hood and translucent-like silver smoke curling into a crescent, silent unseen infiltrator."
+    },
+    {
+      "id": "v3_single_2_normal",
+      "name": "戦闘兵",
+      "file": "assets/ui/titles/v3_single_2_normal.webp",
+      "design": "BRONZE standard tier, bronze rim, burgundy and olive ribbon, dark red enamel. Central crossed compact rifles over a forward lightning bolt, strong clean military heraldry."
+    },
+    {
+      "id": "v3_single_2_elite",
+      "name": "戦場の猛者",
+      "file": "assets/ui/titles/v3_single_2_elite.webp",
+      "design": "SILVER elite tier, silver rim, crimson and gold ribbon, dark red enamel. Central roaring lion head in metal relief over crossed rifle barrels, two small golden stars."
+    },
+    {
+      "id": "v3_single_3_normal",
+      "name": "爆破兵",
+      "file": "assets/ui/titles/v3_single_3_normal.webp",
+      "design": "BRONZE standard tier, bronze rim, amber and black ribbon, burnt orange enamel. Central round black demolition mine with one red circular light, three bold explosion rays."
+    },
+    {
+      "id": "v3_single_3_elite",
+      "name": "爆炎の達人",
+      "file": "assets/ui/titles/v3_single_3_elite.webp",
+      "design": "SILVER elite tier, silver rim, orange and crimson ribbon, dark amber enamel. Central round demolition mine engulfed by a symmetrical five-tongue flame burst, gold highlights."
+    },
+    {
+      "id": "v3_single_4_normal",
+      "name": "機動兵",
+      "file": "assets/ui/titles/v3_single_4_normal.webp",
+      "design": "BRONZE standard tier, bronze rim, ochre and olive ribbon, dark khaki enamel. Central winged military boot and a forward arrow, swift movement toward objective."
+    },
+    {
+      "id": "v3_single_4_elite",
+      "name": "機動戦のエース",
+      "file": "assets/ui/titles/v3_single_4_elite.webp",
+      "design": "SILVER elite tier, silver rim, golden ochre and black ribbon, deep olive enamel. Central silver tank tread wheel with swept wings and two gold speed streaks."
+    },
+    {
+      "id": "v3_single_5_normal",
+      "name": "戦術家",
+      "file": "assets/ui/titles/v3_single_5_normal.webp",
+      "design": "BRONZE standard tier, bronze rim, purple and charcoal ribbon, dark violet enamel. Central chess knight with a curved tactical route arrow leading around a small shield."
+    },
+    {
+      "id": "v3_single_5_elite",
+      "name": "戦場の知将",
+      "file": "assets/ui/titles/v3_single_5_elite.webp",
+      "design": "SILVER elite tier, silver rim, royal purple and gold ribbon, violet enamel. Central silver owl with spread angular wings above a chess knight, tactical intelligence."
+    },
+    {
+      "id": "v3_single_6_normal",
+      "name": "連携兵",
+      "file": "assets/ui/titles/v3_single_6_normal.webp",
+      "design": "BRONZE standard tier, bronze rim, teal and cream ribbon, dark teal enamel. Central two clasped military gloved hands above two small shoulder silhouettes, teamwork."
+    },
+    {
+      "id": "v3_single_6_elite",
+      "name": "絆の指揮官",
+      "file": "assets/ui/titles/v3_single_6_elite.webp",
+      "design": "SILVER elite tier, silver rim, turquoise and navy ribbon, deep teal enamel. Central linked silver shields protecting two helmeted companions, small gold command star."
+    },
+    {
+      "id": "v3_single_7_normal",
+      "name": "生還者",
+      "file": "assets/ui/titles/v3_single_7_normal.webp",
+      "design": "BRONZE standard tier, bronze rim, sage green and cream ribbon, deep sage enamel. Central upright shield with a strong heartbeat line and small olive sprig, survival."
+    },
+    {
+      "id": "v3_single_7_elite",
+      "name": "不屈の生還者",
+      "file": "assets/ui/titles/v3_single_7_elite.webp",
+      "design": "SILVER elite tier, silver rim, ivory and emerald ribbon, deep green enamel. Central silver shield deflecting three broken projectiles, intact bright heart emblem, resilient survivor."
+    },
+    {
+      "id": "v3_ghost_sniper",
+      "name": "ゴーストスナイパー",
+      "file": "assets/ui/titles/v3_ghost_sniper.webp",
+      "design": "SPECIAL composite tier, dark gunmetal and silver rim, black and ice-blue ribbon, dark blue enamel. Central hooded face behind a clear rifle scope crosshair, diagonal precision rifle."
+    },
+    {
+      "id": "v3_armored_assault",
+      "name": "鋼鉄の突撃兵",
+      "file": "assets/ui/titles/v3_armored_assault.webp",
+      "design": "SPECIAL composite tier, dark gunmetal and silver rim, crimson and ochre ribbon, deep red enamel. Central forceful frontal tank charging through a broken barricade, silver lightning accents."
+    },
+    {
+      "id": "v3_front_commander",
+      "name": "最前線の指揮官",
+      "file": "assets/ui/titles/v3_front_commander.webp",
+      "design": "SPECIAL composite tier, dark gunmetal and silver rim, olive and teal ribbon, deep green enamel. Central command flag above a fortified capture point with two supporting soldier helmets and one command star."
+    },
+    {
+      "id": "v3_shadow_pair",
+      "name": "影の相棒",
+      "file": "assets/ui/titles/v3_shadow_pair.webp",
+      "design": "SPECIAL composite tier, dark gunmetal and silver rim, emerald and cobalt ribbon, dark teal enamel. Central two hooded companions back to back, one holding a closed document folder, small blue accent stripe."
+    },
+    {
+      "id": "v3_versatile",
+      "name": "多彩な戦士",
+      "file": "assets/ui/titles/v3_versatile.webp",
+      "design": "SPECIAL accomplishment tier, silver and bronze rim, multicolor restrained ribbon of green blue crimson gold stripes, dark navy enamel. Central eight-point compass rose with four distinct small skill symbols around it: shield, lightning, flame, flag."
+    },
+    {
+      "id": "v3_infantry",
+      "name": "孤高の歩兵",
+      "file": "assets/ui/titles/v3_infantry.webp",
+      "design": "SPECIAL accomplishment tier, silver and bronze rim, charcoal and ivory ribbon, deep charcoal enamel. Central solitary helmeted walking infantry silhouette carrying a compact rifle across rugged ground, strong lone heroic pose."
+    },
+    {
+      "id": "v3_chain",
+      "name": "マルチキルの達人",
+      "file": "assets/ui/titles/v3_chain.webp",
+      "design": "SPECIAL accomplishment tier, silver and bronze rim, crimson and black ribbon, deep burgundy enamel. Central linked chain forming a sweeping arc around three successive target bursts, dynamic consecutive combat rhythm."
+    },
+    {
+      "id": "v3_one_shot",
+      "name": "ワンショットキルの達人",
+      "file": "assets/ui/titles/v3_one_shot.webp",
+      "design": "SPECIAL accomplishment tier, silver and bronze rim, orange and black ribbon, dark amber enamel. Central single descending projectile with one large radial shockwave striking five small target sparks, one decisive attack."
+    },
+    {
+      "id": "v3_legend_0",
+      "name": "任務の覇者",
+      "file": "assets/ui/titles/v3_legend_0.webp",
+      "design": "LEGENDARY tier, ornate luminous gold and platinum rim, gold and deep olive ribbon, rich emerald enamel. Central crowned mission flag rising above a conquered fortress gate, radiant gold sunburst and fuller laurel wreath."
+    },
+    {
+      "id": "v3_legend_1",
+      "name": "幽影の覇者",
+      "file": "assets/ui/titles/v3_legend_1.webp",
+      "design": "LEGENDARY tier, ornate luminous gold and platinum rim, gold and black-green ribbon, near-black emerald enamel. Central regal spectral hood with crescent moon and curling mist, small crown crest and fuller laurel wreath."
+    },
+    {
+      "id": "v3_legend_2",
+      "name": "戦場の覇王",
+      "file": "assets/ui/titles/v3_legend_2.webp",
+      "design": "LEGENDARY tier, ornate luminous gold and platinum rim, gold and crimson ribbon, deep ruby enamel. Central crowned roaring lion over crossed swords and a bold lightning bolt, fuller laurel wreath."
+    },
+    {
+      "id": "v3_legend_3",
+      "name": "爆炎の支配者",
+      "file": "assets/ui/titles/v3_legend_3.webp",
+      "design": "LEGENDARY tier, ornate luminous gold and platinum rim, gold and fiery orange ribbon, dark ruby enamel. Central magnificent flame crown around a black demolition mine with one red light, radiant explosion halo and fuller laurel wreath."
+    },
+    {
+      "id": "v3_legend_4",
+      "name": "疾風迅雷",
+      "file": "assets/ui/titles/v3_legend_4.webp",
+      "design": "LEGENDARY tier, ornate luminous gold and platinum rim, gold and electric yellow ribbon, dark blue enamel. Central winged armored wheel splitting two sharp lightning bolts, wind curls and fuller laurel wreath."
+    },
+    {
+      "id": "v3_legend_5",
+      "name": "神算鬼謀",
+      "file": "assets/ui/titles/v3_legend_5.webp",
+      "design": "LEGENDARY tier, ornate luminous gold and platinum rim, gold and royal purple ribbon, deep amethyst enamel. Central wise crowned owl above a chess knight and elegantly curved tactical arrow, fuller laurel wreath."
+    },
+    {
+      "id": "v3_legend_6",
+      "name": "不滅の絆",
+      "file": "assets/ui/titles/v3_legend_6.webp",
+      "design": "LEGENDARY tier, ornate luminous gold and platinum rim, gold and turquoise ribbon, rich teal enamel. Central interlocked twin shields and clasped hands forming an unbroken infinity shape, bright command star and fuller laurel wreath."
+    },
+    {
+      "id": "v3_legend_7",
+      "name": "不死鳥",
+      "file": "assets/ui/titles/v3_legend_7.webp",
+      "design": "LEGENDARY tier, ornate luminous gold and platinum rim, gold and ivory-crimson ribbon, dark emerald enamel. Central phoenix with uplifted wings rising from flame around an intact heart-shaped shield, fuller laurel wreath."
+    }
+  ]
+}

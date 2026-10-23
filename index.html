@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.23.2137</title>
+<title>こっそり戦車大作戦 2026.10.23.2217</title>
 
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
@@ -428,11 +428,11 @@ body.area-picker-open #pad,body.area-picker-open #resetBtn,body.area-picker-open
 .res-award-chip{display:inline-flex;align-items:center;gap:7px;max-width:100%;box-sizing:border-box;padding:5px 10px 5px 6px;min-width:0;line-height:1.5}
 .award-chip-label{min-width:0;overflow-wrap:anywhere}.award-new{color:#ffe3a0;white-space:nowrap}
 .res-title-name{display:flex;align-items:center;gap:12px;line-height:1.4;min-width:0}
-.res-title-name>span{min-width:0;overflow-wrap:anywhere}.res-title-name .award-icon{width:58px;height:58px}
+.res-title-name>span{min-width:0;overflow-wrap:anywhere}.res-title-name .award-icon{width:80px;height:80px;object-fit:contain}
 .trophy-card .tc-mark{position:static;float:right;margin:0 0 8px 8px;line-height:1}
-.trophy-card .tc-mark .award-icon{width:52px;height:52px}.trophy-card .tc-note{clear:both}
+.trophy-card .tc-mark .award-icon{width:76px;height:76px;object-fit:contain}.trophy-card .tc-note{clear:both}
 .trophy-card.locked .award-icon{opacity:.4;filter:none}
-@media(max-width:380px){.res-title-name{gap:8px;font-size:19px}.res-title-name .award-icon{width:48px;height:48px}.trophy-card .tc-mark .award-icon{width:42px;height:42px}}
+@media(max-width:380px){.res-title-name{gap:8px;font-size:19px}.res-title-name .award-icon{width:60px;height:60px}.trophy-card .tc-mark .award-icon{width:56px;height:56px}}
 </style>
 <style>
 /* 作戦説明は静止DOMで表示し、待機中のゲーム更新・再描画を止める。 */
@@ -886,7 +886,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.23.2137',FILE_CREATED_AT='2026/10/23 21:37',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.23.2217',FILE_CREATED_AT='2026/10/23 22:17',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -8119,7 +8119,7 @@ function reportGameError(error){
 </script>
 <script src="js/stage-progress.js?v=2026.10.23.1833"></script>
 <script src="js/frontline.js?v=2026.10.23.0853"></script>
-<script src="js/award-icons.js?v=2026.10.23.0018"></script>
+<script src="js/award-icons.js?v=2026.10.23.2217"></script>
 <script src="js/enemy-bomber.js?v=2026.10.23.1833"></script>
 <script src="js/characters.js?v=2026.10.19.1032"></script>
 <script src="js/enemy-dogs.js?v=2026.10.22.0945"></script>

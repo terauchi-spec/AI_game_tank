@@ -1,3 +1,6 @@
+// WebP title medals are fetched only when results or the collection render.
+const TITLE_WEBP_IDS=new Set(["v3_single_0_normal", "v3_single_0_elite", "v3_single_1_normal", "v3_single_1_elite", "v3_single_2_normal", "v3_single_2_elite", "v3_single_3_normal", "v3_single_3_elite", "v3_single_4_normal", "v3_single_4_elite", "v3_single_5_normal", "v3_single_5_elite", "v3_single_6_normal", "v3_single_6_elite", "v3_single_7_normal", "v3_single_7_elite", "v3_ghost_sniper", "v3_armored_assault", "v3_front_commander", "v3_shadow_pair", "v3_versatile", "v3_infantry", "v3_chain", "v3_one_shot", "v3_legend_0", "v3_legend_1", "v3_legend_2", "v3_legend_3", "v3_legend_4", "v3_legend_5", "v3_legend_6", "v3_legend_7"]);
+const TITLE_WEBP_VERSION="2026.10.23.medals1";
 // Static SVG award emblems. Used only while rendering results / the collection.
 // No bitmaps, filters, animation loops or gameplay-time entity searches.
 const AWARD_AXIS_SYMBOLS=['flag','stealth','assault','blast','footsteps','tactics','teamwork','survival'];
@@ -73,6 +76,10 @@ function awardIcon(entry,kind='title'){
  if(!entry)return '';
  const key=kind+':'+entry.id;if(awardIconCache.has(key))return awardIconCache.get(key);
  const spec=awardIconSpec(entry,kind);if(!spec)return '';
+ if(kind==='title'&&TITLE_WEBP_IDS.has(entry.id)){
+  const html='<img class="award-icon award-icon-'+spec.tier+'" src="assets/ui/titles/'+entry.id+'.webp?v='+TITLE_WEBP_VERSION+'" width="256" height="256" alt="" aria-hidden="true" loading="lazy" decoding="async">';
+  awardIconCache.set(key,html);return html;
+ }
  const color=spec.color||AWARD_COLORS[spec.main]||'#e7d195',legend=spec.tier==='legend',elite=spec.tier==='elite';
  const rim=legend?'#ffe5a0':elite?'#f3d28a':'#9aa98b';
  const frame=kind==='medal'?'<path d="m19 41-3 20 16-7 16 7-3-20" fill="#5b4930" stroke="'+rim+'"/><circle cx="32" cy="26" r="23" fill="#26332b" stroke="'+rim+'"/>':'<path d="M32 3 57 14v19c0 12-11 21-25 28C18 54 7 45 7 33V14Z" fill="#26332b" stroke="'+rim+'"/>';
