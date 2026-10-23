@@ -8,7 +8,7 @@ function enemyBomberInRandomArea(){
 }
 function setupEnemyBomber(){
  if(!enemyBomberEnabled()||!mission)return;
- mission.enemyAirRaid={remaining:R()<.5?1:2,passes:0,phase:'idle',timer:0,lane:1,plane:null,bombs:[],gradient:null,gradientHeight:0};
+ mission.enemyAirRaid={remaining:R()<.5?1:2,passes:0,phase:'idle',timer:0,position:.5,plane:null,bombs:[],gradient:null,gradientHeight:0};
 }
 function updateEnemyBomber(dt){
  if(!enemyBomberEnabled()||state!=='play'||!mission?.enemyAirRaid)return;
@@ -19,7 +19,7 @@ function updateEnemyBomber(dt){
  }
  if(raid.phase==='idle'){
   if(!mission.enemyWavesStarted||!raid.remaining||raid.passes>0&&mission.index<1||!enemyBomberInRandomArea())return;
-  raid.lane=Math.min(2,Math.floor(R()*3));raid.phase='warning';raid.timer=8;sfx('radio');return;
+  raid.position=1/6+R()*2/3;raid.phase='warning';raid.timer=8;sfx('radio');return;
  }
  if(raid.phase==='cooldown'){
   raid.timer=Math.max(0,raid.timer-dt);if(raid.timer===0)raid.phase='idle';return;
@@ -29,7 +29,7 @@ function updateEnemyBomber(dt){
   raid.timer=Math.max(0,raid.timer-dt);
   if(raid.timer>1e-9)return;
   const view=frontlineView();
-  raid.plane={x:view.x+(raid.lane+.5)*view.w/3,y:Math.max(ZONES[ZONES.length-2].y1+1,Math.min(ZONES[1].y0-1,view.y-180)),endY:view.y+view.h+180,drop:.05,drops:0,maxDrops:25};
+  raid.plane={x:view.x+raid.position*view.w,y:Math.max(ZONES[ZONES.length-2].y1+1,Math.min(ZONES[1].y0-1,view.y-180)),endY:view.y+view.h+180,drop:.05,drops:0,maxDrops:25};
   raid.remaining--;raid.passes++;raid.phase='flight';return;
  }
  if(raid.phase!=='flight')return;
@@ -88,7 +88,7 @@ function drawEnemyBomberAircraft(){
 function drawEnemyBomberWarning(){
  if(!enemyBomberEnabled()||state!=='play'||!mission?.enemyAirRaid)return;
  const raid=mission.enemyAirRaid;if(raid.phase!=='warning'&&raid.phase!=='flight')return;
- const width=W/3,view=frontlineView(),left=raid.plane?raid.plane.x-view.x-width/2:raid.lane*width;
+ const width=W/3,view=frontlineView(),left=raid.plane?raid.plane.x-view.x-width/2:raid.position*W-width/2;
  const x=Math.max(0,left),right=Math.min(W,left+width),height=Math.min(150,H*.2);
  gm.save();gm.setTransform(1,0,0,1,0,0);
  if(right>x){

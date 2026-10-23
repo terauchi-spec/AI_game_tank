@@ -690,7 +690,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-combat"><h2>7. 武器・爆発・破壊</h2>
 <ul><li><strong>歩兵の設置爆弾：</strong>D（スマホ：B）で設置し、再度D（スマホ：B）で起爆。爆風で敵・オブジェクトを攻撃できます。川の中では水流の向きに流速の2倍で流れ、陸に出ると止まります。</li><li><strong>戦車主砲：</strong>壁や建物などに当たると炸裂。プレイヤーの主砲が壁に着弾したときは、着弾点から約9.5m以内の敵歩兵を撃破できます。</li><li><strong>MG・ライフル：</strong>弾の種類に応じた射程・被弾処理があります。狙撃弾は敵兵を貫通できます。</li><li>木と岩石の画像は各2種類。配置位置に応じて約半々で固定選択し、サイズ・当たり判定・破壊処理は共通です。</li><li>建物・岩石・司令本部の足元には背景の上に薄い影を描画し、破壊後も地面の暗い跡として残します。</li><li><strong>一般車両：</strong>乗車できない駐車車両です。現在は出現を一時停止しています。赤・青・白・黄の4色で、当たり判定・炎上・爆発は既存オブジェクトと同様です。</li><li><strong>破壊可能オブジェクト：</strong>木箱やドラム缶などは被弾・炎上・爆発に反応し、状況によって連鎖爆発も発生します。</li><li>爆風によって敵やプレイヤーが押し飛ばされ、気絶する場合があります。</li></ul>
-<h3>アイテムと支援爆撃</h3><ul><li><strong>ガソリン：</strong>赤い携行缶。通常マップに5個配置され、乗車中のみ表示・取得できます。取得すると搭乗車両の燃料が満タンになります。</li><li><strong>無線：</strong>通常マップに1個配置。徒歩・乗車どちらでも取得でき、支援爆撃を自動で要請します。</li><li><strong>支援爆撃機：</strong>大きな主翼と細い胴体を持つ六発機。画面上方向へ飛び、3列に計25発の爆弾を投下します。直近の変更で進行方向の爆撃範囲を約160〜170px延長しました。投下間隔は約0.14秒で、爆弾は約0.48秒後に炸裂します。乗り物より上に描画されます。</li><li><strong>敵爆撃機（制圧上級）：</strong>青い爆撃機が開始草原を除くランダムエリアで1〜2回飛来します。通信傍受のメッセージから8秒後、上部の赤い警告に対応する左・中央・右のいずれかを絨毯爆撃します。警告は通過まで続き、敵兵にはダメージを与えません。</li></ul>
+<h3>アイテムと支援爆撃</h3><ul><li><strong>ガソリン：</strong>赤い携行缶。通常マップに5個配置され、乗車中のみ表示・取得できます。取得すると搭乗車両の燃料が満タンになります。</li><li><strong>無線：</strong>通常マップに1個配置。徒歩・乗車どちらでも取得でき、支援爆撃を自動で要請します。</li><li><strong>支援爆撃機：</strong>大きな主翼と細い胴体を持つ六発機。画面上方向へ飛び、3列に計25発の爆弾を投下します。直近の変更で進行方向の爆撃範囲を約160〜170px延長しました。投下間隔は約0.14秒で、爆弾は約0.48秒後に炸裂します。乗り物より上に描画されます。</li><li><strong>敵爆撃機（制圧上級）：</strong>青い爆撃機が開始草原を除くランダムエリアで1〜2回飛来します。通信傍受のメッセージから8秒後、左右の間でランダムに選ばれた位置を絨毯爆撃します。上部の赤い警告は飛来位置に合わせて表示されます。警告は通過まで続き、敵兵にはダメージを与えません。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-skills"><h2>8. 10種類のスキル</h2>
 <p>通常プレイでは出撃前に<strong>解放済みスキルから1種類</strong>を選択します。スキルごとに使用方法・持続時間・チャージが異なります。</p>
@@ -874,7 +874,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.23.1006',FILE_CREATED_AT='2026/10/23 10:06',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.23.1227',FILE_CREATED_AT='2026/10/23 12:27',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -8222,7 +8222,7 @@ function reportGameError(error){
 <script src="js/stage-progress.js?v=2026.10.23.0846"></script>
 <script src="js/frontline.js?v=2026.10.23.0853"></script>
 <script src="js/award-icons.js?v=2026.10.23.0018"></script>
-<script src="js/enemy-bomber.js?v=2026.10.23.1006"></script>
+<script src="js/enemy-bomber.js?v=2026.10.23.1227"></script>
 <script src="js/characters.js?v=2026.10.19.1032"></script>
 <script src="js/enemy-dogs.js?v=2026.10.22.0945"></script>
 <script src="js/partner.js?v=2026.10.17.2030"></script>

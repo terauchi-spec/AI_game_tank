@@ -33,12 +33,13 @@ test('aircraft spawn stays inside the random area band even at its edge or after
 });
 test('the exact warning messages precede aircraft appearance by eight seconds',()=>{
  const s=harness([0,.99]),c=s.c;c.setupEnemyBomber();c.mission.enemyWavesStarted=true;c.updateEnemyBomber(.02);const raid=c.mission.enemyAirRaid;assert.equal(raid.phase,'warning');assert.equal(raid.timer,8);c.drawEnemyBomberWarning();assert.deepEqual(s.texts,['敵の通信を傍受！','敵の爆撃機がそちらに向かっている']);
- c.updateEnemyBomber(7.999);assert.equal(raid.plane,null);assert.equal(raid.bombs.length,0);c.updateEnemyBomber(.001);assert.equal(raid.phase,'flight');assert.equal(raid.plane.x,400);assert.equal(raid.plane.y,8320);assert.equal(raid.bombs.length,0);
+ c.updateEnemyBomber(7.999);assert.equal(raid.plane,null);assert.equal(raid.bombs.length,0);c.updateEnemyBomber(.001);assert.equal(raid.phase,'flight');assert.equal(raid.plane.x,396.8);assert.equal(raid.plane.y,8320);assert.equal(raid.bombs.length,0);
 });
-test('left, center and right alerts use only their matching third and reuse the indoor-style gradient',()=>{
- for(const [roll,left] of [[0,0],[.5,160],[.99,320]]){
-  const s=harness([0,roll]),c=s.c;c.setupEnemyBomber();c.mission.enemyWavesStarted=true;c.updateEnemyBomber(.1);c.drawEnemyBomberWarning();assert.deepEqual(s.rects[0],[left,0,160,150]);assert.deepEqual(s.gradients[0].stops,[[0,'rgba(190,22,18,.48)'],[1,'rgba(190,22,18,0)']]);c.drawEnemyBomberWarning();assert.equal(s.gradients.length,1);
-  c.updateEnemyBomber(8);c.view.x=40;s.rects.length=0;c.drawEnemyBomberWarning();const [x,,width]=s.rects[0];assert.equal(x,Math.max(0,left-40));assert.equal(width,left===0?120:160);assert.equal(s.texts.at(-1),'敵爆撃機 通過中');
+test('continuous horizontal positions align warnings and flights, retaining the cached gradient',()=>{
+ for(const roll of [0,.125,.25,.375,.5,.625,.75,.875,1]){
+  const left=roll*320;
+  const s=harness([0,roll]),c=s.c;c.setupEnemyBomber();c.mission.enemyWavesStarted=true;c.updateEnemyBomber(.1);c.drawEnemyBomberWarning();assert.ok(Math.abs(s.rects[0][0]-left)<1e-9);assert.equal(s.rects[0][1],0);assert.ok(Math.abs(s.rects[0][2]-160)<1e-9);assert.equal(s.rects[0][3],150);assert.deepEqual(s.gradients[0].stops,[[0,'rgba(190,22,18,.48)'],[1,'rgba(190,22,18,0)']]);c.drawEnemyBomberWarning();assert.equal(s.gradients.length,1);
+  c.updateEnemyBomber(8);assert.ok(Math.abs(c.mission.enemyAirRaid.plane.x-(80+roll*320))<1e-9);c.view.x=40;s.rects.length=0;c.drawEnemyBomberWarning();const [x,,width]=s.rects[0];assert.ok(Math.abs(x-Math.max(0,left-40))<1e-9);assert.ok(Math.abs(width-(left<40?120+left:160))<1e-9);assert.equal(s.texts.at(-1),'敵爆撃機 通過中');
  }
 });
 test('a full run contains one or two complete 25-bomb carpet passes, with bounded in-flight bombs',()=>{
