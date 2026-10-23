@@ -2,12 +2,12 @@
 let selectedStageId=null,expandedStageId=null,stageDebugAll=false;
 const STAGE_PROGRESS_KEY='tankGameStageProgressV1';
 const STAGE_ORDER=[
- {id:'beginner',name:'破壊（初級）',image:'satellite'},
- {id:'indoorBeginner',name:'潜入（初級）',image:'infiltration_beginner'},
- {id:'frontBeginner',name:'制圧（初級）',image:'supplies'},
- {id:'base',name:'破壊（上級）',image:'headquarters'},
- {id:'indoor',name:'潜入（上級）',image:'infiltration_advanced'},
- {id:'front',name:'制圧（上級）',image:'antenna'}
+ {id:'beginner',target:'軍事衛星施設',name:'破壊（初級）',image:'satellite'},
+ {id:'indoorBeginner',target:'軍司令施設（南部）',name:'潜入（初級）',image:'infiltration_beginner'},
+ {id:'frontBeginner',target:'軍需物資',name:'制圧（初級）',image:'supplies'},
+ {id:'base',target:'軍司令施設（北部）',name:'破壊（上級）',image:'headquarters'},
+ {id:'indoor',target:'軍需格納庫',name:'潜入（上級）',image:'infiltration_advanced'},
+ {id:'front',target:'戦術アンテナ',name:'制圧（上級）',image:'antenna'}
 ];
 const TEST_STAGES=[{id:'frontOni',name:'制圧（鬼）',image:'antenna'}];
 const STAGE_DISPLAY_ORDER=STAGE_ORDER.map(stage=>stage.id);
@@ -51,7 +51,8 @@ function readStageRecords(){
  const stages={};
  for(const {id} of STAGE_ORDER){
   const v=saved?.stages?.[id];
-  stages[id]={sorties:Number.isSafeInteger(v?.sorties)&&v.sorties>=0?v.sorties:0,bestScore:Number.isFinite(v?.bestScore)&&v.bestScore>=0?Math.round(v.bestScore):null,bestRank:STAGE_RECORD_RANKS.includes(v?.bestRank)?v.bestRank:null};
+  const sorties=Number.isSafeInteger(v?.sorties)&&v.sorties>=0?v.sorties:0;
+  stages[id]={sorties,successes:Number.isSafeInteger(v?.successes)&&v.successes>=0?Math.min(v.successes,sorties):0,bestScore:Number.isFinite(v?.bestScore)&&v.bestScore>=0?Math.round(v.bestScore):null,bestRank:STAGE_RECORD_RANKS.includes(v?.bestRank)?v.bestRank:null};
  }
  return{version:1,stages};
 }
@@ -66,6 +67,7 @@ function recordStageResult(s){
  recordStageSortie(s);
  const id=s.stageRecordId;if(!STAGE_ORDER.some(stage=>stage.id===id))return;
  const data=readStageRecords(),v=data.stages[id],score=s.final.total,rank=s.final.rank;
+ if(s.final.cleared===true)v.successes=Math.min(v.sorties,v.successes+1);
  if(Number.isFinite(score)&&score>=0)v.bestScore=Math.max(v.bestScore??0,Math.round(score));
  if(STAGE_RECORD_RANKS.includes(rank)&&(!v.bestRank||STAGE_RECORD_RANKS.indexOf(rank)<STAGE_RECORD_RANKS.indexOf(v.bestRank)))v.bestRank=rank;
  try{localStorage.setItem(STAGE_RECORDS_KEY,JSON.stringify(data));s.stageResultRecorded=true;}catch(_){s.stageRecordSaveFailed=true;}
@@ -78,10 +80,10 @@ function renderStageRecords(){
   panel.hidden=!open;card.setAttribute('aria-expanded',String(open));
   if(!open)return;
   const metrics=panel.querySelector('.stage-record-metrics'),note=panel.querySelector('.stage-record-note');
-  metrics.hidden=!v;note.textContent=v?'ステージ別の記録は今回の更新以降に集計':'デバッグ・テストステージは記録対象外';
+  metrics.hidden=!v;note.hidden=!!v;note.textContent=v?'':'デバッグ・テストステージは記録対象外';
   if(!v)return;
   panel.querySelector('.stage-record-score').textContent=v.bestScore===null?'—':v.bestScore.toLocaleString('ja-JP');
-  panel.querySelector('.stage-record-count').textContent=v.sorties.toLocaleString('ja-JP')+'回';
+  panel.querySelector('.stage-record-count').textContent=v.successes.toLocaleString('ja-JP')+' / '+v.sorties.toLocaleString('ja-JP')+'回';
   panel.querySelector('.stage-record-rank').textContent=v.bestRank||'—';
   const image=panel.querySelector('img');image.hidden=!v.bestRank;
   if(v.bestRank){image.src='assets/ui/ranks/rank_'+v.bestRank.toLowerCase()+'.webp?v=2026.10.17';image.alt=v.bestRank+'ランク';}else image.removeAttribute('src');
@@ -94,7 +96,7 @@ function setSelectedStage(id,toggle=true){
  document.querySelectorAll('[data-stage]').forEach(card=>{const chosen=card.dataset.stage===id;card.classList.toggle('selected',chosen);card.setAttribute('aria-pressed',String(chosen));});
  const stage=[...STAGE_ORDER,...TEST_STAGES].find(stage=>stage.id===id),button=document.getElementById('stageDeploy');
  button.disabled=typeof gameBuildQueued!=='undefined'&&gameBuildQueued;
- button.textContent=id==='areaDebug'?'エリアデバッグへ':stage.name.replace(/[（）]/g,'')+'で出撃';
+ button.textContent=id==='areaDebug'?'エリアデバッグへ':stage.name+'で出撃';
  renderStageRecords();
  return true;
 }
@@ -116,12 +118,17 @@ function renderStageLocks(){
   const testStage=TEST_STAGES.find(stage=>stage.id===id);
   if(testStage){
    button.disabled=!stageDebugAll;button.classList.toggle('locked',!stageDebugAll);
+   button.classList.toggle('stage-concealed',!stageDebugAll);
+   button.querySelector('.stage-target').textContent=stageDebugAll?'テスト：敵3倍・味方2倍':'？';
    button.querySelector('.stage-number').textContent='鬼';button.setAttribute('aria-label',testStage.name+'（テスト）'+(stageDebugAll?'':'・全ステージを表示で選択'));
    button.title=stageDebugAll?'制圧上級と同じ3拠点・敵兵の出現数3倍':'全ステージを表示で選択できるテストステージ';return;
   }
   if(!stage)return;
   const locked=!stageAvailableForSelection(id,progress);
   button.disabled=locked;button.classList.toggle('locked',locked);
+  const concealed=!stageSelectable(id,progress);
+  button.classList.toggle('stage-concealed',concealed);
+  button.querySelector('.stage-target').textContent=concealed?'？':stage.target;
   button.classList.toggle('stage-cleared',progress.cleared.includes(id));
   const number=stageDisplayNumber(id),name=stageSelectionName(stage.name),requirement=index>0?stageSelectionName(STAGE_ORDER[index-1].name)+'をクリアすると解放':'';
   button.querySelector('.stage-number').textContent=number;
