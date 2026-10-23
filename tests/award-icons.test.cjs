@@ -7,8 +7,8 @@ vm.runInContext(html.slice(html.indexOf('const RES_AXES='),html.indexOf('functio
 vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/award-icons.js'),'utf8'),c);
 const read=code=>vm.runInContext(code,c);
 const titles=read('TITLE_CATALOG.filter(t=>!t.legacy)');
-test('all 32 current titles have complete icon definitions',()=>{
- assert.equal(titles.length,32);assert.ok(titles.every(t=>t.id.startsWith('v3_')));
+test('all 33 current titles have complete icon definitions',()=>{
+ assert.equal(titles.length,33);assert.ok(titles.every(t=>t.id.startsWith('v3_')));
  for(const [kind,entries] of [['title',titles]])for(const entry of entries){const spec=c.awardIconSpec(entry,kind);assert.ok(spec,`${kind} ${entry.id}`);assert.ok(read(`AWARD_SYMBOLS[${JSON.stringify(spec.main)}]`));if(spec.secondary)assert.ok(read(`AWARD_SYMBOLS[${JSON.stringify(spec.secondary)}]`));const svg=c.awardIcon(entry,kind);assert.ok(svg.startsWith('<img'));assert.ok(!svg.includes('undefined'));assert.match(svg,/aria-hidden="true"/);}
 });
 test('all current titles have distinct visual compositions',()=>{
@@ -37,11 +37,11 @@ test('empty result preserves debug and save-failure notices',()=>{
  for(const flag of ['disabled','saveFailed']){const el=resultAwards({titles:[],newTitles:[],[flag]:true});assert.match(el('resEarnedTitles').innerHTML,/獲得なし/);assert.match(el('resAwardNote').textContent,flag==='disabled'?/デバッグ/:/保存できません/);}
 });
 test('UI contains no medal tab or removed result element references',()=>{
- assert.ok(!html.includes('trophyTabMedals'));for(const id of ['resMedals','resOtherAwards','resOtherMedals','resMedalNote'])assert.ok(!html.includes("'"+id+"'"));assert.ok(html.includes('全32種'));
+ assert.ok(!html.includes('trophyTabMedals'));for(const id of ['resMedals','resOtherAwards','resOtherMedals','resMedalNote'])assert.ok(!html.includes("'"+id+"'"));assert.ok(html.includes('全33種'));
 });
 
 test('each live title maps to its own transparent 256px WebP within the transfer budget',()=>{
  const files=titles.map(t=>path.join(__dirname,'../assets/ui/titles',t.id+'.webp'));let total=0;
  for(const file of files){const b=fs.readFileSync(file);assert.equal(b.toString('ascii',0,4),'RIFF');assert.equal(b.toString('ascii',8,12),'WEBP');assert.equal(b.toString('ascii',12,16),'VP8X');assert.ok(b[20]&16,'alpha channel '+file);assert.equal(b.readUIntLE(24,3)+1,256);assert.equal(b.readUIntLE(27,3)+1,256);assert.ok(b.length<45000,'per image budget');total+=b.length;}
- assert.ok(total<900000,'32 image budget');const manifest=JSON.parse(fs.readFileSync(path.join(__dirname,'../docs/title-medal-art.json'),'utf8'));assert.equal(manifest.titles.length,32);assert.deepEqual(new Set(manifest.titles.map(t=>t.id)),new Set(titles.map(t=>t.id)));
+ assert.ok(total<900000,'32 image budget');const manifest=JSON.parse(fs.readFileSync(path.join(__dirname,'../docs/title-medal-art.json'),'utf8'));assert.equal(manifest.titles.length,33);assert.deepEqual(new Set(manifest.titles.map(t=>t.id)),new Set(titles.map(t=>t.id)));
 });

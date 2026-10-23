@@ -13,11 +13,16 @@ function harness(){
  for(const id of ['resHome','trophyBack','trophyTabTitles','trophyTabStats']){const line=html.split('\n').find(l=>l.startsWith("document.getElementById('"+id+"').addEventListener"));vm.runInContext(line,c);}
  c.scoreStats=c.newScoreStats();Object.assign(c.scoreStats,{objectiveDamage:1,final:{cleared:true,total:500,rank:'B'}});c.state='win';c.nodes=nodes;c.storage=storage;c.run=s=>vm.runInContext(s,c);return c;
 }
-test('result opens, displays earned titles, visits 32-title collection and stats, and returns to result',()=>{
+test('result opens, displays earned titles, visits 33-title collection and stats, and returns to result',()=>{
  const c=harness();c.recordRunAchievements(c.scoreStats);c.syncResultScreen();assert.ok(c.document.body.classList.contains('result-open'));assert.match(c.nodes.get('resTitle').innerHTML,/完遂の達人|不屈の生還者/);assert.match(c.nodes.get('resDetail').innerHTML,/100%/);
- c.nodes.get('resHome').click();assert.ok(c.document.body.classList.contains('trophy-open'));assert.equal(c.nodes.get('trophyGrid').children.length,32);assert.equal(c.nodes.get('trophyBack').textContent,'評価画面');
- c.nodes.get('trophyTabStats').click();assert.equal(c.nodes.get('trophyStats').hidden,false);c.nodes.get('trophyTabTitles').click();assert.equal(c.nodes.get('trophyGrid').children.length,32);c.nodes.get('trophyBack').click();assert.ok(!c.document.body.classList.contains('trophy-open'));assert.ok(c.document.body.classList.contains('result-open'));
+ c.nodes.get('resHome').click();assert.ok(c.document.body.classList.contains('trophy-open'));assert.equal(c.nodes.get('trophyGrid').children.length,33);assert.equal(c.nodes.get('trophyBack').textContent,'評価画面');
+ c.nodes.get('trophyTabStats').click();assert.equal(c.nodes.get('trophyStats').hidden,false);c.nodes.get('trophyTabTitles').click();assert.equal(c.nodes.get('trophyGrid').children.length,33);c.nodes.get('trophyBack').click();assert.ok(!c.document.body.classList.contains('trophy-open'));assert.ok(c.document.body.classList.contains('result-open'));
 });
-test('legacy award data never inflates the visible 32 titles',()=>{
- const c=harness();c.storage.set(c.run('TITLE_ARCHIVE_KEY'),JSON.stringify({titles:{v2_single_1_elite:{count:8},v3_ghost_agent:{count:4}},medals:{untouched:{count:4}},runs:9}));c.openTrophyArchive();assert.equal(c.nodes.get('trophyGrid').children.length,32);assert.match(c.nodes.get('trophyOverview').innerHTML,/>0<\/strong> \/ 32/);
+test('legacy award data never inflates the visible 33 titles',()=>{
+ const c=harness();c.storage.set(c.run('TITLE_ARCHIVE_KEY'),JSON.stringify({titles:{v2_single_1_elite:{count:8},v3_ghost_agent:{count:4}},medals:{untouched:{count:4}},runs:9}));c.openTrophyArchive();assert.equal(c.nodes.get('trophyGrid').children.length,33);assert.match(c.nodes.get('trophyOverview').innerHTML,/>0<\/strong> \/ 33/);
+});
+
+test('a completed archive shows all 33 titles and the no-ribbon mythic graphic',()=>{
+ const c=harness(),ids=Array.from(c.run('TITLE_COLLECTION_TARGETS'));c.storage.set(c.run('TITLE_ARCHIVE_KEY'),JSON.stringify({titles:Object.fromEntries(ids.map(id=>[id,{count:1}])),runs:32}));c.openTrophyArchive();assert.match(c.nodes.get('trophyOverview').innerHTML,/>33<\/strong> \/ 33/);
+ const myth=c.nodes.get('trophyGrid').children.find(card=>card.classList.contains('mythic'));assert.ok(myth);assert.ok(!myth.className.includes('locked'));assert.match(myth.children[1].innerHTML,/v3_mythic_complete\.webp/);assert.equal(myth.children[0].children[0].textContent,'神話級');assert.equal(myth.children[0].children[1].textContent,'戦場の神話');
 });

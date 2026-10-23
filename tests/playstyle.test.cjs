@@ -32,15 +32,15 @@ test('weapon-specific efficiency handles MG bursts and sniper shots separately',
 test('sniper multikills cannot boost explosion efficiency',()=>{
  const c=harness();Object.assign(c.scoreStats,{explosiveKills:2,maxOneShotKills:10});assert.equal(c.metrics()[3],8);c.scoreStats.blastMaxOneShot=4;assert.equal(c.metrics()[3],42);
 });
-test('exactly 32 unique titles cover eight tiers and consolidated accomplishments',()=>{
- const c=harness();assert.equal(c.get('TITLE_CATALOG.length'),32);assert.ok(c.get('new Set(TITLE_CATALOG.map(t=>t.id)).size===32'));assert.equal(c.get('TITLE_COMBOS.length'),4);assert.equal(c.get('TITLE_SPECIAL.length'),4);assert.ok(c.get('TITLE_COMBOS.every(t=>t.axes.every(i=>i>=0&&i<8))'));assert.equal(c.get('typeof MEDAL_CATALOG'),'undefined');
+test('exactly 33 unique titles cover eight tiers and consolidated accomplishments',()=>{
+ const c=harness();assert.equal(c.get('TITLE_CATALOG.length'),33);assert.ok(c.get('new Set(TITLE_CATALOG.map(t=>t.id)).size===33'));assert.equal(c.get('TITLE_COMBOS.length'),4);assert.equal(c.get('TITLE_SPECIAL.length'),4);assert.ok(c.get('TITLE_COMBOS.every(t=>t.axes.every(i=>i>=0&&i<8))'));assert.equal(c.get('typeof MEDAL_CATALOG'),'undefined');
 });
 test('every axis can earn its upper title and old titles cannot be awarded anew',()=>{
  const c=harness(),s=Object.assign(c.scoreStats,rich);s.final={cleared:true,total:1000};s.vehicleKinds={tank:true};const result=c.evaluateRunTitles(Array(8).fill(5),c.metrics(),s,s.final,{titles:{},medals:{}});for(let i=0;i<8;i++)assert.ok(result.titles.some(t=>t.id===`v3_single_${i}_elite`));assert.ok(result.titles.every(t=>!t.legacy));
 });
-test('old awards remain stored but never expand the 32-title collection or grant legends on load',()=>{
+test('old awards remain stored but never expand the 33-title collection or grant legends on load',()=>{
  const c=harness(),titles={v2_single_1_elite:{count:7,at:'old'},v3_single_1_elite:{count:4,at:'old'},v3_ghost_agent:{count:2}};
- c.saved.set(c.get('TITLE_ARCHIVE_KEY'),JSON.stringify({titles,medals:{untouched:{count:2}},runs:8}));const a=c.readTitleArchive();assert.equal(a.titles.v2_single_1_elite.count,7);assert.equal(a.titles.v3_single_1_elite.count,4);assert.equal(a.medals.untouched.count,2);assert.equal(a.runs,8);assert.equal(a.titles.v3_legend_1,undefined);assert.equal(c.get('TITLE_CATALOG.length'),32);
+ c.saved.set(c.get('TITLE_ARCHIVE_KEY'),JSON.stringify({titles,medals:{untouched:{count:2}},runs:8}));const a=c.readTitleArchive();assert.equal(a.titles.v2_single_1_elite.count,7);assert.equal(a.titles.v3_single_1_elite.count,4);assert.equal(a.medals.untouched.count,2);assert.equal(a.runs,8);assert.equal(a.titles.v3_legend_1,undefined);assert.equal(c.get('TITLE_CATALOG.length'),33);
 });
 test('fifth upper-title acquisition earns a new legend without double counting a run',()=>{
  const c=harness();for(let n=1;n<=5;n++){const s=c.scoreStats=Object.assign(c.newScoreStats(),rich,{final:{cleared:true,total:1000},vehicleKinds:{tank:true}});c.recordRunAchievements(s);c.recordRunAchievements(s);assert.equal(!!c.readTitleArchive().titles.v3_legend_1,n===5);}assert.equal(c.readTitleArchive().titles.v3_single_1_elite.count,5);assert.equal(c.readTitleArchive().runs,5);
@@ -113,4 +113,24 @@ test('composite title needs both axes at Lv5 plus its evidence',()=>{
 });
 test('medal history is never awarded or incremented in a new run',()=>{
  const c=harness();c.saved.set(c.get('TITLE_ARCHIVE_KEY'),JSON.stringify({titles:{},medals:{v3_mission_clear:{count:2}},runs:2}));Object.assign(c.scoreStats,rich,{final:{cleared:true,total:1000}});c.recordRunAchievements(c.scoreStats);assert.equal(c.scoreStats.awards.medals,undefined);assert.equal(c.readTitleArchive().medals.v3_mission_clear.count,2);assert.equal(c.readTitleArchive().runs,3);
+});
+
+test('mythic requires each of the 32 current titles; legacy or duplicate counts cannot substitute',()=>{
+ const c=harness(),ids=Array.from(c.get('TITLE_COLLECTION_TARGETS'));assert.equal(ids.length,32);assert.ok(!ids.includes('v3_mythic_complete'));
+ const titles=Object.fromEntries(ids.slice(0,-1).map(id=>[id,{count:99}]));titles.v2_single_1_elite={count:999};c.saved.set(c.get('TITLE_ARCHIVE_KEY'),JSON.stringify({titles,runs:12}));assert.equal(c.readTitleArchive().titles.v3_mythic_complete,undefined);
+ const result=c.evaluateRunTitles(Array(8).fill(0),Array(8).fill(0),c.scoreStats,{cleared:false},{titles});assert.ok(!result.titles.some(t=>t.id==='v3_mythic_complete'));
+});
+test('the final missing title unlocks mythic in the same result, once per result',()=>{
+ const c=harness(),ids=Array.from(c.get('TITLE_COLLECTION_TARGETS')),missing='v3_single_0_elite';
+ c.saved.set(c.get('TITLE_ARCHIVE_KEY'),JSON.stringify({titles:Object.fromEntries(ids.filter(id=>id!==missing).map(id=>[id,{count:1}])),runs:12}));
+ const s=Object.assign(c.scoreStats,rich,{final:{cleared:true,total:1000}});c.recordRunAchievements(s);assert.ok(s.awards.newTitles.includes(missing));assert.ok(s.awards.newTitles.includes('v3_mythic_complete'));assert.equal(s.awards.primary,'v3_mythic_complete');assert.equal(c.readTitleArchive().titles.v3_mythic_complete.count,1);c.recordRunAchievements(s);assert.equal(c.readTitleArchive().titles.v3_mythic_complete.count,1);assert.equal(c.readTitleArchive().runs,13);
+});
+test('an already complete collection receives mythic on load without resetting counts, medals or runs',()=>{
+ const c=harness(),ids=Array.from(c.get('TITLE_COLLECTION_TARGETS'));
+ const titles=Object.fromEntries(ids.map(id=>[id,{count:3,at:'2026-10-20',score:123}]));c.saved.set(c.get('TITLE_ARCHIVE_KEY'),JSON.stringify({titles,medals:{old:{count:4}},runs:40}));
+ const a=c.readTitleArchive();assert.equal(a.titles.v3_mythic_complete.count,1);assert.equal(a.runs,40);assert.equal(a.medals.old.count,4);for(const id of ids)assert.equal(a.titles[id].count,3);assert.equal(c.readTitleArchive().titles.v3_mythic_complete.count,1);assert.equal(JSON.parse(c.saved.get(c.get('TITLE_ARCHIVE_KEY'))).titles.v3_mythic_complete.count,1);
+});
+test('debug cannot save the final title or mythic, and mythic has the highest priority',()=>{
+ const c=harness(),ids=Array.from(c.get('TITLE_COLLECTION_TARGETS')),titles=Object.fromEntries(ids.filter(id=>id!=='v3_single_0_elite').map(id=>[id,{count:1}]));c.saved.set(c.get('TITLE_ARCHIVE_KEY'),JSON.stringify({titles,runs:2}));
+ const s=Object.assign(c.scoreStats,rich,{debugUsed:true,final:{cleared:true,total:1000}});c.recordRunAchievements(s);assert.equal(s.awards.disabled,true);assert.equal(c.readTitleArchive().titles.v3_mythic_complete,undefined);assert.equal(c.readTitleArchive().runs,2);assert.equal(c.get('TITLE_MYTHIC.type'),'神話級');assert.ok(c.get('TITLE_CATALOG.filter(t=>!t.collection).every(t=>t.priority<TITLE_MYTHIC.priority)'));
 });

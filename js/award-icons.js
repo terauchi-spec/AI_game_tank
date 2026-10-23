@@ -1,5 +1,5 @@
 // WebP title medals are fetched only when results or the collection render.
-const TITLE_WEBP_IDS=new Set(["v3_single_0_normal", "v3_single_0_elite", "v3_single_1_normal", "v3_single_1_elite", "v3_single_2_normal", "v3_single_2_elite", "v3_single_3_normal", "v3_single_3_elite", "v3_single_4_normal", "v3_single_4_elite", "v3_single_5_normal", "v3_single_5_elite", "v3_single_6_normal", "v3_single_6_elite", "v3_single_7_normal", "v3_single_7_elite", "v3_ghost_sniper", "v3_armored_assault", "v3_front_commander", "v3_shadow_pair", "v3_versatile", "v3_infantry", "v3_chain", "v3_one_shot", "v3_legend_0", "v3_legend_1", "v3_legend_2", "v3_legend_3", "v3_legend_4", "v3_legend_5", "v3_legend_6", "v3_legend_7"]);
+const TITLE_WEBP_IDS=new Set(["v3_single_0_normal", "v3_single_0_elite", "v3_single_1_normal", "v3_single_1_elite", "v3_single_2_normal", "v3_single_2_elite", "v3_single_3_normal", "v3_single_3_elite", "v3_single_4_normal", "v3_single_4_elite", "v3_single_5_normal", "v3_single_5_elite", "v3_single_6_normal", "v3_single_6_elite", "v3_single_7_normal", "v3_single_7_elite", "v3_ghost_sniper", "v3_armored_assault", "v3_front_commander", "v3_shadow_pair", "v3_versatile", "v3_infantry", "v3_chain", "v3_one_shot", "v3_legend_0", "v3_legend_1", "v3_legend_2", "v3_legend_3", "v3_legend_4", "v3_legend_5", "v3_legend_6", "v3_legend_7", "v3_mythic_complete"]);
 const TITLE_WEBP_VERSION="2026.10.23.medals1";
 // Static SVG award emblems. Used only while rendering results / the collection.
 // No bitmaps, filters, animation loops or gameplay-time entity searches.
@@ -60,6 +60,7 @@ const AWARD_SPECIAL_ICONS=Object.freeze({
 const AWARD_LEGACY_COMBOS=Object.freeze({ghost_sniper:[0,2],shadow_scout:[0,1],silent_saboteur:[0,4],first_strike:[1,2],battle_schemer:[1,6],demolition_expert:[3,4],armored_assault:[3,5],unyielding_fighter:[3,7],lightning_demolition:[4,5],maneuver_ace:[5,6]});
 function awardIconSpec(entry,kind='title'){
  if(!entry)return null;
+ if(entry.id==='v3_mythic_complete'&&kind==='title')return{main:'bomb',secondary:'star',tier:'mythic'};
  if(kind==='medal'){const spec=AWARD_MEDAL_ICONS[entry.id]||AWARD_MEDAL_ICONS[entry.id.replace(/^v3_/,'v2_')]||AWARD_MEDAL_ICONS[entry.id.replace(/^v3_/,'')];return spec?{...spec,tier:'medal'}:null;}
  let m=entry.id.match(/^(v[23]_)?single_([0-7])_(normal|elite)$/);
  if(m){const symbols=m[1]==='v3_'?AWARD_AXIS_SYMBOLS:m[1]?AWARD_V2_SYMBOLS:AWARD_LEGACY_SYMBOLS;return{main:symbols[+m[2]],tier:m[3],legacy:!m[1]};}
@@ -96,5 +97,5 @@ function awardIcon(entry,kind='title'){
 }
 function renderAwardChip(entry,kind='title',fresh=false){
  if(!entry)return '';
- return '<span class="res-award-chip'+(fresh?' new':'')+(entry.type==='伝説級'?' legendary':'')+'">'+awardIcon(entry,kind)+'<span class="award-chip-label">'+(fresh?'<span class="award-new">NEW! </span>':'')+escapeAwardText(entry.name)+'</span></span>';
+ return '<span class="res-award-chip'+(fresh?' new':'')+(entry.type==='神話級'?' mythic':entry.type==='伝説級'?' legendary':'')+'">'+awardIcon(entry,kind)+'<span class="award-chip-label">'+(fresh?'<span class="award-new">NEW! </span>':'')+escapeAwardText(entry.name)+'</span></span>';
 }
