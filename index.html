@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.24.0613</title>
+<title>こっそり戦車大作戦 2026.10.24.0653</title>
 
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
@@ -900,7 +900,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.24.0613',FILE_CREATED_AT='2026/10/24 06:13',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.24.0653',FILE_CREATED_AT='2026/10/24 06:53',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -1870,6 +1870,7 @@ function unlockSkillOnClear(s){
 }
 function skillSelectable(id){return (skillDebugAll||areaDebugEnabled||readSkillProgress().unlocked.includes(id))&&SK.some(k=>k.id===id);}
 function skillMenuLayout(){return skillDebugAll?{sy0:88,ch:56,h:52,debugY:602,debugH:34}:{sy0:126,ch:116,h:102,debugY:494,debugH:40};}
+const STAGE_PREPARATION_MIN_MS=2000;
 let gameBuildQueued=false,gameBuildGeneration=0;
 function selectSkillIndex(i,deploy=false){
  const list=skillMenuList();if(i<0||i>=list.length||gameBuildQueued)return false;
@@ -1877,13 +1878,27 @@ function selectSkillIndex(i,deploy=false){
  state='preparing';bombReq=false;cannonReq=false;interact=false;skillReq=false;mdown=false;gameBuildQueued=true;sfx('skill');
  // 先に「準備中」を1フレーム描画してから重いステージ生成を行う。
  // その間にタイトルへ戻った場合は世代番号で予約済み生成を無効化する。
- requestAnimationFrame(()=>requestAnimationFrame(()=>{
-  if(buildGen!==gameBuildGeneration||state!=='preparing'){gameBuildQueued=false;return;}
-  reset(false);skill=selected;
-  if(areaDebugEnabled&&hound)resetHoundPosition();
-  if(buildGen!==gameBuildGeneration){gameBuildQueued=false;return;}
-  state=areaDebugEnabled?'play':(stageMode==='base'||stageMode==='beginner'||stageMode==='front'||stageMode==='indoor')?'briefing':'play';briefingFrameDrawn=false;gameBuildQueued=false;
- }));
+ requestAnimationFrame(()=>{
+  syncStageScreen();
+  requestAnimationFrame(()=>{
+   const loadingShownAt=performance.now();
+   if(buildGen!==gameBuildGeneration)return;
+   if(state!=='preparing'){gameBuildQueued=false;return;}
+   reset(false);skill=selected;
+   if(areaDebugEnabled&&hound)resetHoundPosition();
+   if(buildGen!==gameBuildGeneration)return;
+   // reset() sets play; keep simulation paused until the loading screen has been visible for 2 seconds.
+   state='preparing';
+   const finishPreparation=()=>{
+    if(buildGen!==gameBuildGeneration)return;
+    if(state!=='preparing'){gameBuildQueued=false;return;}
+    const remaining=STAGE_PREPARATION_MIN_MS-(performance.now()-loadingShownAt);
+    if(remaining>0){setTimeout(finishPreparation,remaining);return;}
+    state=areaDebugEnabled?'play':(stageMode==='base'||stageMode==='beginner'||stageMode==='front'||stageMode==='indoor')?'briefing':'play';briefingFrameDrawn=false;gameBuildQueued=false;
+   };
+   finishPreparation();
+  });
+ });
  return true;
 }
 function chooseSkillByNumber(n){return selectSkillIndex(n-1);}
@@ -8158,9 +8173,9 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/stage-progress.js?v=2026.10.24.0613"></script>
+<script src="js/stage-progress.js?v=2026.10.24.0653"></script>
 <script src="js/frontline.js?v=2026.10.23.0853"></script>
-<script src="js/award-icons.js?v=2026.10.24.0613"></script>
+<script src="js/award-icons.js?v=2026.10.24.0653"></script>
 <script src="js/enemy-bomber.js?v=2026.10.23.1833"></script>
 <script src="js/characters.js?v=2026.10.19.1032"></script>
 <script src="js/enemy-dogs.js?v=2026.10.22.0945"></script>
