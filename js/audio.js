@@ -139,7 +139,7 @@ function updateGameAudio(){
  setGameSeLoop('vehicle',groundVehicle&&moving?(vehicle.kind==='tank'&&vehicle.t?.id!=='armored'?'tankMove':'wheelMove'):null,.11,Math.min(1.3,Math.max(.8,speed/160)));
  setGameSeLoop('drillContact',p.drill>0&&p.drillContact?'drillContact':null,.15);
  setGameSeLoop('flame',p.flameActive?'flameLoop':null,.13);
- setGameSeLoop('rain',typeof weather!=='undefined'&&weather==='rain'&&stageMode!=='indoor'?'rainLoop':null,.10*(typeof rainIntensity==='number'?rainIntensity:1));
+ setGameSeLoop('rain',typeof weather!=='undefined'&&weather==='rain'&&stageMode!=='indoor'?'rainLoop':null,.20*(typeof rainIntensity==='number'?rainIntensity:1));
  setGameSeLoop('alarm',typeof indoorWorld!=='undefined'&&stageMode==='indoor'&&indoorWorld?.alarm?.active?'indoorAlarm':null,.09);
  const plane=typeof airstrike!=='undefined'&&airstrike?airstrike:typeof mission!=='undefined'&&mission?.enemyAirRaid?.phase==='flight'?mission.enemyAirRaid.plane:null;
  setGameSeLoop('aircraft',plane?'aircraft':null,.14*gameSeDistance(plane));
