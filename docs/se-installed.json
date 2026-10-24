@@ -1,5 +1,5 @@
 {
-  "source": "こっそり戦車大作戦_ゲーム_SE.xlsx B列の緑",
+  "source": "こっそり戦車大作戦_ゲーム_SE.xlsx B列の緑 + 共通スキル発動音 se_skills.mp3",
   "ids": [
     1,
     2,
@@ -90,19 +90,9 @@
     "assets/audio/se/se_048_aircraft_flyby.mp3",
     "assets/audio/se/se_050_air_bomb_explosion.mp3",
     "assets/audio/se/se_051_air_raid_warning.mp3",
-    "assets/audio/se/se_052_bomb_throw.mp3",
-    "assets/audio/se/se_054_hide_underground.mp3",
-    "assets/audio/se/se_057_decoy_place.mp3",
     "assets/audio/se/se_058_decoy_signal.mp3",
-    "assets/audio/se/se_059_reinforcement_arrival.mp3",
-    "assets/audio/se/se_061_drill_start.mp3",
-    "assets/audio/se/se_064_wall_build.mp3",
-    "assets/audio/se/se_065_flamethrower_start.mp3",
     "assets/audio/se/se_066_flamethrower_loop.mp3",
-    "assets/audio/se/se_068_sniper_deploy.mp3",
-    "assets/audio/se/se_070_hound_command.mp3",
     "assets/audio/se/se_072_dog_bark.mp3",
-    "assets/audio/se/se_073_partner_command.mp3",
     "assets/audio/se/se_074_enemy_suspicious.mp3",
     "assets/audio/se/se_075_enemy_detected.mp3",
     "assets/audio/se/se_077_commander_whistle.mp3",
@@ -114,6 +104,22 @@
     "assets/audio/se/se_089_capture_complete.mp3",
     "assets/audio/se/se_091_counterattack_warning.mp3",
     "assets/audio/se/se_093_rain_loop.mp3",
-    "assets/audio/se/se_096_fire_loop.mp3"
-  ]
+    "assets/audio/se/se_096_fire_loop.mp3",
+    "assets/audio/se/se_skills.mp3"
+  ],
+  "skillActivation": {
+    "file": "assets/audio/se/se_skills.mp3",
+    "aliases": [
+      "bombThrow",
+      "hide",
+      "decoyPlace",
+      "reinforcement",
+      "drillStart",
+      "build",
+      "flameStart",
+      "sniperDeploy",
+      "houndCommand",
+      "partnerCommand"
+    ]
+  }
 }
