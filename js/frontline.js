@@ -505,7 +505,7 @@ function updateFrontlineCounterattack(point,dt){
  if(!point||point.done)return;
  if(!point.counterTriggered&&D(p,point)<frontlineCaptureRadius(point)){
   point.counterTriggered=true;point.counterPending=(isFrontlineBeginner()?4:6)*frontlineEnemyMultiplier();point.counterBluePending=(isFrontlineBeginner()?1:2)*frontlineEnemyMultiplier();point.counterRetry=0;
-  mission.waveT=Math.max(mission.waveT||0,6);say('敵の反撃部隊が接近！');
+  mission.waveT=Math.max(mission.waveT||0,6);sfx('counterattack');say('敵の反撃部隊が接近！');
  }
  if(!(point.counterPending>0))return;
  point.counterRetry=(point.counterRetry||0)-dt;

@@ -1750,7 +1750,7 @@ function indoorAlarmLevel(alarm=indoorWorld?.alarm){
 function indoorRefreshAlarm(reason){
  const alarm=indoorWorld?.alarm;
  if(!alarm||alarm.active)return;
- if(reason)say(reason);
+ if(reason){if(typeof sfx==='function')sfx('indoorTick');say(reason);}
  if(indoorAlarmLevel(alarm)<3)return;
  alarm.active=true;alarm.elapsed=0;
  for(const floor of indoorWorld.floors)for(const other of floor.guards||[]){
@@ -2191,6 +2191,7 @@ function indoorUpdateGuardNotice(h,dt){
  }
  // A weak glimpse can pass unnoticed. React only after enough evidence builds.
  if(n.exposure>.11){
+  if(!(h.sus>0)&&typeof sfx==='function')sfx('suspicion',h);
   h.sus=n.exposure-.11;h.susMax=.89;
   if(n.spot){const angle=Math.atan2(n.spot.y-h.y,n.spot.x-h.x);h.face+=Math.max(-dt*2,Math.min(dt*2,angD(angle,h.face)));}
   return true;
@@ -2495,7 +2496,10 @@ function updateInfiltrationDoors(dt){
         const half=INDOOR_DOOR_WIDTH/2*(door.vertical?INDOOR_SCALE_Y:INDOOR_SCALE_X);
         if(perpendicular<=contact&&along<=half+12){near=true;break;}
       }
-      door.open=Math.max(0,Math.min(1,door.open+(near?1:-1)*INDOOR_DOOR_SPEED*dt));
+      const opening=near?1:-1,wasOpen=door.open;
+      door.open=Math.max(0,Math.min(1,door.open+opening*INDOOR_DOOR_SPEED*dt));
+      if(door.open!==wasOpen&&door.seMotion!==opening&&floor.number===indoorWorld.currentFloor+1&&typeof sfx==='function')sfx('door',{x:door.x,y:door.y});
+      door.seMotion=door.open===0||door.open===1?0:opening;
       // 開扉中は当たり判定・視線遮蔽ともに解除。閉扉時は再び遮る。
       door.cover.noHit=near||door.open>.65;
     }
@@ -2554,7 +2558,7 @@ function updateInfiltrationMission(dt){
     if(detected||w.alarm?.active)q.scoreExposed=true;
     q.progress=Math.min(INDOOR_ACQUIRE_SECONDS,(q.progress||0)+dt*workers);
     if(q.progress>=INDOOR_ACQUIRE_SECONDS){
-      q.done=true;q.collectedT=.9;m.index++;sfx('pickup');
+      q.done=true;q.collectedT=.9;m.index++;sfx(m.index===m.points.length?'allDocuments':'document');
       if(typeof scoreStats!=='undefined'&&scoreStats&&!scoreStats.finalized){
        scoreStats.documents=(scoreStats.documents||0)+1;scoreStats.documentTotal=m.points.length;
        scoreStats.hiddenDocuments=(scoreStats.hiddenDocuments||0)+Number(!q.scoreExposed);

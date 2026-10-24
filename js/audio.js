@@ -1,0 +1,132 @@
+// Uploaded MP3 effects. One shared AudioContext, bounded decoding/cache/voices, no audio elements per shot.
+const GAME_SE_FILES=Object.freeze({
+ uiSelect:'se_001_ui_select',uiConfirm:'se_002_ui_confirm',unavailable:'se_005_ui_unavailable',win:'se_006_mission_success',lose:'se_007_mission_failure',results:'se_009_results_reveal',grassStep:'se_014_footstep_grass',splash:'se_017_water_splash',playerHit:'se_018_player_hit',deathHit:'se_019_player_down',mg:'se_023_machine_gun_fire',enemyGun:'se_024_enemy_rifle_fire',cannon:'se_025_tank_cannon_fire',enemyCannon:'se_026_enemy_cannon_fire',bazooka:'se_027_commander_bazooka_fire',sniper:'se_028_sniper_fire',soldierHit:'se_029_bullet_hit_soldier',vehicleHit:'se_030_bullet_hit_armor',empty:'se_032_weapon_empty',bombPlace:'se_033_bomb_place',bombExplosion:'se_035_bomb_explosion',shellExplosion:'se_036_shell_explosion',propExplosion:'se_037_prop_explosion',vehicleDestroyed:'se_038_vehicle_destroyed',coverBreak:'se_040_cover_break',enter:'se_041_vehicle_board_exit',tankMove:'se_042_tank_movement_loop',wheelMove:'se_043_wheeled_vehicle_loop',aircraft:'se_048_aircraft_flyby',airExplosion:'se_050_air_bomb_explosion',airWarning:'se_051_air_raid_warning',bombThrow:'se_052_bomb_throw',hide:'se_054_hide_underground',decoyPlace:'se_057_decoy_place',decoy:'se_058_decoy_signal',reinforcement:'se_059_reinforcement_arrival',drillStart:'se_061_drill_start',build:'se_064_wall_build',flameStart:'se_065_flamethrower_start',flameLoop:'se_066_flamethrower_loop',sniperDeploy:'se_068_sniper_deploy',houndCommand:'se_070_hound_command',dogBark:'se_072_dog_bark',partnerCommand:'se_073_partner_command',suspicion:'se_074_enemy_suspicious',detected:'se_075_enemy_detected',whistle:'se_077_commander_whistle',indoorTick:'se_079_indoor_alert_tick',indoorAlarm:'se_080_indoor_alarm_loop',door:'se_081_automatic_door',document:'se_084_document_collected',allDocuments:'se_085_all_documents_collected',capture:'se_089_capture_complete',counterattack:'se_091_counterattack_warning',rainLoop:'se_093_rain_loop',fireLoop:'se_096_fire_loop'
+});
+const GAME_SE_ALIASES=Object.freeze({skill:'uiSelect',explosion:'shellExplosion',sniperHit:'soldierHit',drillBreak:'coverBreak',rain:'rainLoop'});
+const gameSe={cache:new Map(),pending:new Map(),failed:new Set(),queue:[],decoding:0,bytes:0,maxBytes:32*1024*1024,voices:new Set(),loops:new Map(),last:new Map(),epoch:0,scanAt:0,previous:null,grassAt:0,preloaded:false,loadedScene:null};
+function gameSeContext(){return typeof audioCtx!=='undefined'?audioCtx:null;}
+function gameSeReady(name){return gameSe.cache.has(gameSeName(name));}
+function gameSeName(name){return GAME_SE_ALIASES[name]||name;}
+function gameSeVisible(){return gameSe.focused!==false&&(typeof document==='undefined'||document.visibilityState!=='hidden');}
+function gameSeMaster(context){
+ if(gameSe.master&&gameSe.master.context===context)return gameSe.master;
+ const gain=context.createGain(),limiter=context.createDynamicsCompressor();gain.gain.value=.65;
+ limiter.threshold.value=-8;limiter.knee.value=8;limiter.ratio.value=8;limiter.attack.value=.003;limiter.release.value=.12;
+ gain.connect(limiter);limiter.connect(context.destination);gameSe.master=gain;return gain;
+}
+function gameSeTrim(){
+ if(gameSe.bytes<=gameSe.maxBytes)return;
+ for(const [name,entry] of gameSe.cache){
+  if([...gameSe.voices].some(v=>v.name===name))continue;
+  gameSe.cache.delete(name);gameSe.bytes-=entry.bytes;
+  if(gameSe.bytes<=gameSe.maxBytes)break;
+ }
+}
+function loadGameSe(name,urgent=false){
+ name=gameSeName(name);const cached=gameSe.cache.get(name);
+ if(cached){gameSe.cache.delete(name);gameSe.cache.set(name,cached);return Promise.resolve(cached.buffer);}
+ if(!GAME_SE_FILES[name]||gameSe.failed.has(name))return Promise.resolve(null);
+ if(gameSe.pending.has(name)){
+  if(urgent){const at=gameSe.queue.findIndex(q=>q.name===name);if(at>0)gameSe.queue.unshift(gameSe.queue.splice(at,1)[0]);}
+  return gameSe.pending.get(name);
+ }
+ let resolve;const promise=new Promise(r=>resolve=r);gameSe.pending.set(name,promise);
+ const job={name,resolve};urgent?gameSe.queue.unshift(job):gameSe.queue.push(job);pumpGameSeLoads();return promise;
+}
+function pumpGameSeLoads(){
+ const context=gameSeContext();if(!context)return;
+ while(gameSe.decoding<2&&gameSe.queue.length){
+  const job=gameSe.queue.shift();gameSe.decoding++;
+  (async()=>{
+   try{
+    const response=await fetch('assets/audio/se/'+GAME_SE_FILES[job.name]+'.mp3');if(!response.ok)throw Error('SE HTTP '+response.status);
+    const buffer=await context.decodeAudioData(await response.arrayBuffer());
+    const bytes=buffer.length*buffer.numberOfChannels*4;gameSe.cache.set(job.name,{buffer,bytes});gameSe.bytes+=bytes;gameSeTrim();job.resolve(buffer);
+   }catch(_){gameSe.failed.add(job.name);job.resolve(null);}
+   finally{gameSe.pending.delete(job.name);gameSe.decoding--;pumpGameSeLoads();}
+  })();
+ }
+}
+function gameSeDistance(position){
+ if(!position||!Number.isFinite(position.x)||!Number.isFinite(position.y)||typeof p==='undefined'||!p)return 1;
+ if(typeof indoorWorld!=='undefined'&&typeof stageMode!=='undefined'&&stageMode==='indoor'&&position.indoorFloor&&position.indoorFloor!==indoorWorld?.currentFloor+1)return 0;
+ const distance=Math.hypot(position.x-p.x,position.y-p.y);return distance>=1200?0:1/(1+(distance/330)**2);
+}
+function stopGameSeVoice(voice,fade=.025){
+ if(!gameSe.voices.has(voice))return;gameSe.voices.delete(voice);
+ try{const t=voice.source.context.currentTime;voice.gain.gain.cancelScheduledValues(t);voice.gain.gain.setTargetAtTime(0,t,.008);voice.source.stop(t+fade);}catch(_){}
+}
+function startGameSeVoice(name,buffer,volume,loop=false,rate=1){
+ const context=gameSeContext();if(!context||context.state!=='running'||!gameSeVisible()||volume<=0)return null;
+ const critical=['win','lose','detected','airWarning','indoorTick','capture','counterattack','results'].includes(name);
+ const same=[...gameSe.voices].filter(v=>v.name===name&&!v.loop);
+ const perSound=['mg','enemyGun','soldierHit','vehicleHit','shellExplosion','propExplosion','airExplosion'].includes(name)?2:1;
+ if(!loop&&same.length>=perSound)stopGameSeVoice(same[0]);
+ if(gameSe.voices.size>=16){const victim=[...gameSe.voices].find(v=>!v.loop&&!v.critical);if(victim)stopGameSeVoice(victim);else if(!critical)return null;else stopGameSeVoice(gameSe.voices.values().next().value);}
+ const source=context.createBufferSource(),gain=context.createGain();source.buffer=buffer;source.loop=loop;source.playbackRate.value=rate;gain.gain.value=volume;source.connect(gain);gain.connect(gameSeMaster(context));
+ const voice={name,source,gain,loop,critical};gameSe.voices.add(voice);
+ source.onended=()=>{gameSe.voices.delete(voice);try{source.disconnect();gain.disconnect();}catch(_){}gameSeTrim();};source.start();return voice;
+}
+function playGameSe(name,position=null){
+ if(name==='rain')return !gameSe.failed.has('rainLoop');
+ name=gameSeName(name);if(!GAME_SE_FILES[name]||gameSe.failed.has(name))return false;
+ if(!gameSeVisible())return true;
+ const context=gameSeContext();if(!context)return true;
+ const volume=gameSeDistance(position);if(volume<.025)return true;
+ const time=performance.now();const gap=({mg:55,enemyGun:90,soldierHit:65,vehicleHit:80,shellExplosion:100,propExplosion:100,airExplosion:100,suspicion:900,detected:1000,door:250,grassStep:340,empty:400,unavailable:450,indoorTick:200})[name]||65;
+ if(time-(gameSe.last.get(name)??-Infinity)<gap)return true;gameSe.last.set(name,time);
+ const volumes={mg:.22,enemyGun:.14,cannon:.45,enemyCannon:.34,sniper:.38,bazooka:.35,grassStep:.07,airExplosion:.23,shellExplosion:.28,propExplosion:.22,bombExplosion:.36,vehicleDestroyed:.32,win:.42,lose:.4,results:.3,door:.16,suspicion:.25,detected:.34};
+ const cached=gameSe.cache.get(name);
+ if(!cached){gameSe.last.delete(name);loadGameSe(name,true);return false;} // Use the existing synthesized effect until the MP3 is ready; never replay a late shot.
+ gameSe.cache.delete(name);gameSe.cache.set(name,cached);
+ startGameSeVoice(name,cached.buffer,volume*(volumes[name]??.25));
+ return true;
+}
+function setGameSeLoop(key,name,volume,rate=1){
+ const previous=gameSe.loops.get(key);
+ if(!name||volume<.01||!gameSeVisible()){
+  if(previous){gameSe.loops.delete(key);if(previous.voice)stopGameSeVoice(previous.voice);}return;
+ }
+ if(previous?.name===name){previous.volume=volume;previous.rate=rate;if(previous.voice){const t=previous.voice.source.context.currentTime;previous.voice.gain.gain.setTargetAtTime(volume,t,.06);previous.voice.source.playbackRate.setTargetAtTime(rate,t,.06);}return;}
+ if(previous){gameSe.loops.delete(key);if(previous.voice)stopGameSeVoice(previous.voice);}
+ const record={name,volume,rate,voice:null};gameSe.loops.set(key,record);
+ loadGameSe(name).then(buffer=>{if(!buffer||gameSe.loops.get(key)!==record||!gameSeVisible())return;try{record.voice=startGameSeVoice(name,buffer,record.volume,true,record.rate);}catch(_){}if(!record.voice)gameSe.loops.delete(key);});
+}
+function stopGameAudio(){
+ gameSe.epoch++;gameSe.loops.clear();for(const voice of [...gameSe.voices])stopGameSeVoice(voice);gameSe.previous=null;gameSe.last.clear();gameSe.loadedScene=null;
+}
+function preloadGameSe(){
+ if(!gameSeContext())return;
+ if(!gameSe.preloaded){gameSe.preloaded=true;for(const name of ['uiSelect','uiConfirm','unavailable'])loadGameSe(name);}
+ if(typeof state!=='undefined'&&state==='preparing'&&gameSe.loadedScene!==stageMode){
+  gameSe.loadedScene=stageMode;
+  const list=['win','lose','results','playerHit','deathHit','mg','enemyGun','cannon','enemyCannon','bazooka','sniper','soldierHit','vehicleHit','empty','bombPlace','bombExplosion','shellExplosion','propExplosion','vehicleDestroyed','coverBreak','enter','suspicion','detected','whistle'];
+  if(stageMode==='indoor')list.push('indoorTick','indoorAlarm','door','document','allDocuments');
+  if(stageMode==='front')list.push('airWarning','capture','counterattack','aircraft','airExplosion');
+  const skillSounds={throw:['bombThrow'],dig:['hide','splash'],decoy:['decoyPlace','decoy'],buddy:['reinforcement'],drill:['drillStart'],build:['build'],flame:['flameStart','flameLoop'],sniper:['sniperDeploy'],hound:['houndCommand','dogBark'],partner:['partnerCommand']};
+  list.push(...(skillSounds[typeof skill!=='undefined'?skill:'']||[]));for(const name of list)loadGameSe(name);
+ }
+ pumpGameSeLoads();
+}
+function updateGameAudio(){
+ if(!gameSeContext())return;
+ preloadGameSe();
+ const active=typeof state!=='undefined'&&state==='play'&&gameSeVisible();
+ if(!active){for(const key of [...gameSe.loops.keys()])setGameSeLoop(key,null,0);gameSe.previous=null;return;}
+ if(typeof p==='undefined'||!p)return;
+ const now=performance.now(),prior=gameSe.previous,moved=prior?Math.hypot(p.x-prior.x,p.y-prior.y):0,dt=prior?Math.max(.001,(now-prior.at)/1000):1;
+ gameSe.previous={x:p.x,y:p.y,at:now};
+ const speed=moved/dt,moving=dt<.3&&moved>.15&&speed<1200;
+ if(moving&&!p.tank&&!(p.dig>0)&&!(p.digPrep>0)&&now-gameSe.grassAt>350&&typeof inBush==='function'&&inBush(p)){gameSe.grassAt=now;playGameSe('grassStep');}
+ if(now<gameSe.scanAt)return;gameSe.scanAt=now+100;
+ const vehicle=p.tank,groundVehicle=vehicle&&vehicle.kind!=='fighter';
+ setGameSeLoop('vehicle',groundVehicle&&moving?(vehicle.kind==='tank'&&vehicle.t?.id!=='armored'?'tankMove':'wheelMove'):null,.11,Math.min(1.3,Math.max(.8,speed/160)));
+ setGameSeLoop('flame',p.flameActive?'flameLoop':null,.13);
+ setGameSeLoop('rain',typeof weather!=='undefined'&&weather==='rain'&&stageMode!=='indoor'?'rainLoop':null,.07*(typeof rainIntensity==='number'?rainIntensity:1));
+ setGameSeLoop('alarm',typeof indoorWorld!=='undefined'&&stageMode==='indoor'&&indoorWorld?.alarm?.active?'indoorAlarm':null,.09);
+ const plane=typeof airstrike!=='undefined'&&airstrike?airstrike:typeof mission!=='undefined'&&mission?.enemyAirRaid?.phase==='flight'?mission.enemyAirRaid.plane:null;
+ setGameSeLoop('aircraft',plane?'aircraft':null,.14*gameSeDistance(plane));
+ const hot=typeof burningAt==='function'&&burningAt(p.x,p.y,160);setGameSeLoop('fire',hot?'fireLoop':null,.06);
+}
+if(typeof document!=='undefined')document.addEventListener('visibilitychange',()=>{if(!gameSeVisible())stopGameAudio();});
+if(typeof addEventListener==='function'){addEventListener('blur',()=>{gameSe.focused=false;stopGameAudio();});addEventListener('focus',()=>{gameSe.focused=true;});}

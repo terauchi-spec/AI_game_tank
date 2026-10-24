@@ -22,7 +22,7 @@ function updateEnemyBomber(dt){
   const view=frontlineView();
   // Lock the world-space route when warning starts; camera movement never retargets it.
   raid.route={x:R()*WW,y:Math.max(ZONES[ZONES.length-2].y1+1,Math.min(ZONES[1].y0-1,view.y-180)),endY:view.y+view.h+180};
-  raid.phase='warning';raid.timer=5;sfx('radio');return;
+  raid.phase='warning';raid.timer=5;sfx('airWarning');return;
  }
  if(raid.phase==='cooldown'){
   raid.timer=Math.max(0,raid.timer-dt);if(raid.timer===0)raid.phase='idle';return;

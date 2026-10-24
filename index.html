@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.24.0745</title>
+<title>こっそり戦車大作戦 2026.10.24.1946</title>
 
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
@@ -882,6 +882,7 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 </div><footer class="sk-bottom stage-bottom"><button type="button" class="sk-toggle" id="stageDebugAll" aria-pressed="false">全ステージを表示</button><button type="button" class="sk-deploy" id="stageDeploy" disabled>ステージを選択してください</button></footer></div></div>
 <div id="missionHud" role="status"></div>
 
+<script src="js/audio.js?v=2026.10.24.1946"></script>
 <script>
 const MOBILE_VIEW=matchMedia('(pointer:coarse)').matches;
 // iPhoneの描画反映の途切れを切り分けるため、表示Canvasと静的キャッシュの作成設定を統一する。
@@ -892,14 +893,15 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.24.0745',FILE_CREATED_AT='2026/10/24 07:45',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.24.1946',FILE_CREATED_AT='2026/10/24 19:46',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
-function ensureAudio(){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(_){}}
+function ensureAudio(){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});}catch(_){}}
 function tone(f=440,d=.08,v=.035,type='square',f2=null){if(!audioCtx)return;const t=audioCtx.currentTime,o=audioCtx.createOscillator(),a=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t+d);a.gain.setValueAtTime(v,t);a.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(a);a.connect(audioCtx.destination);o.start(t);o.stop(t+d+.02);}
 function noise(d=.12,v=.025){if(!audioCtx)return;const sr=audioCtx.sampleRate,n=Math.max(1,Math.floor(sr*d)),buf=audioCtx.createBuffer(1,n,sr),ch=buf.getChannelData(0);for(let i=0;i<n;i++)ch[i]=(Math.random()*2-1)*(1-i/n);const src=audioCtx.createBufferSource(),a=audioCtx.createGain();src.buffer=buf;a.gain.value=v;src.connect(a);a.connect(audioCtx.destination);src.start();}
-function sfx(n){ensureAudio();if(!audioCtx)return;switch(n){case'cannon':tone(105,.14,.065,'sawtooth',45);noise(.18,.045);break;case'mg':tone(250,.045,.018,'square',150);break;case'explosion':tone(80,.22,.055,'sawtooth',32);noise(.28,.055);break;case'airExplosion':tone(80,.22,.033,'sawtooth',32);noise(.28,.033);break;case'pickup':tone(620,.08,.03,'sine',900);setTimeout(()=>tone(900,.09,.025,'sine',1200),65);break;case'skill':tone(420,.1,.025,'triangle',650);break;case'sniper':noise(.055,.070);tone(1180,.032,.045,'square',430);tone(185,.105,.050,'sawtooth',78);setTimeout(()=>{noise(.10,.018);tone(520,.055,.014,'triangle',260);},48);break;case'sniperHit':tone(920,.045,.018,'square',620);break;case'sniperLens':tone(760,.035,.020,'square',430);noise(.032,.008);setTimeout(()=>tone(390,.045,.018,'triangle',260),48);break;case'drill':tone(145,.07,.02,'sawtooth',110);break;case'drillBreak':noise(.2,.045);tone(120,.13,.04,'square',55);break;case'ally':tone(520,.08,.025,'triangle',720);setTimeout(()=>tone(720,.1,.025,'triangle',980),70);break;case'radio':tone(880,.05,.018,'square');setTimeout(()=>tone(660,.05,.018,'square'),80);setTimeout(()=>tone(980,.08,.02,'square'),160);break;case'enter':tone(280,.07,.022,'triangle',420);break;case'rain':noise(.35,.012);break;case'enemyCannon':tone(88,.11,.028,'sawtooth',50);noise(.11,.018);break;case'enemyGun':tone(190,.04,.009,'square',130);break;case'lose':tone(180,.18,.035,'sawtooth',75);setTimeout(()=>tone(120,.28,.025,'sawtooth',45),120);break;case'win':tone(440,.12,.03,'triangle',660);setTimeout(()=>tone(660,.16,.03,'triangle',990),120);break;case'crush':tone(120,.055,.022,'square',70);noise(.07,.022);break;case'vehicleHit':tone(210,.05,.018,'square',120);noise(.045,.012);break;case'decoy':tone(760,.06,.018,'square',1020);setTimeout(()=>tone(1020,.05,.014,'square',760),70);break;case'splash':noise(.09,.016);tone(190,.06,.012,'triangle',130);break;case'deathHit':tone(95,.18,.05,'sawtooth',42);noise(.22,.04);break;case'bombdrop':tone(330,.18,.018,'sine',120);setTimeout(()=>noise(.06,.01),100);break;}}
+function legacySfx(n){ensureAudio();if(!audioCtx)return;switch(n){case'cannon':tone(105,.14,.065,'sawtooth',45);noise(.18,.045);break;case'mg':tone(250,.045,.018,'square',150);break;case'explosion':tone(80,.22,.055,'sawtooth',32);noise(.28,.055);break;case'airExplosion':tone(80,.22,.033,'sawtooth',32);noise(.28,.033);break;case'pickup':tone(620,.08,.03,'sine',900);setTimeout(()=>tone(900,.09,.025,'sine',1200),65);break;case'skill':tone(420,.1,.025,'triangle',650);break;case'sniper':noise(.055,.070);tone(1180,.032,.045,'square',430);tone(185,.105,.050,'sawtooth',78);setTimeout(()=>{noise(.10,.018);tone(520,.055,.014,'triangle',260);},48);break;case'sniperHit':tone(920,.045,.018,'square',620);break;case'sniperLens':tone(760,.035,.020,'square',430);noise(.032,.008);setTimeout(()=>tone(390,.045,.018,'triangle',260),48);break;case'drill':tone(145,.07,.02,'sawtooth',110);break;case'drillBreak':noise(.2,.045);tone(120,.13,.04,'square',55);break;case'ally':tone(520,.08,.025,'triangle',720);setTimeout(()=>tone(720,.1,.025,'triangle',980),70);break;case'radio':tone(880,.05,.018,'square');setTimeout(()=>tone(660,.05,.018,'square'),80);setTimeout(()=>tone(980,.08,.02,'square'),160);break;case'enter':tone(280,.07,.022,'triangle',420);break;case'rain':noise(.35,.012);break;case'enemyCannon':tone(88,.11,.028,'sawtooth',50);noise(.11,.018);break;case'enemyGun':tone(190,.04,.009,'square',130);break;case'lose':tone(180,.18,.035,'sawtooth',75);setTimeout(()=>tone(120,.28,.025,'sawtooth',45),120);break;case'win':tone(440,.12,.03,'triangle',660);setTimeout(()=>tone(660,.16,.03,'triangle',990),120);break;case'crush':tone(120,.055,.022,'square',70);noise(.07,.022);break;case'vehicleHit':tone(210,.05,.018,'square',120);noise(.045,.012);break;case'decoy':tone(760,.06,.018,'square',1020);setTimeout(()=>tone(1020,.05,.014,'square',760),70);break;case'splash':noise(.09,.016);tone(190,.06,.012,'triangle',130);break;case'deathHit':tone(95,.18,.05,'sawtooth',42);noise(.22,.04);break;case'bombdrop':tone(330,.18,.018,'sine',120);setTimeout(()=>noise(.06,.01),100);break;}}
+function sfx(n,position=null){ensureAudio();const sample=n==='skill'?(typeof state!=='undefined'&&state==='play'?'legacySkill':'uiSelect'):n;try{if(typeof playGameSe==='function'&&playGameSe(sample,position))return;}catch(_){}legacySfx(({uiSelect:'skill',uiConfirm:'skill',unavailable:'skill',bombExplosion:'explosion',shellExplosion:'explosion',propExplosion:'explosion',vehicleDestroyed:'explosion',coverBreak:'drillBreak',playerHit:'vehicleHit',soldierHit:'sniperHit',bombPlace:'skill',bombThrow:'skill',hide:'skill',decoyPlace:'skill',reinforcement:'ally',drillStart:'skill',build:'skill',sniperDeploy:'skill',houndCommand:'skill',partnerCommand:'skill',airWarning:'radio',bazooka:'enemyCannon',document:'pickup',allDocuments:'pickup',capture:'pickup'})[n]||n);}
 addEventListener('pointerdown',ensureAudio,{passive:true});addEventListener('keydown',ensureAudio,{passive:true});
 const keys={};let mx=240,my=300,mdown=false,bombReq=false,cannonReq=false,interact=false;
 const normKeyCode=e=>{
@@ -1440,11 +1442,11 @@ function explodeObject(o,fxOn=true){
   if(o.enemyAirStrikeOrigin){enemyBomberBlast(cx,cy,28);return true;}
   // オブジェクト爆発はプレイヤー戦車の主砲が遮蔽物へ着弾した時と同じ処理を使う。
   // 見た目だけでなく、爆風による吹き飛ばし・敵への効果・遮蔽物破壊範囲まで統一する。
-  if(now-lastObjectExplosionSfx>80){lastObjectExplosionSfx=now;sfx('explosion');}
+  if(now-lastObjectExplosionSfx>80){lastObjectExplosionSfx=now;sfx('propExplosion',{x:cx,y:cy});}
   const fromRadio=radioStrikeKillContext>0||!!o.radioStrikeOrigin;
   if(fromRadio)radioStrikeKillContext++;
   try{
-   playerCannonGroundImpact(cx,cy,newCombatAction(fromRadio?'radioBomb':'objectBlast'),28,5);
+   playerCannonGroundImpact(cx,cy,newCombatAction(fromRadio?'radioBomb':'objectBlast'),28,5,false);
    // オブジェクト爆発は周囲100px以内の別オブジェクトを炎上させ、連鎖爆発のきっかけにする。
    damageObjectsInRadius(cx,cy,100,'objectBlast');
    carveMazeWalls(cx,cy,100);
@@ -1867,7 +1869,7 @@ let gameBuildQueued=false,gameBuildGeneration=0;
 function selectSkillIndex(i,deploy=false){
  const list=skillMenuList();if(i<0||i>=list.length||gameBuildQueued)return false;
  const selected=list[i].id;if(!skillSelectable(selected))return false;if(!deploy){selectedSkillId=selected;skill=selected;areaDebugEnabled=false;selectedAreaDebug=null;selectedStageId=null;state='stage';sfx('skill');return true;}if(!areaDebugEnabled&&!stageAvailableForSelection(currentStageId()))return false;const buildGen=++gameBuildGeneration;skill=selected;
- state='preparing';bombReq=false;cannonReq=false;interact=false;skillReq=false;mdown=false;gameBuildQueued=true;sfx('skill');
+ state='preparing';bombReq=false;cannonReq=false;interact=false;skillReq=false;mdown=false;gameBuildQueued=true;sfx('uiConfirm');
  // 先に「準備中」を1フレーム描画してから重いステージ生成を行う。
  // その間にタイトルへ戻った場合は世代番号で予約済み生成を無効化する。
  requestAnimationFrame(()=>{
@@ -1912,7 +1914,7 @@ function helpBackRect(){return{x:28,y:H-62,w:160,h:38};}
 function hitRect(px,py,r){return px>=r.x&&px<=r.x+r.w&&py>=r.y&&py<=r.y+r.h;}
 function handleTitlePointer(px,py){
  const r=titleButtonRects();
- if(hitRect(px,py,r.start)){rollSkillChoices();state='skill';sfx('skill');return true;}
+ if(hitRect(px,py,r.start)){rollSkillChoices();state='skill';sfx('uiConfirm');return true;}
  if(hitRect(px,py,r.help)){state='help';sfx('skill');return true;}
  return false;
 }
@@ -2867,6 +2869,7 @@ function distributeFlankPatrols(){
 }
 
 function reset(rerollSkills=true){
+ if(typeof stopGameAudio==='function')stopGameAudio();
  if(typeof clearInfiltrationRenderCache==='function')clearInfiltrationRenderCache();
  clearStaticRasterCache();clearFragmentRenderCache();clearMazeWallChunks();clearCanyonTiles();clearSpinifexScatters();
  radioStrikeKillContext=0;burningNatureSet.clear();lastEnemySeparationAt=-1e9;patrolChatScanT=0;allyTargetRefreshAt=0;
@@ -3530,6 +3533,7 @@ function trackEnemyDeaths(){
 function recordPlayerDamage(amount,vehicle=false){
  if(!scoreStats||scoreStats.finalized||!(amount>0))return;
  if(vehicle&&p.tank){const v=p.tank,remaining=v.kind==='truck'?1-(v.mgHits||0)/5:v.kind==='fighter'?v.hp/FIGHTER_TYPE.hp:1-(v.ch||0)/(v.t?.armor||3);amount=Math.min(amount,Math.max(0,remaining));if(!(amount>0))return;}
+ if(typeof sfx==='function')sfx(vehicle?'vehicleHit':'playerHit');
  scoreStats.damageHits++;const key=vehicle?'vehicleDamage':'playerDamage';
  scoreStats[key]=(scoreStats[key]||0)+amount;
  if(vehicle&&p.tank)p.tank.scoreDamageRecorded=(p.tank.scoreDamageRecorded||0)+amount;
@@ -3700,7 +3704,7 @@ function commanderWhistle(h,key){
  if(h.dogHandler||commanderRallying||h.commander!=='blue'||key!=='p'||(h.whistleCooldown||0)>0)return;
  h.whistleT=2.5;h.whistleCooldown=8;h.whistleSignalT=1;
  commanderSignals.push({source:h,x:h.x,y:h.y,remaining:1,visualRemaining:2.5,notified:false});
- tone(1450,.16,.035,'sine',1850);setTimeout(()=>tone(1800,.16,.03,'sine',1450),170);
+ sfx('whistle',h);
 }
 function updateCommanderSignals(dt){
  for(const signal of commanderSignals){
@@ -3808,7 +3812,7 @@ function updateCommanderAI(h,dt){
   h.modeFrozen=true;h.walking=false;h.face=h.commanderAim;h.commanderCharge=Math.max(0,h.commanderCharge-dt);
   if(h.commanderCharge<=0){
    const angle=h.commanderAim,blue=h.commander==='blue';
-   h.characterShotAt=performance.now();fire(h.x+Math.cos(angle)*22,h.y+Math.sin(angle)*22,angle,'e',blue?'c':'r',blue?enemyCannonSpeed():520,blue?COMMANDER_BLUE_RANGE:COMMANDER_WHITE_RANGE);
+   h.characterShotAt=performance.now();fire(h.x+Math.cos(angle)*22,h.y+Math.sin(angle)*22,angle,'e',blue?'c':'r',blue?enemyCannonSpeed():520,blue?COMMANDER_BLUE_RANGE:COMMANDER_WHITE_RANGE,undefined,blue?'bazooka':null);
    const bullet=bullets[bullets.length-1];bullet.commanderRocket=blue;bullet.commanderRifle=!blue;bullet.commanderShooter=h;
    h.commanderCooldown=blue?4:3.2;h.commanderShotT=blue?0:.06;h.commanderAim=null;
    if(blue){h.commanderRelocateT=1.2;h.commanderRoute=null;
@@ -3919,6 +3923,7 @@ function enterHumanFound(h,key,pause=null,ignoreStealth=false){
  const fresh=!h.st,tg=targetObj(key);h.sus=0;h.susPause=0;h.st=1;h.target=key;h.lost=humanMemory(h);
  if(tg)h.face=Math.atan2(tg.y-h.y,tg.x-h.x);
  if(fresh){
+  if(key==='p'&&typeof sfx==='function')sfx('detected',h);
   h.foundPause=Math.max(h.foundPause||0,foundModePause());
   commanderWhistle(h,key);
   enemyModePaused(h);
@@ -3947,6 +3952,7 @@ function enterTankFound(e,key,pause=null){
  recordDecoyLure(e,key);
  const fresh=!e.st;e.sus=0;e.susPhase=0;e.susHold=0;e.st=1;e.target=key;e.lost=DETECT_MEMORY;
  if(fresh){
+  if(key==='p'&&typeof sfx==='function')sfx('detected',e);
   const react=foundModePause();e.foundPause=Math.max(e.foundPause||0,react);e.firePause=Math.max(e.firePause||0,react);enemyModePaused(e);activateStaticTank(e);
   if(key==='p'&&scoreStats&&!scoreStats.finalized)scoreStats.foundEntries++;
  }
@@ -3971,6 +3977,7 @@ function updateEnemyTankWeapons(e,tg,d,toT,vis,canFire,dt){
 function setTankSuspicion(e,x,y,dur=3.5){
  if(!e||!e.alive||e.st||e.areaDebugStatic||debugMode>=2)return false;
  const fresh=!(e.sus>0),direction=Math.atan2(y-e.y,x-e.x);
+ if(fresh&&typeof sfx==='function')sfx('suspicion',e);
  e.sus=Math.max(e.sus||0,dur);e.susMax=Math.max(e.susMax||0,dur);
  if(fresh||Math.abs(angD(direction,e.susAngle??direction))>.40){
   e.susAngle=direction;e.susPhase=0;e.susHold=.45+R()*.35;e.susSweepDir=R()<.5?-1:1;
@@ -3992,6 +3999,7 @@ function setSuspicion(h,dur=2,sourceX=null,sourceY=null){
  if(h&&h.chatT>0)cancelPatrolChat(h);
  if(!h||!h.alive||h.stun>0||h.st)return;
  const freshSuspicion=!(h.sus>0);
+ if(freshSuspicion&&typeof sfx==='function')sfx('suspicion',h);
  const total=h.elite?dur+2:dur;h.sus=total;h.susMax=total;h.susPause=.5+R()*.5;h.susApproach=h.elite?2:0;h.susDir=R()<.5?1:-1;h.susOrbit=R()*Math.PI*2;h.susCx=h.x;h.susCy=h.y;h.susRadius=14+R()*8;
   // White commanders investigate the event location, not the player's live position.
   if(h.commander==='white'){
@@ -4239,7 +4247,7 @@ function damageBridgeByBomb(x,y,r=42){
  if(damaged){bridges=next;shake=Math.max(shake,10);}
  return damaged;
 }
-function bombBlast(x,y,actionId=0,selfHit=false){scatterSpinifexAt(x,y,95);if(scoreStats&&!scoreStats.finalized)scoreStats.bombBlasts++;if(!actionId)actionId=newCombatAction('bomb');sfx('explosion');stunHoundAtBlast(x,y,95);stunPartnerByOwnBlast(x,y);suspectHumansNear(x,y,500,true);/* 設置爆弾の爆風で相棒は気絶（HPは減らない）。 */if(p&&!p.tank&&!(p.dig>0))beginBlastFlight(p,x,y,95,58,8,0);for(const a of (allies||[]))if(a.alive&&!(a.chute>0))beginBlastFlight(a,x,y,95,42,8,0);damageBridgeByBomb(x,y,42);/* 外側の爆風は炎上、近距離の爆芯は即爆発。 */damageObjectsInRadius(x,y,95,'bombBlast');damageObjectsInRadius(x,y,28,'bombDirect');carve(x,y,28,true,null);fb(x,y,52);burst(x,y,70,'#ff8a3a',420);burst(x,y,25,'#fff3b0',520);shake=18;flash=.7;waves.push({x,y,r:0,max:95,hit:!!selfHit,actionId});return actionId;}
+function bombBlast(x,y,actionId=0,selfHit=false){scatterSpinifexAt(x,y,95);if(scoreStats&&!scoreStats.finalized)scoreStats.bombBlasts++;if(!actionId)actionId=newCombatAction('bomb');sfx('bombExplosion',{x,y});stunHoundAtBlast(x,y,95);stunPartnerByOwnBlast(x,y);suspectHumansNear(x,y,500,true);/* 設置爆弾の爆風で相棒は気絶（HPは減らない）。 */if(p&&!p.tank&&!(p.dig>0))beginBlastFlight(p,x,y,95,58,8,0);for(const a of (allies||[]))if(a.alive&&!(a.chute>0))beginBlastFlight(a,x,y,95,42,8,0);damageBridgeByBomb(x,y,42);/* 外側の爆風は炎上、近距離の爆芯は即爆発。 */damageObjectsInRadius(x,y,95,'bombBlast');damageObjectsInRadius(x,y,28,'bombDirect');carve(x,y,28,true,null);fb(x,y,52);burst(x,y,70,'#ff8a3a',420);burst(x,y,25,'#fff3b0',520);shake=18;flash=.7;waves.push({x,y,r:0,max:95,hit:!!selfHit,actionId});return actionId;}
 function tankWreckId(t){return (t&&t.id)||'enemy';}
 function spawnTankWreck(x,y,body,ang,tank,impactX=null,impactY=null){
  if(!tankWrecks)tankWrecks=[];
@@ -4263,7 +4271,7 @@ function spawnVehicleWreck(v,x,y,body,ang,impactX=null,impactY=null){
 }
 function destroyEnemyTank(e,impactX=null,impactY=null){
  if(!e||!e.alive)return false;
- e.alive=false;e.wreckSpawned=true;
+ e.alive=false;e.wreckSpawned=true;if(typeof sfx==='function')sfx('vehicleDestroyed',e);
  spawnTankWreck(e.x,e.y,e.body,e.ang,{id:'enemy'},impactX,impactY);
  return true;
 }
@@ -4349,7 +4357,7 @@ function wreck(){
   shake=Math.max(shake,4);flash=Math.max(flash,.14);return;
  }
  if(p.tank)recordPlayerDamage(Math.max(0,1-(p.tank.scoreDamageRecorded||0)),true);
- const veh=p.tank,kind=veh&&veh.kind,wasTruck=kind==='truck',wasFighter=kind==='fighter';if(kind==='tank'||wasTruck)spawnVehicleWreck(veh,p.x,p.y,p.body,p.ang);sfx('explosion');fb(p.x,p.y,50);burst(p.x,p.y,50,wasTruck?'#d48a52':wasFighter?'#9fc8e8':'#ff7b3a',330);releasePartnerSharedWreck(veh);p.partnerDriver=false;p.tank=null;p.hp=3;p.cc=0;p.vc=0;shake=16;flash=.5;say(veh&&veh.t.id==='armored'?'装甲車大破! 歩兵として脱出':wasTruck?'トラック大破! 歩兵として脱出':wasFighter?'戦闘機撃墜! 歩兵として脱出':'戦車大破!歩兵として脱出');
+ const veh=p.tank,kind=veh&&veh.kind,wasTruck=kind==='truck',wasFighter=kind==='fighter';if(kind==='tank'||wasTruck)spawnVehicleWreck(veh,p.x,p.y,p.body,p.ang);sfx('vehicleDestroyed');fb(p.x,p.y,50);burst(p.x,p.y,50,wasTruck?'#d48a52':wasFighter?'#9fc8e8':'#ff7b3a',330);releasePartnerSharedWreck(veh);p.partnerDriver=false;p.tank=null;p.hp=3;p.cc=0;p.vc=0;shake=16;flash=.5;say(veh&&veh.t.id==='armored'?'装甲車大破! 歩兵として脱出':wasTruck?'トラック大破! 歩兵として脱出':wasFighter?'戦闘機撃墜! 歩兵として脱出':'戦車大破!歩兵として脱出');
 }
 function truckTankCrashFx(x,y,e,actionId=0){
  if(e&&e.alive){destroyEnemyTank(e,x,y);if(actionId)recordPlayerKill(actionId,'',e);burst(e.x,e.y,46,'#ff6a2a',380);}
@@ -4414,15 +4422,15 @@ function cannonBlastPush(x,y,from,allyStun=from==='e'?5:0){
  // 敵戦車砲を含め、歩兵状態のプレイヤーも爆風で吹き飛ぶ。
  if(p&&!p.tank&&!(p.dig>0))beginBlastFlight(p,x,y,rad,baseForce,8,0);
 }
-function fire(x,y,a,from,k,spd,rng,dmg){if(from==='p'&&scoreStats&&!scoreStats.finalized){scoreStats.shots++;if(k==='s')scoreStats.sniperShots++;else if(k==='c')scoreStats.cannonShots++;else scoreStats.mgShots++;}if(from==='p')sfx(k==='c'?'cannon':k==='s'?'sniper':'mg');else if(from==='ally')sfx(k==='c'?'cannon':'mg');else if(from==='e')sfx(k==='c'?'enemyCannon':'enemyGun');const actionId=(from==='p'&&(k==='c'||k==='s'))?newCombatAction(k==='s'?'sniper':'cannon'):0;if(from==='p'&&k==='c')suspectTanksNear(x,y,520);bullets.push({x,y,sx:x,sy:y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,from,k,dmg:dmg||0,life:rng/spd,actionId});}
+function fire(x,y,a,from,k,spd,rng,dmg,soundKey=null){if(from==='p'&&scoreStats&&!scoreStats.finalized){scoreStats.shots++;if(k==='s')scoreStats.sniperShots++;else if(k==='c')scoreStats.cannonShots++;else scoreStats.mgShots++;}if(from==='p')sfx(soundKey||(k==='c'?'cannon':k==='s'?'sniper':'mg'),{x,y});else if(from==='ally')sfx(soundKey||(k==='c'?'cannon':'mg'),{x,y});else if(from==='e')sfx(soundKey||(k==='c'?'enemyCannon':'enemyGun'),{x,y});const actionId=(from==='p'&&(k==='c'||k==='s'))?newCombatAction(k==='s'?'sniper':'cannon'):0;if(from==='p'&&k==='c')suspectTanksNear(x,y,520);bullets.push({x,y,sx:x,sy:y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,from,k,dmg:dmg||0,life:rng/spd,actionId});}
 function enemyCannonSpeed(){return p&&p.tank&&p.tank.kind==='tank'?(p.tank.t.cspd||630):630;}
 function cannonImpactFx(x,y){fb(x,y,125);burst(x,y,165,'#ff7a28',560);burst(x,y,78,'#fff2a6',720);burst(x,y,30,'#ffffff',820);shake=Math.max(shake,18);flash=Math.max(flash,.62);}
-function cannonImpact(x,y,from,allyStun=from==='e'?5:0){cannonImpactFx(x,y);scatterSpinifexAt(x,y,95);cannonBlastPush(x,y,from,allyStun);stunHoundAtBlast(x,y,95);damageObjectsInRadius(x,y,60,'cannonBlast');if(from==='p')suspectHumansNear(x,y,500,true);else suspectTanksNear(x,y,450);}
-function playerCannonGroundImpact(x,y,actionId=0,humanKillRadius=28,allyStun=0){
+function cannonImpact(x,y,from,allyStun=from==='e'?5:0,sound=true){if(sound)sfx('shellExplosion',{x,y});cannonImpactFx(x,y);scatterSpinifexAt(x,y,95);cannonBlastPush(x,y,from,allyStun);stunHoundAtBlast(x,y,95);damageObjectsInRadius(x,y,60,'cannonBlast');if(from==='p')suspectHumansNear(x,y,500,true);else suspectTanksNear(x,y,450);}
+function playerCannonGroundImpact(x,y,actionId=0,humanKillRadius=28,allyStun=0,sound=true){
  // プレイヤー戦車の主砲が地形・遮蔽物へ着弾した時の標準処理。
  // 壁への直撃だけ敵歩兵の撃破範囲を設置爆弾相当(95px)へ拡張する。
  // オブジェクトの連鎖爆発などは従来の範囲(28px)を維持する。
- cannonImpact(x,y,'p',allyStun);
+ cannonImpact(x,y,'p',allyStun,sound);
  explode(x,y,28,false,'p',actionId,humanKillRadius);
  carve(x,y,60,true,'cannonBlast');
  burst(x,y,22,'#a89a74',260);
@@ -4435,7 +4443,7 @@ function finishDig(msg,withBurst=true){
  if(withBurst)digSoilBurst(p.x,p.y,1.12);
  sfx('skill');if(msg)say(msg);return true;
 }
-function explode(x,y,rad,big,source='',actionId=0,humanKillRadius=rad){scatterSpinifexAt(x,y,rad);if(big)sfx(source==='air'?'airExplosion':'explosion');fb(x,y,big?46:22);
+function explode(x,y,rad,big,source='',actionId=0,humanKillRadius=rad){scatterSpinifexAt(x,y,rad);if(big)sfx(source==='air'?'airExplosion':'shellExplosion',{x,y});fb(x,y,big?46:22);
  if(stageMode==='indoor')indoorDamageWindows(x,y,rad);
  burst(x,y,big?60:20,'#ff8a3a',big?400:200);burst(x,y,big?25:6,'#fff3b0',big?500:200);if(big){shake=18;flash=.7;}
  for(const h of humans)if(h.alive&&Math.hypot(h.x-x,h.y-y)<humanKillRadius){h.alive=false;if(source==='ally')recordSupportResult('kill','ally',h);else if(actionId)recordPlayerKill(actionId,'',h);burst(h.x,h.y,10,'#c05a3a',160);}
@@ -4448,7 +4456,7 @@ function explode(x,y,rad,big,source='',actionId=0,humanKillRadius=rad){scatterSp
 function summonAlly(){
  const active=(allies||[]).filter(a=>a.alive&&!a.frontline).length;if(active>=5){say('増援は最大5人まで');return;}
  const used=new Set((allies||[]).filter(a=>a.alive&&!a.frontline).map(a=>a.slot)),slot=[0,1,2,3,4].find(n=>!used.has(n))??0,rank=slot-2,ax=Math.max(40,Math.min(WW-40,p.x+rank*38+(R()-.5)*34)),landY=Math.max(45,Math.min(WH-45,p.y-48-Math.abs(rank)*14));
- const startY=Math.max(45,landY-320);allies.push({id:++allySeq,x:ax,y:startY,startY,landY,alive:true,chute:3,chuteTotal:3,shotCd:.2,burstLeft:3,face:p.body,slot,speedScale:stageMode==='front'?.5+R()*.5:1});assignFrontlineAllyRole(allies[allies.length-1],true);setSkillCooldown(6);sfx('ally');say('増援を要請! '+(active+1)+'/5');
+ const startY=Math.max(45,landY-320);allies.push({id:++allySeq,x:ax,y:startY,startY,landY,alive:true,chute:3,chuteTotal:3,shotCd:.2,burstLeft:3,face:p.body,slot,speedScale:stageMode==='front'?.5+R()*.5:1});assignFrontlineAllyRole(allies[allies.length-1],true);setSkillCooldown(6);sfx('reinforcement');say('増援を要請! '+(active+1)+'/5');
 }
 let partner=null;
 // Companion behavior is in js/partner.js; shared partner state remains here.
@@ -4595,7 +4603,7 @@ function houndRespawnIfLost(){
 }
 function beginHoundAttack(){
  if(!hound){spawnHound();}if(hound.stun>0){say('猟犬は気絶中');return false;}if(hound.state!=='follow'){say('猟犬は行動中');return false;}
- hound.state='dashOut';hound.face=p.body;hound.attackA=p.body;hound.dashDist=0;hound.target=null;hound.blocked=0;hound.coverContact=0;setSkillCooldown(3);sfx('skill');say('猟犬、突撃!');return true;
+ hound.state='dashOut';hound.face=p.body;hound.attackA=p.body;hound.dashDist=0;hound.target=null;hound.blocked=0;hound.coverContact=0;setSkillCooldown(3);sfx('houndCommand');say('猟犬、突撃!');return true;
 }
 function houndNearestHuman(maxDist=Infinity){let best=null,bd=maxDist;for(const h of humans||[]){if(!h.alive||h.stun>0||h.houndPinned)continue;const d=Math.hypot(h.x-hound.x,h.y-hound.y);if(d<=bd){bd=d;best=h;}}return best;}
 function finishHoundBite(){
@@ -4773,7 +4781,7 @@ function updateDrill(dt){
   p.drillTankHit=(p.drillTankHit||0)+dt;p.drillTankFx=(p.drillTankFx||0)-dt;
   if(p.drillTankFx<=0){p.drillTankFx=.14;burst(tankHit.x+(R()-.5)*18,tankHit.y+(R()-.5)*18,8,'#ffb347',80);shake=Math.max(shake,3);}
   if(p.drillTankHit>=3){
-   destroyEnemyTank(tankHit,p.x,p.y);recordPlayerKill(p.drillActionId||0,'',tankHit);fb(tankHit.x,tankHit.y,44);burst(tankHit.x,tankHit.y,48,'#ff6a2a',360);burst(tankHit.x,tankHit.y,20,'#ffe49a',260);sfx('explosion');shake=Math.max(shake,14);flash=Math.max(flash,.35);say('ドリルで敵戦車を撃破!');
+   destroyEnemyTank(tankHit,p.x,p.y);recordPlayerKill(p.drillActionId||0,'',tankHit);fb(tankHit.x,tankHit.y,44);burst(tankHit.x,tankHit.y,48,'#ff6a2a',360);burst(tankHit.x,tankHit.y,20,'#ffe49a',260);sfx('vehicleDestroyed',tankHit);shake=Math.max(shake,14);flash=Math.max(flash,.35);say('ドリルで敵戦車を撃破!');
    p.drillTankHit=0;p.drillTankTarget=null;p.drillSilentTank=null;
   }
  }else{p.drillTankHit=0;p.drillTankTarget=null;p.drillSilentTank=null;}
@@ -4896,7 +4904,7 @@ function placeBuildWall(){
   const wall={parts,born,blinkHidden:false};
   for(const part of parts)part.buildGroup=wall;
   covers.push(...parts);builtWalls.push(wall);
-  burst(center.x,center.y,12,'#c6c9c5',75);sfx('skill');say('コンクリート防護壁を設置');return true;
+  burst(center.x,center.y,12,'#c6c9c5',75);sfx('build');say('コンクリート防護壁を設置');return true;
  }
  say('ここには建築できない');return false;
 }
@@ -5026,11 +5034,12 @@ function updateFlame(dt){
  const can=state==='play'&&!p.tank&&skill==='flame'&&!(p.dig>0)&&!(p.drill>0)&&!(p.grappleT>0),wants=can&&!!keys.KeyS&&(p.flameFuel||0)>.035;
  if(wants){
   // 火炎放射中は押し始めた向きを固定。移動方向が変わっても射線・体の向きは変えない。
+  if(!p.flameActive){sfx('flameStart');}
   if(!p.flameActive||!Number.isFinite(p.flameLockA))p.flameLockA=p.body;
   p.flameActive=true;p.body=p.flameLockA;p.flameFuel=Math.max(0,(p.flameFuel||0)-dt);p.flameReach=Math.min(200,(p.flameReach||0)+200*dt);p.flamePath=makeFlamePath(p.flameReach);p.flameSfx=(p.flameSfx||0)-dt;
   natureHitByPath(p.flamePath);
   stunEnemyDogsAtFlame(p.flamePath);
-  if(p.flameSfx<=0){p.flameSfx=.16;tone(105,.08,.012,'sawtooth',64);noise(.07,.012);}
+  if(p.flameSfx<=0){p.flameSfx=.16;if(typeof gameSeReady!=='function'||!gameSeReady('flameLoop')){tone(105,.08,.012,'sawtooth',64);noise(.07,.012);}}
  }else{
   p.flameActive=false;p.flameLockA=null;p.flamePath=[];p.flameReach=0;
   if((p.flameFuel||0)<3)p.flameFuel=Math.min(3,(p.flameFuel||0)+dt*.25);
@@ -5124,7 +5133,7 @@ function sniperViewRange(){return weather==='sandstorm'?SNIPER_RANGE*.55:weather
 function enterSniperMode(){
  if(!p||p.tank||p.dig>0||p.digPrep>0||p.drill>0||p.grappleT>0||p.sniperMode||p.sniperEnterT>0||p.sniperReadyT>0)return false;
  p.sniperMode=false;p.sniperLockA=p.body;p.sniperAimN=0;p.sniperZoom=SNIPER_ZOOM_MIN;p.sniperLensChangeT=0;p.sniperExitT=0;p.sniperFlash=0;p.sniperHitT=0;p.sniperEnterT=SNIPER_DEPLOY_TIME;p.sniperReadyT=SNIPER_SETTLE_TIME;p.body=p.sniperLockA;
- bombReq=false;interact=false;sfx('skill');say('狙撃準備：伏せてライフルを展開…');return true;
+ bombReq=false;interact=false;sfx('sniperDeploy');say('狙撃準備：伏せてライフルを展開…');return true;
 }
 function beginSniperExit(){
  if(!p||!p.sniperMode||p.sniperExitT>0)return false;
@@ -5594,11 +5603,11 @@ function update(dt){
  }
  if(p.dig>0&&inMudAt(p.x,p.y,5)){finishDig('泥では潜伏を継続できない',false);burst(p.x,p.y,14,'#705238',120);}
  if(T&&!isTruck&&!isFighter){if(TOUCH&&Number.isFinite(touchTurretAngle))p.ang=touchTurretAngle;else p.ang=(performance.now()-lastMouse<1500)?Math.atan2(wy-p.y,wx-p.x):p.body;}
- p.cc=Math.max(0,p.cc-dt);p.vc=Math.max(0,p.vc-dt);p.scd=Math.max(0,p.scd-dt);p.digExitAnim=Math.max(0,(p.digExitAnim||0)-dt);p.grappleT=Math.max(0,(p.grappleT||0)-dt);if(p.grappleT<=0)p.grappleTarget=null;if(p.scd<=0)p.scdMax=0;if(decoy){decoy.t-=dt;decoy.sound=(decoy.sound||0)-dt;if(decoy.sound<=0){decoy.sound=.75;sfx('decoy');burst(decoy.x,decoy.y,3,'#ffd27a',35);}if(decoy.t<=0){burst(decoy.x,decoy.y,12,'#ff6666',75);decoy=null;}}
+ p.cc=Math.max(0,p.cc-dt);p.vc=Math.max(0,p.vc-dt);p.scd=Math.max(0,p.scd-dt);p.digExitAnim=Math.max(0,(p.digExitAnim||0)-dt);p.grappleT=Math.max(0,(p.grappleT||0)-dt);if(p.grappleT<=0)p.grappleTarget=null;if(p.scd<=0)p.scdMax=0;if(decoy){decoy.t-=dt;decoy.sound=(decoy.sound||0)-dt;if(decoy.sound<=0){decoy.sound=.75;sfx('decoy',decoy);burst(decoy.x,decoy.y,3,'#ffd27a',35);}if(decoy.t<=0){burst(decoy.x,decoy.y,12,'#ff6666',75);decoy=null;}}
  if(p.dig>0){p.digElapsed=(p.digElapsed||0)+dt;p.dig-=dt;if(R()<.6){const wet=digUsesWaterFx(p.x,p.y);trimParts(1);parts.push({x:p.x,y:p.y,vx:(R()-.5)*60,vy:(R()-.5)*60,life:.35,col:wet?(R()<.5?'#8ed3ef':'#d4f4ff'):'#7a5a38',sz:wet?2+R()*3:4+R()*3});}if(p.dig<=0)finishDig('潜航解除：地上に出た');}
  if(p.grappleT>0||playerAir){skillReq=false;bombReq=false;interact=false;}
- if(skillReq){skillReq=false;if(p.sniperMode){if(!(p.sniperExitT>0))fireSniper();}else if(p.sniperEnterT>0||p.sniperReadyT>0){}else if(T)say('スキルは歩兵のときに使える');else if(skill==='hound'&&hound&&hound.stun>0){say('猟犬は気絶中');}else if(skill==='hound'&&hound&&hound.state!=='follow'){say('猟犬は行動中');}else if(skill==='dig'&&p.dig>0){finishDig('潜航解除：地上に出た');}else if(skill==='dig'&&p.digPrep>0){say('潜伏準備中');}else if(skill==='flame'){}else if(skill==='throw'){const pb=bombs.findIndex(b=>b.own==='p');if(pb>=0&&!(bombs[pb].fly>0)){bombBlast(bombs[pb].x,bombs[pb].y);bombs.splice(pb,1);say('起爆!');}else if(p.scd>0)say('スキル準備中');else if(p.dig<=0&&p.digPrep<=0)useSkill(wx,wy);}else if(p.scd>0)say('スキル準備中');else if(p.dig<=0&&p.digPrep<=0&&p.drill<=0)useSkill(wx,wy);}
- if(bombReq){bombReq=false;if(!T&&!(p.dig>0)&&!(p.digPrep>0)){const pb=bombs.findIndex(b=>b.own==='p');if(pb<0){bombs.push({x:p.x,y:p.y,own:'p',armed:false,hudPlacedAt:performance.now()});sfx('skill');say('爆弾を設置(D（スマホ：B）で起爆)');}else if(!(bombs[pb].fly>0)){bombBlast(bombs[pb].x,bombs[pb].y);bombs.splice(pb,1);}}}
+ if(skillReq){skillReq=false;if(p.sniperMode){if(!(p.sniperExitT>0))fireSniper();}else if(p.sniperEnterT>0||p.sniperReadyT>0){}else if(T)say('スキルは歩兵のときに使える');else if(skill==='hound'&&hound&&hound.stun>0){say('猟犬は気絶中');}else if(skill==='hound'&&hound&&hound.state!=='follow'){say('猟犬は行動中');}else if(skill==='dig'&&p.dig>0){finishDig('潜航解除：地上に出た');}else if(skill==='dig'&&p.digPrep>0){say('潜伏準備中');}else if(skill==='flame'){}else if(skill==='throw'){const pb=bombs.findIndex(b=>b.own==='p');if(pb>=0&&!(bombs[pb].fly>0)){bombBlast(bombs[pb].x,bombs[pb].y);bombs.splice(pb,1);say('起爆!');}else if(p.scd>0){sfx('unavailable');say('スキル準備中');}else if(p.dig<=0&&p.digPrep<=0)useSkill(wx,wy);}else if(p.scd>0){sfx('unavailable');say('スキル準備中');}else if(p.dig<=0&&p.digPrep<=0&&p.drill<=0)useSkill(wx,wy);}
+ if(bombReq){bombReq=false;if(!T&&!(p.dig>0)&&!(p.digPrep>0)){const pb=bombs.findIndex(b=>b.own==='p');if(pb<0){bombs.push({x:p.x,y:p.y,own:'p',armed:false,hudPlacedAt:performance.now()});sfx('bombPlace');say('爆弾を設置(D（スマホ：B）で起爆)');}else if(!(bombs[pb].fly>0)){bombBlast(bombs[pb].x,bombs[pb].y);bombs.splice(pb,1);}}}
  let near=null;if(!sniperLocked&&!T&&!(p.digPrep>0))near=cars.find(c=>D(c,p)<(c.kind==='fighter'?76:58));
  if(!sniperLocked&&!T&&!(p.digPrep>0)&&skill==='partner'&&partner&&partner.vehicle&&!partner.down&&!(partner.stunT>0)&&D(partner,p)<(partner.vehicle.kind==='fighter'?76:58)&&(!near||D(partner,p)<D(near,p)))near=partner.vehicle;
  const nearHuman=!sniperLocked&&!T&&!(p.dig>0)&&!(p.digPrep>0)&&!(p.drill>0)?humans.filter(h=>h.alive&&!(h.stun>0)&&D(h,p)<38).sort((a,b)=>D(a,p)-D(b,p))[0]:null;
@@ -5612,6 +5621,7 @@ function update(dt){
   else if(near&&!(p.dig>0)&&!(p.drill>0)){cars=cars.filter(c=>c!==near);p.tank=near;p.partnerDriver=!!(partner&&partner.vehicle===near);if(p.partnerDriver){p.x=partner.x;p.y=partner.y;}if(scoreStats){scoreStats.vehicleBoards++;scoreStats.vehicleKinds[vehicleStyleKind(near)]=true;}p.body=near.body??p.body;p.ang=p.body;touchTurretAngle=null;sfx('enter');vehicleNameT=1.8;say(near.t.n+' に搭乗!');}else if(near&&p.drill>0)say('突貫中は搭乗できない');}
  updateCoastingTrucks(dt);
  const dAttack=!!(keys.KeyD||mdown||cannonReq);cannonReq=false;
+ if(p.tank&&T&&!isTruck&&!isFighter&&!isPartnerDrivenVehicle()){if(dAttack&&T.id!=='armored'&&p.cc<=0&&!(p.tank.c>0))sfx('empty');if((keys.KeyS||(T.id==='armored'&&dAttack))&&p.vc<=0&&!(p.tank.v>0))sfx('empty');}
  if(p.tank&&p.tank.kind==='fighter'){if(!isPartnerDrivenVehicle()&&dAttack&&p.cc<=0)fighterBomb();}
  else if(p.tank&&p.tank.kind==='tank'){const t=p.tank.t;
   if(!isPartnerDrivenVehicle()&&t.id!=='armored'&&dAttack&&p.cc<=0&&p.tank.c>0){p.cc=t.ccd;if(!areaDebugInfiniteAmmo)p.tank.c--;fire(p.x+Math.cos(p.ang)*44,p.y+Math.sin(p.ang)*44,p.ang,'p','c',t.cspd,t.crng,t.cdmg);shake=6;burst(p.x+Math.cos(p.ang)*47,p.y+Math.sin(p.ang)*47,8,'#ffd27a',140);}
@@ -5762,11 +5772,11 @@ function update(dt){
    for(const e of etanks)if(e.alive&&Math.hypot(b.x-e.x,b.y-e.y)<TANK_HIT){
     dead=true;
     if(b.k==='c'){cannonImpact(e.x,e.y,b.from);explode(e.x,e.y,38,true,b.from,b.from==='p'?b.actionId:0);}
-    else{if(b.k==='s'&&b.from==='p')setTankSuspicion(e,b.x,b.y,3.5);else if(b.k==='v'&&(b.from==='p'||b.from==='ally')){enterTankFound(e,'p',.5);e.sniperForcedFoundT=Math.max(e.sniperForcedFoundT||0,2);}if(b.k==='s'){fb(b.x,b.y,8);burst(b.x,b.y,6,'#ffb86c',150);burst(b.x,b.y,4,'#fff1b5',100);shake=Math.max(shake,2.5);}else burst(b.x,b.y,4,'#ffe28a',100);}
+    else{if(b.k==='s'&&b.from==='p')setTankSuspicion(e,b.x,b.y,3.5);else if(b.k==='v'&&(b.from==='p'||b.from==='ally')){enterTankFound(e,'p',.5);e.sniperForcedFoundT=Math.max(e.sniperForcedFoundT||0,2);}if(b.k==='s'){fb(b.x,b.y,8);burst(b.x,b.y,6,'#ffb86c',150);burst(b.x,b.y,4,'#fff1b5',100);shake=Math.max(shake,2.5);}else burst(b.x,b.y,4,'#ffe28a',100);sfx('vehicleHit',e);}
     break;
    }
    const humanHitR=(b.from==='p'&&b.k==='v')?18:10;
-   if(!dead)for(const h of humans)if(h.alive&&Math.hypot(b.x-h.x,b.y-h.y)<humanHitR){if(b.k==='c'){if(b.from==='p'){suspectHumansNear(h.x,h.y,500);recordPlayerKill(b.actionId||0,'',h);}else recordSupportResult('kill','ally',h);h.alive=false;burst(h.x,h.y,12,'#c05a3a',160);break;}else{dead=true;if(b.from==='p')recordPlayerKill(b.actionId||0,b.k==='s'?'sniper':b.k==='c'?'cannon':'mg',h);else recordSupportResult('kill','ally',h);if(b.k==='s'){h.sniperFallMax=.72;h.sniperFallT=h.sniperFallMax;h.sniperFallA=Math.atan2(b.vy,b.vx);if(p){p.sniperHitT=.42;p.sniperHitX=h.x;p.sniperHitY=h.y;}sfx('sniperHit');burst(h.x,h.y,12,'#c05a3a',160);}else burst(h.x,h.y,12,'#c05a3a',160);h.alive=false;break;}}
+   if(!dead)for(const h of humans)if(h.alive&&Math.hypot(b.x-h.x,b.y-h.y)<humanHitR){if(b.k==='c'){if(b.from==='p'){suspectHumansNear(h.x,h.y,500);recordPlayerKill(b.actionId||0,'',h);}else recordSupportResult('kill','ally',h);h.alive=false;burst(h.x,h.y,12,'#c05a3a',160);break;}else{dead=true;if(b.from==='p')recordPlayerKill(b.actionId||0,b.k==='s'?'sniper':b.k==='c'?'cannon':'mg',h);else recordSupportResult('kill','ally',h);if(b.k==='s'){h.sniperFallMax=.72;h.sniperFallT=h.sniperFallMax;h.sniperFallA=Math.atan2(b.vy,b.vx);if(p){p.sniperHitT=.42;p.sniperHitX=h.x;p.sniperHitY=h.y;}sfx('sniperHit');burst(h.x,h.y,12,'#c05a3a',160);}else{burst(h.x,h.y,12,'#c05a3a',160);sfx('soldierHit',h);}h.alive=false;break;}}
   }else if(!dead&&b.from==='e'){
    const travelled=Math.hypot(b.x-(b.sx??b.x),b.y-(b.sy??b.y));
    if(b.k==='c'&&travelled>48){
@@ -5910,28 +5920,28 @@ function carve(x,y,r,credit=false,objectDamageSource='impact'){
   const removedHere=Math.max(0,ow*oh-keptArea);if(removedHere>0&&c.indoorWall)recordIndoorWallGroundMark(c,fragmentGroup);removedArea+=removedHere;if(!c.playerBuilt&&!c.pb)styleRemoved+=removedHere;if(removedHere>0&&objectDamageSource==='cannonBlast')cannonDebris.push({x,y,col:(FRAG_COLORS[c.kd]||[CCol[c.kd]||'#8a7a55'])[0],n:Math.max(2,Math.min(6,Math.round(removedHere/2600)))});
  }
  // 形が変わらない接触では配列を差し替えず、空間グリッドの全再構築を避ける。
- if(coverChanged){covers=out;if(typeof indoorWorld!=='undefined'&&indoorWorld&&stageMode==='indoor')indoorRefreshDamagedNavigation(x,y,r);}
+ if(coverChanged){if(removedArea>0&&typeof sfx==='function')sfx('coverBreak',{x,y});covers=out;if(typeof indoorWorld!=='undefined'&&indoorWorld&&stageMode==='indoor')indoorRefreshDamagedNavigation(x,y,r);}
  if(removedArea>0&&objectDamageSource==='cannonBlast')for(const d of cannonDebris)cannonCoverDebris(d.x,d.y,d.col,d.n);
  if(credit&&scoreStats&&!scoreStats.finalized){scoreStats.coverDestroyed+=removedArea;scoreStats.styleDestroyed+=styleRemoved;}
  return removedArea;
 }
 function useSkill(wx,wy){if(scoreStats&&!scoreStats.finalized)scoreStats.skillUses++;
  if(skill==='throw'){if(bombs.some(b=>b.own==='p')){say('爆弾は1つまで');return;}const a=p.body;let d=0;for(let k=4;k<=110;k+=2){if(hitsM(p.x+Math.cos(a)*k,p.y+Math.sin(a)*k,4))break;d=k;}
-  bombs.push({x:p.x,y:p.y,own:'p',armed:false,fly:.35,sx:p.x,sy:p.y,tx:p.x+Math.cos(a)*d,ty:p.y+Math.sin(a)*d});setSkillCooldown(5);sfx('skill');say('爆弾を遠投（D（スマホ：B）で起爆）');}
+  bombs.push({x:p.x,y:p.y,own:'p',armed:false,fly:.35,sx:p.x,sy:p.y,tx:p.x+Math.cos(a)*d,ty:p.y+Math.sin(a)*d});setSkillCooldown(5);sfx('bombThrow');say('爆弾を遠投（D（スマホ：B）で起爆）');}
  else if(skill==='dig'){
   // Sを押したら0.5秒その場で静止し、地面／水面に潜るモーションを再生してから潜伏する。
   p.digPrep=DIG_PREP_DURATION;p.dig=0;p.digElapsed=0;p.digExitAnim=0;
-  sfx('skill');say(digUsesWaterFx(p.x,p.y)?'潜伏準備中：水中へ潜る':'潜伏準備中：地中へ潜る');
+  sfx(digUsesWaterFx(p.x,p.y)?'splash':'hide');say(digUsesWaterFx(p.x,p.y)?'潜伏準備中：水中へ潜る':'潜伏準備中：地中へ潜る');
   if(digUsesWaterFx(p.x,p.y))digWaterBurst(p.x,p.y,.55);else digSoilBurst(p.x,p.y,.55);
  }
- else if(skill==='decoy'){decoy={x:p.x,y:p.y,t:5,face:p.body,sound:.05};if(stageMode==='indoor')decoy.indoorFloor=indoorWorld.currentFloor+1;setSkillCooldown(8);sfx('skill');say('偽装!敵の注意をそらせ');}
+ else if(skill==='decoy'){decoy={x:p.x,y:p.y,t:5,face:p.body,sound:.05};if(stageMode==='indoor')decoy.indoorFloor=indoorWorld.currentFloor+1;setSkillCooldown(8);sfx('decoyPlace');say('偽装!敵の注意をそらせ');}
  else if(skill==='buddy')summonAlly();
- else if(skill==='drill'){p.drill=DRILL_ACTIVE;p.drillHit=0;p.drillTarget=null;p.drillTankHit=0;p.drillTankTarget=null;p.drillSilentTank=null;p.drillTankFx=0;p.drillSfx=0;p.drillActionId=newCombatAction('drill');sfx('skill');say('突貫! ドリル展開');}
+ else if(skill==='drill'){p.drill=DRILL_ACTIVE;p.drillHit=0;p.drillTarget=null;p.drillTankHit=0;p.drillTankTarget=null;p.drillSilentTank=null;p.drillTankFx=0;p.drillSfx=0;p.drillActionId=newCombatAction('drill');sfx('drillStart');say('突貫! ドリル展開');}
  else if(skill==='build'){if(placeBuildWall())setSkillCooldown(1.5);}
  else if(skill==='flame'){/* S長押しで連続使用 */}
  else if(skill==='sniper')enterSniperMode();
  else if(skill==='hound')beginHoundAttack();}
-function winSeq(){if(stageMode!=='base'&&stageMode!=='beginner'){base.hp=30;say('作戦目標を達成しよう');return;}if(areaDebugEnabled){base.hp=30;say('エリアデバッグ中：司令部破壊判定を無効化');return;}state='blast';blastT=2.4;bq=0;p.dig=0;p.digPrep=0;p.drill=0;sfx('win');}
+function winSeq(){if(stageMode!=='base'&&stageMode!=='beginner'){base.hp=30;say('作戦目標を達成しよう');return;}if(areaDebugEnabled){base.hp=30;say('エリアデバッグ中：司令部破壊判定を無効化');return;}state='blast';blastT=2.4;bq=0;p.dig=0;p.digPrep=0;p.drill=0;}
 function blastUpdate(dt){blastT-=dt;bq-=dt;if(bq<=0){bq=.1;const x=base.x+R()*base.w,y=base.y+R()*base.h;fb(x,y,28+R()*34);burst(x,y,25,'#ff8a3a',380);shake=14;if(R()<.3)flash=.5;}
  for(const f of fx)f.l-=dt;fx=fx.filter(f=>f.l>0);updateParts(dt);
  flash=Math.max(0,flash-dt*2.5);if(blastT<=0){state='succeeded';successFrameDrawn=false;shake=0;finalizeScore(true);}}
@@ -7760,7 +7770,7 @@ function animateResultScore(total){
 function syncResultScreen(){
  const show=(state==='win'||state==='lose')&&!!(scoreStats&&scoreStats.final);
  const open=document.body.classList.contains('result-open');
- if(show&&!open){renderResultScreen();document.body.classList.add('result-open');document.getElementById('resultScreen').scrollTop=0;animateResultScore(scoreStats.final.total);}
+ if(show&&!open){sfx('results');renderResultScreen();document.body.classList.add('result-open');document.getElementById('resultScreen').scrollTop=0;animateResultScore(scoreStats.final.total);}
  else if(!show&&open){resultScoreAnimId++;document.body.classList.remove('result-open');}
 }
 document.getElementById('resRetry').addEventListener('click',()=>{rollSkillChoices();state='skill';bombReq=false;cannonReq=false;interact=false;skillReq=false;syncResultScreen();sfx('skill');});
@@ -7789,7 +7799,7 @@ function skillArtSrc(id,name=''){
 }
 document.getElementById('skHome').addEventListener('click',()=>{state='title';sfx('skill');});
 document.getElementById('skDebugAll').addEventListener('click',()=>{skillDebugAll=!skillDebugAll;skillMenuDirty=true;sfx('skill');});
-document.getElementById('titleStart').addEventListener('click',()=>{rollSkillChoices();state='skill';sfx('skill');});
+document.getElementById('titleStart').addEventListener('click',()=>{rollSkillChoices();state='skill';sfx('uiConfirm');});
 document.getElementById('titleHelp').addEventListener('click',()=>{state='help';sfx('skill');});
 document.getElementById('titleSpecs').addEventListener('click',()=>{state='spec';sfx('skill');});
 document.getElementById('titleDiagnostics').addEventListener('click',()=>{location.href='diagnostics.html';});
@@ -7922,7 +7932,7 @@ let briefingFrameDrawn=false;
 let successFrameDrawn=false;
 function syncMissionSuccess(){
  const active=state==='succeeded',wasOpen=document.body.classList.contains('success-open');
- if(active!==wasOpen){document.body.classList.toggle('success-open',active);if(active)document.getElementById('missionSuccessEvaluate').focus({preventScroll:true});}
+ if(active!==wasOpen){document.body.classList.toggle('success-open',active);if(active){sfx('win');document.getElementById('missionSuccessEvaluate').focus({preventScroll:true});}}
 }
 document.getElementById('missionSuccessEvaluate').addEventListener('click',()=>{
  if(state!=='succeeded')return;
@@ -7961,7 +7971,7 @@ document.getElementById('missionBegin').addEventListener('click',()=>{
  for(const key in keys)keys[key]=false;
  bombReq=false;cannonReq=false;interact=false;skillReq=false;mdown=false;
  recordStageSortie(scoreStats);
- state='play';last=performance.now();syncMissionBriefing();sfx('skill');
+ state='play';last=performance.now();syncMissionBriefing();sfx('uiConfirm');
 });
 function syncStageScreen(){
  document.body.classList.toggle('stage-preparing',state==='preparing');
@@ -8004,7 +8014,7 @@ function setupMission(){
   say('潜入：機密情報を3つ回収して帰還せよ');
  }
 }
-function completeMission(){if(state!=='play')return;const frontline=beginFrontlineVictory();if(!frontline)state='win';shake=0;finalizeScore(true);sfx('win');}
+function completeMission(){if(state!=='play')return;const frontline=beginFrontlineVictory();if(!frontline)state='win';shake=0;finalizeScore(true);if(!frontline&&state==='win')sfx('win');}
 function updateMission(dt){
  if(stageMode==='indoor'){updateInfiltrationMission(dt);return;}
  if(!mission||areaDebugEnabled)return;
@@ -8033,7 +8043,7 @@ function updateMission(dt){
   }
   updateFrontlineWaves(dt);if(typeof updateEnemyBomber==='function'){updateEnemyBomber(dt);if(state!=='play')return;}m.reinforceT-=dt;
   if(m.reinforceT<=0){m.reinforceT=18;if(allies.filter(a=>a.alive&&a.frontline).length<4*frontlineAllyMultiplier())missionAllies(Math.max(q.y+250,Math.min(p.y+120,WH-200)));}
-  if(m.progress>=FRONTLINE_CAPTURE_SECONDS){q.done=true;if(typeof scoreStats!=='undefined'&&scoreStats){scoreStats.capturePoints=(scoreStats.capturePoints||0)+Number(!!q.playerContributed);scoreStats.objectiveProgress=(m.index+1)/m.points.length;}m.index++;m.progress=0;p.hp=3;say('拠点を制圧！');if(m.index===m.points.length){completeMission();return;}missionAllies(q.y);}
+  if(m.progress>=FRONTLINE_CAPTURE_SECONDS){q.done=true;if(typeof scoreStats!=='undefined'&&scoreStats){scoreStats.capturePoints=(scoreStats.capturePoints||0)+Number(!!q.playerContributed);scoreStats.objectiveProgress=(m.index+1)/m.points.length;}m.index++;m.progress=0;p.hp=3;sfx('capture');say('拠点を制圧！');if(m.index===m.points.length){completeMission();return;}missionAllies(q.y);}
  }else{
   m.alarm=Math.max(0,Math.min(100,m.alarm+dt*(detected?12:-5)));m.waveT-=dt;
   if(m.alarm>=65&&m.waveT<=0){m.waveT=24;m.alertCount++;if(humans.filter(h=>h.alive&&D(h,p)<650).length<12)for(let i=0;i<3;i++)missionEnemy(p.x+(i-1)*110,p.y-340,true);say('警戒部隊が接近！ 草むらや遮蔽物へ');}
@@ -8149,6 +8159,7 @@ function loop(n){
   }
   prevState=state;
  }while(remain>.000001);
+ if(typeof updateGameAudio==='function'){try{updateGameAudio();}catch(_){}}
  const frameUpdateEnd=performance.now();
  const gameplayActive=state==='play';if(document.body.classList.contains('gameplay-active')!==gameplayActive)document.body.classList.toggle('gameplay-active',gameplayActive);
  if(shouldDrawGameFrame(n)){draw(near);drawMission();drawFrontlineVictorySignal();if(typeof drawEnemyBomberWarning==='function')drawEnemyBomberWarning();recordGameDraw(n);}const frameDrawEnd=performance.now();syncMissionSuccess();syncMissionFailure();syncMissionBriefing();syncStageScreen();syncResultScreen();syncSkillScreen();syncAreaDebugPicker();syncTitleScreen();syncHelpScreen();syncSpecScreen();
@@ -8165,17 +8176,17 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/stage-progress.js?v=2026.10.24.0745"></script>
-<script src="js/frontline.js?v=2026.10.23.0853"></script>
-<script src="js/award-icons.js?v=2026.10.24.0745"></script>
-<script src="js/enemy-bomber.js?v=2026.10.23.1833"></script>
+<script src="js/stage-progress.js?v=2026.10.24.1946"></script>
+<script src="js/frontline.js?v=2026.10.24.1946"></script>
+<script src="js/award-icons.js?v=2026.10.24.1946"></script>
+<script src="js/enemy-bomber.js?v=2026.10.24.1946"></script>
 <script src="js/characters.js?v=2026.10.19.1032"></script>
-<script src="js/enemy-dogs.js?v=2026.10.22.0945"></script>
-<script src="js/partner.js?v=2026.10.17.2030"></script>
+<script src="js/enemy-dogs.js?v=2026.10.24.1946"></script>
+<script src="js/partner.js?v=2026.10.24.1946"></script>
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/canyon.js?v=2026.10.23.0824"></script>
 <script src="js/vegetation.js?v=2026.10.14.1653"></script>
-<script src="js/infiltration-world.js?v=2026.10.23.0018"></script>
+<script src="js/infiltration-world.js?v=2026.10.24.1946"></script>
 <script src="js/infiltration-render.js?v=2026.10.21.1139"></script>
 <script>
 (function(){
@@ -8306,6 +8317,7 @@ const backToTitle=e=>{
  if(stageMode==='indoor'&&typeof clearInfiltrationRenderCache==='function')clearInfiltrationRenderCache();
  // 画面を戻すだけで新規マップを生成しない。旧実装ではここでreset()が走り、
  // 大量の遮蔽物・敵巡回ルート・迷路兵配置を同期生成していたため遷移が重かった。
+ if(typeof stopGameAudio==='function')stopGameAudio();
  gameBuildGeneration++;state='title';gameBuildQueued=false;if(hound&&hound.target)hound.target.houndPinned=false;hound=null;houndTrail=[];
  debugMode=0;debugInvincible=false;updateDebugBadge();
  bombReq=false;cannonReq=false;interact=false;skillReq=false;

@@ -24,7 +24,7 @@ test('a warning commits the pass and its world route even after retreating to th
  const s=harness(),c=s.c;c.setupEnemyBomber();c.mission.enemyWavesStarted=true;c.updateEnemyBomber(.1);c.updateEnemyBomber(4.9);
  const raid=c.mission.enemyAirRaid,route=JSON.parse(JSON.stringify(raid.route));c.p.y=12000;c.view={x:480,y:11500,w:480,h:800};c.updateEnemyBomber(.1);
  assert.equal(raid.phase,'flight');assert.equal(raid.remaining,0);assert.equal(raid.passes,1);assert.equal(raid.plane.x,route.x);assert.equal(raid.plane.y,route.y);assert.equal(raid.plane.endY,route.endY);
- c.view.y=20000;run(s,20);assert.equal(raid.phase,'done');assert.equal(s.blasts,25);assert.equal(s.sounds.filter(s=>s==='radio').length,1);
+ c.view.y=20000;run(s,20);assert.equal(raid.phase,'done');assert.equal(s.blasts,25);assert.equal(s.sounds.filter(s=>s==='airWarning').length,1);
 });
 test('horizontal flight positions span the entire area independently of camera position and viewport width',()=>{
  for(const roll of [0,.125,.5,.875,.999999])for(const view of [{x:0,w:480},{x:480,w:480},{x:60,w:840}]){
@@ -54,7 +54,7 @@ test('a full run contains one or two complete 25-bomb carpet passes, with bounde
  for(const [roll,count] of [[0,1],[.99,2]]){
   const s=harness([roll,.5]),c=s.c;c.setupEnemyBomber();c.mission.enemyWavesStarted=true;c.mission.index=1;let peak=0;
   for(let i=0;i<6000;i++){c.updateEnemyBomber(.05);peak=Math.max(peak,c.mission.enemyAirRaid.bombs.length);}
-  const raid=c.mission.enemyAirRaid;assert.equal(raid.phase,'done');assert.equal(raid.passes,count);assert.equal(raid.remaining,0);assert.equal(s.blasts,count*25);assert.ok(peak<=4);assert.equal(s.sounds.filter(s=>s==='radio').length,count);s.rects.length=0;c.drawEnemyBomberWarning();assert.equal(s.rects.length,0);
+  const raid=c.mission.enemyAirRaid;assert.equal(raid.phase,'done');assert.equal(raid.passes,count);assert.equal(raid.remaining,0);assert.equal(s.blasts,count*25);assert.ok(peak<=4);assert.equal(s.sounds.filter(s=>s==='airWarning').length,count);s.rects.length=0;c.drawEnemyBomberWarning();assert.equal(s.rects.length,0);
  }
 });
 test('warning remains active during the aircraft pass and resets cleanly for a new mission',()=>{

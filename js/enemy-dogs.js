@@ -173,7 +173,7 @@ function dogMoveAround(unit,goal,speed,dt,r=7,isDog=true){
 function dogBark(dog){
  const key=dog.targetKey,target=dogTargetObject(key);
  if(!key||!target||dog.alertDisabled||dog.stun>0||dog.barkCooldown>0)return;
- tone(190,.13,.025,'sawtooth',95);
+ if(typeof sfx==='function')sfx('dogBark',dog);else tone(190,.13,.025,'sawtooth',95);
  dog.barkT=.9;dog.barkCooldown=3;dog.signalX=dog.x;dog.signalY=dog.y;
  // The bark identifies the actual target, including the Partner, to nearby infantry.
  const rallying=commanderRallying;commanderRallying=true;
@@ -231,7 +231,7 @@ function updateEnemyDogs(dt){
   if(debugMode<2&&!dog.alertDisabled&&hound&&skill==='hound'&&!(hound.stun>0)&&D(hound,dog)<=100){
    dogSilence(dog);
    hound.warningBarkT=.9;hound.warningBarkX=hound.x;hound.warningBarkY=hound.y;
-   tone(225,.18,.03,'sawtooth',110);say('猟犬が吠えて犬兵を追い払った！');
+   if(typeof sfx==='function')sfx('dogBark',hound);else tone(225,.18,.03,'sawtooth',110);say('猟犬が吠えて犬兵を追い払った！');
   }
   const chaseTarget=dog.state==='chase'?dogTargetObject(dog.targetKey):null;
   if(dog.state==='chase'&&(!chaseTarget||dog.patrolMode==='indoor'&&(dog.indoorFloor!==indoorWorld?.currentFloor+1||dog.targetKey==='p'&&indoorStairProtected())))dogEndAlert(dog);

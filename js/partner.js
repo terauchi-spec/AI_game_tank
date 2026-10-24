@@ -102,7 +102,7 @@ function partnerVehicleDestroyed(q){
  if(isPartnerDrivenVehicle()){wreck();return;}
  const v=q.vehicle;if(truckLikeVehicle(v))spawnVehicleWreck(v,q.x,q.y,q.face,q.vehicleAim??q.face);q.vehicle=null;q.boardTarget=null;q.route=null;q.routeStart=null;
  q.routeWait=0;q.backup=false;q.moving=false;q.wallFollow=null;q.sideStep=null;
- burst(q.x,q.y,32,'#ff8244',220);sfx('explosion');
+ burst(q.x,q.y,32,'#ff8244',220);sfx('vehicleDestroyed',q);
  q.hp=Math.max(0,q.hp-1);
  if(!q.hp){q.down=true;say('相棒の乗り物が大破！救助が必要');}
  else{q.stunT=2;q.stunContactDelay=.3;say('相棒の乗り物が大破！');}
@@ -204,6 +204,7 @@ function startPartnerOrder(){
 function finishPartnerOrder(confirm=true){
  if(!partnerOrder.pressed)return;
  if(confirm&&partner&&!partner.down&&!(partner.stunT>0)){
+  if(typeof sfx==='function')sfx('partnerCommand');
   if(!partnerOrder.drawing){partnerOrder.signalT=1;partnerOrder.signalKind='call';}
   if(partner.vehicle&&!partnerOrder.drawing){partnerExitVehicle(partner);}
   else if(partnerOrder.drawing){
