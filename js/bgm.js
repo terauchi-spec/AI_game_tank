@@ -1,47 +1,54 @@
-// Stream the menu track through one media element rather than decoding a full song.
+// Use the SE AudioContext directly: no media element or separate audio session.
 const GAME_BGM_URL='assets/audio/bgm/stahlmarsch_zum_sieg.mp3?v=696964203a01';
-const gameBgm={audio:null,gain:null,unlocked:false,finished:false,pending:false,blocked:false,focused:true,resultActive:false,resultWaiting:false};
+const gameBgm={buffer:null,pending:null,source:null,gain:null,offset:0,startedAt:0,unlocked:false,finished:false,blocked:false,focused:true,resultActive:false,resultWaiting:false};
+function gameBgmContext(){return typeof audioCtx!=='undefined'?audioCtx:null;}
 function gameBgmAllowed(){return typeof state!=='undefined'&&(state==='title'||state==='skill'||state==='stage'||(gameBgm.resultActive&&(state==='win'||state==='lose')));}
 function gameBgmVisible(){return gameBgm.focused&&(typeof document==='undefined'||document.visibilityState!=='hidden');}
 function gameBgmWanted(){return gameBgmAllowed()&&gameBgmVisible()&&!gameBgm.resultWaiting;}
+function pauseGameBgm(){
+ const source=gameBgm.source;if(!source)return;
+ gameBgm.offset=Math.min(gameBgm.buffer.duration,gameBgm.offset+Math.max(0,source.context.currentTime-gameBgm.startedAt));
+ gameBgm.source=null;source.onended=null;
+ try{source.stop();source.disconnect();}catch(_){}
+}
 function beginResultGameBgm(){
  // Called after the result SE is started, once per newly opened result screen.
- gameBgm.resultActive=true;gameBgm.resultWaiting=true;gameBgm.finished=false;
- if(gameBgm.audio){gameBgm.audio.pause();gameBgm.audio.currentTime=0;}
+ pauseGameBgm();gameBgm.offset=0;gameBgm.resultActive=true;gameBgm.resultWaiting=true;gameBgm.finished=false;
 }
 function resultGameSePlaying(){
  return typeof gameSe!=='undefined'&&[...gameSe.voices].some(v=>!v.loop&&(v.name==='results'||v.name==='win'||v.name==='lose'));
 }
-function createGameBgm(){
- if(gameBgm.audio||typeof Audio==='undefined')return gameBgm.audio;
- const audio=new Audio();audio.preload='none';audio.loop=false;audio.volume=.23;
- audio.addEventListener('ended',()=>{gameBgm.finished=true;});
- audio.addEventListener('error',()=>{gameBgm.blocked=true;});
- // Web Audio gain also controls volume on mobile browsers that ignore media.volume.
- try{
-  const context=typeof audioCtx!=='undefined'?audioCtx:null;
-  if(context&&typeof context.createMediaElementSource==='function'){
-   const source=context.createMediaElementSource(audio),gain=context.createGain();
-   gain.gain.value=.23;source.connect(gain);gain.connect(context.destination);
-   gameBgm.source=source;gameBgm.gain=gain;audio.volume=1;
-  }
- }catch(_){}
- audio.src=GAME_BGM_URL;gameBgm.audio=audio;return audio;
+function loadGameBgm(context){
+ if(gameBgm.pending)return gameBgm.pending;
+ // One download/decode and one retained music buffer, separate from the SE LRU.
+ gameBgm.pending=Promise.resolve().then(async()=>{
+  try{
+   const response=await fetch(GAME_BGM_URL);if(!response.ok)throw Error('BGM HTTP '+response.status);
+   gameBgm.buffer=await context.decodeAudioData(await response.arrayBuffer());
+  }catch(_){gameBgm.blocked=true;}
+  finally{gameBgm.pending=null;}
+  updateGameBgm();
+ });
+ return gameBgm.pending;
 }
 function updateGameBgm(){
  if(typeof state!=='undefined'&&state!=='win'&&state!=='lose')gameBgm.resultActive=false;
  if(gameBgm.resultWaiting&&!resultGameSePlaying())gameBgm.resultWaiting=false;
- const wanted=gameBgmWanted();
- if(!wanted){if(gameBgm.audio&&!gameBgm.audio.paused)gameBgm.audio.pause();return;}
- if(!gameBgm.unlocked||gameBgm.finished||gameBgm.pending||gameBgm.blocked)return;
- const audio=createGameBgm();if(!audio||!audio.paused)return;
- gameBgm.pending=true;
+ if(!gameBgmWanted()){pauseGameBgm();return;}
+ if(!gameBgm.unlocked||gameBgm.finished||gameBgm.pending||gameBgm.blocked||gameBgm.source)return;
+ const context=gameBgmContext();if(!context||context.state!=='running')return;
+ if(!gameBgm.buffer){loadGameBgm(context);return;}
+ if(gameBgm.offset>=gameBgm.buffer.duration){gameBgm.finished=true;return;}
  try{
-  Promise.resolve(audio.play()).then(()=>{
-   gameBgm.pending=false;
-   if(!gameBgmWanted())audio.pause();
-  },()=>{gameBgm.pending=false;gameBgm.blocked=true;});
- }catch(_){gameBgm.pending=false;gameBgm.blocked=true;}
+  if(!gameBgm.gain){const gain=context.createGain();gain.gain.value=.23;gain.connect(context.destination);gameBgm.gain=gain;}
+  const source=context.createBufferSource();source.buffer=gameBgm.buffer;source.loop=false;source.connect(gameBgm.gain);
+  source.onended=()=>{
+   if(gameBgm.source!==source)return;
+   gameBgm.source=null;gameBgm.offset=gameBgm.buffer.duration;gameBgm.finished=true;
+   try{source.disconnect();}catch(_){}
+  };
+  gameBgm.startedAt=context.currentTime;gameBgm.source=source;source.start(0,gameBgm.offset);
+ }catch(_){pauseGameBgm();gameBgm.blocked=true;}
 }
 function unlockGameBgm(event){
  if(event&&event.isTrusted===false)return;

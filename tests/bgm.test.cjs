@@ -1,55 +1,49 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
-function harness({defer=false,reject=false}={}){
- const events={},media=[];let resolvePlay,rejectPlay;
- class Audio{
-  constructor(){this.paused=true;this.currentTime=0;this.events={};this.plays=0;media.push(this);}
-  addEventListener(n,f){this.events[n]=f;}
-  play(){this.plays++;this.paused=false;if(reject){this.paused=true;return Promise.reject(Error('blocked'));}if(defer)return new Promise((resolve,reject)=>{resolvePlay=resolve;rejectPlay=reject;});return Promise.resolve();}
-  pause(){this.paused=true;}
- }
- const context={destination:{},createMediaElementSource(){return{connect(){}};},createGain(){return{gain:{value:0},connect(){}};}};
- const c={state:'title',Audio,audioCtx:context,ensureAudio(){},document:{visibilityState:'visible',addEventListener:(n,f)=>events[n]=f},addEventListener:(n,f)=>events[n]=f};
+function harness({defer=false,fail=false,decodeFail=false}={}){
+ const events={},sources=[],requests=[],waiting=[];let decodes=0;
+ const context={state:'running',currentTime:0,destination:{},createGain(){return{gain:{value:0},connect(){}};},createBufferSource(){const s={context,connect(){},disconnect(){},start(...args){s.args=args;s.started=true;},stop(){s.stopped=true;s.onended?.();}};sources.push(s);return s;},async decodeAudioData(){decodes++;if(decodeFail)throw Error('decode');return{duration:60,numberOfChannels:2,length:2646000};}};
+ const c={state:'title',audioCtx:context,gameSe:{voices:new Set()},ensureAudio(){},Audio:class{constructor(){throw Error('HTML Audio must not be used');}},document:{visibilityState:'visible',addEventListener:(n,f)=>events[n]=f},addEventListener:(n,f)=>events[n]=f,
+ fetch(url){requests.push(url);if(fail)return Promise.reject(Error('network'));const response={ok:true,arrayBuffer:async()=>new ArrayBuffer(1)};return defer?new Promise(resolve=>waiting.push(()=>resolve(response))):Promise.resolve(response);}};
  vm.createContext(c);vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/bgm.js'),'utf8'),c);
- return{c,events,media,get:s=>vm.runInContext(s,c),resolve:()=>resolvePlay(),reject:()=>rejectPlay(Error('blocked'))};
+ return{c,context,events,sources,requests,waiting,get:s=>vm.runInContext(s,c),decodes:()=>decodes};
 }
 const tick=()=>new Promise(r=>setImmediate(r));
-test('BGM waits for interaction, streams one element, and continues across title, skill and stage without restart',async()=>{
- const h=harness(),{c}=h;c.updateGameBgm();assert.equal(h.media.length,0);c.unlockGameBgm({isTrusted:false});assert.equal(h.media.length,0);
- h.events.pointerdown({isTrusted:true});await tick();const a=h.media[0];assert.equal(a.loop,false);assert.equal(a.preload,'none');assert.ok(a.src.includes('stahlmarsch_zum_sieg.mp3?v='));assert.equal(h.get('gameBgm.gain.gain.value'),.23);
- a.currentTime=17;for(const s of ['skill','stage','skill','title']){c.state=s;c.updateGameBgm();}assert.equal(a.plays,1);assert.equal(a.currentTime,17);assert.equal(h.media.length,1);
+test('BGM uses the SE AudioContext, waits for interaction, and decodes once across menu transitions',async()=>{
+ const h=harness(),{c}=h;c.updateGameBgm();c.unlockGameBgm({isTrusted:false});assert.equal(h.requests.length,0);h.events.pointerdown({isTrusted:true});await tick();assert.equal(h.requests.length,1);assert.equal(h.decodes(),1);const source=h.sources[0];assert.equal(source.context,h.context);assert.equal(source.loop,false);assert.deepEqual(source.args,[0,0]);assert.equal(h.get('gameBgm.gain.gain.value'),.23);
+ h.context.currentTime=17;for(const state of ['skill','stage','skill','title']){c.state=state;c.updateGameBgm();}assert.equal(h.sources.length,1);assert.equal(source.stopped,undefined);assert.equal(h.requests.length,1);
 });
-test('BGM pauses outside eligible menus and on hidden/blurred pages, resumes position and never repeats after ending',async()=>{
- const h=harness(),{c}=h;c.unlockGameBgm();await tick();const a=h.media[0];a.currentTime=21;
- for(const s of ['preparing','briefing','play','win','awards','help','spec']){c.state=s;c.updateGameBgm();assert.equal(a.paused,true);}
- c.state='title';c.updateGameBgm();await tick();assert.equal(a.currentTime,21);assert.equal(a.paused,false);
- c.document.visibilityState='hidden';h.events.visibilitychange();assert.equal(a.paused,true);c.document.visibilityState='visible';h.events.visibilitychange();await tick();assert.equal(a.paused,false);
- h.events.blur();assert.equal(a.paused,true);h.events.focus();await tick();assert.equal(a.paused,false);
- a.paused=true;a.events.ended();const plays=a.plays;for(const s of ['title','skill','stage','play','title']){c.state=s;c.updateGameBgm();c.unlockGameBgm();}assert.equal(a.plays,plays);
+test('BGM pauses outside eligible menus and resumes its exact position on return, visibility and focus changes',async()=>{
+ const h=harness(),{c}=h;c.unlockGameBgm();await tick();h.context.currentTime=21;c.state='preparing';c.updateGameBgm();assert.equal(h.sources[0].stopped,true);assert.equal(h.get('gameBgm.offset'),21);assert.equal(h.get('gameBgm.finished'),false);
+ for(const state of ['briefing','play','win','lose','help','spec']){c.state=state;c.updateGameBgm();}assert.equal(h.sources.length,1);
+ h.context.currentTime=30;c.state='title';c.updateGameBgm();assert.deepEqual(h.sources.at(-1).args,[0,21]);
+ h.context.currentTime=32;c.document.visibilityState='hidden';h.events.visibilitychange();assert.equal(h.get('gameBgm.source'),null);c.document.visibilityState='visible';h.events.visibilitychange();assert.deepEqual(h.sources.at(-1).args,[0,23]);
+ h.context.currentTime=34;h.events.blur();assert.equal(h.get('gameBgm.source'),null);h.events.focus();assert.deepEqual(h.sources.at(-1).args,[0,25]);assert.equal(h.decodes(),1);
 });
-test('pending playback cannot continue after deployment and blocked playback does not retry every frame',async()=>{
- const h=harness({defer:true});h.c.unlockGameBgm();for(let i=0;i<20;i++)h.c.updateGameBgm();assert.equal(h.media[0].plays,1);h.c.state='preparing';h.c.updateGameBgm();h.resolve();await tick();assert.equal(h.media[0].paused,true);
- const bad=harness({reject:true});bad.c.unlockGameBgm();await tick();for(let i=0;i<20;i++)bad.c.updateGameBgm();assert.equal(bad.media[0].plays,1);bad.c.unlockGameBgm();await tick();assert.equal(bad.media[0].plays,2);
+test('natural ending never repeats even after user gestures or returning to title',async()=>{
+ const h=harness(),{c}=h;c.unlockGameBgm();await tick();h.sources[0].onended();for(const state of ['title','skill','stage','play','title']){c.state=state;c.updateGameBgm();c.unlockGameBgm();}assert.equal(h.sources.length,1);assert.equal(h.get('gameBgm.finished'),true);
 });
-test('BGM asset and main frame integration exist',()=>{
- const root=path.join(__dirname,'..'),html=fs.readFileSync(path.join(root,'index.html'),'utf8');assert.match(html,/<script src="js\/bgm.js\?v=/);assert.match(html,/try\{updateGameBgm\(\);\}/);assert.ok(fs.statSync(path.join(root,'assets/audio/bgm/stahlmarsch_zum_sieg.mp3')).size>0);
-});
-test('success and failure results restart the theme only after all result SE voices finish, then play once',async()=>{
- const h=harness(),{c}=h;c.gameSe={voices:new Set()};c.unlockGameBgm();await tick();const a=h.media[0];a.currentTime=60;a.paused=true;a.events.ended();
+test('success and failure results reset the theme and wait for outcome and result SE before playing once',async()=>{
+ const h=harness(),{c}=h;c.unlockGameBgm();await tick();h.sources[0].onended();
  for(const state of ['win','lose']){
-  c.state='play';c.updateGameBgm();c.state=state;const result={name:'results',loop:false},outcome={name:state,loop:false};c.gameSe.voices.add(result);c.gameSe.voices.add(outcome);c.beginResultGameBgm();const plays=a.plays;
-  c.updateGameBgm();assert.equal(a.currentTime,0);assert.equal(a.paused,true);assert.equal(a.plays,plays);
-  c.gameSe.voices.delete(result);c.updateGameBgm();assert.equal(a.plays,plays);
-  c.gameSe.voices.delete(outcome);c.updateGameBgm();await tick();assert.equal(a.plays,plays+1);assert.equal(a.loop,false);
-  a.currentTime=12;for(let i=0;i<10;i++)c.updateGameBgm();assert.equal(a.currentTime,12);assert.equal(a.plays,plays+1);
-  a.paused=true;a.events.ended();c.updateGameBgm();c.unlockGameBgm();assert.equal(a.plays,plays+1);
+  c.state='play';c.updateGameBgm();c.state=state;const result={name:'results'},outcome={name:state};c.gameSe.voices.add(result);c.gameSe.voices.add(outcome);c.beginResultGameBgm();const count=h.sources.length;c.updateGameBgm();assert.equal(h.sources.length,count);assert.equal(h.get('gameBgm.offset'),0);
+  c.gameSe.voices.delete(result);c.updateGameBgm();assert.equal(h.sources.length,count);c.gameSe.voices.delete(outcome);c.updateGameBgm();assert.equal(h.sources.length,count+1);assert.deepEqual(h.sources.at(-1).args,[0,0]);for(let i=0;i<10;i++)c.updateGameBgm();assert.equal(h.sources.length,count+1);h.sources.at(-1).onended();c.updateGameBgm();assert.equal(h.sources.length,count+1);
  }
- assert.equal(h.media.length,1);
+ assert.equal(h.requests.length,1);assert.equal(h.decodes(),1);
 });
-test('leaving results cancels a late start, unrelated effects do not postpone music, and missing SE cannot hang the wait',async()=>{
- const h=harness(),{c}=h;c.gameSe={voices:new Set([{name:'results',loop:false}])};c.unlockGameBgm();await tick();c.state='win';c.beginResultGameBgm();c.updateGameBgm();const a=h.media[0],plays=a.plays;c.state='play';c.updateGameBgm();c.gameSe.voices.clear();c.updateGameBgm();await tick();assert.equal(a.plays,plays);assert.equal(a.paused,true);
- c.gameSe.voices.add({name:'uiSelect',loop:false});c.state='lose';c.beginResultGameBgm();c.updateGameBgm();await tick();assert.equal(a.plays,plays+1);
- const absent=harness();absent.c.state='win';absent.c.beginResultGameBgm();absent.c.unlockGameBgm();await tick();assert.equal(absent.media[0].plays,1);
+test('a late download cannot start during gameplay or while result SE is playing; fetch/decode are deduplicated',async()=>{
+ for(const state of ['play','win']){
+  const h=harness({defer:true}),{c}=h;c.unlockGameBgm();for(let i=0;i<20;i++)c.updateGameBgm();await tick();assert.equal(h.requests.length,1);c.state=state;if(state==='win'){c.gameSe.voices.add({name:'results'});c.beginResultGameBgm();}c.updateGameBgm();h.waiting[0]();await tick();assert.equal(h.sources.length,0);
+  if(state==='win'){c.gameSe.voices.clear();c.updateGameBgm();assert.equal(h.sources.length,1);}else{c.state='title';c.updateGameBgm();assert.equal(h.sources.length,1);}
+ }
 });
-test('pending menu playback stays paused while result SE is running',async()=>{
- const h=harness({defer:true}),{c}=h;c.unlockGameBgm();c.state='win';c.gameSe={voices:new Set([{name:'results',loop:false}])};c.beginResultGameBgm();c.updateGameBgm();h.resolve();await tick();assert.equal(h.media[0].paused,true);assert.equal(h.media[0].plays,1);
+test('network or decode failure does not block gameplay or retry on every frame',async()=>{
+ for(const options of [{fail:true},{decodeFail:true}]){
+  const h=harness(options),{c}=h;c.unlockGameBgm();await tick();for(let i=0;i<20;i++)c.updateGameBgm();assert.equal(h.requests.length,1);assert.equal(h.sources.length,0);assert.equal(h.get('gameBgm.pending'),null);c.unlockGameBgm();await tick();assert.equal(h.requests.length,2);
+ }
+});
+test('suspended context waits for resume and absent result SE does not hang BGM',async()=>{
+ const h=harness(),{c}=h;h.context.state='suspended';c.unlockGameBgm();assert.equal(h.requests.length,0);h.context.state='running';c.updateGameBgm();await tick();assert.equal(h.sources.length,1);c.state='lose';c.beginResultGameBgm();c.gameSe.voices.add({name:'uiSelect'});c.updateGameBgm();assert.equal(h.sources.length,2);assert.deepEqual(h.sources.at(-1).args,[0,0]);
+});
+test('main frame and result opening retain their BGM hooks and asset',()=>{
+ const root=path.join(__dirname,'..'),html=fs.readFileSync(path.join(root,'index.html'),'utf8');assert.match(html,/<script src="js\/bgm.js\?v=/);assert.match(html,/try\{updateGameBgm\(\);\}/);assert.match(html,/if\(show&&!open\)\{sfx\('results'\);if\(typeof beginResultGameBgm==='function'\)beginResultGameBgm\(\);/);assert.ok(fs.statSync(path.join(root,'assets/audio/bgm/stahlmarsch_zum_sieg.mp3')).size>0);
 });
