@@ -33,3 +33,23 @@ test('pending playback cannot continue after deployment and blocked playback doe
 test('BGM asset and main frame integration exist',()=>{
  const root=path.join(__dirname,'..'),html=fs.readFileSync(path.join(root,'index.html'),'utf8');assert.match(html,/<script src="js\/bgm.js\?v=/);assert.match(html,/try\{updateGameBgm\(\);\}/);assert.ok(fs.statSync(path.join(root,'assets/audio/bgm/stahlmarsch_zum_sieg.mp3')).size>0);
 });
+test('success and failure results restart the theme only after all result SE voices finish, then play once',async()=>{
+ const h=harness(),{c}=h;c.gameSe={voices:new Set()};c.unlockGameBgm();await tick();const a=h.media[0];a.currentTime=60;a.paused=true;a.events.ended();
+ for(const state of ['win','lose']){
+  c.state='play';c.updateGameBgm();c.state=state;const result={name:'results',loop:false},outcome={name:state,loop:false};c.gameSe.voices.add(result);c.gameSe.voices.add(outcome);c.beginResultGameBgm();const plays=a.plays;
+  c.updateGameBgm();assert.equal(a.currentTime,0);assert.equal(a.paused,true);assert.equal(a.plays,plays);
+  c.gameSe.voices.delete(result);c.updateGameBgm();assert.equal(a.plays,plays);
+  c.gameSe.voices.delete(outcome);c.updateGameBgm();await tick();assert.equal(a.plays,plays+1);assert.equal(a.loop,false);
+  a.currentTime=12;for(let i=0;i<10;i++)c.updateGameBgm();assert.equal(a.currentTime,12);assert.equal(a.plays,plays+1);
+  a.paused=true;a.events.ended();c.updateGameBgm();c.unlockGameBgm();assert.equal(a.plays,plays+1);
+ }
+ assert.equal(h.media.length,1);
+});
+test('leaving results cancels a late start, unrelated effects do not postpone music, and missing SE cannot hang the wait',async()=>{
+ const h=harness(),{c}=h;c.gameSe={voices:new Set([{name:'results',loop:false}])};c.unlockGameBgm();await tick();c.state='win';c.beginResultGameBgm();c.updateGameBgm();const a=h.media[0],plays=a.plays;c.state='play';c.updateGameBgm();c.gameSe.voices.clear();c.updateGameBgm();await tick();assert.equal(a.plays,plays);assert.equal(a.paused,true);
+ c.gameSe.voices.add({name:'uiSelect',loop:false});c.state='lose';c.beginResultGameBgm();c.updateGameBgm();await tick();assert.equal(a.plays,plays+1);
+ const absent=harness();absent.c.state='win';absent.c.beginResultGameBgm();absent.c.unlockGameBgm();await tick();assert.equal(absent.media[0].plays,1);
+});
+test('pending menu playback stays paused while result SE is running',async()=>{
+ const h=harness({defer:true}),{c}=h;c.unlockGameBgm();c.state='win';c.gameSe={voices:new Set([{name:'results',loop:false}])};c.beginResultGameBgm();c.updateGameBgm();h.resolve();await tick();assert.equal(h.media[0].paused,true);assert.equal(h.media[0].plays,1);
+});
