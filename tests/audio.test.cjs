@@ -8,9 +8,9 @@ function harness({defer=false,fail=false}={}){
  vm.createContext(c);vm.runInContext(source,c);c.get=s=>vm.runInContext(s,c);return{c,context,events,requests,waiting,sources};
 }
 const settle=()=>new Promise(r=>setImmediate(r));
-test('all 47 active manifest MP3s match the explicitly uploaded files, without requesting unprovided effects',()=>{
+test('all 48 active manifest MP3s match the explicitly uploaded files, without requesting unprovided effects',()=>{
  const {c}=harness(),defs=c.get('GAME_SE_FILES'),manifest=JSON.parse(fs.readFileSync(path.join(__dirname,'../docs/se-installed.json')));
- assert.equal(Object.keys(defs).length,47);assert.deepEqual(Object.values(defs).map(n=>'assets/audio/se/'+n+'.mp3').sort(),manifest.files.sort());for(const file of manifest.files)assert.ok(fs.statSync(path.join(__dirname,'..',file)).size>0);
+ assert.equal(Object.keys(defs).length,48);assert.deepEqual(Object.values(defs).map(n=>'assets/audio/se/'+n+'.mp3').sort(),manifest.files.sort());for(const file of manifest.files)assert.ok(fs.statSync(path.join(__dirname,'..',file)).size>0);
  assert.equal(c.playGameSe('sniperLens'),false);assert.equal(c.playGameSe('pickup'),false);
 });
 test('MP3s decode once and cached effects play immediately; loading never replays a late shot',async()=>{
@@ -60,9 +60,26 @@ test('the legacy wrapper keeps unavailable effects and gameplay skill tones, whi
 
 test('all ten skill activation aliases reuse se_skills with one download, decode and cache entry',async()=>{
  const h=harness(),{c}=h,names=['bombThrow','hide','decoyPlace','reinforcement','drillStart','build','flameStart','sniperDeploy','houndCommand','partnerCommand'];
- await Promise.all(names.map(n=>c.loadGameSe(n)));assert.equal(h.requests.length,1);assert.ok(h.requests[0].endsWith('/se_skills.mp3'));assert.equal(c.get('gameSe.cache.size'),1);
+ await Promise.all(names.map(n=>c.loadGameSe(n)));assert.equal(h.requests.length,1);assert.ok(h.requests[0].includes('/se_skills.mp3?v='));assert.equal(c.get('gameSe.cache.size'),1);
  for(const n of names){c.now+=100;assert.equal(c.playGameSe(n),true);assert.equal(c.get('Array.from(gameSe.voices)[0].name'),'skillActivate');}
  assert.equal(h.requests.length,1);assert.equal(c.get('gameSe.voices.size'),1);
  for(const n of ['decoy','flameLoop','dogBark','sniper'])assert.notEqual(c.gameSeName(n),'skillActivate');
  const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');assert.ok(html.includes("sfx('hide');say(digUsesWaterFx"));
+});
+
+test('each active MP3 request includes its verified content revision',async()=>{
+ const h=harness(),{c}=h;await c.loadGameSe('cannon');const versions=JSON.parse(fs.readFileSync(path.join(__dirname,'../docs/se-revisions.json')));assert.equal(h.requests[0],'assets/audio/se/se_025_tank_cannon_fire.mp3?v='+versions.se_025_tank_cannon_fire);assert.equal(Object.keys(versions).length,48);
+});
+test('drill contact loops only during actual contact and stops on release, expiry or menus',async()=>{
+ const h=harness(),{c}=h;await c.loadGameSe('drillContact');c.p.drill=5;c.p.drillContact=false;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("drillContact")'),false);
+ c.now+=120;c.p.drillContact=true;c.updateGameAudio();await settle();assert.equal(c.get('gameSe.loops.get("drillContact").name'),'drillContact');c.now+=120;c.p.drillContact=false;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("drillContact")'),false);
+ c.now+=120;c.p.drillContact=true;c.p.drill=0;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("drillContact")'),false);
+ c.now+=120;c.p.drill=5;c.updateGameAudio();await settle();c.state='title';c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("drillContact")'),false);
+});
+test('actual drill collision logic reports contact for cover, objects, targets and tanks, and clears on cancellation',()=>{
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),a=html.indexOf('function updateDrill(dt){'),body=html.slice(a,html.indexOf('// 入水時',a));
+ for(const kind of ['cover','object','base','tank','none']){
+  const target={alive:true,x:30,y:0,st:0,static:false},c={p:{drill:5,drillSfx:1,drillHit:0,drillTankHit:0},humans:[],etanks:kind==='tank'?[target]:[],base:kind==='base'?{hp:10}:null,TANK_HIT:28,DRILL_RECHARGE:6,shake:0,drillGeom:()=>({a:{x:0,y:0},b:{x:50,y:0},r:11}),coversInBox:()=>kind==='cover'?[target]:[],objectsInBox:()=>kind==='object'?[target]:[],segmentHitsCover:()=>true,segmentHitsObject:()=>true,segmentBaseImpact:()=>({x:30,y:0}),pointSegDist:()=>0,R:()=>.5,burst(){},sfx(){},setSkillCooldown(){},say(){}};
+  vm.createContext(c);vm.runInContext(body,c);c.updateDrill(.1);assert.equal(c.p.drillContact,kind!=='none',kind);c.p.drill=0;c.updateDrill(.1);assert.equal(c.p.drillContact,false);c.p.drill=5;c.p.drillContact=true;c.p.tank={};c.updateDrill(.1);assert.equal(c.p.drillContact,false);
+ }
 });

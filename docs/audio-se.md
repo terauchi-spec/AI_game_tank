@@ -1,6 +1,6 @@
 # MP3 SE integration
 
-The green B-column cells in `こっそり戦車大作戦_ゲーム_SE.xlsx` identify the 56 supplied event mappings. The ten skill-activation events now alias the single `se_skills.mp3` asset, giving 47 active MP3 files. `se-installed.json` records the active file paths and shared-skill aliases. Files remain unchanged under `assets/audio/se/`.
+The green B-column cells in `こっそり戦車大作戦_ゲーム_SE.xlsx` identify the 56 supplied event mappings. The ten skill-activation events now alias the single `se_skills.mp3` asset, giving 47 active MP3 files before the new drill-contact effect; the current bank has 48 files. `se-installed.json` records the active file paths and shared-skill aliases. Files remain unchanged under `assets/audio/se/`.
 
 `js/audio.js` shares the existing AudioContext and replaces matching synthesized effects. Unprovided effects retain their existing synthesis. Before a requested MP3 has finished loading, gameplay uses its existing fallback instead of blocking or replaying the event late.
 
@@ -16,3 +16,7 @@ The green B-column cells in `こっそり戦車大作戦_ゲーム_SE.xlsx` iden
 Throw, hide (including water), decoy placement, reinforcement call, drill start, wall build, flame start, sniper deployment, hound command and partner command all resolve to `skillActivate`, backed by `se_skills.mp3`. Downloads, decoding, cache entries and voice limits are shared. Decoy signals, flame sustain, dog barks, weapon sounds and other physical effects retain their own files. Original redundant MP3 uploads are retained but no longer requested.
 
 Validation: the original 56 supplied files matched GitHub blob hashes and decoded fully with FFmpeg; the shared skill asset has the same verified hash as the supplied skill placeholders. Automated audio tests exercise caching, concurrency, failures, distance, throttling, voice caps, loop cancellation and lifecycle. Browser/device listening and perceived loudness still require in-game confirmation.
+
+`se_063_drill_contact.mp3` loops only while the active drill intersects cover, objects, the mission target or an enemy tank. Releasing contact, expiring the skill, boarding a vehicle, or entering a menu stops the loop. The shared skill activation sound remains `se_skills.mp3`.
+
+Every active MP3 URL carries the corresponding Git blob revision from `se-revisions.json`, so replaced audio assets bypass old browser/CDN cache entries without changing filenames.

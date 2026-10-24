@@ -1,5 +1,5 @@
 {
-  "source": "こっそり戦車大作戦_ゲーム_SE.xlsx B列の緑 + 共通スキル発動音 se_skills.mp3",
+  "source": "こっそり戦車大作戦_ゲーム_SE.xlsx B列の緑 + 共通スキル発動音 se_skills.mp3 + 追加ドリル接触音 se_063_drill_contact.mp3",
   "ids": [
     1,
     2,
@@ -38,6 +38,7 @@
     58,
     59,
     61,
+    63,
     64,
     65,
     66,
@@ -105,7 +106,8 @@
     "assets/audio/se/se_091_counterattack_warning.mp3",
     "assets/audio/se/se_093_rain_loop.mp3",
     "assets/audio/se/se_096_fire_loop.mp3",
-    "assets/audio/se/se_skills.mp3"
+    "assets/audio/se/se_skills.mp3",
+    "assets/audio/se/se_063_drill_contact.mp3"
   ],
   "skillActivation": {
     "file": "assets/audio/se/se_skills.mp3",
