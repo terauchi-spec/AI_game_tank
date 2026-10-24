@@ -1,6 +1,6 @@
 # MP3 SE integration
 
-The green B-column cells in `こっそり戦車大作戦_ゲーム_SE.xlsx` identify the 56 supplied event mappings. The ten skill-activation events now alias the single `se_skills.mp3` asset, giving 47 active MP3 files before the new drill-contact effect; the current bank has 48 files. `se-installed.json` records the active file paths and shared-skill aliases. Playback assets are stored under `assets/audio/se/`.
+The green B-column cells in `こっそり戦車大作戦_ゲーム_SE.xlsx` identify the 56 supplied event mappings. The ten skill-activation events now alias the single `se_skills.mp3` asset, giving 47 active MP3 files before the new drill-contact effect; the current bank has 49 files. `se-installed.json` records the active file paths and shared-skill aliases. Playback assets are stored under `assets/audio/se/`.
 
 `js/audio.js` shares the existing AudioContext and replaces matching synthesized effects. Unprovided effects retain their existing synthesis. Before a requested MP3 has finished loading, gameplay uses its existing fallback instead of blocking or replaying the event late.
 
@@ -22,3 +22,5 @@ Validation: the original 56 supplied files matched GitHub blob hashes and decode
 Every active MP3 URL carries the corresponding Git blob revision from `se-revisions.json`, so replaced audio assets bypass old browser/CDN cache entries without changing filenames.
 
 Rain loop gain is 0.10 times rain intensity (previously 0.07). The refreshed drill-contact clip is used, and the updated root-level tank movement upload is copied into the playback asset directory. Revision URLs match the refreshed playback files.
+
+Enemy tanks use the supplied `se_00_enemy_tank_movement_loop.mp3` (3.024 seconds). Actual position changes are sampled at 10 Hz; stationary and destroyed tanks are silent. Distance attenuation fades the loudest moving enemy into one shared loop, culling at 1200 px and avoiding stacked loops in crowds. Menus, reset, tab hiding and blur stop playback and clear movement samples. The player vehicle keeps its separate existing sound.

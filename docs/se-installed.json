@@ -1,5 +1,5 @@
 {
-  "source": "こっそり戦車大作戦_ゲーム_SE.xlsx B列の緑 + 共通スキル発動音 se_skills.mp3 + 追加ドリル接触音 se_063_drill_contact.mp3",
+  "source": "こっそり戦車大作戦_ゲーム_SE.xlsx B列の緑 + 共通スキル発動音 se_skills.mp3 + 追加ドリル接触音 se_063_drill_contact.mp3 + 添付敵戦車走行音 se_00_enemy_tank_movement_loop.mp3",
   "ids": [
     1,
     2,
@@ -107,7 +107,8 @@
     "assets/audio/se/se_093_rain_loop.mp3",
     "assets/audio/se/se_096_fire_loop.mp3",
     "assets/audio/se/se_skills.mp3",
-    "assets/audio/se/se_063_drill_contact.mp3"
+    "assets/audio/se/se_063_drill_contact.mp3",
+    "assets/audio/se/se_00_enemy_tank_movement_loop.mp3"
   ],
   "skillActivation": {
     "file": "assets/audio/se/se_skills.mp3",
