@@ -25,7 +25,7 @@
   "se_038_vehicle_destroyed": "a08301badd19",
   "se_040_cover_break": "17ffe9c3ea22",
   "se_041_vehicle_board_exit": "d3d3e4f26657",
-  "se_042_tank_movement_loop": "6123e8135d29",
+  "se_042_tank_movement_loop": "c66ba82d1935",
   "se_043_wheeled_vehicle_loop": "98ecb50db67d",
   "se_048_aircraft_flyby": "667ec0d2671f",
   "se_050_air_bomb_explosion": "6f114287d521",
@@ -46,5 +46,5 @@
   "se_093_rain_loop": "85ade4968d5d",
   "se_096_fire_loop": "44821f0ff381",
   "se_skills": "3ff9b5665ed7",
-  "se_063_drill_contact": "84610e306d91"
+  "se_063_drill_contact": "b02869a743a7"
 }
