@@ -40,7 +40,7 @@ function updateGameBgm(){
  if(!gameBgm.buffer){loadGameBgm(context);return;}
  if(gameBgm.offset>=gameBgm.buffer.duration){gameBgm.finished=true;return;}
  try{
-  if(!gameBgm.gain){const gain=context.createGain();gain.gain.value=.23;gain.connect(context.destination);gameBgm.gain=gain;}
+  if(!gameBgm.gain){const gain=context.createGain();gain.gain.value=.184;gain.connect(context.destination);gameBgm.gain=gain;}
   const source=context.createBufferSource();source.buffer=gameBgm.buffer;source.loop=false;source.connect(gameBgm.gain);
   source.onended=()=>{
    if(gameBgm.source!==source)return;

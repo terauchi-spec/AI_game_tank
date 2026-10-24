@@ -9,7 +9,7 @@ function harness({defer=false,fail=false,decodeFail=false}={}){
 }
 const tick=()=>new Promise(r=>setImmediate(r));
 test('BGM uses the SE AudioContext, waits for interaction, and decodes once across menu transitions',async()=>{
- const h=harness(),{c}=h;c.updateGameBgm();c.unlockGameBgm({isTrusted:false});assert.equal(h.requests.length,0);h.events.pointerdown({isTrusted:true});await tick();assert.equal(h.requests.length,1);assert.equal(h.decodes(),1);const source=h.sources[0];assert.equal(source.context,h.context);assert.equal(source.loop,false);assert.deepEqual(source.args,[0,0]);assert.equal(h.get('gameBgm.gain.gain.value'),.23);
+ const h=harness(),{c}=h;c.updateGameBgm();c.unlockGameBgm({isTrusted:false});assert.equal(h.requests.length,0);h.events.pointerdown({isTrusted:true});await tick();assert.equal(h.requests.length,1);assert.equal(h.decodes(),1);const source=h.sources[0];assert.equal(source.context,h.context);assert.equal(source.loop,false);assert.deepEqual(source.args,[0,0]);assert.equal(h.get('gameBgm.gain.gain.value'),.184);
  h.context.currentTime=17;for(const state of ['skill','stage','skill','title']){c.state=state;c.updateGameBgm();}assert.equal(h.sources.length,1);assert.equal(source.stopped,undefined);assert.equal(h.requests.length,1);
 });
 test('BGM pauses outside eligible menus and resumes its exact position on return, visibility and focus changes',async()=>{
