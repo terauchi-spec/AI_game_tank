@@ -1,15 +1,16 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const root=path.join(__dirname,'..'),source=fs.readFileSync(path.join(root,'js/intro.js'),'utf8'),html=fs.readFileSync(path.join(root,'index.html'),'utf8');
-function harness({storage=new Map(),fail=false}={}){
+function harness({storage=new Map(),fail=false,reducedMotion=true}={}){
  const nodes=new Map(),classes=new Set(['title-open']),get=id=>{
   if(!nodes.has(id))nodes.set(id,{hidden:false,textContent:'',value:'',scrollTop:100,attrs:{},events:{},getAttribute(k){return this.attrs[k]??null;},setAttribute(k,v){this.attrs[k]=v;},removeAttribute(k){delete this.attrs[k];},addEventListener(k,fn){this.events[k]=fn;},focus(){this.focused=true;},blur(){this.focused=false;}});return nodes.get(id);
  };
- const c={now:1000,performance:{now:()=>c.now},state:'title',keys:{KeyD:true,ArrowUp:true},bombReq:true,cannonReq:true,interact:true,skillReq:true,mdown:true,rolls:0,rollSkillChoices(){this.rolls++;},sfx(){},document:{body:{classList:{add:k=>classes.add(k),remove:k=>classes.delete(k)}},getElementById:get},localStorage:{getItem(k){if(fail)throw Error('blocked');return storage.get(k)||null;},setItem(k,v){if(fail)throw Error('blocked');storage.set(k,v);},removeItem(k){if(fail)throw Error('blocked');storage.delete(k);}}};
+ let timerId=0;const timers=new Map();
+ const c={setTimeout(fn){const id=++timerId;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id),matchMedia:()=>({matches:reducedMotion}),now:1000,performance:{now:()=>c.now},state:'title',keys:{KeyD:true,ArrowUp:true},bombReq:true,cannonReq:true,interact:true,skillReq:true,mdown:true,rolls:0,rollSkillChoices(){this.rolls++;},sfx(){},document:{body:{classList:{add:k=>classes.add(k),remove:k=>classes.delete(k)}},getElementById:get},localStorage:{getItem(k){if(fail)throw Error('blocked');return storage.get(k)||null;},setItem(k,v){if(fail)throw Error('blocked');storage.set(k,v);},removeItem(k){if(fail)throw Error('blocked');storage.delete(k);}}};
  // Stub is called as a global function, not as an object method.
  c.rollSkillChoices=()=>c.rolls++;
  vm.createContext(c);vm.runInContext(source,c);
  const next=()=>{c.now+=500;get('introConversation').events.click({target:{closest:()=>null}});},submit=value=>{get('introName').value=value;get('introNameForm').events.submit({preventDefault(){}});};
- const toName=()=>{for(let i=0;i<5;i++)next();},finish=()=>{for(let i=0;i<5;i++)next();};return {c,get,classes,storage,next,submit,toName,finish};
+ const toName=()=>{for(let i=0;i<5;i++)next();},finish=()=>{for(let i=0;i<5;i++)next();};return {c,get,classes,storage,next,submit,toName,finish,timers,tick(){const [id,fn]=timers.entries().next().value;timers.delete(id);fn();}};
 }
 test('first start shows instructor 0 and first page, then saves name and opens personalized second page before skills',()=>{
  const h=harness(),{c,get}=h;c.startFromTitle();assert.equal(c.state,'intro');assert.equal(c.rolls,0);assert.ok(h.classes.has('intro-open'));assert.ok(!h.classes.has('title-open'));assert.match(get('introInstructor').src,/instructor_0.webp/);assert.equal(get('introDialogue').textContent,'よくきたな！');
@@ -60,8 +61,15 @@ test('each window tap advances one phrase, ignores form taps and double taps, an
  h.get('introConversation').events.click({target:{closest:()=>({})}});assert.equal(h.get('introNameForm').hidden,false);
  h.submit('タンク');const second=[h.get('introDialogue').textContent];h.get('introConversation').events.click({target:{closest:()=>null}});assert.equal(h.get('introDialogue').textContent,second[0]);
  for(let i=0;i<4;i++){h.next();second.push(h.get('introDialogue').textContent);assert.equal(h.c.state,'intro');}
- assert.match(second.join(''),/ほほう、タンクか/);assert.match(second[3],/ではゆけ！タンクよ/);assert.match(second[4],/戦況をかえて/);assert.equal(h.get('introNext').textContent,'スキル選択へ');h.next();assert.equal(h.c.state,'skill');
+ assert.match(second.join(''),/ほほう、タンクか/);assert.match(second[3],/ではゆけ！タンクよ/);assert.match(second[4],/戦況をかえて/);assert.equal(h.get('introNext').attrs['aria-label'],'スキル選択へ');h.next();assert.equal(h.c.state,'skill');
 });
 test('Enter and Space advance the focused conversation once, while repeats do not',()=>{
  const h=harness();h.c.startFromTitle();h.c.now+=500;let prevented=false;h.get('introDialogue').events.keydown({key:'Enter',repeat:false,preventDefault(){prevented=true;}});assert.ok(prevented);assert.match(h.get('introDialogue').textContent,/司令本部/);h.c.now+=500;h.get('introDialogue').events.keydown({key:' ',repeat:true,preventDefault(){}});assert.match(h.get('introDialogue').textContent,/司令本部/);
+});
+
+test('speech reveals one character per tick, tap completes before advancing, and only one timer is active',()=>{
+ const h=harness({reducedMotion:false});h.c.startFromTitle();assert.equal(h.get('introDialogue').textContent,'よ');assert.equal(h.timers.size,1);assert.equal(h.get('introNext').hidden,true);
+ h.tick();assert.equal(h.get('introDialogue').textContent,'よく');assert.equal(h.timers.size,1);h.next();assert.equal(h.get('introDialogue').textContent,'よくきたな！');assert.equal(h.get('introNext').hidden,false);assert.equal(h.timers.size,0);
+ h.next();assert.equal(h.get('introDialogue').textContent,'こ');assert.equal(h.timers.size,1);while(h.timers.size)h.tick();assert.match(h.get('introDialogue').textContent,/司令本部だ！/);assert.equal(h.get('introNext').hidden,false);
+ h.next();assert.equal(h.timers.size,1);h.c.resetIntroName();assert.equal(h.timers.size,0);h.c.state='title';h.c.startFromTitle();assert.equal(h.timers.size,1);h.c.enterIntroSkillSelection();assert.equal(h.timers.size,0);
 });

@@ -1,6 +1,32 @@
 // First-start conversation. Reuses existing compressed artwork; no map generation.
 const INTRO_NAME_KEY='tankGamePlayerNameV1';
 let introSessionName='',introStep=0,introComposing=false,introReadyAt=0,introLine=0;
+let introTypingTimer=null,introFullText='',introTypedCount=0;
+function stopIntroTyping(){
+ if(introTypingTimer!==null)clearTimeout(introTypingTimer);
+ introTypingTimer=null;
+}
+function finishIntroTyping(){
+ stopIntroTyping();introTypedCount=introFullText.length;
+ document.getElementById('introDialogue').textContent=introFullText;
+ document.getElementById('introNext').hidden=false;
+}
+function revealIntroCharacter(){
+ introTypingTimer=null;
+ if(state!=='intro'||introStep===1)return;
+ const copy=document.getElementById('introDialogue');
+ introTypedCount=Math.min(introFullText.length,introTypedCount+1);
+ copy.textContent=introFullText.slice(0,introTypedCount);
+ if(introTypedCount<introFullText.length)introTypingTimer=setTimeout(revealIntroCharacter,40);
+ else document.getElementById('introNext').hidden=false;
+}
+function startIntroTyping(text){
+ stopIntroTyping();introFullText=text;introTypedCount=0;
+ const copy=document.getElementById('introDialogue');copy.textContent='';copy.setAttribute('aria-label',text);
+ document.getElementById('introNext').hidden=true;
+ if(typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches){finishIntroTyping();return;}
+ revealIntroCharacter();
+}
 function normalizeIntroName(value){
  const name=String(value||'').normalize('NFKC').trim();
  return /^[A-Za-z0-9\u3041-\u3096\u309d\u309e\u30a1-\u30fa\u30fc-\u30fe]{1,10}$/u.test(name)?name:'';
@@ -9,6 +35,7 @@ function readIntroName(){
  try{return normalizeIntroName(localStorage.getItem(INTRO_NAME_KEY))||introSessionName;}catch(_){return introSessionName;}
 }
 function resetIntroName(){
+ stopIntroTyping();introFullText='';introTypedCount=0;
  introSessionName='';introStep=0;introLine=0;introComposing=false;introReadyAt=0;
  try{localStorage.removeItem(INTRO_NAME_KEY);}catch(_){}
  document.getElementById('introName').value='';
@@ -47,21 +74,23 @@ function showIntroStep(){
  const naming=introStep===1,copy=document.getElementById('introDialogue');
  copy.hidden=naming;
  document.getElementById('introNameForm').hidden=!naming;
- const next=document.getElementById('introNext');next.hidden=naming;
- if(!naming)copy.textContent=introDialogueLines()[introLine];
- next.textContent=introStep===2&&introLine===introDialogueLines().length-1?'スキル選択へ':'タップして次へ ▾';
+ const next=document.getElementById('introNext');
+ next.setAttribute('aria-label',introStep===2&&introLine===introDialogueLines().length-1?'スキル選択へ':'次のセリフへ');
+ if(naming){stopIntroTyping();next.hidden=true;}else startIntroTyping(introDialogueLines()[introLine]);
  document.getElementById('introScreen').scrollTop=0;
  if(naming)document.getElementById('introName').focus({preventScroll:true});else copy.focus({preventScroll:true});
 }
 function advanceIntroDialogue(){
  if(state!=='intro'||introStep===1||performance.now()<introReadyAt)return;
  introReadyAt=performance.now()+180;sfx('uiConfirm');
+ if(introTypedCount<introFullText.length){finishIntroTyping();return;}
  if(introLine<introDialogueLines().length-1)introLine++;
  else if(introStep===0){introStep=1;introLine=0;}
  else{enterIntroSkillSelection();return;}
  showIntroStep();
 }
 function enterIntroSkillSelection(){
+ stopIntroTyping();
  document.getElementById('introScreen').hidden=true;document.body.classList.remove('intro-open');
  // Name entry must never leave action/movement keys pressed.
  for(const code in keys)keys[code]=false;
