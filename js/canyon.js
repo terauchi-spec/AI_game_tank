@@ -245,12 +245,13 @@ function setupSelectedAreaDebugStage(){
  const bushN=name==='草原'?50:name==='湿地'?30:name==='森林'?12:name==='村'?8:name==='荒野'?0:5;
  for(let i=0,made=0;i<bushN*40&&made<bushN;i++){const x=40+R()*(WW-150),y=z.y1+140+R()*1900;if(!hitsM(x+40,y+25,45)&&!bushes.some(b=>circleHitsRect(x+40,y+25,50,b))){bushes.push({x,y,w:85,h:55});made++;}}
  if(name==='荒野')buildCanyonZones();if(name==='草原')setupGrassVegetation();
- // Reserve a safe starting space for infantry and the unlimited-ammo tank.
- covers=covers.filter(c=>!circleHitsRect(WW/2,p.y-50,145,coverSpriteRect(c)||c));
- objects=objects.filter(o=>!circleHitsRect(WW/2,p.y-50,170,o));bushes=bushes.filter(b=>!circleHitsRect(WW/2,p.y-50,170,b));mud=mud.filter(m=>!circleHitsRect(WW/2,p.y-50,170,m));
- const type=TYPES[0];cars.push({x:WW/2+75,y:p.y-60,t:type,kind:'tank',hp:type.hp,c:type.cmax,v:type.vmax,f:type.fmax,ch:0,body:-Math.PI/2,areaDebug:1,debugInfinite:1});
+ // Reserve the full two-row lineup and a walking lane around every tank.
+ const clearStart=o=>!circleHitsRect(WW/2,p.y-150,310,o);
+ covers=covers.filter(c=>clearStart(coverSpriteRect(c)||c));
+ objects=objects.filter(clearStart);bushes=bushes.filter(clearStart);mud=mud.filter(clearStart);
+ spawnAreaDebugPlayerTanks();
  weather='clear';weatherT=0;weatherNext=name==='荒野'?10:99999;rainIntensity=0;baseSpawnT=99999;radio=null;airstrike=null;airbombs=[];debugMode=1;debugInvincible=true;
- captureBuildingGroundMarks();rebuildSpatialGrid();spawnAreaDebugEnemies(z);say(name+' テスト：無敵／戦車の弾数・燃料無制限');
+ captureBuildingGroundMarks();rebuildSpatialGrid();spawnAreaDebugEnemies(z);say(name+' テスト：無敵／全' + TYPES.length + '種戦車／弾数・燃料無制限');
 }
 function syncAreaDebugPicker(){document.body.classList.toggle('area-picker-open',state==='areaPick');}
 const areaList=document.getElementById('areaDebugList');
