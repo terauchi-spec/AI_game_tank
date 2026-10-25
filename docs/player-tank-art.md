@@ -1,23 +1,22 @@
 # Player tank artwork
 
-The seven player tanks use original, simplified top-down Canvas artwork. Their
-silhouettes follow the references below; they are not blueprints or exact scale
-reproductions. Vehicle statistics, collision geometry, weapon origins, spawns and
-enemy tank graphics are unchanged by the art update.
+The seven player tanks share the original compact, round, stylized renderer in
+`drawOriginalTankShape()`. Wide tracks, large bright wheels, oversized turrets,
+short hulls and the original palette define their appearance. Real-vehicle cues
+are small accents within that style, rather than scale-model proportions.
 
-| Game ID | Visual reference | Distinguishing features |
-| --- | --- | --- |
-| t34 | T-34/85 | Sloping hull, rounded elongated turret, five suspension groups, rear side fuel drums. |
-| tiger | Tiger I | Rectangular hull, horseshoe turret, rear cooling fans, turret storage bin, 88 mm muzzle brake. |
-| type10 | Type 10 | Faceted modular turret, rear bustle, side skirts, five suspension groups, green/brown camouflage. |
-| m1 | M1A1-family Abrams | Broad angular turret cheeks, large rear bustle, seven suspension groups, rear engine grilles, sand finish. |
-| sherman | M4A1 with 75 mm gun | Cast rounded hull and turret, short gun without brake, three VVSS suspension groups per side. |
-| churchill | Churchill Mk VII | Long narrow infantry-tank chassis, full-length track guards, compact turret and many small suspension groups. |
-| kingtiger | Tiger II production turret | Sloped hull, angular turret, long 88 mm gun with double-baffle brake, rear cooling fans and three-color camouflage. |
+| Game ID | Model cues |
+| --- | --- |
+| t34 | Round turret, sloped nose and small rear-side fuel drums. |
+| tiger | Broad box hull and turret, rear cooling fans and chunky muzzle brake. |
+| type10 | Compact angular turret and side skirts. |
+| m1 | Sand finish, broad angular turret and rear bustle. |
+| sherman | Rounded cast nose and round turret with a shorter gun. |
+| churchill | Slightly longer track runs, track guards and a compact turret. |
+| kingtiger | Sloped hull, angular turret and longer gun with a muzzle brake. |
 
-The national/variant paint treatments are representative artistic choices, not a
-claim that every tank of the type used the same camouflage. Small fittings are
-simplified for readability at the game's 30 px drawing scale.
+Vehicle statistics, collision geometry, weapon origins, spawn rules and enemy
+tank graphics are unchanged. The infantry armor-impact sound fix is retained.
 
 ## References
 
@@ -34,16 +33,10 @@ Reference photographs are not bundled, copied into textures or redistributed.
 
 ## Rendering and budget
 
-`js/player-tank-art.js` draws each hull and turret once into separate, tightly cropped
-transparent canvases (hulls 64 x 103 px; turrets at most 54 x 119 px). Both layers rotate independently using the same world
-positions and headings as before. The seven-type cache is bounded to fourteen
-canvases (86,266 pixels, about 0.33 MiB of RGBA pixels before any platform raster
-mirrors). It is independent of the number of vehicles, headings and drawing sizes.
-
-There are no new bitmap downloads. On a cache hit, a complete tank requires two
-raster draws plus a small hull shadow; detailed tracks, camouflage, hatches and
-grilles are not replayed each frame. The existing static raster helper is retained
-for mobile compatibility. Lazy generation avoids work for types absent from play.
-
-Wrecks reuse the armor outlines with their existing blackened styling. The legacy
-enemy renderer remains the fallback; armor/weapon statistics stay in `TYPES`.
+The original illustrations are drawn once into separate cropped hull/turret
+canvases, then rotated independently through the existing static raster helper.
+The cache has at most fourteen small canvases, fewer than 110,000 pixels total
+(under 0.42 MiB of RGBA pixels, before platform raster mirrors). It is independent
+of the number of vehicles, headings and drawing sizes. There are no new bitmap
+downloads and no repeated track/hatch drawing on cache hits. Wrecks use the
+original compact outlines and blackened styling.
