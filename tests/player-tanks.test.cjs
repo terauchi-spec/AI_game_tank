@@ -29,3 +29,28 @@ test('all tank body and turret layers render independently with balanced canvas 
  const silhouettes=[];for(const t of c.types)for(const layer of ['both','hull','turret']){commands.length=0;c.tankShape(0,0,-Math.PI/2,0,t,30,layer);assert.equal(depth,0);assert.ok(commands.length>0);for(const cmd of commands)for(const arg of cmd.slice(1))if(typeof arg==='number')assert.ok(Number.isFinite(arg));if(layer==='both')silhouettes.push(JSON.stringify(commands));}
  assert.equal(new Set(silhouettes).size,7);
 });
+
+function artHarness(){
+ const c=harness(),commands=[],rasters=[],canvases=[];let depth=0;
+ const context=()=>new Proxy({globalAlpha:1,save(){depth++},restore(){depth--},createLinearGradient(){return{addColorStop(){}}}},{get:(o,k)=>k in o?o[k]:(...args)=>commands.push([k,...args])});
+ c.g=context();c.document={createElement(){const canvas={number:canvases.length};canvases.push(canvas);return canvas;}};c.gameCanvasContext=context;c.drawStaticRaster=(...args)=>rasters.push(args);
+ vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/player-tank-art.js'),'utf8'),c);
+ vm.runInContext(section(html,'function wreckHullPath(','function tankWreckPose('),c);vm.runInContext(section(html,'function tankShape(','function truckShape('),c);
+ return{c,commands,rasters,canvases,depth:()=>depth};
+}
+test('reference artwork caches exactly two layers per type and does no repeated vector work or allocations',()=>{
+ const h=artHarness();for(const t of h.c.types)h.c.tankShape(12,34,.2,.8,t,30,'both');assert.equal(h.canvases.length,14);assert.equal(h.rasters.length,14);assert.equal(h.depth(),0);
+ const originals=h.rasters.map(args=>args[0]);h.rasters.length=0;h.commands.length=0;
+ for(let n=0;n<10;n++)for(const t of h.c.types)h.c.tankShape(12,34,n*.1,n*.2,t,30,'both');
+ assert.equal(h.canvases.length,14);assert.equal(h.rasters.length,140);assert.ok(h.commands.every(cmd=>['translate','rotate','beginPath','ellipse','fill'].includes(cmd[0])));assert.equal(h.depth(),0);
+ for(let i=0;i<140;i++)assert.equal(h.rasters[i][0],originals[i%14]);assert.ok(h.canvases.every(v=>v.width<=64&&v.height<=120));assert.ok(h.canvases.reduce((sum,v)=>sum+v.width*v.height,0)<100000);
+});
+test('split foliage layers keep independent turret headings, caller opacity and all seven cached designs',()=>{
+ const h=artHarness();for(const t of h.c.types){h.c.g.globalAlpha=.4;h.rasters.length=0;h.commands.length=0;h.c.tankShape(0,0,.3,1.2,t,30,'hull');assert.equal(h.rasters.length,1);assert.equal(h.c.g.globalAlpha,.4);assert.ok(h.commands.some(cmd=>cmd[0]==='rotate'&&cmd[1]===.3+Math.PI/2));h.commands.length=0;h.c.tankShape(0,0,.3,1.2,t,30,'turret');assert.equal(h.rasters.length,2);assert.ok(h.commands.some(cmd=>cmd[0]==='rotate'&&cmd[1]===1.2+Math.PI/2));assert.equal(h.depth(),0);}
+});
+test('reference artwork is limited to player tanks and preserves the legacy enemy renderer',()=>{
+ const h=artHarness();h.c.shade=()=> '#888';h.c.tankShape(0,0,0,0,{id:'enemy',col:'#333333'},30);assert.equal(h.canvases.length,0);assert.equal(h.rasters.length,0);assert.ok(h.commands.some(cmd=>cmd[0]==='fillRect'));assert.equal(h.depth(),0);
+});
+test('destroyed player hulls and turrets use the same reference outline with the legacy gun axis',()=>{
+ const h=artHarness();for(const t of h.c.types){h.commands.length=0;h.c.wreckHullPath(h.c.g,t.id,30);h.c.wreckTurretPath(h.c.g,t.id,30);assert.ok(h.commands.some(cmd=>cmd[0]==='rotate'&&cmd[1]===Math.PI/2));assert.equal(h.depth(),0);}
+});
