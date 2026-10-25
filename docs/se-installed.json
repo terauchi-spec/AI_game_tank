@@ -1,5 +1,5 @@
 {
-  "source": "こっそり戦車大作戦_ゲーム_SE.xlsx B列の緑 + 共通スキル発動音 se_skills.mp3 + 追加ドリル接触音 se_063_drill_contact.mp3 + 添付敵戦車走行音 se_00_enemy_tank_movement_loop.mp3 + 追加SE（花火・土の足音・目標破壊・狙撃ズーム）",
+  "source": "こっそり戦車大作戦_ゲーム_SE.xlsx B列の緑 + 共通スキル発動音 se_skills.mp3 + 追加ドリル接触音 se_063_drill_contact.mp3 + 添付敵戦車走行音 se_00_enemy_tank_movement_loop.mp3 + 追加SE（花火・土の足音・目標破壊・狙撃ズーム）（反撃警告SEは除外）",
   "ids": [
     1,
     2,
@@ -59,7 +59,6 @@
     84,
     85,
     89,
-    91,
     93,
     96
   ],
@@ -107,7 +106,6 @@
     "assets/audio/se/se_084_document_collected.mp3",
     "assets/audio/se/se_085_all_documents_collected.mp3",
     "assets/audio/se/se_089_capture_complete.mp3",
-    "assets/audio/se/se_091_counterattack_warning.mp3",
     "assets/audio/se/se_093_rain_loop.mp3",
     "assets/audio/se/se_096_fire_loop.mp3",
     "assets/audio/se/se_skills.mp3",

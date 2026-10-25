@@ -22,9 +22,9 @@ test('enemy tanks share one loop, use movement rather than turret rotation, and 
  c.state='results';c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),false);c.state='play';c.now+=120;for(const t of c.etanks)t.x+=5;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),false);
  c.now+=120;for(const t of c.etanks)t.x+=5;c.updateGameAudio();await settle();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),true);c.stopGameAudio();c.now+=120;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),false);
 });
-test('all 53 active manifest MP3s match the explicitly uploaded files, without requesting unprovided effects',()=>{
+test('all 52 active manifest MP3s match the explicitly uploaded files, without requesting unprovided effects',()=>{
  const {c}=harness(),defs=c.get('GAME_SE_FILES'),manifest=JSON.parse(fs.readFileSync(path.join(__dirname,'../docs/se-installed.json')));
- assert.equal(Object.keys(defs).length,53);assert.deepEqual(Object.values(defs).map(n=>'assets/audio/se/'+n+'.mp3').sort(),manifest.files.sort());for(const file of manifest.files)assert.ok(fs.statSync(path.join(__dirname,'..',file)).size>0);
+ assert.equal(Object.keys(defs).length,52);assert.deepEqual(Object.values(defs).map(n=>'assets/audio/se/'+n+'.mp3').sort(),manifest.files.sort());for(const file of manifest.files)assert.ok(fs.statSync(path.join(__dirname,'..',file)).size>0);
  assert.equal(c.gameSeName('sniperLens'),'sniperLens');assert.equal(c.playGameSe('pickup'),false);
 });
 test('MP3s decode once and cached effects play immediately; loading never replays a late shot',async()=>{
@@ -82,7 +82,7 @@ test('all ten skill activation aliases reuse se_skills with one download, decode
 });
 
 test('each active MP3 request includes its verified content revision',async()=>{
- const h=harness(),{c}=h;await c.loadGameSe('cannon');const versions=JSON.parse(fs.readFileSync(path.join(__dirname,'../docs/se-revisions.json')));assert.equal(h.requests[0],'assets/audio/se/se_025_tank_cannon_fire.mp3?v='+versions.se_025_tank_cannon_fire);assert.equal(Object.keys(versions).length,53);
+ const h=harness(),{c}=h;await c.loadGameSe('cannon');const versions=JSON.parse(fs.readFileSync(path.join(__dirname,'../docs/se-revisions.json')));assert.equal(h.requests[0],'assets/audio/se/se_025_tank_cannon_fire.mp3?v='+versions.se_025_tank_cannon_fire);assert.equal(Object.keys(versions).length,52);
 });
 test('drill contact loops only during actual contact and stops on release, expiry or menus',async()=>{
  const h=harness(),{c}=h;await c.loadGameSe('drillContact');c.p.drill=5;c.p.drillContact=false;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("drillContact")'),false);
@@ -136,4 +136,8 @@ test('objective destruction plays once at the lethal hit and fireworks follow an
  let listener;c.document={getElementById:()=>({addEventListener:(name,fn)=>listener=fn})};
  const a=html.indexOf("document.getElementById('missionSuccess').addEventListener('animationstart'");vm.runInContext(html.slice(a,html.indexOf("document.getElementById('missionSuccessEvaluate').addEventListener",a)),c);
  c.state='succeeded';listener({animationName:'missionBriefingPop'});listener({animationName:'missionFireworkBurst'});c.state='win';listener({animationName:'missionFireworkBurst'});assert.deepEqual(sounds,['objectiveDestroyed','firework']);
+});
+
+test('counterattack warning has no audio download or playback',async()=>{
+ const h=harness();assert.equal(h.c.playGameSe('counterattack'),false);await h.c.loadGameSe('counterattack');assert.equal(h.requests.length,0);assert.equal(h.sources.length,0);
 });
