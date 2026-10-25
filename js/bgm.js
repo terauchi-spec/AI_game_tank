@@ -2,7 +2,7 @@
 const GAME_BGM_URL='assets/audio/bgm/stahlmarsch_zum_sieg.mp3?v=696964203a01';
 const gameBgm={buffer:null,pending:null,source:null,gain:null,offset:0,startedAt:0,unlocked:false,finished:false,blocked:false,focused:true,resultActive:false,resultWaiting:false};
 function gameBgmContext(){return typeof audioCtx!=='undefined'?audioCtx:null;}
-function gameBgmAllowed(){return typeof state!=='undefined'&&(state==='title'||state==='skill'||state==='stage'||(gameBgm.resultActive&&(state==='win'||state==='lose')));}
+function gameBgmAllowed(){return typeof state!=='undefined'&&(state==='title'||state==='leaderboard'||state==='skill'||state==='stage'||(gameBgm.resultActive&&(state==='win'||state==='lose')));}
 function gameBgmVisible(){return gameBgm.focused&&(typeof document==='undefined'||document.visibilityState!=='hidden');}
 function gameBgmWanted(){return gameBgmAllowed()&&gameBgmVisible()&&!gameBgm.resultWaiting;}
 function pauseGameBgm(){

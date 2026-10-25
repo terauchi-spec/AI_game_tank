@@ -32,8 +32,8 @@ test('IME confirmation cannot submit early; storage failure allows the current s
 });
 test('all title entry points use the intro gate and input handlers ignore gameplay shortcuts during entry',()=>{
  assert.match(html,/if\(hitRect\(px,py,r.start\)\)\{startFromTitle\(\)/);assert.match(html,/if\(state==='title'\)\{e.preventDefault\(\);startFromTitle\(\)/);assert.match(html,/getElementById\('titleStart'\)\.addEventListener\('click',\(\)=>\{startFromTitle\(\)/);
- for(const kind of ['keydown','keypress','keyup'])assert.ok(html.includes("addEventListener('"+kind+"',e=>{\n if(state==='intro')return;"));
- assert.match(html,/function drawMenuOnlyState\(\)\{\n if\(state==='intro'\)return true;/);
+ for(const kind of ['keydown','keypress','keyup'])assert.ok(html.includes("addEventListener('"+kind+"',e=>{\n if(state==='intro'||state==='leaderboard')return;"));
+ assert.match(html,/function drawMenuOnlyState\(\)\{\n if\(state==='intro'\|\|state==='leaderboard'\)return true;/);
 });
 
  test('the title activation cannot skip the opening conversation and conversation focus cannot trigger next on key release',()=>{
