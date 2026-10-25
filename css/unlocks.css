@@ -30,3 +30,6 @@ body.unlock-open,html:has(body.unlock-open){overscroll-behavior:none}
 
 /* Keep the same headquarters scene when leaving the introduction. */
 #skillScreen{isolation:isolate;background:#080a07}
+
+/* Anchor the skill backdrop to the viewport while the skill list scrolls. */
+#skillScreen::before{position:fixed}
