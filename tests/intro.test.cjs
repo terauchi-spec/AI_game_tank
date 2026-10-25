@@ -61,7 +61,7 @@ test('each window tap advances one phrase, ignores form taps and double taps, an
  h.get('introConversation').events.click({target:{closest:()=>({})}});assert.equal(h.get('introNameForm').hidden,false);
  h.submit('タンク');const second=[h.get('introDialogue').textContent];h.get('introConversation').events.click({target:{closest:()=>null}});assert.equal(h.get('introDialogue').textContent,second[0]);
  for(let i=0;i<4;i++){h.next();second.push(h.get('introDialogue').textContent);assert.equal(h.c.state,'intro');}
- assert.match(second.join(''),/ほほう、タンクか/);assert.match(second[3],/ではゆけ！タンクよ/);assert.match(second[4],/真のこっそり魂をみせるのだ！/);assert.equal(h.get('introNext').attrs['aria-label'],'スキル選択へ');h.next();assert.equal(h.c.state,'skill');
+ assert.match(second.join(''),/ほほう、タンクか/);assert.match(second[3],/ではゆけ！タンクよ/);assert.match(second[4],/いきすぎたサバイバルゲームを決着させるのだ！/);assert.equal(h.get('introNext').attrs['aria-label'],'スキル選択へ');h.next();assert.equal(h.c.state,'skill');
 });
 test('Enter and Space advance the focused conversation once, while repeats do not',()=>{
  const h=harness();h.c.startFromTitle();h.c.now+=500;let prevented=false;h.get('introDialogue').events.keydown({key:'Enter',repeat:false,preventDefault(){prevented=true;}});assert.ok(prevented);assert.match(h.get('introDialogue').textContent,/司令本部/);h.c.now+=500;h.get('introDialogue').events.keydown({key:' ',repeat:true,preventDefault(){}});assert.match(h.get('introDialogue').textContent,/司令本部/);
