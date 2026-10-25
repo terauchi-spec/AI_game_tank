@@ -97,3 +97,21 @@ test('actual drill collision logic reports contact for cover, objects, targets a
   vm.createContext(c);vm.runInContext(body,c);c.updateDrill(.1);assert.equal(c.p.drillContact,kind!=='none',kind);c.p.drill=0;c.updateDrill(.1);assert.equal(c.p.drillContact,false);c.p.drill=5;c.p.drillContact=true;c.p.tank={};c.updateDrill(.1);assert.equal(c.p.drillContact,false);
  }
 });
+
+function incomingBulletHarness({kind='r',vehicle='tank',id='t34',hit=true}={}){
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),section=(a,b)=>html.slice(html.indexOf(a),html.indexOf(b,html.indexOf(a))),sounds=[];
+ const c={p:{x:0,y:0,hp:3,tank:vehicle?{kind:vehicle,t:{id,armor:2},ch:0,hp:8}:null},scoreStats:{damageHits:0},bullets:[{x:-40,y:hit?0:100,vx:1000,vy:0,life:1,from:'e',k:kind}],humans:[],etanks:[],allies:[],partner:null,hound:null,decoy:null,TANK_HIT:28,FIGHTER_TYPE:{hp:8},stageMode:'base',shake:0,sfx:n=>sounds.push(n),burst(){},cannonImpact(){},segmentBaseImpact:()=>null,objectsInBox:()=>[],coversInBox:()=>[],wreck(){c.wrecked=true;},triggerPlayerDeath(){c.died=true;},D:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y)};
+ vm.createContext(c);vm.runInContext(section('function recordPlayerDamage(','function trackObjectiveMovement('),c);vm.runInContext(section('function enemyPlayerBulletImpact(','function pointSegDist('),c);
+ vm.runInContext('function incoming(dt){'+section(' for(let i=bullets.length-1;i>=0;i--){const b=bullets[i],ox=b.x',' for(const w of waves){w.r+=260*dt')+'}',c);c.incoming(.05);return{c,sounds};
+}
+test('infantry bullets ping every player tank with the existing armor-hit SE, without damage or score penalties',()=>{
+ for(const id of ['t34','tiger','type10','m1','sherman','churchill','kingtiger']){
+  const h=incomingBulletHarness({id});assert.deepEqual(h.sounds,['vehicleHit']);assert.equal(h.c.p.tank.ch,0);assert.equal(h.c.scoreStats.damageHits,0);assert.equal(h.c.p.hp,3);assert.equal(h.c.bullets.length,0);assert.equal(h.c.wrecked,undefined);
+ }
+});
+test('tank machine guns keep the same armor-hit SE; misses and on-foot hits retain their existing behavior',()=>{
+ const mg=incomingBulletHarness({kind:'v'});assert.deepEqual(mg.sounds,['vehicleHit']);assert.equal(mg.c.p.tank.ch,.066);assert.equal(mg.c.scoreStats.damageHits,1);
+ const miss=incomingBulletHarness({hit:false});assert.deepEqual(miss.sounds,[]);assert.equal(miss.c.bullets.length,1);
+ const foot=incomingBulletHarness({vehicle:null});assert.deepEqual(foot.sounds,['playerHit']);assert.equal(foot.c.p.hp,2);
+ const armored=incomingBulletHarness({id:'armored'});assert.deepEqual(armored.sounds,['vehicleHit']);assert.ok(armored.c.p.tank.ch>0);
+});
