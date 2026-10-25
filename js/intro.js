@@ -59,7 +59,7 @@ function introDialogueLines(){
   'ここは、こっそり戦車師団の司令本部だ！',
   'お前にはこれから、こっそり戦車大隊の隊長となってもらう',
   '・・・',
-  'ところで貴様は自分の名前もいえないのか！？'
+  'ところで貴様は自分の名前もなのらんのか！？'
  ];
  const name=readIntroName();
  return [
@@ -67,11 +67,26 @@ function introDialogueLines(){
   'なかなか良い名前ではないか',
   'その名にはじぬよう、一人前のこっそり兵士をめざすがよい',
   'ではゆけ！'+name+'よ',
-  '真のこっそり魂で、この戦況をかえてみせるのだ！'
+  '真のこっそり魂をみせるのだ！'
  ];
+}
+// Keyboard changes the visible viewport on iOS without shrinking the layout viewport.
+// Only name entry responds to these events; no per-frame viewport measurements.
+function updateIntroNameViewport(){
+ if(state!=='intro'||introStep!==1||typeof visualViewport==='undefined')return;
+ const screen=document.getElementById('introScreen'),viewport=visualViewport;
+ const top=Math.max(12,viewport.offsetTop-screen.getBoundingClientRect().top+12);
+ screen.style.setProperty('--intro-form-top',top+'px');
+ screen.style.setProperty('--intro-form-height',Math.max(1,viewport.height-24)+'px');
+}
+if(typeof visualViewport!=='undefined'){
+ visualViewport.addEventListener('resize',updateIntroNameViewport);
+ visualViewport.addEventListener('scroll',updateIntroNameViewport);
 }
 function showIntroStep(){
  const naming=introStep===1,copy=document.getElementById('introDialogue');
+ if(naming){document.body.classList.add('intro-naming');updateIntroNameViewport();}
+ else document.body.classList.remove('intro-naming');
  copy.hidden=naming;
  document.getElementById('introNameForm').hidden=!naming;
  const next=document.getElementById('introNext');
@@ -91,7 +106,7 @@ function advanceIntroDialogue(){
 }
 function enterIntroSkillSelection(){
  stopIntroTyping();
- document.getElementById('introScreen').hidden=true;document.body.classList.remove('intro-open');
+ document.getElementById('introScreen').hidden=true;document.body.classList.remove('intro-open');document.body.classList.remove('intro-naming');
  // Name entry must never leave action/movement keys pressed.
  for(const code in keys)keys[code]=false;
  bombReq=false;cannonReq=false;interact=false;skillReq=false;mdown=false;
