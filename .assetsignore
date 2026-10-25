@@ -1,0 +1,11 @@
+# Repository and local tooling are not public game assets.
+**/.git
+**/.github
+**/node_modules
+**/.wrangler
+**/.DS_Store
+**/.env
+**/.env.*
+/tests/
+/docs/
+/.assetsignore
