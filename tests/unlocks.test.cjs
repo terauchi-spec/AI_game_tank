@@ -28,7 +28,7 @@ test('failure results with new titles receive the same interstitial, and another
 });
 test('instructor cycle is persistent, advances only once per opening, wraps around and tolerates unavailable storage',()=>{
  const storage=new Map();
- for(let i=0;i<5;i++){const h=harness({storage});h.c.scoreStats=run();h.c.syncResultScreen();assert.match(h.getNode('unlockInstructor').src,new RegExp('instructor_'+(i%3+1)));for(let j=0;j<5;j++)h.c.syncResultScreen();}
+ for(let i=0;i<14;i++){const h=harness({storage});h.c.scoreStats=run();h.c.syncResultScreen();assert.match(h.getNode('unlockInstructor').src,new RegExp('instructor_'+(i%12+1)));for(let j=0;j<5;j++)h.c.syncResultScreen();}
  const h=harness({storageFails:true});h.c.scoreStats=run();assert.doesNotThrow(()=>h.c.syncResultScreen());h.c.acknowledgeRunUnlocks();h.c.state='play';h.c.syncResultScreen();h.c.scoreStats=run();h.c.state='win';h.c.syncResultScreen();assert.match(h.getNode('unlockInstructor').src,/instructor_2/);
 });
 test('Enter, Space and Escape acknowledge rather than skip to skill selection; repeats and stale clicks do not acknowledge',()=>{
@@ -37,7 +37,7 @@ test('Enter, Space and Escape acknowledge rather than skip to skill selection; r
 });
 test('cards escape labels and all responsive screen assets exist',()=>{
  const h=harness();const card=h.c.renderUnlockCard({kind:'skill',name:'<script>"&',image:'x" onerror="bad',note:'<>'});assert.doesNotMatch(card,/<script>|src="x" onerror=/);assert.match(card,/&lt;script&gt;/);assert.match(html,/ナイスこっそり！/);assert.match(html,/id="unlockEvaluate" type="button">評価画面/);assert.match(html,/css\/unlocks.css\?v=/);
- const css=fs.readFileSync(path.join(root,'css/unlocks.css'),'utf8');assert.match(css,/safe-area-inset-bottom/);assert.match(css,/--menu-button-font-size/);assert.match(css,/#unlockScreen\[hidden\]/);for(let i=1;i<=3;i++)assert.ok(fs.statSync(path.join(root,'assets/ui/instructors/instructor_'+i+'.webp')).size<100000);
+ const css=fs.readFileSync(path.join(root,'css/unlocks.css'),'utf8');assert.match(css,/safe-area-inset-bottom/);assert.match(css,/--menu-button-font-size/);assert.match(css,/#unlockScreen\[hidden\]/);for(let i=1;i<=12;i++)assert.ok(fs.statSync(path.join(root,'assets/ui/instructors/instructor_'+i+'.webp')).size<100000);
 });
 
 test('debug results show all newly persisted unlocks before evaluation',()=>{const h=harness();h.c.scoreStats={...run(),debugUsed:true};h.c.syncResultScreen();assert.ok(h.classes.has('unlock-open'));assert.equal(h.c.renders,0);assert.equal(h.c.scoreStats.unlockNoticeItems.length,3);});
