@@ -42,3 +42,12 @@ Run `node --test tests/leaderboard*.test.cjs` for validation, best-score orderin
 concurrent transactional updates, cookie handling, DOM rendering, exclusion,
 offline retry and submission snapshots. Integration with the actual Cloudflare
 account must be verified after deployment via the API and two browser sessions.
+
+Successful score submissions also return `updated: [{board, position}]`, limited
+to boards whose top-30 row actually changed for that player. Unchanged personal
+bests and scores outside the retained thirty return an empty array. The client
+uses only this server confirmation for unlock-screen scoreboard notices, including
+when there are no stage/skill/title unlocks. Late results append to an open notice;
+if evaluation has already opened they produce a score-only notice once. A delayed
+submission never interrupts another sortie. The instructor bubble uses the outcome
+of the run and does not add another animation timer.

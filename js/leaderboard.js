@@ -1,5 +1,6 @@
 // Network work happens only after results or when this board is opened, never per frame.
 const LEADERBOARD_PENDING_KEY='tankGameLeaderboardPendingV1';
+const leaderboardRuns=new WeakMap();
 let leaderboardBoard='overall',leaderboardRequest=0,leaderboardSending=false,leaderboardPending=readLeaderboardPending();
 function readLeaderboardPending(){try{const v=JSON.parse(localStorage.getItem(LEADERBOARD_PENDING_KEY)||'{}');return v&&typeof v==='object'&&!Array.isArray(v)?v:{};}catch(_){return {};}}
 function saveLeaderboardPending(){try{localStorage.setItem(LEADERBOARD_PENDING_KEY,JSON.stringify(leaderboardPending));}catch(_){}}
@@ -11,7 +12,7 @@ function queueLeaderboardScore(s){
  const titles=[s.awards?.primary,...(s.awards?.titles||[])].filter((id,i,a)=>byId.has(id)&&a.indexOf(id)===i);
  const entry={name,stage,score:Math.round(s.final.total),rank:s.final.rank,skill,titles,debug:false};
  s.leaderboardQueued=true;
- if(!leaderboardPending[stage]||entry.score>leaderboardPending[stage].score){leaderboardPending[stage]=entry;saveLeaderboardPending();}
+ if(!leaderboardPending[stage]||entry.score>leaderboardPending[stage].score){leaderboardPending[stage]=entry;leaderboardRuns.set(entry,s);saveLeaderboardPending();}
  setTimeout(flushLeaderboardScores,0);
 }
 async function leaderboardFetch(url,options={}){
@@ -26,10 +27,19 @@ async function flushLeaderboardScores(){
    const entry=leaderboardPending[stage];if(!entry)continue;
    const result=await leaderboardFetch('/api/leaderboard',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(entry)});
    if(!result.ok)throw Error('not saved');
+   notifyLeaderboardUpdate(entry,result);
    if(leaderboardPending[stage]===entry){delete leaderboardPending[stage];saveLeaderboardPending();}
   }
  }catch(_){/* Keep the bounded queue for the next result or board visit. */}
  finally{leaderboardSending=false;}
+}
+function notifyLeaderboardUpdate(entry,result){
+ const run=leaderboardRuns.get(entry);if(!run||!Array.isArray(result.updated))return;
+ const updates=result.updated.filter(v=>(v.board==='overall'||STAGE_ORDER.some(stage=>stage.id===v.board))&&Number.isInteger(v.position)&&v.position>=1&&v.position<=30);
+ if(!updates.length)return;
+ run.leaderboardUpdates=updates;
+ // Never interrupt another sortie/menu when an old offline submission completes.
+ if(typeof scoreStats!=='undefined'&&scoreStats===run&&(state==='win'||state==='lose')&&typeof syncResultScreen==='function')syncResultScreen();
 }
 function openLeaderboard(){
  if(state!=='title')return;

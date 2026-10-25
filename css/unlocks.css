@@ -33,3 +33,8 @@ body.unlock-open,html:has(body.unlock-open){overscroll-behavior:none}
 
 /* Anchor the skill backdrop to the viewport while the skill list scrolls. */
 #skillScreen::before{position:fixed}
+
+/* Reuse the introduction's speech-bubble treatment without a new image asset. */
+#unlockScreen .unlock-instructor-speech{display:block;position:relative;box-sizing:border-box;margin:-40px auto 18px;padding:22px 24px;border:1px solid #e9e4d8;border-radius:28px;background:#fffdf8;color:#293026;box-shadow:0 7px 24px #0005;font-size:clamp(22px,5.2vw,27px);font-weight:650;line-height:1.65;opacity:1;text-align:left}
+.unlock-instructor-speech::before{content:'';position:absolute;top:-15px;left:22%;border-left:14px solid transparent;border-right:14px solid transparent;border-bottom:16px solid #fffdf8;pointer-events:none}
+.unlock-leaderboard-ranks{font-size:clamp(14px,3.5vw,18px);line-height:1.6;margin-top:6px;color:#fff0bf}

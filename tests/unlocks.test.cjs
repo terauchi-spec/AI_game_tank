@@ -41,3 +41,20 @@ test('cards escape labels and all responsive screen assets exist',()=>{
 });
 
 test('debug results show all newly persisted unlocks before evaluation',()=>{const h=harness();h.c.scoreStats={...run(),debugUsed:true};h.c.syncResultScreen();assert.ok(h.classes.has('unlock-open'));assert.equal(h.c.renders,0);assert.equal(h.c.scoreStats.unlockNoticeItems.length,3);});
+test('a confirmed leaderboard update alone opens the unlock screen and uses success/failure speech',()=>{
+ for(const cleared of [true,false]){
+  const h=harness();h.c.state=cleared?'win':'lose';h.c.scoreStats={final:{total:12345,cleared},awards:{newTitles:[]},leaderboardUpdates:[{board:'overall',position:3},{board:'indoorBeginner',position:2}]};
+  h.c.syncResultScreen();assert.ok(h.classes.has('unlock-open'));const text=h.getNode('unlockList').innerHTML;assert.match(text,/スコアボード更新/);assert.match(text,/12,345点/);assert.match(text,/総合 3位/);assert.match(text,/潜入（初級） 2位/);assert.equal(h.getNode('unlockDialogue').textContent,cleared?'よくやった！すばらしい逃げ足だったぞ':'もっとこっそり進め！はずかしくないのか');
+ }
+});
+test('late confirmed ranking updates append once to an open unlock screen without cycling the instructor',()=>{
+ const h=harness();h.c.scoreStats=run();h.c.syncResultScreen();const image=h.getNode('unlockInstructor').src;h.c.scoreStats.leaderboardUpdates=[{board:'overall',position:1}];h.c.syncResultScreen();h.c.syncResultScreen();assert.equal(h.getNode('unlockInstructor').src,image);assert.equal(h.c.scoreStats.unlockNoticeItems.filter(v=>v.kind==='leaderboard').length,1);assert.match(h.getNode('unlockList').innerHTML,/総合 1位/);
+});
+test('a confirmed update arriving after evaluation opened is shown once and does not repeat prior unlocks',()=>{
+ const h=harness();h.c.scoreStats=run();h.c.syncResultScreen();h.c.acknowledgeRunUnlocks();assert.ok(h.classes.has('result-open'));h.c.scoreStats.leaderboardUpdates=[{board:'overall',position:5}];h.c.syncResultScreen();assert.ok(h.classes.has('unlock-open'));assert.deepEqual(Array.from(h.c.scoreStats.unlockNoticeItems,v=>v.kind),['leaderboard']);h.c.acknowledgeRunUnlocks();h.c.syncResultScreen();assert.ok(!h.classes.has('unlock-open'));
+});
+test('unconfirmed, non-ranking and invalid-position submissions never create scoreboard notices',()=>{
+ for(const updates of [undefined,[],[{board:'overall',position:31}],[{board:'unknown',position:1}]]){
+  const h=harness(),s={final:{total:100,cleared:false},awards:{newTitles:[]},leaderboardUpdates:updates};assert.equal(h.c.collectRunUnlocks(s).length,0);
+ }
+});

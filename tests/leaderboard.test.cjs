@@ -24,3 +24,9 @@ test('scoreboard opens from title and handles unavailable service, close and lat
 test('names are rendered as plain text and only known title IDs create trusted artwork',()=>{
  const h=harness();h.c.renderLeaderboardRows([{name:'<img onerror=bad>',score:500,rank:'A',skill:'throw',titles:['<script>','v3_single_1']}]);const row=h.get('leaderboardList').children[0].children[0],body=row.children[1];assert.equal(body.children[0].textContent,'<img onerror=bad>');assert.equal(body.children[0].innerHTML,undefined);assert.equal(body.children[2].children.length,1);
 });
+test('server-confirmed board changes notify the matching run only; failures and unchanged scores do not announce updates',async()=>{
+ for(const mode of ['updated','same','failed','stale']){
+  const h=harness(),s=run();h.c.scoreStats=mode==='stale'?run():s;let opened=0;h.c.syncResultScreen=()=>opened++;h.c.fetch=async()=>{if(mode==='failed')throw Error('offline');return{ok:true,json:async()=>({ok:true,updated:mode==='same'?[]:[{board:'overall',position:4}]})};};
+  h.c.queueLeaderboardScore(s);await h.c.flushLeaderboardScores();assert.equal(opened,mode==='updated'?1:0,mode);assert.equal(!!s.leaderboardUpdates,mode==='updated'||mode==='stale',mode);
+ }
+});

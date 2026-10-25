@@ -28,13 +28,16 @@ export class Scoreboard{
   if(!score||typeof body.player!=='string'||!/^[a-f0-9-]{36}$/.test(body.player))return json({error:'invalid_score'},400);
   const entry={...score,player:body.player,at:Date.now()};
   // Both boards update atomically; simultaneous submissions cannot lose a winner.
-  await this.ctx.storage.transaction(async tx=>{
+  const updated=await this.ctx.storage.transaction(async tx=>{
+   const updates=[];
    for(const board of ['overall',entry.stage]){
     const key='board:'+board,rows=await tx.get(key)||[],next=insertBest(rows,entry);
-    if(next!==rows)await tx.put(key,next);
+    const position=next.findIndex(v=>v.player===entry.player);
+    if(next!==rows&&position>=0){await tx.put(key,next);updates.push({board,position:position+1});}
    }
+   return updates;
   });
-  return json({ok:true});
+  return json({ok:true,updated});
  }
 }
 export default{

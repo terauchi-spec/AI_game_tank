@@ -30,3 +30,10 @@ test('worker routes static assets unchanged and rejects cross-origin, invalid or
  const response=await worker.fetch(post(JSON.stringify(sample())),env);assert.equal(response.status,200);const cookie=response.headers.get('set-cookie');assert.match(cookie,/__Host-tankPlayer=/);assert.match(cookie,/HttpOnly; Secure; SameSite=Strict/);assert.equal(calls,1);
  assert.equal((await worker.fetch(new Request('https://game.test/api/nope'),env)).status,404);
 });
+test('submission response identifies actual changed top-30 boards and ranks, excluding unchanged or non-ranking scores',async()=>{
+ const {Scoreboard}=await mod,h=storageHarness(),board=new Scoreboard(h),id='12345678-1234-1234-1234-123456789012';
+ const post=async(player,entry)=>(await board.fetch(new Request('https://game.test/api/leaderboard',{method:'POST',body:JSON.stringify({player,entry})}))).json();
+ const first=await post(id,sample({score:100}));assert.deepEqual(first.updated,[{board:'overall',position:1},{board:'beginner',position:1}]);assert.deepEqual((await post(id,sample({score:100}))).updated,[]);
+ for(let i=0;i<30;i++)await post(i.toString(16).padStart(8,'0')+'-1234-1234-1234-123456789012',sample({score:200+i}));assert.deepEqual((await post(id,sample({score:150}))).updated,[]);
+ const stageOnly=await post(id,sample({stage:'indoor',score:160}));assert.deepEqual(stageOnly.updated,[{board:'indoor',position:1}]);
+});
