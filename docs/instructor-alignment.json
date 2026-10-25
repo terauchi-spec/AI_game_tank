@@ -1,0 +1,92 @@
+{
+  "canvas": [
+    768,
+    1024
+  ],
+  "bodyHeight": 800,
+  "footY": 984,
+  "output": [
+    600,
+    800
+  ],
+  "portraits": {
+    "0": {
+      "bodyCenterX": 542,
+      "bodyTopY": 69,
+      "footY": 1503,
+      "bytes": 86480
+    },
+    "1": {
+      "bodyCenterX": 548,
+      "bodyTopY": 6,
+      "footY": 1478,
+      "bytes": 80314
+    },
+    "2": {
+      "bodyCenterX": 547,
+      "bodyTopY": 6,
+      "footY": 1477,
+      "bytes": 85010
+    },
+    "3": {
+      "bodyCenterX": 544,
+      "bodyTopY": 22,
+      "footY": 1505,
+      "bytes": 74998
+    },
+    "4": {
+      "bodyCenterX": 549,
+      "bodyTopY": 16,
+      "footY": 1511,
+      "bytes": 77424
+    },
+    "5": {
+      "bodyCenterX": 575,
+      "bodyTopY": 6,
+      "footY": 1502,
+      "bytes": 72546
+    },
+    "6": {
+      "bodyCenterX": 440,
+      "bodyTopY": 37,
+      "footY": 1496,
+      "bytes": 57530
+    },
+    "7": {
+      "bodyCenterX": 500,
+      "bodyTopY": 9,
+      "footY": 1460,
+      "bytes": 85956
+    },
+    "8": {
+      "bodyCenterX": 546,
+      "bodyTopY": 11,
+      "footY": 1491,
+      "bytes": 76564
+    },
+    "9": {
+      "bodyCenterX": 430,
+      "bodyTopY": 230,
+      "footY": 1495,
+      "bytes": 95672
+    },
+    "10": {
+      "bodyCenterX": 549,
+      "bodyTopY": 7,
+      "footY": 1478,
+      "bytes": 82638
+    },
+    "11": {
+      "bodyCenterX": 547,
+      "bodyTopY": 17,
+      "footY": 1492,
+      "bytes": 74012
+    },
+    "12": {
+      "bodyCenterX": 551,
+      "bodyTopY": 14,
+      "footY": 1496,
+      "bytes": 71478
+    }
+  }
+}

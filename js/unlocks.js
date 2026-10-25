@@ -1,6 +1,6 @@
 // Presentation only: progression and award persistence remain in their existing owners.
 const UNLOCK_INSTRUCTOR_KEY='tankGameUnlockInstructorV1';
-const UNLOCK_INSTRUCTORS=['instructor_1','instructor_2','instructor_3','instructor_4','instructor_5','instructor_6','instructor_7','instructor_8','instructor_9','instructor_10','instructor_11','instructor_12'];
+const UNLOCK_INSTRUCTORS=['instructor_1','instructor_2','instructor_3','instructor_4','instructor_5','instructor_6','instructor_7','instructor_8','instructor_9','instructor_10','instructor_11','instructor_12','instructor_0'];
 let unlockRun=null,unlockInstructorNext=0;
 try{const saved=Number(localStorage.getItem(UNLOCK_INSTRUCTOR_KEY));if(Number.isSafeInteger(saved)&&saved>=0)unlockInstructorNext=saved%UNLOCK_INSTRUCTORS.length;}catch(_){}
 function escapeUnlockText(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -30,7 +30,7 @@ function syncUnlockScreen(s){
  if(s.unlockNoticeAcknowledged||!s.unlockNoticeItems.length){if(unlockRun)closeUnlockScreen();return false;}
  if(unlockRun!==s){
   const screen=document.getElementById('unlockScreen'),image=document.getElementById('unlockInstructor');
-  unlockRun=s;image.src='assets/ui/instructors/'+UNLOCK_INSTRUCTORS[unlockInstructorNext]+'.webp';
+  unlockRun=s;image.src='assets/ui/instructors/'+UNLOCK_INSTRUCTORS[unlockInstructorNext]+'.webp?v=2026.10.25.1434';
   unlockInstructorNext=(unlockInstructorNext+1)%UNLOCK_INSTRUCTORS.length;
   try{localStorage.setItem(UNLOCK_INSTRUCTOR_KEY,String(unlockInstructorNext));}catch(_){}
   document.getElementById('unlockList').innerHTML=s.unlockNoticeItems.map(renderUnlockCard).join('');
