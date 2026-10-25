@@ -47,5 +47,9 @@
   "se_096_fire_loop": "44821f0ff381",
   "se_skills": "3ff9b5665ed7",
   "se_063_drill_contact": "b02869a743a7",
-  "se_00_enemy_tank_movement_loop": "6123e8135d29"
+  "se_00_enemy_tank_movement_loop": "6123e8135d29",
+  "se_008_success_firework": "8c94379f84ff",
+  "se_013_footstep_dirt": "800537edae85",
+  "se_039_objective_destroyed": "b36ba89e7389",
+  "se_069_sniper_zoom": "77cff57ef27b"
 }
