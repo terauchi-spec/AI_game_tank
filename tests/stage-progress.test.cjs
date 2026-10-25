@@ -9,9 +9,9 @@ test('only 01 starts open and all six stages unlock exactly in display order',()
  for(let i=0;i<order.length;i++){const s=clear(c,order[i]);assert.equal(s.unlockedStage,order[i+1]);assert.deepEqual(c.ids(),order.slice(0,Math.min(order.length,i+2)));assert.equal(clear(c,order[i]).unlockedStage,undefined);}
  assert.deepEqual(JSON.parse(c.storage.get('tankGameStageProgressV1')),{version:2,cleared:order});
 });
-test('locked stages, failures, debug and duplicate finalization cannot advance progress',()=>{
+test('locked stages, failures, area debug and duplicate finalization cannot advance progress',()=>{
  const c=harness();for(const id of order.slice(1))clear(c,id);assert.equal(c.storage.size,0);
- for(const s of [{final:{cleared:false}},{final:{cleared:true},debugUsed:true}])c.unlockStageOnClear(s);
+ for(const s of [{final:{cleared:false}}])c.unlockStageOnClear(s);
  c.areaDebugEnabled=true;clear(c,'beginner');assert.deepEqual(c.ids(),['beginner']);c.areaDebugEnabled=false;
  const s=clear(c,'beginner');c.unlockStageOnClear(s);assert.deepEqual(c.ids(),order.slice(0,2));assert.equal(JSON.parse(c.storage.get('tankGameStageProgressV1')).cleared.length,1);
 });
@@ -55,9 +55,9 @@ test('stage selection only highlights the card; deployment starts the chosen dif
  assert.equal(c.deploySelectedStage(),true);assert.equal(deployments,1);assert.equal(c.stageMode,'beginner');assert.equal(c.deploySelectedStage(),false);
  c.state='stage';clear(c,'beginner');c.state='stage';c.setSelectedStage('indoorBeginner');assert.equal(c.stageMode,'beginner');assert.equal(deployments,1);assert.equal(nodes.stageDeploy.textContent,'潜入（初級）で出撃');c.deploySelectedStage();assert.equal(c.stageMode,'indoor');assert.equal(c.indoorBeginner,true);assert.equal(deployments,2);
 });
-test('all-stage debug selection never grants normal unlocks and turning it off restores locks and selection',()=>{
+test('all-stage debug selection retains prerequisites and turning it off restores locks and selection',()=>{
  const c=harness(),{buttons,nodes}=cards(c);vm.runInContext('stageDebugAll=true',c);c.renderStageLocks();assert.ok(buttons.every(b=>!b.disabled));assert.equal(c.stageSelectable('front'),false);assert.equal(c.setSelectedStage('front'),true);assert.equal(nodes.stageDeploy.textContent,'制圧（上級）で出撃');
- const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');c.skillDebugAll=false;vm.runInContext(html.slice(html.indexOf('function newScoreStats()'),html.indexOf('function playerDetectedNow()')),c);const stats=c.newScoreStats();assert.equal(stats.debugUsed,true);stats.final={cleared:true};c.unlockStageOnClear(stats);assert.equal(c.storage.size,0);
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');c.skillDebugAll=false;vm.runInContext(html.slice(html.indexOf('function newScoreStats()'),html.indexOf('function playerDetectedNow()')),c);const stats=c.newScoreStats();assert.equal(stats.debugUsed,true);stats.final={cleared:true};c.stageMode='front';c.unlockStageOnClear(stats);assert.equal(c.storage.size,0);
  vm.runInContext('stageDebugAll=false',c);c.renderStageLocks();assert.equal(buttons[5].disabled,true);assert.equal(nodes.stageDeploy.textContent,'破壊（初級）で出撃');assert.equal(buttons[0].classList.selected,true);
 });
 test('area debug opens its picker only after confirmation and cannot grant stage progress',()=>{
@@ -83,9 +83,9 @@ test('stage records count actual starts once, retain per-stage bests across relo
  s={};c.recordStageSortie(s);s.final={total:10500,rank:'S'};c.recordStageResult(s);const restored=harness();restored.storage.set('tankGameStageRecordsV1',c.storage.get('tankGameStageRecordsV1'));r=restored.readStageRecords().stages.beginner;assert.equal(r.sorties,3);assert.equal(r.bestScore,10500);assert.equal(r.bestRank,'S');
  for(const id of order){c.frontlineBeginner=id==='frontBeginner';c.indoorBeginner=id==='indoorBeginner';c.stageMode=c.frontlineBeginner?'front':c.indoorBeginner?'indoor':id;const run={};c.recordStageSortie(run);assert.equal(run.stageRecordId,id);}
 });
-test('stage record counts survive an abandoned run and exclude debug, test and malformed data',()=>{
+test('stage record counts survive an abandoned run and include debug but exclude area/test and malformed data',()=>{
  const c=harness();c.recordStageSortie({});assert.equal(c.readStageRecords().stages.beginner.sorties,1);assert.equal(c.readStageRecords().stages.beginner.bestRank,null);
- c.recordStageSortie({debugUsed:true});c.recordStageResult({debugUsed:true,final:{total:99999,rank:'S'}});c.areaDebugEnabled=true;c.recordStageSortie({});c.areaDebugEnabled=false;c.stageMode='front';c.frontlineOni=true;c.recordStageSortie({});assert.equal(c.readStageRecords().stages.beginner.sorties,1);
+ c.recordStageSortie({debugUsed:true});c.recordStageResult({debugUsed:true,final:{total:99999,rank:'S'}});c.areaDebugEnabled=true;c.recordStageSortie({});c.areaDebugEnabled=false;c.stageMode='front';c.frontlineOni=true;c.recordStageSortie({});assert.equal(c.readStageRecords().stages.beginner.sorties,3);
  c.storage.set('tankGameStageRecordsV1','{"stages":{"beginner":{"sorties":-4,"bestScore":"9000","bestRank":"<img>"}}}');let r=c.readStageRecords().stages.beginner;assert.equal(r.sorties,0);assert.equal(r.bestScore,null);assert.equal(r.bestRank,null);
  c.storage.set('tankGameStageRecordsV1','broken');assert.equal(c.readStageRecords().stages.beginner.sorties,0);
  c.frontlineOni=false;c.stageMode='beginner';c.localStorage.setItem=()=>{throw Error('quota');};const s={};c.recordStageSortie(s);assert.equal(s.stageRecordSaveFailed,true);assert.equal(s.stageSortieRecorded,undefined);
@@ -98,13 +98,13 @@ test('selected stage records open, toggle closed and switch with matching score,
  const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');assert.match(html,/recordStageSortie\(scoreStats\);\s*state='play'/);assert.match(html,/recordStageResult\(scoreStats\)/);assert.match(html,/STAGE_PROGRESS_KEY,STAGE_RECORDS_KEY/);assert.equal((html.match(/class="stage-records" hidden/g)||[]).length,8);
 });
 
-test('successes count completed clears once per sortie, preserving old records and excluding failures and debug',()=>{
+test('successes count completed clears once per sortie, preserving old records and including debug clears',()=>{
  const c=harness();c.storage.set('tankGameStageRecordsV1',JSON.stringify({stages:{beginner:{sorties:12,bestScore:8000,bestRank:'A'}}}));
  assert.equal(c.readStageRecords().stages.beginner.successes,0);
  const win={};c.recordStageSortie(win);win.final={cleared:true,total:1000,rank:'C'};c.recordStageResult(win);c.recordStageResult(win);
  let r=c.readStageRecords().stages.beginner;assert.equal(r.successes,1);assert.equal(r.sorties,13);assert.equal(r.bestScore,8000);assert.equal(r.bestRank,'A');
  c.recordStageResult({final:{cleared:false,total:500,rank:'D'}});c.recordStageSortie({});c.recordStageResult({debugUsed:true,final:{cleared:true,total:9000,rank:'S'}});
- const restored=harness();restored.storage.set('tankGameStageRecordsV1',c.storage.get('tankGameStageRecordsV1'));r=restored.readStageRecords().stages.beginner;assert.equal(r.successes,1);assert.equal(r.sorties,15);
+ const restored=harness();restored.storage.set('tankGameStageRecordsV1',c.storage.get('tankGameStageRecordsV1'));r=restored.readStageRecords().stages.beginner;assert.equal(r.successes,2);assert.equal(r.sorties,16);
  for(const successes of [-1,2.5,'4',999]){c.storage.set('tankGameStageRecordsV1',JSON.stringify({stages:{beginner:{sorties:4,successes}}}));assert.equal(c.readStageRecords().stages.beginner.successes,successes===999?4:0);}
 });
 test('locked facility names stay unknown until normal unlock, including during all-stage debug selection',()=>{

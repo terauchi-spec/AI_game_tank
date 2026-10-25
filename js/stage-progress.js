@@ -1,4 +1,4 @@
-// Stage progress is independent of skill unlocks and never changes in debug runs.
+// Stage progress is independent of skill unlocks and persists even when debug controls are used.
 let selectedStageId=null,expandedStageId=null,stageDebugAll=false;
 const STAGE_PROGRESS_KEY='tankGameStageProgressV1';
 const STAGE_ORDER=[
@@ -31,7 +31,7 @@ function stageSelectable(id,progress=readStageProgress()){
  return index>=0&&STAGE_ORDER.slice(0,index).every(stage=>progress.cleared.includes(stage.id));
 }
 function unlockStageOnClear(s){
- if(!s?.final?.cleared||s.debugUsed||areaDebugEnabled||s.stageProgressRecorded)return;
+ if(!s?.final?.cleared||areaDebugEnabled||s.stageProgressRecorded)return;
  s.stageProgressRecorded=true;const progress=readStageProgress(),id=currentStageId();
  if(!stageSelectable(id,progress)||progress.cleared.includes(id))return;
  const before={cleared:[...progress.cleared]};progress.cleared.push(id);
@@ -57,13 +57,13 @@ function readStageRecords(){
  return{version:1,stages};
 }
 function recordStageSortie(s){
- if(!s||s.stageSortieRecorded||s.debugUsed||areaDebugEnabled)return;
+ if(!s||s.stageSortieRecorded||areaDebugEnabled)return;
  const id=currentStageId();if(!STAGE_ORDER.some(stage=>stage.id===id))return;
  const data=readStageRecords();data.stages[id].sorties++;
  try{localStorage.setItem(STAGE_RECORDS_KEY,JSON.stringify(data));s.stageSortieRecorded=true;s.stageRecordId=id;}catch(_){s.stageRecordSaveFailed=true;}
 }
 function recordStageResult(s){
- if(!s?.final||s.stageResultRecorded||s.debugUsed||areaDebugEnabled)return;
+ if(!s?.final||s.stageResultRecorded||areaDebugEnabled)return;
  recordStageSortie(s);
  const id=s.stageRecordId;if(!STAGE_ORDER.some(stage=>stage.id===id))return;
  const data=readStageRecords(),v=data.stages[id],score=s.final.total,rank=s.final.rank;

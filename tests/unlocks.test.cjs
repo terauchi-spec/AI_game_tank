@@ -18,8 +18,8 @@ test('real result transition shows combined unlocks before result rendering, SE 
  h.getNode('unlockEvaluate').handlers.click();assert.ok(h.classes.has('result-open'));assert.equal(h.classes.has('unlock-open'),false);assert.equal(c.renders,1);assert.equal(c.bgmStarts,1);assert.deepEqual(h.sounds,['uiConfirm','results']);for(let i=0;i<10;i++)c.syncResultScreen();assert.equal(c.renders,1);assert.equal(c.bgmStarts,1);
  h.getNode('unlockEvaluate').handlers.click();assert.equal(c.renders,1);
 });
-test('no unlocks, repeats, invalid IDs, debug and failed saves go directly to evaluation',()=>{
- const values=[{final:{total:10},awards:{newTitles:[],repeatTitles:['v3_stealth']}},{...run(),debugUsed:true},{...run(),awards:{disabled:true,newTitles:['v3_stealth']}},{...run(),stageUnlockSaveFailed:true,unlockSaveFailed:true,awards:{saveFailed:true,newTitles:['v3_stealth']}}];
+test('no unlocks, repeats, invalid IDs and failed saves go directly to evaluation',()=>{
+ const values=[{final:{total:10},awards:{newTitles:[],repeatTitles:['v3_stealth']}},{...run(),awards:{disabled:true,newTitles:['v3_stealth']}},{...run(),stageUnlockSaveFailed:true,unlockSaveFailed:true,awards:{saveFailed:true,newTitles:['v3_stealth']}}];
  for(const s of values){const h=harness();h.c.scoreStats=s;h.c.syncResultScreen();assert.ok(h.classes.has('result-open'));assert.equal(h.classes.has('unlock-open'),false);assert.equal(h.getNode('unlockInstructor').src,'');}
  const h=harness();h.c.areaDebugEnabled=true;assert.equal(h.c.collectRunUnlocks(run()).length,0);
 });
@@ -39,3 +39,5 @@ test('cards escape labels and all responsive screen assets exist',()=>{
  const h=harness();const card=h.c.renderUnlockCard({kind:'skill',name:'<script>"&',image:'x" onerror="bad',note:'<>'});assert.doesNotMatch(card,/<script>|src="x" onerror=/);assert.match(card,/&lt;script&gt;/);assert.match(html,/ナイスこっそり！/);assert.match(html,/id="unlockEvaluate" type="button">評価画面/);assert.match(html,/css\/unlocks.css\?v=/);
  const css=fs.readFileSync(path.join(root,'css/unlocks.css'),'utf8');assert.match(css,/safe-area-inset-bottom/);assert.match(css,/--menu-button-font-size/);assert.match(css,/#unlockScreen\[hidden\]/);for(let i=1;i<=3;i++)assert.ok(fs.statSync(path.join(root,'assets/ui/instructors/instructor_'+i+'.webp')).size<100000);
 });
+
+test('debug results show all newly persisted unlocks before evaluation',()=>{const h=harness();h.c.scoreStats={...run(),debugUsed:true};h.c.syncResultScreen();assert.ok(h.classes.has('unlock-open'));assert.equal(h.c.renders,0);assert.equal(h.c.scoreStats.unlockNoticeItems.length,3);});

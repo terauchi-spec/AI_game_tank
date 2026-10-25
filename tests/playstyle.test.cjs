@@ -45,8 +45,8 @@ test('old awards remain stored but never expand the 34-title collection or grant
 test('fifth upper-title acquisition earns a new legend without double counting a run',()=>{
  const c=harness();for(let n=1;n<=5;n++){const s=c.scoreStats=Object.assign(c.newScoreStats(),rich,{final:{cleared:true,total:1000},vehicleKinds:{tank:true}});c.recordRunAchievements(s);c.recordRunAchievements(s);assert.equal(!!c.readTitleArchive().titles.v3_legend_1,n===5);}assert.equal(c.readTitleArchive().titles.v3_single_1_elite.count,5);assert.equal(c.readTitleArchive().runs,5);
 });
-test('debug results do not modify achievement storage',()=>{
- const c=harness(),s=Object.assign(c.scoreStats,rich,{debugUsed:true,final:{cleared:true,total:1000}});c.recordRunAchievements(s);assert.equal(c.saved.size,0);assert.equal(s.awards.disabled,true);
+test('debug results persist achievements',()=>{
+ const c=harness(),s=Object.assign(c.scoreStats,rich,{debugUsed:true,final:{cleared:true,total:1000}});c.recordRunAchievements(s);assert.equal(c.readTitleArchive().runs,1);assert.equal(s.awards.disabled,false);assert.ok(s.awards.newTitles.length>0);
 });
 test('decoy counts distinct enemies, not repeated target updates',()=>{
  const c=harness();c.decoy={};const h={};c.recordDecoyLure(h,'decoy');c.recordDecoyLure(h,'decoy');c.recordDecoyLure({},'p');c.recordDecoyLure({},'decoy');assert.equal(c.scoreStats.decoyLures,2);
@@ -130,9 +130,9 @@ test('an already complete collection receives mythic on load without resetting c
  const titles=Object.fromEntries(ids.map(id=>[id,{count:3,at:'2026-10-20',score:123}]));c.saved.set(c.get('TITLE_ARCHIVE_KEY'),JSON.stringify({titles,medals:{old:{count:4}},runs:40}));
  const a=c.readTitleArchive();assert.equal(a.titles.v3_mythic_complete.count,1);assert.equal(a.runs,40);assert.equal(a.medals.old.count,4);for(const id of ids)assert.equal(a.titles[id].count,3);assert.equal(c.readTitleArchive().titles.v3_mythic_complete.count,1);assert.equal(JSON.parse(c.saved.get(c.get('TITLE_ARCHIVE_KEY'))).titles.v3_mythic_complete.count,1);
 });
-test('debug cannot save the final title or mythic, and mythic has the highest priority',()=>{
+test('debug saves the final title and mythic, and mythic has the highest priority',()=>{
  const c=harness(),ids=Array.from(c.get('TITLE_COLLECTION_TARGETS')),titles=Object.fromEntries(ids.filter(id=>id!=='v3_single_0_elite').map(id=>[id,{count:1}]));c.saved.set(c.get('TITLE_ARCHIVE_KEY'),JSON.stringify({titles,runs:2}));
- const s=Object.assign(c.scoreStats,rich,{debugUsed:true,final:{cleared:true,total:1000}});c.recordRunAchievements(s);assert.equal(s.awards.disabled,true);assert.equal(c.readTitleArchive().titles.v3_mythic_complete,undefined);assert.equal(c.readTitleArchive().runs,2);assert.equal(c.get('TITLE_MYTHIC.type'),'神話級');assert.ok(c.get('TITLE_CATALOG.filter(t=>!t.collection).every(t=>t.priority<TITLE_MYTHIC.priority)'));
+ const s=Object.assign(c.scoreStats,rich,{debugUsed:true,final:{cleared:true,total:1000}});c.recordRunAchievements(s);assert.equal(s.awards.disabled,false);assert.equal(c.readTitleArchive().titles.v3_mythic_complete.count,1);assert.equal(c.readTitleArchive().runs,3);assert.equal(c.get('TITLE_MYTHIC.type'),'神話級');assert.ok(c.get('TITLE_CATALOG.filter(t=>!t.collection).every(t=>t.priority<TITLE_MYTHIC.priority)'));
 });
 
 function stageHarness(cleared=[]){
@@ -149,8 +149,8 @@ test('last normal stage grants the legendary and mythic together before stage pe
  assert.equal(c.readStageProgress().cleared.length,5);c.unlockStageOnClear(s);assert.equal(c.readStageProgress().cleared.length,6);
  c.recordRunAchievements(s);const a=c.readTitleArchive();assert.equal(a.runs,33);assert.equal(a.titles.v3_all_stages_clear.count,1);assert.equal(a.titles.v3_mythic_complete.count,1);
 });
-test('failure, debug, test Oni and missing normal stages cannot complete the legendary condition',()=>{
- for(const mode of ['failure','debug','areaDebug','oni','missing']){
+test('failure, area debug, test Oni and missing normal stages cannot complete the legendary condition',()=>{
+ for(const mode of ['failure','areaDebug','oni','missing']){
   const c=stageHarness(mode==='missing'?allStages.filter(id=>!['front','indoor'].includes(id)):allStages.slice(0,-1));
   const s=Object.assign(c.scoreStats,{debugUsed:mode==='debug',final:{cleared:mode!=='failure',total:1000}});c.areaDebugEnabled=mode==='areaDebug';c.frontlineOni=mode==='oni';
   c.recordRunAchievements(s);assert.equal(c.readTitleArchive().titles.v3_all_stages_clear,undefined,mode);
@@ -168,4 +168,24 @@ test('all six persisted clears retroactively award the legendary, including lega
 test('previously earned mythic survives the added legendary requirement',()=>{
  const c=stageHarness();c.saved.set(c.get('TITLE_ARCHIVE_KEY'),JSON.stringify({titles:{v3_mythic_complete:{count:1,at:'old'}},runs:32}));
  const a=c.readTitleArchive();assert.equal(a.titles.v3_mythic_complete.at,'old');assert.equal(a.titles.v3_all_stages_clear,undefined);
+});
+
+test('debug finalization persists unlocks, high score, achievements and history once across reload',()=>{
+ for(const cleared of [true,false]){
+  const c=stageHarness();Object.assign(c,{stageMode:'beginner',skill:'throw',SK:[{id:'throw'},{id:'dig'}],highScoreData:null,distanceMeters:n=>Math.round(n/10)});
+  vm.runInContext(html.slice(html.indexOf("const SKILL_PROGRESS_KEY="),html.indexOf('function rollSkillChoices()')),c);
+  vm.runInContext(html.slice(html.indexOf('function unlockSkillOnClear('),html.indexOf('function skillSelectable(')),c);
+  vm.runInContext(html.slice(html.indexOf("const SCORE_KEY="),html.indexOf('function newScoreStats()')),c);
+  vm.runInContext(html.slice(html.indexOf("const RUN_HISTORY_KEY="),html.indexOf('function renderTrophyStats()')),c);
+  const s=c.scoreStats=Object.assign(c.newScoreStats(),rich,{debugUsed:true,stage:'beginner'});
+  c.finalizeScore(cleared);const saved=JSON.stringify([...c.saved]);c.finalizeScore(cleared);assert.equal(JSON.stringify([...c.saved]),saved);
+  assert.equal(c.readRunHistory().summary.plays,1);assert.equal(c.readRunHistory().summary.clears,Number(cleared));assert.equal(c.readTitleArchive().runs,1);assert.equal(s.awards.disabled,false);
+  assert.equal(c.loadHighScore().score,s.final.total);assert.equal(s.newHigh,true);
+  const records=c.readStageRecords().stages.beginner;assert.equal(records.sorties,1);assert.equal(records.successes,Number(cleared));assert.equal(records.bestScore,s.final.total);
+  assert.equal(c.readSkillProgress().clears,Number(cleared));assert.equal(c.readSkillProgress().unlocked.includes('dig'),cleared);assert.equal(c.stageSelectable('indoorBeginner'),cleared);
+  const restored=stageHarness();for(const [k,v] of c.saved)restored.saved.set(k,v);assert.equal(restored.stageSelectable('indoorBeginner'),cleared);assert.equal(restored.readTitleArchive().runs,1);assert.equal(restored.readStageRecords().stages.beginner.bestScore,s.final.total);
+ }
+});
+test('debug clear of the last normal stage earns the all-stage title in the same result',()=>{
+ const c=stageHarness(allStages.slice(0,-1)),s=Object.assign(c.scoreStats,{debugUsed:true,final:{cleared:true,total:1000}});c.recordRunAchievements(s);assert.ok(s.awards.newTitles.includes('v3_all_stages_clear'));
 });

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.25.1141</title>
+<title>こっそり戦車大作戦 2026.10.25.1150</title>
 
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
@@ -571,7 +571,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 }
 @media(max-width:360px){#resultScreen .res-rank-badge{width:144px;height:144px}#resultScreen .res-medal{gap:10px}#resultScreen .res-medal-rank{font-size:38px}}
 </style>
-<link rel="stylesheet" href="css/unlocks.css?v=2026.10.25.1141">
+<link rel="stylesheet" href="css/unlocks.css?v=2026.10.25.1150">
 </head>
 <body>
 <canvas id="c" width="840" height="720"></canvas>
@@ -616,7 +616,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
   <section class="help-block"><h2>出撃からクリアまで</h2>
     <div class="help-step"><strong>1</strong><span><b>スキル・ステージ選択</b>：初回は「遠投」のみ。スキルを選び、3種類の作戦から出撃。</span></div>
     <div class="help-step"><strong>2</strong><span><b>潜入・戦闘</b>：敵の警戒と地形を見ながら進軍。マルチキルやワンショットキルも評価の対象。</span></div>
-    <div class="help-step"><strong>3</strong><span><b>任務完了</b>：選んだ作戦の目標を達成してクリア。通常プレイでクリアするたびにスキルが1つ解放される。</span></div>
+    <div class="help-step"><strong>3</strong><span><b>任務完了</b>：選んだ作戦の目標を達成してクリア。デバッグ使用の有無にかかわらず、クリアするたびにスキルが1つ解放される。</span></div>
     <div class="help-step"><strong>4</strong><span><b>評価・戦績</b>：スコア、8軸のプレイスタイル、称号を確認。タイトルの「称号」では獲得履歴と戦績も見られる。</span></div>
   </section>
   <div class="help-footer">※ スキルごとの詳細な操作は、スキル選択画面のⓘから確認できます。</div>
@@ -728,7 +728,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <ul><li>クリアまたは失敗後の評価画面に、総合スコアと<strong>F〜Sの7段階ランク</strong>を表示します。</li><li>スコアは潜入・戦闘・任務達成・クリア時間などをもとに計算します。前線制圧では自分の撃破を中心に評価し、味方の撃破は上限付きの支援点として加算します。継続増援の大量撃破や安全な移動だけで得点が過度に伸びないよう補正します。到達距離は出撃開始地点からの最大前進距離です。距離表示はすべてm単位です。</li><li>プレイスタイルを<strong>任務遂行／隠密／戦闘／爆破／機動／戦術／連携／生存</strong>の8軸（Lv0〜5）で評価します。Lv5には100点と高い成果が必要です。任務遂行は自分の目標達成への貢献、隠密は未発見での接近・回収、戦闘は撃破数・武器効率・連撃、爆破は目標爆破・爆発撃破、機動は目標への新たな前進、戦術は誘導・防御・組み付き、連携は共同作戦・救助・共同撃破、生存は任務参加と無傷での生還を評価します。待機・同じ場所の往復・支援任せだけでは伸びません。</li><li><strong>マルチキル：</strong>撃破間隔4秒以内で続けて敵を撃破すること。<strong>ワンショットキル：</strong>同一攻撃で複数の敵を撃破すること。無線支援爆撃とその連鎖爆発は、マルチキル・ワンショットキルの対象外です。</li><li>称号は単独16種・複合4種・特殊4種・伝説級9種・神話級1種の全34種です。伝説級「全戦域の覇者」は通常6ステージすべてのクリア、神話級「戦場の神話」はほかの33種類すべての獲得が条件です。単独はLv4以上、上級はLv5に加えて個別の成果、複合は2軸ともLv5が必要です。従来の8種類の伝説級は、対応する上級称号を累計5回獲得すると授与します。タイトル画面の「称号」からコレクションと累計戦績を確認できます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-save"><h2>11. スキル解放・保存・デバッグ</h2>
-<ul><li>破壊・制圧・潜入は、いずれも評価・実績保存の対象です。ステージは01から順番に、ひとつ前をクリアすると解放されます。</li><li>初期解放スキルは<strong>遠投</strong>。通常プレイでクリアするたびに、新しいスキルが順番に1種類ずつ解放されます。</li><li>スキル解放・称号・ハイスコア・戦績などは、このブラウザ内に保存されます。</li><li>称号画面の「戦績」から保存データを初期化できます。初期化は取り消せません。</li><li>デバッグではPキー（スマホは上部アイコン）で「無敵→無敵＋索敵解除→無敵＋戦闘機（燃料無限）→通常」を切り替え、描画診断ではAI・衝突等の更新を止め、最初の15秒はゲーム画面全体、次の15秒は背景だけを、同じ経路で自動スクロールします。終了後は無敵＋戦闘機に戻ります。Oキーで前方に戦車を出現、Lキーで巡回ルート表示を切り替えられます。スキル選択画面には全スキル表示、ステージ選択画面には全ステージ表示とエリアデバッグがあります。エリアデバッグでは全エリアの遮蔽物・静止した敵のサンプルを確認でき、出発地点付近にガソリンと無線を配置しています。デバッグ用ガソリンは徒歩でも表示され、取得には乗車が必要です。デバッグプレイの実績は通常の称号・戦績やスキル解放の対象外です。</li></ul>
+<ul><li>破壊・制圧・潜入は、いずれも評価・実績保存の対象です。ステージは01から順番に、ひとつ前をクリアすると解放されます。</li><li>初期解放スキルは<strong>遠投</strong>。デバッグ使用の有無にかかわらず、クリアするたびに、新しいスキルが順番に1種類ずつ解放されます。</li><li>スキル解放・称号・ハイスコア・戦績などは、このブラウザ内に保存されます。</li><li>称号画面の「戦績」から保存データを初期化できます。初期化は取り消せません。</li><li>デバッグではPキー（スマホは上部アイコン）で「無敵→無敵＋索敵解除→無敵＋戦闘機（燃料無限）→通常」を切り替え、描画診断ではAI・衝突等の更新を止め、最初の15秒はゲーム画面全体、次の15秒は背景だけを、同じ経路で自動スクロールします。終了後は無敵＋戦闘機に戻ります。Oキーで前方に戦車を出現、Lキーで巡回ルート表示を切り替えられます。スキル選択画面には全スキル表示、ステージ選択画面には全ステージ表示とエリアデバッグがあります。エリアデバッグでは全エリアの遮蔽物・静止した敵のサンプルを確認でき、出発地点付近にガソリンと無線を配置しています。デバッグ用ガソリンは徒歩でも表示され、取得には乗車が必要です。通常ステージではデバッグ中も、ステージ・スキル解放、称号、ハイスコア、戦績が保存されます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <p class="spec-foot">仕様は Ver.<span id="specVersion"></span> 時点の内容です。ゲームの更新に伴い変更される場合があります。</p>
 </div></div>
@@ -737,7 +737,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
  <div class="trophy-nav"><div class="trophy-heading">称号コレクション（全34種）</div></div>
  <div class="trophy-overview" id="trophyOverview" aria-live="polite"></div><div class="trophy-tabs"><button id="trophyTabTitles" class="trophy-tab active" type="button">称号</button><button id="trophyTabStats" class="trophy-tab" type="button">戦績</button></div>
  <div id="trophyCount" class="trophy-count"></div><div id="trophyGrid" class="trophy-grid"></div><div id="trophyStats" class="trophy-stats" hidden></div>
- <div class="trophy-empty">獲得履歴と戦績は、このブラウザ内に保存されます。<br>デバッグプレイでは称号・戦績を記録しません。</div>
+ <div class="trophy-empty">獲得履歴と戦績は、このブラウザ内に保存されます。<br>通常ステージではデバッグ中も称号・戦績を記録します。</div>
  </div><footer class="trophy-actions" aria-label="称号画面の操作"><button id="trophyBack" class="trophy-back" type="button">タイトル</button></footer></div>
 <section id="unlockScreen" aria-label="新しく解放された要素" role="region" aria-labelledby="unlockHeading" hidden>
  <div class="unlock-shell"><header class="unlock-header"><h1 id="unlockHeading">ナイスこっそり！</h1><div class="unlock-portrait"><img id="unlockInstructor" width="480" height="720" alt="ご褒美のデザートを手にした教官" decoding="async"></div><div class="unlock-header-note">新しい要素が解放されました</div></header><div id="unlockList"></div></div>
@@ -887,8 +887,8 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 </div><footer class="sk-bottom stage-bottom"><button type="button" class="sk-toggle" id="stageDebugAll" aria-pressed="false">全ステージを表示</button><button type="button" class="sk-deploy" id="stageDeploy" disabled>ステージを選択してください</button></footer></div></div>
 <div id="missionHud" role="status"></div>
 
-<script src="js/audio.js?v=2026.10.25.1141"></script>
-<script src="js/bgm.js?v=2026.10.25.1141"></script>
+<script src="js/audio.js?v=2026.10.25.1150"></script>
+<script src="js/bgm.js?v=2026.10.25.1150"></script>
 <script>
 const MOBILE_VIEW=matchMedia('(pointer:coarse)').matches;
 // iPhoneの描画反映の途切れを切り分けるため、表示Canvasと静的キャッシュの作成設定を統一する。
@@ -899,7 +899,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.25.1141',FILE_CREATED_AT='2026/10/25 11:41',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.25.1150',FILE_CREATED_AT='2026/10/25 11:50',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -1862,7 +1862,7 @@ function rollSkillChoices(){
 }
 function skillMenuList(){return skillDebugAll?SK:skillChoices.map(id=>SK.find(k=>k.id===id)).filter(Boolean);}
 function unlockSkillOnClear(s){
- if(!s?.final?.cleared||s.debugUsed||areaDebugEnabled)return;
+ if(!s?.final?.cleared||areaDebugEnabled)return;
  const progress=readSkillProgress();progress.clears++;
  const next=SK.find(k=>!progress.unlocked.includes(k.id));
  if(next){progress.unlocked.push(next.id);s.unlockedSkill=next.id;}
@@ -3611,7 +3611,7 @@ function finalizeScore(cleared){
  trackEnemyDeaths();if(scoreStats.stage==='indoor'&&typeof indoorWorld!=='undefined'&&indoorWorld?.alarm?.active)scoreStats.indoorAlarm=true;scoreStats.finalized=true;
  scoreStats.final=calculateScore(scoreStats,cleared,stageMode==='front');
  const {total,rank}=scoreStats.final;
- scoreStats.newHigh=!(scoreStats.debugUsed||areaDebugEnabled)&&saveHighScore(total,rank);
+ scoreStats.newHigh=!areaDebugEnabled&&saveHighScore(total,rank);
  recordRunAchievements(scoreStats);
  recordRunHistory(scoreStats);
  if(typeof recordStageResult==='function')recordStageResult(scoreStats);
@@ -7598,12 +7598,12 @@ function resultStyle(levels,s){
  const metrics=resultMetrics(s,s.final),v=evaluateRunTitles(levels,metrics,s,s.final);
  return[v.primary.name,v.primary.note,v.primary];
 }
-// Read the same canonical six-stage progress used by stage selection. Debug/test stages do not count.
+// Read the same canonical six-stage progress used by stage selection. Area debug and test-only stage identities do not count.
 function allNormalStagesCleared(s=null,r=null){
  if(typeof readStageProgress!=='function'||typeof STAGE_ORDER==='undefined'||!STAGE_ORDER.length)return false;
  const progress=readStageProgress(),cleared=new Set(progress.cleared);
  // Stage progress is saved later in finalizeScore; include a legitimate clear in this result now.
- if(r?.cleared&&!s?.debugUsed&&!areaDebugEnabled&&typeof currentStageId==='function'){
+ if(r?.cleared&&!areaDebugEnabled&&typeof currentStageId==='function'){
   const id=currentStageId();
   if(STAGE_ORDER.some(stage=>stage.id===id)&&stageSelectable(id,progress))cleared.add(id);
  }
@@ -7637,8 +7637,8 @@ function recordRunAchievements(s){
  if(!s||!s.final||s.awards)return; // 同じリザルトを二重計上しない
  const r=s.final,metrics=resultMetrics(s,r),levels=metrics.map(resLevel),evals=evaluateRunTitles(levels,metrics,s,r);
  const result={primary:evals.primary.id,titles:evals.titles.map(v=>v.id),newTitles:[],repeatTitles:[],titleCounts:{},disabled:false};
- // 無敵モード・エリアデバッグは実績保存対象外。スコアの既存仕様は変えない。
- if(s.debugUsed||areaDebugEnabled){result.disabled=true;s.awards=result;return;}
+ // 通常ステージはデバッグ使用時も保存する。終了判定のないエリアデバッグのみ対象外。
+ if(areaDebugEnabled){result.disabled=true;s.awards=result;return;}
  const archive=readTitleArchive(),stamp=new Date().toISOString();
  for(const t of evals.titles){
   const previous=archive.titles[t.id],count=titleAcquisitionCount(previous)+1;
@@ -7654,7 +7654,7 @@ function renderAwardResult(s){
  const titleById=new Map(TITLE_CATALOG.map(t=>[t.id,t]));
  const ids=[...(aw.titles||[])].filter(id=>id!==aw.primary).sort((a,b)=>Number((aw.newTitles||[]).includes(b))-Number((aw.newTitles||[]).includes(a)));
  el('resEarnedTitles').innerHTML=ids.map(id=>renderAwardChip(titleById.get(id),'title',(aw.newTitles||[]).includes(id))).join('')||'<span class="res-sub">ほかの称号の獲得なし</span>';
- el('resAwardNote').textContent=aw.disabled?'デバッグプレイのため保存されません':aw.saveFailed?'保存できませんでした。ブラウザの保存設定をご確認ください。':'初獲得は NEW! 表示。全'+TITLE_CATALOG.length+'種類の獲得条件・履歴は下の「称号」から確認できます。';
+ el('resAwardNote').textContent=aw.disabled?'エリアデバッグのため保存されません':aw.saveFailed?'保存できませんでした。ブラウザの保存設定をご確認ください。':'初獲得は NEW! 表示。全'+TITLE_CATALOG.length+'種類の獲得条件・履歴は下の「称号」から確認できます。';
 }
 let trophyTab='title';
 function renderTrophyArchive(){
@@ -7692,7 +7692,7 @@ function readRunHistory(){
  return{recent:[],summary:{plays:0,clears:0,scoreTotal:0,totalTime:0,totalDistance:0,humanKills:0,eliteKills:0,tankKills:0,stuns:0,detections:0,damageHits:0,maxChain:0,maxOneShot:0,oneShotEvents:0}};
 }
 function recordRunHistory(s){
- if(!s?.final||s.historyRecorded||s.debugUsed||areaDebugEnabled)return;
+ if(!s?.final||s.historyRecorded||areaDebugEnabled)return;
  s.historyRecorded=true;
  const data=readRunHistory(),d=data.summary,r=s.final;
  const v={at:new Date().toISOString(),cleared:!!r.cleared,score:Math.round(r.total),rank:r.rank,skill,seconds:Math.round(s.time),distance:distanceMeters(s.maxProgress),humanKills:s.humanKills,eliteKills:s.eliteKills,tankKills:s.tankKills,stuns:s.stuns,detections:s.detections,maxChain:s.maxKillChain,maxOneShot:s.maxOneShotKills||0};
@@ -8185,18 +8185,18 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/stage-progress.js?v=2026.10.25.1141"></script>
-<script src="js/frontline.js?v=2026.10.25.1141"></script>
-<script src="js/award-icons.js?v=2026.10.25.1141"></script>
-<script src="js/unlocks.js?v=2026.10.25.1141"></script>
-<script src="js/enemy-bomber.js?v=2026.10.25.1141"></script>
+<script src="js/stage-progress.js?v=2026.10.25.1150"></script>
+<script src="js/frontline.js?v=2026.10.25.1150"></script>
+<script src="js/award-icons.js?v=2026.10.25.1150"></script>
+<script src="js/unlocks.js?v=2026.10.25.1150"></script>
+<script src="js/enemy-bomber.js?v=2026.10.25.1150"></script>
 <script src="js/characters.js?v=2026.10.19.1032"></script>
-<script src="js/enemy-dogs.js?v=2026.10.25.1141"></script>
-<script src="js/partner.js?v=2026.10.25.1141"></script>
+<script src="js/enemy-dogs.js?v=2026.10.25.1150"></script>
+<script src="js/partner.js?v=2026.10.25.1150"></script>
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/canyon.js?v=2026.10.23.0824"></script>
 <script src="js/vegetation.js?v=2026.10.14.1653"></script>
-<script src="js/infiltration-world.js?v=2026.10.25.1141"></script>
+<script src="js/infiltration-world.js?v=2026.10.25.1150"></script>
 <script src="js/infiltration-render.js?v=2026.10.21.1139"></script>
 <script>
 (function(){
