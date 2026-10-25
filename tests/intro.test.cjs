@@ -4,11 +4,11 @@ function harness({storage=new Map(),fail=false}={}){
  const nodes=new Map(),classes=new Set(['title-open']),get=id=>{
   if(!nodes.has(id))nodes.set(id,{hidden:false,textContent:'',value:'',scrollTop:100,attrs:{},events:{},getAttribute(k){return this.attrs[k]??null;},setAttribute(k,v){this.attrs[k]=v;},removeAttribute(k){delete this.attrs[k];},addEventListener(k,fn){this.events[k]=fn;},focus(){this.focused=true;}});return nodes.get(id);
  };
- const c={state:'title',keys:{KeyD:true,ArrowUp:true},bombReq:true,cannonReq:true,interact:true,skillReq:true,mdown:true,rolls:0,rollSkillChoices(){this.rolls++;},sfx(){},document:{body:{classList:{add:k=>classes.add(k),remove:k=>classes.delete(k)}},getElementById:get},localStorage:{getItem(k){if(fail)throw Error('blocked');return storage.get(k)||null;},setItem(k,v){if(fail)throw Error('blocked');storage.set(k,v);}}};
+ const c={now:1000,performance:{now:()=>c.now},state:'title',keys:{KeyD:true,ArrowUp:true},bombReq:true,cannonReq:true,interact:true,skillReq:true,mdown:true,rolls:0,rollSkillChoices(){this.rolls++;},sfx(){},document:{body:{classList:{add:k=>classes.add(k),remove:k=>classes.delete(k)}},getElementById:get},localStorage:{getItem(k){if(fail)throw Error('blocked');return storage.get(k)||null;},setItem(k,v){if(fail)throw Error('blocked');storage.set(k,v);},removeItem(k){if(fail)throw Error('blocked');storage.delete(k);}}};
  // Stub is called as a global function, not as an object method.
  c.rollSkillChoices=()=>c.rolls++;
  vm.createContext(c);vm.runInContext(source,c);
- const next=()=>get('introNext').events.click(),submit=value=>{get('introName').value=value;get('introNameForm').events.submit({preventDefault(){}});};
+ const next=()=>{c.now+=500;get('introNext').events.click();},submit=value=>{get('introName').value=value;get('introNameForm').events.submit({preventDefault(){}});};
  return {c,get,classes,storage,next,submit};
 }
 test('first start shows instructor 0 and first page, then saves name and opens personalized second page before skills',()=>{
@@ -34,3 +34,13 @@ test('all title entry points use the intro gate and input handlers ignore gamepl
  for(const kind of ['keydown','keypress','keyup'])assert.ok(html.includes("addEventListener('"+kind+"',e=>{\n if(state==='intro')return;"));
  assert.match(html,/function drawMenuOnlyState\(\)\{\n if\(state==='intro'\)return true;/);
 });
+
+ test('the title activation cannot skip the opening conversation and conversation focus cannot trigger next on key release',()=>{
+ const h=harness();h.c.startFromTitle();h.get('introNext').events.click();assert.equal(h.get('introNameForm').hidden,true);assert.equal(h.get('introDialogue').focused,true);assert.match(h.get('introDialogue').textContent,/よくきたな/);h.next();assert.equal(h.get('introNameForm').hidden,false);
+ });
+ test('confirmed data reset clears persistent and session names so the intro starts again without a reload; cancellation preserves them',()=>{
+ const h=harness();h.c.startFromTitle();h.next();h.submit('タンコ');h.next();
+ const a=html.indexOf("document.getElementById('trophyReset').addEventListener('click'");const snippet=html.slice(a,html.indexOf('\n}',a));
+ Object.assign(h.c,{confirm:()=>false,TITLE_ARCHIVE_KEY:'titles',SCORE_KEY:'score',RUN_HISTORY_KEY:'runs',SKILL_PROGRESS_KEY:'skills',STAGE_PROGRESS_KEY:'stages',STAGE_RECORDS_KEY:'records',loadHighScore:()=>({}),renderTrophyArchive(){}});
+ vm.runInContext(snippet,h.c);h.get('trophyReset').events.click();assert.equal(h.c.readIntroName(),'タンコ');h.c.confirm=()=>true;h.get('trophyReset').events.click();assert.equal(h.c.readIntroName(),'');assert.equal(h.get('introName').value,'');h.c.state='title';h.c.startFromTitle();assert.equal(h.c.state,'intro');assert.equal(h.get('introNameForm').hidden,true);assert.match(h.get('introDialogue').textContent,/よくきたな/);
+ });
