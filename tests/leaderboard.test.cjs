@@ -30,3 +30,11 @@ test('server-confirmed board changes notify the matching run only; failures and 
   h.c.queueLeaderboardScore(s);await h.c.flushLeaderboardScores();assert.equal(opened,mode==='updated'?1:0,mode);assert.equal(!!s.leaderboardUpdates,mode==='updated'||mode==='stale',mode);
  }
 });
+test('the first three rows use gold, silver and bronze WebP medals; fourth place retains a numeric position',()=>{
+ const h=harness();h.c.renderLeaderboardRows(Array.from({length:4},(_,i)=>({name:'たんく'+i,score:100-i,rank:'A',skill:'throw',titles:[]})));
+ const rows=h.get('leaderboardList').children[0].children;
+ for(const [i,color] of ['gold','silver','bronze'].entries()){
+  const medal=rows[i].children[0].children[0];assert.match(medal.src,new RegExp('medal-'+color+'\\.webp\\?v='));assert.match(medal.alt,new RegExp('^'+(i+1)+'位'));assert.ok(fs.statSync(require('node:path').join(__dirname,'../assets/ui/leaderboard/medal-'+color+'.webp')).size<10000);
+ }
+ assert.equal(rows[3].children[0].textContent,'04');assert.equal(rows[3].children[0].children.length,0);
+});

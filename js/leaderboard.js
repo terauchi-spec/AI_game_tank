@@ -71,7 +71,8 @@ function renderLeaderboardRows(entries){
  entries.forEach((entry,index)=>{
   const row=document.createElement('li');row.className='leaderboard-row';
   const add=(tag,cls,text,parent=row)=>{const el=document.createElement(tag);el.className=cls;el.textContent=text;parent.appendChild(el);return el;};
-  add('div','lb-position',String(index+1).padStart(2,'0'));
+  const position=add('div','lb-position',index<3?'':String(index+1).padStart(2,'0'));
+  if(index<3){const medal=document.createElement('img');medal.className='lb-medal';medal.src='assets/ui/leaderboard/medal-'+['gold','silver','bronze'][index]+'.webp?v=2026.10.26.0847';medal.alt=(index+1)+'位 '+['金','銀','銅'][index]+'メダル';medal.width=160;medal.height=192;medal.decoding='async';position.appendChild(medal);}
   const body=add('div','lb-player','');add('strong','lb-name',String(entry.name||''),body);
   const meta=add('div','lb-meta','',body);add('span','lb-score',Number(entry.score).toLocaleString('ja-JP')+'点',meta);add('span','lb-rank','RANK '+String(entry.rank||''),meta);add('span','lb-skill',skills.get(entry.skill)||'—',meta);
   const awards=add('div','lb-titles','',body);let found=0;

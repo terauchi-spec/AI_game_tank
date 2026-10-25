@@ -664,9 +664,9 @@ test('north boundary allows sideways movement, clamps large forward steps and le
  const enemy={x:100,y:2200};c.mv(enemy,0,25,14);assert.equal(enemy.y,2225);
 });
 
-test('skill reinforcements roll commanders at the 20 percent threshold in every stage',()=>{
- const c=harness();for(const mode of ['front','base','beginner'])for(const roll of [0,.199999,.2,.9999]){
-  c.stageMode=mode;c.allies=[];c.R=()=>roll;c.summonAlly();assert.equal(c.allies[0].frontCommander,roll<.2);
+test('skill reinforcements roll commanders at the one-in-fifteen threshold in every stage',()=>{
+ const c=harness();for(const mode of ['front','base','beginner','indoor'])for(const roll of [0,1/15-1e-8,1/15,.2,.9999]){
+  c.stageMode=mode;c.allies=[];c.R=()=>roll;c.summonAlly();assert.equal(c.allies[0].frontCommander,roll<1/15);
  }
 });
 test('allied soldiers raise weapons throughout discovery and lower them while stunned or radioing',()=>{

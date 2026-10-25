@@ -396,7 +396,7 @@ function moveFrontlineAlly(a,target,sp,dt){
 }
 // Stage troops keep one commander per five; skill drops roll independently.
 function assignFrontlineAllyRole(a,skillDrop=false){
- if(skillDrop){a.frontCommander=R()<.2;return a;}
+ if(skillDrop){a.frontCommander=R()<1/15;return a;}
  if(stageMode!=='front'||!mission)return a;
  mission.allySpawnCount=(mission.allySpawnCount||0)+1;
  a.frontCommander=mission.allySpawnCount%5===0;
