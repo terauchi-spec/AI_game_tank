@@ -17,9 +17,9 @@ function collectRunUnlocks(s){
  return items;
 }
 function renderUnlockCard(item){
- const labels={stage:['NEW STAGE UNLOCKED!','新ステージ解放！'],skill:['NEW SKILL UNLOCKED!','新スキル解放！'],title:['NEW TITLE UNLOCKED!','新称号獲得！']},label=labels[item.kind];
+ const labels={stage:'新ステージ',skill:'新スキル',title:'新称号'},label=labels[item.kind];
  const art=item.kind==='title'?(typeof awardIcon==='function'?awardIcon(item.title,'title'):''):('<img src="'+escapeUnlockText(item.image)+'" alt="" decoding="async" loading="lazy">');
- return '<article class="unlock-card unlock-card-'+item.kind+'"><div class="unlock-card-art" aria-hidden="true">'+art+'</div><div class="unlock-card-copy"><div class="unlock-eyebrow">'+label[0]+'</div><h2>'+label[1]+'</h2><div class="unlock-name">'+escapeUnlockText(item.name)+'</div><div class="unlock-note">'+escapeUnlockText(item.note)+'</div></div></article>';
+ return '<article class="unlock-card unlock-card-'+item.kind+'"><div class="unlock-card-art" aria-hidden="true">'+art+'</div><div class="unlock-card-copy"><h2>'+label+'</h2><div class="unlock-name">'+escapeUnlockText(item.name)+'</div></div></article>';
 }
 function closeUnlockScreen(){
  document.body.classList.remove('unlock-open');document.getElementById('unlockScreen').hidden=true;unlockRun=null;

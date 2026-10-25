@@ -14,7 +14,7 @@ test('stage, skill and only newly acquired current titles are collected once wit
 });
 test('real result transition shows combined unlocks before result rendering, SE and BGM; acknowledgement opens results once',()=>{
  const h=harness(),{c}=h;c.scoreStats=run();c.syncResultScreen();assert.ok(h.classes.has('unlock-open'));assert.equal(h.classes.has('result-open'),false);assert.equal(c.renders,0);assert.equal(h.sounds.length,0);assert.equal(c.bgmStarts,0);assert.equal(h.getNode('unlockScreen').scrollTop,0);assert.equal(h.getNode('unlockEvaluate').focused,true);
- const list=h.getNode('unlockList').innerHTML;assert.match(list,/新ステージ解放/);assert.match(list,/新スキル解放/);assert.match(list,/新称号獲得/);assert.match(list,/隠密兵/);for(let i=0;i<10;i++)c.syncResultScreen();assert.match(h.getNode('unlockInstructor').src,/^assets\/ui\/instructors\/instructor_1\.webp\?v=/);
+ const list=h.getNode('unlockList').innerHTML;assert.match(list,/新ステージ/);assert.match(list,/新スキル/);assert.match(list,/新称号/);assert.match(list,/隠密兵/);for(let i=0;i<10;i++)c.syncResultScreen();assert.match(h.getNode('unlockInstructor').src,/^assets\/ui\/instructors\/instructor_1\.webp\?v=/);
  h.getNode('unlockEvaluate').handlers.click();assert.ok(h.classes.has('result-open'));assert.equal(h.classes.has('unlock-open'),false);assert.equal(c.renders,1);assert.equal(c.bgmStarts,1);assert.deepEqual(h.sounds,['uiConfirm','results']);for(let i=0;i<10;i++)c.syncResultScreen();assert.equal(c.renders,1);assert.equal(c.bgmStarts,1);
  h.getNode('unlockEvaluate').handlers.click();assert.equal(c.renders,1);
 });
