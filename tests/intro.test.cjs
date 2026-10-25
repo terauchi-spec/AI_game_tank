@@ -1,0 +1,36 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
+const root=path.join(__dirname,'..'),source=fs.readFileSync(path.join(root,'js/intro.js'),'utf8'),html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+function harness({storage=new Map(),fail=false}={}){
+ const nodes=new Map(),classes=new Set(['title-open']),get=id=>{
+  if(!nodes.has(id))nodes.set(id,{hidden:false,textContent:'',value:'',scrollTop:100,attrs:{},events:{},getAttribute(k){return this.attrs[k]??null;},setAttribute(k,v){this.attrs[k]=v;},removeAttribute(k){delete this.attrs[k];},addEventListener(k,fn){this.events[k]=fn;},focus(){this.focused=true;}});return nodes.get(id);
+ };
+ const c={state:'title',keys:{KeyD:true,ArrowUp:true},bombReq:true,cannonReq:true,interact:true,skillReq:true,mdown:true,rolls:0,rollSkillChoices(){this.rolls++;},sfx(){},document:{body:{classList:{add:k=>classes.add(k),remove:k=>classes.delete(k)}},getElementById:get},localStorage:{getItem(k){if(fail)throw Error('blocked');return storage.get(k)||null;},setItem(k,v){if(fail)throw Error('blocked');storage.set(k,v);}}};
+ // Stub is called as a global function, not as an object method.
+ c.rollSkillChoices=()=>c.rolls++;
+ vm.createContext(c);vm.runInContext(source,c);
+ const next=()=>get('introNext').events.click(),submit=value=>{get('introName').value=value;get('introNameForm').events.submit({preventDefault(){}});};
+ return {c,get,classes,storage,next,submit};
+}
+test('first start shows instructor 0 and first page, then saves name and opens personalized second page before skills',()=>{
+ const h=harness(),{c,get}=h;c.startFromTitle();assert.equal(c.state,'intro');assert.equal(c.rolls,0);assert.ok(h.classes.has('intro-open'));assert.ok(!h.classes.has('title-open'));assert.match(get('introInstructor').src,/instructor_0.webp/);assert.match(get('introDialogue').textContent,/ところで貴様は自分の名前もいえないのか/);
+ h.next();assert.equal(get('introNameForm').hidden,false);assert.equal(get('introDialogue').hidden,true);assert.equal(get('introName').focused,true);h.submit('こっそり隊長');assert.equal(get('introName').attrs['aria-invalid'],'true');assert.equal(h.storage.size,0);
+ h.submit('こっそり01');assert.equal(h.storage.get('tankGamePlayerNameV1'),'こっそり01');assert.equal(c.state,'intro');assert.match(get('introDialogue').textContent,/ほほう、こっそり01か/);assert.match(get('introDialogue').textContent,/ではゆけ！こっそり01よ/);assert.equal(get('introNameForm').hidden,true);assert.equal(get('introScreen').scrollTop,0);
+ h.next();assert.equal(c.state,'skill');assert.equal(c.rolls,1);assert.equal(get('introScreen').hidden,true);assert.ok(!h.classes.has('intro-open'));for(const k of Object.keys(c.keys))assert.equal(c.keys[k],false);for(const k of ['bombReq','cannonReq','interact','skillReq','mdown'])assert.equal(c[k],false);h.next();assert.equal(c.rolls,1);
+});
+test('saved names skip intro across reloads, including after name confirmation before the last page is closed',()=>{
+ const storage=new Map(),h=harness({storage});h.c.startFromTitle();h.next();h.submit('タンク10');const reload=harness({storage});reload.c.startFromTitle();assert.equal(reload.c.state,'skill');assert.equal(reload.c.rolls,1);assert.equal(reload.get('introInstructor').src,undefined);
+});
+test('name validation accepts 1–10 allowed characters, normalizes full width and half width forms, and rejects invalid names',()=>{
+ const h=harness();for(const n of ['A','abc123','あいうえお','アイウエオ','ヴァンガード','たんくー','0123456789'])assert.ok(h.c.normalizeIntroName(n),n);
+ assert.equal(h.c.normalizeIntroName('ＡＢ１２'),'AB12');assert.equal(h.c.normalizeIntroName('ﾀﾝｸ'),'タンク');
+ for(const n of ['', ' ', 'abcdefghijk','こっそり隊長','a b','a_b','<script>','😀','test!'])assert.equal(h.c.normalizeIntroName(n),'',n);
+ const invalid=harness({storage:new Map([['tankGamePlayerNameV1','<b>']])});invalid.c.startFromTitle();assert.equal(invalid.c.state,'intro');
+});
+test('IME confirmation cannot submit early; storage failure allows the current session to continue and explains the limit',()=>{
+ const h=harness({fail:true});h.c.startFromTitle();h.next();h.get('introName').events.compositionstart();h.submit('たんく');assert.equal(h.get('introNameForm').hidden,false);h.get('introName').events.compositionend();h.submit('たんく');assert.match(h.get('introSaveNote').textContent,/保存できません/);assert.match(h.get('introDialogue').textContent,/たんく/);h.next();h.c.state='title';h.c.startFromTitle();assert.equal(h.c.state,'skill');
+});
+test('all title entry points use the intro gate and input handlers ignore gameplay shortcuts during entry',()=>{
+ assert.match(html,/if\(hitRect\(px,py,r.start\)\)\{startFromTitle\(\)/);assert.match(html,/if\(state==='title'\)\{e.preventDefault\(\);startFromTitle\(\)/);assert.match(html,/getElementById\('titleStart'\)\.addEventListener\('click',\(\)=>\{startFromTitle\(\)/);
+ for(const kind of ['keydown','keypress','keyup'])assert.ok(html.includes("addEventListener('"+kind+"',e=>{\n if(state==='intro')return;"));
+ assert.match(html,/function drawMenuOnlyState\(\)\{\n if\(state==='intro'\)return true;/);
+});
