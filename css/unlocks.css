@@ -5,8 +5,11 @@ body.unlock-open,html:has(body.unlock-open){overscroll-behavior:none}
 .unlock-shell{max-width:770px;margin:0 auto}
 .unlock-header{text-align:center;margin-bottom:22px}
 .unlock-header h1{font-size:clamp(30px,7.5vw,48px);font-weight:950;letter-spacing:.06em;line-height:1.25;margin:0 0 18px;color:#fff1b8;text-shadow:0 3px 10px #0007}
-.unlock-portrait{width:min(76%,340px);margin:0 auto;overflow:hidden;border:2px solid #f8dc94;border-radius:24px;background:radial-gradient(ellipse,#fffef3,#fae8ba);box-shadow:0 8px 30px #0005}
-#unlockInstructor{display:block;width:100%;height:clamp(265px,52vh,410px);object-fit:contain;mix-blend-mode:multiply}
+/* The full square hangar scene places the instructor on its foreground floor.
+   The white-backed portraits use a near-white alpha key without
+   modifying any of the twelve cycling character assets. */
+.unlock-portrait{position:relative;isolation:isolate;width:100%;max-width:650px;aspect-ratio:1;margin:0 auto;overflow:hidden;border:2px solid #f8dc94;border-radius:24px;box-sizing:border-box;background:#d8b47f url('../assets/ui/unlock-background.webp') center/cover no-repeat;box-shadow:0 8px 30px #0005}
+#unlockInstructor{position:absolute;left:20%;bottom:2%;display:block;width:60%;height:76%;object-fit:contain;object-position:center bottom;filter:url(#unlockInstructorCutout)}
 .unlock-header-note{font-size:14px;font-weight:800;letter-spacing:.06em;color:#edda9f;margin-top:16px}
 #unlockList{display:grid;gap:17px}
 .unlock-card{display:grid;grid-template-columns:minmax(0,32%) minmax(0,1fr);align-items:center;gap:18px;padding:22px 20px;border:2px solid #ffe7a3;border-radius:23px;background:linear-gradient(120deg,#76501f,#947032 53%,#6d4b20);box-shadow:0 0 0 4px #cba65a30,0 10px 24px #0004;overflow:hidden}
@@ -25,5 +28,5 @@ body.unlock-open,html:has(body.unlock-open){overscroll-behavior:none}
 #unlockEvaluate:focus-visible{outline:3px solid #fff5c2;outline-offset:3px}
 #unlockEvaluate:active{transform:translateY(1px)}
 #resultScreen .res-unlock{display:none!important}
-@media(max-width:420px){.unlock-card{gap:13px;padding:17px 13px;grid-template-columns:minmax(0,30%) minmax(0,1fr)}.unlock-eyebrow{font-size:9px;letter-spacing:.1em}.unlock-note{font-size:12px}.unlock-portrait{width:76%}.unlock-header{margin-bottom:20px}}
+@media(max-width:420px){.unlock-card{gap:13px;padding:17px 13px;grid-template-columns:minmax(0,30%) minmax(0,1fr)}.unlock-eyebrow{font-size:9px;letter-spacing:.1em}.unlock-note{font-size:12px}.unlock-portrait{border-radius:18px}.unlock-header{margin-bottom:20px}}
 @media(prefers-reduced-motion:no-preference){body.unlock-open .unlock-header{animation:unlockEnter .28s ease-out both}@keyframes unlockEnter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}}
