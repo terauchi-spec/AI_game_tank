@@ -1,3 +1,5 @@
+/* The legacy coarse-pointer stylesheet hides every p; restore intro copy only. */
+#introScreen p{display:block;opacity:1;text-align:left}
 #introScreen[hidden],#introScreen [hidden]{display:none!important}
 #introScreen{position:fixed;inset:0;z-index:86;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;box-sizing:border-box;isolation:isolate;background:#080a07;color:#fff4cb;font-family:system-ui,-apple-system,'Hiragino Sans',sans-serif;padding:max(22px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) calc(28px + env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
 body.intro-open #pad,body.intro-open #resetBtn,body.intro-open #debugToggleBtn,body.intro-open #debugBadge{display:none!important}

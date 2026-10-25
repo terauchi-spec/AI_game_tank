@@ -44,3 +44,11 @@ test('all title entry points use the intro gate and input handlers ignore gamepl
  Object.assign(h.c,{confirm:()=>false,TITLE_ARCHIVE_KEY:'titles',SCORE_KEY:'score',RUN_HISTORY_KEY:'runs',SKILL_PROGRESS_KEY:'skills',STAGE_PROGRESS_KEY:'stages',STAGE_RECORDS_KEY:'records',loadHighScore:()=>({}),renderTrophyArchive(){}});
  vm.runInContext(snippet,h.c);h.get('trophyReset').events.click();assert.equal(h.c.readIntroName(),'タンコ');h.c.confirm=()=>true;h.get('trophyReset').events.click();assert.equal(h.c.readIntroName(),'');assert.equal(h.get('introName').value,'');h.c.state='title';h.c.startFromTitle();assert.equal(h.c.state,'intro');assert.equal(h.get('introNameForm').hidden,true);assert.match(h.get('introDialogue').textContent,/よくきたな/);
  });
+
+test('intro copy explicitly overrides the legacy mobile paragraph hiding while hidden pages and empty notices stay hidden',()=>{
+ const css=fs.readFileSync(path.join(root,'css/intro.css'),'utf8');
+ assert.match(html,/@media \(pointer:coarse\)\{[\s\S]*?p\{display:none\}/);
+ assert.match(css,/#introScreen p\{[^}]*display:block;[^}]*opacity:1;/);
+ assert.match(css,/#introScreen\[hidden\],#introScreen \[hidden\]\{display:none!important\}/);
+ assert.match(css,/#introNameError:empty,#introSaveNote:empty\{display:none\}/);
+});
