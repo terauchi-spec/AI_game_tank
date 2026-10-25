@@ -76,7 +76,7 @@ function playGameSe(name,position=null){
  const volume=gameSeDistance(position);if(volume<.025)return true;
  const time=performance.now();const gap=({mg:55,enemyGun:90,soldierHit:65,vehicleHit:80,shellExplosion:100,propExplosion:100,airExplosion:100,suspicion:900,detected:1000,door:250,grassStep:340,dirtStep:340,empty:400,unavailable:450,indoorTick:200})[name]||65;
  if(time-(gameSe.last.get(name)??-Infinity)<gap)return true;gameSe.last.set(name,time);
- const volumes={mg:.22,enemyGun:.14,cannon:.45,enemyCannon:.34,sniper:.38,bazooka:.35,grassStep:.07,dirtStep:.07,firework:.22,objectiveDestroyed:.4,sniperLens:.16,airExplosion:.23,shellExplosion:.28,propExplosion:.22,bombExplosion:.36,vehicleDestroyed:.32,win:.42,lose:.4,results:.3,door:.16,suspicion:.25,detected:.34};
+ const volumes={mg:.22,enemyGun:.14,cannon:.45,enemyCannon:.34,sniper:.38,bazooka:.35,grassStep:.105,dirtStep:.105,firework:.22,objectiveDestroyed:.4,sniperLens:.16,airExplosion:.23,shellExplosion:.28,propExplosion:.22,bombExplosion:.36,vehicleDestroyed:.32,win:.42,lose:.4,results:.3,door:.16,suspicion:.25,detected:.34};
  const cached=gameSe.cache.get(name);
  if(!cached){gameSe.last.delete(name);loadGameSe(name,true);return false;} // Use the existing synthesized effect until the MP3 is ready; never replay a late shot.
  gameSe.cache.delete(name);gameSe.cache.set(name,cached);
@@ -139,7 +139,7 @@ function updateGameAudio(){
  setGameSeLoop('vehicle',groundVehicle&&moving?(vehicle.kind==='tank'&&vehicle.t?.id!=='armored'?'tankMove':'wheelMove'):null,.11,Math.min(1.3,Math.max(.8,speed/160)));
  setGameSeLoop('drillContact',p.drill>0&&p.drillContact?'drillContact':null,.15);
  setGameSeLoop('flame',p.flameActive?'flameLoop':null,.13);
- setGameSeLoop('rain',typeof weather!=='undefined'&&weather==='rain'&&stageMode!=='indoor'?'rainLoop':null,.20*(typeof rainIntensity==='number'?rainIntensity:1));
+ setGameSeLoop('rain',typeof weather!=='undefined'&&weather==='rain'&&stageMode!=='indoor'?'rainLoop':null,.30*(typeof rainIntensity==='number'?rainIntensity:1));
  setGameSeLoop('alarm',typeof indoorWorld!=='undefined'&&stageMode==='indoor'&&indoorWorld?.alarm?.active?'indoorAlarm':null,.09);
  const plane=typeof airstrike!=='undefined'&&airstrike?airstrike:typeof mission!=='undefined'&&mission?.enemyAirRaid?.phase==='flight'?mission.enemyAirRaid.plane:null;
  setGameSeLoop('aircraft',plane?'aircraft':null,.14*gameSeDistance(plane));
