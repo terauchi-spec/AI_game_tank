@@ -94,7 +94,7 @@ test('five-second extraction finalizes once, freezes gameplay, boards the player
  h.api.update(.5);assert.equal(pickup.boarded,true);
  h.api.update(1);assert.equal(pickup.phase,'depart');assert.equal(c.p.x,pickup.carX-8);
  assert.equal(h.api.camera().x,camera.x);assert.equal(h.api.camera().y,camera.y,'camera stays at pickup location');
- h.api.update(2);assert.equal(c.state,'win');assert.ok(pickup.carX-64>camera.x+c.W,'jeep has left the screen');
+ h.api.update(2);assert.equal(c.state,'succeeded');assert.equal(c.successFrameDrawn,false);assert.ok(pickup.carX-64>camera.x+c.W,'jeep has left the screen');
  assert.equal(h.completed,1);h.api.update(10);assert.equal(h.completed,1);
 });
 
@@ -134,7 +134,7 @@ test('EXIT pickup boards the partner beside the player, displays the blue helmet
  assert.ok(fills.some(f=>f.color==='#399bff'),'blue partner helmet is visible in the car');
  assert.ok(fills.some(f=>f.color==='#b5372e'),'red player helmet remains visible');
  h.api.update(1);assert.equal(v.phase,'depart');assert.equal(c.partner.x,v.carX-25);assert.equal(c.p.x,v.carX-8);
- h.api.update(2);assert.equal(c.state,'win');assert.equal(c.partner.x,v.carX-25);assert.equal(c.partner.hp,2);
+ h.api.update(2);assert.equal(c.state,'succeeded');assert.equal(c.successFrameDrawn,false);assert.equal(c.partner.x,v.carX-25);assert.equal(c.partner.hp,2);
 });
 
 test('pickup includes an incapacitated partner without changing health and omits partners for other skills',()=>{
@@ -165,7 +165,7 @@ test('EXIT pickup gathers and boards the hound, releases its target and carries 
  assert.ok(fills.some(f=>f.color==='#201710'),'dog muzzle is rendered in the car');
  assert.ok(fills.some(f=>f.color==='#b5372e'),'player remains aboard');
  h.api.update(1);assert.equal(v.phase,'depart');assert.equal(c.hound.x,v.carX-25);assert.equal(c.p.x,v.carX-8);
- h.api.update(2);assert.equal(c.state,'win');assert.equal(c.hound.x,v.carX-25);assert.equal(h.completed,1);
+ h.api.update(2);assert.equal(c.state,'succeeded');assert.equal(c.successFrameDrawn,false);assert.equal(c.hound.x,v.carX-25);assert.equal(h.completed,1);
  for(const mode of ['base','front']){c.stageMode=mode;const before=bodies;c.drawHound();assert.equal(bodies,before+1,'other stages retain dog drawing');}
  c.stageMode='indoor';const before=bodies;c.drawHound({...c.hound,enemyDog:true});assert.equal(bodies,before+1,'enemy dogs are never hidden by the player extraction');
 });
@@ -342,3 +342,13 @@ test('stair arrival freezes only the infiltration player for 0.5 seconds',()=>{
  w.stairMoveLock=.5;c.stageMode='base';c.mv(c.p,5,0,8);assert.equal(c.p.x,x+10);
 });
 
+
+test('extraction success waits at the success overlay until evaluation is explicitly requested',()=>{
+ const h=harness(),c=h.c,index=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),nodes=new Map(),classes=new Set(),sounds=[];let results=0;
+ const get=id=>{if(!nodes.has(id))nodes.set(id,{events:{},addEventListener(name,fn){this.events[name]=fn;},focus(){this.focused=true;}});return nodes.get(id);};
+ c.document.getElementById=get;c.document.body.classList={contains:k=>classes.has(k),toggle(k,on){on?classes.add(k):classes.delete(k);}};c.sfx=n=>sounds.push(n);c.syncResultScreen=()=>results++;
+ vm.runInContext(index.slice(index.indexOf('function syncMissionSuccess(){'),index.indexOf('let failureFrameDrawn=false;')),c);
+ h.api.begin(h.api.world.exits[0]);c.syncMissionSuccess();assert.equal(classes.has('success-open'),false);h.api.update(6);assert.equal(c.state,'succeeded');c.syncMissionSuccess();assert.equal(classes.has('success-open'),true);assert.equal(get('missionSuccessEvaluate').focused,true);assert.equal(results,0);c.syncMissionSuccess();assert.deepEqual(sounds,['win']);
+ get('missionSuccessEvaluate').events.click();assert.equal(c.state,'win');assert.equal(classes.has('success-open'),false);assert.equal(results,1);get('missionSuccessEvaluate').events.click();assert.equal(results,1);
+ assert.match(index,/<h1 id="missionSuccessTitle">作成成功<\/h1>/);assert.match(index,/<h1 id="missionFailureTitle">作成失敗<\/h1>/);
+});

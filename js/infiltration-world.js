@@ -2693,7 +2693,7 @@ function updateInfiltrationExtraction(dt){
     if(ride.boarded){q.x=v.carX-25;q.y=v.y-10;q.face=0;q.moving=false;}
     else{q.moving=!(q.stun>0)&&Math.hypot(q.x-oldX,q.y-oldY)>.01;if(q.moving)q.face=Math.atan2(q.y-oldY,q.x-oldX);}
   }
-  if(t>=v.duration){state='win';resultAnimT=0;}
+  if(t>=v.duration){state='succeeded';successFrameDrawn=false;resultAnimT=0;}
 }
 let indoorJeepCanvas=null;
 function infiltrationJeepSprite(){
