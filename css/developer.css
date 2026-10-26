@@ -8,3 +8,5 @@ body:not(.developer-mode) #skDebugAll,body:not(.developer-mode) #stageDebugAll,b
 #developerLogin p,#developerScreen p{display:block;opacity:1;line-height:1.7;text-align:left;color:#efd6ff;font-size:16px}.dev-panel button:focus-visible,#developerTrigger:focus-visible{outline:3px solid #e9c3ff;outline-offset:4px}
 
 body.developer-mode.gameplay-active #debugToggleBtn{display:flex}
+
+.dev-panel #developerLeaderboard{display:block;width:100%;margin:24px 0;background:#764493;border-color:#c091df}

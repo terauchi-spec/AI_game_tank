@@ -1,7 +1,7 @@
 // Network work happens only after results or when this board is opened, never per frame.
 const LEADERBOARD_PENDING_KEY='tankGameLeaderboardPendingV1';
 const leaderboardRuns=new WeakMap();
-let leaderboardBoard='overall',leaderboardRequest=0,leaderboardSending=false,leaderboardPending=readLeaderboardPending();
+let leaderboardDeveloperView=false,leaderboardBoard='overall',leaderboardRequest=0,leaderboardSending=false,leaderboardPending=readLeaderboardPending();
 function readLeaderboardPending(){try{const v=JSON.parse(localStorage.getItem(LEADERBOARD_PENDING_KEY)||'{}');return v&&typeof v==='object'&&!Array.isArray(v)?v:{};}catch(_){return {};}}
 function saveLeaderboardPending(){try{localStorage.setItem(LEADERBOARD_PENDING_KEY,JSON.stringify(leaderboardPending));}catch(_){}}
 function queueLeaderboardScore(s){
@@ -41,8 +41,13 @@ function notifyLeaderboardUpdate(entry,result){
  // Never interrupt another sortie/menu when an old offline submission completes.
  if(typeof scoreStats!=='undefined'&&scoreStats===run&&(state==='win'||state==='lose')&&typeof syncResultScreen==='function')syncResultScreen();
 }
-function openLeaderboard(){
- if(state!=='title')return;
+function openLeaderboard(developer=false){
+ const developerView=developer===true;
+ if(developerView?(state!=='developer'||typeof isDeveloperMode!=='function'||!isDeveloperMode()):state!=='title')return;
+ leaderboardDeveloperView=developerView;
+ if(developerView)document.getElementById('developerScreen').hidden=true;
+ document.getElementById('leaderboardHeading').textContent=developerView?'開発者用スコアボード':'スコアボード';
+ document.getElementById('leaderboardHome').textContent=developerView?'開発者画面':'タイトル';
  state='leaderboard';document.body.classList.remove('title-open');document.body.classList.add('leaderboard-open');
  document.getElementById('leaderboardScreen').hidden=false;document.getElementById('leaderboardScreen').scrollTop=0;
  const select=document.getElementById('leaderboardSelect');
@@ -51,7 +56,11 @@ function openLeaderboard(){
 }
 function closeLeaderboard(){
  if(state!=='leaderboard')return;
- leaderboardRequest++;document.getElementById('leaderboardScreen').hidden=true;document.body.classList.remove('leaderboard-open');state='title';sfx('uiSelect');
+ leaderboardRequest++;document.getElementById('leaderboardScreen').hidden=true;document.body.classList.remove('leaderboard-open');
+ const returnToDeveloper=leaderboardDeveloperView&&typeof isDeveloperMode==='function'&&isDeveloperMode();
+ leaderboardDeveloperView=false;state=returnToDeveloper?'developer':'title';
+ if(returnToDeveloper){document.getElementById('developerScreen').hidden=false;document.getElementById('developerLeaderboard').focus({preventScroll:true});}
+ sfx('uiSelect');
 }
 async function refreshLeaderboard(){
  const request=++leaderboardRequest,board=leaderboardBoard,status=document.getElementById('leaderboardStatus'),list=document.getElementById('leaderboardList');
@@ -74,7 +83,7 @@ function renderLeaderboardRows(entries){
   const position=add('div','lb-position',index<3?'':String(index+1).padStart(2,'0'));
   if(index<3){const medal=document.createElement('img');medal.className='lb-medal';medal.src='assets/ui/leaderboard/medal-'+['gold','silver','bronze'][index]+'.webp?v=2026.10.26.0847';medal.alt=(index+1)+'位 '+['金','銀','銅'][index]+'メダル';medal.width=160;medal.height=192;medal.decoding='async';position.appendChild(medal);}
   const body=add('div','lb-player','');add('strong','lb-name',String(entry.name||''),body);
-  const meta=add('div','lb-meta','',body);add('span','lb-score',Number(entry.score).toLocaleString('ja-JP')+'点',meta);add('span','lb-rank','RANK '+String(entry.rank||''),meta);add('span','lb-skill',skills.get(entry.skill)||'—',meta);
+  const meta=add('div','lb-meta','',body);add('span','lb-score',Number(entry.score).toLocaleString('ja-JP')+'点',meta);add('span','lb-rank','RANK '+String(entry.rank||''),meta);add('span','lb-skill','使用スキル：'+(skills.get(entry.skill)||'—'),meta);
   const awards=add('div','lb-titles','',body);let found=0;
   for(const id of Array.isArray(entry.titles)?entry.titles:[]){const title=titles.get(id);if(!title)continue;const chip=add('span','lb-title','',awards),art=document.createElement('span');art.className='lb-title-art';art.innerHTML=awardIcon(title,'title');chip.appendChild(art);add('span','',title.name,chip);found++;}
   if(!found)add('span','lb-empty-title','称号なし',awards);

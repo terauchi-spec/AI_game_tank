@@ -38,3 +38,20 @@ test('the first three rows use gold, silver and bronze WebP medals; fourth place
  }
  assert.equal(rows[3].children[0].textContent,'04');assert.equal(rows[3].children[0].children.length,0);
 });
+
+test('developer board requires active mode, shows only top 30, switches stages and returns to developer on Escape',async()=>{
+ const h=harness();h.c.state='developer';h.c.isDeveloperMode=()=>false;h.c.openLeaderboard(true);assert.equal(h.c.state,'developer');assert.equal(h.sent.length,0);
+ h.c.isDeveloperMode=()=>true;h.c.fetch=async(url,options)=>{h.sent.push({url,options});return{ok:true,json:async()=>({entries:Array.from({length:40},(_,i)=>({name:'たんく'+i,score:1000-i,rank:'A',skill:'throw',titles:[]}))})};};
+ h.c.openLeaderboard(true);await new Promise(r=>setImmediate(r));assert.equal(h.c.state,'leaderboard');assert.equal(h.get('developerScreen').hidden,true);assert.equal(h.get('leaderboardHeading').textContent,'開発者用スコアボード');assert.equal(h.get('leaderboardHome').textContent,'開発者画面');assert.equal(h.get('leaderboardList').children[0].children.length,30);assert.equal(h.get('leaderboardList').children[0].children[29].children[0].textContent,'30');
+ h.get('leaderboardSelect').handlers.change({target:{value:'indoor'}});await new Promise(r=>setImmediate(r));assert.equal(h.sent.at(-1).url,'/api/leaderboard?board=indoor');assert.equal(h.get('leaderboardList').children[0].children.length,30);
+ let prevented=false;h.events.keydown({key:'Escape',preventDefault(){prevented=true;}});assert.ok(prevented);assert.equal(h.c.state,'developer');assert.equal(h.get('developerScreen').hidden,false);assert.equal(h.get('leaderboardScreen').hidden,true);
+ h.c.state='title';h.c.openLeaderboard();await new Promise(r=>setImmediate(r));assert.equal(h.get('leaderboardHeading').textContent,'スコアボード');assert.equal(h.get('leaderboardHome').textContent,'タイトル');h.c.closeLeaderboard();assert.equal(h.c.state,'title');
+});
+test('a late developer board response cannot paint over the closed developer menu',async()=>{
+ const h=harness();h.c.state='developer';h.c.isDeveloperMode=()=>true;let resolve;h.c.fetch=()=>new Promise(r=>resolve=r);h.c.openLeaderboard(true);await new Promise(r=>setImmediate(r));h.c.closeLeaderboard();resolve({ok:true,json:async()=>({entries:[{name:'遅延',score:100,rank:'A',skill:'throw',titles:[]}]})});await new Promise(r=>setImmediate(r));assert.equal(h.c.state,'developer');assert.equal(h.get('leaderboardList').children.length,0);
+});
+test('skill labels use an emphasized usage prefix and remain plain text for unknown skills',()=>{
+ const h=harness();h.c.renderLeaderboardRows([{name:'タンコ',score:100,rank:'A',skill:'throw',titles:[]},{name:'タンコ2',score:90,rank:'B',skill:'<script>',titles:[]}]);
+ const rows=h.get('leaderboardList').children[0].children;
+ assert.equal(rows[0].children[1].children[1].children[2].textContent,'使用スキル：遠投');assert.equal(rows[1].children[1].children[1].children[2].textContent,'使用スキル：—');
+});

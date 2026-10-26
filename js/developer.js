@@ -56,6 +56,10 @@ function closeDeveloperScreen(){
  document.getElementById('developerScreen').hidden=true;state='title';
 }
 document.getElementById('developerHome').addEventListener('click',closeDeveloperScreen);
+document.getElementById('developerLeaderboard').addEventListener('click',()=>{
+ if(state!=='developer'||!isDeveloperMode()||developerBusy)return;
+ openLeaderboard(true);
+});
 document.getElementById('developerResetScores').addEventListener('click',async()=>{
  if(state!=='developer'||!isDeveloperMode()||developerBusy)return;
  if(!confirm('全プレイヤーの総合・全ステージのスコアボードをリセットします。取り消せません。実行しますか？'))return;

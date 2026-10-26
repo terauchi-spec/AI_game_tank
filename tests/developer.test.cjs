@@ -31,3 +31,7 @@ test('non-developers cannot reveal or select locked skills through stale all-ski
  const c={SK:[{id:'throw'},{id:'sniper'}],skillChoices:['throw'],skillDebugAll:true,areaDebugEnabled:true,isDeveloperMode:()=>false,readSkillProgress:()=>({unlocked:['throw']})};vm.createContext(c);for(const name of ['skillMenuList','skillSelectable'])vm.runInContext(html.split('\n').find(line=>line.startsWith('function '+name+'(')),c);
  assert.deepEqual(Array.from(c.skillMenuList(),v=>v.id),['throw']);assert.equal(c.skillSelectable('sniper'),false);c.isDeveloperMode=()=>true;assert.equal(c.skillMenuList().length,2);assert.equal(c.skillSelectable('sniper'),true);
 });
+
+test('developer scoreboard entry opens only from the authenticated developer screen and is blocked while busy',()=>{
+ const h=harness(),opened=[];h.c.openLeaderboard=mode=>opened.push(mode);const click=()=>h.get('developerLeaderboard').events.click();h.c.state='developer';click();assert.equal(opened.length,0);h.c.setDeveloperMode(true);h.c.state='title';click();assert.equal(opened.length,0);h.c.state='developer';click();assert.deepEqual(opened,[true]);vm.runInContext('developerBusy=true',h.c);click();assert.equal(opened.length,1);assert.match(html,/id="developerLeaderboard" type="button">開発者用スコアボード/);
+});
