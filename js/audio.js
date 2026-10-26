@@ -8,12 +8,12 @@ const gameSe={cache:new Map(),pending:new Map(),failed:new Set(),queue:[],decodi
 function gameSeContext(){return typeof audioCtx!=='undefined'?audioCtx:null;}
 function gameSeReady(name){return gameSe.cache.has(gameSeName(name));}
 function gameSeName(name){return GAME_SE_ALIASES[name]||name;}
-function gameSeVisible(){return gameSe.focused!==false&&(typeof document==='undefined'||document.visibilityState!=='hidden');}
+function gameSeVisible(){return (typeof gameSoundEnabled==='undefined'||gameSoundEnabled)&&gameSe.focused!==false&&(typeof document==='undefined'||document.visibilityState!=='hidden');}
 function gameSeMaster(context){
  if(gameSe.master&&gameSe.master.context===context)return gameSe.master;
  const gain=context.createGain(),limiter=context.createDynamicsCompressor();gain.gain.value=.65;
  limiter.threshold.value=-8;limiter.knee.value=8;limiter.ratio.value=8;limiter.attack.value=.003;limiter.release.value=.12;
- gain.connect(limiter);limiter.connect(context.destination);gameSe.master=gain;return gain;
+ gain.connect(limiter);limiter.connect(typeof gameAudioDestination==='function'?gameAudioDestination(context):context.destination);gameSe.master=gain;return gain;
 }
 function gameSeTrim(){
  if(gameSe.bytes<=gameSe.maxBytes)return;
@@ -97,6 +97,7 @@ function stopGameAudio(){
  gameSe.epoch++;gameSe.loops.clear();for(const voice of [...gameSe.voices])stopGameSeVoice(voice);gameSe.previous=null;gameSe.enemyPositions=new WeakMap();gameSe.last.clear();gameSe.loadedScene=null;
 }
 function preloadGameSe(){
+ if(typeof gameSoundEnabled!=='undefined'&&!gameSoundEnabled)return;
  if(!gameSeContext())return;
  if(!gameSe.preloaded){gameSe.preloaded=true;for(const name of ['uiSelect','uiConfirm','unavailable'])loadGameSe(name);}
  if(typeof state!=='undefined'&&state==='preparing'&&gameSe.loadedScene!==stageMode){

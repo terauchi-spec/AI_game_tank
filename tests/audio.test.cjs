@@ -69,7 +69,7 @@ test('uploaded loops are attached to flame, rain, indoor alarms, aircraft and ne
 });
 test('the legacy wrapper keeps unavailable effects and gameplay skill tones, while menu actions use uploaded UI audio',()=>{
  const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),line=html.split('\n').find(l=>l.startsWith('function sfx(n,position=')),played=[],fallback=[];
- const c={state:'play',ensureAudio(){},playGameSe(n){played.push(n);return false;},legacySfx:n=>fallback.push(n)};vm.createContext(c);vm.runInContext(line,c);c.sfx('skill');assert.equal(played.pop(),'legacySkill');assert.equal(fallback.pop(),'skill');c.state='stage';c.sfx('skill');assert.equal(played.pop(),'uiSelect');c.sfx('bombExplosion');assert.equal(fallback.pop(),'explosion');c.playGameSe=()=>{throw Error('audio failure');};c.sfx('mg');assert.equal(fallback.pop(),'mg');
+ const c={state:'play',gameSoundEnabled:true,ensureAudio(){},playGameSe(n){played.push(n);return false;},legacySfx:n=>fallback.push(n)};vm.createContext(c);vm.runInContext(line,c);c.sfx('skill');assert.equal(played.pop(),'legacySkill');assert.equal(fallback.pop(),'skill');c.state='stage';c.sfx('skill');assert.equal(played.pop(),'uiSelect');c.sfx('bombExplosion');assert.equal(fallback.pop(),'explosion');c.playGameSe=()=>{throw Error('audio failure');};c.sfx('mg');assert.equal(fallback.pop(),'mg');
 });
 
 test('all ten skill activation aliases reuse se_skills with one download, decode and cache entry',async()=>{

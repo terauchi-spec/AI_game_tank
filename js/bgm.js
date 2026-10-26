@@ -4,7 +4,7 @@ const gameBgm={buffer:null,pending:null,source:null,gain:null,offset:0,startedAt
 function gameBgmContext(){return typeof audioCtx!=='undefined'?audioCtx:null;}
 function gameBgmAllowed(){return typeof state!=='undefined'&&(state==='title'||state==='leaderboard'||state==='developer'||state==='developerPass'||state==='skill'||state==='stage'||(gameBgm.resultActive&&(state==='win'||state==='lose')));}
 function gameBgmVisible(){return gameBgm.focused&&(typeof document==='undefined'||document.visibilityState!=='hidden');}
-function gameBgmWanted(){return gameBgmAllowed()&&gameBgmVisible()&&!gameBgm.resultWaiting;}
+function gameBgmWanted(){return (typeof gameSoundEnabled==='undefined'||gameSoundEnabled)&&gameBgmAllowed()&&gameBgmVisible()&&!gameBgm.resultWaiting;}
 function pauseGameBgm(){
  const source=gameBgm.source;if(!source)return;
  gameBgm.offset=Math.min(gameBgm.buffer.duration,gameBgm.offset+Math.max(0,source.context.currentTime-gameBgm.startedAt));
@@ -40,7 +40,7 @@ function updateGameBgm(){
  if(!gameBgm.buffer){loadGameBgm(context);return;}
  if(gameBgm.offset>=gameBgm.buffer.duration){gameBgm.finished=true;return;}
  try{
-  if(!gameBgm.gain){const gain=context.createGain();gain.gain.value=.115;gain.connect(context.destination);gameBgm.gain=gain;}
+  if(!gameBgm.gain){const gain=context.createGain();gain.gain.value=.115;gain.connect(typeof gameAudioDestination==='function'?gameAudioDestination(context):context.destination);gameBgm.gain=gain;}
   const source=context.createBufferSource();source.buffer=gameBgm.buffer;source.loop=false;source.connect(gameBgm.gain);
   source.onended=()=>{
    if(gameBgm.source!==source)return;
