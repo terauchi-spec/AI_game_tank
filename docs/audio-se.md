@@ -1,6 +1,6 @@
 # MP3 SE integration
 
-The green B-column cells in `こっそり戦車大作戦_ゲーム_SE.xlsx` identify the 56 supplied event mappings. The ten skill-activation events now alias the single `se_skills.mp3` asset, giving 47 active MP3 files before the new drill-contact effect; the current bank has 49 files. `se-installed.json` records the active file paths and shared-skill aliases. Playback assets are stored under `assets/audio/se/`.
+The green B-column cells in `こっそり戦車大作戦_ゲーム_SE.xlsx` identify the 56 supplied event mappings. The ten skill-activation events now alias the single `se_skills.mp3` asset, giving 47 active MP3 files before subsequent additions; the current bank has 58 files. `se-installed.json` records the active file paths and shared-skill aliases. Playback assets are stored under `assets/audio/se/`.
 
 `js/audio.js` shares the existing AudioContext and replaces matching synthesized effects. Unprovided effects retain their existing synthesis. Before a requested MP3 has finished loading, gameplay uses its existing fallback instead of blocking or replaying the event late.
 
@@ -24,3 +24,5 @@ Every active MP3 URL carries the corresponding Git blob revision from `se-revisi
 Rain loop gain is 0.20 times rain intensity (doubled from 0.10). The refreshed drill-contact clip is used, and the updated root-level tank movement upload is copied into the playback asset directory. Revision URLs match the refreshed playback files.
 
 Enemy tanks use the supplied `se_00_enemy_tank_movement_loop.mp3` (3.024 seconds). Actual position changes are sampled at 10 Hz; stationary and destroyed tanks are silent. Distance attenuation fades the loudest moving enemy into one shared loop, culling at 1200 px and avoiding stacked loops in crowds. Menus, reset, tab hiding and blur stop playback and clear movement samples. The player vehicle keeps its separate existing sound.
+
+Player and partner-operated tank cannons use seven distinct clips: T-34 = `se_025_tank_cannon_fire`, Tiger I = `_2`, Type 10 = `_3`, M1 Abrams = `_4`, M4 Sherman = `_5`, Churchill = `_6`, King Tiger = `_7`. The active bank has 58 files. Vehicle type data supplies `cannonSe`; enemy cannons and commander bazookas keep their existing sounds. Cannon variants share the previous cannon gain and synthesized fallback. Only the currently boarded tank variant is preloaded on a vehicle change; other variants load on demand within the existing 32 MiB cache, two-decode and 16-voice limits. Trucks and armored cars use the refreshed `se_043_wheeled_vehicle_loop` with its updated content revision.

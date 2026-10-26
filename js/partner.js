@@ -178,7 +178,7 @@ function partnerVehicleAttack(q,dt){
  }else if(v.kind==='tank'){
   if(v.t.id!=='armored'&&target&&v.c>0&&q.vehicleCannonT<=0){
    q.vehicleCannonT=v.t.ccd||2.5;v.c--;
-   fire(q.x+Math.cos(a)*44,q.y+Math.sin(a)*44,a,'ally','c',v.t.cspd||558,v.t.crng||504,v.t.cdmg||3);
+   fire(q.x+Math.cos(a)*44,q.y+Math.sin(a)*44,a,'ally','c',v.t.cspd||558,v.t.crng||504,v.t.cdmg||3,v.t.cannonSe||'cannon');
   }
   if(!isPartnerDrivenVehicle()&&closestHuman&&v.v>0&&q.vehicleGunT<=0){
    const ma=Math.atan2(closestHuman.y-q.y,closestHuman.x-q.x);

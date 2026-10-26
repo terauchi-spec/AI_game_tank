@@ -22,9 +22,9 @@ test('enemy tanks share one loop, use movement rather than turret rotation, and 
  c.state='results';c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),false);c.state='play';c.now+=120;for(const t of c.etanks)t.x+=5;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),false);
  c.now+=120;for(const t of c.etanks)t.x+=5;c.updateGameAudio();await settle();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),true);c.stopGameAudio();c.now+=120;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),false);
 });
-test('all 52 active manifest MP3s match the explicitly uploaded files, without requesting unprovided effects',()=>{
+test('all 58 active manifest MP3s match the explicitly uploaded files, without requesting unprovided effects',()=>{
  const {c}=harness(),defs=c.get('GAME_SE_FILES'),manifest=JSON.parse(fs.readFileSync(path.join(__dirname,'../docs/se-installed.json')));
- assert.equal(Object.keys(defs).length,52);assert.deepEqual(Object.values(defs).map(n=>'assets/audio/se/'+n+'.mp3').sort(),manifest.files.sort());for(const file of manifest.files)assert.ok(fs.statSync(path.join(__dirname,'..',file)).size>0);
+ assert.equal(Object.keys(defs).length,58);assert.deepEqual(Object.values(defs).map(n=>'assets/audio/se/'+n+'.mp3').sort(),manifest.files.sort());for(const file of manifest.files)assert.ok(fs.statSync(path.join(__dirname,'..',file)).size>0);
  assert.equal(c.gameSeName('sniperLens'),'sniperLens');assert.equal(c.playGameSe('pickup'),false);
 });
 test('MP3s decode once and cached effects play immediately; loading never replays a late shot',async()=>{
@@ -82,7 +82,7 @@ test('all ten skill activation aliases reuse se_skills with one download, decode
 });
 
 test('each active MP3 request includes its verified content revision',async()=>{
- const h=harness(),{c}=h;await c.loadGameSe('cannon');const versions=JSON.parse(fs.readFileSync(path.join(__dirname,'../docs/se-revisions.json')));assert.equal(h.requests[0],'assets/audio/se/se_025_tank_cannon_fire.mp3?v='+versions.se_025_tank_cannon_fire);assert.equal(Object.keys(versions).length,52);
+ const h=harness(),{c}=h;await c.loadGameSe('cannon');const versions=JSON.parse(fs.readFileSync(path.join(__dirname,'../docs/se-revisions.json')));assert.equal(h.requests[0],'assets/audio/se/se_025_tank_cannon_fire.mp3?v='+versions.se_025_tank_cannon_fire);assert.equal(Object.keys(versions).length,58);
 });
 test('drill contact loops only during actual contact and stops on release, expiry or menus',async()=>{
  const h=harness(),{c}=h;await c.loadGameSe('drillContact');c.p.drill=5;c.p.drillContact=false;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("drillContact")'),false);
@@ -140,4 +140,37 @@ test('objective destruction plays once at the lethal hit and fireworks follow an
 
 test('counterattack warning has no audio download or playback',async()=>{
  const h=harness();assert.equal(h.c.playGameSe('counterattack'),false);await h.c.loadGameSe('counterattack');assert.equal(h.requests.length,0);assert.equal(h.sources.length,0);
+});
+
+test('all seven player and partner tank cannons pass distinct uploaded sound keys without changing their shots',()=>{
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),types={};vm.createContext(types);vm.runInContext(html.slice(html.indexOf('const PLAYER_TANK_FUEL_SCALE='),html.indexOf('const ARMORED_TYPE='))+';this.tanks=TYPES;',types);
+ const defs=harness().c.get('GAME_SE_FILES'),keys=new Set(),partnerSource=fs.readFileSync(path.join(__dirname,'../js/partner.js'),'utf8');
+ const shot=html.split('\n').find(line=>line.includes("if(!isPartnerDrivenVehicle()&&t.id!=='armored'&&dAttack"));
+ for(const [i,t] of types.tanks.entries()){
+  const key=i?'cannon'+(i+1):'cannon';assert.equal(t.cannonSe,key);keys.add(key);assert.equal(defs[key],'se_025_tank_cannon_fire'+(i?'_'+(i+1):''));
+  const calls=[],c={t,p:{x:0,y:0,ang:0,cc:0,tank:{c:2}},dAttack:true,areaDebugInfiniteAmmo:false,isPartnerDrivenVehicle:()=>false,fire:(...args)=>calls.push(args),burst(){}};
+  vm.createContext(c);vm.runInContext(shot,c);assert.equal(calls[0][8],key);assert.equal(c.p.tank.c,1);assert.equal(c.p.cc,t.ccd);
+  c.humans=[];c.etanks=[{x:100,y:0,alive:true}];c.D=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);c.los=()=>true;
+  vm.runInContext(partnerSource.slice(partnerSource.indexOf('function partnerVehicleAttack('),partnerSource.indexOf('// S short press:')),c);
+  c.partnerVehicleAttack({x:0,y:0,face:0,vehicle:{kind:'tank',t,c:2,v:0}},.1);assert.equal(calls[1][8],key);assert.equal(calls[1][3],'ally');
+ }
+ assert.equal(keys.size,7);
+});
+test('each cannon variant keeps the cannon gain and synthesized fallback until ready',async()=>{
+ const h=harness(),{c}=h;for(let i=2;i<=7;i++){const name='cannon'+i;await c.loadGameSe(name);assert.equal(c.playGameSe(name),true);assert.equal(c.get('[...gameSe.voices].at(-1).gain.gain.value'),.45);}
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),fallback=[],ctx={gameSoundEnabled:true,ensureAudio(){},playGameSe:()=>false,legacySfx:n=>fallback.push(n)};
+ vm.createContext(ctx);vm.runInContext(html.split('\n').find(l=>l.startsWith('function sfx(n,position=')),ctx);for(let i=2;i<=7;i++)ctx.sfx('cannon'+i);assert.deepEqual(fallback,Array(6).fill('cannon'));
+});
+test('boarding preloads only the selected cannon variant and does not preload all six additions',async()=>{
+ const h=harness(),{c}=h;c.p.tank={kind:'tank',t:{id:'kingtiger',cannonSe:'cannon7'}};c.updateGameAudio();await settle();const cannonRequests=()=>h.requests.filter(url=>url.includes('se_025_tank_cannon_fire'));assert.equal(cannonRequests().length,1);assert.match(cannonRequests()[0],/se_025_tank_cannon_fire_7\.mp3/);
+ c.now+=120;c.updateGameAudio();await settle();assert.equal(cannonRequests().length,1);c.p.tank=null;c.now+=120;c.updateGameAudio();c.p.tank={kind:'tank',t:{id:'type10',cannonSe:'cannon3'}};c.now+=120;c.updateGameAudio();await settle();assert.equal(cannonRequests().length,2);assert.match(cannonRequests()[1],/se_025_tank_cannon_fire_3\.mp3/);
+});
+test('truck and armored car movement use the updated wheel clip and stop when stationary',async()=>{
+ for(const [kind,id] of [['truck','truck'],['tank','armored']]){
+  const h=harness(),{c}=h;c.p.tank={kind,t:{id}};await c.loadGameSe('wheelMove');c.updateGameAudio();c.now+=120;c.p.x+=15;c.updateGameAudio();await settle();assert.equal(c.get('gameSe.loops.get("vehicle").name'),'wheelMove');c.now+=120;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("vehicle")'),false);
+ }
+});
+test('all seven cannon clips and the refreshed wheels carry their actual Git blob content revisions',()=>{
+ const crypto=require('node:crypto'),{c}=harness(),defs=c.get('GAME_SE_FILES'),revisions=c.get('GAME_SE_REVISIONS');
+ for(const name of Object.values(defs).filter(name=>name.startsWith('se_025_')||name==='se_043_wheeled_vehicle_loop')){const data=fs.readFileSync(path.join(__dirname,'../assets/audio/se',name+'.mp3')),sha=crypto.createHash('sha1').update(Buffer.from('blob '+data.length+'\0')).update(data).digest('hex');assert.equal(revisions[name],sha.slice(0,12),name);}
 });

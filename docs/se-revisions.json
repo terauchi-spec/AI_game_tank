@@ -26,7 +26,7 @@
   "se_040_cover_break": "17ffe9c3ea22",
   "se_041_vehicle_board_exit": "d3d3e4f26657",
   "se_042_tank_movement_loop": "c66ba82d1935",
-  "se_043_wheeled_vehicle_loop": "98ecb50db67d",
+  "se_043_wheeled_vehicle_loop": "2ce5de2f59aa",
   "se_048_aircraft_flyby": "667ec0d2671f",
   "se_050_air_bomb_explosion": "6f114287d521",
   "se_051_air_raid_warning": "fef9bf6c1c83",
@@ -50,5 +50,11 @@
   "se_008_success_firework": "8c94379f84ff",
   "se_013_footstep_dirt": "800537edae85",
   "se_039_objective_destroyed": "b36ba89e7389",
-  "se_069_sniper_zoom": "77cff57ef27b"
+  "se_069_sniper_zoom": "77cff57ef27b",
+  "se_025_tank_cannon_fire_2": "b80fe420ab3e",
+  "se_025_tank_cannon_fire_3": "cf406bcd4ebe",
+  "se_025_tank_cannon_fire_4": "7599148d49e4",
+  "se_025_tank_cannon_fire_5": "de397f08c742",
+  "se_025_tank_cannon_fire_6": "6723413af6d0",
+  "se_025_tank_cannon_fire_7": "bf8e99b17b79"
 }
