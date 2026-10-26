@@ -5,24 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.26.1844</title>
+<title>こっそり戦車大作戦 2026.10.26.1912</title>
 
 <style>
-#titleSound{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
-#titleSound[aria-checked="false"]{color:#d5d5d5}
-#titleSound .sound-switch{position:relative;display:block;width:44px;height:24px;border-radius:12px;background:#568846;box-shadow:inset 0 0 0 1px #ffffff40}
-#titleSound .sound-switch::after{content:"";position:absolute;top:3px;left:23px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #0005;transition:transform .15s ease}
-#titleSound[aria-checked="false"] .sound-switch{background:#62676a}
-#titleSound[aria-checked="false"] .sound-switch::after{transform:translateX(-20px)}
-#titleSound:focus-visible{outline:2px solid #ffe1a0;outline-offset:3px}
-@media(prefers-reduced-motion:reduce){#titleSound .sound-switch::after{transition:none}}
-#titleSound img{width:24px;height:24px;object-fit:contain}
-#titleSound .sound-off,#titleSound[aria-checked="false"] .sound-on{display:none}
-#titleSound[aria-checked="false"] .sound-off{display:block}
+.sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
+.sound-control[aria-checked="false"]{color:#d5d5d5}
+.sound-control .sound-switch{position:relative;display:block;width:44px;height:24px;border-radius:12px;background:#568846;box-shadow:inset 0 0 0 1px #ffffff40}
+.sound-control .sound-switch::after{content:"";position:absolute;top:3px;left:23px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #0005;transition:transform .15s ease}
+.sound-control[aria-checked="false"] .sound-switch{background:#62676a}
+.sound-control[aria-checked="false"] .sound-switch::after{transform:translateX(-20px)}
+.sound-control:focus-visible{outline:2px solid #ffe1a0;outline-offset:3px}
+@media(prefers-reduced-motion:reduce){.sound-control .sound-switch::after{transition:none}}
+.sound-control img{width:24px;height:24px;object-fit:contain}
+.sound-control .sound-off,.sound-control[aria-checked="false"] .sound-on{display:none}
+.sound-control[aria-checked="false"] .sound-off{display:block}
 #gameMenu{width:min(320px,calc(100vw - 48px));box-sizing:border-box;max-height:calc(100dvh - 32px);overflow:auto;border:1px solid #c5b27b;border-radius:22px;padding:24px;background:#1d2a20;color:#fff5d6;text-align:center;box-shadow:0 12px 48px #0008}
 #gameMenu::backdrop{background:rgba(0,0,0,.68)}
 #gameMenu h2{font-size:23px;margin:0 0 20px}#gameMenu nav{display:grid;gap:12px}
 #gameMenu button{min-height:52px;border:1px solid #c4b47f;border-radius:12px;background:#354336;color:#fff4d0;font:700 19px system-ui;touch-action:manipulation;cursor:pointer}
+#gameMenu #gameMenuSound{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:10px 14px;margin:0}
 #gameMenu #gameMenuResume{background:#e9cb85;color:#202b22}
 body.game-paused #pad,body.game-paused #resetBtn,body.game-paused #debugToggleBtn,body.game-paused #debugBadge,body.game-paused #missionHud{display:none!important}
 body:not(.gameplay-active) #resetBtn{display:none!important}
@@ -603,22 +604,22 @@ body.success-open .mission-firework{animation:missionFireworkBurst 1250ms ease-o
 }
 @media(max-width:360px){#resultScreen .res-rank-badge{width:144px;height:144px}#resultScreen .res-medal{gap:10px}#resultScreen .res-medal-rank{font-size:38px}}
 </style>
-<link rel="stylesheet" href="css/developer.css?v=2026.10.26.1844">
-<link rel="stylesheet" href="css/leaderboard.css?v=2026.10.26.1844">
-<link rel="stylesheet" href="css/intro.css?v=2026.10.26.1844">
-<link rel="stylesheet" href="css/unlocks.css?v=2026.10.26.1844">
+<link rel="stylesheet" href="css/developer.css?v=2026.10.26.1912">
+<link rel="stylesheet" href="css/leaderboard.css?v=2026.10.26.1912">
+<link rel="stylesheet" href="css/intro.css?v=2026.10.26.1912">
+<link rel="stylesheet" href="css/unlocks.css?v=2026.10.26.1912">
 </head>
 <body>
 <canvas id="c" width="840" height="720"></canvas>
 <button id="resetBtn" type="button" aria-label="メニューを開く" title="メニュー" aria-haspopup="dialog">☰</button>
-<dialog id="gameMenu" aria-labelledby="gameMenuHeading"><h2 id="gameMenuHeading">一時停止</h2><nav aria-label="ゲーム中メニュー"><button id="gameMenuTitle" type="button">タイトル</button><button id="gameMenuEnd" type="button">作戦終了</button><button id="gameMenuResume" type="button">ゲームに戻る</button></nav></dialog>
+<dialog id="gameMenu" aria-labelledby="gameMenuHeading"><h2 id="gameMenuHeading">一時停止</h2><nav aria-label="ゲーム中メニュー"><button id="gameMenuTitle" type="button">タイトル</button><button id="gameMenuEnd" type="button">作戦終了</button><button id="gameMenuSound" class="sound-control" type="button" role="switch" aria-checked="true"><img class="sound-on" src="assets/ui/sound-on.webp" width="24" height="24" alt="" aria-hidden="true"><img class="sound-off" src="assets/ui/sound-off.webp" width="24" height="24" alt="" aria-hidden="true"><span>音声</span><span class="sound-switch" aria-hidden="true"></span></button><button id="gameMenuResume" type="button">ゲームに戻る</button></nav></dialog>
 <button id="debugToggleBtn" type="button" aria-label="無敵モード切替" title="無敵モード切替"><span class="icon">🛡</span><span class="key">P</span></button>
 <div id="debugBadge" hidden><span id="debugBadgeText">無敵モード</span><button id="mazeCompareButton" type="button" hidden>比較：通常 → 敵移動停止</button></div>
 <div id="pad"><div id="stick"><div id="knob"></div></div><div class="btns"><button class="b" id="skillBtn" data-k="KeyS"><span class="coolRing" id="skillCooldown"></span><span class="coolText" id="skillCooldownText"></span><b>S</b><small id="skillLabel">スキル</small></button><button class="b" id="actionBtn" type="button"><span class="coolRing" id="actionCooldown"></span><span class="coolText" id="actionCooldownText"></span><b id="actionGlyph">B</b><small id="actionLabel">爆弾</small></button><button class="b" data-k="KeyA"><b>A</b><small>操作</small></button></div></div>
 <div id="titleScreen" role="region" aria-label="タイトル画面"><div class="title-wrap">
 <div class="title-hero"><img class="title-art" alt="戦場を見下ろす兵士と戦車のイラスト" src="assets/ui/title_hero.webp?v=2026.10.14.1653"><div class="title-hero-text"><div class="title-tag">TACTICAL ACTION GAME</div><h1 class="title-main"><img class="title-logo" src="assets/ui/title_logo.webp?v=2026.10.14.1653" alt="こっそり戦車大作戦"></h1></div></div>
 <nav class="title-actions" aria-label="タイトルメニュー">
-<button type="button" id="titleSound" role="switch" aria-checked="true"><img class="sound-on" src="assets/ui/sound-on.webp" width="24" height="24" alt="" aria-hidden="true"><img class="sound-off" src="assets/ui/sound-off.webp" width="24" height="24" alt="" aria-hidden="true"><span class="sound-switch" aria-hidden="true"></span></button>
+<button type="button" id="titleSound" class="sound-control" role="switch" aria-checked="true"><img class="sound-on" src="assets/ui/sound-on.webp" width="24" height="24" alt="" aria-hidden="true"><img class="sound-off" src="assets/ui/sound-off.webp" width="24" height="24" alt="" aria-hidden="true"><span class="sound-switch" aria-hidden="true"></span></button>
 <button type="button" class="title-cta" id="titleStart">ゲームを始める</button>
 <div class="title-secondaries"><button type="button" class="title-secondary" id="titleDeveloper" hidden>開発者</button><button type="button" class="title-secondary" id="titleLeaderboard">スコアボード</button><button type="button" class="title-secondary" id="titleAwards">称号</button><button type="button" class="title-secondary" id="titleHelp">操作説明</button><button type="button" class="title-secondary" id="titleSpecs">仕様</button><button type="button" class="title-secondary" id="titleDiagnostics">表示診断（停止の調査）</button></div>
 </nav>
@@ -957,9 +958,9 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 </div><footer class="sk-bottom stage-bottom"><button type="button" class="sk-toggle" id="stageDebugAll" aria-pressed="false">全ステージを表示</button><button type="button" class="sk-deploy" id="stageDeploy" disabled>ステージを選択してください</button></footer></div></div>
 <div id="missionHud" role="status"></div>
 
-<script src="js/player-tank-art.js?v=2026.10.26.1844"></script>
-<script src="js/audio.js?v=2026.10.26.1844"></script>
-<script src="js/bgm.js?v=2026.10.26.1844"></script>
+<script src="js/player-tank-art.js?v=2026.10.26.1912"></script>
+<script src="js/audio.js?v=2026.10.26.1912"></script>
+<script src="js/bgm.js?v=2026.10.26.1912"></script>
 <script>
 const MOBILE_VIEW=matchMedia('(pointer:coarse)').matches;
 // iPhoneの描画反映の途切れを切り分けるため、表示Canvasと静的キャッシュの作成設定を統一する。
@@ -970,7 +971,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.26.1844',FILE_CREATED_AT='2026/10/26 18:44',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.26.1912',FILE_CREATED_AT='2026/10/26 19:12',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -987,7 +988,7 @@ function setGameSoundEnabled(enabled){
  try{localStorage.setItem('tankGameSoundEnabledV1',gameSoundEnabled?'on':'off');}catch(_){}
  syncSoundButton();if(gameSoundEnabled){ensureAudio();if(typeof updateGameBgm==='function')updateGameBgm();}
 }
-function syncSoundButton(){const button=document.getElementById('titleSound');button.setAttribute('aria-checked',String(gameSoundEnabled));button.setAttribute('aria-label','すべての音：'+(gameSoundEnabled?'オン（押すとオフ）':'オフ（押すとオン）'));}
+function syncSoundButton(){for(const id of ['titleSound','gameMenuSound']){const button=document.getElementById(id);button.setAttribute('aria-checked',String(gameSoundEnabled));button.setAttribute('aria-label','すべての音：'+(gameSoundEnabled?'オン（押すとオフ）':'オフ（押すとオン）'));}}
 
 function ensureAudio(){if(!gameSoundEnabled)return;try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});}catch(_){}}
 function tone(f=440,d=.08,v=.035,type='square',f2=null){if(!audioCtx||!gameSoundEnabled)return;const t=audioCtx.currentTime,o=audioCtx.createOscillator(),a=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t+d);a.gain.setValueAtTime(v,t);a.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(a);a.connect(gameAudioDestination(audioCtx));o.start(t);o.stop(t+d+.02);}
@@ -8349,21 +8350,21 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/stage-progress.js?v=2026.10.26.1844"></script>
-<script src="js/frontline.js?v=2026.10.26.1844"></script>
-<script src="js/award-icons.js?v=2026.10.26.1844"></script>
-<script src="js/developer.js?v=2026.10.26.1844"></script>
-<script src="js/leaderboard.js?v=2026.10.26.1844"></script>
-<script src="js/intro.js?v=2026.10.26.1844"></script>
-<script src="js/unlocks.js?v=2026.10.26.1844"></script>
-<script src="js/enemy-bomber.js?v=2026.10.26.1844"></script>
+<script src="js/stage-progress.js?v=2026.10.26.1912"></script>
+<script src="js/frontline.js?v=2026.10.26.1912"></script>
+<script src="js/award-icons.js?v=2026.10.26.1912"></script>
+<script src="js/developer.js?v=2026.10.26.1912"></script>
+<script src="js/leaderboard.js?v=2026.10.26.1912"></script>
+<script src="js/intro.js?v=2026.10.26.1912"></script>
+<script src="js/unlocks.js?v=2026.10.26.1912"></script>
+<script src="js/enemy-bomber.js?v=2026.10.26.1912"></script>
 <script src="js/characters.js?v=2026.10.19.1032"></script>
-<script src="js/enemy-dogs.js?v=2026.10.26.1844"></script>
-<script src="js/partner.js?v=2026.10.26.1844"></script>
+<script src="js/enemy-dogs.js?v=2026.10.26.1912"></script>
+<script src="js/partner.js?v=2026.10.26.1912"></script>
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
-<script src="js/canyon.js?v=2026.10.26.1844"></script>
+<script src="js/canyon.js?v=2026.10.26.1912"></script>
 <script src="js/vegetation.js?v=2026.10.14.1653"></script>
-<script src="js/infiltration-world.js?v=2026.10.26.1844"></script>
+<script src="js/infiltration-world.js?v=2026.10.26.1912"></script>
 <script src="js/infiltration-render.js?v=2026.10.21.1139"></script>
 <script>
 (function(){
@@ -8541,6 +8542,7 @@ function openGameMenu(){
 function resumeGameMenu(){if(state!=='paused')return;closeGameMenu();state='play';resetBtn.focus({preventScroll:true});}
 resetBtn.addEventListener('click',openGameMenu);
 document.getElementById('gameMenuResume').addEventListener('click',resumeGameMenu);
+document.getElementById('gameMenuSound').addEventListener('click',()=>{if(state==='paused')setGameSoundEnabled(!gameSoundEnabled);});
 document.getElementById('gameMenuTitle').addEventListener('click',()=>{if(state!=='paused')return;closeGameMenu();backToTitle();});
 document.getElementById('gameMenuEnd').addEventListener('click',()=>{
  if(state!=='paused')return;

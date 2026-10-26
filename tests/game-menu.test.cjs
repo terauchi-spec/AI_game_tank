@@ -3,7 +3,7 @@ const html=fs.readFileSync(require('node:path').join(__dirname,'../index.html'),
 function menu(){
  const nodes=new Map(),classes=new Set(),calls={clear:0,stop:0,finalize:0,home:0,partner:0};
  const get=id=>{if(!nodes.has(id))nodes.set(id,{events:{},addEventListener(k,f){this.events[k]=f;},focus(){this.focused=true;},showModal(){this.open=true;},close(){this.open=false;}});return nodes.get(id);};
- const c={state:'play',resetBtn:get('resetBtn'),document:{getElementById:get,body:{classList:{add:k=>classes.add(k),remove:k=>classes.delete(k)}}},clearInputs(){calls.clear++;},stopGameAudio(){calls.stop++;},finishPartnerOrder(confirm){assert.equal(confirm,false);calls.partner++;},backToTitle(){calls.home++;c.state='title';},finalizeScore(success){assert.equal(success,false);calls.finalize++;},sfx(){},syncMissionFailure(){calls.failure=true;}};
+ const c={gameSoundEnabled:true,setGameSoundEnabled(value){c.gameSoundEnabled=value;},state:'play',resetBtn:get('resetBtn'),document:{getElementById:get,body:{classList:{add:k=>classes.add(k),remove:k=>classes.delete(k)}}},clearInputs(){calls.clear++;},stopGameAudio(){calls.stop++;},finishPartnerOrder(confirm){assert.equal(confirm,false);calls.partner++;},backToTitle(){calls.home++;c.state='title';},finalizeScore(success){assert.equal(success,false);calls.finalize++;},sfx(){},syncMissionFailure(){calls.failure=true;}};
  vm.createContext(c);vm.runInContext(html.slice(html.indexOf("const gameMenu=document.getElementById('gameMenu');"),html.indexOf("document.addEventListener('visibilitychange',()=>{if(document.hidden)clearInputs();});")),c);return{c,get,calls,classes};
 }
 test('menu freezes play, releases held controls and partner orders; return and Escape resume without ending the run',()=>{
@@ -22,3 +22,7 @@ test('paused frames do not advance movement, enemy AI, mission timers or effects
  assert.match(html,/function shouldDrawGameFrame\(now\)\{\s*if\(state==='paused'\)return false/);
 });
 test('every inline script still compiles',()=>{for(const script of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))if(script[1].trim())new vm.Script(script[1]);});
+
+test('menu audio toggle preserves pause and run; the shared setting remains after resume and reopening',()=>{
+ const h=menu();h.c.openGameMenu();h.get('gameMenuSound').events.click();assert.equal(h.c.gameSoundEnabled,false);assert.equal(h.c.state,'paused');assert.equal(h.get('gameMenu').open,true);assert.equal(h.calls.finalize,0);h.c.resumeGameMenu();h.c.openGameMenu();assert.equal(h.c.gameSoundEnabled,false);h.get('gameMenuSound').events.click();assert.equal(h.c.gameSoundEnabled,true);assert.equal(h.c.state,'paused');h.c.resumeGameMenu();h.get('gameMenuSound').events.click();assert.equal(h.c.gameSoundEnabled,true);
+});
