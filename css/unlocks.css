@@ -1,10 +1,10 @@
 :root{--instructor-speech-height:clamp(190px,29svh,250px)}
 #unlockScreen[hidden]{display:none!important}
-#unlockScreen{position:fixed;inset:0;z-index:85;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;box-sizing:border-box;color:#fff4cb;isolation:isolate;background:#080a07;padding:max(22px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) calc(112px + env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));font-family:system-ui,-apple-system,'Hiragino Sans',sans-serif}
+#unlockScreen{position:fixed;inset:0;z-index:85;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;box-sizing:border-box;color:#fff4cb;isolation:isolate;background:#080a07;padding:max(22px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) calc(112px + env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));font-family:system-ui,-apple-system,'Hiragino Sans',sans-serif}
 #unlockScreen::before,#introScreen::before,#skillScreen::before{content:'';position:absolute;top:0;left:0;width:100%;height:100vh;height:100svh;z-index:-1;pointer-events:none;background:linear-gradient(to bottom,#080a0770 0%,#080a0710 25%,#080a0715 60%,#080a07bb 85%,#080a07 100%),url('../assets/ui/unlock-background.webp') center 60%/cover no-repeat}
 body.unlock-open #resultScreen,body.unlock-open #resetBtn,body.unlock-open #pad,body.unlock-open #debugToggleBtn,body.unlock-open #debugBadge{display:none!important}
 body.unlock-open,html:has(body.unlock-open){overscroll-behavior:none}
-.unlock-shell{max-width:770px;margin:0 auto}
+.unlock-shell{width:100%;min-width:0;max-width:770px;margin:0 auto}
 .unlock-header{text-align:center;margin-bottom:22px}
 .unlock-header h1{font-size:clamp(30px,7.5vw,48px);font-weight:950;letter-spacing:.06em;line-height:1.25;margin:0 0 18px;color:#fff1b8;text-shadow:0 3px 10px #0007}
 /* The portrait is an unframed foreground layer over the screen-wide hangar. */
@@ -12,13 +12,13 @@ body.unlock-open,html:has(body.unlock-open){overscroll-behavior:none}
 #unlockInstructor{display:block;width:100%;height:100%;object-fit:contain;object-position:center bottom;transform:translateY(clamp(-56px,-12vw,-36px)) scale(1.1);transform-origin:center}
 .unlock-header-note{font-size:14px;font-weight:800;letter-spacing:.06em;color:#edda9f;margin-top:16px}
 #unlockList{display:grid;gap:14px}
-.unlock-card{display:grid;grid-template-columns:clamp(88px,24vw,132px) minmax(0,1fr);align-items:center;gap:16px;padding:16px 18px;border:2px solid #ffe7a3;border-radius:23px;background:linear-gradient(120deg,#76501f,#947032 53%,#6d4b20);box-shadow:0 0 0 4px #cba65a30,0 10px 24px #0004;overflow:hidden}
+.unlock-card{box-sizing:border-box;min-width:0;display:grid;grid-template-columns:clamp(88px,24vw,132px) minmax(0,1fr);align-items:center;gap:16px;padding:16px 18px;border:2px solid #ffe7a3;border-radius:23px;background:linear-gradient(120deg,#76501f,#947032 53%,#6d4b20);box-shadow:0 0 0 4px #cba65a30,0 10px 24px #0004;overflow:hidden}
 .unlock-card-art{aspect-ratio:1;display:grid;place-items:center;border-radius:50%;border:3px solid #fff1b6;background:radial-gradient(circle at 38% 30%,#fff4b9,#d1a340 75%);box-shadow:0 0 0 5px #f4d68438,0 5px 12px #392a1b66;overflow:hidden}
 .unlock-card-art img,.unlock-card-art svg{display:block;width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain;border-radius:0;filter:none}
 .unlock-card-skill .unlock-card-art img{object-fit:cover}
 .unlock-card-title .unlock-card-art{border:0;border-radius:0;background:none;box-shadow:none;overflow:visible}
 .unlock-card-title .unlock-card-art .award-icon{width:100%;height:100%;margin:0;flex:none;border:0;border-radius:0;background:none;box-shadow:none}
-.unlock-card-copy{min-width:0;text-shadow:0 2px 6px #49341655}
+.unlock-card-copy{min-width:0;overflow-wrap:anywhere;text-shadow:0 2px 6px #49341655}
 .unlock-card h2{font-size:clamp(16px,4vw,22px);line-height:1.35;margin:0 0 6px;font-weight:950;color:#fff7dc}
 .unlock-name{font-size:clamp(21px,5vw,30px);font-weight:950;line-height:1.35;overflow-wrap:anywhere;color:#fff3c0}
 .unlock-actions{position:fixed;bottom:0;left:50%;transform:translateX(-50%);z-index:1;width:min(100%,770px);box-sizing:border-box;padding:12px 14px calc(12px + env(safe-area-inset-bottom));border:1px solid #b39655;border-bottom:0;border-radius:14px 14px 0 0;background:#28281cf7;box-shadow:0 -10px 26px #0007}
@@ -45,3 +45,9 @@ body.unlock-open,html:has(body.unlock-open){overscroll-behavior:none}
 
 #introHeading[hidden],#unlockHeading[hidden]{display:none!important}
 @media(max-height:500px){:root{--instructor-speech-height:clamp(130px,45svh,190px)}}
+
+/* A single opening reveal uses compositor-friendly transforms and opacity only. */
+@media(prefers-reduced-motion:no-preference){
+ #unlockList.unlock-revealing .unlock-card{animation:unlockCardReveal .55s cubic-bezier(.2,.7,.2,1) both;animation-delay:var(--unlock-reveal-delay,300ms)}
+ @keyframes unlockCardReveal{from{opacity:0;transform:translateY(22px) scale(.97)}to{opacity:1;transform:none}}
+}

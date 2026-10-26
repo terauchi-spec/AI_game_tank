@@ -1,11 +1,11 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const root=path.join(__dirname,'..'),source=fs.readFileSync(path.join(root,'js/unlocks.js'),'utf8'),html=fs.readFileSync(path.join(root,'index.html'),'utf8');
-function harness({storage=new Map(),storageFails=false}={}){
- const nodes=new Map(),classes=new Set(),events={},sounds=[],getNode=id=>{if(!nodes.has(id))nodes.set(id,{hidden:true,innerHTML:'',src:'',scrollTop:99,handlers:{},addEventListener(n,f){this.handlers[n]=f;},focus(){this.focused=true;}});return nodes.get(id);};
- const c={state:'win',scoreStats:null,areaDebugEnabled:false,STAGE_ORDER:[{id:'indoorBeginner',name:'潜入（初級）',image:'infiltration_beginner'}],SK:[{id:'dig',n:'潜伏'}],TITLE_CATALOG:[{id:'v3_stealth',name:'隠密兵',type:'単独実績'}],stageDisplayNumber:()=> '02',skillCardIconSrc:id=>'assets/ui/skills/'+id+'.webp',awardIcon:t=>'<img src="assets/ui/titles/'+t.id+'.webp">',
+function harness({storage=new Map(),storageFails=false,reducedMotion=false}={}){
+ const timers=new Map();let timerId=0;const nodes=new Map(),classes=new Set(),events={},sounds=[],getNode=id=>{if(!nodes.has(id))nodes.set(id,{hidden:true,innerHTML:'',src:'',scrollTop:99,scrolls:[],classList:{values:new Set(),add(n){this.values.add(n);},remove(n){this.values.delete(n);},contains(n){return this.values.has(n);}},getBoundingClientRect(){return {top:id==='unlockList'?800:0};},scrollTo(options){this.scrolls.push(options);this.scrollTop=options.top;},handlers:{},addEventListener(n,f){this.handlers[n]=f;},focus(){this.focused=true;}});return nodes.get(id);};
+ const c={setTimeout(fn){timers.set(++timerId,fn);return timerId;},clearTimeout(id){timers.delete(id);},matchMedia:()=>({matches:reducedMotion}),state:'win',scoreStats:null,areaDebugEnabled:false,STAGE_ORDER:[{id:'indoorBeginner',name:'潜入（初級）',image:'infiltration_beginner'}],SK:[{id:'dig',n:'潜伏'}],TITLE_CATALOG:[{id:'v3_stealth',name:'隠密兵',type:'単独実績'}],stageDisplayNumber:()=> '02',skillCardIconSrc:id=>'assets/ui/skills/'+id+'.webp',awardIcon:t=>'<img src="assets/ui/titles/'+t.id+'.webp">',
  document:{body:{classList:{contains:n=>classes.has(n),add:n=>classes.add(n),remove:n=>classes.delete(n)}},getElementById:getNode},localStorage:{getItem(k){if(storageFails)throw Error('storage');return storage.get(k)??null;},setItem(k,v){if(storageFails)throw Error('storage');storage.set(k,v);}},addEventListener:(n,f)=>events[n]=f,sfx:n=>sounds.push(n),renderResultScreen(){c.renders++;},renders:0,animateResultScore(){c.animations++;},animations:0,beginResultGameBgm(){c.bgmStarts++;},bgmStarts:0,resultScoreAnimId:0};
  vm.createContext(c);vm.runInContext(source,c);const start=html.indexOf('function syncResultScreen(){');vm.runInContext(html.slice(start,html.indexOf("document.getElementById('resRetry')",start)),c);
- return{c,nodes,classes,events,sounds,storage,getNode,get:s=>vm.runInContext(s,c)};
+ return{c,nodes,classes,events,sounds,storage,getNode,timers,flush(){const jobs=[...timers.values()];timers.clear();jobs.forEach(fn=>fn());},get:s=>vm.runInContext(s,c)};
 }
 const run=()=>({final:{total:100,cleared:true},unlockedStage:'indoorBeginner',unlockedSkill:'dig',awards:{newTitles:['v3_stealth'],repeatTitles:['old']}});
 test('stage, skill and only newly acquired current titles are collected once without changing progression',()=>{
@@ -76,4 +76,18 @@ test('score update cards use existing gold, silver or bronze WebP medals for the
  for(const [position,color] of [[1,'gold'],[2,'silver'],[3,'bronze'],[30,'bronze']]){
   const h=harness(),s={final:{total:200},awards:{newTitles:[]},leaderboardUpdates:[{board:'overall',position:30},{board:'indoorBeginner',position}]};const item=h.c.collectRunUnlocks(s)[0],card=h.c.renderUnlockCard(item);assert.match(card,new RegExp('assets/ui/leaderboard/medal-'+color+'\\.webp'));assert.doesNotMatch(card,/<svg/);assert.ok(fs.statSync(path.join(root,item.image)).size<10000);
  }
+});
+
+test('opening scrolls to unlock content and reveals once, without scheduling on every sync',()=>{
+ const h=harness();h.c.scoreStats=run();h.c.syncResultScreen();for(let i=0;i<20;i++)h.c.syncResultScreen();assert.equal(h.timers.size,1);h.flush();const screen=h.getNode('unlockScreen');assert.equal(screen.scrolls.length,1);assert.equal(screen.scrolls[0].left,0);assert.equal(screen.scrolls[0].top,780);assert.equal(screen.scrolls[0].behavior,'smooth');assert.ok(h.getNode('unlockList').classList.contains('unlock-revealing'));h.c.syncResultScreen();assert.equal(h.timers.size,0);
+});
+test('manual interaction and leaving the screen cancel the pending opening scroll',()=>{
+ for(const action of ['pointerdown','touchstart','wheel','keydown','close']){
+  const h=harness();h.c.scoreStats=run();h.c.syncResultScreen();if(action==='close')h.c.closeUnlockScreen();else h.getNode('unlockScreen').handlers[action]();assert.equal(h.timers.size,0);h.flush();assert.ok(!h.getNode('unlockList').classList.contains('unlock-revealing'));
+ }
+});
+test('reduced motion shows contents without smooth scroll or animated reveal; late rankings do not replay the reveal',()=>{
+ const h=harness({reducedMotion:true});h.c.scoreStats=run();h.c.syncResultScreen();h.flush();assert.equal(h.getNode('unlockScreen').scrolls[0].behavior,'instant');assert.ok(!h.getNode('unlockList').classList.contains('unlock-revealing'));
+ const normal=harness();normal.c.scoreStats=run();normal.c.syncResultScreen();normal.flush();normal.c.scoreStats.leaderboardUpdates=[{board:'overall',position:1}];normal.c.syncResultScreen();assert.equal(normal.timers.size,0);assert.equal(normal.getNode('unlockScreen').scrolls.length,1);assert.ok(!normal.getNode('unlockList').classList.contains('unlock-revealing'));
+ const css=fs.readFileSync(path.join(root,'css/unlocks.css'),'utf8');assert.match(css,/#unlockScreen\{[^}]*overflow-x:hidden;overflow-y:auto/);assert.match(css,/prefers-reduced-motion:no-preference/);
 });

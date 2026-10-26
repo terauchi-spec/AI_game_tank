@@ -25,12 +25,37 @@ function collectRunUnlocks(s){
  }
  return items;
 }
-function renderUnlockCard(item){
+function renderUnlockCard(item,index=0){
  const labels={stage:'新ステージ',skill:'新スキル',title:'新称号',rank:'昇級！',leaderboard:'スコアボード更新'},label=labels[item.kind];
  const art=item.kind==='rank'?'<span class="unlock-rank-mark">↑</span>':item.kind==='title'?(typeof awardIcon==='function'?awardIcon(item.title,'title'):''):('<img src="'+escapeUnlockText(item.image)+'" alt="" decoding="async" loading="lazy">');
- return '<article class="unlock-card unlock-card-'+item.kind+'"><div class="unlock-card-art" aria-hidden="true">'+art+'</div><div class="unlock-card-copy"><h2>'+label+'</h2><div class="unlock-name">'+escapeUnlockText(item.name)+'</div>'+(item.kind==='leaderboard'||item.kind==='rank'?'<div class="unlock-leaderboard-ranks">'+escapeUnlockText(item.note)+'</div>':'')+'</div></article>';
+ return '<article class="unlock-card unlock-card-'+item.kind+'" style="--unlock-reveal-delay:'+ (300+Math.min(index,6)*100)+'ms"><div class="unlock-card-art" aria-hidden="true">'+art+'</div><div class="unlock-card-copy"><h2>'+label+'</h2><div class="unlock-name">'+escapeUnlockText(item.name)+'</div>'+(item.kind==='leaderboard'||item.kind==='rank'?'<div class="unlock-leaderboard-ranks">'+escapeUnlockText(item.note)+'</div>':'')+'</div></article>';
 }
+let unlockRevealTimer=null;
+function cancelUnlockReveal(){
+ if(unlockRevealTimer!==null){clearTimeout(unlockRevealTimer);unlockRevealTimer=null;}
+}
+function beginUnlockReveal(screen){
+ cancelUnlockReveal();
+ const list=document.getElementById('unlockList'),run=unlockRun;
+ list.classList.remove('unlock-revealing');
+ unlockRevealTimer=setTimeout(()=>{
+  unlockRevealTimer=null;
+  if(unlockRun!==run||screen.hidden)return;
+  const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  const top=Math.max(0,screen.scrollTop+list.getBoundingClientRect().top-screen.getBoundingClientRect().top-20);
+  screen.scrollTo({top,left:0,behavior:reduced?'instant':'smooth'});
+  if(!reduced)list.classList.add('unlock-revealing');
+ },650);
+}
+// Manual interaction takes priority over the opening scroll.
+const unlockScrollScreen=document.getElementById('unlockScreen');
+function interruptUnlockReveal(){
+ cancelUnlockReveal();
+ unlockScrollScreen.scrollTo({top:unlockScrollScreen.scrollTop,left:0,behavior:'instant'});
+}
+for(const event of ['pointerdown','touchstart','wheel','keydown'])unlockScrollScreen.addEventListener(event,interruptUnlockReveal,{passive:true});
 function closeUnlockScreen(){
+ cancelUnlockReveal();
  document.body.classList.remove('unlock-open');document.getElementById('unlockScreen').hidden=true;unlockRun=null;
 }
 function syncUnlockScreen(s){
@@ -55,7 +80,8 @@ function syncUnlockScreen(s){
   document.getElementById('unlockList').innerHTML=s.unlockNoticeItems.map(renderUnlockCard).join('');
   screen.hidden=false;document.body.classList.add('unlock-open');screen.scrollTop=0;
   document.getElementById('unlockEvaluate').focus({preventScroll:true});
- }else if(updated)document.getElementById('unlockList').innerHTML=s.unlockNoticeItems.map(renderUnlockCard).join('');
+  beginUnlockReveal(screen);
+ }else if(updated){const list=document.getElementById('unlockList');list.classList.remove('unlock-revealing');list.innerHTML=s.unlockNoticeItems.map(renderUnlockCard).join('');}
  return true;
 }
 function acknowledgeRunUnlocks(){
