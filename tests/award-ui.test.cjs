@@ -55,7 +55,9 @@ test('prominent collection rank agrees on both screens and stats, ignores repeat
  const result=c.nodes.get('resCareerRank').innerHTML;
  assert.equal(result,c.nodes.get('trophyCareerRank').innerHTML);
  assert.match(result,new RegExp('career-rank-name">'+rank.name+'</strong>'));
- assert.match(result,new RegExp('称号 '+rank.total+' / 34種類'));
+ assert.doesNotMatch(result,/階級 \d+ \/ 16|称号 \d+ \/ 34種類/);
+ assert.equal(c.nodes.get('trophyCount').textContent,'');
+ assert.match(result,/次の.+まで あと\d+種類/);
  c.nodes.get('trophyTabStats').click();assert.equal(c.nodes.get('trophyCareerRank').innerHTML,result);
  c.recordRunAchievements(c.scoreStats);assert.equal(c.careerRank().total,rank.total);
  c.storage.set(c.run('TITLE_ARCHIVE_KEY'),JSON.stringify({titles:{},runs:0}));c.renderTrophyArchive();assert.match(c.nodes.get('trophyCareerRank').innerHTML,/career-rank-name">二等兵<\/strong>/);
