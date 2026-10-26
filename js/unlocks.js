@@ -45,6 +45,12 @@ function beginUnlockReveal(screen){
   const top=Math.max(0,screen.scrollTop+list.getBoundingClientRect().top-screen.getBoundingClientRect().top-20);
   screen.scrollTo({top,left:0,behavior:reduced?'instant':'smooth'});
   if(!reduced)list.classList.add('unlock-revealing');
+  // Let the staggered cards finish and remain readable before returning to the instructor.
+  unlockRevealTimer=setTimeout(()=>{
+   unlockRevealTimer=null;
+   if(unlockRun!==run||screen.hidden)return;
+   screen.scrollTo({top:0,left:0,behavior:reduced?'instant':'smooth'});
+  },2500+Math.min(Math.max(0,run.unlockNoticeItems.length-1),6)*100);
  },650);
 }
 // Manual interaction takes priority over the opening scroll.

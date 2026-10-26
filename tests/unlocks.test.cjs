@@ -79,7 +79,7 @@ test('score update cards use existing gold, silver or bronze WebP medals for the
 });
 
 test('opening scrolls to unlock content and reveals once, without scheduling on every sync',()=>{
- const h=harness();h.c.scoreStats=run();h.c.syncResultScreen();for(let i=0;i<20;i++)h.c.syncResultScreen();assert.equal(h.timers.size,1);h.flush();const screen=h.getNode('unlockScreen');assert.equal(screen.scrolls.length,1);assert.equal(screen.scrolls[0].left,0);assert.equal(screen.scrolls[0].top,780);assert.equal(screen.scrolls[0].behavior,'smooth');assert.ok(h.getNode('unlockList').classList.contains('unlock-revealing'));h.c.syncResultScreen();assert.equal(h.timers.size,0);
+ const h=harness();h.c.scoreStats=run();h.c.syncResultScreen();for(let i=0;i<20;i++)h.c.syncResultScreen();assert.equal(h.timers.size,1);h.flush();const screen=h.getNode('unlockScreen');assert.equal(screen.scrolls.length,1);assert.equal(screen.scrolls[0].left,0);assert.equal(screen.scrolls[0].top,780);assert.equal(screen.scrolls[0].behavior,'smooth');assert.ok(h.getNode('unlockList').classList.contains('unlock-revealing'));h.c.syncResultScreen();assert.equal(h.timers.size,1);h.flush();assert.equal(screen.scrolls.length,2);assert.equal(screen.scrolls[1].top,0);assert.equal(screen.scrolls[1].behavior,'smooth');assert.equal(h.timers.size,0);h.c.syncResultScreen();assert.equal(h.timers.size,0);
 });
 test('manual interaction and leaving the screen cancel the pending opening scroll',()=>{
  for(const action of ['pointerdown','touchstart','wheel','keydown','close']){
@@ -87,7 +87,13 @@ test('manual interaction and leaving the screen cancel the pending opening scrol
  }
 });
 test('reduced motion shows contents without smooth scroll or animated reveal; late rankings do not replay the reveal',()=>{
- const h=harness({reducedMotion:true});h.c.scoreStats=run();h.c.syncResultScreen();h.flush();assert.equal(h.getNode('unlockScreen').scrolls[0].behavior,'instant');assert.ok(!h.getNode('unlockList').classList.contains('unlock-revealing'));
- const normal=harness();normal.c.scoreStats=run();normal.c.syncResultScreen();normal.flush();normal.c.scoreStats.leaderboardUpdates=[{board:'overall',position:1}];normal.c.syncResultScreen();assert.equal(normal.timers.size,0);assert.equal(normal.getNode('unlockScreen').scrolls.length,1);assert.ok(!normal.getNode('unlockList').classList.contains('unlock-revealing'));
+ const h=harness({reducedMotion:true});h.c.scoreStats=run();h.c.syncResultScreen();h.flush();assert.equal(h.getNode('unlockScreen').scrolls[0].behavior,'instant');assert.ok(!h.getNode('unlockList').classList.contains('unlock-revealing'));h.flush();assert.equal(h.getNode('unlockScreen').scrolls[1].behavior,'instant');assert.equal(h.getNode('unlockScreen').scrolls[1].top,0);
+ const normal=harness();normal.c.scoreStats=run();normal.c.syncResultScreen();normal.flush();normal.c.scoreStats.leaderboardUpdates=[{board:'overall',position:1}];normal.c.syncResultScreen();assert.equal(normal.timers.size,1);assert.equal(normal.getNode('unlockScreen').scrolls.length,1);assert.ok(!normal.getNode('unlockList').classList.contains('unlock-revealing'));
  const css=fs.readFileSync(path.join(root,'css/unlocks.css'),'utf8');assert.match(css,/#unlockScreen\{[^}]*overflow-x:hidden;overflow-y:auto/);assert.match(css,/prefers-reduced-motion:no-preference/);
+});
+
+test('manual interaction or exit after the cards appear cancels the return to the instructor',()=>{
+ for(const action of ['pointerdown','touchstart','wheel','keydown','close']){
+  const h=harness();h.c.scoreStats=run();h.c.syncResultScreen();h.flush();assert.equal(h.timers.size,1);if(action==='close')h.c.closeUnlockScreen();else h.getNode('unlockScreen').handlers[action]();const count=h.getNode('unlockScreen').scrolls.length;assert.equal(h.timers.size,0);h.flush();assert.equal(h.getNode('unlockScreen').scrolls.length,count);
+ }
 });
