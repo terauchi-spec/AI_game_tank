@@ -58,3 +58,22 @@ test('unconfirmed, non-ranking and invalid-position submissions never create sco
   const h=harness(),s={final:{total:100,cleared:false},awards:{newTitles:[]},leaderboardUpdates:updates};assert.equal(h.c.collectRunUnlocks(s).length,0);
  }
 });
+
+test('promotion alone opens the unlock screen once and shows old and new rank, including on failure',()=>{
+ for(const cleared of [true,false]){
+  const h=harness(),s={final:{total:100,cleared},awards:{newTitles:[]},careerPromotion:{from:'伍長',name:'軍曹',previousLevel:4,level:5}};h.c.scoreStats=s;h.c.state=cleared?'win':'lose';h.c.syncResultScreen();assert.ok(h.classes.has('unlock-open'));assert.match(h.getNode('unlockList').innerHTML,/昇級！/);assert.match(h.getNode('unlockList').innerHTML,/軍曹/);assert.match(h.getNode('unlockList').innerHTML,/伍長 → 軍曹/);assert.equal(s.unlockNoticeItems.length,1);h.c.acknowledgeRunUnlocks();h.c.syncResultScreen();assert.ok(h.classes.has('result-open'));assert.ok(!h.classes.has('unlock-open'));
+ }
+});
+test('promotion combines with other unlocks and a late score update does not repeat an acknowledged promotion',()=>{
+ const h=harness(),s={...run(),careerPromotion:{from:'二等兵',name:'伍長',previousLevel:1,level:4}};h.c.scoreStats=s;h.c.syncResultScreen();assert.equal(s.unlockNoticeItems.length,4);assert.equal(s.unlockNoticeItems.filter(v=>v.kind==='rank').length,1);h.c.acknowledgeRunUnlocks();s.leaderboardUpdates=[{board:'overall',position:2}];h.c.syncResultScreen();assert.deepEqual(Array.from(s.unlockNoticeItems,v=>v.kind),['leaderboard']);assert.doesNotMatch(h.getNode('unlockList').innerHTML,/昇級/);
+});
+test('failed saves, unchanged ranks, invalid ranks and debug areas cannot announce promotions',()=>{
+ for(const mode of ['failed','same','invalid','area']){
+  const h=harness(),s={final:{total:100},awards:{newTitles:[]},careerPromotion:{from:'二等兵',name:'一等兵',previousLevel:1,level:2}};if(mode==='failed')s.awards.saveFailed=true;if(mode==='same')s.careerPromotion.level=1;if(mode==='invalid')s.careerPromotion.level=17;if(mode==='area')h.c.areaDebugEnabled=true;assert.equal(h.c.collectRunUnlocks(s).length,0,mode);
+ }
+});
+test('score update cards use existing gold, silver or bronze WebP medals for the best updated board',()=>{
+ for(const [position,color] of [[1,'gold'],[2,'silver'],[3,'bronze'],[30,'bronze']]){
+  const h=harness(),s={final:{total:200},awards:{newTitles:[]},leaderboardUpdates:[{board:'overall',position:30},{board:'indoorBeginner',position}]};const item=h.c.collectRunUnlocks(s)[0],card=h.c.renderUnlockCard(item);assert.match(card,new RegExp('assets/ui/leaderboard/medal-'+color+'\\.webp'));assert.doesNotMatch(card,/<svg/);assert.ok(fs.statSync(path.join(root,item.image)).size<10000);
+ }
+});

@@ -189,3 +189,12 @@ test('debug finalization persists unlocks, high score, achievements and history 
 test('debug clear of the last normal stage earns the all-stage title in the same result',()=>{
  const c=stageHarness(allStages.slice(0,-1)),s=Object.assign(c.scoreStats,{debugUsed:true,final:{cleared:true,total:1000}});c.recordRunAchievements(s);assert.ok(s.awards.newTitles.includes('v3_all_stages_clear'));
 });
+
+test('persisted new titles announce the highest new career rank once, while repeats do not promote',()=>{
+ const c=harness(),before=c.careerRank();Object.assign(c.scoreStats,rich,{final:{cleared:true,total:1000}});c.recordRunAchievements(c.scoreStats);const after=c.careerRank(),promotion=c.scoreStats.careerPromotion;assert.ok(after.level>before.level);assert.equal(promotion.from,before.name);assert.equal(promotion.name,after.name);assert.equal(promotion.previousLevel,before.level);assert.equal(promotion.level,after.level);
+ c.recordRunAchievements(c.scoreStats);assert.equal(c.scoreStats.careerPromotion,promotion);
+ const repeat=Object.assign(c.newScoreStats(),rich,{final:{cleared:true,total:1000}});c.recordRunAchievements(repeat);assert.equal(c.careerRank().level,after.level);assert.equal(repeat.careerPromotion,undefined);
+});
+test('unsaved achievements and area debug never announce a career promotion',()=>{
+ for(const debug of [false,true]){const c=harness();c.areaDebugEnabled=debug;if(!debug)c.localStorage.setItem=()=>{throw Error('quota')};Object.assign(c.scoreStats,rich,{final:{cleared:true,total:1000}});c.recordRunAchievements(c.scoreStats);assert.equal(c.scoreStats.careerPromotion,undefined);assert.equal(debug?c.scoreStats.awards.disabled:c.scoreStats.awards.saveFailed,true);}
+});

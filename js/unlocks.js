@@ -14,14 +14,21 @@ function collectRunUnlocks(s){
  if(!s.awards?.saveFailed)for(const id of new Set(s.awards?.newTitles||[])){
   const title=titles.find(v=>v.id===id);if(title)items.push({kind:'title',id,name:title.name,title,note:title.type||'新しい称号を獲得しました'});
  }
+ const promotion=s.careerPromotion;
+ if(!s.awards?.saveFailed&&promotion&&Number.isInteger(promotion.previousLevel)&&Number.isInteger(promotion.level)&&promotion.previousLevel>=1&&promotion.level>promotion.previousLevel&&promotion.level<=16&&promotion.name){
+  items.push({kind:'rank',id:'careerRank',name:promotion.name,note:promotion.from+' → '+promotion.name});
+ }
  const boards=(s.leaderboardUpdates||[]).filter(v=>Number.isInteger(v.position)&&v.position>=1&&v.position<=30&&(v.board==='overall'||stages.some(stage=>stage.id===v.board)));
- if(boards.length)items.push({kind:'leaderboard',id:'leaderboard',name:Math.round(s.final.total).toLocaleString('ja-JP')+'点',note:boards.map(v=>(v.board==='overall'?'総合':stages.find(stage=>stage.id===v.board).name)+' '+v.position+'位').join(' ／ ')});
+ if(boards.length){
+  const best=Math.min(...boards.map(v=>v.position)),medal=best===1?'gold':best===2?'silver':'bronze';
+  items.push({kind:'leaderboard',id:'leaderboard',name:Math.round(s.final.total).toLocaleString('ja-JP')+'点',image:'assets/ui/leaderboard/medal-'+medal+'.webp',note:boards.map(v=>(v.board==='overall'?'総合':stages.find(stage=>stage.id===v.board).name)+' '+v.position+'位').join(' ／ ')});
+ }
  return items;
 }
 function renderUnlockCard(item){
- const labels={stage:'新ステージ',skill:'新スキル',title:'新称号',leaderboard:'スコアボード更新'},label=labels[item.kind];
- const art=item.kind==='leaderboard'?'<svg viewBox="0 0 80 80" fill="none"><path d="M22 14h36v16c0 15-8 23-18 23s-18-8-18-23V14Z" fill="#fff1b8"/><path d="M22 20H12v10c0 10 8 16 17 16m29-26h10v10c0 10-8 16-17 16M40 53v12M27 68h26" stroke="#fff1b8" stroke-width="6" stroke-linecap="round"/></svg>':item.kind==='title'?(typeof awardIcon==='function'?awardIcon(item.title,'title'):''):('<img src="'+escapeUnlockText(item.image)+'" alt="" decoding="async" loading="lazy">');
- return '<article class="unlock-card unlock-card-'+item.kind+'"><div class="unlock-card-art" aria-hidden="true">'+art+'</div><div class="unlock-card-copy"><h2>'+label+'</h2><div class="unlock-name">'+escapeUnlockText(item.name)+'</div>'+(item.kind==='leaderboard'?'<div class="unlock-leaderboard-ranks">'+escapeUnlockText(item.note)+'</div>':'')+'</div></article>';
+ const labels={stage:'新ステージ',skill:'新スキル',title:'新称号',rank:'昇級！',leaderboard:'スコアボード更新'},label=labels[item.kind];
+ const art=item.kind==='rank'?'<span class="unlock-rank-mark">↑</span>':item.kind==='title'?(typeof awardIcon==='function'?awardIcon(item.title,'title'):''):('<img src="'+escapeUnlockText(item.image)+'" alt="" decoding="async" loading="lazy">');
+ return '<article class="unlock-card unlock-card-'+item.kind+'"><div class="unlock-card-art" aria-hidden="true">'+art+'</div><div class="unlock-card-copy"><h2>'+label+'</h2><div class="unlock-name">'+escapeUnlockText(item.name)+'</div>'+(item.kind==='leaderboard'||item.kind==='rank'?'<div class="unlock-leaderboard-ranks">'+escapeUnlockText(item.note)+'</div>':'')+'</div></article>';
 }
 function closeUnlockScreen(){
  document.body.classList.remove('unlock-open');document.getElementById('unlockScreen').hidden=true;unlockRun=null;
