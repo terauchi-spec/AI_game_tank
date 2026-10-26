@@ -31,3 +31,31 @@ test('the all-stage legendary stays immediately before mythic even when one is l
  const c=harness();c.storage.set(c.run('TITLE_ARCHIVE_KEY'),JSON.stringify({titles:{v3_mythic_complete:{count:1}},runs:32}));c.openTrophyArchive();
  const cards=c.nodes.get('trophyGrid').children;assert.match(cards.at(-2).children[1].innerHTML,/v3_all_stages_clear\.webp/);assert.match(cards.at(-1).children[1].innerHTML,/v3_mythic_complete\.webp/);assert.equal(cards.at(-2).children[0].children[0].textContent,'伝説級');
 });
+
+test('career ranks follow all 16 thresholds, count repeats, and cap at general',()=>{
+ const c=harness(),id=c.run('TITLE_CATALOG[0].id');
+ const ranks=c.run('CAREER_RANKS');assert.equal(ranks.length,16);
+ assert.equal(c.careerRank({titles:{}}).name,'二等兵');
+ for(let i=1;i<ranks.length;i++){
+  const [name,threshold]=ranks[i];
+  const before=c.careerRank({titles:{[id]:{count:threshold-1}}});
+  if(threshold>1)assert.equal(before.name,ranks[i-1][0]);
+  const reached=c.careerRank({titles:{[id]:{count:threshold}}});
+  assert.equal(reached.name,name);assert.equal(reached.level,i+1);assert.equal(reached.total,threshold);
+ }
+ const top=c.careerRank({titles:{[id]:{count:10000}}});assert.equal(top.name,'大将');assert.equal(top.next,null);assert.equal(top.remaining,0);
+ const second=c.run('TITLE_CATALOG[1].id');const legacy=c.careerRank({titles:{[id]:{at:'old'},[second]:{count:9},removed_title:{count:9999}}});assert.equal(legacy.total,10);assert.equal(legacy.name,'軍曹');
+});
+
+test('current career rank agrees on collection, stats and result, and viewing does not award titles twice',()=>{
+ const c=harness(),id=c.run('TITLE_CATALOG[0].id');
+ c.storage.set(c.run('TITLE_ARCHIVE_KEY'),JSON.stringify({titles:{[id]:{count:39}},runs:9}));
+ c.recordRunAchievements(c.scoreStats);const total=c.careerRank().total;
+ c.syncResultScreen();c.openTrophyArchive();
+ assert.equal(c.nodes.get('resCareerRank').textContent,c.nodes.get('trophyCareerRank').textContent);
+ assert.match(c.nodes.get('resCareerRank').textContent,/現在の階級：少尉/);
+ assert.match(c.nodes.get('resCareerRank').textContent,new RegExp('称号の累計獲得：'+total+'回'));
+ c.nodes.get('trophyTabStats').click();assert.match(c.nodes.get('trophyCareerRank').textContent,/現在の階級：少尉/);
+ c.recordRunAchievements(c.scoreStats);assert.equal(c.careerRank().total,total);
+ c.storage.set(c.run('TITLE_ARCHIVE_KEY'),JSON.stringify({titles:{},runs:0}));c.renderTrophyArchive();assert.match(c.nodes.get('trophyCareerRank').textContent,/現在の階級：二等兵/);
+});
