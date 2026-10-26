@@ -42,7 +42,8 @@ function unlockStageOnClear(s){
 }
 // Debug visibility affects selection only; canonical progression still uses stageSelectable().
 function stageAvailableForSelection(id,progress=readStageProgress()){
- return id==='areaDebug'||(TEST_STAGES.some(stage=>stage.id===id)&&stageDebugAll)||(STAGE_ORDER.some(stage=>stage.id===id)&&(stageDebugAll||stageSelectable(id,progress)));
+ const developer=typeof isDeveloperMode==='function'&&isDeveloperMode();
+ return (id==='areaDebug'&&developer)||(TEST_STAGES.some(stage=>stage.id===id)&&developer&&stageDebugAll)||(STAGE_ORDER.some(stage=>stage.id===id)&&((developer&&stageDebugAll)||stageSelectable(id,progress)));
 }
 const STAGE_RECORDS_KEY='tankGameStageRecordsV1';
 const STAGE_RECORD_RANKS=['S','A','B','C','D','E','F'];
@@ -113,7 +114,7 @@ function renderStageLocks(){
  document.querySelectorAll('[data-stage]').forEach(button=>{
   const id=button.dataset.stage,index=STAGE_ORDER.findIndex(stage=>stage.id===id),stage=STAGE_ORDER[index];
   if(id==='areaDebug'){
-   button.disabled=false;button.classList.toggle('locked',false);button.setAttribute('aria-label','エリアデバッグ');return;
+   button.disabled=!(typeof isDeveloperMode==='function'&&isDeveloperMode());button.classList.toggle('locked',false);button.setAttribute('aria-label','エリアデバッグ');return;
   }
   const testStage=TEST_STAGES.find(stage=>stage.id===id);
   if(testStage){

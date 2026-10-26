@@ -2,7 +2,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
 const source=html.slice(html.indexOf('const STAGE_PREPARATION_MIN_MS='),html.indexOf('function chooseSkillByNumber('));
 function harness(buildTime=0){
- const frames=[],timers=[],c={now:0,state:'stage',stageMode:'beginner',areaDebugEnabled:false,hound:null,builds:0,painted:false,
+ const frames=[],timers=[],c={isDeveloperMode:()=>true,now:0,state:'stage',stageMode:'beginner',areaDebugEnabled:false,hound:null,builds:0,painted:false,
  skillMenuList:()=>[{id:'throw'}],skillSelectable:()=>true,stageAvailableForSelection:()=>true,currentStageId:()=> 'beginner',sfx(){},
  performance:{now:()=>c.now},requestAnimationFrame:fn=>frames.push(fn),setTimeout(fn,delay){timers.push({fn,at:c.now+delay});},
  syncStageScreen(){c.painted=c.state==='preparing';},reset(){assert.equal(c.painted,true);c.builds++;c.now+=buildTime;c.state='play';}};

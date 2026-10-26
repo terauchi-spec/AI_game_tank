@@ -1,7 +1,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const source=fs.readFileSync(path.join(__dirname,'../js/stage-progress.js'),'utf8');
 const order=['beginner','indoorBeginner','frontBeginner','base','indoor','front'];
-function harness(saved){const storage=new Map(saved?[['tankGameStageProgressV1',saved]]:[]),c={stageMode:'beginner',frontlineBeginner:false,indoorBeginner:false,areaDebugEnabled:false,localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)}};vm.createContext(c);vm.runInContext(source,c);c.storage=storage;c.ids=()=>order.filter(id=>c.stageSelectable(id));return c;}
+function harness(saved){const storage=new Map(saved?[['tankGameStageProgressV1',saved]]:[]),c={isDeveloperMode:()=>true,stageMode:'beginner',frontlineBeginner:false,indoorBeginner:false,areaDebugEnabled:false,localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)}};vm.createContext(c);vm.runInContext(source,c);c.storage=storage;c.ids=()=>order.filter(id=>c.stageSelectable(id));return c;}
 function clear(c,id){c.frontlineBeginner=id==='frontBeginner';c.indoorBeginner=id==='indoorBeginner';c.stageMode=c.frontlineBeginner?'front':c.indoorBeginner?'indoor':id;const s={final:{cleared:true}};c.unlockStageOnClear(s);return s;}
 function cards(c){const buttons=order.map(id=>({dataset:{stage:id},classList:{toggle(k,v){this[k]=v;}},number:{},target:{},querySelector(sel){return sel==='.stage-target'?this.target:sel==='.stage-number'?this.number:null;},setAttribute(k,v){this[k]=v;}})),nodes={};c.document={querySelectorAll:()=>buttons,getElementById:id=>nodes[id]??={classList:{toggle(k,v){this[k]=v;}},setAttribute(k,v){this[k]=v;},removeAttribute(k){delete this[k];}}};return{buttons,nodes};}
 test('only 01 starts open and all six stages unlock exactly in display order',()=>{
@@ -112,4 +112,7 @@ test('locked facility names stay unknown until normal unlock, including during a
  vm.runInContext('stageDebugAll=true',c);c.renderStageLocks();assert.equal(buttons[4].disabled,false);assert.equal(buttons[4].target.textContent,'？');assert.equal(buttons[4].classList['stage-concealed'],true);
  vm.runInContext('stageDebugAll=false',c);for(const id of order.slice(0,4))clear(c,id);c.renderStageLocks();assert.equal(buttons[4].target.textContent,'軍需格納庫');assert.equal(buttons[4].classList['stage-concealed'],false);
  c.setSelectedStage('frontBeginner');assert.equal(nodes.stageDeploy.textContent,'制圧（初級）で出撃');
+});
+test('non-developers cannot bypass unlocks or select area debug and Oni even with stale all-stage flags',()=>{
+ const c=harness();c.isDeveloperMode=()=>false;vm.runInContext('stageDebugAll=true',c);assert.equal(c.stageAvailableForSelection('beginner'),true);for(const id of ['front','areaDebug','frontOni'])assert.equal(c.stageAvailableForSelection(id),false,id);c.isDeveloperMode=()=>true;for(const id of ['front','areaDebug','frontOni'])assert.equal(c.stageAvailableForSelection(id),true,id);
 });

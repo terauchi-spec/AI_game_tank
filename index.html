@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.26.0911</title>
+<title>こっそり戦車大作戦 2026.10.26.0942</title>
 
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#12140f;--fg:#e6e9d8}
@@ -571,9 +571,10 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 }
 @media(max-width:360px){#resultScreen .res-rank-badge{width:144px;height:144px}#resultScreen .res-medal{gap:10px}#resultScreen .res-medal-rank{font-size:38px}}
 </style>
-<link rel="stylesheet" href="css/leaderboard.css?v=2026.10.26.0911">
-<link rel="stylesheet" href="css/intro.css?v=2026.10.26.0911">
-<link rel="stylesheet" href="css/unlocks.css?v=2026.10.26.0911">
+<link rel="stylesheet" href="css/developer.css?v=2026.10.26.0942">
+<link rel="stylesheet" href="css/leaderboard.css?v=2026.10.26.0942">
+<link rel="stylesheet" href="css/intro.css?v=2026.10.26.0942">
+<link rel="stylesheet" href="css/unlocks.css?v=2026.10.26.0942">
 </head>
 <body>
 <canvas id="c" width="840" height="720"></canvas>
@@ -585,10 +586,10 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <div class="title-hero"><img class="title-art" alt="戦場を見下ろす兵士と戦車のイラスト" src="assets/ui/title_hero.webp?v=2026.10.14.1653"><div class="title-hero-text"><div class="title-tag">TACTICAL ACTION GAME</div><h1 class="title-main"><img class="title-logo" src="assets/ui/title_logo.webp?v=2026.10.14.1653" alt="こっそり戦車大作戦"></h1></div></div>
 <nav class="title-actions" aria-label="タイトルメニュー">
 <button type="button" class="title-cta" id="titleStart">ゲームを始める</button>
-<div class="title-secondaries"><button type="button" class="title-secondary" id="titleLeaderboard">スコアボード</button><button type="button" class="title-secondary" id="titleAwards">称号</button><button type="button" class="title-secondary" id="titleHelp">操作説明</button><button type="button" class="title-secondary" id="titleSpecs">仕様</button><button type="button" class="title-secondary" id="titleDiagnostics">表示診断（停止の調査）</button></div>
+<div class="title-secondaries"><button type="button" class="title-secondary" id="titleDeveloper" hidden>開発者</button><button type="button" class="title-secondary" id="titleLeaderboard">スコアボード</button><button type="button" class="title-secondary" id="titleAwards">称号</button><button type="button" class="title-secondary" id="titleHelp">操作説明</button><button type="button" class="title-secondary" id="titleSpecs">仕様</button><button type="button" class="title-secondary" id="titleDiagnostics">表示診断（停止の調査）</button></div>
 </nav>
 <div class="title-identity" aria-label="制作者と更新情報">
-  <div class="title-credit"><span class="title-identity-label">CREATED BY</span><strong class="title-credit-name">Terauchi Takeharu</strong></div>
+  <div class="title-credit"><span class="title-identity-label">CREATED BY</span><button id="developerTrigger" type="button" class="title-credit-name">Terauchi Takeharu</button></div>
   <div class="title-update"><span class="title-identity-label">LATEST UPDATE</span><strong class="title-update-date" id="titleUpdated"></strong><span class="title-update-version">VERSION <span id="titleVersion"></span></span></div>
 </div>
 </div></div>
@@ -730,7 +731,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 750ms ease-ou
 <ul><li>クリアまたは失敗後の評価画面に、総合スコアと<strong>F〜Sの7段階ランク</strong>を表示します。</li><li>スコアは潜入・戦闘・任務達成・クリア時間などをもとに計算します。前線制圧では自分の撃破を中心に評価し、味方の撃破は上限付きの支援点として加算します。継続増援の大量撃破や安全な移動だけで得点が過度に伸びないよう補正します。到達距離は出撃開始地点からの最大前進距離です。距離表示はすべてm単位です。</li><li>プレイスタイルを<strong>任務遂行／隠密／戦闘／爆破／機動／戦術／連携／生存</strong>の8軸（Lv0〜5）で評価します。Lv5には100点と高い成果が必要です。任務遂行は自分の目標達成への貢献、隠密は未発見での接近・回収、戦闘は撃破数・武器効率・連撃、爆破は目標爆破・爆発撃破、機動は目標への新たな前進、戦術は誘導・防御・組み付き、連携は共同作戦・救助・共同撃破、生存は任務参加と無傷での生還を評価します。待機・同じ場所の往復・支援任せだけでは伸びません。</li><li><strong>マルチキル：</strong>撃破間隔4秒以内で続けて敵を撃破すること。<strong>ワンショットキル：</strong>同一攻撃で複数の敵を撃破すること。無線支援爆撃とその連鎖爆発は、マルチキル・ワンショットキルの対象外です。</li><li>称号は単独16種・複合4種・特殊4種・伝説級9種・神話級1種の全34種です。伝説級「全戦域の覇者」は通常6ステージすべてのクリア、神話級「戦場の神話」はほかの33種類すべての獲得が条件です。単独はLv4以上、上級はLv5に加えて個別の成果、複合は2軸ともLv5が必要です。従来の8種類の伝説級は、対応する上級称号を累計5回獲得すると授与します。タイトル画面の「称号」からコレクションと累計戦績を確認できます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-save"><h2>11. スキル解放・保存・デバッグ</h2>
-<ul><li>破壊・制圧・潜入は、いずれも評価・実績保存の対象です。ステージは01から順番に、ひとつ前をクリアすると解放されます。</li><li>初期解放スキルは<strong>遠投</strong>。デバッグ使用の有無にかかわらず、クリアするたびに、新しいスキルが順番に1種類ずつ解放されます。</li><li>スキル解放・称号・ハイスコア・戦績などは、このブラウザ内に保存されます。</li><li>称号画面の「戦績」から保存データを初期化できます。初期化は取り消せません。</li><li>デバッグではPキー（スマホは上部アイコン）で「無敵→無敵＋索敵解除→無敵＋戦闘機（燃料無限）→通常」を切り替え、描画診断ではAI・衝突等の更新を止め、最初の15秒はゲーム画面全体、次の15秒は背景だけを、同じ経路で自動スクロールします。終了後は無敵＋戦闘機に戻ります。Oキーで前方に戦車を出現、Lキーで巡回ルート表示を切り替えられます。スキル選択画面には全スキル表示、ステージ選択画面には全ステージ表示とエリアデバッグがあります。エリアデバッグでは全エリアの遮蔽物・静止した敵のサンプルを確認でき、出発地点付近にガソリンと無線を配置しています。デバッグ用ガソリンは徒歩でも表示され、取得には乗車が必要です。通常ステージではデバッグ中も、ステージ・スキル解放、称号、ハイスコア、戦績が保存されます。</li></ul>
+<ul><li>破壊・制圧・潜入は、いずれも評価・実績保存の対象です。ステージは01から順番に、ひとつ前をクリアすると解放されます。</li><li>初期解放スキルは<strong>遠投</strong>。デバッグ使用の有無にかかわらず、クリアするたびに、新しいスキルが順番に1種類ずつ解放されます。</li><li>スキル解放・称号・ハイスコア・戦績などは、このブラウザ内に保存されます。</li><li>称号画面の「戦績」から保存データを初期化できます。初期化は取り消せません。</li><li>各デバッグ機能は開発者モード限定です。開発者モードではPキー（スマホは上部アイコン）で「無敵→無敵＋索敵解除→無敵＋戦闘機（燃料無限）→通常」を切り替え、描画診断ではAI・衝突等の更新を止め、最初の15秒はゲーム画面全体、次の15秒は背景だけを、同じ経路で自動スクロールします。終了後は無敵＋戦闘機に戻ります。Oキーで前方に戦車を出現、Lキーで巡回ルート表示を切り替えられます。スキル選択画面には全スキル表示、ステージ選択画面には全ステージ表示とエリアデバッグがあります。エリアデバッグでは全エリアの遮蔽物・静止した敵のサンプルを確認でき、出発地点付近にガソリンと無線を配置しています。デバッグ用ガソリンは徒歩でも表示され、取得には乗車が必要です。通常ステージではデバッグ中も、ステージ・スキル解放、称号、ハイスコア、戦績が保存されます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <p class="spec-foot">仕様は Ver.<span id="specVersion"></span> 時点の内容です。ゲームの更新に伴い変更される場合があります。</p>
 </div></div>
@@ -850,6 +851,8 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
  #stageScreen .stage-copy strong,#stageScreen .stage-target{font-size:15px}
 }
 </style>
+<section id="developerLogin" role="dialog" aria-modal="true" aria-labelledby="developerLoginHeading" hidden><div class="dev-panel"><h1 id="developerLoginHeading">開発者モード</h1><form id="developerLoginForm" novalidate><label for="developerPin">数字4桁のパスワード</label><input id="developerPin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off"><p id="developerLoginStatus" role="status"></p><div class="dev-actions"><button id="developerCancel" type="button">キャンセル</button><button id="developerSubmit" type="submit">開始</button></div></form></div></section>
+<section id="developerScreen" aria-labelledby="developerHeading" hidden><div class="dev-panel"><h1 id="developerHeading">開発者</h1><button id="developerHome" type="button">タイトル</button><button id="developerResetScores" type="button">スコアボードをリセット</button><p id="developerStatus" role="status"></p></div></section>
 <section id="leaderboardScreen" aria-labelledby="leaderboardHeading" hidden>
  <div class="lb-shell">
   <header class="lb-header"><h1 id="leaderboardHeading">スコアボード</h1><button id="leaderboardHome" type="button">タイトル</button></header>
@@ -918,9 +921,9 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 </div><footer class="sk-bottom stage-bottom"><button type="button" class="sk-toggle" id="stageDebugAll" aria-pressed="false">全ステージを表示</button><button type="button" class="sk-deploy" id="stageDeploy" disabled>ステージを選択してください</button></footer></div></div>
 <div id="missionHud" role="status"></div>
 
-<script src="js/player-tank-art.js?v=2026.10.26.0911"></script>
-<script src="js/audio.js?v=2026.10.26.0911"></script>
-<script src="js/bgm.js?v=2026.10.26.0911"></script>
+<script src="js/player-tank-art.js?v=2026.10.26.0942"></script>
+<script src="js/audio.js?v=2026.10.26.0942"></script>
+<script src="js/bgm.js?v=2026.10.26.0942"></script>
 <script>
 const MOBILE_VIEW=matchMedia('(pointer:coarse)').matches;
 // iPhoneの描画反映の途切れを切り分けるため、表示Canvasと静的キャッシュの作成設定を統一する。
@@ -931,7 +934,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.26.0911',FILE_CREATED_AT='2026/10/26 09:11',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.26.0942',FILE_CREATED_AT='2026/10/26 09:42',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null;
@@ -959,7 +962,7 @@ function queueDAction(){
  if(p&&p.tank)cannonReq=true;else bombReq=true;
 }
 addEventListener('keydown',e=>{
- if(state==='intro'||state==='leaderboard')return;
+ if(state==='intro'||state==='leaderboard'||state==='developer'||state==='developerPass')return;
  const code=normKeyCode(e);
  if(state==='briefing'||state==='failed'||state==='succeeded'||state==='frontVictory'||state==='indoorEscape')return;
  if((state==='play'||state==='blast')&&(code.startsWith('Arrow')||code==='Space'))e.preventDefault();
@@ -969,9 +972,9 @@ addEventListener('keydown',e=>{
  if(code==='KeyD'&&!e.repeat)queueDAction();
  if(code==='KeyA'&&first&&!e.repeat)interact=true;
  if(code==='KeyS'&&!(p&&p.tank)&&first&&!e.repeat){if(skill==='partner'&&state==='play')startPartnerOrder();else skillReq=true;}
- if(code==='KeyP'&&state==='play'&&first&&!e.repeat)toggleDebugInvincible();
- if(code==='KeyO'&&state==='play'&&first&&!e.repeat)spawnAreaDebugTankAhead();
- if(code==='KeyL'&&state==='play'&&first&&!e.repeat){patrolRoutesVisible=!patrolRoutesVisible;if(patrolRoutesVisible&&scoreStats)scoreStats.debugUsed=true;say('巡回ルート表示：'+(patrolRoutesVisible?'ON（青＝建物周回）':'OFF'));}
+ if(code==='KeyP'&&isDeveloperMode()&&state==='play'&&first&&!e.repeat)toggleDebugInvincible();
+ if(code==='KeyO'&&isDeveloperMode()&&state==='play'&&first&&!e.repeat)spawnAreaDebugTankAhead();
+ if(code==='KeyL'&&isDeveloperMode()&&state==='play'&&first&&!e.repeat){patrolRoutesVisible=!patrolRoutesVisible;if(patrolRoutesVisible&&scoreStats)scoreStats.debugUsed=true;say('巡回ルート表示：'+(patrolRoutesVisible?'ON（青＝建物周回）':'OFF'));}
  if(e.repeat)return;
  if(code==='Escape'&&document.body.classList.contains('trophy-open')){closeTrophyArchive();if(trophyReturnToResult){trophyReturnToResult=false;document.getElementById('trophyBack').textContent='タイトル';syncResultScreen();}return;}
   if(code==='Enter'&&document.body.classList.contains('trophy-open'))return;
@@ -987,13 +990,13 @@ addEventListener('keydown',e=>{
 },true);
 // 一部キーボードでは3キー同時押し時にkeydownだけ欠落するため、keypressも予備経路にする。
 addEventListener('keypress',e=>{
- if(state==='intro'||state==='leaderboard')return;
+ if(state==='intro'||state==='leaderboard'||state==='developer'||state==='developerPass')return;
  if(state==='briefing'||state==='failed'||state==='succeeded'||state==='frontVictory'||state==='indoorEscape')return;
  const code=normKeyCode(e);
  if(code==='KeyD'&&!dPressHandled)queueDAction();
 },true);
 addEventListener('keyup',e=>{
- if(state==='intro'||state==='leaderboard')return;
+ if(state==='intro'||state==='leaderboard'||state==='developer'||state==='developerPass')return;
  const code=normKeyCode(e);
  // keydown/keypressが届かずkeyupだけ届いたケースでも、D操作を1回だけ実行。
  if(code==='KeyD'){
@@ -1898,7 +1901,7 @@ function rollSkillChoices(){
  const saved=readSkillProgress();skillChoices=SK.filter(k=>saved.unlocked.includes(k.id)).map(k=>k.id);
  skillDebugAll=false;if(typeof stageDebugAll!=='undefined')stageDebugAll=false;areaDebugEnabled=false;skillMenuDirty=true;
 }
-function skillMenuList(){return skillDebugAll?SK:skillChoices.map(id=>SK.find(k=>k.id===id)).filter(Boolean);}
+function skillMenuList(){return (typeof isDeveloperMode==='function'&&isDeveloperMode()&&skillDebugAll)?SK:skillChoices.map(id=>SK.find(k=>k.id===id)).filter(Boolean);}
 function unlockSkillOnClear(s){
  if(!s?.final?.cleared||areaDebugEnabled)return;
  const progress=readSkillProgress();progress.clears++;
@@ -1906,11 +1909,12 @@ function unlockSkillOnClear(s){
  if(next){progress.unlocked.push(next.id);s.unlockedSkill=next.id;}
  try{localStorage.setItem(SKILL_PROGRESS_KEY,JSON.stringify(progress));}catch(_){s.unlockSaveFailed=true;}
 }
-function skillSelectable(id){return (skillDebugAll||areaDebugEnabled||readSkillProgress().unlocked.includes(id))&&SK.some(k=>k.id===id);}
+function skillSelectable(id){return ((typeof isDeveloperMode==='function'&&isDeveloperMode()&&(skillDebugAll||areaDebugEnabled))||readSkillProgress().unlocked.includes(id))&&SK.some(k=>k.id===id);}
 function skillMenuLayout(){return skillDebugAll?{sy0:88,ch:56,h:52,debugY:602,debugH:34}:{sy0:126,ch:116,h:102,debugY:494,debugH:40};}
 const STAGE_PREPARATION_MIN_MS=2000;
 let gameBuildQueued=false,gameBuildGeneration=0;
 function selectSkillIndex(i,deploy=false){
+ if(areaDebugEnabled&&(typeof isDeveloperMode!=='function'||!isDeveloperMode()))return false;
  const list=skillMenuList();if(i<0||i>=list.length||gameBuildQueued)return false;
  const selected=list[i].id;if(!skillSelectable(selected))return false;if(!deploy){selectedSkillId=selected;skill=selected;areaDebugEnabled=false;selectedAreaDebug=null;selectedStageId=null;state='stage';sfx('skill');return true;}if(!areaDebugEnabled&&!stageAvailableForSelection(currentStageId()))return false;const buildGen=++gameBuildGeneration;skill=selected;
  state='preparing';bombReq=false;cannonReq=false;interact=false;skillReq=false;mdown=false;gameBuildQueued=true;sfx('uiConfirm');
@@ -1944,7 +1948,7 @@ function handleSkillMenuPointer(px,py){
  const L=skillMenuLayout(),list=skillMenuList();
  for(let i=0;i<list.length;i++){const y=L.sy0+i*L.ch;if(px>=35&&px<=W-35&&py>=y&&py<y+L.h)return selectSkillIndex(i);}
  const left={x:35,y:L.debugY,w:W-70,h:L.debugH};
- if(hitRect(px,py,left)){skillDebugAll=!skillDebugAll;sfx('skill');return true;}
+ if(hitRect(px,py,left)&&isDeveloperMode()){skillDebugAll=!skillDebugAll;sfx('skill');return true;}
  return false;
 }
 function titleButtonRects(){
@@ -2386,6 +2390,7 @@ function setupAreaDebugStage(){
  cam=Math.max(0,p.y-H*.6);camX=Math.max(0,Math.min(WW-W,p.x-W/2));say('エリアデバッグ：全エリアと遮蔽物を確認できます');
 }
 function spawnAreaDebugTankAhead(){
+ if(typeof isDeveloperMode!=='function'||!isDeveloperMode())return;
  if(state!=='play'||!p||!cars)return false;
  const t=TYPES[R()*TYPES.length|0],r=40,face=(p.tank&&p.tank.kind==='tank')?p.ang:(p.body??-Math.PI/2),ux=Math.cos(face),uy=Math.sin(face),px=-uy,py=ux;
  const dists=[110,145,180,220],sides=[0,42,-42,78,-78,118,-118];
@@ -4193,6 +4198,7 @@ function mazeComparisonEnemyFrozen(o){
  return mazeComparisonActive()&&mazeCompare.mode===1&&((humans||[]).includes(o)||(etanks||[]).includes(o))&&(o.zoneHeavy==='敵迷路基地'||zoneAt(o.y).n==='敵迷路基地');
 }
 function switchMazeComparison(){
+ if(typeof isDeveloperMode!=='function'||!isDeveloperMode())return;
  if(!mazeComparisonActive()||!p||zoneAt(p.y).n!=='敵迷路基地')return;
  mazeCompare.mode=(mazeCompare.mode+1)%3;mazeCompare.switchedAt=performance.now();
  mazeCompare.samples[mazeCompare.mode]=null;
@@ -4240,6 +4246,7 @@ function updateDebugBadge(){
 }
 let debugRenderDiagnostic=null;
 function beginDebugRenderDiagnostic(){
+ if(typeof isDeveloperMode!=='function'||!isDeveloperMode())return;
  debugRenderDiagnostic={active:true,started:performance.now(),startY:p.y,phase:'world',stats:{world:{max:0,stalls:0},terrain:{max:0,stalls:0}}};
  gameFramePerf.rafAt=null;gameFramePerf.rafGap=0;gameFramePerf.rafStallAt=0;
 }
@@ -4258,6 +4265,7 @@ function updateDebugRenderDiagnostic(dt){
  return null;
 }
 function toggleDebugInvincible(){
+ if(typeof isDeveloperMode!=='function'||!isDeveloperMode())return;
  debugMode=(debugMode+1)%4;debugInvincible=debugMode>0||areaDebugEnabled;if(scoreStats&&!scoreStats.finalized)scoreStats.debugUsed=true;
  if(debugMode===0){resetMazeComparison();debugRenderDiagnostic=null;exitDebugFighterToHuman();}
  if(debugInvincible&&p){
@@ -7064,7 +7072,7 @@ function drawResultButton(x,y,w,h,label,primary,a=1){
  g.restore();
 }
 function drawMenuOnlyState(){
- if(state==='intro'||state==='leaderboard')return true;
+ if(state==='intro'||state==='leaderboard'||state==='developer'||state==='developerPass')return true;
  if(state==='spec'||state==='stage'||state==='areaPick'){g=gm;gm.setTransform(1,0,0,1,0,0);g.fillStyle='#151d17';g.fillRect(0,0,W,H);return true;}
  if(state!=='title'&&state!=='help'&&state!=='skill'&&state!=='preparing')return false;
  g=gm;gm.setTransform(1,0,0,1,0,0);gm.imageSmoothingEnabled=false;
@@ -7886,7 +7894,7 @@ function skillArtSrc(id,name=''){
  return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 410"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="%232e3c2d"/><stop offset="100%" stop-color="%23161f18"/></linearGradient></defs><rect width="720" height="410" fill="url(%23g)"/><circle cx="132" cy="205" r="74" fill="%23374936" stroke="%237d8b72"/><circle cx="132" cy="205" r="44" fill="%2353694f"/><text x="220" y="168" fill="%23ffe2a1" font-size="40" font-weight="800" font-family="Arial, sans-serif">${label}</text><text x="220" y="224" fill="%23d1ddca" font-size="22" font-family="Arial, sans-serif">Graphic test in progress</text></svg>`;
 }
 document.getElementById('skHome').addEventListener('click',()=>{state='title';sfx('skill');});
-document.getElementById('skDebugAll').addEventListener('click',()=>{skillDebugAll=!skillDebugAll;skillMenuDirty=true;sfx('skill');});
+document.getElementById('skDebugAll').addEventListener('click',()=>{if(!isDeveloperMode())return;skillDebugAll=!skillDebugAll;skillMenuDirty=true;sfx('skill');});
 document.getElementById('titleStart').addEventListener('click',()=>{startFromTitle();sfx('uiConfirm');});
 document.getElementById('titleHelp').addEventListener('click',()=>{state='help';sfx('skill');});
 document.getElementById('titleSpecs').addEventListener('click',()=>{state='spec';sfx('skill');});
@@ -8014,7 +8022,7 @@ let stageMode='beginner',frontlineBeginner=false,frontlineOni=false,indoorBeginn
 const STAGE_NAMES={beginner:'破壊（初級）：軍事衛星施設',base:'破壊（上級）：軍司令施設',get front(){return frontlineOni?'制圧（鬼・テスト）：戦術アンテナ':frontlineBeginner?'制圧（初級）：軍需物資':'制圧（上級）：戦術アンテナ';},stealth:'潜入',indoorBeginner:'潜入（初級）：重要資料2箇所',get indoor(){return indoorBeginner?'潜入（初級）：重要資料2箇所':'潜入（上級）：重要資料3箇所';}};
 document.querySelectorAll('[data-stage]').forEach(b=>b.addEventListener('click',()=>{if(state!=='stage')return;if(setSelectedStage(b.dataset.stage))sfx('skill');}));
 document.getElementById('stageDeploy').addEventListener('click',()=>{deploySelectedStage();});
-document.getElementById('stageDebugAll').addEventListener('click',()=>{if(state!=='stage')return;stageDebugAll=!stageDebugAll;renderStageLocks();sfx('skill');});
+document.getElementById('stageDebugAll').addEventListener('click',()=>{if(state!=='stage'||!isDeveloperMode())return;stageDebugAll=!stageDebugAll;renderStageLocks();sfx('skill');});
 document.getElementById('stageBack').onclick=()=>{areaDebugEnabled=false;selectedAreaDebug=null;state='skill';};
 let briefingFrameDrawn=false;
 let successFrameDrawn=false;
@@ -8268,20 +8276,21 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/stage-progress.js?v=2026.10.26.0911"></script>
-<script src="js/frontline.js?v=2026.10.26.0911"></script>
-<script src="js/award-icons.js?v=2026.10.26.0911"></script>
-<script src="js/leaderboard.js?v=2026.10.26.0911"></script>
-<script src="js/intro.js?v=2026.10.26.0911"></script>
-<script src="js/unlocks.js?v=2026.10.26.0911"></script>
-<script src="js/enemy-bomber.js?v=2026.10.26.0911"></script>
+<script src="js/stage-progress.js?v=2026.10.26.0942"></script>
+<script src="js/frontline.js?v=2026.10.26.0942"></script>
+<script src="js/award-icons.js?v=2026.10.26.0942"></script>
+<script src="js/developer.js?v=2026.10.26.0942"></script>
+<script src="js/leaderboard.js?v=2026.10.26.0942"></script>
+<script src="js/intro.js?v=2026.10.26.0942"></script>
+<script src="js/unlocks.js?v=2026.10.26.0942"></script>
+<script src="js/enemy-bomber.js?v=2026.10.26.0942"></script>
 <script src="js/characters.js?v=2026.10.19.1032"></script>
-<script src="js/enemy-dogs.js?v=2026.10.26.0911"></script>
-<script src="js/partner.js?v=2026.10.26.0911"></script>
+<script src="js/enemy-dogs.js?v=2026.10.26.0942"></script>
+<script src="js/partner.js?v=2026.10.26.0942"></script>
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
-<script src="js/canyon.js?v=2026.10.26.0911"></script>
+<script src="js/canyon.js?v=2026.10.26.0942"></script>
 <script src="js/vegetation.js?v=2026.10.14.1653"></script>
-<script src="js/infiltration-world.js?v=2026.10.26.0911"></script>
+<script src="js/infiltration-world.js?v=2026.10.26.0942"></script>
 <script src="js/infiltration-render.js?v=2026.10.21.1139"></script>
 <script>
 (function(){
@@ -8310,7 +8319,7 @@ if(debugToggleBtn){
   debugToggleBtn.style.opacity=playable?'1':'.5';
  };
  debugToggleBtn.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();},{passive:false});
- debugToggleBtn.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();if(state!=='play')return;toggleDebugInvincible();syncDebugToggleButton();});
+ debugToggleBtn.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();if(state!=='play'||!isDeveloperMode())return;toggleDebugInvincible();syncDebugToggleButton();});
  syncDebugToggleButton();
  setInterval(syncDebugToggleButton,250);
 }
@@ -8423,7 +8432,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)clearInputs
 addEventListener('blur',clearInputs);
 // Pointer Events 対応端末ではCSS touch-actionに任せ、ページ全体を同期touchmove待ちにしない。
 // 古い端末だけ、従来のスクロール抑止フォールバックを登録する。
-if(!window.PointerEvent)document.addEventListener('touchmove',e=>{const inScrollableLayer=(state==='leaderboard'&&e.target.closest('#leaderboardScreen'))||(state==='intro'&&e.target.closest('#introScreen'))||(document.body.classList.contains('trophy-open')&&e.target.closest('#trophyScreen'))||(document.body.classList.contains('result-open')&&e.target.closest('#resultScreen'))||(document.body.classList.contains('skill-open')&&e.target.closest('#skillScreen'))||(document.body.classList.contains('title-open')&&e.target.closest('#titleScreen'))||(document.body.classList.contains('help-open')&&e.target.closest('#helpScreen'))||(document.body.classList.contains('spec-open')&&e.target.closest('#specScreen'));if(inScrollableLayer)return;e.preventDefault();},{passive:false});
+if(!window.PointerEvent)document.addEventListener('touchmove',e=>{const inScrollableLayer=((state==='developer'||state==='developerPass')&&e.target.closest('#developerLogin,#developerScreen'))||(state==='leaderboard'&&e.target.closest('#leaderboardScreen'))||(state==='intro'&&e.target.closest('#introScreen'))||(document.body.classList.contains('trophy-open')&&e.target.closest('#trophyScreen'))||(document.body.classList.contains('result-open')&&e.target.closest('#resultScreen'))||(document.body.classList.contains('skill-open')&&e.target.closest('#skillScreen'))||(document.body.classList.contains('title-open')&&e.target.closest('#titleScreen'))||(document.body.classList.contains('help-open')&&e.target.closest('#helpScreen'))||(document.body.classList.contains('spec-open')&&e.target.closest('#specScreen'));if(inScrollableLayer)return;e.preventDefault();},{passive:false});
 document.addEventListener('gesturestart',e=>e.preventDefault(),{passive:false});
 document.addEventListener('contextmenu',e=>e.preventDefault());
 })();
