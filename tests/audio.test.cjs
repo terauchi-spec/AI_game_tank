@@ -195,3 +195,24 @@ test('boarding, hiding, water, indoors and leaving play stop already-playing foo
 test('a footstep completing its download after stopping never starts late',async()=>{
  const h=harness({defer:true}),{c}=h,loaded=c.loadGameSe('dirtStep');c.updateGameAudio();c.now+=120;c.p.x+=10;c.updateGameAudio();c.now+=16;c.updateGameAudio();h.waiting.shift()();await loaded;await settle();assert.equal(h.sources.length,0);assert.equal(c.get('gameSe.footstep'),null);
 });
+
+test('tank, armored and truck loops stop and restart before the next environment scan',async()=>{
+ for(const [kind,id,name] of [['tank','t34','tankMove'],['tank','armored','wheelMove'],['truck','truck','wheelMove']]){
+  const h=harness(),{c}=h;await c.loadGameSe(name);c.p.tank={kind,t:{id}};c.updateGameAudio();c.now+=16;c.p.x+=5;c.updateGameAudio();await settle();const first=c.get('gameSe.loops.get("vehicle").voice');assert.ok(first,id);
+  c.now+=16;c.updateGameAudio();assert.equal(first.source.stopped,true,id);assert.equal(c.get('gameSe.loops.has("vehicle")'),false,id);
+  c.now+=16;c.p.x+=5;c.updateGameAudio();await settle();assert.ok(c.get('gameSe.loops.get("vehicle").voice'),id);assert.notEqual(c.get('gameSe.loops.get("vehicle").voice'),first,id);
+ }
+});
+test('dismount, loss of player and switching to aircraft stop an already playing vehicle loop immediately',async()=>{
+ for(const mode of ['dismount','missing','aircraft']){
+  const h=harness(),{c}=h;await c.loadGameSe('tankMove');c.p.tank={kind:'tank',t:{id:'t34'}};c.updateGameAudio();c.now+=16;c.p.x+=5;c.updateGameAudio();await settle();const voice=c.get('gameSe.loops.get("vehicle").voice');assert.ok(voice);c.now+=16;c.p.x+=5;
+  if(mode==='missing')c.p=null;else c.p.tank=mode==='aircraft'?{kind:'fighter',t:{id:'fighter'}}:null;c.updateGameAudio();assert.equal(voice.source.stopped,true);assert.equal(c.get('gameSe.loops.has("vehicle")'),false);
+ }
+});
+test('stopping before a vehicle loop download finishes prevents a late restart',async()=>{
+ const h=harness({defer:true}),{c}=h,loaded=c.loadGameSe('tankMove');c.p.tank={kind:'tank',t:{id:'t34'}};c.updateGameAudio();c.now+=16;c.p.x+=5;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("vehicle")'),true);c.now+=16;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("vehicle")'),false);h.waiting.shift()();await loaded;await settle();assert.equal(h.sources.length,0);assert.equal(c.get('gameSe.loops.has("vehicle")'),false);
+});
+test('continuous driving retains the existing 10Hz gain and speed update bound',async()=>{
+ const h=harness(),{c}=h;await c.loadGameSe('tankMove');c.p.tank={kind:'tank',t:{id:'t34'}};c.updateGameAudio();c.now+=16;c.p.x+=5;c.updateGameAudio();await settle();const voice=c.get('gameSe.loops.get("vehicle").voice');let gains=0,rates=0;voice.gain.gain.setTargetAtTime=()=>gains++;voice.source.playbackRate.setTargetAtTime=()=>rates++;
+ for(let i=0;i<4;i++){c.now+=16;c.p.x+=5;c.updateGameAudio();}assert.equal(gains,0);assert.equal(rates,0);c.now+=32;c.p.x+=5;c.updateGameAudio();assert.equal(gains,1);assert.equal(rates,1);
+});

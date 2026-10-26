@@ -138,7 +138,7 @@ function updateGameAudio(){
  preloadGameSe();
  const active=typeof state!=='undefined'&&state==='play'&&gameSeVisible();
  if(!active){stopGameFootsteps();for(const key of [...gameSe.loops.keys()])setGameSeLoop(key,null,0);gameSe.previous=null;gameSe.enemyPositions=new WeakMap();return;}
- if(typeof p==='undefined'||!p){stopGameFootsteps();return;}
+ if(typeof p==='undefined'||!p){stopGameFootsteps();setGameSeLoop('vehicle',null,0);return;}
  const now=performance.now(),prior=gameSe.previous,moved=prior?Math.hypot(p.x-prior.x,p.y-prior.y):0,dt=prior?Math.max(.001,(now-prior.at)/1000):1;
  gameSe.previous={x:p.x,y:p.y,at:now};
  const speed=moved/dt,moving=dt<.3&&moved>.15&&speed<1200;
@@ -146,13 +146,16 @@ function updateGameAudio(){
  // 10Hzの環境音更新を待たず、静止を検出したフレームで再生中の足音も止める。
  if(!walking)stopGameFootsteps();
  else if(now-gameSe.grassAt>350){gameSe.grassAt=now;playGameSe(typeof inBush==='function'&&inBush(p)?'grassStep':'dirtStep');}
+ const vehicle=p.tank,groundVehicle=vehicle&&vehicle.kind!=='fighter';
+ const vehicleSound=groundVehicle&&moving?(vehicle.kind==='tank'&&vehicle.t?.id!=='armored'?'tankMove':'wheelMove'):null;
+ // 足音と同様、静止・降車は検出したフレームで停止。発進・車両切替も待たずに反映する。
+ // 走行中の音量・速度調整は従来の10Hzを維持し、毎フレームのAudioParam更新は増やさない。
+ if(!vehicleSound||now>=gameSe.scanAt||gameSe.loops.get('vehicle')?.name!==vehicleSound)setGameSeLoop('vehicle',vehicleSound,.11,Math.min(1.3,Math.max(.8,speed/160)));
  if(now<gameSe.scanAt)return;gameSe.scanAt=now+100;
  updateEnemyTankAudio(now);
- const vehicle=p.tank,groundVehicle=vehicle&&vehicle.kind!=='fighter';
  // 乗車した車種の主砲音だけ先読みし、6本の追加SEを一括デコードしない。
  const cannon=groundVehicle&&vehicle.kind==='tank'&&vehicle.t?.id!=='armored'?(vehicle.t?.cannonSe||'cannon'):null;
  if(gameSe.vehicleCannon!==cannon){gameSe.vehicleCannon=cannon;if(cannon)loadGameSe(cannon,true);}
- setGameSeLoop('vehicle',groundVehicle&&moving?(vehicle.kind==='tank'&&vehicle.t?.id!=='armored'?'tankMove':'wheelMove'):null,.11,Math.min(1.3,Math.max(.8,speed/160)));
  setGameSeLoop('drillContact',p.drill>0&&p.drillContact?'drillContact':null,.15);
  setGameSeLoop('flame',p.flameActive?'flameLoop':null,.13);
  setGameSeLoop('rain',typeof weather!=='undefined'&&weather==='rain'&&stageMode!=='indoor'?'rainLoop':null,.30*(typeof rainIntensity==='number'?rainIntensity:1));
