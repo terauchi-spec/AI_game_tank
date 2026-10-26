@@ -147,7 +147,7 @@ test('all seven player and partner tank cannons pass distinct uploaded sound key
  const defs=harness().c.get('GAME_SE_FILES'),keys=new Set(),partnerSource=fs.readFileSync(path.join(__dirname,'../js/partner.js'),'utf8');
  const shot=html.split('\n').find(line=>line.includes("if(!isPartnerDrivenVehicle()&&t.id!=='armored'&&dAttack"));
  for(const [i,t] of types.tanks.entries()){
-  const key=i?'cannon'+(i+1):'cannon';assert.equal(t.cannonSe,key);keys.add(key);assert.equal(defs[key],'se_025_tank_cannon_fire'+(i?'_'+(i+1):''));
+  const number={t34:7,tiger:2,type10:1,m1:4,sherman:5,churchill:6,kingtiger:3}[t.id],key=number===1?'cannon':'cannon'+number;assert.equal(t.cannonSe,key);keys.add(key);assert.equal(defs[key],'se_025_tank_cannon_fire'+(number===1?'':'_'+number));
   const calls=[],c={t,p:{x:0,y:0,ang:0,cc:0,tank:{c:2}},dAttack:true,areaDebugInfiniteAmmo:false,isPartnerDrivenVehicle:()=>false,fire:(...args)=>calls.push(args),burst(){}};
   vm.createContext(c);vm.runInContext(shot,c);assert.equal(calls[0][8],key);assert.equal(c.p.tank.c,1);assert.equal(c.p.cc,t.ccd);
   c.humans=[];c.etanks=[{x:100,y:0,alive:true}];c.D=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);c.los=()=>true;
@@ -162,8 +162,8 @@ test('each cannon variant keeps the cannon gain and synthesized fallback until r
  vm.createContext(ctx);vm.runInContext(html.split('\n').find(l=>l.startsWith('function sfx(n,position=')),ctx);for(let i=2;i<=7;i++)ctx.sfx('cannon'+i);assert.deepEqual(fallback,Array(6).fill('cannon'));
 });
 test('boarding preloads only the selected cannon variant and does not preload all six additions',async()=>{
- const h=harness(),{c}=h;c.p.tank={kind:'tank',t:{id:'kingtiger',cannonSe:'cannon7'}};c.updateGameAudio();await settle();const cannonRequests=()=>h.requests.filter(url=>url.includes('se_025_tank_cannon_fire'));assert.equal(cannonRequests().length,1);assert.match(cannonRequests()[0],/se_025_tank_cannon_fire_7\.mp3/);
- c.now+=120;c.updateGameAudio();await settle();assert.equal(cannonRequests().length,1);c.p.tank=null;c.now+=120;c.updateGameAudio();c.p.tank={kind:'tank',t:{id:'type10',cannonSe:'cannon3'}};c.now+=120;c.updateGameAudio();await settle();assert.equal(cannonRequests().length,2);assert.match(cannonRequests()[1],/se_025_tank_cannon_fire_3\.mp3/);
+ const h=harness(),{c}=h;c.p.tank={kind:'tank',t:{id:'kingtiger',cannonSe:'cannon3'}};c.updateGameAudio();await settle();const cannonRequests=()=>h.requests.filter(url=>url.includes('se_025_tank_cannon_fire'));assert.equal(cannonRequests().length,1);assert.match(cannonRequests()[0],/se_025_tank_cannon_fire_3\.mp3/);
+ c.now+=120;c.updateGameAudio();await settle();assert.equal(cannonRequests().length,1);c.p.tank=null;c.now+=120;c.updateGameAudio();c.p.tank={kind:'tank',t:{id:'type10',cannonSe:'cannon'}};c.now+=120;c.updateGameAudio();await settle();assert.equal(cannonRequests().length,2);assert.match(cannonRequests()[1],/se_025_tank_cannon_fire\.mp3/);
 });
 test('truck and armored car movement use the updated wheel clip and stop when stationary',async()=>{
  for(const [kind,id] of [['truck','truck'],['tank','armored']]){
@@ -173,4 +173,25 @@ test('truck and armored car movement use the updated wheel clip and stop when st
 test('all seven cannon clips and the refreshed wheels carry their actual Git blob content revisions',()=>{
  const crypto=require('node:crypto'),{c}=harness(),defs=c.get('GAME_SE_FILES'),revisions=c.get('GAME_SE_REVISIONS');
  for(const name of Object.values(defs).filter(name=>name.startsWith('se_025_')||name==='se_043_wheeled_vehicle_loop')){const data=fs.readFileSync(path.join(__dirname,'../assets/audio/se',name+'.mp3')),sha=crypto.createHash('sha1').update(Buffer.from('blob '+data.length+'\0')).update(data).digest('hex');assert.equal(revisions[name],sha.slice(0,12),name);}
+});
+
+test('dirt and grass footsteps stop on the first stationary frame, preserve gunshots and resume immediately',async()=>{
+ for(const grass of [false,true]){
+  const h=harness(),{c}=h;await c.loadGameSe(grass?'grassStep':'dirtStep');await c.loadGameSe('cannon');c.inBush=()=>grass;c.updateGameAudio();c.now+=120;c.p.x+=10;c.updateGameAudio();const foot=c.get('gameSe.footstep');assert.ok(foot);assert.equal(foot.name,grass?'grassStep':'dirtStep');c.playGameSe('cannon');const gun=c.get('[...gameSe.voices].find(v=>v.name==="cannon")');
+  c.now+=16;c.updateGameAudio();assert.equal(foot.source.stopped,true);assert.equal(c.get('gameSe.footstep'),null);assert.equal(gun.source.stopped,undefined);
+  c.now+=16;c.p.x+=5;c.updateGameAudio();assert.ok(c.get('gameSe.footstep'));assert.notEqual(c.get('gameSe.footstep'),foot);
+ }
+});
+test('footstep transitions keep one voice and delayed old completion cannot clear the new step',async()=>{
+ const h=harness(),{c}=h;await c.loadGameSe('dirtStep');await c.loadGameSe('grassStep');c.updateGameAudio();c.now+=120;c.p.x+=10;c.updateGameAudio();const old=c.get('gameSe.footstep');c.inBush=()=>true;for(let i=0;i<3;i++){c.now+=120;c.p.x+=10;c.updateGameAudio();}const current=c.get('gameSe.footstep');assert.equal(current.name,'grassStep');assert.equal(old.source.stopped,true);assert.equal(c.get('[...gameSe.voices].filter(v=>v.name==="dirtStep"||v.name==="grassStep").length'),1);old.source.onended();assert.equal(c.get('gameSe.footstep'),current);
+});
+test('boarding, hiding, water, indoors and leaving play stop already-playing footsteps',async()=>{
+ for(const mode of ['tank','dig','prep','water','indoor','pause','result','missingPlayer']){
+  const h=harness(),{c}=h;await c.loadGameSe('dirtStep');c.updateGameAudio();c.now+=120;c.p.x+=10;c.updateGameAudio();const foot=c.get('gameSe.footstep');assert.ok(foot);c.now+=16;c.p.x+=5;
+  if(mode==='tank')c.p.tank={kind:'truck',t:{id:'truck'}};if(mode==='dig')c.p.dig=1;if(mode==='prep')c.p.digPrep=1;if(mode==='water')c.inWaterAt=()=>true;if(mode==='indoor')c.stageMode='indoor';if(mode==='pause')c.state='paused';if(mode==='result')c.state='win';if(mode==='missingPlayer')c.p=null;
+  c.updateGameAudio();assert.equal(foot.source.stopped,true,mode);assert.equal(c.get('gameSe.footstep'),null,mode);
+ }
+});
+test('a footstep completing its download after stopping never starts late',async()=>{
+ const h=harness({defer:true}),{c}=h,loaded=c.loadGameSe('dirtStep');c.updateGameAudio();c.now+=120;c.p.x+=10;c.updateGameAudio();c.now+=16;c.updateGameAudio();h.waiting.shift()();await loaded;await settle();assert.equal(h.sources.length,0);assert.equal(c.get('gameSe.footstep'),null);
 });
