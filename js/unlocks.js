@@ -25,33 +25,41 @@ function collectRunUnlocks(s){
  }
  return items;
 }
-function renderUnlockCard(item,index=0){
+function renderUnlockCard(item){
  const labels={stage:'新ステージ',skill:'新スキル',title:'新称号',rank:'昇級！',leaderboard:'スコアボード更新'},label=labels[item.kind];
  const art=item.kind==='rank'?'<span class="unlock-rank-mark">↑</span>':item.kind==='title'?(typeof awardIcon==='function'?awardIcon(item.title,'title'):''):('<img src="'+escapeUnlockText(item.image)+'" alt="" decoding="async" loading="lazy">');
- return '<article class="unlock-card unlock-card-'+item.kind+'" style="--unlock-reveal-delay:'+ (300+Math.min(index,6)*100)+'ms"><div class="unlock-card-art" aria-hidden="true">'+art+'</div><div class="unlock-card-copy"><h2>'+label+'</h2><div class="unlock-name">'+escapeUnlockText(item.name)+'</div>'+(item.kind==='leaderboard'||item.kind==='rank'?'<div class="unlock-leaderboard-ranks">'+escapeUnlockText(item.note)+'</div>':'')+'</div></article>';
+ return '<article class="unlock-card unlock-card-'+item.kind+'"><div class="unlock-card-art" aria-hidden="true">'+art+'</div><div class="unlock-card-copy"><h2>'+label+'</h2><div class="unlock-name">'+escapeUnlockText(item.name)+'</div>'+(item.kind==='leaderboard'||item.kind==='rank'?'<div class="unlock-leaderboard-ranks">'+escapeUnlockText(item.note)+'</div>':'')+'</div></article>';
 }
 let unlockRevealTimer=null;
 function cancelUnlockReveal(){
  if(unlockRevealTimer!==null){clearTimeout(unlockRevealTimer);unlockRevealTimer=null;}
+ // Interrupted presentations leave every card readable during manual scrolling.
+ document.getElementById('unlockList').classList.remove('unlock-sequencing');
 }
 function beginUnlockReveal(screen){
  cancelUnlockReveal();
  const list=document.getElementById('unlockList'),run=unlockRun;
- list.classList.remove('unlock-revealing');
- unlockRevealTimer=setTimeout(()=>{
+ const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
+ const behavior=reduced?'instant':'smooth';
+ let index=0;
+ list.classList.add('unlock-sequencing');
+ function revealNext(){
   unlockRevealTimer=null;
   if(unlockRun!==run||screen.hidden)return;
-  const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
-  const top=Math.max(0,screen.scrollTop+list.getBoundingClientRect().top-screen.getBoundingClientRect().top-20);
-  screen.scrollTo({top,left:0,behavior:reduced?'instant':'smooth'});
-  if(!reduced)list.classList.add('unlock-revealing');
-  // Let the staggered cards finish and remain readable before returning to the instructor.
-  unlockRevealTimer=setTimeout(()=>{
-   unlockRevealTimer=null;
-   if(unlockRun!==run||screen.hidden)return;
-   screen.scrollTo({top:0,left:0,behavior:reduced?'instant':'smooth'});
-  },2500+Math.min(Math.max(0,run.unlockNoticeItems.length-1),6)*100);
- },650);
+  const cards=list.querySelectorAll('.unlock-card');
+  if(index===cards.length){
+   list.classList.remove('unlock-sequencing');
+   screen.scrollTo({top:0,left:0,behavior});
+   return;
+  }
+  const card=cards[index++];
+  const top=Math.max(0,screen.scrollTop+card.getBoundingClientRect().top-screen.getBoundingClientRect().top-20);
+  screen.scrollTo({top,left:0,behavior});
+  card.classList.add('unlock-card-revealed');
+  // Match the CSS reveal duration. The final completion returns immediately, without a dwell.
+  unlockRevealTimer=setTimeout(revealNext,reduced?0:550);
+ }
+ unlockRevealTimer=setTimeout(revealNext,120);
 }
 // Manual interaction takes priority over the opening scroll.
 const unlockScrollScreen=document.getElementById('unlockScreen');
@@ -87,7 +95,7 @@ function syncUnlockScreen(s){
   screen.hidden=false;document.body.classList.add('unlock-open');screen.scrollTop=0;
   document.getElementById('unlockEvaluate').focus({preventScroll:true});
   beginUnlockReveal(screen);
- }else if(updated){const list=document.getElementById('unlockList');list.classList.remove('unlock-revealing');list.innerHTML=s.unlockNoticeItems.map(renderUnlockCard).join('');}
+ }else if(updated){const list=document.getElementById('unlockList'),shown=list.querySelectorAll('.unlock-card').length;list.insertAdjacentHTML('beforeend',s.unlockNoticeItems.slice(shown).map(renderUnlockCard).join(''));}
  return true;
 }
 function acknowledgeRunUnlocks(){

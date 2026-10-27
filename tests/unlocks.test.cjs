@@ -1,11 +1,11 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const root=path.join(__dirname,'..'),source=fs.readFileSync(path.join(root,'js/unlocks.js'),'utf8'),html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 function harness({storage=new Map(),storageFails=false,reducedMotion=false}={}){
- const timers=new Map();let timerId=0;const nodes=new Map(),classes=new Set(),events={},sounds=[],getNode=id=>{if(!nodes.has(id))nodes.set(id,{hidden:true,innerHTML:'',src:'',scrollTop:99,scrolls:[],classList:{values:new Set(),add(n){this.values.add(n);},remove(n){this.values.delete(n);},contains(n){return this.values.has(n);}},getBoundingClientRect(){return {top:id==='unlockList'?800:0};},scrollTo(options){this.scrolls.push(options);this.scrollTop=options.top;},handlers:{},addEventListener(n,f){this.handlers[n]=f;},focus(){this.focused=true;}});return nodes.get(id);};
- const c={setTimeout(fn){timers.set(++timerId,fn);return timerId;},clearTimeout(id){timers.delete(id);},matchMedia:()=>({matches:reducedMotion}),state:'win',scoreStats:null,areaDebugEnabled:false,STAGE_ORDER:[{id:'indoorBeginner',name:'潜入（初級）',image:'infiltration_beginner'}],SK:[{id:'dig',n:'潜伏'}],TITLE_CATALOG:[{id:'v3_stealth',name:'隠密兵',type:'単独実績'}],stageDisplayNumber:()=> '02',skillCardIconSrc:id=>'assets/ui/skills/'+id+'.webp',awardIcon:t=>'<img src="assets/ui/titles/'+t.id+'.webp">',
+ const timers=new Map(),delays=[];let timerId=0;const nodes=new Map(),classes=new Set(),events={},sounds=[],getNode=id=>{if(!nodes.has(id))nodes.set(id,{hidden:true,innerHTML:'',src:'',scrollTop:99,scrolls:[],classList:{values:new Set(),add(n){this.values.add(n);},remove(n){this.values.delete(n);},contains(n){return this.values.has(n);}},insertAdjacentHTML(position,text){assert.equal(position,'beforeend');this.innerHTML+=text;},querySelectorAll(){const length=(this.innerHTML.match(/<article /g)||[]).length;this.cards??=[];while(this.cards.length<length){const i=this.cards.length;this.cards.push({classList:{values:new Set(),add(n){this.values.add(n);},contains(n){return this.values.has(n);}},getBoundingClientRect(){return {top:800+i*220-getNode('unlockScreen').scrollTop};}});}return this.cards;},getBoundingClientRect(){return {top:id==='unlockList'?800:0};},scrollTo(options){this.scrolls.push(options);this.scrollTop=options.top;},handlers:{},addEventListener(n,f){this.handlers[n]=f;},focus(){this.focused=true;}});return nodes.get(id);};
+ const c={setTimeout(fn,delay){delays.push(delay);timers.set(++timerId,fn);return timerId;},clearTimeout(id){timers.delete(id);},matchMedia:()=>({matches:reducedMotion}),state:'win',scoreStats:null,areaDebugEnabled:false,STAGE_ORDER:[{id:'indoorBeginner',name:'潜入（初級）',image:'infiltration_beginner'}],SK:[{id:'dig',n:'潜伏'}],TITLE_CATALOG:[{id:'v3_stealth',name:'隠密兵',type:'単独実績'}],stageDisplayNumber:()=> '02',skillCardIconSrc:id=>'assets/ui/skills/'+id+'.webp',awardIcon:t=>'<img src="assets/ui/titles/'+t.id+'.webp">',
  document:{body:{classList:{contains:n=>classes.has(n),add:n=>classes.add(n),remove:n=>classes.delete(n)}},getElementById:getNode},localStorage:{getItem(k){if(storageFails)throw Error('storage');return storage.get(k)??null;},setItem(k,v){if(storageFails)throw Error('storage');storage.set(k,v);}},addEventListener:(n,f)=>events[n]=f,sfx:n=>sounds.push(n),renderResultScreen(){c.renders++;},renders:0,animateResultScore(){c.animations++;},animations:0,beginResultGameBgm(){c.bgmStarts++;},bgmStarts:0,resultScoreAnimId:0};
  vm.createContext(c);vm.runInContext(source,c);const start=html.indexOf('function syncResultScreen(){');vm.runInContext(html.slice(start,html.indexOf("document.getElementById('resRetry')",start)),c);
- return{c,nodes,classes,events,sounds,storage,getNode,timers,flush(){const jobs=[...timers.values()];timers.clear();jobs.forEach(fn=>fn());},get:s=>vm.runInContext(s,c)};
+ return{c,nodes,classes,events,sounds,storage,getNode,timers,delays,flush(){const jobs=[...timers.values()];timers.clear();jobs.forEach(fn=>fn());},get:s=>vm.runInContext(s,c)};
 }
 const run=()=>({final:{total:100,cleared:true},unlockedStage:'indoorBeginner',unlockedSkill:'dig',awards:{newTitles:['v3_stealth'],repeatTitles:['old']}});
 test('stage, skill and only newly acquired current titles are collected once without changing progression',()=>{
@@ -78,22 +78,26 @@ test('score update cards use existing gold, silver or bronze WebP medals for the
  }
 });
 
-test('opening scrolls to unlock content and reveals once, without scheduling on every sync',()=>{
- const h=harness();h.c.scoreStats=run();h.c.syncResultScreen();for(let i=0;i<20;i++)h.c.syncResultScreen();assert.equal(h.timers.size,1);h.flush();const screen=h.getNode('unlockScreen');assert.equal(screen.scrolls.length,1);assert.equal(screen.scrolls[0].left,0);assert.equal(screen.scrolls[0].top,780);assert.equal(screen.scrolls[0].behavior,'smooth');assert.ok(h.getNode('unlockList').classList.contains('unlock-revealing'));h.c.syncResultScreen();assert.equal(h.timers.size,1);h.flush();assert.equal(screen.scrolls.length,2);assert.equal(screen.scrolls[1].top,0);assert.equal(screen.scrolls[1].behavior,'smooth');assert.equal(h.timers.size,0);h.c.syncResultScreen();assert.equal(h.timers.size,0);
+test('cards reveal in order, scrolling through the last card and returning immediately when its animation finishes',()=>{
+ const h=harness();h.c.scoreStats=run();h.c.syncResultScreen();const list=h.getNode('unlockList'),cards=list.querySelectorAll('.unlock-card'),screen=h.getNode('unlockScreen');for(let i=0;i<20;i++)h.c.syncResultScreen();assert.equal(h.timers.size,1);
+ assert.ok(list.classList.contains('unlock-sequencing'));
+ for(let i=0;i<3;i++){
+  h.flush();assert.equal(screen.scrolls.length,i+1);assert.equal(screen.scrolls[i].top,780+i*220);assert.equal(screen.scrolls[i].left,0);assert.equal(screen.scrolls[i].behavior,'smooth');assert.deepEqual(cards.map(c=>c.classList.contains('unlock-card-revealed')),cards.map((_,j)=>j<=i));assert.equal(h.timers.size,1);
+ }
+ assert.deepEqual(h.delays,[120,550,550,550]);h.flush();assert.equal(screen.scrolls.length,4);assert.equal(screen.scrolls[3].top,0);assert.equal(h.timers.size,0);assert.ok(!list.classList.contains('unlock-sequencing'));h.c.syncResultScreen();assert.equal(h.timers.size,0);
 });
-test('manual interaction and leaving the screen cancel the pending opening scroll',()=>{
- for(const action of ['pointerdown','touchstart','wheel','keydown','close']){
-  const h=harness();h.c.scoreStats=run();h.c.syncResultScreen();if(action==='close')h.c.closeUnlockScreen();else h.getNode('unlockScreen').handlers[action]();assert.equal(h.timers.size,0);h.flush();assert.ok(!h.getNode('unlockList').classList.contains('unlock-revealing'));
+test('manual interaction or exit cancels every phase and exposes all remaining cards',()=>{
+ for(const phase of [0,1,2,3])for(const action of ['pointerdown','touchstart','wheel','keydown','close']){
+  const h=harness();h.c.scoreStats=run();h.c.syncResultScreen();for(let i=0;i<phase;i++)h.flush();if(action==='close')h.c.closeUnlockScreen();else h.getNode('unlockScreen').handlers[action]();const count=h.getNode('unlockScreen').scrolls.length;assert.equal(h.timers.size,0);h.flush();assert.equal(h.getNode('unlockScreen').scrolls.length,count);assert.ok(!h.getNode('unlockList').classList.contains('unlock-sequencing'));
  }
 });
-test('reduced motion shows contents without smooth scroll or animated reveal; late rankings do not replay the reveal',()=>{
- const h=harness({reducedMotion:true});h.c.scoreStats=run();h.c.syncResultScreen();h.flush();assert.equal(h.getNode('unlockScreen').scrolls[0].behavior,'instant');assert.ok(!h.getNode('unlockList').classList.contains('unlock-revealing'));h.flush();assert.equal(h.getNode('unlockScreen').scrolls[1].behavior,'instant');assert.equal(h.getNode('unlockScreen').scrolls[1].top,0);
- const normal=harness();normal.c.scoreStats=run();normal.c.syncResultScreen();normal.flush();normal.c.scoreStats.leaderboardUpdates=[{board:'overall',position:1}];normal.c.syncResultScreen();assert.equal(normal.timers.size,1);assert.equal(normal.getNode('unlockScreen').scrolls.length,1);assert.ok(!normal.getNode('unlockList').classList.contains('unlock-revealing'));
+test('reduced motion uses instant scrolling and no animation delays, then returns to the instructor',()=>{
+ const h=harness({reducedMotion:true});h.c.scoreStats=run();h.c.syncResultScreen();for(let i=0;i<4;i++)h.flush();const scrolls=h.getNode('unlockScreen').scrolls;assert.deepEqual(scrolls.map(s=>s.top),[780,1000,1220,0]);assert.ok(scrolls.every(s=>s.behavior==='instant'));assert.deepEqual(h.delays,[120,0,0,0]);assert.equal(h.timers.size,0);
  const css=fs.readFileSync(path.join(root,'css/unlocks.css'),'utf8');assert.match(css,/#unlockScreen\{[^}]*overflow-x:hidden;overflow-y:auto/);assert.match(css,/prefers-reduced-motion:no-preference/);
 });
-
-test('manual interaction or exit after the cards appear cancels the return to the instructor',()=>{
- for(const action of ['pointerdown','touchstart','wheel','keydown','close']){
-  const h=harness();h.c.scoreStats=run();h.c.syncResultScreen();h.flush();assert.equal(h.timers.size,1);if(action==='close')h.c.closeUnlockScreen();else h.getNode('unlockScreen').handlers[action]();const count=h.getNode('unlockScreen').scrolls.length;assert.equal(h.timers.size,0);h.flush();assert.equal(h.getNode('unlockScreen').scrolls.length,count);
- }
+test('late rankings join the active sequence without repeating earlier cards or restarting the instructor',()=>{
+ const h=harness();h.c.scoreStats=run();h.c.syncResultScreen();h.flush();const instructor=h.getNode('unlockInstructor').src;h.c.scoreStats.leaderboardUpdates=[{board:'overall',position:1}];h.c.syncResultScreen();assert.equal(h.timers.size,1);assert.match(h.getNode('unlockList').innerHTML,/スコアボード更新/);assert.equal(h.getNode('unlockInstructor').src,instructor);for(let i=0;i<4;i++)h.flush();assert.deepEqual(h.getNode('unlockScreen').scrolls.map(s=>s.top),[780,1000,1220,1440,0]);assert.equal(h.timers.size,0);
+});
+test('a single unlock also returns after its reveal with no extra pause',()=>{
+ const h=harness();h.c.scoreStats={final:{total:100},awards:{newTitles:['v3_stealth']}};h.c.syncResultScreen();h.flush();assert.equal(h.getNode('unlockScreen').scrolls.length,1);h.flush();assert.equal(h.getNode('unlockScreen').scrolls[1].top,0);assert.deepEqual(h.delays,[120,550]);assert.equal(h.timers.size,0);
 });
