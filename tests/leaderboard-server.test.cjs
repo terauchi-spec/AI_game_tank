@@ -6,7 +6,7 @@ function storageHarness(){
  return {data,storage:{...tx,transaction(fn){const promise=tail.then(()=>fn(tx));tail=promise.catch(()=>{});return promise;}}};
 }
 test('scores validate allowed names, normal stages, skills, ranks and bounded data; debug and invalid input are rejected',async()=>{
- const {validateScore}=await mod;assert.equal(validateScore(sample()).name,'たんく01');assert.equal(validateScore(sample({name:'ＡＢ１２'})).name,'AB12');
+ const {validateScore}=await mod;assert.equal(validateScore(sample()).name,'たんく01');assert.equal(validateScore(sample({stage:'decisive'})).stage,'decisive');assert.equal(validateScore(sample({name:'ＡＢ１２'})).name,'AB12');
  for(const extra of [{name:'<img>'},{name:'abcdefghijkl'},{stage:'frontOni'},{stage:'areaDebug'},{debug:true},{debug:undefined},{score:NaN},{score:-1},{score:1.1},{score:1e10},{rank:'Z'},{skill:'bad'},{titles:['<svg>']},{titles:Array(41).fill('v3_single_0')}])assert.equal(validateScore(sample(extra)),null,JSON.stringify(extra));
 });
 test('top thirty keep one best per player, preserve metadata at that score, and use earliest score for ties',async()=>{

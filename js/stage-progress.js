@@ -7,13 +7,14 @@ const STAGE_ORDER=[
  {id:'frontBeginner',target:'軍需物資',name:'制圧（初級）',image:'supplies'},
  {id:'base',target:'軍司令施設（北部）',name:'破壊（上級）',image:'headquarters'},
  {id:'indoor',target:'軍需格納庫',name:'潜入（上級）',image:'infiltration_advanced'},
- {id:'front',target:'戦術アンテナ',name:'制圧（上級）',image:'antenna'}
+ {id:'front',target:'戦術アンテナ',name:'制圧（上級）',image:'antenna'},
+ {id:'decisive',target:'移動要塞',name:'決戦',image:'decisive'}
 ];
 const TEST_STAGES=[{id:'frontOni',name:'制圧（鬼）',image:'antenna'}];
 const STAGE_DISPLAY_ORDER=STAGE_ORDER.map(stage=>stage.id);
 function stageDisplayNumber(id){return String(STAGE_DISPLAY_ORDER.indexOf(id)+1).padStart(2,'0');}
 function stageSelectionName(name){return name.replace('拠点破壊','破壊').replace('前線制圧','制圧');}
-function currentStageId(){return stageMode==='front'&&typeof frontlineOni!=='undefined'&&frontlineOni?'frontOni':stageMode==='front'&&frontlineBeginner?'frontBeginner':stageMode==='indoor'&&typeof indoorBeginner!=='undefined'&&indoorBeginner?'indoorBeginner':stageMode;}
+function currentStageId(){if(typeof isDecisiveStage==='function'&&isDecisiveStage())return 'decisive';return stageMode==='front'&&typeof frontlineOni!=='undefined'&&frontlineOni?'frontOni':stageMode==='front'&&frontlineBeginner?'frontBeginner':stageMode==='indoor'&&typeof indoorBeginner!=='undefined'&&indoorBeginner?'indoorBeginner':stageMode;}
 function readStageProgress(){
  let saved;try{saved=JSON.parse(localStorage.getItem(STAGE_PROGRESS_KEY)||'null');}catch(_){}
  const earned=new Set();
@@ -103,7 +104,7 @@ function setSelectedStage(id,toggle=true){
 }
 function deploySelectedStage(){
  if(state!=='stage'||gameBuildQueued||!stageAvailableForSelection(selectedStageId))return false;
- const id=selectedStageId;selectedAreaDebug=null;
+ const id=selectedStageId;selectedAreaDebug=null;if(typeof decisiveBattle!=='undefined')decisiveBattle=null;
  areaDebugEnabled=id==='areaDebug';frontlineOni=id==='frontOni';frontlineBeginner=id==='frontBeginner';indoorBeginner=id==='indoorBeginner';
  stageMode=areaDebugEnabled?'base':frontlineBeginner||frontlineOni?'front':indoorBeginner?'indoor':id;
  if(areaDebugEnabled){state='areaPick';sfx('skill');return true;}

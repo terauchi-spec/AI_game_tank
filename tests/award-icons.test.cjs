@@ -26,6 +26,7 @@ test('title medal images are lazy, asynchronous, decorative, sized and cached',(
 });
 
 function resultAwards(awards){
+ c.renderCareerRank=()=>{};
  const nodes=new Map();c.document={getElementById:id=>{if(!nodes.has(id))nodes.set(id,{});return nodes.get(id);}};
  vm.runInContext(html.slice(html.indexOf('function renderAwardResult('),html.indexOf("let trophyTab='title';")),c);c.renderAwardResult({awards});return id=>nodes.get(id);
 }

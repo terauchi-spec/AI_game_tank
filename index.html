@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.27.1650</title>
+<title>こっそり戦車大作戦 2026.10.27.2038</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -504,7 +504,8 @@ body.briefing-open .mission-briefing-image{transform-origin:center bottom;animat
 @media(max-width:600px){#missionBriefing .mission-briefing-image{width:min(73.5vw,273px);height:min(42dvh,357px)}#missionBriefing .mission-hud-guide{gap:6px;margin-bottom:16px;font-size:14px}#missionBriefing .mission-hud-guide img,#missionBriefing .mission-hud-guide svg{width:25px;height:25px}}
 /* 最前線だけ、3人の画像と制圧ルールに切り替える。 */
 #missionBriefing.front-briefing .mission-hud-guide,#missionFrontlineRules[hidden]{display:none}
-#missionBriefing.indoor-briefing .mission-hud-guide,#missionIndoorRules[hidden]{display:none}
+#missionBriefing.indoor-briefing .mission-hud-guide,#missionIndoorRules[hidden],#missionDecisiveRules[hidden]{display:none}
+#missionBriefing .mission-hud-guide[hidden]{display:none}
 #missionBriefing.front-briefing .mission-briefing-content{width:min(100%,1040px);gap:24px}
 #missionBriefing.front-briefing .mission-briefing-image{width:min(48vw,520px);height:min(65dvh,450px)}
 #missionBriefing.front-briefing .mission-briefing-copy{flex:1;min-width:0}
@@ -604,10 +605,10 @@ body.success-open .mission-firework{animation:missionFireworkBurst 1250ms ease-o
 }
 @media(max-width:360px){#resultScreen .res-rank-badge{width:144px;height:144px}#resultScreen .res-medal{gap:10px}#resultScreen .res-medal-rank{font-size:38px}}
 </style>
-<link rel="stylesheet" href="css/developer.css?v=2026.10.27.1650">
-<link rel="stylesheet" href="css/leaderboard.css?v=2026.10.27.1650">
-<link rel="stylesheet" href="css/intro.css?v=2026.10.27.1650">
-<link rel="stylesheet" href="css/unlocks.css?v=2026.10.27.1650">
+<link rel="stylesheet" href="css/developer.css?v=2026.10.27.2038">
+<link rel="stylesheet" href="css/leaderboard.css?v=2026.10.27.2038">
+<link rel="stylesheet" href="css/intro.css?v=2026.10.27.2038">
+<link rel="stylesheet" href="css/unlocks.css?v=2026.10.27.2038">
 </head>
 <body>
 <canvas id="c" width="840" height="720"></canvas>
@@ -942,7 +943,7 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 #stageScreen .stage-card.stage-cleared .stage-number{border-color:#b3db9c;color:#c8e9a5}
 </style>
 <section id="areaDebugPicker" aria-labelledby="areaDebugHeading"><div class="area-debug-panel"><h1 id="areaDebugHeading">テストするエリア</h1><p>無敵で地形や遮蔽物を確認できます。<br>開始地点の戦車は弾数・燃料無制限です。</p><div id="areaDebugList"></div><button id="areaDebugBack" type="button">ステージ選択に戻る</button></div></section>
-<div id="missionBriefing" role="dialog" aria-modal="true" aria-labelledby="missionBriefingTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_hero.webp?v=2026.10.14.1653" alt="円形爆弾を抱えて走る主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionBriefingTitle">ミッション</h1><p id="missionBriefingGoal">敵の拠点にたどりつき、破壊せよ</p><ul class="mission-hud-guide" aria-label="ゲーム画面のアイコン説明"><li><img src="assets/ui/ui_heart_full.png" alt="ハート" decoding="async"><span>残りライフ</span></li><li><img src="assets/ui/ui_bomb_normal.png" alt="爆弾" decoding="async"><span>爆弾の設置状態</span></li><li><svg viewBox="-18 -18 36 36" role="img" aria-label="目に斜線"><path d="M-14 0 C-7-11 7-11 14 0 C7 11-7 11-14 0Z" fill="white" stroke="black" stroke-width="3"/><circle r="5" fill="black"/><path d="M-12 11 12-11" stroke="black" stroke-width="3.5"/><path d="M-12 11 12-11" stroke="#ef3434" stroke-width="2"/></svg><span>敵から隠れている状態</span></li></ul><div id="missionFrontlineRules" hidden><ul class="mission-front-rules" aria-label="最前線の制圧ルール"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V3m0 1c5-4 8 4 14 0v10c-6 4-9-4-14 0"/></svg><span id="missionFrontlineOrder">3拠点を順番に制圧</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 1v4m0 14v4M1 12h4m14 0h4"/></svg><span>円に入り、敵を排除</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><circle cx="4" cy="10" r="2"/><circle cx="20" cy="10" r="2"/><path d="M6 22v-4a6 6 0 0 1 12 0v4M1 21v-5a3 3 0 0 1 4-3m18 8v-5a3 3 0 0 0-4-3"/></svg><span>味方兵と制圧！人数で加速</span></li></ul></div><div id="missionIndoorRules" hidden><ul class="mission-front-rules" aria-label="潜入の作戦ポイント"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2h9l5 5v15H5ZM14 2v6h5M8 12h8M8 16h8"/></svg><span id="missionIndoorDocuments">円に入り、重要資料3か所を回収</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12C7 4 17 4 22 12C17 20 7 20 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><span>赤い目3つで館内アラート発令</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3H3v18h7M7 12h15m-5-5 5 5-5 5"/></svg><span>回収後は施設外のEXITから脱出</span></li></ul></div><button type="button" id="missionBegin">作戦開始</button></div></div></div>
+<div id="missionBriefing" role="dialog" aria-modal="true" aria-labelledby="missionBriefingTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_hero.webp?v=2026.10.14.1653" alt="円形爆弾を抱えて走る主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionBriefingTitle">ミッション</h1><p id="missionBriefingGoal">敵の拠点にたどりつき、破壊せよ</p><ul class="mission-hud-guide" aria-label="ゲーム画面のアイコン説明"><li><img src="assets/ui/ui_heart_full.png" alt="ハート" decoding="async"><span>残りライフ</span></li><li><img src="assets/ui/ui_bomb_normal.png" alt="爆弾" decoding="async"><span>爆弾の設置状態</span></li><li><svg viewBox="-18 -18 36 36" role="img" aria-label="目に斜線"><path d="M-14 0 C-7-11 7-11 14 0 C7 11-7 11-14 0Z" fill="white" stroke="black" stroke-width="3"/><circle r="5" fill="black"/><path d="M-12 11 12-11" stroke="black" stroke-width="3.5"/><path d="M-12 11 12-11" stroke="#ef3434" stroke-width="2"/></svg><span>敵から隠れている状態</span></li></ul><div id="missionFrontlineRules" hidden><ul class="mission-front-rules" aria-label="最前線の制圧ルール"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V3m0 1c5-4 8 4 14 0v10c-6 4-9-4-14 0"/></svg><span id="missionFrontlineOrder">3拠点を順番に制圧</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 1v4m0 14v4M1 12h4m14 0h4"/></svg><span>円に入り、敵を排除</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><circle cx="4" cy="10" r="2"/><circle cx="20" cy="10" r="2"/><path d="M6 22v-4a6 6 0 0 1 12 0v4M1 21v-5a3 3 0 0 1 4-3m18 8v-5a3 3 0 0 0-4-3"/></svg><span>味方兵と制圧！人数で加速</span></li></ul></div><div id="missionDecisiveRules" hidden><ul class="mission-front-rules" aria-label="決戦の作戦ポイント"><li>1人で開始草原から、ランダムな3エリアを突破</li><li>3エリア目の中継拠点：円内の敵を排除し48秒制圧</li><li>制圧後は味方部隊と砂漠3エリアへ進軍</li><li>巨大移動要塞を主砲・設置爆弾などで破壊</li></ul></div><div id="missionIndoorRules" hidden><ul class="mission-front-rules" aria-label="潜入の作戦ポイント"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2h9l5 5v15H5ZM14 2v6h5M8 12h8M8 16h8"/></svg><span id="missionIndoorDocuments">円に入り、重要資料3か所を回収</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12C7 4 17 4 22 12C17 20 7 20 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><span>赤い目3つで館内アラート発令</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3H3v18h7M7 12h15m-5-5 5 5-5 5"/></svg><span>回収後は施設外のEXITから脱出</span></li></ul></div><button type="button" id="missionBegin">作戦開始</button></div></div></div>
 <div id="stageLoadingScreen" role="status" aria-live="polite"><div class="stage-loading-title">作戦準備中…</div></div>
 <div id="stageScreen" role="region" aria-label="ステージ選択"><div class="stage-shell">
 <header class="stage-header"><div><div class="stage-kicker">CHOOSE YOUR MISSION</div><h1>ステージ選択</h1></div><button type="button" class="sk-home" id="stageBack">スキル選択</button></header><p id="stageSkill"></p>
@@ -953,14 +954,15 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 <button type="button" class="stage-card" data-stage="base"><span class="stage-number" aria-hidden="true">04</span><span class="stage-copy"><strong>破壊（上級）</strong><span class="stage-target">軍司令施設（北部）</span></span><span class="stage-art"><img src="assets/ui/stages/headquarters.webp" alt="" width="144" height="96" loading="lazy" decoding="async"></span><span class="stage-records" hidden><span class="stage-record-metrics"><span><small>最高スコア</small><b class="stage-record-score">—</b></span><span class="stage-record-rank-group"><small>最高ランク</small><span class="stage-record-rank-value"><img alt="" width="42" height="42" decoding="async"><b class="stage-record-rank">—</b></span></span><span><small>成功/出撃回数</small><b class="stage-record-count">0 / 0回</b></span></span><small class="stage-record-note"></small></span></button>
 <button type="button" class="stage-card" data-stage="indoor" id="stageInfiltrationAdvanced"><span class="stage-number" aria-hidden="true">05</span><span class="stage-copy"><strong>潜入（上級）</strong><span class="stage-target">軍需格納庫</span></span><span class="stage-art"><img src="assets/ui/stages/infiltration_advanced.webp" alt="夜のアーチ屋根の大型軍事施設" width="144" height="96" loading="lazy" decoding="async"></span><span class="stage-records" hidden><span class="stage-record-metrics"><span><small>最高スコア</small><b class="stage-record-score">—</b></span><span class="stage-record-rank-group"><small>最高ランク</small><span class="stage-record-rank-value"><img alt="" width="42" height="42" decoding="async"><b class="stage-record-rank">—</b></span></span><span><small>成功/出撃回数</small><b class="stage-record-count">0 / 0回</b></span></span><small class="stage-record-note"></small></span></button>
 <button type="button" class="stage-card" data-stage="front"><span class="stage-number" aria-hidden="true">06</span><span class="stage-copy"><strong>制圧（上級）</strong><span class="stage-target">戦術アンテナ</span></span><span class="stage-art"><img src="assets/ui/stages/antenna.webp" alt="" width="144" height="96" loading="lazy" decoding="async"></span><span class="stage-records" hidden><span class="stage-record-metrics"><span><small>最高スコア</small><b class="stage-record-score">—</b></span><span class="stage-record-rank-group"><small>最高ランク</small><span class="stage-record-rank-value"><img alt="" width="42" height="42" decoding="async"><b class="stage-record-rank">—</b></span></span><span><small>成功/出撃回数</small><b class="stage-record-count">0 / 0回</b></span></span><small class="stage-record-note"></small></span></button>
+<button type="button" class="stage-card" data-stage="decisive"><span class="stage-number" aria-hidden="true">07</span><span class="stage-copy"><strong>決戦</strong><span class="stage-target">移動要塞</span></span><span class="stage-art"><img src="assets/ui/stages/decisive.webp" alt="" width="144" height="96" loading="lazy" decoding="async"></span><span class="stage-records" hidden><span class="stage-record-metrics"><span><small>最高スコア</small><b class="stage-record-score">—</b></span><span class="stage-record-rank-group"><small>最高ランク</small><span class="stage-record-rank-value"><img alt="" width="42" height="42" decoding="async"><b class="stage-record-rank">—</b></span></span><span><small>成功/出撃回数</small><b class="stage-record-count">0 / 0回</b></span></span><small class="stage-record-note"></small></span></button>
 <button type="button" class="stage-card" data-stage="frontOni"><span class="stage-number" aria-hidden="true">鬼</span><span class="stage-copy"><strong>制圧（鬼）</strong><span class="stage-target">テスト：敵3倍・味方2倍</span></span><span class="stage-art"><img src="assets/ui/stages/antenna.webp" alt="" width="144" height="96" loading="lazy" decoding="async"></span><span class="stage-records" hidden><span class="stage-record-metrics"><span><small>最高スコア</small><b class="stage-record-score">—</b></span><span class="stage-record-rank-group"><small>最高ランク</small><span class="stage-record-rank-value"><img alt="" width="42" height="42" decoding="async"><b class="stage-record-rank">—</b></span></span><span><small>成功/出撃回数</small><b class="stage-record-count">0 / 0回</b></span></span><small class="stage-record-note"></small></span></button>
 <button type="button" class="stage-card" data-stage="areaDebug"><span class="stage-number" aria-hidden="true">EX</span><span class="stage-copy"><strong>エリアデバッグ</strong><span class="stage-target">エリアを選んで地形・遮蔽物を確認</span></span><span class="stage-art stage-debug-art" aria-hidden="true">⚙</span><span class="stage-records" hidden><span class="stage-record-metrics"><span><small>最高スコア</small><b class="stage-record-score">—</b></span><span class="stage-record-rank-group"><small>最高ランク</small><span class="stage-record-rank-value"><img alt="" width="42" height="42" decoding="async"><b class="stage-record-rank">—</b></span></span><span><small>成功/出撃回数</small><b class="stage-record-count">0 / 0回</b></span></span><small class="stage-record-note"></small></span></button>
 </div><footer class="sk-bottom stage-bottom"><button type="button" class="sk-toggle" id="stageDebugAll" aria-pressed="false">全ステージを表示</button><button type="button" class="sk-deploy" id="stageDeploy" disabled>ステージを選択してください</button></footer></div></div>
 <div id="missionHud" role="status"></div>
 
-<script src="js/player-tank-art.js?v=2026.10.27.1650"></script>
-<script src="js/audio.js?v=2026.10.27.1650"></script>
-<script src="js/bgm.js?v=2026.10.27.1650"></script>
+<script src="js/player-tank-art.js?v=2026.10.27.2038"></script>
+<script src="js/audio.js?v=2026.10.27.2038"></script>
+<script src="js/bgm.js?v=2026.10.27.2038"></script>
 <script>
 const MOBILE_VIEW=matchMedia('(pointer:coarse)').matches;
 // iPhoneの描画反映の途切れを切り分けるため、表示Canvasと静的キャッシュの作成設定を統一する。
@@ -971,7 +973,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.27.1650',FILE_CREATED_AT='2026/10/27 16:50',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.27.2038',FILE_CREATED_AT='2026/10/27 20:38',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -1091,6 +1093,7 @@ const ZONE_STYLE={
  '街':{g:'#57595e',p:['#47494e','#65686e','#3c3f44','#72757b']},
  '敵迷路基地':{g:'#50535a',p:['#3f4249','#60646c','#34373d','#70747c']},
  '荒野':{g:'#a76b43',p:['#8c5537','#bd8652','#995f3b','#c39867']},
+ '砂漠':{g:'#cbb27a',p:['#bfa16b','#d7bf8a','#dec895','#b89a64']},
  '湿地':{g:'#596946',p:['#4a5b39','#697753','#52623f','#76815d']},
  '敵司令本部':{g:'#44464c',p:['#35373c','#53565e','#2a2c31']}
 };
@@ -1367,7 +1370,7 @@ function coverVisualRect(c){
   if(Number.isFinite(c.hx)&&Number.isFinite(c.hy)&&Number.isFinite(c.hw)&&Number.isFinite(c.hh))return{x:c.hx,y:c.hy,w:c.hw,h:c.hh};
   return{x:c.x,y:c.y,w:c.w,h:c.h};
  }
- if(c.playerBuilt)return{x:c.x,y:c.y,w:c.w,h:c.h};
+ if(c.playerBuilt||c.decisiveKind)return{x:c.x,y:c.y,w:c.w,h:c.h};
  const cx=c.x+c.w/2,cy=c.y+c.h/2,hor=c.w>=c.h;
  if(c.kd===3||c.kd===4||c.kd===9||c.kd===10){
   const concrete=c.kd===3||c.kd===9;
@@ -1414,7 +1417,7 @@ function coverSpriteRect(c){
  if(!c)return c;
  if(c.fr)return{x:c.x,y:c.y,w:c.w,h:c.h};
  if(c.indoorProp)return{x:c.x,y:c.y,w:c.w,h:c.h};
- if(c.playerBuilt)return{x:c.x,y:c.y,w:c.w,h:c.h};
+ if(c.playerBuilt||c.decisiveKind)return{x:c.x,y:c.y,w:c.w,h:c.h};
  const cx=c.x+c.w/2,cy=c.y+c.h/2,hor=c.w>=c.h;
  if(c.kd===0){const long=hor?c.w:c.h,short=Math.max(hor?c.h:c.w,long*.34),len=long*1.08,th=short*1.08;return hor?centerRect(cx,cy,len,th):centerRect(cx,cy,th,len);}
  if(c.kd===1){const long=hor?c.w:c.h,short=Math.max(hor?c.h:c.w,14),len=long*1.03,th=short*1.18;return hor?centerRect(cx,cy,len,th):centerRect(cx,cy,th,len);}
@@ -1655,6 +1658,7 @@ function naturalCoverImage(c,key){
  return stableRand(c,key==='tree'?61:81)<.5&&assetOK(variant)?variant:original;
 }
 function drawCoverAsset(c){
+ if(c.decisiveKind)return drawDecisiveCover(c);
  if(c.frontAntenna)return true;
  if(c.indoorProp)return drawInfiltrationPropSprite(c);
  const cx=c.x+c.w/2,cy=c.y+c.h/2,hor=c.w>=c.h;
@@ -1832,6 +1836,7 @@ function drawCoverFragmentGroup(f){
 function drawCoverFragment(c){
  const src={kd:c.kd,x:c.ox0??c.x,y:c.oy0??c.y,w:c.ow0??c.ow??c.w,h:c.oh0??c.oh??c.h,playerBuilt:!!c.pb};
  if(c.indoorProp){src.indoorProp=true;src.propArt=c.propArt;}
+ if(c.decisiveKind)src.decisiveKind=c.decisiveKind;
  if(c.indoorWall)src.indoorWall=true;
  g.save();
  // A tiny overlap prevents antialiasing seams between adjacent surviving tiles.
@@ -1905,6 +1910,7 @@ function drawBridgeFancy(b){
 
 let ZONES=[];
 function setupZones(){
+ if(stageMode==='decisive'&&!areaDebugEnabled){setupDecisiveZones();return;}
  // 初級は開始草原→3エリア→電波施設のある草原、上級は従来の全7エリア。
  const beginner=stageMode==='beginner'&&!areaDebugEnabled,frontEasy=isFrontlineBeginner();
  const pool=beginner||frontEasy?['草原','森林','丘陵','村','湿地']:['草原','森林','村','丘陵','敵前線基地','街','敵迷路基地','湿地'];
@@ -1988,7 +1994,7 @@ function selectSkillIndex(i,deploy=false){
     if(state!=='preparing'){gameBuildQueued=false;return;}
     const remaining=STAGE_PREPARATION_MIN_MS-(performance.now()-loadingShownAt);
     if(remaining>0){setTimeout(finishPreparation,remaining);return;}
-    state=areaDebugEnabled?'play':(stageMode==='base'||stageMode==='beginner'||stageMode==='front'||stageMode==='indoor')?'briefing':'play';briefingFrameDrawn=false;gameBuildQueued=false;
+    state=areaDebugEnabled?'play':(stageMode==='base'||stageMode==='beginner'||stageMode==='front'||stageMode==='indoor'||stageMode==='decisive')?'briefing':'play';briefingFrameDrawn=false;gameBuildQueued=false;
    };
    finishPreparation();
   });
@@ -2978,6 +2984,7 @@ function distributeFlankPatrols(){
 }
 
 function reset(rerollSkills=true){
+ if(typeof decisiveBattle!=='undefined')decisiveBattle=null;
  if(typeof stopGameAudio==='function')stopGameAudio();
  if(typeof clearInfiltrationRenderCache==='function')clearInfiltrationRenderCache();
  clearStaticRasterCache();clearFragmentRenderCache();clearMazeWallChunks();clearCanyonTiles();clearSpinifexScatters();
@@ -2994,7 +3001,7 @@ function reset(rerollSkills=true){
  base={x:WW/2-baseW/2,y:60,w:baseW,h:baseH,hp:30,maxHp:30,deadAt:0};bullets=[];parts=[];bombs=[];waves=[];fx=[];items=[];bushes=[];
  roadBands=[];water=[];bridges=[];mud=[];
  for(const ry of [2675,1325]){
-  if(zoneAt(ry*MAP_SCALE).n==='荒野')continue;
+  if(['荒野','砂漠'].includes(zoneAt(ry*MAP_SCALE).n))continue;
   // 各候補地点で75%の確率で川を生成。最小幅は従来70pxの半分=35px、最大は約600pxを維持。
   if(R()>=.75)continue;
   const riverH=35+Math.pow(R(),.72)*565,flowDir=R()<.5?-1:1,flowSpeed=6+R()*24;
@@ -3217,6 +3224,7 @@ function reset(rerollSkills=true){
  radio=radioSpot?{...radioSpot,got:false}:null;
  if(!radio)console.warn('Radio spawn skipped: no safe separated location');
  if(stageMode==='front'&&!areaDebugEnabled){setupFrontlineArmy();setupFrontlineVehicles();}
+ if(stageMode==='decisive'&&!areaDebugEnabled)setupDecisiveWorld();
 }
 // 敵司令本部のコリジョンは command_building_1.webp の実描画領域に合わせる。
 // 元画像256x221のうち、主要な不透明領域はおよそ x=4..248 / y=6..213。
@@ -3247,6 +3255,7 @@ function radioFacilityHits(x,y,r=0){
 }
 function baseHitRect(){
  const b=base;
+ if(b?.decisiveFortress)return{x:b.x,y:b.y,w:b.w,h:b.h};
  if(stageMode==='beginner'&&!areaDebugEnabled)return{x:b.x+b.w*22/256,y:b.y,w:b.w*232/256,h:b.h};
  const l=b.w*(4/256),r=b.w*(8/256),t=b.h*(6/221),bt=b.h*(8/221);
  return{x:b.x+l,y:b.y+t,w:b.w-l-r,h:b.h-t-bt};
@@ -3284,7 +3293,7 @@ function carveBaseFragments(ix,iy,rr=20){
  return removed;
 }
 function damageBase(amount,ix,iy,rr=20,multi=1,cause='player'){
- const b=ensureBaseState();if(!b||b.hp<=0)return 0;
+ const b=ensureBaseState();if(!b||b.hp<=0||b.decisiveLocked)return 0;
  const actual=Math.min(b.hp,amount);b.hp=Math.max(0,b.hp-amount);
  if(scoreStats&&!scoreStats.finalized){
   if(cause!=='support')scoreStats.objectiveDamage=(scoreStats.objectiveDamage||0)+actual/(b.maxHp||30);
@@ -3299,7 +3308,7 @@ function damageBase(amount,ix,iy,rr=20,multi=1,cause='player'){
   removed+=carveBaseFragments(ix+Math.cos(a)*spread,iy+Math.sin(a)*spread,baseR*(hits===1?1:.82));
  }
  burst(ix,iy,16,'#a89a74',180);shake=Math.max(shake,6);
- if(b.hp<=0){sfx('objectiveDestroyed');b.deadAt=performance.now();if(state==='play')winSeq();}
+ if(b.hp<=0){if(b.decisiveFortress&&scoreStats)scoreStats.objectiveProgress=1;sfx('objectiveDestroyed');b.deadAt=performance.now();if(state==='play')winSeq();}
  return removed;
 }
 function baseFragmentAliveAt(x,y){
@@ -3712,7 +3721,7 @@ function calculateScore(s,cleared,front=false){
 function finalizeScore(cleared){
  if(!scoreStats||scoreStats.finalized)return;
  trackEnemyDeaths();if(scoreStats.stage==='indoor'&&typeof indoorWorld!=='undefined'&&indoorWorld?.alarm?.active)scoreStats.indoorAlarm=true;scoreStats.finalized=true;
- scoreStats.final=calculateScore(scoreStats,cleared,stageMode==='front');
+ scoreStats.final=calculateScore(scoreStats,cleared,stageMode==='front'||scoreStats.stage==='decisive');
  const {total,rank}=scoreStats.final;
  scoreStats.newHigh=!areaDebugEnabled&&saveHighScore(total,rank);
  recordRunAchievements(scoreStats);
@@ -6014,6 +6023,7 @@ function carve(x,y,r,credit=false,objectDamageSource='impact'){
    const edge=dist<=r+tile*1.1;
    const f={fr:1,kd:c.kd,x:a,y:b,w,h,col:pal[idx],rx,ry,ow,oh,ox0:c.x,oy0:c.y,ow0:c.w,oh0:c.h,pb:c.playerBuilt?1:0,mazeWall:c.mazeWall?1:0,edge:edge?1:0};
 
+   if(c.decisiveKind)f.decisiveKind=c.decisiveKind;
    if(c.buildGroup){f.buildGroup=c.buildGroup;f.born=c.born;c.buildGroup.parts.push(f);}
    if(srcEllipse){
     const dx=(mx-srcEllipse.x)/srcEllipse.rx,dy=(my-srcEllipse.y)/srcEllipse.ry,dn=Math.hypot(dx,dy);
@@ -6061,7 +6071,7 @@ function useSkill(wx,wy){if(scoreStats&&!scoreStats.finalized)scoreStats.skillUs
  else if(skill==='flame'){/* S長押しで連続使用 */}
  else if(skill==='sniper')enterSniperMode();
  else if(skill==='hound')beginHoundAttack();}
-function winSeq(){if(stageMode!=='base'&&stageMode!=='beginner'){base.hp=30;say('作戦目標を達成しよう');return;}if(areaDebugEnabled){base.hp=30;say('エリアデバッグ中：司令部破壊判定を無効化');return;}state='blast';blastT=2.4;bq=0;p.dig=0;p.digPrep=0;p.drill=0;}
+function winSeq(){if(stageMode!=='base'&&stageMode!=='beginner'&&!(base?.decisiveFortress&&!base.decisiveLocked)){base.hp=30;say('作戦目標を達成しよう');return;}if(areaDebugEnabled){base.hp=30;say('エリアデバッグ中：司令部破壊判定を無効化');return;}state='blast';blastT=2.4;bq=0;p.dig=0;p.digPrep=0;p.drill=0;}
 function blastUpdate(dt){blastT-=dt;bq-=dt;if(bq<=0){bq=.1;const x=base.x+R()*base.w,y=base.y+R()*base.h;fb(x,y,28+R()*34);burst(x,y,25,'#ff8a3a',380);shake=14;if(R()<.3)flash=.5;}
  for(const f of fx)f.l-=dt;fx=fx.filter(f=>f.l>0);updateParts(dt);
  flash=Math.max(0,flash-dt*2.5);if(blastT<=0){state='succeeded';successFrameDrawn=false;shake=0;finalizeScore(true);}}
@@ -6949,7 +6959,7 @@ function drawAllyParachute(ally){
 }
 
 function baseDamageCanvas(){
- const b=ensureBaseState(),im=COVER_IMG[stageMode==='beginner'&&!areaDebugEnabled?'radio_facility':'command_building_1'];if(!b||!assetOK(im)||!b.fragMask)return null;
+ const b=ensureBaseState(),im=COVER_IMG[b?.decisiveFortress?'decisive_fortress':stageMode==='beginner'&&!areaDebugEnabled?'radio_facility':'command_building_1'];if(!b||!assetOK(im)||!b.fragMask)return null;
  const key=(b.damageVersion||0)+':'+(b.hp<=0?1:0)+':'+b.w+'x'+b.h;
  if(b._damageCanvas&&b._damageCanvasKey===key)return b._damageCanvas;
  const c=document.createElement('canvas');c.width=Math.max(1,Math.round(b.w));c.height=Math.max(1,Math.round(b.h));
@@ -6983,7 +6993,7 @@ function baseDamageCanvas(){
  b._damageCanvas=c;b._damageCanvasKey=key;return c;
 }
 function drawBase(){
- const b=ensureBaseState(),dead=b.hp<=0,cx=b.x+b.w/2,cy=b.y+b.h/2,im=COVER_IMG[stageMode==='beginner'&&!areaDebugEnabled?'radio_facility':'command_building_1'],dmg=baseDamageCanvas();
+ const b=ensureBaseState(),dead=b.hp<=0,cx=b.x+b.w/2,cy=b.y+b.h/2,im=COVER_IMG[b?.decisiveFortress?'decisive_fortress':stageMode==='beginner'&&!areaDebugEnabled?'radio_facility':'command_building_1'],dmg=baseDamageCanvas();
  g.save();
  if(dmg)drawStaticRaster(dmg,b.x,b.y,b.w,b.h);
  else if(assetOK(im))g.drawImage(im,b.x,b.y,b.w,b.h);
@@ -7348,9 +7358,9 @@ function draw(near){
  // タッチ端末は表示Canvasへ直接描画し、動的な画面外Canvasの毎フレーム転写を避ける。
  g=MOBILE_VIEW?gm:og;g.setTransform(MOBILE_VIEW?1:.5,0,0,MOBILE_VIEW?1:.5,0,0);g.imageSmoothingEnabled=false;labels.length=0;vehicleMarkers.length=0;
  fragmentDrawFrame++;fragmentAssetSignature=Object.values(COVER_IMG).reduce((n,im)=>n+(assetOK(im)?1:0),0);
- const bl=state==='blast'||((state==='win'||state==='succeeded')&&(stageMode==='base'||stageMode==='beginner'));
+ const bl=state==='blast'||((state==='win'||state==='succeeded')&&(stageMode==='base'||stageMode==='beginner'||base?.decisiveFortress));
  const victoryCamera=stageMode==='indoor'?infiltrationCamera():frontlineVictoryCamera();
- if(victoryCamera){cam=victoryCamera.y;camX=victoryCamera.x;}else if(bl){cam+=(0-cam)*.07;camX+=(Math.max(0,Math.min(WW-W,base.x+base.w/2-W/2))-camX)*.07;}else{cam=Math.max(frontlineNorthEdge(),Math.min(WH-H,p.y-H*.6));camX=Math.max(0,Math.min(WW-W,p.x-W/2));}
+ if(victoryCamera){cam=victoryCamera.y;camX=victoryCamera.x;}else if(bl){cam+=((base?.decisiveFortress?Math.max(0,base.y+base.h/2-H/2):0)-cam)*.07;camX+=(Math.max(0,Math.min(WW-W,base.x+base.w/2-W/2))-camX)*.07;}else{cam=Math.max(frontlineNorthEdge(),Math.min(WH-H,p.y-H*.6));camX=Math.max(0,Math.min(WW-W,p.x-W/2));}
  const cy=Math.round(cam/2)*2,cx=Math.round(camX/2)*2;
  g.save();if(shake>0)g.translate((R()-.5)*shake,(R()-.5)*shake);
  g.fillStyle='#2b3322';g.fillRect(-20,-20,W+40,H+40);g.translate(-cx,-cy);
@@ -7649,9 +7659,9 @@ function tacticalSuccesses(s){return (s.decoyLures||0)+(s.wallBlocks||0)+(s.tact
 function supportSuccesses(s){return (s.allyKills||0)+(s.allyStuns||0)+(s.partnerRescues||0);}
 function teamworkSuccesses(s){return (s.partnerRescues||0)*3+(s.jointKills||0)+(s.partnerDocuments||0)*4+Math.min(8,(s.jointObjectiveSeconds||0)/4);}
 function resultMetrics(s,r={}){
- r=r||{};const indoor=s.stage==='indoor',front=s.stage==='front',clear=!!r.cleared;
+ r=r||{};const indoor=s.stage==='indoor',front=s.stage==='front'||s.stage==='decisive',clear=!!r.cleared;
  const progress=clear?1:Math.min(1,indoor?(s.objectiveProgress||0):front?(s.objectiveProgress||0):(s.objectiveDamage||0));
- const contribution=indoor?(s.documents||0)/Math.max(1,s.documentTotal||0):front?(s.capturePoints||0)/Math.max(1,s.objectiveTotal||0):(s.objectiveDamage||0);
+ const contribution=indoor?(s.documents||0)/Math.max(1,s.documentTotal||0):s.stage==='decisive'?(s.objectiveProgress||0):front?(s.capturePoints||0)/Math.max(1,s.objectiveTotal||0):(s.objectiveDamage||0);
  const missionMastery=clear&&contribution>=.9&&(indoor?!s.indoorAlarm&&s.detections===0:front?(s.captureDefenseKills||0)>=3:(s.playerDamage||0)+(s.vehicleDamage||0)<=.5);
  const mission=resClamp(Math.min(missionMastery?100:95,progress*100));
  const advance=indoor?(s.objectiveAdvance||0):front?(s.objectiveAdvance||0):(s.maxProgress||0);
@@ -7707,7 +7717,7 @@ const TITLE_CATALOG=[
 const legendNames=['任務の覇者','幽影の覇者','戦場の覇王','爆炎の支配者','疾風迅雷','神算鬼謀','不滅の絆','不死鳥'];
 const TITLE_LEGENDS=Object.freeze(TITLE_BASE.map(([axis],i)=>({id:'v3_legend_'+i,name:legendNames[i],from:'v3_single_'+i+'_elite',axis:i,flavor:axis+'を極め、幾度も戦果を重ねた伝説の兵士'})));
 for(const t of TITLE_LEGENDS)TITLE_CATALOG.push({id:t.id,name:t.name,type:'伝説級',priority:650,note:'上級称号「'+TITLE_BASE[t.axis][2]+'」を累計5回獲得',legendFrom:t.from,axis:t.axis,threshold:5,evidence:'elite'});
-const TITLE_ALL_STAGES=Object.freeze({id:'v3_all_stages_clear',name:'全戦域の覇者',type:'伝説級',priority:700,note:'通常の全6ステージをクリア（破壊・潜入・制圧の初級／上級）',flavor:'すべての戦域で作戦を完遂した、歴戦の覇者',valid:(lv,s,r)=>allNormalStagesCleared(s,r)});
+const TITLE_ALL_STAGES=Object.freeze({id:'v3_all_stages_clear',name:'全戦域の覇者',type:'伝説級',priority:700,note:'通常の全7ステージをクリア（破壊・潜入・制圧の初級／上級と決戦）',flavor:'すべての戦域で作戦を完遂した、歴戦の覇者',valid:(lv,s,r)=>allNormalStagesCleared(s,r)});
 TITLE_CATALOG.push(TITLE_ALL_STAGES);
 const TITLE_COLLECTION_TARGETS=Object.freeze(TITLE_CATALOG.map(t=>t.id));
 const TITLE_MYTHIC=Object.freeze({id:'v3_mythic_complete',name:'戦場の神話',type:'神話級',priority:900,collection:true,note:'ほかの称号33種類をすべて獲得',flavor:'あらゆる作戦を極めた者だけが辿り着く、神話の頂'});
@@ -7900,7 +7910,7 @@ function renderResultScreen(){const s=scoreStats,r=s&&s.final;if(!r)return;
  const el=id=>document.getElementById(id),kills=s.humanKills+s.eliteKills+s.tankKills;
  const metrics=resultMetrics(s,r),levels=metrics.map(resLevel),sty=resultStyle(levels,s);
  el('resStatus').textContent=r.cleared?'作戦成功':'作戦失敗';el('resStatus').style.color=r.cleared?'#dff3b0':'#ffb0a0';
-  const stageArt=stageMode==='indoor'?(indoorBeginner?'infiltration_beginner':'infiltration_advanced'):stageMode==='front'?(frontlineBeginner?'supplies':'antenna'):stageMode==='beginner'?'satellite':stageMode==='base'?'headquarters':null;
+  const stageArt=(typeof isDecisiveStage==='function'&&isDecisiveStage())?'decisive':stageMode==='indoor'?(indoorBeginner?'infiltration_beginner':'infiltration_advanced'):stageMode==='front'?(frontlineBeginner?'supplies':'antenna'):stageMode==='beginner'?'satellite':stageMode==='base'?'headquarters':null;
   const stageImage=el('resStageImage');stageImage.hidden=!stageArt;if(stageArt)stageImage.src='assets/ui/stages/'+stageArt+'.webp';
  const zone=(ZONES||[]).find(z=>p&&p.y>=z.y0&&p.y<=z.y1);
  el('resArea').textContent='作戦：'+STAGE_NAMES[stageMode];
@@ -7915,7 +7925,7 @@ function renderResultScreen(){const s=scoreStats,r=s&&s.final;if(!r)return;
  el('resTitle').innerHTML=awardIcon(sty[2],'title')+'<span>'+escapeAwardText(sty[0])+'</span>';el('resTitleFlavor').textContent=TITLE_FLAVOR[sty[2].id]||sty[1];renderAwardResult(s);
  const quick=[['プレイ時間',formatRunTime(s.time)],[s.stage==='indoor'?'資料回収':'到達距離',s.stage==='indoor'?(s.documents||0)+' / '+(s.documentTotal||0):distanceMeters(s.maxProgress)+'m'],['総撃破数',kills],['発見回数',s.detections],['被弾回数',s.damageHits],['気絶数',s.stuns]];
  el('resQuick').innerHTML=quick.map(([n,v])=>`<div class="res-stat"><label>${n}</label><strong>${v}</strong></div>`).join('');
- const entries=[['任務達成率',Math.round(r.cleared?100:100*Math.min(1,s.stage==='indoor'||s.stage==='front'?(s.objectiveProgress||0):(s.objectiveDamage||0)))+'%'],['目標への接近・帰還',distanceMeters(s.objectiveAdvance||0)+'m'],['歩兵の累積ダメージ',Math.round((s.playerDamage||0)*100)+'%'],['搭乗車両の累積ダメージ',Math.round((s.vehicleDamage||0)*100)+'%'],...(s.stage==='indoor'?[['未発見で回収した資料',s.hiddenDocuments||0],['相棒が参加した資料',s.partnerDocuments||0],['館内警報',s.indoorAlarm?'発動':'未発動']]:s.stage==='front'?[['自分が参加した制圧',s.capturePoints||0],['共同制圧の時間',formatRunTime(s.jointObjectiveSeconds||0)],['制圧妨害の敵を排除',s.captureDefenseKills||0]]:[]),['発見状態での撃破',s.assaultKills],['遮蔽物・木の破壊面積',Math.round(s.styleDestroyed/100)+'m²'],['車両での新たな前進',distanceMeters(s.vehicleAdvance)+'m'],['車両での撃破',s.vehicleKills],['偽装で誘導した敵',s.decoyLures],['防護壁で防いだ弾',s.wallBlocks],['組み付き成功',s.tacticalStuns],['味方による撃破',s.allyKills],['味方による気絶',s.allyStuns],['相棒の救助',s.partnerRescues],['同乗中の共同撃破',s.jointKills],['歩兵撃破',s.humanKills],['エリート撃破',s.eliteKills],['戦車撃破',s.tankKills],['最大マルチキル',s.maxKillChain],['最大ワンショットキル',s.maxOneShotKills||0],['ワンショットキル発生数',s.oneShotEvents||0],['未発見移動距離',distanceMeters(s.unseenDist)+'m'],['累計移動距離',distanceMeters(s.totalTravel)+'m'],['発見状態の累計時間',formatRunTime(s.detectedTime)],['疑惑状態の発生',s.suspicionEntries],['遮蔽物破壊面積',Math.round(s.coverDestroyed/100)+'m²'],['射撃数（記録対象）',s.shots],['狙撃発射数',s.sniperShots],['狙撃撃破数',s.sniperKills],['爆弾撃破数',s.bombKills],['爆発による撃破',s.explosiveKills],['主砲発射数',s.cannonShots],['MG等発射数',s.mgShots],['爆弾爆発数',s.bombBlasts],['スキル発動数（記録対象）',s.skillUses],['乗り物搭乗回数',s.vehicleBoards],['乗り物利用時間',formatRunTime(s.vehicleTime)],['乗り物の種類数',Object.keys(s.vehicleKinds).length],['潜入スコア',r.stealth],['戦闘スコア',r.combat],...(stageMode==='front'?[['自分の撃破による得点',r.playerCombatPoints],['味方の支援による得点',r.supportCombatPoints]]:[]),['マルチキルボーナス',r.chainBonus],['ワンショットキルボーナス',r.multiKillBonus],['任務達成・タイムボーナス',r.bonus]];
+ const entries=[['任務達成率',Math.round(r.cleared?100:100*Math.min(1,s.stage==='indoor'||s.stage==='front'||s.stage==='decisive'?(s.objectiveProgress||0):(s.objectiveDamage||0)))+'%'],['目標への接近・帰還',distanceMeters(s.objectiveAdvance||0)+'m'],['歩兵の累積ダメージ',Math.round((s.playerDamage||0)*100)+'%'],['搭乗車両の累積ダメージ',Math.round((s.vehicleDamage||0)*100)+'%'],...(s.stage==='indoor'?[['未発見で回収した資料',s.hiddenDocuments||0],['相棒が参加した資料',s.partnerDocuments||0],['館内警報',s.indoorAlarm?'発動':'未発動']]:s.stage==='front'?[['自分が参加した制圧',s.capturePoints||0],['共同制圧の時間',formatRunTime(s.jointObjectiveSeconds||0)],['制圧妨害の敵を排除',s.captureDefenseKills||0]]:[]),['発見状態での撃破',s.assaultKills],['遮蔽物・木の破壊面積',Math.round(s.styleDestroyed/100)+'m²'],['車両での新たな前進',distanceMeters(s.vehicleAdvance)+'m'],['車両での撃破',s.vehicleKills],['偽装で誘導した敵',s.decoyLures],['防護壁で防いだ弾',s.wallBlocks],['組み付き成功',s.tacticalStuns],['味方による撃破',s.allyKills],['味方による気絶',s.allyStuns],['相棒の救助',s.partnerRescues],['同乗中の共同撃破',s.jointKills],['歩兵撃破',s.humanKills],['エリート撃破',s.eliteKills],['戦車撃破',s.tankKills],['最大マルチキル',s.maxKillChain],['最大ワンショットキル',s.maxOneShotKills||0],['ワンショットキル発生数',s.oneShotEvents||0],['未発見移動距離',distanceMeters(s.unseenDist)+'m'],['累計移動距離',distanceMeters(s.totalTravel)+'m'],['発見状態の累計時間',formatRunTime(s.detectedTime)],['疑惑状態の発生',s.suspicionEntries],['遮蔽物破壊面積',Math.round(s.coverDestroyed/100)+'m²'],['射撃数（記録対象）',s.shots],['狙撃発射数',s.sniperShots],['狙撃撃破数',s.sniperKills],['爆弾撃破数',s.bombKills],['爆発による撃破',s.explosiveKills],['主砲発射数',s.cannonShots],['MG等発射数',s.mgShots],['爆弾爆発数',s.bombBlasts],['スキル発動数（記録対象）',s.skillUses],['乗り物搭乗回数',s.vehicleBoards],['乗り物利用時間',formatRunTime(s.vehicleTime)],['乗り物の種類数',Object.keys(s.vehicleKinds).length],['潜入スコア',r.stealth],['戦闘スコア',r.combat],...(stageMode==='front'?[['自分の撃破による得点',r.playerCombatPoints],['味方の支援による得点',r.supportCombatPoints]]:[]),['マルチキルボーナス',r.chainBonus],['ワンショットキルボーナス',r.multiKillBonus],['任務達成・タイムボーナス',r.bonus]];
  el('resDetail').innerHTML=entries.map(([n,v])=>`<div class="res-detail-row"><span>${n}</span><strong>${v}</strong></div>`).join('');
 }
 let resultScoreAnimId=0;
@@ -8092,7 +8102,7 @@ document.getElementById('specVersion').textContent=GAME_VERSION;
 
 
 let stageMode='beginner',frontlineBeginner=false,frontlineOni=false,indoorBeginner=false,mission=null;
-const STAGE_NAMES={beginner:'破壊（初級）：軍事衛星施設',base:'破壊（上級）：軍司令施設',get front(){return frontlineOni?'制圧（鬼・テスト）：戦術アンテナ':frontlineBeginner?'制圧（初級）：軍需物資':'制圧（上級）：戦術アンテナ';},stealth:'潜入',indoorBeginner:'潜入（初級）：重要資料2箇所',get indoor(){return indoorBeginner?'潜入（初級）：重要資料2箇所':'潜入（上級）：重要資料3箇所';}};
+const STAGE_NAMES={decisive:'決戦：移動要塞',beginner:'破壊（初級）：軍事衛星施設',base:'破壊（上級）：軍司令施設',get front(){return typeof isDecisiveStage==='function'&&isDecisiveStage()?'決戦：移動要塞':frontlineOni?'制圧（鬼・テスト）：戦術アンテナ':frontlineBeginner?'制圧（初級）：軍需物資':'制圧（上級）：戦術アンテナ';},stealth:'潜入',indoorBeginner:'潜入（初級）：重要資料2箇所',get indoor(){return indoorBeginner?'潜入（初級）：重要資料2箇所':'潜入（上級）：重要資料3箇所';}};
 document.querySelectorAll('[data-stage]').forEach(b=>b.addEventListener('click',()=>{if(state!=='stage')return;if(setSelectedStage(b.dataset.stage))sfx('skill');}));
 document.getElementById('stageDeploy').addEventListener('click',()=>{deploySelectedStage();});
 document.getElementById('stageDebugAll').addEventListener('click',()=>{if(state!=='stage'||!isDeveloperMode())return;stageDebugAll=!stageDebugAll;renderStageLocks();sfx('skill');});
@@ -8122,19 +8132,20 @@ document.getElementById('missionEvaluate').addEventListener('click',()=>{
 function syncMissionBriefing(){
  const active=state==='briefing',wasOpen=document.body.classList.contains('briefing-open');
  if(active!==wasOpen){document.body.classList.toggle('briefing-open',active);if(active){
-   const front=stageMode==='front',screen=document.getElementById('missionBriefing'),image=screen.querySelector('.mission-briefing-image');
+   const decisive=stageMode==='decisive',front=stageMode==='front',screen=document.getElementById('missionBriefing'),image=screen.querySelector('.mission-briefing-image');
    screen.classList.toggle('front-briefing',front);
    screen.classList.toggle('indoor-briefing',stageMode==='indoor');
    document.getElementById('missionFrontlineOrder').textContent=(isFrontlineBeginner()?2:3)+'拠点を順番に制圧';
-   const imageSrc=stageMode==='indoor'?'assets/ui/mission_infiltration.webp?v=2026.10.21':front?'assets/ui/mission_frontline.webp?v=2026.10.17':'assets/ui/mission_hero.webp?v=2026.10.14.1653';
+   const imageSrc=decisive?'assets/ui/stages/decisive.webp':stageMode==='indoor'?'assets/ui/mission_infiltration.webp?v=2026.10.21':front?'assets/ui/mission_frontline.webp?v=2026.10.17':'assets/ui/mission_hero.webp?v=2026.10.14.1653';
    if(image.getAttribute('src')!==imageSrc)image.src=imageSrc;
-   image.alt=stageMode==='indoor'?'鋼鉄のドアに身を隠し、設置爆弾を手に様子をうかがう主人公':front?'主人公と2人の味方兵が一緒に進軍する姿':'円形爆弾を抱えて走る主人公';
-   screen.querySelector('.mission-hud-guide').hidden=front||stageMode==='indoor';
+   image.alt=decisive?'砂漠の巨大移動要塞':stageMode==='indoor'?'鋼鉄のドアに身を隠し、設置爆弾を手に様子をうかがう主人公':front?'主人公と2人の味方兵が一緒に進軍する姿':'円形爆弾を抱えて走る主人公';
+   screen.querySelector('.mission-hud-guide').hidden=front||decisive||stageMode==='indoor';
+   document.getElementById('missionDecisiveRules').hidden=!decisive;
    document.getElementById('missionFrontlineRules').hidden=!front;
    document.getElementById('missionIndoorRules').hidden=stageMode!=='indoor';
    document.getElementById('missionIndoorDocuments').textContent='円に入り、重要資料'+(indoorBeginner?2:3)+'か所を回収';
-   document.getElementById('missionBriefingTitle').textContent=stageMode==='indoor'?(indoorBeginner?'潜入（初級）':'潜入（上級）'):front?(isFrontlineOni()?'制圧（鬼・テスト）':isFrontlineBeginner()?'制圧（初級）':'制圧（上級）'):stageMode==='beginner'?'破壊（初級）':'破壊（上級）';
-   document.getElementById('missionBriefingGoal').textContent=stageMode==='indoor'?'重要資料を回収し、敵施設から脱出せよ':front?(isFrontlineBeginner()?'軍需物資':'戦術アンテナ')+'の'+(isFrontlineBeginner()?2:3)+'拠点を制圧せよ':stageMode==='beginner'?'軍事衛星施設を破壊せよ':'軍司令施設を破壊せよ';
+   document.getElementById('missionBriefingTitle').textContent=decisive?'決戦':stageMode==='indoor'?(indoorBeginner?'潜入（初級）':'潜入（上級）'):front?(isFrontlineOni()?'制圧（鬼・テスト）':isFrontlineBeginner()?'制圧（初級）':'制圧（上級）'):stageMode==='beginner'?'破壊（初級）':'破壊（上級）';
+   document.getElementById('missionBriefingGoal').textContent=decisive?'中継拠点を制圧し、砂漠の移動要塞を破壊せよ':stageMode==='indoor'?'重要資料を回収し、敵施設から脱出せよ':front?(isFrontlineBeginner()?'軍需物資':'戦術アンテナ')+'の'+(isFrontlineBeginner()?2:3)+'拠点を制圧せよ':stageMode==='beginner'?'軍事衛星施設を破壊せよ':'軍司令施設を破壊せよ';
    document.getElementById('missionBegin').focus({preventScroll:true});
   }}
 }
@@ -8169,6 +8180,7 @@ function missionEnemy(x,y,alert=false){
 }
 function missionAllies(y){const scale=frontlineAllyMultiplier(),count=Math.min(6*scale,10*scale-allies.filter(a=>a.alive&&a.frontline).length);for(let i=0;i<count;i++){const q=missionSpot(150+(i%6)*125,y+100+Math.floor(i/6)*70,14);allies.push({...q,id:++allySeq,alive:true,chute:0,shotCd:.2+i*.1,burstLeft:3,face:-Math.PI/2,slot:i,frontline:true,speedScale:.5+R()*.5});assignFrontlineAllyRole(allies[allies.length-1]);}}
 function setupMission(){
+ if(stageMode==='decisive'){mission=null;return;}
  if(stageMode==='indoor'){setupInfiltrationMission();return;}
  mission=null;if(areaDebugEnabled||stageMode==='base'||stageMode==='beginner')return;
  mission={index:0,progress:0,alarm:0,waveT:15,reinforceT:20,detected:false,points:[],exit:{x:p.x,y:p.y},alertCount:0};
@@ -8188,6 +8200,7 @@ function setupMission(){
 }
 function completeMission(){if(state!=='play')return;const frontline=beginFrontlineVictory();if(!frontline)state='win';shake=0;finalizeScore(true);if(!frontline&&state==='win'&&stageMode!=='indoor')sfx('win');}
 function updateMission(dt){
+ if(typeof isDecisiveStage==='function'&&isDecisiveStage()){updateDecisiveMission(dt);return;}
  if(stageMode==='indoor'){updateInfiltrationMission(dt);return;}
  if(!mission||areaDebugEnabled)return;
  const m=mission,detected=humans.some(h=>h.alive&&h.st&&h.target==='p'&&!(h.stun>0))||etanks.some(e=>e.alive&&e.st&&e.target==='p');
@@ -8226,6 +8239,7 @@ function updateMission(dt){
 }
 let missionHudNextAt=0,missionHudText="";
 function drawMission(){
+ if(typeof isDecisiveStage==='function'&&isDecisiveStage()){drawDecisiveMission();return;}
  if(stageMode==='indoor'){drawInfiltrationMission();return;}
  // 開始説明・撃破演出・結果待ちでも、同じ作戦の表示サイズを維持する。
  const frontBattle=stageMode==='front'&&!!mission;
@@ -8350,21 +8364,22 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/stage-progress.js?v=2026.10.27.1650"></script>
-<script src="js/frontline.js?v=2026.10.27.1650"></script>
-<script src="js/award-icons.js?v=2026.10.27.1650"></script>
-<script src="js/developer.js?v=2026.10.27.1650"></script>
-<script src="js/leaderboard.js?v=2026.10.27.1650"></script>
-<script src="js/intro.js?v=2026.10.27.1650"></script>
-<script src="js/unlocks.js?v=2026.10.27.1650"></script>
-<script src="js/enemy-bomber.js?v=2026.10.27.1650"></script>
+<script src="js/stage-progress.js?v=2026.10.27.2038"></script>
+<script src="js/decisive.js?v=2026.10.27.2038"></script>
+<script src="js/frontline.js?v=2026.10.27.2038"></script>
+<script src="js/award-icons.js?v=2026.10.27.2038"></script>
+<script src="js/developer.js?v=2026.10.27.2038"></script>
+<script src="js/leaderboard.js?v=2026.10.27.2038"></script>
+<script src="js/intro.js?v=2026.10.27.2038"></script>
+<script src="js/unlocks.js?v=2026.10.27.2038"></script>
+<script src="js/enemy-bomber.js?v=2026.10.27.2038"></script>
 <script src="js/characters.js?v=2026.10.19.1032"></script>
-<script src="js/enemy-dogs.js?v=2026.10.27.1650"></script>
-<script src="js/partner.js?v=2026.10.27.1650"></script>
+<script src="js/enemy-dogs.js?v=2026.10.27.2038"></script>
+<script src="js/partner.js?v=2026.10.27.2038"></script>
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
-<script src="js/canyon.js?v=2026.10.27.1650"></script>
+<script src="js/canyon.js?v=2026.10.27.2038"></script>
 <script src="js/vegetation.js?v=2026.10.14.1653"></script>
-<script src="js/infiltration-world.js?v=2026.10.27.1650"></script>
+<script src="js/infiltration-world.js?v=2026.10.27.2038"></script>
 <script src="js/infiltration-render.js?v=2026.10.21.1139"></script>
 <script>
 (function(){

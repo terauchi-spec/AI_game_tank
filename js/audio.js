@@ -114,6 +114,7 @@ function preloadGameSe(){
   const list=['firework','dirtStep','grassStep','objectiveDestroyed','enemyTankMove','win','lose','results','playerHit','deathHit','mg','enemyGun','cannon','enemyCannon','bazooka','sniper','soldierHit','vehicleHit','empty','bombPlace','bombExplosion','shellExplosion','propExplosion','vehicleDestroyed','coverBreak','enter','suspicion','detected','whistle'];
   if(stageMode==='indoor')list.push('indoorTick','indoorAlarm','door','document','allDocuments');
   if(stageMode==='front')list.push('airWarning','capture','aircraft','airExplosion');
+  if(stageMode==='decisive')list.push('capture');
   const skillSounds={throw:['bombThrow'],dig:['hide','splash'],decoy:['decoyPlace','decoy'],buddy:['reinforcement'],drill:['drillStart','drillContact'],build:['build'],flame:['flameStart','flameLoop'],sniper:['sniperDeploy','sniperLens'],hound:['houndCommand','dogBark'],partner:['partnerCommand']};
   list.push(...(skillSounds[typeof skill!=='undefined'?skill:'']||[]));for(const name of list)loadGameSe(name);
  }
