@@ -1,6 +1,6 @@
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const html=fs.readFileSync(path.join(__dirname,'../../index.html'),'utf8');
-function touchInputHarness({captureWorks=true}={}){
+function touchInputHarness({captureWorks=true,source=null,mode=null,deadZone=.12}={}){
  const captured=new Map(),touches=new Map(),stats={geometryReads:0,captureCalls:0};
  function node(id){return{
   id,events:new Map(),dataset:{},style:{},classList:{add(){},remove(){},toggle(){}},setAttribute(){},
@@ -14,11 +14,11 @@ function touchInputHarness({captureWorks=true}={}){
  const names=['stick','knob','actionBtn','skillBtn','aBtn','actionGlyph','actionLabel','actionCooldown','actionCooldownText','skillLabel','skillCooldown','skillCooldownText'];
  const nodes=Object.fromEntries(names.map(id=>[id,node(id)])),root=node('window'),doc=node('document');nodes.knob.parent=nodes.stick;
  nodes.skillBtn.dataset.k='KeyS';nodes.aBtn.dataset.k='KeyA';doc.getElementById=id=>nodes[id]||null;doc.querySelectorAll=()=>[nodes.skillBtn,nodes.aBtn];
- const c={document:doc,window:{},keys:{},p:null,skill:'throw',state:'play',bombs:[],SKN:{throw:'投擲'},performance:{now:()=>1000},gameFramePerf:{inputMax:0},
+ const c={document:doc,window:{inputTestMode:mode},inputTestDeadZone:deadZone,keys:{},p:null,skill:'throw',state:'play',bombs:[],SKN:{throw:'投擲'},performance:{now:()=>1000},gameFramePerf:{inputMax:0},
   shiftSniperLens(){},skillGaugeStatus:()=>null,isPartnerDrivenVehicle:()=>false,playerVehicleGunBlocked:()=>false,setInterval(){},addEventListener:root.addEventListener.bind(root),
   bombReq:false,skillReq:false,interact:false,cannonReq:false,touchTurretAngle:null};
  vm.createContext(c);const run=code=>vm.runInContext(code,c);
- run(html.slice(html.indexOf('// iPhone Chrome/Safari: synthetic KeyboardEvent'),html.indexOf('// 古いiOS向けフォールバック')));
+ run(source??html.slice(html.indexOf('// iPhone Chrome/Safari: synthetic KeyboardEvent'),html.indexOf('// 古いiOS向けフォールバック')));
  function start(el,id,x=95,y=50,{pointer=true,target=el}={}){
   const t={identifier:id,target,clientX:x,clientY:y};touches.set(id,t);
   if(pointer)el.emit('pointerdown',{pointerId:id+1000,pointerType:'touch',clientX:x,clientY:y});

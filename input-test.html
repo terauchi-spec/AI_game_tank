@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>戦車ゲーム 入力だけの比較テスト</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;overscroll-behavior:none;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;background:#142219;color:#f4f4e5;font-family:system-ui,-apple-system,sans-serif}
+*{box-sizing:border-box}main{position:relative;z-index:30;padding:max(12px,env(safe-area-inset-top)) 12px 0;pointer-events:none}main>*{pointer-events:auto}h1{font-size:18px;margin:0 0 6px}.intro{font-size:12px;margin:4px 0 10px;color:#d4dfce;line-height:1.5}.modes{display:flex;gap:8px}.modes a{flex:1;text-align:center;padding:10px 5px;border:1px solid #819572;border-radius:8px;background:#26392b;color:#f4f4e5;text-decoration:none;font-size:13px;font-weight:800;touch-action:manipulation}.modes a[aria-current]{color:#202b20;background:#f4d68d;border-color:#ffe8aa}.settings{display:flex;gap:8px;align-items:center;font-size:12px;margin:9px 0}.settings select,.settings button{min-height:36px;border:1px solid #819572;border-radius:6px;background:#26392b;color:#fff;font:inherit;padding:5px;touch-action:manipulation}.settings button{margin-left:auto}#metrics{margin:0;padding:9px;background:#080f0b;border:1px solid #4c654e;border-radius:8px;font:12px/1.55 monospace;white-space:pre-wrap;overflow-wrap:anywhere;pointer-events:none}#trace{margin-top:7px;font:11px/1.5 monospace;color:#bfccb9;white-space:pre-wrap;pointer-events:none}.note{font-size:11px;color:#b4c1ae;margin:6px 0;pointer-events:none}#c{position:fixed;inset:0;touch-action:none;pointer-events:auto}#pad{position:fixed;inset:0;z-index:20;pointer-events:none;touch-action:none}
+#stick{box-sizing:content-box;position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:max(18px,calc(env(safe-area-inset-bottom,0px) + 12px));width:132px;height:132px;border-radius:50%;background:#0a0c0847;border:2px solid #e6e9d86b;touch-action:none;pointer-events:auto}
+#knob{position:absolute;left:42px;top:42px;width:48px;height:48px;border-radius:50%;background:#e6e9d861;border:2px solid #e6e9d8ad}
+.btns{position:absolute;right:max(12px,env(safe-area-inset-right,0px));bottom:max(18px,calc(env(safe-area-inset-bottom,0px) + 12px));display:grid;grid-template-columns:repeat(2,64px);grid-template-rows:repeat(2,64px);gap:10px;pointer-events:auto}
+.b{position:relative;width:64px;height:64px;border-radius:50%;background:#0a0c0857;border:2px solid #e6e9d880;color:#f4f4e5;display:flex;flex-direction:column;align-items:center;justify-content:center;touch-action:none;font:inherit;padding:0}.b b{font-size:20px;line-height:1}.b small{font-size:9px;margin-top:2px}.b.on{background:#ffd27a80;border-color:#ffd27a}#actionBtn{grid-column:1;grid-row:1}#skillBtn{grid-column:2;grid-row:1/span 2;align-self:center}.coolRing,.coolText{display:none}.touch-dot{position:fixed;left:0;top:0;width:20px;height:20px;border:2px solid #00ffff;border-radius:50%;z-index:40;pointer-events:none;display:none}
+@media(max-width:360px){#stick{width:116px;height:116px}#knob{left:37px;top:37px;width:42px;height:42px}.btns{grid-template-columns:repeat(2,58px);grid-template-rows:repeat(2,58px);gap:8px}.b{width:58px;height:58px}#trace{font-size:10px}}
+</style>
+</head>
+<body>
+<div id="c" aria-hidden="true"></div>
+<main>
+<h1>入力だけの比較テスト</h1>
+<p class="intro">右指でAを押し、離す瞬間に左指でスティックを動かします。<br>同じ操作を①・②で各10回ほど比べてください。</p>
+<nav class="modes"><a id="pointerMode" href="?mode=pointer&zone=12">① 変更前の方式</a><a id="touchMode" href="?mode=touch&zone=12">② 現在の方式</a></nav>
+<div class="settings"><label for="zone">無反応範囲</label><select id="zone"><option value="12">小：約8px</option><option value="30">従来：約20px</option></select><button id="clearLog" type="button">記録クリア</button></div>
+<pre id="metrics">準備中…</pre><div id="trace"></div>
+<p class="note">両方式で見た目・感度は共通。描画・敵・音・スコア処理なし。記録はこの画面内だけです。</p>
+</main>
+<div id="pad"><div id="stick"><div id="knob"></div></div><div class="btns">
+<button class="b" id="skillBtn" data-k="KeyS" type="button"><span class="coolRing" id="skillCooldown"></span><span class="coolText" id="skillCooldownText"></span><b>S</b><small id="skillLabel">スキル</small></button>
+<button class="b" id="actionBtn" type="button"><span class="coolRing" id="actionCooldown"></span><span class="coolText" id="actionCooldownText"></span><b id="actionGlyph">B</b><small id="actionLabel">爆弾</small></button>
+<button class="b" data-k="KeyA" type="button"><b>A</b><small>操作</small></button>
+</div></div>
+<script src="js/input-test-common.js"></script>
+<script src="js/input-test-pointer.js"></script>
+<script src="js/input-test-touch.js"></script>
+<script>inputTestRefresh();</script>
+</body>
+</html>
