@@ -5,6 +5,7 @@ function setDeveloperMode(active){
  developerModeEnabled=!!active;
  document.body.classList[active?'add':'remove']('developer-mode');
  document.getElementById('titleDeveloper').hidden=!active;
+ document.getElementById('titleSpecs').hidden=!active;
  if(!active){
   skillDebugAll=false;stageDebugAll=false;areaDebugEnabled=false;selectedAreaDebug=null;debugMode=0;debugInvincible=false;patrolRoutesVisible=false;
   if(typeof resetMazeComparison==='function')resetMazeComparison();
