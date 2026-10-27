@@ -1,51 +1,33 @@
-const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
-const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
-function harness(captureWorks=true){
- const handlers=()=>({events:new Map(),addEventListener(type,fn){if(!this.events.has(type))this.events.set(type,[]);this.events.get(type).push(fn);},emit(type,props={}){const e={type,cancelable:true,preventDefault(){this.prevented=true;},...props};for(const fn of this.events.get(type)||[])fn(e);return e;}});
- const root=handlers(),doc=handlers(),captured=new Set(),knob={style:{}},keys={};
- const pad={...handlers(),clientWidth:100,getBoundingClientRect:()=>({left:0,top:0,width:100,height:100}),contains:el=>el===pad||el===knob,setPointerCapture(id){if(!captureWorks)throw Error('capture unavailable');captured.add(id);},hasPointerCapture:id=>captured.has(id),releasePointerCapture(id){captured.delete(id);}};
- doc.getElementById=id=>id==='stick'?pad:knob;
- const c={document:doc,window:{},addEventListener:root.addEventListener.bind(root),performance:{now:()=>0},gameFramePerf:{inputMax:0},press:k=>keys[k]=true,release:k=>keys[k]=false,cap:(el,e)=>{try{el.setPointerCapture(e.pointerId);}catch(_){}},keys};
- vm.createContext(c);vm.runInContext(html.slice(html.indexOf("const pad=document.getElementById('stick')"),html.indexOf('// 古いiOS向けフォールバック')),c);
- const down=(id=1,extra={})=>pad.emit('pointerdown',{pointerId:id,pointerType:'touch',clientX:95,clientY:50,...extra});
- const touch=id=>({identifier:id,target:pad});
- const start=id=>pad.emit('touchstart',{changedTouches:[touch(id)]});
- const neutral=()=>{for(const k of ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'])assert.ok(!keys[k],k+' released');assert.equal(knob.style.transform,'');assert.equal(vm.runInContext('act',c),null);};
- return{c,pad,knob,keys,root,doc,captured,down,touch,start,neutral};
-}
-test('release outside the stick stops movement even when pointer capture fails',()=>{
- const h=harness(false);h.down();assert.equal(h.keys.ArrowRight,true);h.root.emit('pointerup',{pointerId:1});h.neutral();
+const {test}=require('node:test'),assert=require('node:assert/strict');
+const {touchInputHarness}=require('./helpers/touch-input.cjs');
+function neutral(h){for(const k of ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'])assert.ok(!h.c.keys[k],k+' released');assert.equal(h.nodes.knob.style.transform,'');assert.equal(h.run('act'),null);}
+test('mouse release outside the stick stops movement even when pointer capture fails',()=>{
+ const h=touchInputHarness({captureWorks:false});h.nodes.stick.emit('pointerdown',{pointerId:1,pointerType:'mouse',clientX:95,clientY:50});assert.equal(h.c.keys.ArrowRight,true);h.root.emit('pointerup',{pointerId:1});neutral(h);
 });
-test('a missing pointerup is recovered by touchend while the attack finger remains down',()=>{
- const h=harness();h.down();h.start(41);h.doc.emit('touchend',{touches:[{identifier:42,target:{id:'actionBtn'}}]});h.neutral();assert.equal(h.captured.size,0);
+test('native touch release needs no pointer capture or pointerup',()=>{
+ const h=touchInputHarness({captureWorks:false});h.start(h.nodes.stick,41,95,50,{pointer:false});assert.equal(h.c.keys.ArrowRight,true);assert.equal(h.captured.size,0);h.end(41,{pointer:false});neutral(h);
 });
-test('lifting a different finger preserves a stationary stick hold; lifting its finger stops it',()=>{
- const h=harness();h.down();h.start(41);for(let i=0;i<10;i++)h.doc.emit('touchend',{touches:[h.touch(41)]});assert.equal(h.keys.ArrowRight,true);h.doc.emit('touchend',{touches:[]});h.neutral();
+test('a stationary native stick survives repeated taps by another finger',()=>{
+ const h=touchInputHarness();h.start(h.nodes.stick,41);for(let i=0;i<20;i++){h.start(h.nodes.aBtn,100+i);h.end(100+i);assert.equal(h.c.keys.ArrowRight,true);}h.end(41);neutral(h);
 });
-test('a fresh touch replaces a stranded pointer and ignores delayed releases from the old pointer',()=>{
- const h=harness();h.down(1);h.start(41);h.down(2,{clientX:5});h.start(42);assert.equal(h.keys.ArrowRight,false);assert.equal(h.keys.ArrowLeft,true);h.root.emit('pointerup',{pointerId:1});assert.equal(h.keys.ArrowLeft,true);h.pad.emit('lostpointercapture',{pointerId:1});assert.equal(h.keys.ArrowLeft,true);h.root.emit('pointerup',{pointerId:2});h.neutral();
+test('a second finger on the stick does not steal ownership from the first',()=>{
+ const h=touchInputHarness();h.start(h.nodes.stick,1);h.start(h.nodes.stick,2,5,50);assert.equal(h.c.keys.ArrowRight,true);h.end(2);assert.equal(h.c.keys.ArrowRight,true);h.end(1);neutral(h);
 });
-test('global pointer cancellation and touch cancellation both release the stick',()=>{
- let h=harness();h.down();h.root.emit('pointercancel',{pointerId:1});h.neutral();h=harness();h.down();h.start(41);h.doc.emit('touchcancel',{touches:[]});h.neutral();
+test('touch cancellation stops movement; delayed pointer events do not cancel a fresh touch',()=>{
+ const h=touchInputHarness();h.start(h.nodes.stick,1);h.end(1,{cancel:true});neutral(h);h.start(h.nodes.stick,2,5,50);h.root.emit('pointerup',{pointerId:1001});h.nodes.stick.emit('lostpointercapture',{pointerId:1001});assert.equal(h.c.keys.ArrowLeft,true);h.end(2);neutral(h);
 });
-test('loss of capture stops movement, but a stale loss notification does not stop a recaptured pointer',()=>{
- const h=harness();h.down();h.pad.emit('lostpointercapture',{pointerId:1});assert.equal(h.keys.ArrowRight,true);h.captured.delete(1);h.pad.emit('lostpointercapture',{pointerId:1});h.neutral();
+test('mouse capture loss stops movement and unrelated pointer motion is ignored',()=>{
+ const h=touchInputHarness();h.nodes.stick.emit('pointerdown',{pointerId:1,pointerType:'mouse',clientX:95,clientY:50});h.root.emit('pointermove',{pointerId:2,clientX:5,clientY:50});assert.equal(h.c.keys.ArrowRight,true);
+ h.captured.delete(1);h.nodes.stick.emit('lostpointercapture',{pointerId:1});neutral(h);
 });
-test('a new touch elsewhere clears an abandoned stick using the active touch list',()=>{
- const h=harness();h.down();h.start(41);h.doc.emit('touchstart',{touches:[{identifier:42,target:{id:'skillBtn'}}]});h.neutral();
+test('touchmove follows a finger outside the stick and a missing end is reconciled from remaining touches',()=>{
+ const h=touchInputHarness();h.start(h.nodes.stick,1);h.move(1,-50,50);assert.equal(h.c.keys.ArrowLeft,true);h.doc.emit('touchend',{changedTouches:[],touches:[{identifier:2,target:h.nodes.aBtn}]});neutral(h);
 });
-test('global movement updates only the active pointer, and mouse movement with no button releases it',()=>{
- const h=harness(false);h.down(1,{pointerType:'mouse'});h.root.emit('pointermove',{pointerId:2,buttons:1,clientX:5,clientY:50});assert.equal(h.keys.ArrowRight,true);h.root.emit('pointermove',{pointerId:1,buttons:1,clientX:5,clientY:50});assert.equal(h.keys.ArrowLeft,true);h.root.emit('pointermove',{pointerId:1,buttons:0});h.neutral();
-});
-test('touchend without a preceding touchstart still releases, without confusing other touches',()=>{
- const h=harness();h.down();h.doc.emit('touchend',{touches:[{identifier:99,target:{id:'actionBtn'}}]});h.neutral();
-});
-test('hiding the browser or losing focus clears capture, movement and pending actions, then accepts a new stick',()=>{
- for(const event of ['visibilitychange','blur']){
-  const h=harness();h.doc.querySelectorAll=()=>[];
-  vm.runInContext("const buttonPointers=new Map(),controlTouches=new Map();const actionBtn={classList:{remove(){}}};let actionPointer=null,actionKey=null,actionAimPointer=null,skillAimPointer=null,touchTurretAngle=null,dPressHandled=false,bombReq=true,cannonReq=true,interact=true,skillReq=true,mdown=true;",h.c);
-  vm.runInContext(html.slice(html.indexOf('const clearInputs=()=>'),html.indexOf("const resetBtn=document.getElementById('resetBtn');")),h.c);
-  vm.runInContext("document.addEventListener('visibilitychange',()=>{if(document.hidden)clearInputs();});addEventListener('blur',clearInputs);",h.c);
-  h.down();h.start(41);h.doc.hidden=true;(event==='blur'?h.root:h.doc).emit(event);h.neutral();assert.equal(h.captured.size,0);assert.equal(vm.runInContext('bombReq||cannonReq||interact||skillReq||mdown',h.c),false);h.down(2);assert.equal(h.keys.ArrowRight,true);
+test('hiding the browser or losing focus clears inputs and accepts a new touch',()=>{
+ for(const type of ['visibilitychange','blur']){
+  const h=touchInputHarness();Object.assign(h.c,{dPressHandled:false,mdown:true});h.run(h.html.slice(h.html.indexOf('const clearInputs=()=>'),h.html.indexOf("const resetBtn=document.getElementById('resetBtn');")));
+  h.run("document.addEventListener('visibilitychange',()=>{if(document.hidden)clearInputs();});addEventListener('blur',clearInputs);");
+  h.start(h.nodes.stick,1);h.start(h.nodes.aBtn,2);h.doc.hidden=true;(type==='blur'?h.root:h.doc).emit(type);neutral(h);assert.equal(h.c.interact,false);assert.equal(h.c.keys.KeyA,false);
+  h.start(h.nodes.stick,3);assert.equal(h.c.keys.ArrowRight,true);h.end(3);neutral(h);
  }
 });

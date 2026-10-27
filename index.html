@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.28.0644</title>
+<title>こっそり戦車大作戦 2026.10.28.0652</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -606,10 +606,10 @@ body.success-open .mission-firework{animation:missionFireworkBurst 1250ms ease-o
 }
 @media(max-width:360px){#resultScreen .res-rank-badge{width:144px;height:144px}#resultScreen .res-medal{gap:10px}#resultScreen .res-medal-rank{font-size:38px}}
 </style>
-<link rel="stylesheet" href="css/developer.css?v=2026.10.28.0644">
-<link rel="stylesheet" href="css/leaderboard.css?v=2026.10.28.0644">
-<link rel="stylesheet" href="css/intro.css?v=2026.10.28.0644">
-<link rel="stylesheet" href="css/unlocks.css?v=2026.10.28.0644">
+<link rel="stylesheet" href="css/developer.css?v=2026.10.28.0652">
+<link rel="stylesheet" href="css/leaderboard.css?v=2026.10.28.0652">
+<link rel="stylesheet" href="css/intro.css?v=2026.10.28.0652">
+<link rel="stylesheet" href="css/unlocks.css?v=2026.10.28.0652">
 </head>
 <body>
 <canvas id="c" width="840" height="720"></canvas>
@@ -962,9 +962,9 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 </div><footer class="sk-bottom stage-bottom"><button type="button" class="sk-toggle" id="stageDebugAll" aria-pressed="false">全ステージを表示</button><button type="button" class="sk-deploy" id="stageDeploy" disabled>ステージを選択してください</button></footer></div></div>
 <div id="missionHud" role="status"></div>
 
-<script src="js/player-tank-art.js?v=2026.10.28.0644"></script>
-<script src="js/audio.js?v=2026.10.28.0644"></script>
-<script src="js/bgm.js?v=2026.10.28.0644"></script>
+<script src="js/player-tank-art.js?v=2026.10.28.0652"></script>
+<script src="js/audio.js?v=2026.10.28.0652"></script>
+<script src="js/bgm.js?v=2026.10.28.0652"></script>
 <script>
 const MOBILE_VIEW=matchMedia('(pointer:coarse)').matches;
 // iPhoneの描画反映の途切れを切り分けるため、表示Canvasと静的キャッシュの作成設定を統一する。
@@ -975,7 +975,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.28.0644',FILE_CREATED_AT='2026/10/28 06:44',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.28.0652',FILE_CREATED_AT='2026/10/28 06:52',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -8388,23 +8388,23 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/stage-progress.js?v=2026.10.28.0644"></script>
-<script src="js/decisive.js?v=2026.10.28.0644"></script>
-<script src="js/frontline.js?v=2026.10.28.0644"></script>
-<script src="js/award-icons.js?v=2026.10.28.0644"></script>
-<script src="js/developer.js?v=2026.10.28.0644"></script>
-<script src="js/leaderboard.js?v=2026.10.28.0644"></script>
-<script src="js/intro.js?v=2026.10.28.0644"></script>
-<script src="js/unlocks.js?v=2026.10.28.0644"></script>
-<script src="js/enemy-bomber.js?v=2026.10.28.0644"></script>
+<script src="js/stage-progress.js?v=2026.10.28.0652"></script>
+<script src="js/decisive.js?v=2026.10.28.0652"></script>
+<script src="js/frontline.js?v=2026.10.28.0652"></script>
+<script src="js/award-icons.js?v=2026.10.28.0652"></script>
+<script src="js/developer.js?v=2026.10.28.0652"></script>
+<script src="js/leaderboard.js?v=2026.10.28.0652"></script>
+<script src="js/intro.js?v=2026.10.28.0652"></script>
+<script src="js/unlocks.js?v=2026.10.28.0652"></script>
+<script src="js/enemy-bomber.js?v=2026.10.28.0652"></script>
 <script src="js/characters.js?v=2026.10.19.1032"></script>
-<script src="js/fallen-enemies.js?v=2026.10.28.0644"></script>
-<script src="js/enemy-dogs.js?v=2026.10.28.0644"></script>
-<script src="js/partner.js?v=2026.10.28.0644"></script>
+<script src="js/fallen-enemies.js?v=2026.10.28.0652"></script>
+<script src="js/enemy-dogs.js?v=2026.10.28.0652"></script>
+<script src="js/partner.js?v=2026.10.28.0652"></script>
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
-<script src="js/canyon.js?v=2026.10.28.0644"></script>
+<script src="js/canyon.js?v=2026.10.28.0652"></script>
 <script src="js/vegetation.js?v=2026.10.14.1653"></script>
-<script src="js/infiltration-world.js?v=2026.10.28.0644"></script>
+<script src="js/infiltration-world.js?v=2026.10.28.0652"></script>
 <script src="js/infiltration-render.js?v=2026.10.21.1139"></script>
 <script>
 (function(){
@@ -8418,7 +8418,7 @@ const press=(c)=>{
  if(c==='KeyS'&&!(p&&p.tank)){if(skill==='partner'&&state==='play')startPartnerOrder();else skillReq=true;}
 };
 const release=(c)=>{if(c==='KeyS'&&skill==='partner')finishPartnerOrder(true);keys[c]=false;};
-const cap=(el,e)=>{try{el.setPointerCapture(e.pointerId);}catch(_){}};
+const cap=(el,e)=>{if(typeof e.pointerId!=='number')return;try{el.setPointerCapture(e.pointerId);}catch(_){}};
 const debugToggleBtn=document.getElementById('debugToggleBtn'),debugRoutesBtn=document.getElementById('debugRoutesBtn');
 const debugModeLabel=()=>debugMode===1?'無敵モード':debugMode===2?'無敵＋索敵解除':debugMode===3?'無敵＋戦闘機∞燃料':debugMode===4?'描画診断（30秒）':'無敵モード OFF';
 if(debugToggleBtn){
@@ -8444,39 +8444,50 @@ if(debugToggleBtn){
 }
 
 const buttonPointers=new Map();
-const controlTouches=new Map();
-// Pointer Eventsの終了通知が欠落しても、実際に残っている指で各ボタンを個別に復旧する。
-// pointerIdとTouch.identifierは別の番号なので、touchstartで対応を記録する。
+// 指の操作はTouch.identifierで統一し、Pointer Eventsとの二重処理を避ける。
+// 開始通知が欠けても、操作部から始まったtouchmoveで復帰できる。定期監視はしない。
 const touchControls=new Map();
-function releaseControlCapture(el,id){try{if(el.hasPointerCapture(id))el.releasePointerCapture(id);}catch(_){} }
-function watchTouchControl(el,pointer,cancel){
- const control={pointer,cancel,type:''};touchControls.set(el,control);
- el.addEventListener('pointerdown',e=>{if(pointer()===e.pointerId)control.type=e.pointerType||'';},{passive:true});
+const touchId=t=>'touch:'+t.identifier;
+const touchInput=(t,e)=>({pointerId:touchId(t),pointerType:'touch',clientX:t.clientX,clientY:t.clientY,
+ cancelable:e.cancelable,preventDefault:()=>{if(e.cancelable)e.preventDefault();}});
+function releaseControlCapture(el,id){if(typeof id!=='number')return;try{if(el.hasPointerCapture(id))el.releasePointerCapture(id);}catch(_){} }
+function bindTouchControl(el,pointer,down,move,up,cancel){
+ const control={pointer,down,move,up,cancel};touchControls.set(el,control);
  el.addEventListener('touchstart',e=>{
-  if(pointer()===null||controlTouches.has(el))return;
-  for(const touch of e.changedTouches)if(el.contains(touch.target)){controlTouches.set(el,touch.identifier);break;}
- },{passive:true});
+  if(state!=='play'||pointer()!==null)return;
+  for(const t of e.changedTouches)if(el.contains(t.target)){down(touchInput(t,e));break;}
+ },{passive:false});
+ // Touch Eventsは指が領域外へ動いても開始要素へ届く。ページ全体のスクロールを同期処理で待たせない。
+ el.addEventListener('touchmove',e=>{
+  if(state!=='play')return;
+  for(const t of e.changedTouches){
+   if(pointer()===null&&el.contains(t.target))down(touchInput(t,e));
+   if(pointer()===touchId(t)){if(e.cancelable)e.preventDefault();if(move)move(touchInput(t,e));break;}
+  }
+ },{passive:false});
 }
-const reconcileControlTouches=e=>{
- for(const [el,control] of touchControls){
-  if(control.pointer()===null||control.type!=='touch')continue;
-  const id=controlTouches.get(el);
-  if(Array.from(e.touches).some(t=>id!==undefined?t.identifier===id:el.contains(t.target)))continue;
-  control.cancel();
+function finishControlTouches(e,cancelled){
+ for(const c of touchControls.values()){
+  const id=c.pointer();if(typeof id!=='string')continue;
+  let ended=false;
+  for(const t of e.changedTouches||[])if(id===touchId(t)){(cancelled?c.cancel:c.up)(touchInput(t,e));ended=true;break;}
+  if(ended)continue;
+  let present=false;for(const t of e.touches)if(id===touchId(t)){present=true;break;}
+  if(!present)c.cancel();
  }
-};
-document.addEventListener('touchend',reconcileControlTouches,{capture:true,passive:true});
-document.addEventListener('touchcancel',reconcileControlTouches,{capture:true,passive:true});
+}
+document.addEventListener('touchend',e=>finishControlTouches(e,false),{capture:true,passive:false});
+document.addEventListener('touchcancel',e=>finishControlTouches(e,true),{capture:true,passive:false});
 document.querySelectorAll('[data-k]').forEach(el=>{const c=el.dataset.k;
  const down=e=>{e.preventDefault();if(buttonPointers.has(el))return;buttonPointers.set(el,e.pointerId);cap(el,e);el.classList.add('on');press(c);};
- const up=e=>{if(!buttonPointers.has(el)||(e&&buttonPointers.get(el)!==e.pointerId))return;if(e&&e.cancelable)e.preventDefault();const id=buttonPointers.get(el);buttonPointers.delete(el);controlTouches.delete(el);el.classList.remove('on');release(c);if(el.id==='skillBtn')finishSkillAim();releaseControlCapture(el,id);};
- el.addEventListener('pointerdown',down,{passive:false});
+ const up=e=>{if(!buttonPointers.has(el)||(e&&buttonPointers.get(el)!==e.pointerId))return;if(e&&e.cancelable)e.preventDefault();const id=buttonPointers.get(el);buttonPointers.delete(el);el.classList.remove('on');release(c);if(el.id==='skillBtn')finishSkillAim();releaseControlCapture(el,id);};
+ el.addEventListener('pointerdown',e=>{if(e.pointerType!=='touch')down(e);},{passive:false});
  el.addEventListener('pointerup',up,{passive:false});
  el.addEventListener('pointercancel',up,{passive:false});
  el.addEventListener('lostpointercapture',up,{passive:false});
  addEventListener('pointerup',up,{capture:true,passive:false});
  addEventListener('pointercancel',up,{capture:true,passive:false});
- watchTouchControl(el,()=>buttonPointers.get(el)??null,()=>up());
+ bindTouchControl(el,()=>buttonPointers.get(el)??null,e=>{down(e);if(el.id==='skillBtn')beginSkillAim(e);},el.id==='skillBtn'?e=>moveSkillAim(e):null,up,up);
 });
 
 // D/S/E操作: D=爆弾/主砲/爆撃、S=スキル/MG、E=搭乗/降車。
@@ -8517,28 +8528,31 @@ const actionDown=e=>{
 };
 const finishAction=(e,fireTank)=>{
  if(actionPointer===null||(e&&e.pointerId!==actionPointer))return;
- const pointer=actionPointer;actionPointer=null;controlTouches.delete(actionBtn);if(e&&e.cancelable)e.preventDefault();
+ const pointer=actionPointer;actionPointer=null;if(e&&e.cancelable)e.preventDefault();
  const wasTankAim=actionAimPointer!==null&&(!e||e.pointerId===actionAimPointer);
  if(wasTankAim&&e)updateTouchTurretAim(e,actionAimStartX,actionAimStartY);
  if(wasTankAim&&fireTank&&p&&p.tank&&p.tank.kind==='tank')cannonReq=true;
  actionAimPointer=null;actionBtn.classList.remove('on');if(actionKey)release(actionKey);actionKey=null;releaseControlCapture(actionBtn,pointer);
 };
-actionBtn.addEventListener('pointerdown',actionDown,{passive:false});
-actionBtn.addEventListener('pointermove',e=>{if(actionAimPointer===e.pointerId){e.preventDefault();updateTouchTurretAim(e,actionAimStartX,actionAimStartY);}},{passive:false});
+actionBtn.addEventListener('pointerdown',e=>{if(e.pointerType!=='touch')actionDown(e);},{passive:false});
+const moveActionAim=e=>{if(actionAimPointer===e.pointerId){e.preventDefault();updateTouchTurretAim(e,actionAimStartX,actionAimStartY);}};
+actionBtn.addEventListener('pointermove',moveActionAim,{passive:false});
 actionBtn.addEventListener('pointerup',e=>finishAction(e,true),{passive:false});
 actionBtn.addEventListener('pointercancel',e=>finishAction(e,false),{passive:false});
 actionBtn.addEventListener('lostpointercapture',e=>finishAction(e,false),{passive:false});
 addEventListener('pointerup',e=>finishAction(e,true),{capture:true,passive:false});
 addEventListener('pointercancel',e=>finishAction(e,false),{capture:true,passive:false});
-watchTouchControl(actionBtn,()=>actionPointer,()=>finishAction(null,false));
+bindTouchControl(actionBtn,()=>actionPointer,actionDown,moveActionAim,e=>finishAction(e,true),e=>finishAction(e,false));
 // スマホ戦車: SはMGを押下中ずっと発射。ドラッグ中は射撃しながら砲塔を旋回する。
-skillBtn.addEventListener('pointerdown',e=>{if(buttonPointers.get(skillBtn)!==e.pointerId)return;if(p&&p.tank&&p.tank.kind==='tank'){skillAimPointer=e.pointerId;skillAimStartX=e.clientX;skillAimStartY=e.clientY;}},{passive:false});
-skillBtn.addEventListener('pointermove',e=>{if(skillAimPointer===e.pointerId){e.preventDefault();updateTouchTurretAim(e,skillAimStartX,skillAimStartY);}},{passive:false});
+const beginSkillAim=e=>{if(buttonPointers.get(skillBtn)!==e.pointerId)return;if(p&&p.tank&&p.tank.kind==='tank'){skillAimPointer=e.pointerId;skillAimStartX=e.clientX;skillAimStartY=e.clientY;}};
+skillBtn.addEventListener('pointerdown',beginSkillAim,{passive:false});
+const moveSkillAim=e=>{if(skillAimPointer===e.pointerId){e.preventDefault();updateTouchTurretAim(e,skillAimStartX,skillAimStartY);}};
+skillBtn.addEventListener('pointermove',moveSkillAim,{passive:false});
 const finishSkillAim=e=>{if(skillAimPointer!==null&&(!e||e.pointerId===skillAimPointer))skillAimPointer=null;};
 skillBtn.addEventListener('pointerup',finishSkillAim,{passive:false});skillBtn.addEventListener('pointercancel',finishSkillAim,{passive:false});skillBtn.addEventListener('lostpointercapture',finishSkillAim,{passive:false});
 syncActionButton();setInterval(syncActionButton,50);
 
-const pad=document.getElementById('stick'),knob=document.getElementById('knob'),st={ArrowUp:0,ArrowDown:0,ArrowLeft:0,ArrowRight:0};let act=null,stickPointerType='',stickTouchId=null;
+const pad=document.getElementById('stick'),knob=document.getElementById('knob'),st={ArrowUp:0,ArrowDown:0,ArrowLeft:0,ArrowRight:0};let act=null,stickPointerType='';
 function setDir(x,y){const m=.3,n={ArrowLeft:x<-m,ArrowRight:x>m,ArrowUp:y<-m,ArrowDown:y>m};for(const k in n)if(!!st[k]!==n[k]){st[k]=n[k]?1:0;n[k]?press(k):release(k);}}
 // 指を動かすたびのレイアウト読み戻しを避け、押下時の幾何情報を再利用する。
 let stickGeometry=null;
@@ -8555,42 +8569,29 @@ if(window.visualViewport){visualViewport.addEventListener('resize',()=>{stickGeo
 const end=e=>{
  if(act===null||(e&&e.pointerId!==act))return;
  if(e&&e.cancelable)e.preventDefault();
- const previous=act;act=null;stickPointerType='';stickTouchId=null;
+ const previous=act;act=null;stickPointerType='';
  knob.style.transform='';setDir(0,0);
- try{if(pad.hasPointerCapture(previous))pad.releasePointerCapture(previous);}catch(_){}
+ releaseControlCapture(pad,previous);
 };
-pad.addEventListener('pointerdown',e=>{
+const beginStick=e=>{
  e.preventDefault();if(act!==null)end();
  act=e.pointerId;stickPointerType=e.pointerType||'';cap(pad,e);refreshStickGeometry();mvp(e);
-},{passive:false});
+};
+pad.addEventListener('pointerdown',e=>{if(e.pointerType!=='touch')beginStick(e);},{passive:false});
 // キャプチャ取得失敗・要素外での指離れにも対応。移動処理は1イベントにつき1回だけ行う。
 addEventListener('pointermove',e=>{if(act!==e.pointerId)return;if(stickPointerType==='mouse'&&e.buttons===0){end(e);return;}if(e.cancelable)e.preventDefault();mvp(e);},{capture:true,passive:false});
 addEventListener('pointerup',end,{capture:true,passive:false});
 addEventListener('pointercancel',end,{capture:true,passive:false});
 pad.addEventListener('lostpointercapture',e=>{if(!pad.hasPointerCapture(e.pointerId))end(e);},{passive:false});
-// iOSでPointer Eventsの終了通知が欠落した場合も、実際のタッチ一覧で解放を確認する。
-// 静止した長押しを時間切れにせず、別の指で攻撃中でもスティックの指だけを追跡する。
-pad.addEventListener('touchstart',e=>{
- if(act===null||stickPointerType!=='touch')return;
- for(const touch of e.changedTouches)if(pad.contains(touch.target))stickTouchId=touch.identifier;
-},{passive:true});
-const reconcileStickTouches=e=>{
- if(act===null||stickPointerType!=='touch')return;
- for(const touch of e.touches){
-  if(stickTouchId!==null?touch.identifier===stickTouchId:pad.contains(touch.target))return;
- }
- end();
-};
-document.addEventListener('touchend',reconcileStickTouches,{capture:true,passive:true});
-document.addEventListener('touchcancel',reconcileStickTouches,{capture:true,passive:true});
-document.addEventListener('touchstart',e=>{if(stickTouchId!==null)reconcileStickTouches(e);},{capture:true,passive:true});
+// タッチの開始・移動・終了を同じTouch.identifierで追跡する。別の指の終了では解除しない。
+bindTouchControl(pad,()=>act,beginStick,mvp,end,end);
 
 // 古いiOS向けフォールバック: Pointer Events がない場合もタップ開始だけは動かす。
 if(!window.PointerEvent){
  cv.addEventListener('touchstart',e=>{const t=e.changedTouches[0];if(!t)return;e.preventDefault();const r=cv.getBoundingClientRect();mx=(t.clientX-r.left)*W/r.width;my=(t.clientY-r.top)*H/r.height;if(state==='title')handleTitlePointer(mx,my);else if(state==='help')handleHelpPointer(mx,my);else if(state==='skill'){handleSkillMenuPointer(mx,my);}else if(state==='win'||state==='lose'){handleResultPointer(mx,my);}},{passive:false});
 }
 
-const clearInputs=()=>{for(const k in keys)keys[k]=false;for(const k in st)st[k]=0;end();stickPointerType='';stickTouchId=null;buttonPointers.clear();controlTouches.clear();actionPointer=null;actionKey=null;actionAimPointer=null;skillAimPointer=null;touchTurretAngle=null;dPressHandled=false;bombReq=false;cannonReq=false;interact=false;skillReq=false;knob.style.transform='';document.querySelectorAll('[data-k]').forEach(el=>el.classList.remove('on'));actionBtn.classList.remove('on');mdown=false;};
+const clearInputs=()=>{for(const k in keys)keys[k]=false;for(const k in st)st[k]=0;end();stickPointerType='';buttonPointers.clear();actionPointer=null;actionKey=null;actionAimPointer=null;skillAimPointer=null;touchTurretAngle=null;dPressHandled=false;bombReq=false;cannonReq=false;interact=false;skillReq=false;knob.style.transform='';document.querySelectorAll('[data-k]').forEach(el=>el.classList.remove('on'));actionBtn.classList.remove('on');mdown=false;};
 const resetBtn=document.getElementById('resetBtn');
 const backToTitle=e=>{
  if(e){e.preventDefault();e.stopPropagation();}
@@ -8634,7 +8635,7 @@ const preventGameZoom=e=>{
 };
 for(const type of ['gesturestart','gesturechange','gestureend','dblclick'])document.addEventListener(type,preventGameZoom,{capture:true,passive:false});
 // iOSがPointer Eventsとは別にピンチを認識する経路を、2本目のタッチ開始時に抑える。
-// 操作ボタンはPointer Eventsのまま動作し、1本指操作・メニューのスクロールは妨げない。
+// 操作部はTouch Eventsで各指を追跡し、1本指操作・メニューのスクロールは妨げない。
 const preventGamePinch=e=>{if(state==='play'&&e.touches.length>1&&e.cancelable)e.preventDefault();};
 cv.addEventListener('touchstart',preventGamePinch,{capture:true,passive:false});
 pad.addEventListener('touchstart',preventGamePinch,{capture:true,passive:false});
