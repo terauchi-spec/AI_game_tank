@@ -1,4 +1,4 @@
-body:not(.developer-mode) #skDebugAll,body:not(.developer-mode) #stageDebugAll,body:not(.developer-mode) [data-stage="areaDebug"],body:not(.developer-mode) [data-stage="frontOni"],body:not(.developer-mode) #debugToggleBtn,body:not(.developer-mode) #debugBadge,body:not(.developer-mode) #mazeCompareButton{display:none!important}
+body:not(.developer-mode) #skDebugAll,body:not(.developer-mode) #stageDebugAll,body:not(.developer-mode) [data-stage="areaDebug"],body:not(.developer-mode) [data-stage="frontOni"],body:not(.developer-mode) #debugRoutesBtn,body:not(.developer-mode) #debugToggleBtn,body:not(.developer-mode) #debugBadge,body:not(.developer-mode) #mazeCompareButton{display:none!important}
 #titleDeveloper[hidden],#developerLogin[hidden],#developerScreen[hidden]{display:none!important}
 #developerTrigger{background:none;border:0;padding:0;width:100%;font-family:inherit;text-align:inherit;cursor:pointer;touch-action:manipulation;color:inherit}
 #titleScreen #titleDeveloper{background:linear-gradient(110deg,#9456ca,#633099);border-color:#cf9af4;color:#fff2ff}
