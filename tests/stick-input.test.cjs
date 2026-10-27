@@ -31,3 +31,19 @@ test('hiding the browser or losing focus clears inputs and accepts a new touch',
   h.start(h.nodes.stick,3);assert.equal(h.c.keys.ArrowRight,true);h.end(3);neutral(h);
  }
 });
+
+test('short touch swipes leave the reduced dead zone without requiring the old 30 percent travel',()=>{
+ const h=touchInputHarness();h.start(h.nodes.stick,1,50,50);assert.ok(!h.c.keys.ArrowUp);
+ h.move(1,50,38);assert.equal(h.c.keys.ArrowUp,true,'24 percent of radius now responds; formerly ignored');
+ h.move(1,50,50);assert.equal(h.c.keys.ArrowUp,false);h.end(1);neutral(h);
+});
+test('minor thumb jitter stays neutral, and mouse retains its original dead zone',()=>{
+ const h=touchInputHarness();h.start(h.nodes.stick,1,50,50);h.move(1,52,47);for(const k of ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'])assert.ok(!h.c.keys[k]);h.end(1);
+ h.nodes.stick.emit('pointerdown',{pointerId:7,pointerType:'mouse',clientX:50,clientY:38});assert.ok(!h.c.keys.ArrowUp);h.root.emit('pointerup',{pointerId:7});neutral(h);
+});
+test('A to a small stick swipe responds immediately across repeated handoffs',()=>{
+ const h=touchInputHarness();for(let i=0;i<100;i++){
+  h.start(h.nodes.aBtn,i*2,50,50);h.end(i*2);h.start(h.nodes.stick,i*2+1,50,50);
+  h.move(i*2+1,50,40);assert.equal(h.c.keys.ArrowUp,true);h.end(i*2+1);neutral(h);
+ }
+});
