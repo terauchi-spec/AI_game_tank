@@ -59,3 +59,9 @@ test('equal absolute remaining armor and fuel have equal lengths across vehicles
 test('ticks are limited to the filled active portion, stay on the common scale and require no more than eleven marks',()=>{
  const h=harness();for(const [fill,capacity] of [[0,.6],[.25,.6],[.6,.6],[1,1]]){h.lines.length=0;h.rects.length=0;h.c.drawVehicleHudGauge(10,20,120,fill,'green',capacity);assert.ok(h.lines.length<=11);for(const tick of h.lines)assert.ok(tick.x>10&&tick.x<10+120*fill);if(!fill)assert.equal(h.lines.length,0);const color=h.rects.find(r=>r.color==='green');assert.equal(color.w,120*fill);}
 });
+
+test('capacity endpoints are explicit and unused reference-scale space is not drawn as missing fuel',()=>{
+ const h=harness();h.rects.length=0;h.c.drawVehicleHudGauge(10,20,120,.6,'green',.6);
+ const endpoints=h.rects.filter(r=>r.color==='#e6e9d8');assert.equal(endpoints.length,2);assert.deepEqual(endpoints.map(r=>r.x),[9,81]);assert.ok(endpoints.every(r=>r.y===18&&r.h===12));assert.ok(h.rects.every(r=>r.x+r.w<=83));
+ h.rects.length=0;h.c.drawVehicleHudGauge(10,20,120,.3,'orange',.6);assert.deepEqual(h.rects.filter(r=>r.color==='#e6e9d8').map(r=>r.x),[9,81]);assert.equal(h.rects.find(r=>r.color==='orange').w,36);
+});

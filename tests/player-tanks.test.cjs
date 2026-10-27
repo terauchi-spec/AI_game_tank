@@ -54,3 +54,18 @@ test('deformed artwork is limited to player tanks and preserves the legacy enemy
 test('destroyed player hulls and turrets use the original compact silhouettes',()=>{
  const h=artHarness();for(const t of h.c.types){h.commands.length=0;h.c.wreckHullPath(h.c.g,t.id,30);h.c.wreckTurretPath(h.c.g,t.id,30);assert.ok(h.commands.some(cmd=>['rect','ellipse','moveTo'].includes(cmd[0])));assert.equal(h.depth(),0);}
 });
+
+test('all seven driven tanks animate outer tracks from real travel and share one small cached strip',()=>{
+ const h=artHarness();h.c.TANK_DRAW=30;h.c.state='play';vm.runInContext(html.split('\n').find(l=>l.startsWith('function drawVehicle(v,')),h.c);
+ for(const t of h.c.types){const v={kind:'tank',t,f:100};h.c.drawVehicle(v,0,0,0,.5);assert.equal(v.trackPhase,undefined);h.rasters.length=0;h.c.drawVehicle(v,6,0,0,.5);assert.equal(v.trackPhase,3);assert.equal(h.rasters.length,4);const strips=h.rasters.filter(a=>a.length===9);assert.equal(strips.length,2);assert.equal(strips[0][2],3);assert.equal(strips[0][0],strips[1][0]);}
+ assert.equal(h.canvases.length,15);const strip=h.canvases.find(c=>c.width===8&&c.height===96);assert.ok(strip);
+ const v={kind:'tank',t:h.c.types[0],f:100};h.c.drawVehicle(v,0,0,0,0);h.commands.length=0;
+ for(let i=1;i<=50;i++)h.c.drawVehicle(v,i*2,0,0,1);assert.equal(h.canvases.length,15);assert.ok(!h.commands.some(c=>c[0]==='fillRect'));assert.equal(h.depth(),0);
+});
+test('tracks stop on idle, turning, empty fuel and pause, ignore teleports, and reverse with backward travel',()=>{
+ const h=artHarness(),v={kind:'tank',t:h.c.types[0],f:100};h.c.state='play';const step=(x,y=0,body=0)=>h.c.playerTankTrackPhase(v,x,y,body);
+ assert.equal(step(0),null);assert.equal(step(6),3);assert.equal(step(6),3);assert.equal(step(6,0,2),3);v.f=0;assert.equal(step(10),3);v.f=100;h.c.state='paused';assert.equal(step(20),3);h.c.state='play';assert.equal(step(20),3);assert.equal(step(1020),3);assert.equal(step(1014),0);assert.equal(h.c.playerTankTrackPhase({t:{id:'armored'},f:100},0,0,0),null);
+});
+test('track overlays stay on hull layers, retain caller opacity, and use the longer Churchill belt',()=>{
+ const h=artHarness();h.c.g.globalAlpha=.4;h.c.tankShape(0,0,.3,1.2,h.c.types[0],30,'turret',2);assert.equal(h.rasters.length,1);h.rasters.length=0;h.c.tankShape(0,0,.3,1.2,h.c.types[5],30,'hull',2);assert.equal(h.rasters.length,3);const tracks=h.rasters.filter(a=>a.length===9);assert.ok(tracks.every(a=>a[2]+a[4]<=96));assert.ok(Math.abs(tracks[0][8]-30*2.12*1.16)<1e-9);assert.equal(h.c.g.globalAlpha,.4);assert.equal(h.depth(),0);
+});

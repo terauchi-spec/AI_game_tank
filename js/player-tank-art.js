@@ -21,9 +21,38 @@ function playerTankArtSprites(id){
  };
  cached={hull:make('hull'),turret:make('turret')};playerTankArtCache.set(id,cached);return cached;
 }
-function drawPlayerTankArt(x,y,body,ang,id,sz,layer){
+function drawPlayerTankArt(x,y,body,ang,id,sz,layer,trackPhase=null){
  const art=playerTankArtSprites(id);
  const stamp=sprite=>drawStaticRaster(sprite.canvas,sprite.x*sz,sprite.y*sz,sprite.w*sz,sprite.h*sz);
- if(layer!=='turret'){g.save();g.translate(x,y);g.rotate(body+Math.PI/2);stamp(art.hull);g.restore();}
+ if(layer!=='turret'){g.save();g.translate(x,y);g.rotate(body+Math.PI/2);stamp(art.hull);if(Number.isFinite(trackPhase))drawPlayerTankTracks(id,sz,trackPhase);g.restore();}
  if(layer!=='hull'){g.save();g.translate(x,y);g.rotate(ang+Math.PI/2);stamp(art.turret);g.restore();}
+}
+
+// One shared strip, not extra full hull frames. Source cropping moves the outer tread bands.
+let playerTankTrackStrip=null;
+function drawPlayerTankTracks(id,sz,phase){
+ if(!playerTankTrackStrip){
+  const c=document.createElement('canvas');c.width=8;c.height=96;
+  const q=gameCanvasContext(c);q.fillStyle='#2f3338';q.fillRect(0,0,8,96);
+  q.fillStyle='#7b858d';for(let y=0;y<96;y+=8)q.fillRect(0,y,8,2);
+  q.fillStyle='#181b20';for(let y=3;y<96;y+=8)q.fillRect(0,y,8,2);
+  playerTankTrackStrip=c;
+ }
+ const length=id==='churchill'?1.16:1,sourceHeight=2.12*32*length,top=-sz*1.06*length,height=sz*2.12*length;
+ const offset=((phase%8)+8)%8;
+ drawStaticRaster(playerTankTrackStrip,0,offset,8,sourceHeight,-sz*.98,top,sz*.12,height);
+ drawStaticRaster(playerTankTrackStrip,0,offset,8,sourceHeight,sz*.86,top,sz*.12,height);
+}
+function playerTankTrackPhase(v,x,y,body){
+ if(!v?.t||!PLAYER_TANK_ART[v.t.id])return null;
+ const dx=Number.isFinite(v.trackDrawX)?x-v.trackDrawX:0,dy=Number.isFinite(v.trackDrawY)?y-v.trackDrawY:0;
+ v.trackDrawX=x;v.trackDrawY=y;
+ if(typeof state!=='undefined'&&state!=='play')return v.trackPhase??null;
+ const distance=Math.hypot(dx,dy);
+ // Ignore teleports and turning in place; animation follows real movement, including inertia.
+ if(distance>.01&&distance<128&&v.f>0){
+  const direction=dx*Math.cos(body)+dy*Math.sin(body)>=0?1:-1;
+  v.trackPhase=(((v.trackPhase||0)+distance*.5*direction)%8+8)%8;
+ }
+ return v.trackPhase??null;
 }
