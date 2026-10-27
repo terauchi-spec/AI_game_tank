@@ -1,34 +1,41 @@
-// Cosmetic only: no actors, collision, AI, scoring or per-frame timers in this bounded ground layer.
-const FALLEN_ENEMY_LIMIT=80,FALLEN_ENEMY_SIZE=44;
+// Cosmetic only: bounded snapshots, independent of actors, collision, AI and scoring.
+const FALLEN_ENEMY_LIMIT=80,FALLEN_ENEMY_SIZE=44,ENEMY_CRY_FLIGHT_DURATION=.65;
 const fallenEnemyArt={},fallenEnemies=[];
 function loadFallenEnemyArtwork(){
- for(const pose of ['supine','prone','side'])if(!fallenEnemyArt[pose])fallenEnemyArt[pose]=makeAssetImage('assets/characters/fallen/'+pose+'.webp');
+ for(const pose of ['cry-flying','cry-sitting'])if(!fallenEnemyArt[pose])fallenEnemyArt[pose]=makeAssetImage('assets/characters/fallen/'+pose+'.webp');
 }
 function clearFallenEnemies(){fallenEnemies.length=0;}
 function noteEnemyFallHit(h,dx,dy){
  if(!h||h.fallenSpriteRecorded||h.frontRetired||!Number.isFinite(dx)||!Number.isFinite(dy)||Math.hypot(dx,dy)<.001)return;
  h.fallImpactAngle=Math.atan2(dy,dx);
 }
-function enemyFallPose(face,impact){
- const facing=Number.isFinite(face)?face:0,angle=Number.isFinite(impact)?impact:facing,dot=Math.cos(angle-facing);
- if(dot<-.5)return{pose:'supine',angle:facing-Math.PI/2,flip:1};
- if(dot>.5)return{pose:'prone',angle:facing+Math.PI/2,flip:1};
- return{pose:'side',angle:facing+Math.PI,flip:Math.sin(angle-facing)<0?-1:1};
-}
 function rememberFallenEnemy(h){
  if(!h||h.alive||h.frontRetired||h.fallenSpriteRecorded||!Number.isFinite(h.x)||!Number.isFinite(h.y))return;
  h.fallenSpriteRecorded=true;
- const pose=enemyFallPose(h.face,h.fallImpactAngle??h.sniperFallA);
- fallenEnemies.push({x:h.x,y:h.y,...pose,floor:stageMode==='indoor'?(h.indoorFloor??indoorWorld?.currentFloor??0):null});
+ const impact=h.fallImpactAngle??h.sniperFallA,angle=Number.isFinite(impact)?impact:Number.isFinite(h.face)?h.face:0;
+ fallenEnemies.push({x:h.x,y:h.y,dx:Math.cos(angle)*18,dy:Math.sin(angle)*18,flip:Math.cos(angle)<0?-1:1,age:0,floor:stageMode==='indoor'?(h.indoorFloor??indoorWorld?.currentFloor??0):null});
  if(fallenEnemies.length>FALLEN_ENEMY_LIMIT)fallenEnemies.shift();
+}
+function updateFallenEnemies(dt){
+ if(!Number.isFinite(dt)||dt<=0)return;
+ for(const body of fallenEnemies)if(body.age<ENEMY_CRY_FLIGHT_DURATION)body.age=Math.min(ENEMY_CRY_FLIGHT_DURATION,body.age+dt);
 }
 function drawFallenEnemies(cx,cy){
  for(const body of fallenEnemies){
   if(body.floor!==null&&(stageMode!=='indoor'||body.floor!==indoorWorld?.currentFloor))continue;
   if(body.floor===null&&stageMode==='indoor')continue;
-  if(body.x<cx-50||body.x>cx+W+50||body.y<cy-50||body.y>cy+H+50)continue;
-  const im=fallenEnemyArt[body.pose];if(!assetOK(im))continue;
+  if(body.x<cx-80||body.x>cx+W+80||body.y<cy-80||body.y>cy+H+80)continue;
+  const t=Math.min(1,body.age/ENEMY_CRY_FLIGHT_DURATION),flying=t<1,lift=flying?Math.sin(Math.PI*t)*36:0;
+  const im=fallenEnemyArt[flying?'cry-flying':'cry-sitting'];if(!assetOK(im))continue;
   const scale=FALLEN_ENEMY_SIZE/Math.max(im.naturalWidth,im.naturalHeight),w=im.naturalWidth*scale,h=im.naturalHeight*scale;
-  g.save();g.translate(body.x,body.y);g.rotate(body.angle);if(body.flip<0)g.scale(1,-1);g.imageSmoothingEnabled=true;g.drawImage(im,-w/2,-h/2,w,h);g.restore();
+  g.save();g.translate(body.x+body.dx*t,body.y+body.dy*t-lift);if(flying)g.rotate(body.flip*Math.sin(Math.PI*t)*.18);if(body.flip<0)g.scale(-1,1);g.imageSmoothingEnabled=true;g.drawImage(im,-w/2,-h/2,w,h);g.restore();
  }
+}
+
+// The scope has its own projected character layer; keep the same gentle reaction there.
+function drawScopedCryingEnemy(h,x,y,size){
+ const t=Math.min(1,Math.max(0,(h.sniperFallMax||.72)-(h.sniperFallT||0))/ENEMY_CRY_FLIGHT_DURATION),flying=t<1;
+ const im=fallenEnemyArt[flying?'cry-flying':'cry-sitting'];if(!assetOK(im))return false;
+ const scale=size/Math.max(im.naturalWidth,im.naturalHeight),w=im.naturalWidth*scale,height=im.naturalHeight*scale;
+ g.save();g.translate(x,y-(flying?Math.sin(Math.PI*t)*size*.3:0));if(Number.isFinite(h.sniperFallA)&&Math.cos(h.sniperFallA)<0)g.scale(-1,1);g.imageSmoothingEnabled=true;g.drawImage(im,-w/2,-height/2,w,height);g.restore();return true;
 }
