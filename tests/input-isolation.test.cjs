@@ -27,8 +27,8 @@ test('exactly one input snapshot activates in each page',()=>{
 test('test page loads only its shared UI and the two input snapshots, with no engine, audio or assets',()=>{
  const html=fs.readFileSync(path.join(__dirname,'../input-test.html'),'utf8');
  const scripts=[...html.matchAll(/<script src="([^"]+)"/g)].map(m=>m[1]);
- assert.deepEqual(scripts,['js/input-test-common.js','js/input-test-pointer.js','js/input-test-touch.js']);
+ assert.deepEqual(scripts,['js/input-test-common.js?v=2','js/input-test-pointer.js','js/input-test-touch.js']);
  assert.doesNotMatch(html,/<canvas|<audio|<img|requestAnimationFrame|fetch\(/);
- for(const script of scripts)new vm.Script(fs.readFileSync(path.join(__dirname,'..',script),'utf8'));
+ for(const script of scripts)new vm.Script(fs.readFileSync(path.join(__dirname,'..',script.split('?')[0]),'utf8'));
  for(const match of html.matchAll(/<script>([\s\S]*?)<\/script>/g))new vm.Script(match[1]);
 });

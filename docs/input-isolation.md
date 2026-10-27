@@ -13,8 +13,10 @@ Also compare holding the stick finger down while tapping an action.
 - Buttons, geometry and zoom guards are shared. Game rendering, maps, AI, assets,
   sound and scoring are absent. The snapshots retain their existing 50ms action
   UI synchronization, equally in both modes; no game loop runs.
-- The observer uses passive listeners and a microtask after dispatch to display
-  raw event counts and accepted direction/action state. Four fixed touch markers
+- The observer uses passive capture listeners to record raw input and bubble listeners
+  after the input handlers to display
+  raw event counts and accepted direction/action state. The display is labeled `v2`; it no longer reads state in a microtask that can
+  run before the input handler. Four fixed touch markers
   and five recent log entries are bounded. Nothing is stored or transmitted.
 - The test does not automatically know the user's physical touches. Matching
   start/end totals alone cannot rule out a completely missing touch sequence.
