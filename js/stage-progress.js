@@ -10,7 +10,6 @@ const STAGE_ORDER=[
  {id:'front',target:'戦術アンテナ',name:'制圧（上級）',image:'antenna'},
  {id:'decisive',target:'移動要塞',name:'決戦',image:'decisive'}
 ];
-const TEST_STAGES=[{id:'frontOni',name:'制圧（鬼）',image:'antenna'}];
 const STAGE_DISPLAY_ORDER=STAGE_ORDER.map(stage=>stage.id);
 function stageDisplayNumber(id){return String(STAGE_DISPLAY_ORDER.indexOf(id)+1).padStart(2,'0');}
 function stageSelectionName(name){return name.replace('拠点破壊','破壊').replace('前線制圧','制圧');}
@@ -44,7 +43,7 @@ function unlockStageOnClear(s){
 // Debug visibility affects selection only; canonical progression still uses stageSelectable().
 function stageAvailableForSelection(id,progress=readStageProgress()){
  const developer=typeof isDeveloperMode==='function'&&isDeveloperMode();
- return (id==='areaDebug'&&developer)||(TEST_STAGES.some(stage=>stage.id===id)&&developer&&stageDebugAll)||(STAGE_ORDER.some(stage=>stage.id===id)&&((developer&&stageDebugAll)||stageSelectable(id,progress)));
+ return (id==='areaDebug'&&developer)||(STAGE_ORDER.some(stage=>stage.id===id)&&((developer&&stageDebugAll)||stageSelectable(id,progress)));
 }
 const STAGE_RECORDS_KEY='tankGameStageRecordsV1';
 const STAGE_RECORD_RANKS=['S','A','B','C','D','E','F'];
@@ -96,7 +95,7 @@ function setSelectedStage(id,toggle=true){
  if(toggle)expandedStageId=expandedStageId===id?null:id;else if(selectedStageId!==id)expandedStageId=null;
  selectedStageId=id;
  document.querySelectorAll('[data-stage]').forEach(card=>{const chosen=card.dataset.stage===id;card.classList.toggle('selected',chosen);card.setAttribute('aria-pressed',String(chosen));});
- const stage=[...STAGE_ORDER,...TEST_STAGES].find(stage=>stage.id===id),button=document.getElementById('stageDeploy');
+ const stage=STAGE_ORDER.find(stage=>stage.id===id),button=document.getElementById('stageDeploy');
  button.disabled=typeof gameBuildQueued!=='undefined'&&gameBuildQueued;
  button.textContent=id==='areaDebug'?'エリアデバッグへ':stage.name+'で出撃';
  renderStageRecords();
@@ -105,7 +104,7 @@ function setSelectedStage(id,toggle=true){
 function deploySelectedStage(){
  if(state!=='stage'||gameBuildQueued||!stageAvailableForSelection(selectedStageId))return false;
  const id=selectedStageId;selectedAreaDebug=null;if(typeof decisiveBattle!=='undefined')decisiveBattle=null;
- areaDebugEnabled=id==='areaDebug';frontlineOni=id==='frontOni';frontlineBeginner=id==='frontBeginner';indoorBeginner=id==='indoorBeginner';
+ areaDebugEnabled=id==='areaDebug';frontlineOni=false;frontlineBeginner=id==='frontBeginner';indoorBeginner=id==='indoorBeginner';
  stageMode=areaDebugEnabled?'base':frontlineBeginner||frontlineOni?'front':indoorBeginner?'indoor':id;
  if(areaDebugEnabled){state='areaPick';sfx('skill');return true;}
  return selectSkillIndex(skillMenuList().findIndex(skill=>skill.id===selectedSkillId),true);
@@ -117,18 +116,10 @@ function renderStageLocks(){
   if(id==='areaDebug'){
    button.disabled=!(typeof isDeveloperMode==='function'&&isDeveloperMode());button.classList.toggle('locked',false);button.setAttribute('aria-label','エリアデバッグ');return;
   }
-  const testStage=TEST_STAGES.find(stage=>stage.id===id);
-  if(testStage){
-   button.disabled=!stageDebugAll;button.classList.toggle('locked',!stageDebugAll);
-   button.classList.toggle('stage-concealed',!stageDebugAll);
-   button.querySelector('.stage-target').textContent=stageDebugAll?'テスト：敵3倍・味方2倍':'？';
-   button.querySelector('.stage-number').textContent='鬼';button.setAttribute('aria-label',testStage.name+'（テスト）'+(stageDebugAll?'':'・全ステージを表示で選択'));
-   button.title=stageDebugAll?'制圧上級と同じ3拠点・敵兵の出現数3倍':'全ステージを表示で選択できるテストステージ';return;
-  }
-  if(!stage)return;
+  if(!stage){button.disabled=true;return;}
   const locked=!stageAvailableForSelection(id,progress);
   button.disabled=locked;button.classList.toggle('locked',locked);
-  const concealed=!stageSelectable(id,progress);
+  const concealed=!stageSelectable(id,progress)&&!(id==='decisive'&&stageDebugAll&&typeof isDeveloperMode==='function'&&isDeveloperMode());
   button.classList.toggle('stage-concealed',concealed);
   button.querySelector('.stage-target').textContent=concealed?'？':stage.target;
   button.classList.toggle('stage-cleared',progress.cleared.includes(id));

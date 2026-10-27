@@ -44,8 +44,8 @@ test('current stage identity separates both difficulty pairs',()=>{
  const c=harness();for(const id of order){clear(c,id);assert.equal(c.currentStageId(),id);}
 });
 test('seven HTML selection cards match the canonical unlock order and launch paths enforce it',()=>{
- const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),data=[...html.matchAll(/<button[^>]*class="stage-card"[^>]*data-stage="([^"]+)"[^>]*>(.*?)<\/button>/g)];assert.deepEqual(data.map(m=>m[1]),['beginner','indoorBeginner','frontBeginner','base','indoor','front','decisive','frontOni','areaDebug']);
- assert.deepEqual(data.filter(m=>m[1]!=='areaDebug'&&m[1]!=='frontOni').map(m=>m[2].match(/class="stage-number"[^>]*>(\d+)/)[1]),['01','02','03','04','05','06','07']);assert.match(html,/if\(setSelectedStage\(b.dataset.stage\)\)/);assert.match(html,/!areaDebugEnabled&&!stageAvailableForSelection\(currentStageId\(\)\)/);assert.ok(!html.includes('潜入は初級・上級とも最初から選べます'));
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),data=[...html.matchAll(/<button[^>]*class="stage-card"[^>]*data-stage="([^"]+)"[^>]*>(.*?)<\/button>/g)];assert.deepEqual(data.map(m=>m[1]),['beginner','indoorBeginner','frontBeginner','base','indoor','front','decisive','areaDebug']);
+ assert.deepEqual(data.filter(m=>m[1]!=='areaDebug').map(m=>m[2].match(/class="stage-number"[^>]*>(\d+)/)[1]),['01','02','03','04','05','06','07']);assert.match(html,/if\(setSelectedStage\(b.dataset.stage\)\)/);assert.match(html,/!areaDebugEnabled&&!stageAvailableForSelection\(currentStageId\(\)\)/);assert.ok(!html.includes('潜入は初級・上級とも最初から選べます'));
 });
 
 
@@ -68,12 +68,15 @@ test('fixed menu, area debug navigation and removed skill toggle are wired to th
 });
 
 
-test('Oni is a test-only selection after advanced capture, with no normal unlock or achievement credit',()=>{
- const c=harness(),{buttons,nodes}=cards(c),oni={dataset:{stage:'frontOni'},number:{},target:{},classList:{toggle(k,v){this[k]=v;}},querySelector(sel){return sel==='.stage-target'?this.target:sel==='.stage-number'?this.number:null;},setAttribute(k,v){this[k]=v;}};buttons.push(oni);c.renderStageLocks();assert.equal(oni.disabled,true);assert.equal(c.stageSelectable('frontOni'),false);assert.equal(c.stageAvailableForSelection('frontOni'),false);
- vm.runInContext('stageDebugAll=true',c);c.renderStageLocks();assert.equal(oni.disabled,false);assert.equal(oni.number.textContent,'鬼');assert.equal(c.setSelectedStage('frontOni'),true);assert.equal(nodes.stageDeploy.textContent,'制圧（鬼）で出撃');
- Object.assign(c,{state:'stage',gameBuildQueued:false,skillDebugAll:false,selectedSkillId:'throw',skillMenuList:()=>[{id:'throw'}],selectSkillIndex:()=>true});c.deploySelectedStage();assert.equal(c.stageMode,'front');assert.equal(c.frontlineOni,true);assert.equal(c.frontlineBeginner,false);assert.equal(c.currentStageId(),'frontOni');
- const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');vm.runInContext(html.slice(html.indexOf('function newScoreStats()'),html.indexOf('function playerDetectedNow()')),c);assert.equal(c.newScoreStats().debugUsed,true);
- c.setSelectedStage('beginner');c.deploySelectedStage();assert.equal(c.frontlineOni,false);assert.equal(c.stageMode,'beginner');
+test('decisive appears with its artwork and deploys in developer all-stage selection without granting normal progression',()=>{
+ const c=harness(),{buttons,nodes}=cards(c),card=buttons.find(b=>b.dataset.stage==='decisive');c.renderStageLocks();assert.equal(card.disabled,true);assert.equal(card.classList['stage-concealed'],true);
+ vm.runInContext('stageDebugAll=true',c);c.renderStageLocks();assert.equal(card.disabled,false);assert.equal(card.target.textContent,'移動要塞');assert.equal(card.classList['stage-concealed'],false);assert.equal(c.stageSelectable('decisive'),false);assert.equal(c.setSelectedStage('decisive'),true);assert.equal(nodes.stageDeploy.textContent,'決戦で出撃');
+ Object.assign(c,{state:'stage',gameBuildQueued:false,skillDebugAll:false,selectedSkillId:'throw',skillMenuList:()=>[{id:'throw'}],selectSkillIndex:()=>true});assert.equal(c.deploySelectedStage(),true);assert.equal(c.stageMode,'decisive');assert.equal(c.frontlineOni,false);assert.equal(c.currentStageId(),'decisive');assert.equal(c.storage.size,0);
+ vm.runInContext('stageDebugAll=false',c);c.renderStageLocks();assert.equal(card.disabled,true);assert.equal(card.classList['stage-concealed'],true);assert.equal(card.target.textContent,'？');assert.equal(nodes.stageDeploy.textContent,'破壊（初級）で出撃');
+});
+test('Oni is absent from HTML and cannot be selected or deployed even with stale developer state',()=>{
+ const c=harness();vm.runInContext('stageDebugAll=true',c);assert.equal(c.stageAvailableForSelection('frontOni'),false);assert.equal(c.setSelectedStage('frontOni'),false);Object.assign(c,{state:'stage',gameBuildQueued:false});vm.runInContext("selectedStageId='frontOni'",c);assert.equal(c.deploySelectedStage(),false);
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');assert.doesNotMatch(html,/data-stage="frontOni"|制圧（鬼/);
 });
 
 test('stage records count actual starts once, retain per-stage bests across reloads, and snapshot difficulty',()=>{
@@ -95,7 +98,7 @@ test('selected stage records open, toggle closed and switch with matching score,
  for(const card of buttons){const entries={};for(const key of ['.stage-record-metrics','.stage-record-note','.stage-record-score','.stage-record-count','.stage-record-rank','img'])entries[key]={removeAttribute(k){delete this[k];}};const panel={hidden:true,entries,querySelector:k=>entries[k]};panels[card.dataset.stage]=panel;card.querySelector=sel=>sel==='.stage-records'?panel:sel==='.stage-target'?card.target:sel==='.stage-number'?card.number:null;}
  c.storage.set('tankGameStageRecordsV1',JSON.stringify({stages:{beginner:{sorties:12,successes:3,bestScore:8000,bestRank:'A'}}}));c.renderStageLocks();assert.equal(panels.beginner.hidden,true);c.setSelectedStage('beginner');let panel=panels.beginner;assert.equal(panel.hidden,false);assert.equal(panel.entries['.stage-record-score'].textContent,'8,000');assert.equal(panel.entries['.stage-record-count'].textContent,'3 / 12回');assert.match(panel.entries.img.src,/rank_a\.webp/);
  c.setSelectedStage('beginner');assert.equal(panel.hidden,true);c.renderStageLocks();assert.equal(panel.hidden,true);clear(c,'beginner');c.setSelectedStage('indoorBeginner');assert.equal(panel.hidden,true);panel=panels.indoorBeginner;assert.equal(panel.hidden,false);assert.equal(panel.entries['.stage-record-score'].textContent,'—');assert.equal(panel.entries.img.hidden,true);assert.equal(panel.entries['.stage-record-count'].textContent,'0 / 0回');
- const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');assert.match(html,/recordStageSortie\(scoreStats\);\s*state='play'/);assert.match(html,/recordStageResult\(scoreStats\)/);assert.match(html,/STAGE_PROGRESS_KEY,STAGE_RECORDS_KEY/);assert.equal((html.match(/class="stage-records" hidden/g)||[]).length,9);
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');assert.match(html,/recordStageSortie\(scoreStats\);\s*state='play'/);assert.match(html,/recordStageResult\(scoreStats\)/);assert.match(html,/STAGE_PROGRESS_KEY,STAGE_RECORDS_KEY/);assert.equal((html.match(/class="stage-records" hidden/g)||[]).length,8);
 });
 
 test('successes count completed clears once per sortie, preserving old records and including debug clears',()=>{
@@ -114,5 +117,5 @@ test('locked facility names stay unknown until normal unlock, including during a
  c.setSelectedStage('frontBeginner');assert.equal(nodes.stageDeploy.textContent,'制圧（初級）で出撃');
 });
 test('non-developers cannot bypass unlocks or select area debug and Oni even with stale all-stage flags',()=>{
- const c=harness();c.isDeveloperMode=()=>false;vm.runInContext('stageDebugAll=true',c);assert.equal(c.stageAvailableForSelection('beginner'),true);for(const id of ['front','areaDebug','frontOni'])assert.equal(c.stageAvailableForSelection(id),false,id);c.isDeveloperMode=()=>true;for(const id of ['front','areaDebug','frontOni'])assert.equal(c.stageAvailableForSelection(id),true,id);
+ const c=harness();c.isDeveloperMode=()=>false;vm.runInContext('stageDebugAll=true',c);assert.equal(c.stageAvailableForSelection('beginner'),true);for(const id of ['front','areaDebug','frontOni','decisive'])assert.equal(c.stageAvailableForSelection(id),false,id);c.isDeveloperMode=()=>true;for(const id of ['front','areaDebug','decisive'])assert.equal(c.stageAvailableForSelection(id),true,id);assert.equal(c.stageAvailableForSelection('frontOni'),false);
 });
