@@ -43,7 +43,7 @@ test('touchend without a preceding touchstart still releases, without confusing 
 test('hiding the browser or losing focus clears capture, movement and pending actions, then accepts a new stick',()=>{
  for(const event of ['visibilitychange','blur']){
   const h=harness();h.doc.querySelectorAll=()=>[];
-  vm.runInContext("const buttonPointers=new Map();const actionBtn={classList:{remove(){}}};let actionPointer=null,actionKey=null,actionAimPointer=null,skillAimPointer=null,touchTurretAngle=null,dPressHandled=false,bombReq=true,cannonReq=true,interact=true,skillReq=true,mdown=true;",h.c);
+  vm.runInContext("const buttonPointers=new Map(),controlTouches=new Map();const actionBtn={classList:{remove(){}}};let actionPointer=null,actionKey=null,actionAimPointer=null,skillAimPointer=null,touchTurretAngle=null,dPressHandled=false,bombReq=true,cannonReq=true,interact=true,skillReq=true,mdown=true;",h.c);
   vm.runInContext(html.slice(html.indexOf('const clearInputs=()=>'),html.indexOf("const resetBtn=document.getElementById('resetBtn');")),h.c);
   vm.runInContext("document.addEventListener('visibilitychange',()=>{if(document.hidden)clearInputs();});addEventListener('blur',clearInputs);",h.c);
   h.down();h.start(41);h.doc.hidden=true;(event==='blur'?h.root:h.doc).emit(event);h.neutral();assert.equal(h.captured.size,0);assert.equal(vm.runInContext('bombReq||cannonReq||interact||skillReq||mdown',h.c),false);h.down(2);assert.equal(h.keys.ArrowRight,true);
