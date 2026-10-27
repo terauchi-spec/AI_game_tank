@@ -2633,7 +2633,7 @@ function infiltrationCamera(){
 function beginInfiltrationExtraction(exit){
   if(stageMode!=='indoor'||!mission||mission.extraction)return;
   const view=infiltrationCamera();
-  mission.extraction={elapsed:0,duration:5.2,camX:view.x,camY:view.y,
+  mission.extraction={elapsed:0,duration:2.8,camX:view.x,camY:view.y,
     startX:view.x-100,stopX:exit.x,endX:view.x+W+100,y:exit.y+(p.y>=exit.y?-68:68),
     carX:view.x-100,fromX:p.x,fromY:p.y,boarded:false,phase:'approach'};
   if(typeof skill!=='undefined'&&skill==='partner'&&typeof partner!=='undefined'&&partner){
@@ -2650,7 +2650,7 @@ function beginInfiltrationExtraction(exit){
       fromX:Math.max(view.x-16,Math.min(view.x+W+16,hound.x)),
       fromY:Math.max(view.y-16,Math.min(view.y+H+16,hound.y)),waitX:p.x+20,waitY:p.y+14};
   }
-  // 成否とスコアは5秒の待機完了時に確定。評価画面は回収演出の後に開く。
+  // 成否とスコアは5秒の待機完了時に確定。乗車完了と同時に作戦成功を表示する。
   state='indoorEscape';
   if(typeof keys!=='undefined')for(const key of Object.keys(keys))keys[key]=false;
   bombReq=false;cannonReq=false;interact=false;skillReq=false;
@@ -2668,9 +2668,6 @@ function updateInfiltrationExtraction(dt){
     p.body=Math.atan2(y-v.fromY,x-v.fromX);p.ang=p.body;
     p.x=v.fromX+(x-v.fromX)*u;p.y=v.fromY+(y-v.fromY)*u;
     if(u>=1){v.boarded=true;v.phase='aboard';}
-  }
-  if(t>=3.1){const u=Math.min(1,(t-3.1)/(v.duration-3.1));
-    v.phase='depart';v.carX=v.stopX+(v.endX-v.stopX)*u*u;
   }
   if(v.boarded){p.x=v.carX-8;p.y=v.y+10;}
   if(v.partner){
@@ -2693,7 +2690,7 @@ function updateInfiltrationExtraction(dt){
     if(ride.boarded){q.x=v.carX-25;q.y=v.y-10;q.face=0;q.moving=false;}
     else{q.moving=!(q.stun>0)&&Math.hypot(q.x-oldX,q.y-oldY)>.01;if(q.moving)q.face=Math.atan2(q.y-oldY,q.x-oldX);}
   }
-  if(t>=v.duration){state='succeeded';successFrameDrawn=false;resultAnimT=0;}
+  if(v.boarded){state='succeeded';successFrameDrawn=false;resultAnimT=0;}
 }
 let indoorJeepCanvas=null;
 function infiltrationJeepSprite(){
@@ -2720,7 +2717,7 @@ function infiltrationJeepSprite(){
   indoorJeepCanvas=canvas;return canvas;
 }
 function drawInfiltrationExtraction(cx,cy){
-  const v=stageMode==='indoor'&&state==='indoorEscape'&&mission?.extraction;if(!v)return;
+  const v=stageMode==='indoor'&&(state==='indoorEscape'||state==='succeeded')&&mission?.extraction;if(!v)return;
   gm.save();gm.translate(v.carX-cx,v.y-cy);gm.imageSmoothingEnabled=true;
   gm.drawImage(infiltrationJeepSprite(),-64,-38,128,76);
   if(v.boarded){

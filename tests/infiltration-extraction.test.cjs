@@ -80,7 +80,7 @@ test('upper-floor exterior renders as void without building terrain patterns',()
  ops.length=0;w.currentFloor=0;c.renderFloor(0,w.floors[0].footprint.y);assert.equal(ops[0].color,'#456');assert.equal(patterns,1);
 });
 
-test('five-second extraction finalizes once, freezes gameplay, boards the player and departs before results',()=>{
+test('five-second extraction finalizes once, freezes gameplay, shows success at the exact boarding boundary',()=>{
  const h=harness(),c=h.c,v=h.api.world.exits[0];
  Object.assign(c.p,v);c.mission.index=3;
  h.api.mission(4.9);assert.equal(h.completed,0);assert.equal(c.state,'play');
@@ -91,10 +91,11 @@ test('five-second extraction finalizes once, freezes gameplay, boards the player
  assert.equal(c.keys.ArrowUp,false);assert.equal(c.keys.KeyD,false);
  h.api.update(1.8);assert.equal(pickup.carX,pickup.stopX);assert.equal(pickup.boarded,false);
  h.api.update(.6);assert.equal(pickup.phase,'boarding');assert.equal(c.state,'indoorEscape');
- h.api.update(.5);assert.equal(pickup.boarded,true);
- h.api.update(1);assert.equal(pickup.phase,'depart');assert.equal(c.p.x,pickup.carX-8);
+ h.api.update(.399);assert.equal(pickup.boarded,false);assert.equal(c.state,'indoorEscape');
+ h.api.update(.001);assert.equal(pickup.boarded,true);assert.equal(c.state,'succeeded');
+ assert.equal(pickup.phase,'aboard');assert.equal(pickup.carX,pickup.stopX);assert.equal(c.p.x,pickup.carX-8);
  assert.equal(h.api.camera().x,camera.x);assert.equal(h.api.camera().y,camera.y,'camera stays at pickup location');
- h.api.update(2);assert.equal(c.state,'succeeded');assert.equal(c.successFrameDrawn,false);assert.ok(pickup.carX-64>camera.x+c.W,'jeep has left the screen');
+ h.api.update(2);assert.equal(c.state,'succeeded');assert.equal(c.successFrameDrawn,false);assert.equal(pickup.carX,pickup.stopX,'no departure delay after boarding');
  assert.equal(h.completed,1);h.api.update(10);assert.equal(h.completed,1);
 });
 
@@ -119,7 +120,7 @@ test('both stair directions bring the partner onto the protected landing and cle
  }
 });
 
-test('EXIT pickup boards the partner beside the player, displays the blue helmet and carries both away',()=>{
+test('EXIT pickup boards the partner beside the player, displays the blue helmet and shows both aboard immediately on success',()=>{
  const h=harness(),c=h.c,exit=h.api.world.exits[0];Object.assign(c.p,exit);c.skill='partner';
  c.partner={x:exit.x+60,y:exit.y+30,face:0,hp:2,down:false,stunT:0,route:[{x:10,y:20}],backup:true};
  vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/partner.js'),'utf8'),c);
@@ -133,7 +134,7 @@ test('EXIT pickup boards the partner beside the player, displays the blue helmet
  c.drawPartner();assert.equal(bodies,1,'no duplicate standing partner once aboard');h.api.draw(0,0);
  assert.ok(fills.some(f=>f.color==='#399bff'),'blue partner helmet is visible in the car');
  assert.ok(fills.some(f=>f.color==='#b5372e'),'red player helmet remains visible');
- h.api.update(1);assert.equal(v.phase,'depart');assert.equal(c.partner.x,v.carX-25);assert.equal(c.p.x,v.carX-8);
+ h.api.update(1);assert.equal(v.phase,'aboard');assert.equal(c.state,'succeeded');assert.equal(c.partner.x,v.carX-25);assert.equal(c.p.x,v.carX-8);
  h.api.update(2);assert.equal(c.state,'succeeded');assert.equal(c.successFrameDrawn,false);assert.equal(c.partner.x,v.carX-25);assert.equal(c.partner.hp,2);
 });
 
@@ -147,7 +148,7 @@ test('pickup includes an incapacitated partner without changing health and omits
  }
 });
 
-test('EXIT pickup gathers and boards the hound, releases its target and carries it with the player',()=>{
+test('EXIT pickup gathers and boards the hound, releases its target and shows success with both aboard',()=>{
  const h=harness(),c=h.c,exit=h.api.world.exits[0];Object.assign(c.p,exit);c.skill='hound';c.mission.index=3;
  const target={houndPinned:true};c.hound={x:exit.x+60,y:exit.y+30,face:0,col:'#4a3025',state:'bite',stun:0,target,biteT:2,dashDist:70};
  h.api.mission(5);assert.equal(h.completed,1);assert.equal(c.state,'indoorEscape');
@@ -164,7 +165,7 @@ test('EXIT pickup gathers and boards the hound, releases its target and carries 
  c.drawHound();assert.equal(bodies,1,'no duplicate dog left standing outside the car');h.api.draw(0,0);
  assert.ok(fills.some(f=>f.color==='#201710'),'dog muzzle is rendered in the car');
  assert.ok(fills.some(f=>f.color==='#b5372e'),'player remains aboard');
- h.api.update(1);assert.equal(v.phase,'depart');assert.equal(c.hound.x,v.carX-25);assert.equal(c.p.x,v.carX-8);
+ h.api.update(1);assert.equal(v.phase,'aboard');assert.equal(c.state,'succeeded');assert.equal(c.hound.x,v.carX-25);assert.equal(c.p.x,v.carX-8);
  h.api.update(2);assert.equal(c.state,'succeeded');assert.equal(c.successFrameDrawn,false);assert.equal(c.hound.x,v.carX-25);assert.equal(h.completed,1);
  for(const mode of ['base','front']){c.stageMode=mode;const before=bodies;c.drawHound();assert.equal(bodies,before+1,'other stages retain dog drawing');}
  c.stageMode='indoor';const before=bodies;c.drawHound({...c.hound,enemyDog:true});assert.equal(bodies,before+1,'enemy dogs are never hidden by the player extraction');
@@ -197,7 +198,7 @@ test('jeep raster is built once and reused throughout the cutscene, with no work
  for(let i=0;i<240;i++){h.api.update(.016);h.api.draw(0,0);}
  assert.equal(h.canvases,1);assert.equal(h.draws.length,240);
  assert.equal(h.draws[0][0],h.draws[239][0]);
- h.api.update(10);h.api.draw(0,0);assert.equal(h.draws.length,240);
+ h.c.state='win';h.api.update(10);h.api.draw(0,0);assert.equal(h.draws.length,240);
 });
 
 test('pickup animation does not activate for completed base or frontline stages',()=>{
@@ -348,7 +349,7 @@ test('extraction success waits at the success overlay until evaluation is explic
  const get=id=>{if(!nodes.has(id))nodes.set(id,{events:{},addEventListener(name,fn){this.events[name]=fn;},focus(){this.focused=true;}});return nodes.get(id);};
  c.document.getElementById=get;c.document.body.classList={contains:k=>classes.has(k),toggle(k,on){on?classes.add(k):classes.delete(k);}};c.sfx=n=>sounds.push(n);c.syncResultScreen=()=>results++;
  vm.runInContext(index.slice(index.indexOf('function syncMissionSuccess(){'),index.indexOf('let failureFrameDrawn=false;')),c);
- h.api.begin(h.api.world.exits[0]);c.syncMissionSuccess();assert.equal(classes.has('success-open'),false);h.api.update(6);assert.equal(c.state,'succeeded');c.syncMissionSuccess();assert.equal(classes.has('success-open'),true);assert.equal(get('missionSuccessEvaluate').focused,true);assert.equal(results,0);c.syncMissionSuccess();assert.deepEqual(sounds,['win']);
+ h.api.begin(h.api.world.exits[0]);c.syncMissionSuccess();assert.equal(classes.has('success-open'),false);h.api.update(2.799);assert.equal(c.state,'indoorEscape');c.syncMissionSuccess();assert.equal(classes.has('success-open'),false);h.api.update(.001);assert.equal(c.state,'succeeded');c.syncMissionSuccess();assert.equal(classes.has('success-open'),true);assert.equal(get('missionSuccessEvaluate').focused,true);assert.equal(results,0);c.syncMissionSuccess();assert.deepEqual(sounds,['win']);
  get('missionSuccessEvaluate').events.click();assert.equal(c.state,'win');assert.equal(classes.has('success-open'),false);assert.equal(results,1);get('missionSuccessEvaluate').events.click();assert.equal(results,1);
  assert.match(index,/<h1 id="missionSuccessTitle">作成成功<\/h1>/);assert.match(index,/<h1 id="missionFailureTitle">作成失敗<\/h1>/);
 });
