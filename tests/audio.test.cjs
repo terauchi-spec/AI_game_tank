@@ -22,9 +22,9 @@ test('enemy tanks share one loop, use movement rather than turret rotation, and 
  c.state='results';c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),false);c.state='play';c.now+=120;for(const t of c.etanks)t.x+=5;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),false);
  c.now+=120;for(const t of c.etanks)t.x+=5;c.updateGameAudio();await settle();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),true);c.stopGameAudio();c.now+=120;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),false);
 });
-test('all 60 active manifest MP3s match the explicitly uploaded files, without requesting unprovided effects',()=>{
+test('all 61 active manifest MP3s match the explicitly uploaded files, without requesting unprovided effects',()=>{
  const {c}=harness(),defs=c.get('GAME_SE_FILES'),manifest=JSON.parse(fs.readFileSync(path.join(__dirname,'../docs/se-installed.json')));
- assert.equal(Object.keys(defs).length,60);assert.deepEqual(Object.values(defs).map(n=>'assets/audio/se/'+n+'.mp3').sort(),manifest.files.sort());for(const file of manifest.files)assert.ok(fs.statSync(path.join(__dirname,'..',file)).size>0);
+ assert.equal(Object.keys(defs).length,61);assert.deepEqual(Object.values(defs).map(n=>'assets/audio/se/'+n+'.mp3').sort(),manifest.files.sort());for(const file of manifest.files)assert.ok(fs.statSync(path.join(__dirname,'..',file)).size>0);
  assert.equal(c.gameSeName('sniperLens'),'sniperLens');assert.equal(c.playGameSe('pickup'),false);
 });
 test('MP3s decode once and cached effects play immediately; loading never replays a late shot',async()=>{
@@ -82,7 +82,7 @@ test('all ten skill activation aliases reuse se_skills with one download, decode
 });
 
 test('each active MP3 request includes its verified content revision',async()=>{
- const h=harness(),{c}=h;await c.loadGameSe('cannon');const versions=JSON.parse(fs.readFileSync(path.join(__dirname,'../docs/se-revisions.json')));assert.equal(h.requests[0],'assets/audio/se/se_025_tank_cannon_fire.mp3?v='+versions.se_025_tank_cannon_fire);assert.equal(Object.keys(versions).length,60);
+ const h=harness(),{c}=h;await c.loadGameSe('cannon');const versions=JSON.parse(fs.readFileSync(path.join(__dirname,'../docs/se-revisions.json')));assert.equal(h.requests[0],'assets/audio/se/se_025_tank_cannon_fire.mp3?v='+versions.se_025_tank_cannon_fire);assert.equal(Object.keys(versions).length,61);
 });
 test('drill contact loops only during actual contact and stops on release, expiry or menus',async()=>{
  const h=harness(),{c}=h;await c.loadGameSe('drillContact');c.p.drill=5;c.p.drillContact=false;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("drillContact")'),false);
@@ -234,4 +234,22 @@ test('player fainting sound fires only after a successful new stun and preserves
  const enemy={alive:true,x:10,y:20,st:0};assert.equal(c.stunHuman(enemy),true);assert.equal(sounds[0].name,'fainting');assert.equal(sounds[0].position,enemy);assert.equal(c.scoreStats.stuns,1);assert.equal(c.scoreStats.tacticalStuns,1);assert.equal(c.scoreStats.stealthStuns,1);
  assert.equal(c.stunHuman(enemy),false);assert.equal(c.stunHuman({alive:false}),false);assert.equal(c.stunHuman(null),false);assert.equal(sounds.length,1);
  c.stunHuman({alive:true},'ally');assert.equal(sounds[1].name,'skill');assert.equal(c.scoreStats.tacticalStuns,1);
+});
+
+test('bush entry plays once per outside-to-inside crossing while grass footsteps remain active',async()=>{
+ const h=harness(),{c}=h;let inside=false,lookups=0;c.inBush=()=>{lookups++;return inside;};await c.loadGameSe('bushEnter');await c.loadGameSe('grassStep');
+ const entries=()=>h.sources.filter(s=>s.buffer===c.get('gameSe.cache.get("bushEnter").buffer')).length;
+ c.updateGameAudio();assert.equal(entries(),0);inside=true;c.now+=120;c.p.x+=10;c.updateGameAudio();assert.equal(entries(),1);
+ for(let i=0;i<5;i++){c.now+=120;c.p.x+=10;c.updateGameAudio();}assert.equal(entries(),1);assert.equal(c.get('gameSe.footstep.name'),'grassStep');
+ const count=lookups;c.now+=120;c.updateGameAudio();assert.equal(lookups,count);assert.equal(entries(),1);
+ inside=false;c.now+=120;c.p.x+=10;c.updateGameAudio();inside=true;c.now+=120;c.p.x+=10;c.updateGameAudio();assert.equal(entries(),2);
+ c.state='paused';c.updateGameAudio();c.state='play';c.now+=120;c.updateGameAudio();assert.equal(entries(),2);
+});
+test('spawn, teleport, hiding and flying do not create bush-entry sounds; ground vehicles do',async()=>{
+ for(const mode of ['spawn','teleport','dig','fighter','tank','truck']){
+  const h=harness(),{c}=h;let inside=mode==='spawn';c.inBush=()=>inside;await c.loadGameSe('bushEnter');c.updateGameAudio();inside=true;
+  if(mode==='dig')c.p.dig=1;if(['fighter','tank','truck'].includes(mode))c.p.tank={kind:mode,t:{id:'t34'}};
+  c.now+=120;c.p.x+=mode==='teleport'?1000:10;c.updateGameAudio();
+  const count=h.sources.filter(s=>s.buffer===c.get('gameSe.cache.get("bushEnter").buffer')).length;assert.equal(count,['tank','truck'].includes(mode)?1:0,mode);
+ }
 });
