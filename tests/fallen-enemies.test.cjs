@@ -1,8 +1,8 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const root=path.join(__dirname,'..'),source=fs.readFileSync(path.join(root,'js/fallen-enemies.js'),'utf8');
 function harness(){
- const requests=[],draws=[];let depth=0;const g={save(){depth++;},restore(){depth--;},translate(){},rotate(){},scale(){},drawImage(...args){draws.push(args);}};
- const c={g,stageMode:'base',W:480,H:720,indoorWorld:null,makeAssetImage(src){requests.push(src);return{src,complete:true,naturalWidth:192,naturalHeight:144};},assetOK:im=>!!im?.complete};vm.createContext(c);vm.runInContext(source,c);return{c,requests,draws,get:s=>vm.runInContext(s,c),depth:()=>depth};
+ const requests=[],draws=[],bursts=[];let depth=0;const g={save(){depth++;},restore(){depth--;},translate(){},rotate(){},scale(){},drawImage(...args){draws.push(args);}};
+ const c={g,burst(...args){bursts.push(args);},stageMode:'base',W:480,H:720,indoorWorld:null,makeAssetImage(src){requests.push(src);return{src,complete:true,naturalWidth:192,naturalHeight:144};},assetOK:im=>!!im?.complete};vm.createContext(c);vm.runInContext(source,c);return{c,requests,draws,bursts,get:s=>vm.runInContext(s,c),depth:()=>depth};
 }
 test('crying flight follows impact direction and settles upright without changing actors',()=>{
  const h=harness(),{c}=h;c.loadFallenEnemyArtwork();
@@ -55,11 +55,11 @@ test('sniper scope uses the same airborne and seated crying artwork',()=>{
 
 test('requested sprite sizes apply to world and scope, with ten-second expiry',()=>{
  const h=harness(),{c}=h;c.loadFallenEnemyArtwork();const enemy={x:100,y:100,alive:false};c.rememberFallenEnemy(enemy);
- c.drawFallenEnemies(0,0);assert.ok(Math.abs(Math.max(...h.draws.at(-1).slice(3))-44*1.10)<1e-8);
- c.updateFallenEnemies(9.99);c.drawFallenEnemies(0,0);assert.equal(h.get('fallenEnemies.length'),1);assert.ok(Math.abs(Math.max(...h.draws.at(-1).slice(3))-44*.95)<1e-8);
+ c.drawFallenEnemies(0,0);assert.ok(Math.abs(Math.max(...h.draws.at(-1).slice(3))-44*1.10*1.10)<1e-8);
+ c.updateFallenEnemies(9.99);c.drawFallenEnemies(0,0);assert.equal(h.get('fallenEnemies.length'),1);assert.ok(Math.abs(Math.max(...h.draws.at(-1).slice(3))-44*.95*.95)<1e-8);
  c.updateFallenEnemies(.02);assert.equal(h.get('fallenEnemies.length'),0);c.rememberFallenEnemy(enemy);assert.equal(h.get('fallenEnemies.length'),0);
  c.drawStunnedEnemy(100,100,0);assert.match(h.draws.at(-1)[0].src,/supine/);assert.ok(Math.abs(Math.max(...h.draws.at(-1).slice(3))-44*1.15)<1e-8);
- for(const [remaining,factor] of [[.72,1.10],[.01,.95]]){c.drawScopedCryingEnemy({sniperFallMax:.72,sniperFallT:remaining},100,100,70);assert.ok(Math.abs(Math.max(...h.draws.at(-1).slice(3))-70*factor)<1e-8);}
+ for(const [remaining,factor] of [[.72,1.10*1.10],[.01,.95*.95]]){c.drawScopedCryingEnemy({sniperFallMax:.72,sniperFallT:remaining},100,100,70);assert.ok(Math.abs(Math.max(...h.draws.at(-1).slice(3))-70*factor)<1e-8);}
  assert.equal(h.depth(),0);
 });
 test('real enemy stun uses supine until recovery without replacing living allies or scoring a defeat',()=>{
@@ -69,4 +69,17 @@ test('real enemy stun uses supine until recovery without replacing living allies
  run("soldier(500,1000,0,true,false,false,false,'',false,false,humans[0])");assert.equal(run('stunnedDraws'),1);
  run('update(.1)');assert.equal(run('humans[0].alive'),true);assert.equal(run('humans[0].stun'),0);assert.equal(run('fallenEnemies.length'),0);assert.equal(run('scoreStats.humanKills'),0);
  run("soldier(500,1000,0,false,false,false,false,'',false,false,humans[0])");assert.equal(run('stunnedDraws'),1);
+});
+
+test('expiry emits one allied-style blue burst at the seated location, without off-floor particles',()=>{
+ const h=harness(),{c}=h;c.rememberFallenEnemy({x:100,y:100,alive:false,face:0});
+ c.updateFallenEnemies(9.99);assert.equal(h.bursts.length,0);c.updateFallenEnemies(.01);
+ assert.deepEqual(h.bursts[0],[118,100,18,'#8fd7ff',180]);c.updateFallenEnemies(1);assert.equal(h.bursts.length,1);
+ c.stageMode='indoor';c.indoorWorld={currentFloor:0};c.rememberFallenEnemy({x:100,y:100,alive:false,indoorFloor:1});c.updateFallenEnemies(10);assert.equal(h.bursts.length,1);
+});
+test('simultaneous expiries reuse the real particle cap and do not score additional kills',()=>{
+ const {createGameEngine}=require('./helpers/game-engine.cjs'),{run}=createGameEngine(root,{seed:7});
+ run("stageMode='beginner';reset(false);clearFallenEnemies();parts=[];for(let i=0;i<80;i++)rememberFallenEnemy({x:500,y:1000,alive:false});updateFallenEnemies(10)");
+ assert.equal(run('fallenEnemies.length'),0);assert.equal(run('parts.length'),run('MAX_PARTS'));assert.equal(run("parts.every(q=>q.col==='#8fd7ff')"),true);assert.equal(run('scoreStats.humanKills'),0);
+ run('updateFallenEnemies(1);updateParts(1)');assert.equal(run('parts.length'),0);
 });

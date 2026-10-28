@@ -975,7 +975,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.28.0856',FILE_CREATED_AT='2026/10/28 08:56',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.28.1622',FILE_CREATED_AT='2026/10/28 16:22',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -8399,7 +8399,7 @@ function reportGameError(error){
 <script src="js/unlocks.js?v=2026.10.28.0713"></script>
 <script src="js/enemy-bomber.js?v=2026.10.28.0713"></script>
 <script src="js/characters.js?v=2026.10.19.1032"></script>
-<script src="js/fallen-enemies.js?v=2026.10.28.0713"></script>
+<script src="js/fallen-enemies.js?v=2026.10.28.1622"></script>
 <script src="js/enemy-dogs.js?v=2026.10.28.0713"></script>
 <script src="js/partner.js?v=2026.10.28.0713"></script>
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
