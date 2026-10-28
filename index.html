@@ -975,7 +975,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.28.1622',FILE_CREATED_AT='2026/10/28 16:22',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.28.1720',FILE_CREATED_AT='2026/10/28 17:20',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -5827,7 +5827,7 @@ function update(dt){
    if(h.st){h.cd-=dt;h.ct=(h.ct||0)+dt;const sharedPause=(h.sharePause||0)>0,foundPause=(h.foundPause||0)>0;if(sharedPause)h.sharePause=Math.max(0,h.sharePause-dt);if(foundPause)h.foundPause=Math.max(0,h.foundPause-dt);const movePause=sharedPause||foundPause||(h.chatResumeT||0)>0;h.face=(foundPause&&p)?Math.atan2(p.y-h.y,p.x-h.x):toT;
     // 通常兵だけが設置爆弾を使う。発見モード突入時に設置タイミングを個体ごとにランダム決定。
     if(!h.indoorGuard&&!h.elite&&!h.bu&&!h.plantT&&h.ct>(h.bombAt??1.5)&&!movePause){h.bu=true;h.plantT=.35+R()*.4;h.plantA=toT;}
-    if(h.plantT>0){h.plantT=Math.max(0,h.plantT-dt);h.face=h.plantA??toT;if(h.plantT<=0){const bp=enemyBombPoint(h,h.plantA??toT,100);bombs.push({x:bp.x,y:bp.y,own:'e',armed:true,t:4});h.plantA=null;}}
+    if(h.plantT>0){h.plantT=Math.max(0,h.plantT-dt);h.face=h.plantA??toT;if(h.plantT<=0){const bp=enemyBombPoint(h,h.plantA??toT,100);bombs.push({x:h.x,y:h.y,own:'e',armed:true,t:4,fly:.35,sx:h.x,sy:h.y,tx:bp.x,ty:bp.y});h.plantA=null;}}
     else if(!movePause){if(!moveEliteBombAvoidance(h,moveSp,dt)&&d>110)moveHumanChase(h,toT,moveSp,dt);}
     // 発見モードへの移行直後は、0.5〜1秒の静止が終わるまで発砲しない。
     if(!movePause&&d<150&&h.cd<=0&&vis){if(h.elite){h.characterShotAt=performance.now();fire(h.x,h.y,toT+(R()-.5)*.08,'e','r',330,150);h.cd=1.35;}else{if(!(h.burstLeft>0))h.burstLeft=3;h.characterShotAt=performance.now();fire(h.x,h.y,toT+(R()-.5)*.15,'e','r',330,150);h.burstLeft--;h.cd=h.burstLeft>0?.14:2;}}}
@@ -7479,7 +7479,7 @@ function draw(near){
  if(radio&&!radio.got&&drawPointInView(radio.x,radio.y,cx,cy,100))drawRadioPickup(radio.x,radio.y);
  if(base&&drawBoundsInView(base.x,base.y,base.w,base.h,cx,cy,80))drawBase();
  drawTankWrecks(cx,cy);
- for(const b of bombs){const own=b.own==='p',rr=own?7.5:5.5;g.fillStyle=own?'#181818':'#111';g.beginPath();g.arc(b.x,b.y,rr,0,6.28);g.fill();if(own){g.strokeStyle='rgba(255,95,75,.8)';g.lineWidth=1.5;g.beginPath();g.arc(b.x,b.y,rr+2+(Math.sin(performance.now()/130)+1)*1.2,0,6.28);g.stroke();}if(Math.floor(performance.now()/(own?240:400))%2){g.fillStyle=own?'#ff4f45':'#ff9a2a';g.fillRect(b.x-(own?2:1.5),b.y-(own?2:1.5),own?4:3,own?4:3);}}
+ for(const b of bombs){const own=b.own==='p',rr=own?7.5:5.5,throwLift=!own&&b.fly>0?Math.sin(Math.PI*(1-b.fly/.35))*24:0;if(throwLift>0){g.fillStyle='rgba(0,0,0,.24)';g.beginPath();g.ellipse(b.x,b.y,5,2.5,0,0,6.28);g.fill();g.save();g.translate(0,-throwLift);}g.fillStyle=own?'#181818':'#111';g.beginPath();g.arc(b.x,b.y,rr,0,6.28);g.fill();if(own){g.strokeStyle='rgba(255,95,75,.8)';g.lineWidth=1.5;g.beginPath();g.arc(b.x,b.y,rr+2+(Math.sin(performance.now()/130)+1)*1.2,0,6.28);g.stroke();}if(Math.floor(performance.now()/(own?240:400))%2){g.fillStyle=own?'#ff4f45':'#ff9a2a';g.fillRect(b.x-(own?2:1.5),b.y-(own?2:1.5),own?4:3,own?4:3);}if(throwLift>0)g.restore();}
  for(const w of waves){const k=1-w.r/w.max;g.strokeStyle='rgba(255,170,60,'+k+')';g.lineWidth=6;g.beginPath();g.arc(w.x,w.y,w.r,0,6.28);g.stroke();g.fillStyle='rgba(255,200,100,'+.35*k+')';g.fill();}
  for(const c of cars){if(!drawPointInView(c.x,c.y,cx,cy,160))continue;const foregroundVehicle=c.kind==='truck'||(c.kind==='tank'&&inBush(c));if(!foregroundVehicle)drawVehicle(c,c.x,c.y,c.body??-1.57,c.body??-1.57);const iy=c.y-(c.kind==='fighter'?66:c.kind==='truck'?42:50);markVehicle(c.x,iy,c.f<=0?'fuel':'ride');if(near===c)lab(c.t.n,c.x,iy-24,c.kind==='tank'?'bold 17px system-ui':'bold 14px system-ui','#fff');}
  if(stageMode==='front')for(const ally of allies||[])if(ally.alive&&enemyInView(ally,cx,cy,430))drawFrontlineAllyVision(ally);
