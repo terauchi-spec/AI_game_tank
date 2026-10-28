@@ -2633,7 +2633,7 @@ function infiltrationCamera(){
 function beginInfiltrationExtraction(exit){
   if(stageMode!=='indoor'||!mission||mission.extraction)return;
   const view=infiltrationCamera();
-  mission.extraction={elapsed:0,duration:2.8,camX:view.x,camY:view.y,
+  mission.extraction={elapsed:0,duration:2.8,departureElapsed:0,departureDuration:1.8,camX:view.x,camY:view.y,
     startX:view.x-100,stopX:exit.x,endX:view.x+W+100,y:exit.y+(p.y>=exit.y?-68:68),
     carX:view.x-100,fromX:p.x,fromY:p.y,boarded:false,phase:'approach'};
   if(typeof skill!=='undefined'&&skill==='partner'&&typeof partner!=='undefined'&&partner){
@@ -2657,12 +2657,23 @@ function beginInfiltrationExtraction(exit){
   p.dig=0;p.digPrep=0;p.drill=0;p.grappleT=0;p.flameActive=false;
   p.sniperMode=false;p.sniperEnterT=0;p.sniperReadyT=0;
 }
+function infiltrationExtractionDeparting(){
+  return stageMode==='indoor'&&state==='succeeded'&&!!mission?.extraction?.boarded&&mission.extraction.phase!=='departed';
+}
 function updateInfiltrationExtraction(dt){
   const v=stageMode==='indoor'&&mission?.extraction;
-  if(state!=='indoorEscape'||!v)return;
-  v.elapsed=Math.min(v.duration,v.elapsed+Math.max(0,dt));const t=v.elapsed;
-  if(t<1.8){const u=t/1.8;v.carX=v.startX+(v.stopX-v.startX)*(1-(1-u)**3);}
-  else v.carX=v.stopX;
+  if(!v||(state!=='indoorEscape'&&!infiltrationExtractionDeparting()))return;
+  if(state==='succeeded'){
+    v.departureElapsed=Math.min(v.departureDuration,v.departureElapsed+Math.max(0,dt));
+    const u=v.departureElapsed/v.departureDuration;
+    v.carX=v.stopX+(v.endX-v.stopX)*u*u;
+    v.phase=u>=1?'departed':'departing';
+  }else{
+    v.elapsed=Math.min(v.duration,v.elapsed+Math.max(0,dt));const t=v.elapsed;
+    if(t<1.8){const u=t/1.8;v.carX=v.startX+(v.stopX-v.startX)*(1-(1-u)**3);}
+    else v.carX=v.stopX;
+  }
+  const t=v.elapsed;
   if(t>=2.05&&!v.boarded){
     v.phase='boarding';const u=Math.min(1,(t-2.05)/.75),x=v.stopX-8,y=v.y+10;
     p.body=Math.atan2(y-v.fromY,x-v.fromX);p.ang=p.body;
@@ -2690,7 +2701,7 @@ function updateInfiltrationExtraction(dt){
     if(ride.boarded){q.x=v.carX-25;q.y=v.y-10;q.face=0;q.moving=false;}
     else{q.moving=!(q.stun>0)&&Math.hypot(q.x-oldX,q.y-oldY)>.01;if(q.moving)q.face=Math.atan2(q.y-oldY,q.x-oldX);}
   }
-  if(v.boarded){state='succeeded';successFrameDrawn=false;resultAnimT=0;}
+  if(v.boarded&&state==='indoorEscape'){state='succeeded';successFrameDrawn=false;resultAnimT=0;}
 }
 let indoorJeepCanvas=null;
 function infiltrationJeepSprite(){
