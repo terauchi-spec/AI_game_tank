@@ -58,7 +58,7 @@ test('requested sprite sizes apply to world and scope, with ten-second expiry',(
  c.drawFallenEnemies(0,0);assert.ok(Math.abs(Math.max(...h.draws.at(-1).slice(3))-44*1.10*1.10)<1e-8);
  c.updateFallenEnemies(9.99);c.drawFallenEnemies(0,0);assert.equal(h.get('fallenEnemies.length'),1);assert.ok(Math.abs(Math.max(...h.draws.at(-1).slice(3))-44*.95*.95)<1e-8);
  c.updateFallenEnemies(.02);assert.equal(h.get('fallenEnemies.length'),0);c.rememberFallenEnemy(enemy);assert.equal(h.get('fallenEnemies.length'),0);
- c.drawStunnedEnemy(100,100,0);assert.match(h.draws.at(-1)[0].src,/supine/);assert.ok(Math.abs(Math.max(...h.draws.at(-1).slice(3))-44*1.15)<1e-8);
+ c.drawStunnedEnemy(100,100,0);assert.match(h.draws.at(-1)[0].src,/supine/);assert.ok(Math.abs(Math.max(...h.draws.at(-1).slice(3))-44*1.15*1.10)<1e-8);
  for(const [remaining,factor] of [[.72,1.10*1.10],[.01,.95*.95]]){c.drawScopedCryingEnemy({sniperFallMax:.72,sniperFallT:remaining},100,100,70);assert.ok(Math.abs(Math.max(...h.draws.at(-1).slice(3))-70*factor)<1e-8);}
  assert.equal(h.depth(),0);
 });

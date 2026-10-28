@@ -42,7 +42,7 @@ function drawFallenEnemies(cx,cy){
 }
 function drawStunnedEnemy(x,y,face,size=FALLEN_ENEMY_SIZE*1.15){
  const im=fallenEnemyArt.supine;if(!assetOK(im))return false;
- const scale=size/Math.max(im.naturalWidth,im.naturalHeight),w=im.naturalWidth*scale,h=im.naturalHeight*scale;
+ const scale=size*1.10/Math.max(im.naturalWidth,im.naturalHeight),w=im.naturalWidth*scale,h=im.naturalHeight*scale;
  g.save();g.translate(x,y);g.rotate(face);g.imageSmoothingEnabled=true;g.drawImage(im,-w/2,-h/2,w,h);g.restore();return true;
 }
 
