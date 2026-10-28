@@ -963,7 +963,7 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 <div id="missionHud" role="status"></div>
 
 <script src="js/player-tank-art.js?v=2026.10.28.0713"></script>
-<script src="js/audio.js?v=2026.10.28.2048"></script>
+<script src="js/audio.js?v=2026.10.28.2053"></script>
 <script src="js/bgm.js?v=2026.10.28.0713"></script>
 <script src="js/audio-recovery.js?v=2026.10.28.1725"></script>
 <script>
@@ -976,7 +976,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.28.2048',FILE_CREATED_AT='2026/10/28 20:48',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.28.2053',FILE_CREATED_AT='2026/10/28 20:53',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;

@@ -139,17 +139,22 @@ function updateGameAudio(){
  preloadGameSe();
  const active=typeof state!=='undefined'&&state==='play'&&gameSeVisible();
  if(!active){stopGameFootsteps();for(const key of [...gameSe.loops.keys()])setGameSeLoop(key,null,0);gameSe.previous=null;gameSe.enemyPositions=new WeakMap();return;}
- if(typeof p==='undefined'||!p){stopGameFootsteps();setGameSeLoop('vehicle',null,0);return;}
+ if(typeof p==='undefined'||!p){stopGameFootsteps();setGameSeLoop('vehicle',null,0);setGameSeLoop('bush',null,0);return;}
  const now=performance.now(),prior=gameSe.previous,moved=prior?Math.hypot(p.x-prior.x,p.y-prior.y):0,dt=prior?Math.max(.001,(now-prior.at)/1000):1;
  // Reuse the last bush result while stationary and share the lookup with footsteps.
  const bush=stageMode!=='indoor'&&(prior&&moved===0?prior.bush:typeof inBush==='function'&&inBush(p));
  gameSe.previous={x:p.x,y:p.y,at:now,bush};
  const speed=moved/dt,moving=dt<.3&&moved>.15&&speed<1200;
- if(moving&&prior&&!prior.bush&&bush&&!(p.dig>0)&&!(p.digPrep>0)&&(!p.tank||p.tank.kind!=='fighter'))playGameSe('bushEnter');
+ // One shared source loops even while standing in the bush. Membership changes
+ // bypass the 10Hz environment scan; unchanged loops need no parameter updates.
+ const bushSound=bush&&!(p.dig>0)&&!(p.digPrep>0)&&(!p.tank||p.tank.kind!=='fighter')?'bushEnter':null;
+ if((gameSe.loops.get('bush')?.name||null)!==bushSound)setGameSeLoop('bush',bushSound,.18);
+ const leftBush=prior?.bush&&!bush;
+ if(leftBush)stopGameFootsteps();
  const walking=moving&&!p.tank&&!(p.dig>0)&&!(p.digPrep>0)&&stageMode!=='indoor'&&!(typeof inWaterAt==='function'&&inWaterAt(p.x,p.y,7));
  // 10Hzの環境音更新を待たず、静止を検出したフレームで再生中の足音も止める。
  if(!walking)stopGameFootsteps();
- else if(now-gameSe.grassAt>350){gameSe.grassAt=now;playGameSe(bush?'grassStep':'dirtStep');}
+ else if(leftBush||now-gameSe.grassAt>350){gameSe.grassAt=now;playGameSe(bush?'grassStep':'dirtStep');}
  const vehicle=p.tank,groundVehicle=vehicle&&vehicle.kind!=='fighter';
  const vehicleSound=groundVehicle&&moving?(vehicle.kind==='tank'&&vehicle.t?.id!=='armored'?'tankMove':'wheelMove'):null;
  // 足音と同様、静止・降車は検出したフレームで停止。発進・車両切替も待たずに反映する。

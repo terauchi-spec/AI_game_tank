@@ -236,20 +236,25 @@ test('player fainting sound fires only after a successful new stun and preserves
  c.stunHuman({alive:true},'ally');assert.equal(sounds[1].name,'skill');assert.equal(c.scoreStats.tacticalStuns,1);
 });
 
-test('bush entry plays once per outside-to-inside crossing while grass footsteps remain active',async()=>{
- const h=harness(),{c}=h;let inside=false,lookups=0;c.inBush=()=>{lookups++;return inside;};await c.loadGameSe('bushEnter');await c.loadGameSe('grassStep');
- const entries=()=>h.sources.filter(s=>s.buffer===c.get('gameSe.cache.get("bushEnter").buffer')).length;
- c.updateGameAudio();assert.equal(entries(),0);inside=true;c.now+=120;c.p.x+=10;c.updateGameAudio();assert.equal(entries(),1);
- for(let i=0;i<5;i++){c.now+=120;c.p.x+=10;c.updateGameAudio();}assert.equal(entries(),1);assert.equal(c.get('gameSe.footstep.name'),'grassStep');
- const count=lookups;c.now+=120;c.updateGameAudio();assert.equal(lookups,count);assert.equal(entries(),1);
- inside=false;c.now+=120;c.p.x+=10;c.updateGameAudio();inside=true;c.now+=120;c.p.x+=10;c.updateGameAudio();assert.equal(entries(),2);
- c.state='paused';c.updateGameAudio();c.state='play';c.now+=120;c.updateGameAudio();assert.equal(entries(),2);
+test('bush SE loops while standing inside, shares one source, and stops on the first exit frame',async()=>{
+ const h=harness(),{c}=h;let inside=false;c.inBush=()=>inside;await c.loadGameSe('bushEnter');await c.loadGameSe('grassStep');await c.loadGameSe('dirtStep');
+ c.updateGameAudio();inside=true;c.now+=120;c.p.x+=10;c.updateGameAudio();await settle();
+ const voice=c.get('gameSe.loops.get("bush").voice');assert.ok(voice);assert.equal(voice.source.loop,true);
+ for(let i=0;i<5;i++){c.now+=16;c.updateGameAudio();await settle();assert.equal(c.get('gameSe.loops.get("bush").voice'),voice);}
+ inside=false;c.now+=16;c.p.x+=10;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("bush")'),false);assert.equal(voice.source.stopped,true);assert.equal(c.get('gameSe.footstep.name'),'dirtStep');
+ inside=true;c.now+=16;c.p.x+=10;c.updateGameAudio();await settle();assert.notEqual(c.get('gameSe.loops.get("bush").voice'),voice);
+ c.state='paused';c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("bush")'),false);
 });
-test('spawn, teleport, hiding and flying do not create bush-entry sounds; ground vehicles do',async()=>{
- for(const mode of ['spawn','teleport','dig','fighter','tank','truck']){
-  const h=harness(),{c}=h;let inside=mode==='spawn';c.inBush=()=>inside;await c.loadGameSe('bushEnter');c.updateGameAudio();inside=true;
+test('bush loops on spawn and ground vehicles, stays silent underground or in aircraft, and stops without a player',async()=>{
+ for(const mode of ['spawn','dig','fighter','tank','truck']){
+  const h=harness(),{c}=h;c.inBush=()=>true;await c.loadGameSe('bushEnter');
   if(mode==='dig')c.p.dig=1;if(['fighter','tank','truck'].includes(mode))c.p.tank={kind:mode,t:{id:'t34'}};
-  c.now+=120;c.p.x+=mode==='teleport'?1000:10;c.updateGameAudio();
-  const count=h.sources.filter(s=>s.buffer===c.get('gameSe.cache.get("bushEnter").buffer')).length;assert.equal(count,['tank','truck'].includes(mode)?1:0,mode);
+  c.updateGameAudio();await settle();assert.equal(c.get('gameSe.loops.has("bush")'),!['dig','fighter'].includes(mode),mode);
+  c.p=null;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("bush")'),false);
  }
+});
+test('leaving a bush before decoding finishes cannot start a delayed bush loop',async()=>{
+ const h=harness({defer:true}),{c}=h;let inside=true;c.inBush=()=>inside;c.get('gameSe.preloaded=true');
+ c.updateGameAudio();inside=false;c.now+=16;c.p.x+=1;c.updateGameAudio();
+ for(const complete of [...h.waiting])complete();await settle();assert.equal(c.get('gameSe.loops.has("bush")'),false);assert.equal(h.sources.filter(s=>s.loop).length,0);
 });
