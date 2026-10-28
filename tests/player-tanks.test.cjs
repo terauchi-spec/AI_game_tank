@@ -39,14 +39,14 @@ function artHarness(){
  return{c,commands,rasters,canvases,depth:()=>depth};
 }
 test('deformed artwork caches exactly two layers per type and does no repeated vector work or allocations',()=>{
- const h=artHarness();for(const t of h.c.types)h.c.tankShape(12,34,.2,.8,t,30,'both');assert.equal(h.canvases.length,14);assert.equal(h.rasters.length,14);assert.equal(h.depth(),0);
+ const h=artHarness();for(const t of h.c.types)h.c.tankShape(12,34,.2,.8,t,30,'both');assert.equal(h.canvases.length,15);assert.equal(h.rasters.length,28);assert.equal(h.depth(),0);
  const originals=h.rasters.map(args=>args[0]);h.rasters.length=0;h.commands.length=0;
  for(let n=0;n<10;n++)for(const t of h.c.types)h.c.tankShape(12,34,n*.1,n*.2,t,30,'both');
- assert.equal(h.canvases.length,14);assert.equal(h.rasters.length,140);assert.ok(h.commands.every(cmd=>['translate','rotate','beginPath','ellipse','fill'].includes(cmd[0])));assert.equal(h.depth(),0);
- for(let i=0;i<140;i++)assert.equal(h.rasters[i][0],originals[i%14]);assert.ok(h.canvases.every(v=>v.width<=80&&v.height<=120));assert.ok(h.canvases.reduce((sum,v)=>sum+v.width*v.height,0)<110000);
+ assert.equal(h.canvases.length,15);assert.equal(h.rasters.length,280);assert.ok(h.commands.every(cmd=>['translate','rotate','beginPath','ellipse','fill'].includes(cmd[0])));assert.equal(h.depth(),0);
+ for(let i=0;i<280;i++)assert.equal(h.rasters[i][0],originals[i%28]);assert.ok(h.canvases.every(v=>v.width<=80&&v.height<=120));assert.ok(h.canvases.reduce((sum,v)=>sum+v.width*v.height,0)<110000);
 });
 test('split foliage layers keep independent turret headings, caller opacity and all seven cached designs',()=>{
- const h=artHarness();for(const t of h.c.types){h.c.g.globalAlpha=.4;h.rasters.length=0;h.commands.length=0;h.c.tankShape(0,0,.3,1.2,t,30,'hull');assert.equal(h.rasters.length,1);assert.equal(h.c.g.globalAlpha,.4);assert.ok(h.commands.some(cmd=>cmd[0]==='rotate'&&cmd[1]===.3+Math.PI/2));h.commands.length=0;h.c.tankShape(0,0,.3,1.2,t,30,'turret');assert.equal(h.rasters.length,2);assert.ok(h.commands.some(cmd=>cmd[0]==='rotate'&&cmd[1]===1.2+Math.PI/2));assert.equal(h.depth(),0);}
+ const h=artHarness();for(const t of h.c.types){h.c.g.globalAlpha=.4;h.rasters.length=0;h.commands.length=0;h.c.tankShape(0,0,.3,1.2,t,30,'hull');assert.equal(h.rasters.length,3);assert.equal(h.c.g.globalAlpha,.4);assert.ok(h.commands.some(cmd=>cmd[0]==='rotate'&&cmd[1]===.3+Math.PI/2));h.commands.length=0;h.c.tankShape(0,0,.3,1.2,t,30,'turret');assert.equal(h.rasters.length,4);assert.ok(h.commands.some(cmd=>cmd[0]==='rotate'&&cmd[1]===1.2+Math.PI/2));assert.equal(h.depth(),0);}
 });
 test('deformed artwork is limited to player tanks and preserves the legacy enemy renderer',()=>{
  const h=artHarness();h.c.shade=()=> '#888';h.c.tankShape(0,0,0,0,{id:'enemy',col:'#333333'},30);assert.equal(h.canvases.length,0);assert.equal(h.rasters.length,0);assert.ok(h.commands.some(cmd=>cmd[0]==='fillRect'));assert.equal(h.depth(),0);
@@ -68,4 +68,18 @@ test('tracks stop on idle, turning, empty fuel and pause, ignore teleports, and 
 });
 test('track overlays stay on hull layers, retain caller opacity, and use the longer Churchill belt',()=>{
  const h=artHarness();h.c.g.globalAlpha=.4;h.c.tankShape(0,0,.3,1.2,h.c.types[0],30,'turret',2);assert.equal(h.rasters.length,1);h.rasters.length=0;h.c.tankShape(0,0,.3,1.2,h.c.types[5],30,'hull',2);assert.equal(h.rasters.length,3);const tracks=h.rasters.filter(a=>a.length===9);assert.ok(tracks.every(a=>a[2]+a[4]<=96));assert.ok(Math.abs(tracks[0][8]-30*2.12*1.16)<1e-9);assert.equal(h.c.g.globalAlpha,.4);assert.equal(h.depth(),0);
+});
+
+test('parked, newly boarded and stationary driven tanks use identical full-width belts in every model',()=>{
+ const h=artHarness();h.c.TANK_DRAW=30;h.c.state='play';vm.runInContext(html.split('\n').find(l=>l.startsWith('function drawVehicle(v,')),h.c);
+ for(const t of h.c.types){
+  const vehicle={kind:'tank',t,f:100};h.c.drawVehicle(vehicle,100,100,0,0);const parked=h.rasters.slice(-4);
+  h.c.p.tank=vehicle;h.c.drawVehicle(vehicle,100,100,0,0);const boarded=h.rasters.slice(-4);
+  assert.deepEqual(boarded,parked,t.id);const belts=parked.filter(a=>a.length===9);assert.equal(belts.length,2);assert.equal(belts[0][2],0);assert.equal(belts[1][2],0);
+  assert.equal(belts[0][7],30*.42);assert.equal(belts[1][7],30*.42);assert.equal(belts[0][8],belts[1][8]);assert.equal(belts[0][1],belts[1][1]);
+  assert.equal(belts[0][5],-30*.98);assert.equal(belts[1][5],30*.56);
+  h.c.drawVehicle(vehicle,106,100,0,0);const rolling=h.rasters.slice(-4);assert.equal(rolling[0][2],3);assert.equal(rolling[1][2],3);assert.equal(rolling[2][0],parked[2][0]);assert.equal(rolling[3][0],parked[3][0]);
+  h.c.p.tank=null;h.c.drawVehicle(vehicle,106,100,0,0);assert.deepEqual(h.rasters.slice(-4),rolling,t.id+' exit');
+ }
+ assert.equal(h.depth(),0);
 });

@@ -962,7 +962,7 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 </div><footer class="sk-bottom stage-bottom"><button type="button" class="sk-toggle" id="stageDebugAll" aria-pressed="false">全ステージを表示</button><button type="button" class="sk-deploy" id="stageDeploy" disabled>ステージを選択してください</button></footer></div></div>
 <div id="missionHud" role="status"></div>
 
-<script src="js/player-tank-art.js?v=2026.10.28.0713"></script>
+<script src="js/player-tank-art.js?v=2026.10.28.2114"></script>
 <script src="js/audio.js?v=2026.10.28.2053"></script>
 <script src="js/bgm.js?v=2026.10.28.0713"></script>
 <script src="js/audio-recovery.js?v=2026.10.28.1725"></script>
@@ -976,7 +976,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.28.2053',FILE_CREATED_AT='2026/10/28 20:53',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.28.2114',FILE_CREATED_AT='2026/10/28 21:14',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -6274,7 +6274,7 @@ function tankShape(x,y,body,ang,tank,sz,layer='both',trackPhase=null){
  if(tank&&typeof tank==='object'&&typeof PLAYER_TANK_ART!=='undefined'&&PLAYER_TANK_ART[tank.id]){drawPlayerTankArt(x,y,body,ang,tank.id,sz,layer,trackPhase);return;}
  drawOriginalTankShape(x,y,body,ang,tank,sz,layer,g);
 }
-function drawOriginalTankShape(x,y,body,ang,tank,sz,layer,context){
+function drawOriginalTankShape(x,y,body,ang,tank,sz,layer,context,animatedTracks=false){
  const g=context;
  const t=typeof tank==='object'?tank:{id:'enemy',col:tank},id=t.id||'enemy';
  let col=t.col||'#4b5f9e',accent=shade(col,.82),hi=shade(col,1.18),low=shade(col,.62),dark='#111214',steel='#5a606a';
@@ -6327,14 +6327,19 @@ function drawOriginalTankShape(x,y,body,ang,tank,sz,layer,context){
  // Churchill's longer track run distinguishes its infantry-tank hull.
  const trackLength=id==='churchill'?1.16:1;
  // tracks outer
- g.fillStyle='#090909';
- g.fillRect(-sz*1.05,-sz*1.13*trackLength,sz*.56,sz*2.26*trackLength);
- g.fillRect(sz*.49,-sz*1.13*trackLength,sz*.56,sz*2.26*trackLength);
-
- // track belts
- g.fillStyle='#2f3338';
- g.fillRect(-sz*.98,-sz*1.06*trackLength,sz*.42,sz*2.12*trackLength);
- g.fillRect(sz*.56,-sz*1.06*trackLength,sz*.42,sz*2.12*trackLength);
+ if(animatedTracks){
+  // Leave the belt interiors transparent; the shared animated strip is below this cache.
+  g.strokeStyle='#090909';g.lineWidth=sz*.07;
+  g.strokeRect(-sz*1.015,-sz*1.095*trackLength,sz*.49,sz*2.19*trackLength);
+  g.strokeRect(sz*.525,-sz*1.095*trackLength,sz*.49,sz*2.19*trackLength);
+ }else{
+  g.fillStyle='#090909';
+  g.fillRect(-sz*1.05,-sz*1.13*trackLength,sz*.56,sz*2.26*trackLength);
+  g.fillRect(sz*.49,-sz*1.13*trackLength,sz*.56,sz*2.26*trackLength);
+  g.fillStyle='#2f3338';
+  g.fillRect(-sz*.98,-sz*1.06*trackLength,sz*.42,sz*2.12*trackLength);
+  g.fillRect(sz*.56,-sz*1.06*trackLength,sz*.42,sz*2.12*trackLength);
+ }
 
  // road wheels / rollers
  for(const side of [-1,1]){

@@ -8,7 +8,7 @@ const playerTankArtCache=new Map();
 function paintPlayerTankArt(q,id,layer){
  const tank=TYPES.find(t=>t.id===id);
  q.save();q.scale(1/32,1/32);
- drawOriginalTankShape(0,0,-Math.PI/2,-Math.PI/2,tank,32,layer,q);
+ drawOriginalTankShape(0,0,-Math.PI/2,-Math.PI/2,tank,32,layer,q,true);
  q.restore();
 }
 function playerTankArtSprites(id){
@@ -24,11 +24,11 @@ function playerTankArtSprites(id){
 function drawPlayerTankArt(x,y,body,ang,id,sz,layer,trackPhase=null){
  const art=playerTankArtSprites(id);
  const stamp=sprite=>drawStaticRaster(sprite.canvas,sprite.x*sz,sprite.y*sz,sprite.w*sz,sprite.h*sz);
- if(layer!=='turret'){g.save();g.translate(x,y);g.rotate(body+Math.PI/2);stamp(art.hull);if(Number.isFinite(trackPhase))drawPlayerTankTracks(id,sz,trackPhase);g.restore();}
+ if(layer!=='turret'){g.save();g.translate(x,y);g.rotate(body+Math.PI/2);drawPlayerTankTracks(id,sz,Number.isFinite(trackPhase)?trackPhase:0);stamp(art.hull);g.restore();}
  if(layer!=='hull'){g.save();g.translate(x,y);g.rotate(ang+Math.PI/2);stamp(art.turret);g.restore();}
 }
 
-// One shared strip, not extra full hull frames. Source cropping moves the outer tread bands.
+// One shared strip, not extra full hull frames. Source cropping moves full-width belts beneath the cached wheels and hull.
 let playerTankTrackStrip=null;
 function drawPlayerTankTracks(id,sz,phase){
  if(!playerTankTrackStrip){
@@ -40,8 +40,8 @@ function drawPlayerTankTracks(id,sz,phase){
  }
  const length=id==='churchill'?1.16:1,sourceHeight=2.12*32*length,top=-sz*1.06*length,height=sz*2.12*length;
  const offset=((phase%8)+8)%8;
- drawStaticRaster(playerTankTrackStrip,0,offset,8,sourceHeight,-sz*.98,top,sz*.12,height);
- drawStaticRaster(playerTankTrackStrip,0,offset,8,sourceHeight,sz*.86,top,sz*.12,height);
+ drawStaticRaster(playerTankTrackStrip,0,offset,8,sourceHeight,-sz*.98,top,sz*.42,height);
+ drawStaticRaster(playerTankTrackStrip,0,offset,8,sourceHeight,sz*.56,top,sz*.42,height);
 }
 function playerTankTrackPhase(v,x,y,body){
  if(!v?.t||!PLAYER_TANK_ART[v.t.id])return null;
