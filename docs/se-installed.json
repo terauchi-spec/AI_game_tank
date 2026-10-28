@@ -1,5 +1,5 @@
 {
-  "source": "こっそり戦車大作戦_ゲーム_SE.xlsx B列の緑 + 共通スキル発動音 se_skills.mp3 + 追加ドリル接触音 se_063_drill_contact.mp3 + 添付敵戦車走行音 se_00_enemy_tank_movement_loop.mp3 + 追加SE（花火・土の足音・目標破壊・狙撃ズーム）（反撃警告SEは除外） + 戦車7車種の主砲SE（追加6種）・トラック/装甲車の走行音更新",
+  "source": "こっそり戦車大作戦_ゲーム_SE.xlsx B列の緑 + 共通スキル発動音 se_skills.mp3 + 追加ドリル接触音 se_063_drill_contact.mp3 + 添付敵戦車走行音 se_00_enemy_tank_movement_loop.mp3 + 追加SE（花火・土の足音・目標破壊・狙撃ズーム）（反撃警告SEは除外） + 戦車7車種の主砲SE（追加6種）・トラック/装甲車の走行音更新 + アンロックカード表示音・プレイヤー気絶攻撃音",
   "ids": [
     1,
     2,
@@ -120,7 +120,9 @@
     "assets/audio/se/se_025_tank_cannon_fire_4.mp3",
     "assets/audio/se/se_025_tank_cannon_fire_5.mp3",
     "assets/audio/se/se_025_tank_cannon_fire_6.mp3",
-    "assets/audio/se/se_025_tank_cannon_fire_7.mp3"
+    "assets/audio/se/se_025_tank_cannon_fire_7.mp3",
+    "assets/audio/se/se_unlock_card.mp3",
+    "assets/audio/se/se_fainting.mp3"
   ],
   "skillActivation": {
     "file": "assets/audio/se/se_skills.mp3",

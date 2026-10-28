@@ -101,3 +101,14 @@ test('late rankings join the active sequence without repeating earlier cards or 
 test('a single unlock also returns after its reveal with no extra pause',()=>{
  const h=harness();h.c.scoreStats={final:{total:100},awards:{newTitles:['v3_stealth']}};h.c.syncResultScreen();h.flush();assert.equal(h.getNode('unlockScreen').scrolls.length,1);h.flush();assert.equal(h.getNode('unlockScreen').scrolls[1].top,0);assert.deepEqual(h.delays,[120,550]);assert.equal(h.timers.size,0);
 });
+
+test('each automatic unlock card plays its SE once; syncing and canceled timers do not replay it',()=>{
+ const h=harness(),{c}=h;c.scoreStats=run();c.syncResultScreen();assert.equal(h.sounds.length,0);
+ for(let i=1;i<=3;i++){h.flush();assert.deepEqual(h.sounds,Array(i).fill('unlockCard'));for(let j=0;j<10;j++)c.syncResultScreen();assert.equal(h.sounds.length,i);}
+ h.flush();assert.equal(h.sounds.length,3);c.cancelUnlockReveal();h.flush();assert.equal(h.sounds.length,3);
+ const interrupted=harness();interrupted.c.scoreStats=run();interrupted.c.syncResultScreen();interrupted.c.cancelUnlockReveal();interrupted.flush();assert.equal(interrupted.sounds.length,0);
+});
+test('late visible ranking cards play the card sound once without repeating earlier cards',()=>{
+ const h=harness(),{c}=h;c.scoreStats=run();c.syncResultScreen();for(let i=0;i<4;i++)h.flush();assert.equal(h.sounds.length,3);
+ c.scoreStats.leaderboardUpdates=[{board:'overall',position:1}];c.syncResultScreen();assert.equal(h.sounds.length,4);assert.equal(h.sounds.at(-1),'unlockCard');c.syncResultScreen();assert.equal(h.sounds.length,4);
+});

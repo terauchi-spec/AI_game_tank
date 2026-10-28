@@ -963,7 +963,7 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 <div id="missionHud" role="status"></div>
 
 <script src="js/player-tank-art.js?v=2026.10.28.0713"></script>
-<script src="js/audio.js?v=2026.10.28.0713"></script>
+<script src="js/audio.js?v=2026.10.28.2033"></script>
 <script src="js/bgm.js?v=2026.10.28.0713"></script>
 <script src="js/audio-recovery.js?v=2026.10.28.1725"></script>
 <script>
@@ -976,7 +976,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.28.1725',FILE_CREATED_AT='2026/10/28 17:25',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.28.2033',FILE_CREATED_AT='2026/10/28 20:33',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -999,7 +999,7 @@ function ensureAudio(event){if(typeof recoverGameAudio==='function')return recov
 function tone(f=440,d=.08,v=.035,type='square',f2=null){if(!audioCtx||!gameSoundEnabled)return;const t=audioCtx.currentTime,o=audioCtx.createOscillator(),a=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t+d);a.gain.setValueAtTime(v,t);a.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(a);a.connect(gameAudioDestination(audioCtx));o.start(t);o.stop(t+d+.02);}
 function noise(d=.12,v=.025){if(!audioCtx||!gameSoundEnabled)return;const sr=audioCtx.sampleRate,n=Math.max(1,Math.floor(sr*d)),buf=audioCtx.createBuffer(1,n,sr),ch=buf.getChannelData(0);for(let i=0;i<n;i++)ch[i]=(Math.random()*2-1)*(1-i/n);const src=audioCtx.createBufferSource(),a=audioCtx.createGain();src.buffer=buf;a.gain.value=v;src.connect(a);a.connect(gameAudioDestination(audioCtx));src.start();}
 function legacySfx(n){ensureAudio();if(!audioCtx)return;switch(n){case'cannon':tone(105,.14,.065,'sawtooth',45);noise(.18,.045);break;case'mg':tone(250,.045,.018,'square',150);break;case'explosion':tone(80,.22,.055,'sawtooth',32);noise(.28,.055);break;case'airExplosion':tone(80,.22,.033,'sawtooth',32);noise(.28,.033);break;case'pickup':tone(620,.08,.03,'sine',900);setTimeout(()=>tone(900,.09,.025,'sine',1200),65);break;case'skill':tone(420,.1,.025,'triangle',650);break;case'sniper':noise(.055,.070);tone(1180,.032,.045,'square',430);tone(185,.105,.050,'sawtooth',78);setTimeout(()=>{noise(.10,.018);tone(520,.055,.014,'triangle',260);},48);break;case'sniperHit':tone(920,.045,.018,'square',620);break;case'sniperLens':tone(760,.035,.020,'square',430);noise(.032,.008);setTimeout(()=>tone(390,.045,.018,'triangle',260),48);break;case'drill':tone(145,.07,.02,'sawtooth',110);break;case'drillBreak':noise(.2,.045);tone(120,.13,.04,'square',55);break;case'ally':tone(520,.08,.025,'triangle',720);setTimeout(()=>tone(720,.1,.025,'triangle',980),70);break;case'radio':tone(880,.05,.018,'square');setTimeout(()=>tone(660,.05,.018,'square'),80);setTimeout(()=>tone(980,.08,.02,'square'),160);break;case'enter':tone(280,.07,.022,'triangle',420);break;case'rain':noise(.35,.012);break;case'enemyCannon':tone(88,.11,.028,'sawtooth',50);noise(.11,.018);break;case'enemyGun':tone(190,.04,.009,'square',130);break;case'lose':tone(180,.18,.035,'sawtooth',75);setTimeout(()=>tone(120,.28,.025,'sawtooth',45),120);break;case'win':tone(440,.12,.03,'triangle',660);setTimeout(()=>tone(660,.16,.03,'triangle',990),120);break;case'crush':tone(120,.055,.022,'square',70);noise(.07,.022);break;case'vehicleHit':tone(210,.05,.018,'square',120);noise(.045,.012);break;case'decoy':tone(760,.06,.018,'square',1020);setTimeout(()=>tone(1020,.05,.014,'square',760),70);break;case'splash':noise(.09,.016);tone(190,.06,.012,'triangle',130);break;case'deathHit':tone(95,.18,.05,'sawtooth',42);noise(.22,.04);break;case'bombdrop':tone(330,.18,.018,'sine',120);setTimeout(()=>noise(.06,.01),100);break;}}
-function sfx(n,position=null){if(!gameSoundEnabled)return;ensureAudio();const sample=n==='skill'?(typeof state!=='undefined'&&state==='play'?'legacySkill':'uiSelect'):n;try{if(typeof playGameSe==='function'&&playGameSe(sample,position))return;}catch(_){}legacySfx(/^cannon[2-7]$/.test(n)?'cannon':({uiSelect:'skill',uiConfirm:'skill',unavailable:'skill',bombExplosion:'explosion',shellExplosion:'explosion',propExplosion:'explosion',vehicleDestroyed:'explosion',coverBreak:'drillBreak',playerHit:'vehicleHit',soldierHit:'sniperHit',bombPlace:'skill',bombThrow:'skill',hide:'skill',decoyPlace:'skill',reinforcement:'ally',drillStart:'skill',build:'skill',sniperDeploy:'skill',houndCommand:'skill',partnerCommand:'skill',airWarning:'radio',bazooka:'enemyCannon',document:'pickup',allDocuments:'pickup',capture:'pickup'})[n]||n);}
+function sfx(n,position=null){if(!gameSoundEnabled)return;ensureAudio();const sample=n==='skill'?(typeof state!=='undefined'&&state==='play'?'legacySkill':'uiSelect'):n;try{if(typeof playGameSe==='function'&&playGameSe(sample,position))return;}catch(_){}legacySfx(/^cannon[2-7]$/.test(n)?'cannon':({unlockCard:'skill',fainting:'skill',uiSelect:'skill',uiConfirm:'skill',unavailable:'skill',bombExplosion:'explosion',shellExplosion:'explosion',propExplosion:'explosion',vehicleDestroyed:'explosion',coverBreak:'drillBreak',playerHit:'vehicleHit',soldierHit:'sniperHit',bombPlace:'skill',bombThrow:'skill',hide:'skill',decoyPlace:'skill',reinforcement:'ally',drillStart:'skill',build:'skill',sniperDeploy:'skill',houndCommand:'skill',partnerCommand:'skill',airWarning:'radio',bazooka:'enemyCannon',document:'pickup',allDocuments:'pickup',capture:'pickup'})[n]||n);}
 addEventListener('pointerdown',ensureAudio,{passive:true});addEventListener('keydown',ensureAudio,{passive:true});
 const keys={};let mx=240,my=300,mdown=false,bombReq=false,cannonReq=false,interact=false;
 const normKeyCode=e=>{
@@ -4229,7 +4229,7 @@ function moveAllySmart(a,target,sp,dt){
  if(a.sideStep&&a.sideStep.t>0){a.sideStep.t-=dt;const aa=toT+a.sideStep.dir*Math.PI/2;mv(a,Math.cos(aa)*sp*.9*dt,Math.sin(aa)*sp*.9*dt,8);a.face=aa;if(a.sideStep.t<=0)a.sideStep=null;return;}
  mv(a,Math.cos(toT)*sp*dt,Math.sin(toT)*sp*dt,8);a.face=toT;
 }
-function stunHuman(h,source='player'){if(!h||!h.alive||h.stun>0)return false;if(scoreStats&&!scoreStats.finalized){scoreStats.stuns++;if(source==='player'){scoreStats.tacticalStuns++;if(!h.st)scoreStats.stealthStuns++;}else recordSupportResult('stun',source);}h.stun=60;h.grapple=.3;h.st=0;h.target=null;h.lost=0;h.foundPause=0;h.sharePause=0;h.susPause=0;h.wallFollow=null;h.burstLeft=0;h.cd=0;h.ct=0;h.bu=false;sfx('skill');say('敵兵を気絶させた');return true;}
+function stunHuman(h,source='player'){if(!h||!h.alive||h.stun>0)return false;if(scoreStats&&!scoreStats.finalized){scoreStats.stuns++;if(source==='player'){scoreStats.tacticalStuns++;if(!h.st)scoreStats.stealthStuns++;}else recordSupportResult('stun',source);}h.stun=60;h.grapple=.3;h.st=0;h.target=null;h.lost=0;h.foundPause=0;h.sharePause=0;h.susPause=0;h.wallFollow=null;h.burstLeft=0;h.cd=0;h.ct=0;h.bu=false;sfx(source==='player'?'fainting':'skill',h);say('敵兵を気絶させた');return true;}
 function setSkillCooldown(sec){p.scd=sec;p.scdMax=sec;}
 function clearPlayerDetection(){
  for(const h of (humans||[]))if(h.alive){
@@ -8397,7 +8397,7 @@ function reportGameError(error){
 <script src="js/developer.js?v=2026.10.28.0713"></script>
 <script src="js/leaderboard.js?v=2026.10.28.0713"></script>
 <script src="js/intro.js?v=2026.10.28.0713"></script>
-<script src="js/unlocks.js?v=2026.10.28.0713"></script>
+<script src="js/unlocks.js?v=2026.10.28.2033"></script>
 <script src="js/enemy-bomber.js?v=2026.10.28.0713"></script>
 <script src="js/characters.js?v=2026.10.19.1032"></script>
 <script src="js/fallen-enemies.js?v=2026.10.28.1622"></script>

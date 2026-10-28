@@ -41,6 +41,7 @@ function beginUnlockReveal(screen){
  const list=document.getElementById('unlockList'),run=unlockRun;
  const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
  const behavior=reduced?'instant':'smooth';
+ if(typeof loadGameSe==='function')loadGameSe('unlockCard',true);
  let index=0;
  list.classList.add('unlock-sequencing');
  function revealNext(){
@@ -56,6 +57,7 @@ function beginUnlockReveal(screen){
   const top=Math.max(0,screen.scrollTop+card.getBoundingClientRect().top-screen.getBoundingClientRect().top-20);
   screen.scrollTo({top,left:0,behavior});
   card.classList.add('unlock-card-revealed');
+  if(typeof sfx==='function')sfx('unlockCard');
   // Match the CSS reveal duration. The final completion returns immediately, without a dwell.
   unlockRevealTimer=setTimeout(revealNext,reduced?0:550);
  }
@@ -95,7 +97,7 @@ function syncUnlockScreen(s){
   screen.hidden=false;document.body.classList.add('unlock-open');screen.scrollTop=0;
   document.getElementById('unlockEvaluate').focus({preventScroll:true});
   beginUnlockReveal(screen);
- }else if(updated){const list=document.getElementById('unlockList'),shown=list.querySelectorAll('.unlock-card').length;list.insertAdjacentHTML('beforeend',s.unlockNoticeItems.slice(shown).map(renderUnlockCard).join(''));}
+ }else if(updated){const list=document.getElementById('unlockList'),shown=list.querySelectorAll('.unlock-card').length;list.insertAdjacentHTML('beforeend',s.unlockNoticeItems.slice(shown).map(renderUnlockCard).join(''));if(!list.classList.contains('unlock-sequencing')&&typeof sfx==='function')sfx('unlockCard');}
  return true;
 }
 function acknowledgeRunUnlocks(){
