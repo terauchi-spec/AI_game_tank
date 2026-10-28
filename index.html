@@ -965,6 +965,7 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 <script src="js/player-tank-art.js?v=2026.10.28.0713"></script>
 <script src="js/audio.js?v=2026.10.28.0713"></script>
 <script src="js/bgm.js?v=2026.10.28.0713"></script>
+<script src="js/audio-recovery.js?v=2026.10.28.1725"></script>
 <script>
 const MOBILE_VIEW=matchMedia('(pointer:coarse)').matches;
 // iPhoneの描画反映の途切れを切り分けるため、表示Canvasと静的キャッシュの作成設定を統一する。
@@ -975,7 +976,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.28.1720',FILE_CREATED_AT='2026/10/28 17:20',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.28.1725',FILE_CREATED_AT='2026/10/28 17:25',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -987,14 +988,14 @@ function gameAudioDestination(context){
 }
 function setGameSoundEnabled(enabled){
  gameSoundEnabled=!!enabled;
- if(audioCtx){const output=gameAudioDestination(audioCtx);output.gain.cancelScheduledValues(audioCtx.currentTime);output.gain.setValueAtTime(gameSoundEnabled?1:0,audioCtx.currentTime);}
+ if(audioCtx&&audioCtx.state!=='closed'){const output=gameAudioDestination(audioCtx);output.gain.cancelScheduledValues(audioCtx.currentTime);output.gain.setValueAtTime(gameSoundEnabled?1:0,audioCtx.currentTime);}
  if(!gameSoundEnabled){if(typeof stopGameAudio==='function')stopGameAudio();if(typeof pauseGameBgm==='function')pauseGameBgm();}
  try{localStorage.setItem('tankGameSoundEnabledV1',gameSoundEnabled?'on':'off');}catch(_){}
  syncSoundButton();if(gameSoundEnabled){ensureAudio();if(typeof updateGameBgm==='function')updateGameBgm();}
 }
 function syncSoundButton(){for(const id of ['titleSound','gameMenuSound']){const button=document.getElementById(id);button.setAttribute('aria-checked',String(gameSoundEnabled));button.setAttribute('aria-label','すべての音：'+(gameSoundEnabled?'オン（押すとオフ）':'オフ（押すとオン）'));}}
 
-function ensureAudio(){if(!gameSoundEnabled)return;try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});}catch(_){}}
+function ensureAudio(event){if(typeof recoverGameAudio==='function')return recoverGameAudio(event);if(!gameSoundEnabled)return;try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});}catch(_){}}
 function tone(f=440,d=.08,v=.035,type='square',f2=null){if(!audioCtx||!gameSoundEnabled)return;const t=audioCtx.currentTime,o=audioCtx.createOscillator(),a=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t+d);a.gain.setValueAtTime(v,t);a.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(a);a.connect(gameAudioDestination(audioCtx));o.start(t);o.stop(t+d+.02);}
 function noise(d=.12,v=.025){if(!audioCtx||!gameSoundEnabled)return;const sr=audioCtx.sampleRate,n=Math.max(1,Math.floor(sr*d)),buf=audioCtx.createBuffer(1,n,sr),ch=buf.getChannelData(0);for(let i=0;i<n;i++)ch[i]=(Math.random()*2-1)*(1-i/n);const src=audioCtx.createBufferSource(),a=audioCtx.createGain();src.buffer=buf;a.gain.value=v;src.connect(a);a.connect(gameAudioDestination(audioCtx));src.start();}
 function legacySfx(n){ensureAudio();if(!audioCtx)return;switch(n){case'cannon':tone(105,.14,.065,'sawtooth',45);noise(.18,.045);break;case'mg':tone(250,.045,.018,'square',150);break;case'explosion':tone(80,.22,.055,'sawtooth',32);noise(.28,.055);break;case'airExplosion':tone(80,.22,.033,'sawtooth',32);noise(.28,.033);break;case'pickup':tone(620,.08,.03,'sine',900);setTimeout(()=>tone(900,.09,.025,'sine',1200),65);break;case'skill':tone(420,.1,.025,'triangle',650);break;case'sniper':noise(.055,.070);tone(1180,.032,.045,'square',430);tone(185,.105,.050,'sawtooth',78);setTimeout(()=>{noise(.10,.018);tone(520,.055,.014,'triangle',260);},48);break;case'sniperHit':tone(920,.045,.018,'square',620);break;case'sniperLens':tone(760,.035,.020,'square',430);noise(.032,.008);setTimeout(()=>tone(390,.045,.018,'triangle',260),48);break;case'drill':tone(145,.07,.02,'sawtooth',110);break;case'drillBreak':noise(.2,.045);tone(120,.13,.04,'square',55);break;case'ally':tone(520,.08,.025,'triangle',720);setTimeout(()=>tone(720,.1,.025,'triangle',980),70);break;case'radio':tone(880,.05,.018,'square');setTimeout(()=>tone(660,.05,.018,'square'),80);setTimeout(()=>tone(980,.08,.02,'square'),160);break;case'enter':tone(280,.07,.022,'triangle',420);break;case'rain':noise(.35,.012);break;case'enemyCannon':tone(88,.11,.028,'sawtooth',50);noise(.11,.018);break;case'enemyGun':tone(190,.04,.009,'square',130);break;case'lose':tone(180,.18,.035,'sawtooth',75);setTimeout(()=>tone(120,.28,.025,'sawtooth',45),120);break;case'win':tone(440,.12,.03,'triangle',660);setTimeout(()=>tone(660,.16,.03,'triangle',990),120);break;case'crush':tone(120,.055,.022,'square',70);noise(.07,.022);break;case'vehicleHit':tone(210,.05,.018,'square',120);noise(.045,.012);break;case'decoy':tone(760,.06,.018,'square',1020);setTimeout(()=>tone(1020,.05,.014,'square',760),70);break;case'splash':noise(.09,.016);tone(190,.06,.012,'triangle',130);break;case'deathHit':tone(95,.18,.05,'sawtooth',42);noise(.22,.04);break;case'bombdrop':tone(330,.18,.018,'sine',120);setTimeout(()=>noise(.06,.01),100);break;}}
