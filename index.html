@@ -609,7 +609,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 1250ms ease-o
 <link rel="stylesheet" href="css/developer.css?v=2026.10.28.0713">
 <link rel="stylesheet" href="css/leaderboard.css?v=2026.10.28.0713">
 <link rel="stylesheet" href="css/intro.css?v=2026.10.28.0713">
-<link rel="stylesheet" href="css/unlocks.css?v=2026.10.28.0713">
+<link rel="stylesheet" href="css/unlocks.css?v=2026.10.29.1223">
 </head>
 <body>
 <canvas id="c" width="840" height="720"></canvas>
@@ -782,8 +782,8 @@ body.success-open .mission-firework{animation:missionFireworkBurst 1250ms ease-o
  <div class="trophy-empty">獲得履歴と戦績は、このブラウザ内に保存されます。<br>通常ステージではデバッグ中も称号・戦績を記録します。</div>
  </div><footer class="trophy-actions" aria-label="称号画面の操作"><button id="trophyBack" class="trophy-back" type="button">タイトル</button></footer></div>
 
-<section id="unlockScreen" aria-label="新しく解放された要素" role="region" aria-labelledby="unlockHeading" hidden>
- <div class="unlock-shell"><header class="unlock-header"><h1 id="unlockHeading" hidden>ナイスこっそり！</h1><div class="unlock-portrait"><img id="unlockInstructor" width="480" height="720" alt="アンロックを祝う教官" decoding="async"></div><p id="unlockDialogue" class="unlock-instructor-speech"></p></header><div id="unlockList"></div></div>
+<section id="unlockScreen" aria-label="作戦の振り返りとアンロック" role="region" aria-labelledby="unlockHeading" hidden>
+ <div class="unlock-shell"><header class="unlock-header"><h1 id="unlockHeading" hidden>ナイスこっそり！</h1><div class="unlock-portrait"><img id="unlockInstructor" width="480" height="720" alt="作戦を振り返る教官" decoding="async"></div><p id="unlockDialogue" class="unlock-instructor-speech"></p></header><div id="unlockList"></div></div>
  <footer class="unlock-actions" aria-label="アンロック画面の操作"><button id="unlockEvaluate" type="button">評価画面</button></footer>
 </section>
 <div id="resultScreen" aria-label="プレイ結果" role="region"><div class="res-wrap">
@@ -976,7 +976,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.28.2356',FILE_CREATED_AT='2026/10/28 23:56',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.29.1223',FILE_CREATED_AT='2026/10/29 12:23',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -8402,7 +8402,7 @@ function reportGameError(error){
 <script src="js/developer.js?v=2026.10.28.0713"></script>
 <script src="js/leaderboard.js?v=2026.10.28.0713"></script>
 <script src="js/intro.js?v=2026.10.28.0713"></script>
-<script src="js/unlocks.js?v=2026.10.28.2033"></script>
+<script src="js/unlocks.js?v=2026.10.29.1223"></script>
 <script src="js/enemy-bomber.js?v=2026.10.28.0713"></script>
 <script src="js/characters.js?v=2026.10.19.1032"></script>
 <script src="js/fallen-enemies.js?v=2026.10.28.2211"></script>

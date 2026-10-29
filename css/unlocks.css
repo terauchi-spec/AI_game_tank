@@ -52,3 +52,5 @@ body.unlock-open,html:has(body.unlock-open){overscroll-behavior:none}
  #unlockList.unlock-sequencing .unlock-card-revealed{animation:unlockCardReveal .55s cubic-bezier(.2,.7,.2,1) both}
  @keyframes unlockCardReveal{from{opacity:0;transform:translateY(22px) scale(.97)}to{opacity:1;transform:none}}
 }
+
+.unlock-empty-note{margin:10px 0 22px;color:#edda9f;text-align:center;font-size:15px;line-height:1.8}

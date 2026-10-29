@@ -18,9 +18,9 @@ test('real result transition shows combined unlocks before result rendering, SE 
  h.getNode('unlockEvaluate').handlers.click();assert.ok(h.classes.has('result-open'));assert.equal(h.classes.has('unlock-open'),false);assert.equal(c.renders,1);assert.equal(c.bgmStarts,1);assert.deepEqual(h.sounds,['uiConfirm','results']);for(let i=0;i<10;i++)c.syncResultScreen();assert.equal(c.renders,1);assert.equal(c.bgmStarts,1);
  h.getNode('unlockEvaluate').handlers.click();assert.equal(c.renders,1);
 });
-test('no unlocks, repeats, invalid IDs and failed saves go directly to evaluation',()=>{
+test('no unlocks, repeats and failed saves still show the instructor before evaluation',()=>{
  const values=[{final:{total:10},awards:{newTitles:[],repeatTitles:['v3_stealth']}},{...run(),awards:{disabled:true,newTitles:['v3_stealth']}},{...run(),stageUnlockSaveFailed:true,unlockSaveFailed:true,awards:{saveFailed:true,newTitles:['v3_stealth']}}];
- for(const s of values){const h=harness();h.c.scoreStats=s;h.c.syncResultScreen();assert.ok(h.classes.has('result-open'));assert.equal(h.classes.has('unlock-open'),false);assert.equal(h.getNode('unlockInstructor').src,'');}
+ for(const s of values){const h=harness();h.c.scoreStats=s;h.c.syncResultScreen();assert.ok(h.classes.has('unlock-open'));assert.ok(!h.classes.has('result-open'));assert.match(h.getNode('unlockList').innerHTML,/新しいアンロックはありません/);assert.equal(h.timers.size,0);assert.equal(h.sounds.length,0);h.c.acknowledgeRunUnlocks();assert.ok(h.classes.has('result-open'));h.c.syncResultScreen();assert.ok(!h.classes.has('unlock-open'));}
  const h=harness();h.c.areaDebugEnabled=true;assert.equal(h.c.collectRunUnlocks(run()).length,0);
 });
 test('failure results with new titles receive the same interstitial, and another run can show new unlocks',()=>{
@@ -44,7 +44,7 @@ test('debug results show all newly persisted unlocks before evaluation',()=>{con
 test('a confirmed leaderboard update alone opens the unlock screen and uses success/failure speech',()=>{
  for(const cleared of [true,false]){
   const h=harness();h.c.state=cleared?'win':'lose';h.c.scoreStats={final:{total:12345,cleared},awards:{newTitles:[]},leaderboardUpdates:[{board:'overall',position:3},{board:'indoorBeginner',position:2}]};
-  h.c.syncResultScreen();assert.ok(h.classes.has('unlock-open'));const text=h.getNode('unlockList').innerHTML;assert.match(text,/スコアボード更新/);assert.match(text,/12,345点/);assert.match(text,/総合 3位/);assert.match(text,/潜入（初級） 2位/);assert.equal(h.getNode('unlockDialogue').textContent,cleared?'よくやった！すばらしい逃げ足だったぞ':'もっとこっそり進め！はずかしくないのか');
+  h.c.syncResultScreen();assert.ok(h.classes.has('unlock-open'));const text=h.getNode('unlockList').innerHTML;assert.match(text,/スコアボード更新/);assert.match(text,/12,345点/);assert.match(text,/総合 3位/);assert.match(text,/潜入（初級） 2位/);assert.ok(h.get('INSTRUCTOR_DIALOGUES').some(line=>line.kind===(cleared?'success':'failure')&&line.text===h.getNode('unlockDialogue').textContent));
  }
 });
 test('late confirmed ranking updates append once to an open unlock screen without cycling the instructor',()=>{
@@ -111,4 +111,31 @@ test('each automatic unlock card plays its SE once; syncing and canceled timers 
 test('late visible ranking cards play the card sound once without repeating earlier cards',()=>{
  const h=harness(),{c}=h;c.scoreStats=run();c.syncResultScreen();for(let i=0;i<4;i++)h.flush();assert.equal(h.sounds.length,3);
  c.scoreStats.leaderboardUpdates=[{board:'overall',position:1}];c.syncResultScreen();assert.equal(h.sounds.length,4);assert.equal(h.sounds.at(-1),'unlockCard');c.syncResultScreen();assert.equal(h.sounds.length,4);
+});
+
+test('the instructor has 40 distinct success lines and 20 failure lines, each with a short reflective message',()=>{
+ const h=harness(),lines=h.get('INSTRUCTOR_DIALOGUES');assert.equal(lines.filter(v=>v.kind==='success').length,40);assert.equal(lines.filter(v=>v.kind==='failure').length,20);assert.equal(new Set(lines.map(v=>v.text)).size,60);for(const line of lines){assert.ok(line.text.length<=90);assert.doesNotMatch(line.text,/はずかし|役立たず|だめな奴|無能/);}
+});
+test('actual run statistics constrain the instructor topic and missing statistics do not invent achievements',()=>{
+ for(const [cleared,stats,topic] of [[true,{time:60,detections:0},'stealth'],[true,{damageHits:2},'resilience'],[true,{tacticalStuns:1},'tactics'],[true,{jointKills:1},'team'],[true,{documents:2},'documents'],[true,{newHigh:true},'growth'],[true,{playerKills:1},'combat'],[false,{time:12},'early'],[false,{detections:1},'detected'],[false,{documents:1},'progress'],[false,{damageHits:2},'damage']]){
+  const h=harness(),s={...stats,final:{cleared},awards:{newTitles:[]}},text=h.c.instructorDialogueForRun(s);assert.equal(h.get('INSTRUCTOR_DIALOGUES').find(v=>v.text===text).topic,topic);
+ }
+ const h=harness(),s={final:{cleared:true},awards:{newTitles:[]}};assert.equal(h.get('INSTRUCTOR_DIALOGUES').find(v=>v.text===h.c.instructorDialogueForRun(s)).topic,'general');
+});
+test('dialogue stays fixed across renders and late rankings, cycles across runs, and sometimes names the player safely',()=>{
+ const h=harness(),{c}=h;c.readIntroName=()=>'<こっそりネーム>';const lines=[],named=[];
+ for(let i=0;i<12;i++){c.scoreStats={final:{cleared:i%2===0,total:100},awards:{newTitles:[]}};c.state=i%2===0?'win':'lose';c.syncResultScreen();const text=h.getNode('unlockDialogue').textContent;lines.push(text);if(text.startsWith('<こっそりネーム>、'))named.push(i);
+  const saved=h.storage.get('tankGameInstructorDialogueV1');for(let j=0;j<10;j++)c.syncResultScreen();assert.equal(h.getNode('unlockDialogue').textContent,text);assert.equal(h.storage.get('tankGameInstructorDialogueV1'),saved);
+  c.scoreStats.leaderboardUpdates=[{board:'overall',position:2}];c.syncResultScreen();assert.equal(h.getNode('unlockDialogue').textContent,text);assert.doesNotMatch(h.getNode('unlockList').innerHTML,/こっそりネーム/);c.acknowledgeRunUnlocks();
+ }
+ assert.deepEqual(named,[0,4,8]);assert.ok(new Set(lines).size>=8);
+ const next=harness({storage:h.storage});next.c.scoreStats={final:{cleared:true,total:100},awards:{newTitles:[]}};next.c.syncResultScreen();assert.notEqual(next.getNode('unlockDialogue').textContent,lines.at(-1));
+});
+test('empty presentations do not request card SE or timers; a late unlock replaces the empty note once',()=>{
+ const h=harness(),{c}=h;let preloads=0;c.loadGameSe=()=>preloads++;c.scoreStats={final:{cleared:false,total:100},awards:{newTitles:[]}};c.syncResultScreen();assert.ok(h.classes.has('unlock-open'));assert.equal(preloads,0);assert.equal(h.timers.size,0);assert.equal(h.sounds.length,0);
+ const text=h.getNode('unlockDialogue').textContent;c.scoreStats.leaderboardUpdates=[{board:'overall',position:3}];c.syncResultScreen();assert.doesNotMatch(h.getNode('unlockList').innerHTML,/新しいアンロックはありません/);assert.equal(h.getNode('unlockList').querySelectorAll('.unlock-card').length,1);assert.deepEqual(h.sounds,['unlockCard']);assert.equal(h.getNode('unlockDialogue').textContent,text);c.syncResultScreen();assert.equal(h.sounds.length,1);
+});
+test('unfinalized runs do not open the instructor and storage failure never blocks results',()=>{
+ const h=harness();assert.equal(h.c.syncUnlockScreen({}),false);assert.equal(h.get('unlockRun'),null);
+ const failed=harness({storageFails:true});failed.c.scoreStats={final:{cleared:false},awards:{newTitles:[]}};assert.doesNotThrow(()=>failed.c.syncResultScreen());assert.ok(failed.classes.has('unlock-open'));assert.doesNotThrow(()=>failed.c.acknowledgeRunUnlocks());assert.ok(failed.classes.has('result-open'));
 });
