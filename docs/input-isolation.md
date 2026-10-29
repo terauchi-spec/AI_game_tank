@@ -79,3 +79,39 @@ continues to use its unchanged input snapshots, not this experimental game path.
 If real-phone testing shows this fallback ineffective and no missing finger in the
 raw lists, the next experiment is a separate continuous-touch control mode; it is
 not enabled by this change.
+
+## Continuous physical touch control experiment
+
+Open `/?continuousTouch=1` on the game. Add `&inputDebug=1` only if the full
+input diagnostic panel is needed. The title shows `指を離さない操作テスト`.
+This is a separate control experiment, not proof of a device/OS diagnosis.
+Normal URLs retain the original layout and controls.
+
+1. Put the left thumb on the stick and keep it down. Return to the visible center
+   `停止` circle to stop. This mode uses a 22% per-axis touch dead zone for easier
+   stopping (normal touch remains 12%, mouse 30%). The circle represents the
+   inscribed circle of that neutral square; its corners are neutral too.
+2. Put the right thumb on `待機` in the lower-right cell and keep it down.
+   B is upper-left, S upper-right, A lower-left. Slide to a button to activate it.
+3. Leaving that button's circular region releases it. Return to `待機` before
+   sliding to the next button or triggering it again. Crossing another button
+   without returning to neutral does not accidentally activate that button.
+4. Keep both thumbs down during repeated movement/action changes. This avoids
+   the physical end/start handoff under investigation. A missing first touch still
+   cannot be invented by software; lift and restart one finger at a time if needed.
+
+The transparent input surface tracks one physical right-finger identifier and
+routes zone entry/exit to the existing action/skill functions. Continuous movement
+uses cached button geometry, not repeated layout reads or polling. Cancellation,
+resize and normal menu/blur resets clear the slider. One-shot actions are not
+repeated merely because the finger rests on their button. `buttonHold=200` is
+ignored in this mode to isolate this experiment.
+
+Tradeoffs are confined to this opt-in mode: tank main gun fires on leaving B
+(or lifting), and B/S aim drags are limited to their button regions. The last
+in-region coordinate is used on zone exit, so returning to neutral does not add
+an aim reversal. Partner S orders likewise have a shorter drawable range in this
+prototype. This mode is intended first to test whether uninterrupted physical
+contacts avoid the reported interruption; full gameplay usability is not yet
+validated on an affected iPhone. Diagnostic status includes right touch ownership,
+current selection and cumulative zone activations.

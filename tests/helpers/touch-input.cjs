@@ -1,6 +1,6 @@
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const html=fs.readFileSync(path.join(__dirname,'../../index.html'),'utf8');
-function touchInputHarness({captureWorks=true,source=null,mode=null,deadZone=.12,buttonHold=0,touchRecovery=false}={}){
+function touchInputHarness({captureWorks=true,source=null,mode=null,deadZone=.12,buttonHold=0,touchRecovery=false,continuousTouch=false}={}){
  let now=1000,nextTimer=0;const timers=new Map();
  const captured=new Map(),touches=new Map(),stats={geometryReads:0,captureCalls:0};
  function node(id){return{
@@ -12,12 +12,13 @@ function touchInputHarness({captureWorks=true,source=null,mode=null,deadZone=.12
   setPointerCapture(id){stats.captureCalls++;if(!captureWorks)throw Error('capture unavailable');captured.set(id,this);},
   hasPointerCapture(id){return captured.get(id)===this;},releasePointerCapture(id){captured.delete(id);}
  };}
- const names=['stick','knob','actionBtn','skillBtn','aBtn','actionGlyph','actionLabel','actionCooldown','actionCooldownText','skillLabel','skillCooldown','skillCooldownText'];
+ const names=['stick','knob','actionBtn','skillBtn','aBtn','actionGlyph','actionLabel','actionCooldown','actionCooldownText','skillLabel','skillCooldown','skillCooldownText','continuousSurface','continuousWait'];
  const nodes=Object.fromEntries(names.map(id=>[id,node(id)])),root=node('window'),doc=node('document');nodes.knob.parent=nodes.stick;
- nodes.skillBtn.dataset.k='KeyS';nodes.aBtn.dataset.k='KeyA';doc.getElementById=id=>nodes[id]||null;doc.querySelectorAll=()=>[nodes.skillBtn,nodes.aBtn];
- const c={document:doc,window:{inputTestMode:mode},inputTestDeadZone:deadZone,keys:{},p:null,skill:'throw',state:'play',bombs:[],SKN:{throw:'投擲'},location:{search:'?'+new URLSearchParams({...(buttonHold?{buttonHold}:{}),...(touchRecovery?{touchRecovery:'1'}:{})})},URLSearchParams,clearTimeout:id=>timers.delete(id),setTimeout(fn,delay){const id=++nextTimer;timers.set(id,{fn,at:now+delay});return id;},performance:{now:()=>now},gameFramePerf:{inputMax:0},
+ nodes.skillBtn.dataset.k='KeyS';nodes.aBtn.dataset.k='KeyA';doc.getElementById=id=>nodes[id]||null;doc.querySelectorAll=()=>[nodes.skillBtn,nodes.aBtn];doc.querySelector=()=>nodes.aBtn;doc.body=node('body');
+ const c={document:doc,window:{inputTestMode:mode},inputTestDeadZone:deadZone,keys:{},p:null,skill:'throw',state:'play',bombs:[],SKN:{throw:'投擲'},location:{search:'?'+new URLSearchParams({...(buttonHold?{buttonHold}:{}),...(touchRecovery?{touchRecovery:'1'}:{}),...(continuousTouch?{continuousTouch:'1'}:{})})},URLSearchParams,clearTimeout:id=>timers.delete(id),setTimeout(fn,delay){const id=++nextTimer;timers.set(id,{fn,at:now+delay});return id;},performance:{now:()=>now},gameFramePerf:{inputMax:0},
   shiftSniperLens(){},skillGaugeStatus:()=>null,isPartnerDrivenVehicle:()=>false,playerVehicleGunBlocked:()=>false,setInterval(){},addEventListener:root.addEventListener.bind(root),
   bombReq:false,skillReq:false,interact:false,cannonReq:false,touchTurretAngle:null};
+ if(continuousTouch)for(const [id,left,top] of [['actionBtn',200,0],['skillBtn',300,0],['aBtn',200,100],['continuousWait',300,100]])nodes[id].getBoundingClientRect=()=>{stats.geometryReads++;return{left,top,width:80,height:80};};
  vm.createContext(c);const run=code=>vm.runInContext(code,c);
  run(source??html.slice(html.indexOf('// iPhone Chrome/Safari: synthetic KeyboardEvent'),html.indexOf('// 古いiOS向けフォールバック')));
  function start(el,id,x=95,y=50,{pointer=true,target=el}={}){

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.30.0757</title>
+<title>こっそり戦車大作戦 2026.10.30.0819</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -479,6 +479,18 @@ body.area-picker-open #pad,body.area-picker-open #resetBtn,body.area-picker-open
 .res-award-chip.mythic{border-color:#e3b7f5;background:#49314d;color:#ffe4fa}
 .trophy-card.locked .award-icon{opacity:.65;filter:brightness(0)}
 @media(max-width:380px){.res-title-name{gap:8px;font-size:19px}.res-title-name .award-icon{width:60px;height:60px}.trophy-card{gap:9px;grid-template-columns:minmax(0,1fr) minmax(100px,40%)}}
+/* 検証専用：左右の指を離さず操作するモード。通常URLでは表示しない。 */
+#continuousSurface,#continuousWait,#continuousHint,#continuousStop{display:none}
+body.continuous-input #pad{display:block;position:fixed;inset:0;z-index:20;pointer-events:none}
+body.continuous-input #stick{position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:max(18px,calc(env(safe-area-inset-bottom,0px) + 12px))}
+body.continuous-input .btns{position:absolute;right:max(12px,env(safe-area-inset-right,0px));bottom:max(18px,calc(env(safe-area-inset-bottom,0px) + 12px));pointer-events:none}
+body.continuous-input #skillBtn{grid-column:2;grid-row:1;align-self:center}
+body.continuous-input .btns .b{pointer-events:none}
+body.continuous-input #continuousSurface{display:block;position:absolute;inset:-6px;z-index:2;touch-action:none;pointer-events:auto;border:1px solid #b9d2ac55;border-radius:14px}
+body.continuous-input #continuousWait{display:flex;grid-column:2;grid-row:2;align-items:center;justify-content:center;border:2px dashed #b9d2ac99;border-radius:50%;background:#102018a6;color:#e4f4da;font:700 12px system-ui;pointer-events:none}
+body.continuous-input #continuousWait.on{background:#73916c99;border-color:#d9f5b9}
+body.continuous-input #continuousHint{display:block;position:absolute;right:0;bottom:calc(100% + 9px);width:190px;margin:0;text-align:right;color:#f3f5dd;text-shadow:0 1px 2px #000;font:11px/1.5 system-ui;pointer-events:none}
+body.continuous-input #continuousStop{display:flex;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:22%;height:22%;align-items:center;justify-content:center;border:1px dashed #e4f4daaa;border-radius:50%;font:8px system-ui;color:#fff;pointer-events:none}
 </style>
 <style>
 /* 作戦説明は静止DOMで表示し、待機中のゲーム更新・再描画を止める。 */
@@ -618,7 +630,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 1250ms ease-o
 <button id="debugToggleBtn" type="button" aria-label="無敵モード切替" title="無敵モード切替"><span class="icon">🛡</span><span class="key">P</span></button>
 <button id="debugRoutesBtn" type="button" aria-label="巡回ルート表示切替" title="巡回ルート表示切替" aria-pressed="false"><span class="icon" aria-hidden="true">↝</span><span class="key">L</span></button>
 <div id="debugBadge" hidden><span id="debugBadgeText">無敵モード</span><button id="mazeCompareButton" type="button" hidden>比較：通常 → 敵移動停止</button></div>
-<div id="pad"><div id="stick"><div id="knob"></div></div><div class="btns"><button class="b" id="skillBtn" data-k="KeyS"><span class="coolRing" id="skillCooldown"></span><span class="coolText" id="skillCooldownText"></span><b>S</b><small id="skillLabel">スキル</small></button><button class="b" id="actionBtn" type="button"><span class="coolRing" id="actionCooldown"></span><span class="coolText" id="actionCooldownText"></span><b id="actionGlyph">B</b><small id="actionLabel">爆弾</small></button><button class="b" data-k="KeyA"><b>A</b><small>操作</small></button></div></div>
+<div id="pad"><div id="stick"><div id="knob"></div><span id="continuousStop">停止</span></div><div class="btns"><button class="b" id="skillBtn" data-k="KeyS"><span class="coolRing" id="skillCooldown"></span><span class="coolText" id="skillCooldownText"></span><b>S</b><small id="skillLabel">スキル</small></button><button class="b" id="actionBtn" type="button"><span class="coolRing" id="actionCooldown"></span><span class="coolText" id="actionCooldownText"></span><b id="actionGlyph">B</b><small id="actionLabel">爆弾</small></button><button class="b" data-k="KeyA"><b>A</b><small>操作</small></button><div id="continuousWait">待機</div><div id="continuousSurface" aria-label="B・A・Sのスライド操作領域"></div><p id="continuousHint">指を置いたまま 待機 ⇄ B・A・S<br>左スティックは中央で停止</p></div></div>
 <div id="titleScreen" role="region" aria-label="タイトル画面"><div class="title-wrap">
 <div class="title-hero"><img class="title-art" alt="戦場を見下ろす兵士と戦車のイラスト" src="assets/ui/title_hero.webp?v=2026.10.14.1653"><div class="title-hero-text"><div class="title-tag">TACTICAL ACTION GAME</div><h1 class="title-main"><img class="title-logo" src="assets/ui/title_logo.webp?v=2026.10.14.1653" alt="こっそり戦車大作戦"></h1></div></div>
 <nav class="title-actions" aria-label="タイトルメニュー">
@@ -976,7 +988,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.30.0757',FILE_CREATED_AT='2026/10/30 07:57',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.30.0819',FILE_CREATED_AT='2026/10/30 08:19',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -8429,7 +8441,7 @@ const press=(c)=>{
  if(c==='KeyS'&&!(p&&p.tank)){if(skill==='partner'&&state==='play')startPartnerOrder();else skillReq=true;}
 };
 const release=(c)=>{if(c==='KeyS'&&skill==='partner')finishPartnerOrder(true);keys[c]=false;};
-const cap=(el,e)=>{if(typeof e.pointerId!=='number')return;try{el.setPointerCapture(e.pointerId);}catch(_){}};
+const cap=(el,e)=>{if(e.noCapture||typeof e.pointerId!=='number')return;try{el.setPointerCapture(e.pointerId);}catch(_){}};
 const debugToggleBtn=document.getElementById('debugToggleBtn'),debugRoutesBtn=document.getElementById('debugRoutesBtn');
 const debugModeLabel=()=>debugMode===1?'無敵モード':debugMode===2?'無敵＋索敵解除':debugMode===3?'無敵＋戦闘機∞燃料':debugMode===4?'描画診断（30秒）':'無敵モード OFF';
 if(debugToggleBtn){
@@ -8454,8 +8466,9 @@ if(debugToggleBtn){
  setInterval(syncDebugToggleButton,250);
 }
 
+const continuousTouchMode=typeof location!=='undefined'&&new URLSearchParams(location.search).get('continuousTouch')==='1';
 // 検証専用 ?buttonHold=200：物理的な指の追跡は即解除し、論理押下だけ最低200ms保持する。
-const buttonHoldMs=typeof location!=='undefined'&&new URLSearchParams(location.search).get('buttonHold')==='200'?200:0;
+const buttonHoldMs=!continuousTouchMode&&typeof location!=='undefined'&&new URLSearchParams(location.search).get('buttonHold')==='200'?200:0;
 const buttonHolds=new Map();
 if(buttonHoldMs){const label=document.getElementById('titleUpdated');if(label)label.textContent+=' / BAS 0.2秒テスト';}
 function beginButtonHold(el,e){
@@ -8585,7 +8598,7 @@ syncActionButton();setInterval(syncActionButton,50);
 
 const pad=document.getElementById('stick'),knob=document.getElementById('knob'),st={ArrowUp:0,ArrowDown:0,ArrowLeft:0,ArrowRight:0};let act=null,stickPointerType='';
 // タッチは小さなスワイプでも応答させる。従来の30%（約20px）は切替直後の短い操作を無入力にしていた。
-function setDir(x,y){const m=stickPointerType==='touch'?.12:.3,n={ArrowLeft:x<-m,ArrowRight:x>m,ArrowUp:y<-m,ArrowDown:y>m};for(const k in n)if(!!st[k]!==n[k]){st[k]=n[k]?1:0;n[k]?press(k):release(k);}}
+function setDir(x,y){const m=stickPointerType==='touch'?(continuousTouchMode?.22:.12):.3,n={ArrowLeft:x<-m,ArrowRight:x>m,ArrowUp:y<-m,ArrowDown:y>m};for(const k in n)if(!!st[k]!==n[k]){st[k]=n[k]?1:0;n[k]?press(k):release(k);}}
 // 指を動かすたびのレイアウト読み戻しを避け、押下時の幾何情報を再利用する。
 let stickGeometry=null;
 function refreshStickGeometry(){const r=pad.getBoundingClientRect();stickGeometry={left:r.left,top:r.top,width:r.width,height:r.height,travel:pad.clientWidth*.3};}
@@ -8617,6 +8630,58 @@ addEventListener('pointercancel',end,{capture:true,passive:false});
 pad.addEventListener('lostpointercapture',e=>{if(!pad.hasPointerCapture(e.pointerId))end(e);},{passive:false});
 // タッチの開始・移動・終了を同じTouch.identifierで追跡する。別の指の終了では解除しない。
 bindTouchControl(pad,()=>act,beginStick,mvp,end,end);
+// スライド操作ではボタンを出ると解除し、待機へ戻ってから次の発動を受け付ける。
+// 物理的には一続きのタッチ。照準は各ボタン内のドラッグで行う。
+let resetContinuousTouch=()=>{};
+const continuousStatus={pointer:null,button:'待機',actions:0};
+if(continuousTouchMode){
+ document.body.classList.add('continuous-input');
+ const label=document.getElementById('titleUpdated');if(label)label.textContent+=' / 指を離さない操作テスト';
+ const surface=document.getElementById('continuousSurface'),wait=document.getElementById('continuousWait');
+ const buttons=[actionBtn,skillBtn,document.querySelector('[data-k="KeyA"]')];
+ let pointer=null,active=null,geometry=null,armed=false,lastInput=null,waiting=false;
+ const inside=(r,e)=>{const x=(e.clientX-r.left-r.width/2)/(r.width/2),y=(e.clientY-r.top-r.height/2)/(r.height/2);return x*x+y*y<=1;};
+ const input=(e,point=e)=>({pointerId:e.pointerId,pointerType:e.pointerType,clientX:point.clientX,clientY:point.clientY,cancelable:e.cancelable,noCapture:true,preventDefault:()=>{if(e.cancelable)e.preventDefault();}});
+ const paintWait=on=>{if(waiting===on)return;waiting=on;wait.classList.toggle('on',on);};
+ const releaseActive=(e,cancelled)=>{
+  if(!active)return;const selected=active;active=null;continuousStatus.button='待機';
+  const control=touchControls.get(selected.el),endInput=e?input(e,lastInput||e):undefined;
+  (cancelled?control.cancel:control.up)(endInput);lastInput=null;
+ };
+ const update=e=>{
+  if(pointer!==e.pointerId||!geometry||state!=='play')return;
+  if(e.cancelable)e.preventDefault();
+  const atWait=inside(geometry.wait,e);paintWait(atWait);
+  if(active){
+   if(inside(active.rect,e)){lastInput=input(e);touchControls.get(active.el).move?.(lastInput);return;}
+   // 戻り道で照準を反転させないよう、領域内の最後の座標で解除する。
+   releaseActive(e,false);armed=atWait;return;
+  }
+  if(atWait){armed=true;return;}
+  if(!armed)return;
+  const selected=geometry.buttons.find(b=>inside(b.rect,e));if(!selected)return;
+  active=selected;armed=false;continuousStatus.button=selected.el===actionBtn?'B':selected.el===skillBtn?'S':'A';continuousStatus.actions++;
+  const center={clientX:selected.rect.left+selected.rect.width/2,clientY:selected.rect.top+selected.rect.height/2};
+  touchControls.get(selected.el).down(input(e,center));lastInput=input(e);touchControls.get(selected.el).move?.(lastInput);
+ };
+ const down=e=>{
+  if(state!=='play'||pointer!==null)return;
+  if(e.cancelable)e.preventDefault();pointer=e.pointerId;continuousStatus.pointer=pointer;cap(surface,e);
+  geometry={wait:wait.getBoundingClientRect(),buttons:buttons.map(el=>({el,rect:el.getBoundingClientRect()}))};armed=true;update(e);
+ };
+ const finish=(e,cancelled=false)=>{
+  if(pointer===null||(e&&e.pointerId!==pointer))return;
+  const previous=pointer;pointer=null;continuousStatus.pointer=null;releaseActive(e,cancelled);armed=false;geometry=null;paintWait(false);releaseControlCapture(surface,previous);
+ };
+ surface.addEventListener('pointerdown',e=>{if(e.pointerType!=='touch')down(e);},{passive:false});
+ addEventListener('pointermove',e=>{if(e.pointerType==='touch'||pointer!==e.pointerId)return;if(e.pointerType==='mouse'&&e.buttons===0)finish(e,true);else update(e);},{capture:true,passive:false});
+ addEventListener('pointerup',e=>{if(e.pointerType!=='touch')finish(e);},{capture:true,passive:false});
+ addEventListener('pointercancel',e=>{if(e.pointerType!=='touch')finish(e,true);},{capture:true,passive:false});
+ surface.addEventListener('lostpointercapture',e=>{if(!surface.hasPointerCapture(e.pointerId))finish(e,true);},{passive:false});
+ bindTouchControl(surface,()=>pointer,down,update,e=>finish(e),e=>finish(e,true));
+ resetContinuousTouch=()=>{const previous=pointer;pointer=null;continuousStatus.pointer=null;active=null;lastInput=null;geometry=null;armed=false;continuousStatus.button='待機';paintWait(false);if(previous!==null)releaseControlCapture(surface,previous);};
+ addEventListener('resize',()=>finish(undefined,true));
+}
 // 検証専用：開始通知が欠けた指を、別の指のイベントに付くtouchesから拾う。
 // 通常URLではイベントリスナーも監視タイマーも追加しない。
 const touchListRecovery=typeof location!=='undefined'&&new URLSearchParams(location.search).get('touchRecovery')==='1';
@@ -8650,14 +8715,14 @@ if(touchListRecovery){
 }
 
 if(typeof inputDiagnostics!=='undefined'&&inputDiagnostics)inputDiagnostics.controls=()=>
- 'stick='+(act??'なし')+' dir='+Object.keys(st).filter(k=>st[k]).map(k=>k.replace('Arrow','')).join('/')+' B='+(actionPointer??'なし')+' S='+(buttonPointers.get(skillBtn)??'なし')+' A='+(buttonPointers.get(document.querySelector('[data-k="KeyA"]'))??'なし')+(touchListRecovery?'\n指一覧復帰 ON / 観測'+touchListStats.events+' 一覧'+touchListStats.listed+' 開始なし'+touchListStats.missing+' 復帰'+touchListStats.recovered+'\n'+touchListStats.last:'');
+ 'stick='+(act??'なし')+' dir='+Object.keys(st).filter(k=>st[k]).map(k=>k.replace('Arrow','')).join('/')+' B='+(actionPointer??'なし')+' S='+(buttonPointers.get(skillBtn)??'なし')+' A='+(buttonPointers.get(document.querySelector('[data-k="KeyA"]'))??'なし')+(continuousTouchMode?'\n連続タッチ ON / 右指'+(continuousStatus.pointer??'なし')+' '+continuousStatus.button+' 発動'+continuousStatus.actions:'')+(touchListRecovery?'\n指一覧復帰 ON / 観測'+touchListStats.events+' 一覧'+touchListStats.listed+' 開始なし'+touchListStats.missing+' 復帰'+touchListStats.recovered+'\n'+touchListStats.last:'');
 
 // 古いiOS向けフォールバック: Pointer Events がない場合もタップ開始だけは動かす。
 if(!window.PointerEvent){
  cv.addEventListener('touchstart',e=>{const t=e.changedTouches[0];if(!t)return;e.preventDefault();const r=cv.getBoundingClientRect();mx=(t.clientX-r.left)*W/r.width;my=(t.clientY-r.top)*H/r.height;if(state==='title')handleTitlePointer(mx,my);else if(state==='help')handleHelpPointer(mx,my);else if(state==='skill'){handleSkillMenuPointer(mx,my);}else if(state==='win'||state==='lose'){handleResultPointer(mx,my);}},{passive:false});
 }
 
-const clearInputs=()=>{cancelButtonHolds();for(const k in keys)keys[k]=false;for(const k in st)st[k]=0;end();stickPointerType='';buttonPointers.clear();actionPointer=null;actionKey=null;actionAimPointer=null;skillAimPointer=null;touchTurretAngle=null;dPressHandled=false;bombReq=false;cannonReq=false;interact=false;skillReq=false;knob.style.transform='';document.querySelectorAll('[data-k]').forEach(el=>el.classList.remove('on'));actionBtn.classList.remove('on');mdown=false;};
+const clearInputs=()=>{resetContinuousTouch();cancelButtonHolds();for(const k in keys)keys[k]=false;for(const k in st)st[k]=0;end();stickPointerType='';buttonPointers.clear();actionPointer=null;actionKey=null;actionAimPointer=null;skillAimPointer=null;touchTurretAngle=null;dPressHandled=false;bombReq=false;cannonReq=false;interact=false;skillReq=false;knob.style.transform='';document.querySelectorAll('[data-k]').forEach(el=>el.classList.remove('on'));actionBtn.classList.remove('on');mdown=false;};
 const resetBtn=document.getElementById('resetBtn');
 const backToTitle=e=>{
  if(e){e.preventDefault();e.stopPropagation();}
