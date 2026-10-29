@@ -976,7 +976,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.29.2348',FILE_CREATED_AT='2026/10/29 23:48',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.30.0001',FILE_CREATED_AT='2026/10/30 00:01',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -8454,6 +8454,21 @@ if(debugToggleBtn){
  setInterval(syncDebugToggleButton,250);
 }
 
+// 検証専用 ?buttonHold=200：物理的な指の追跡は即解除し、論理押下だけ最低200ms保持する。
+const buttonHoldMs=typeof location!=='undefined'&&new URLSearchParams(location.search).get('buttonHold')==='200'?200:0;
+const buttonHolds=new Map();
+if(buttonHoldMs){const label=document.getElementById('titleUpdated');if(label)label.textContent+=' / BAS 0.2秒テスト';}
+function beginButtonHold(el,e){
+ const previous=buttonHolds.get(el);
+ if(previous){clearTimeout(previous.timer);buttonHolds.delete(el);if(previous.finish)previous.finish();}
+ if(buttonHoldMs&&e.pointerType==='touch')buttonHolds.set(el,{at:performance.now(),timer:null,finish:null});
+}
+function finishButtonHold(el,finish,cancelled=false){
+ const hold=buttonHolds.get(el),remaining=hold?buttonHoldMs-(performance.now()-hold.at):0;
+ if(!hold||cancelled||remaining<=0){if(hold)clearTimeout(hold.timer);buttonHolds.delete(el);finish();return;}
+ hold.finish=finish;hold.timer=setTimeout(()=>{if(buttonHolds.get(el)!==hold)return;buttonHolds.delete(el);finish();},remaining);
+}
+function cancelButtonHolds(){for(const hold of buttonHolds.values())clearTimeout(hold.timer);buttonHolds.clear();}
 const buttonPointers=new Map();
 // 指の操作はTouch.identifierで統一し、Pointer Eventsとの二重処理を避ける。
 // 開始通知が欠けても、操作部から始まったtouchmoveで復帰できる。定期監視はしない。
@@ -8490,15 +8505,16 @@ function finishControlTouches(e,cancelled){
 document.addEventListener('touchend',e=>finishControlTouches(e,false),{capture:true,passive:false});
 document.addEventListener('touchcancel',e=>finishControlTouches(e,true),{capture:true,passive:false});
 document.querySelectorAll('[data-k]').forEach(el=>{const c=el.dataset.k;
- const down=e=>{e.preventDefault();if(buttonPointers.has(el))return;buttonPointers.set(el,e.pointerId);cap(el,e);el.classList.add('on');press(c);};
- const up=e=>{if(!buttonPointers.has(el)||(e&&buttonPointers.get(el)!==e.pointerId))return;if(e&&e.cancelable)e.preventDefault();const id=buttonPointers.get(el);buttonPointers.delete(el);el.classList.remove('on');release(c);if(el.id==='skillBtn')finishSkillAim();releaseControlCapture(el,id);};
+ const down=e=>{e.preventDefault();if(buttonPointers.has(el))return;beginButtonHold(el,e);buttonPointers.set(el,e.pointerId);cap(el,e);el.classList.add('on');press(c);};
+ const up=(e,cancelled=false)=>{if(!buttonPointers.has(el)||(e&&buttonPointers.get(el)!==e.pointerId))return;if(e&&e.cancelable)e.preventDefault();const id=buttonPointers.get(el);buttonPointers.delete(el);if(el.id==='skillBtn')finishSkillAim();releaseControlCapture(el,id);finishButtonHold(el,()=>{el.classList.remove('on');release(c);},cancelled);};
+ const cancel=e=>up(e,true);
  el.addEventListener('pointerdown',e=>{if(e.pointerType!=='touch')down(e);},{passive:false});
  el.addEventListener('pointerup',up,{passive:false});
- el.addEventListener('pointercancel',up,{passive:false});
- el.addEventListener('lostpointercapture',up,{passive:false});
+ el.addEventListener('pointercancel',cancel,{passive:false});
+ el.addEventListener('lostpointercapture',cancel,{passive:false});
  addEventListener('pointerup',up,{capture:true,passive:false});
- addEventListener('pointercancel',up,{capture:true,passive:false});
- bindTouchControl(el,()=>buttonPointers.get(el)??null,e=>{down(e);if(el.id==='skillBtn')beginSkillAim(e);},el.id==='skillBtn'?e=>moveSkillAim(e):null,up,up);
+ addEventListener('pointercancel',cancel,{capture:true,passive:false});
+ bindTouchControl(el,()=>buttonPointers.get(el)??null,e=>{down(e);if(el.id==='skillBtn')beginSkillAim(e);},el.id==='skillBtn'?e=>moveSkillAim(e):null,up,cancel);
 });
 
 // D/S/E操作: D=爆弾/主砲/爆撃、S=スキル/MG、E=搭乗/降車。
@@ -8528,7 +8544,7 @@ const updateTouchTurretAim=(e,sx,sy)=>{
  touchTurretAngle=Math.atan2(dy,dx);p.ang=touchTurretAngle;return true;
 };
 const actionDown=e=>{
- e.preventDefault();if(actionPointer!==null)return;actionPointer=e.pointerId;cap(actionBtn,e);actionBtn.classList.add('on');
+ e.preventDefault();if(actionPointer!==null)return;beginButtonHold(actionBtn,e);actionPointer=e.pointerId;cap(actionBtn,e);actionBtn.classList.add('on');
  if(p&&p.sniperMode){say('狙撃中：Sで発射 / Aで解除');actionKey=null;return;}
  if(p&&p.tank&&p.tank.kind==='truck'){say('トラックは攻撃できない');actionKey=null;return;}
  if(p&&p.tank&&p.tank.kind==='tank'){
@@ -8542,8 +8558,12 @@ const finishAction=(e,fireTank)=>{
  const pointer=actionPointer;actionPointer=null;if(e&&e.cancelable)e.preventDefault();
  const wasTankAim=actionAimPointer!==null&&(!e||e.pointerId===actionAimPointer);
  if(wasTankAim&&e)updateTouchTurretAim(e,actionAimStartX,actionAimStartY);
- if(wasTankAim&&fireTank&&p&&p.tank&&p.tank.kind==='tank')cannonReq=true;
- actionAimPointer=null;actionBtn.classList.remove('on');if(actionKey)release(actionKey);actionKey=null;releaseControlCapture(actionBtn,pointer);
+ const key=actionKey,tank=p&&p.tank;
+ actionAimPointer=null;actionKey=null;releaseControlCapture(actionBtn,pointer);
+ finishButtonHold(actionBtn,()=>{
+  if(wasTankAim&&fireTank&&state==='play'&&p&&p.tank===tank&&tank&&tank.kind==='tank')cannonReq=true;
+  actionBtn.classList.remove('on');if(key)release(key);
+ },!fireTank);
 };
 actionBtn.addEventListener('pointerdown',e=>{if(e.pointerType!=='touch')actionDown(e);},{passive:false});
 const moveActionAim=e=>{if(actionAimPointer===e.pointerId){e.preventDefault();updateTouchTurretAim(e,actionAimStartX,actionAimStartY);}};
@@ -8605,7 +8625,7 @@ if(!window.PointerEvent){
  cv.addEventListener('touchstart',e=>{const t=e.changedTouches[0];if(!t)return;e.preventDefault();const r=cv.getBoundingClientRect();mx=(t.clientX-r.left)*W/r.width;my=(t.clientY-r.top)*H/r.height;if(state==='title')handleTitlePointer(mx,my);else if(state==='help')handleHelpPointer(mx,my);else if(state==='skill'){handleSkillMenuPointer(mx,my);}else if(state==='win'||state==='lose'){handleResultPointer(mx,my);}},{passive:false});
 }
 
-const clearInputs=()=>{for(const k in keys)keys[k]=false;for(const k in st)st[k]=0;end();stickPointerType='';buttonPointers.clear();actionPointer=null;actionKey=null;actionAimPointer=null;skillAimPointer=null;touchTurretAngle=null;dPressHandled=false;bombReq=false;cannonReq=false;interact=false;skillReq=false;knob.style.transform='';document.querySelectorAll('[data-k]').forEach(el=>el.classList.remove('on'));actionBtn.classList.remove('on');mdown=false;};
+const clearInputs=()=>{cancelButtonHolds();for(const k in keys)keys[k]=false;for(const k in st)st[k]=0;end();stickPointerType='';buttonPointers.clear();actionPointer=null;actionKey=null;actionAimPointer=null;skillAimPointer=null;touchTurretAngle=null;dPressHandled=false;bombReq=false;cannonReq=false;interact=false;skillReq=false;knob.style.transform='';document.querySelectorAll('[data-k]').forEach(el=>el.classList.remove('on'));actionBtn.classList.remove('on');mdown=false;};
 const resetBtn=document.getElementById('resetBtn');
 const backToTitle=e=>{
  if(e){e.preventDefault();e.stopPropagation();}

@@ -1,6 +1,7 @@
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const html=fs.readFileSync(path.join(__dirname,'../../index.html'),'utf8');
-function touchInputHarness({captureWorks=true,source=null,mode=null,deadZone=.12}={}){
+function touchInputHarness({captureWorks=true,source=null,mode=null,deadZone=.12,buttonHold=0}={}){
+ let now=1000,nextTimer=0;const timers=new Map();
  const captured=new Map(),touches=new Map(),stats={geometryReads:0,captureCalls:0};
  function node(id){return{
   id,events:new Map(),dataset:{},style:{},classList:{add(){},remove(){},toggle(){}},setAttribute(){},
@@ -14,7 +15,7 @@ function touchInputHarness({captureWorks=true,source=null,mode=null,deadZone=.12
  const names=['stick','knob','actionBtn','skillBtn','aBtn','actionGlyph','actionLabel','actionCooldown','actionCooldownText','skillLabel','skillCooldown','skillCooldownText'];
  const nodes=Object.fromEntries(names.map(id=>[id,node(id)])),root=node('window'),doc=node('document');nodes.knob.parent=nodes.stick;
  nodes.skillBtn.dataset.k='KeyS';nodes.aBtn.dataset.k='KeyA';doc.getElementById=id=>nodes[id]||null;doc.querySelectorAll=()=>[nodes.skillBtn,nodes.aBtn];
- const c={document:doc,window:{inputTestMode:mode},inputTestDeadZone:deadZone,keys:{},p:null,skill:'throw',state:'play',bombs:[],SKN:{throw:'投擲'},performance:{now:()=>1000},gameFramePerf:{inputMax:0},
+ const c={document:doc,window:{inputTestMode:mode},inputTestDeadZone:deadZone,keys:{},p:null,skill:'throw',state:'play',bombs:[],SKN:{throw:'投擲'},location:{search:buttonHold?'?buttonHold='+buttonHold:''},URLSearchParams,clearTimeout:id=>timers.delete(id),setTimeout(fn,delay){const id=++nextTimer;timers.set(id,{fn,at:now+delay});return id;},performance:{now:()=>now},gameFramePerf:{inputMax:0},
   shiftSniperLens(){},skillGaugeStatus:()=>null,isPartnerDrivenVehicle:()=>false,playerVehicleGunBlocked:()=>false,setInterval(){},addEventListener:root.addEventListener.bind(root),
   bombReq:false,skillReq:false,interact:false,cannonReq:false,touchTurretAngle:null};
  vm.createContext(c);const run=code=>vm.runInContext(code,c);
@@ -35,6 +36,7 @@ function touchInputHarness({captureWorks=true,source=null,mode=null,deadZone=.12
   if(pointer){const type=cancel?'pointercancel':'pointerup',e={pointerId:id+1000,pointerType:'touch',clientX:t.clientX,clientY:t.clientY};root.emit(type,e);t.target.emit?.(type,e);}
   doc.emit(cancel?'touchcancel':'touchend',{changedTouches:[t],touches:[...touches.values()]});
  }
- return{c,nodes,root,doc,captured,touches,stats,start,move,end,run,html};
+ function advance(ms){const target=now+ms;while(true){const next=[...timers.entries()].filter(([,t])=>t.at<=target).sort((a,b)=>a[1].at-b[1].at)[0];if(!next)break;now=next[1].at;timers.delete(next[0]);next[1].fn();}now=target;}
+ return{c,nodes,root,doc,captured,touches,stats,start,move,end,run,html,advance,timers};
 }
 module.exports={touchInputHarness};

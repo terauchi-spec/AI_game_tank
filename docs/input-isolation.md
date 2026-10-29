@@ -25,3 +25,23 @@ Interpretation: a difference between modes suggests an input implementation
 factor. The same dropped sequence in both modes, without game load, warrants
 investigating browser/platform delivery. A successful isolated test does not
 by itself prove game performance or input behavior is correct on the phone.
+
+## Minimum B/S/A hold experiment
+
+Open the **game** at `/?buttonHold=200` to enable a minimum 200ms logical hold
+for touchscreen B/S/A. The title update label includes `BAS 0.2秒テスト`.
+Normal URLs and mouse/keyboard input keep their usual release behavior.
+
+- Actions start immediately. An early touchend frees physical touch ownership
+  immediately, but delays the key/button visual release until 200ms from touchstart.
+  Holding longer than 200ms releases immediately on touchend. The stick is unchanged.
+- Tank B fires on logical release, so a short tap fires at 200ms; S/MG and other
+  hold-based actions remain held for that minimum. A new tap is accepted separately
+  and replaces any pending release for the same button, without clearing another button.
+- Touch cancellation releases immediately and never fires a cancelled tank shot.
+  Blur, hidden-page and menu resets discard pending timers and delayed shots.
+- Only short released taps create a one-shot timer (at most one per button).
+  There is no polling, game-loop work, storage, or event-delivery simulation.
+- This tests game-side release timing only. It cannot extend a physical touch or
+  recover a whole touch sequence that the browser never delivers. Device behavior
+  and any change in the reported handoff failures still require real-phone testing.
