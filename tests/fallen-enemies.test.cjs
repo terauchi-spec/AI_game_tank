@@ -24,7 +24,7 @@ test('ground bodies survive removed/replenished actors, are bounded, and reset b
  const h=harness(),{c}=h;const first={x:0,y:0,alive:false};c.rememberFallenEnemy(first);for(let i=1;i<=100;i++)c.rememberFallenEnemy({x:i,y:100,alive:false});assert.equal(h.get('fallenEnemies.length'),80);assert.equal(h.get('fallenEnemies[0].x'),21);c.rememberFallenEnemy(first);assert.equal(h.get('fallenEnemies.length'),80);c.clearFallenEnemies();assert.equal(h.get('fallenEnemies.length'),0);
 });
 test('only visible bodies on the active indoor floor are stamped; images load once without pixel processing',()=>{
- const h=harness(),{c}=h;c.loadFallenEnemyArtwork();c.loadFallenEnemyArtwork();assert.equal(h.requests.length,3);c.rememberFallenEnemy({x:100,y:100,alive:false});c.rememberFallenEnemy({x:5000,y:100,alive:false});c.drawFallenEnemies(0,0);assert.equal(h.draws.length,1);assert.equal(h.get('fallenEnemies.length'),1);assert.equal(h.depth(),0);
+ const h=harness(),{c}=h;c.loadFallenEnemyArtwork();c.loadFallenEnemyArtwork();assert.equal(h.requests.length,9);c.rememberFallenEnemy({x:100,y:100,alive:false});c.rememberFallenEnemy({x:5000,y:100,alive:false});c.drawFallenEnemies(0,0);assert.equal(h.draws.length,1);assert.equal(h.get('fallenEnemies.length'),1);assert.equal(h.depth(),0);
  c.drawFallenEnemies(1000,0);assert.equal(h.get('fallenEnemies.length'),0);c.drawFallenEnemies(0,0);assert.equal(h.draws.length,1);
  c.clearFallenEnemies();c.stageMode='indoor';c.indoorWorld={currentFloor:0};for(const indoorFloor of [0,1])c.rememberFallenEnemy({x:100,y:100,alive:false,indoorFloor});h.draws.length=0;c.drawFallenEnemies(0,0);assert.equal(h.draws.length,1);c.indoorWorld.currentFloor=1;c.drawFallenEnemies(0,0);assert.equal(h.draws.length,1);assert.equal(h.get('fallenEnemies.length'),0);assert.equal(h.depth(),0);
 });
@@ -40,8 +40,8 @@ test('real bullets and piercing sniper shots preserve scoring and leave the cryi
 });
 
 test('crying and supine transparent WebP assets are complete nonempty RIFF images',()=>{
- for(const pose of ['cry-flying','cry-sitting','supine']){
-  const data=fs.readFileSync(path.join(root,'assets/characters/fallen',pose+'.webp'));
+ for(const variant of ['','white-','ally-'])for(const pose of ['cry-flying','cry-sitting','supine']){
+  const data=fs.readFileSync(path.join(root,'assets/characters/fallen',variant+pose+'.webp'));
   assert.ok(data.length>1000);assert.equal(data.toString('ascii',0,4),'RIFF');assert.equal(data.toString('ascii',8,12),'WEBP');assert.equal(data.readUInt32LE(4)+8,data.length);
   assert.ok(data.includes(Buffer.from('ALPH')),'transparent alpha channel');
  }
@@ -82,4 +82,48 @@ test('simultaneous expiries reuse the real particle cap and do not score additio
  run("stageMode='beginner';reset(false);clearFallenEnemies();parts=[];for(let i=0;i<80;i++)rememberFallenEnemy({x:500,y:1000,alive:false});updateFallenEnemies(10)");
  assert.equal(run('fallenEnemies.length'),0);assert.equal(run('parts.length'),run('MAX_PARTS'));assert.equal(run("parts.every(q=>q.col==='#8fd7ff')"),true);assert.equal(run('scoreStats.humanKills'),0);
  run('updateFallenEnemies(1);updateParts(1)');assert.equal(run('parts.length'),0);
+});
+
+
+test('white infantry and commanders retain their artwork in world, stun, and scope',()=>{
+ const h=harness(),{c}=h;c.loadFallenEnemyArtwork();
+ for(const actor of [{elite:true},{commander:'white'}]){
+  c.clearFallenEnemies();const enemy={...actor,x:100,y:100,alive:false};c.rememberFallenEnemy(enemy);
+  c.drawFallenEnemies(0,0);assert.match(h.draws.at(-1)[0].src,/white-cry-flying/);
+  c.updateFallenEnemies(1);c.drawFallenEnemies(0,0);assert.match(h.draws.at(-1)[0].src,/white-cry-sitting/);
+  c.drawStunnedEnemy(100,100,0,undefined,c.fallenSoldierVariant(enemy));assert.match(h.draws.at(-1)[0].src,/white-supine/);
+  c.drawScopedCryingEnemy({...actor,sniperFallMax:.72,sniperFallT:.72},100,100,70);assert.match(h.draws.at(-1)[0].src,/white-cry-flying/);
+ }
+});
+test('allied combat losses persist independently without recording a living or distant ally as defeated',()=>{
+ const h=harness(),{c}=h;c.loadFallenEnemyArtwork();const ally={x:100,y:100,alive:true};
+ c.rememberFallenAlly(ally,-1,0);assert.equal(h.get('fallenEnemies.length'),0);
+ ally.alive=false;c.rememberFallenAlly(ally,-1,0);c.rememberFallenAlly(ally,-1,0);
+ assert.equal(h.get('fallenEnemies.length'),1);assert.equal(h.get('fallenEnemies[0].flip'),-1);
+ c.drawFallenEnemies(0,0);assert.match(h.draws.at(-1)[0].src,/ally-cry-flying/);
+ c.updateFallenEnemies(1);c.drawFallenEnemies(0,0);assert.match(h.draws.at(-1)[0].src,/ally-cry-sitting/);
+});
+test('reinforcement and Frontline ally stun selects olive supine and preserves timed or contact recovery',()=>{
+ const {createGameEngine}=require('./helpers/game-engine.cjs'),{run}=createGameEngine(root,{seed:7});
+ run("stageMode='beginner';reset(false);loadFallenEnemyArtwork();var stunVariants=[];drawStunnedEnemy=(x,y,f,s,v)=>{stunVariants.push(v);return true};humans=[];etanks=[];allies=[{x:p.x,y:p.y,alive:true,stun:.05,face:0,shotCd:1}]");
+ run("soldier(allies[0].x,allies[0].y,0,true,false,false,false,'',false,false,allies[0])");assert.equal(run('stunVariants.at(-1)'),'ally');
+ run('updateAlly(.1)');assert.equal(run('allies[0].alive'),true);assert.equal(run('allies[0].stun'),0);
+ run("stageMode='front';allies[0].frontline=true;allies[0].stun=10;allies[0].x=p.x+50;updateAlly(1)");assert.equal(run('allies[0].stun'),9);
+ run('allies[0].x=p.x;rescueFrontlineAlly(allies[0])');assert.equal(run('allies[0].stun'),0);assert.equal(run('fallenEnemies.length'),0);
+});
+test('rocket defeats use allied sprites without kill credit; despawn leaves no reaction',()=>{
+ const {createGameEngine}=require('./helpers/game-engine.cjs'),{run}=createGameEngine(root,{seed:7});
+ run("stageMode='beginner';reset(false);humans=[];etanks=[];covers=[];objects=[];cars=[];clearFallenEnemies();allies=[{x:500,y:1000,alive:true}];commanderRocketBlast(500,1000)");
+ assert.equal(run('allies[0].alive'),false);assert.equal(run('fallenEnemies[0].variant'),'ally');assert.equal(run('scoreStats.humanKills'),0);
+ run("updateAlly(.1);clearFallenEnemies();allies=[{x:p.x,y:p.y-2000,alive:true,shotCd:1}];updateAlly(.1)");assert.equal(run('allies.length'),0);assert.equal(run('fallenEnemies.length'),0);
+});
+
+test('enemy bullets and mines leave one olive reaction even after dead allies are filtered',()=>{
+ const {createGameEngine}=require('./helpers/game-engine.cjs'),{run}=createGameEngine(root,{seed:7});
+ for(const kind of ['bullet','mine']){
+  run("stageMode='beginner';skill='throw';reset(false);covers=[];objects=[];water=[];bridges=[];mud=[];bushes=[];cars=[];etanks=[];humans=[];bullets=[];bombs=[];partner=null;hound=null;p.x=700;p.y=1500;allies=[{x:500,y:1000,alive:true,face:0,shotCd:100,burstLeft:3}];rebuildSpatialGrid();clearFallenEnemies()");
+  if(kind==='bullet')run("fire(500,1000,0,'e','r',480,500)");else run("bombs=[{x:500,y:1000,own:'e',t:10}]");
+  run('var defeatedAlly=allies[0];update(0)');assert.equal(run('defeatedAlly.alive'),false);assert.equal(run('fallenEnemies.length'),1);assert.equal(run('fallenEnemies[0].variant'),'ally');
+  run('updateAlly(.1)');assert.equal(run('allies.length'),0);assert.equal(run('fallenEnemies.length'),1);assert.equal(run('scoreStats.humanKills'),0);
+ }
 });
