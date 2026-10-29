@@ -351,7 +351,7 @@ test('extraction success waits at the success overlay until evaluation is explic
  vm.runInContext(index.slice(index.indexOf('function syncMissionSuccess(){'),index.indexOf('let failureFrameDrawn=false;')),c);
  h.api.begin(h.api.world.exits[0]);c.syncMissionSuccess();assert.equal(classes.has('success-open'),false);h.api.update(2.799);assert.equal(c.state,'indoorEscape');c.syncMissionSuccess();assert.equal(classes.has('success-open'),false);h.api.update(.001);assert.equal(c.state,'succeeded');c.syncMissionSuccess();assert.equal(classes.has('success-open'),true);assert.equal(get('missionSuccessEvaluate').focused,true);assert.equal(results,0);c.syncMissionSuccess();assert.deepEqual(sounds,['win']);
  get('missionSuccessEvaluate').events.click();assert.equal(c.state,'win');assert.equal(classes.has('success-open'),false);assert.equal(results,1);get('missionSuccessEvaluate').events.click();assert.equal(results,1);
- assert.match(index,/<h1 id="missionSuccessTitle">作戦成功<\/h1>/);assert.match(index,/<h1 id="missionFailureTitle">作成失敗<\/h1>/);
+ assert.match(index,/<h1 id="missionSuccessTitle">作戦成功<\/h1>/);assert.match(index,/<h1 id="missionFailureTitle">作戦失敗<\/h1>/);
 });
 
 
