@@ -45,5 +45,13 @@ test('suspended context waits for resume and absent result SE does not hang BGM'
  const h=harness(),{c}=h;h.context.state='suspended';c.unlockGameBgm();assert.equal(h.requests.length,0);h.context.state='running';c.updateGameBgm();await tick();assert.equal(h.sources.length,1);c.state='lose';c.beginResultGameBgm();c.gameSe.voices.add({name:'uiSelect'});c.updateGameBgm();assert.equal(h.sources.length,2);assert.deepEqual(h.sources.at(-1).args,[0,0]);
 });
 test('main frame and result opening retain their BGM hooks and asset',()=>{
- const root=path.join(__dirname,'..'),html=fs.readFileSync(path.join(root,'index.html'),'utf8');assert.match(html,/<script src="js\/bgm.js\?v=/);assert.match(html,/try\{updateGameBgm\(\);\}/);assert.match(html,/if\(show&&!open\)\{sfx\('results'\);if\(typeof beginResultGameBgm==='function'\)beginResultGameBgm\(\);/);assert.ok(fs.statSync(path.join(root,'assets/audio/bgm/stahlmarsch_zum_sieg.mp3')).size>0);
+ const root=path.join(__dirname,'..'),html=fs.readFileSync(path.join(root,'index.html'),'utf8');assert.match(html,/<script src="js\/bgm.js\?v=/);assert.match(html,/try\{updateGameBgm\(\);\}/);assert.match(html,/if\(show&&!open\)\{sfx\('results'\);if\(typeof beginResultGameBgm==='function'\)beginResultGameBgm\(scoreStats\);/);assert.ok(fs.statSync(path.join(root,'assets/audio/bgm/stahlmarsch_zum_sieg.mp3')).size>0);
+});
+
+test('unlock and evaluation share one theme source per run, including late unlocks and natural endings',async()=>{
+ const h=harness(),{c}=h;c.unlockGameBgm();await tick();c.state='play';c.updateGameBgm();c.state='win';const run={final:{cleared:true}};
+ c.beginResultGameBgm(run);c.updateGameBgm();const source=h.sources.at(-1),count=h.sources.length;assert.deepEqual(source.args,[0,0]);h.context.currentTime=8;
+ c.gameSe.voices.add({name:'results'});c.beginResultGameBgm(run);c.updateGameBgm();assert.equal(h.sources.length,count);assert.equal(h.get('gameBgm.source'),source);assert.equal(source.stopped,undefined);assert.equal(h.get('gameBgm.startedAt'),0);
+ c.gameSe.voices.clear();source.onended();c.beginResultGameBgm(run);c.updateGameBgm();assert.equal(h.sources.length,count);assert.equal(h.get('gameBgm.finished'),true);
+ c.state='play';c.updateGameBgm();c.state='lose';c.beginResultGameBgm({final:{cleared:false}});c.updateGameBgm();assert.equal(h.sources.length,count+1);assert.deepEqual(h.sources.at(-1).args,[0,0]);assert.equal(h.decodes(),1);
 });

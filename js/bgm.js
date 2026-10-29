@@ -1,6 +1,6 @@
 // Use the SE AudioContext directly: no media element or separate audio session.
 const GAME_BGM_URL='assets/audio/bgm/stahlmarsch_zum_sieg.mp3?v=696964203a01';
-const gameBgm={buffer:null,pending:null,source:null,gain:null,offset:0,startedAt:0,unlocked:false,finished:false,blocked:false,focused:true,resultActive:false,resultWaiting:false};
+const gameBgm={buffer:null,pending:null,source:null,gain:null,offset:0,startedAt:0,unlocked:false,finished:false,blocked:false,focused:true,resultActive:false,resultWaiting:false,resultRun:null};
 function gameBgmContext(){return typeof audioCtx!=='undefined'?audioCtx:null;}
 function gameBgmAllowed(){return typeof state!=='undefined'&&(state==='title'||state==='leaderboard'||state==='developer'||state==='developerPass'||state==='skill'||state==='stage'||(gameBgm.resultActive&&(state==='win'||state==='lose')));}
 function gameBgmVisible(){return gameBgm.focused&&(typeof document==='undefined'||document.visibilityState!=='hidden');}
@@ -11,8 +11,10 @@ function pauseGameBgm(){
  gameBgm.source=null;source.onended=null;
  try{source.stop();source.disconnect();}catch(_){}
 }
-function beginResultGameBgm(){
- // Called after the result SE is started, once per newly opened result screen.
+function beginResultGameBgm(run=null){
+ // Start once per sortie; evaluation and late unlocks retain the same playback.
+ if(run&&gameBgm.resultRun===run){gameBgm.resultActive=true;return;}
+ gameBgm.resultRun=run;
  pauseGameBgm();gameBgm.offset=0;gameBgm.resultActive=true;gameBgm.resultWaiting=true;gameBgm.finished=false;
 }
 function resultGameSePlaying(){

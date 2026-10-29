@@ -964,7 +964,7 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 
 <script src="js/player-tank-art.js?v=2026.10.28.2114"></script>
 <script src="js/audio.js?v=2026.10.28.2053"></script>
-<script src="js/bgm.js?v=2026.10.28.0713"></script>
+<script src="js/bgm.js?v=2026.10.29.1936"></script>
 <script src="js/audio-recovery.js?v=2026.10.28.1725"></script>
 <script>
 const MOBILE_VIEW=matchMedia('(pointer:coarse)').matches;
@@ -976,7 +976,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.29.1300',FILE_CREATED_AT='2026/10/29 13:00',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.29.1936',FILE_CREATED_AT='2026/10/29 19:36',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -7977,7 +7977,7 @@ function syncResultScreen(){
  const show=(state==='win'||state==='lose')&&!!(scoreStats&&scoreStats.final);
  const open=document.body.classList.contains('result-open');
  if(typeof syncUnlockScreen==='function'&&syncUnlockScreen(show?scoreStats:null)){if(open){resultScoreAnimId++;document.body.classList.remove('result-open');}return;}
- if(show&&!open){sfx('results');if(typeof beginResultGameBgm==='function')beginResultGameBgm();renderResultScreen();document.body.classList.add('result-open');document.getElementById('resultScreen').scrollTop=0;animateResultScore(scoreStats.final.total);}
+ if(show&&!open){sfx('results');if(typeof beginResultGameBgm==='function')beginResultGameBgm(scoreStats);renderResultScreen();document.body.classList.add('result-open');document.getElementById('resultScreen').scrollTop=0;animateResultScore(scoreStats.final.total);}
  else if(!show&&open){resultScoreAnimId++;document.body.classList.remove('result-open');}
 }
 document.getElementById('resRetry').addEventListener('click',()=>{rollSkillChoices();state='skill';bombReq=false;cannonReq=false;interact=false;skillReq=false;syncResultScreen();sfx('skill');});
@@ -8402,7 +8402,7 @@ function reportGameError(error){
 <script src="js/developer.js?v=2026.10.28.0713"></script>
 <script src="js/leaderboard.js?v=2026.10.28.0713"></script>
 <script src="js/intro.js?v=2026.10.28.0713"></script>
-<script src="js/unlocks.js?v=2026.10.29.1300"></script>
+<script src="js/unlocks.js?v=2026.10.29.1936"></script>
 <script src="js/enemy-bomber.js?v=2026.10.28.0713"></script>
 <script src="js/characters.js?v=2026.10.19.1032"></script>
 <script src="js/fallen-enemies.js?v=2026.10.28.2211"></script>

@@ -371,8 +371,33 @@ function renderUnlockCard(item){
  const art=item.kind==='rank'?'<span class="unlock-rank-mark">↑</span>':item.kind==='title'?(typeof awardIcon==='function'?awardIcon(item.title,'title'):''):('<img src="'+escapeUnlockText(item.image)+'" alt="" decoding="async" loading="lazy">');
  return '<article class="unlock-card unlock-card-'+item.kind+'"><div class="unlock-card-art" aria-hidden="true">'+art+'</div><div class="unlock-card-copy"><h2>'+label+'</h2><div class="unlock-name">'+escapeUnlockText(item.name)+'</div>'+(item.kind==='leaderboard'||item.kind==='rank'?'<div class="unlock-leaderboard-ranks">'+escapeUnlockText(item.note)+'</div>':'')+'</div></article>';
 }
-let unlockRevealTimer=null;
+let unlockRevealTimer=null,unlockScrollCleanup=null;
+function startUnlockGameBgm(run){
+ if(!run||unlockRun!==run||document.getElementById('unlockScreen').hidden)return;
+ if(typeof beginResultGameBgm==='function')beginResultGameBgm(run);
+ if(typeof updateGameBgm==='function')updateGameBgm();
+}
+function finishUnlockScroll(screen,run,reduced){
+ const needsScroll=!reduced&&screen.scrollTop>1;
+ if(!needsScroll){screen.scrollTo({top:0,left:0,behavior:'instant'});startUnlockGameBgm(run);return;}
+ let finished=false;
+ const done=()=>{
+  if(finished)return;finished=true;
+  if(unlockRevealTimer!==null)clearTimeout(unlockRevealTimer);unlockRevealTimer=null;
+  screen.removeEventListener?.('scroll',onScroll);screen.removeEventListener?.('scrollend',onEnd);unlockScrollCleanup=null;
+  startUnlockGameBgm(run);
+ };
+ const onEnd=()=>{if(screen.scrollTop<=1)done();};
+ const onScroll=()=>{if(finished)return;if(unlockRevealTimer!==null)clearTimeout(unlockRevealTimer);unlockRevealTimer=setTimeout(done,150);};
+ unlockScrollCleanup=()=>{finished=true;screen.removeEventListener?.('scroll',onScroll);screen.removeEventListener?.('scrollend',onEnd);};
+ screen.addEventListener('scroll',onScroll,{passive:true});screen.addEventListener('scrollend',onEnd);
+ // scrollend is preferred; the debounced scroll event supports older browsers.
+ // A single bounded fallback also covers a scroll request that emits no events.
+ unlockRevealTimer=setTimeout(done,1000);
+ screen.scrollTo({top:0,left:0,behavior:'smooth'});
+}
 function cancelUnlockReveal(){
+ if(unlockScrollCleanup){unlockScrollCleanup();unlockScrollCleanup=null;}
  if(unlockRevealTimer!==null){clearTimeout(unlockRevealTimer);unlockRevealTimer=null;}
  // Interrupted presentations leave every card readable during manual scrolling.
  document.getElementById('unlockList').classList.remove('unlock-sequencing');
@@ -380,7 +405,7 @@ function cancelUnlockReveal(){
 function beginUnlockReveal(screen){
  cancelUnlockReveal();
  const list=document.getElementById('unlockList'),run=unlockRun;
- if(!list.querySelectorAll('.unlock-card').length)return;
+ if(!list.querySelectorAll('.unlock-card').length){startUnlockGameBgm(run);return;}
  const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
  const behavior=reduced?'instant':'smooth';
  if(typeof loadGameSe==='function')loadGameSe('unlockCard',true);
@@ -392,7 +417,7 @@ function beginUnlockReveal(screen){
   const cards=list.querySelectorAll('.unlock-card');
   if(index===cards.length){
    list.classList.remove('unlock-sequencing');
-   screen.scrollTo({top:0,left:0,behavior});
+   finishUnlockScroll(screen,run,reduced);
    return;
   }
   const card=cards[index++];
@@ -410,6 +435,7 @@ const unlockScrollScreen=document.getElementById('unlockScreen');
 function interruptUnlockReveal(){
  cancelUnlockReveal();
  unlockScrollScreen.scrollTo({top:unlockScrollScreen.scrollTop,left:0,behavior:'instant'});
+ startUnlockGameBgm(unlockRun);
 }
 for(const event of ['pointerdown','touchstart','wheel','keydown'])unlockScrollScreen.addEventListener(event,interruptUnlockReveal,{passive:true});
 function closeUnlockScreen(){

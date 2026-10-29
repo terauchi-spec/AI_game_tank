@@ -3,7 +3,7 @@ const root=path.join(__dirname,'..'),source=fs.readFileSync(path.join(root,'js/u
 function harness({storage=new Map(),storageFails=false,reducedMotion=false}={}){
  const timers=new Map(),delays=[];let timerId=0;const nodes=new Map(),classes=new Set(),events={},sounds=[],getNode=id=>{if(!nodes.has(id))nodes.set(id,{hidden:true,innerHTML:'',src:'',scrollTop:99,scrolls:[],classList:{values:new Set(),add(n){this.values.add(n);},remove(n){this.values.delete(n);},contains(n){return this.values.has(n);}},insertAdjacentHTML(position,text){assert.equal(position,'beforeend');this.innerHTML+=text;},querySelectorAll(){const length=(this.innerHTML.match(/<article /g)||[]).length;this.cards??=[];while(this.cards.length<length){const i=this.cards.length;this.cards.push({classList:{values:new Set(),add(n){this.values.add(n);},contains(n){return this.values.has(n);}},getBoundingClientRect(){return {top:800+i*220-getNode('unlockScreen').scrollTop};}});}return this.cards;},getBoundingClientRect(){return {top:id==='unlockList'?800:0};},scrollTo(options){this.scrolls.push(options);this.scrollTop=options.top;},handlers:{},addEventListener(n,f){this.handlers[n]=f;},focus(){this.focused=true;}});return nodes.get(id);};
  const c={setTimeout(fn,delay){delays.push(delay);timers.set(++timerId,fn);return timerId;},clearTimeout(id){timers.delete(id);},matchMedia:()=>({matches:reducedMotion}),state:'win',scoreStats:null,areaDebugEnabled:false,STAGE_ORDER:[{id:'indoorBeginner',name:'潜入（初級）',image:'infiltration_beginner'}],SK:[{id:'dig',n:'潜伏'}],TITLE_CATALOG:[{id:'v3_stealth',name:'隠密兵',type:'単独実績'}],stageDisplayNumber:()=> '02',skillCardIconSrc:id=>'assets/ui/skills/'+id+'.webp',awardIcon:t=>'<img src="assets/ui/titles/'+t.id+'.webp">',
- document:{body:{classList:{contains:n=>classes.has(n),add:n=>classes.add(n),remove:n=>classes.delete(n)}},getElementById:getNode},localStorage:{getItem(k){if(storageFails)throw Error('storage');return storage.get(k)??null;},setItem(k,v){if(storageFails)throw Error('storage');storage.set(k,v);}},addEventListener:(n,f)=>events[n]=f,sfx:n=>sounds.push(n),renderResultScreen(){c.renders++;},renders:0,animateResultScore(){c.animations++;},animations:0,beginResultGameBgm(){c.bgmStarts++;},bgmStarts:0,resultScoreAnimId:0};
+ document:{body:{classList:{contains:n=>classes.has(n),add:n=>classes.add(n),remove:n=>classes.delete(n)}},getElementById:getNode},localStorage:{getItem(k){if(storageFails)throw Error('storage');return storage.get(k)??null;},setItem(k,v){if(storageFails)throw Error('storage');storage.set(k,v);}},addEventListener:(n,f)=>events[n]=f,sfx:n=>sounds.push(n),renderResultScreen(){c.renders++;},renders:0,animateResultScore(){c.animations++;},animations:0,beginResultGameBgm(run){if(run&&c.bgmRun===run)return;c.bgmRun=run;c.bgmStarts++;},bgmStarts:0,resultScoreAnimId:0};
  vm.createContext(c);vm.runInContext(source,c);const start=html.indexOf('function syncResultScreen(){');vm.runInContext(html.slice(start,html.indexOf("document.getElementById('resRetry')",start)),c);
  return{c,nodes,classes,events,sounds,storage,getNode,timers,delays,flush(){const jobs=[...timers.values()];timers.clear();jobs.forEach(fn=>fn());},get:s=>vm.runInContext(s,c)};
 }
@@ -84,7 +84,7 @@ test('cards reveal in order, scrolling through the last card and returning immed
  for(let i=0;i<3;i++){
   h.flush();assert.equal(screen.scrolls.length,i+1);assert.equal(screen.scrolls[i].top,780+i*220);assert.equal(screen.scrolls[i].left,0);assert.equal(screen.scrolls[i].behavior,'smooth');assert.deepEqual(cards.map(c=>c.classList.contains('unlock-card-revealed')),cards.map((_,j)=>j<=i));assert.equal(h.timers.size,1);
  }
- assert.deepEqual(h.delays,[120,550,550,550]);h.flush();assert.equal(screen.scrolls.length,4);assert.equal(screen.scrolls[3].top,0);assert.equal(h.timers.size,0);assert.ok(!list.classList.contains('unlock-sequencing'));h.c.syncResultScreen();assert.equal(h.timers.size,0);
+ assert.deepEqual(h.delays,[120,550,550,550]);h.flush();screen.handlers.scrollend?.();assert.equal(screen.scrolls.length,4);assert.equal(screen.scrolls[3].top,0);assert.equal(h.timers.size,0);assert.ok(!list.classList.contains('unlock-sequencing'));h.c.syncResultScreen();assert.equal(h.timers.size,0);
 });
 test('manual interaction or exit cancels every phase and exposes all remaining cards',()=>{
  for(const phase of [0,1,2,3])for(const action of ['pointerdown','touchstart','wheel','keydown','close']){
@@ -96,10 +96,10 @@ test('reduced motion uses instant scrolling and no animation delays, then return
  const css=fs.readFileSync(path.join(root,'css/unlocks.css'),'utf8');assert.match(css,/#unlockScreen\{[^}]*overflow-x:hidden;overflow-y:auto/);assert.match(css,/prefers-reduced-motion:no-preference/);
 });
 test('late rankings join the active sequence without repeating earlier cards or restarting the instructor',()=>{
- const h=harness();h.c.scoreStats=run();h.c.syncResultScreen();h.flush();const instructor=h.getNode('unlockInstructor').src;h.c.scoreStats.leaderboardUpdates=[{board:'overall',position:1}];h.c.syncResultScreen();assert.equal(h.timers.size,1);assert.match(h.getNode('unlockList').innerHTML,/スコアボード更新/);assert.equal(h.getNode('unlockInstructor').src,instructor);for(let i=0;i<4;i++)h.flush();assert.deepEqual(h.getNode('unlockScreen').scrolls.map(s=>s.top),[780,1000,1220,1440,0]);assert.equal(h.timers.size,0);
+ const h=harness();h.c.scoreStats=run();h.c.syncResultScreen();h.flush();const instructor=h.getNode('unlockInstructor').src;h.c.scoreStats.leaderboardUpdates=[{board:'overall',position:1}];h.c.syncResultScreen();assert.equal(h.timers.size,1);assert.match(h.getNode('unlockList').innerHTML,/スコアボード更新/);assert.equal(h.getNode('unlockInstructor').src,instructor);for(let i=0;i<4;i++)h.flush();assert.deepEqual(h.getNode('unlockScreen').scrolls.map(s=>s.top),[780,1000,1220,1440,0]);h.getNode('unlockScreen').handlers.scrollend?.();assert.equal(h.timers.size,0);
 });
 test('a single unlock also returns after its reveal with no extra pause',()=>{
- const h=harness();h.c.scoreStats={final:{total:100},awards:{newTitles:['v3_stealth']}};h.c.syncResultScreen();h.flush();assert.equal(h.getNode('unlockScreen').scrolls.length,1);h.flush();assert.equal(h.getNode('unlockScreen').scrolls[1].top,0);assert.deepEqual(h.delays,[120,550]);assert.equal(h.timers.size,0);
+ const h=harness();h.c.scoreStats={final:{total:100},awards:{newTitles:['v3_stealth']}};h.c.syncResultScreen();h.flush();assert.equal(h.getNode('unlockScreen').scrolls.length,1);h.flush();assert.equal(h.getNode('unlockScreen').scrolls[1].top,0);assert.deepEqual(h.delays,[120,550,1000]);h.getNode('unlockScreen').handlers.scrollend?.();assert.equal(h.timers.size,0);
 });
 
 test('each automatic unlock card plays its SE once; syncing and canceled timers do not replay it',()=>{
@@ -138,4 +138,20 @@ test('empty presentations do not request card SE or timers; a late unlock replac
 test('unfinalized runs do not open the instructor and storage failure never blocks results',()=>{
  const h=harness();assert.equal(h.c.syncUnlockScreen({}),false);assert.equal(h.get('unlockRun'),null);
  const failed=harness({storageFails:true});failed.c.scoreStats={final:{cleared:false},awards:{newTitles:[]}};assert.doesNotThrow(()=>failed.c.syncResultScreen());assert.ok(failed.classes.has('unlock-open'));assert.doesNotThrow(()=>failed.c.acknowledgeRunUnlocks());assert.ok(failed.classes.has('result-open'));
+});
+
+test('theme waits for the return scroll to finish, then continues into evaluation without a second start',()=>{
+ const h=harness(),{c}=h;c.scoreStats=run();c.syncResultScreen();assert.equal(c.bgmStarts,0);
+ for(let i=0;i<3;i++){h.flush();assert.equal(c.bgmStarts,0);}h.flush();assert.equal(h.getNode('unlockScreen').scrollTop,0);assert.equal(c.bgmStarts,0);
+ h.getNode('unlockScreen').scrollTop=20;h.getNode('unlockScreen').handlers.scrollend();assert.equal(c.bgmStarts,0);h.getNode('unlockScreen').scrollTop=0;h.getNode('unlockScreen').handlers.scrollend();assert.equal(c.bgmStarts,1);assert.equal(h.timers.size,0);h.getNode('unlockScreen').handlers.scrollend();assert.equal(c.bgmStarts,1);
+ c.acknowledgeRunUnlocks();assert.equal(c.bgmStarts,1);assert.ok(h.classes.has('result-open'));
+});
+test('empty, reduced-motion and manually interrupted reveals start the theme without leaving pending scroll work',()=>{
+ const empty=harness();empty.c.scoreStats={final:{cleared:false},awards:{newTitles:[]}};empty.c.syncResultScreen();assert.equal(empty.c.bgmStarts,1);assert.equal(empty.timers.size,0);
+ const reduced=harness({reducedMotion:true});reduced.c.scoreStats=run();reduced.c.syncResultScreen();for(let i=0;i<4;i++)reduced.flush();assert.equal(reduced.c.bgmStarts,1);assert.equal(reduced.timers.size,0);
+ const manual=harness();manual.c.scoreStats=run();manual.c.syncResultScreen();manual.getNode('unlockScreen').handlers.wheel();assert.equal(manual.c.bgmStarts,1);assert.equal(manual.timers.size,0);
+});
+test('scroll fallback starts music once and closing the screen cancels late completion',()=>{
+ const h=harness();h.c.scoreStats=run();h.c.syncResultScreen();for(let i=0;i<4;i++)h.flush();h.getNode('unlockScreen').handlers.scroll();assert.equal(h.delays.at(-1),150);h.flush();assert.equal(h.c.bgmStarts,1);assert.equal(h.timers.size,0);
+ const closed=harness();closed.c.scoreStats=run();closed.c.syncResultScreen();for(let i=0;i<4;i++)closed.flush();closed.c.closeUnlockScreen();closed.flush();closed.getNode('unlockScreen').handlers.scrollend();assert.equal(closed.c.bgmStarts,0);assert.equal(closed.timers.size,0);
 });
