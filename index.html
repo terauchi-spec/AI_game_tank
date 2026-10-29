@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.29.2348</title>
+<title>こっそり戦車大作戦 2026.10.30.0757</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -976,7 +976,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.30.0001',FILE_CREATED_AT='2026/10/30 00:01',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.30.0757',FILE_CREATED_AT='2026/10/30 07:57',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -8617,8 +8617,40 @@ addEventListener('pointercancel',end,{capture:true,passive:false});
 pad.addEventListener('lostpointercapture',e=>{if(!pad.hasPointerCapture(e.pointerId))end(e);},{passive:false});
 // タッチの開始・移動・終了を同じTouch.identifierで追跡する。別の指の終了では解除しない。
 bindTouchControl(pad,()=>act,beginStick,mvp,end,end);
+// 検証専用：開始通知が欠けた指を、別の指のイベントに付くtouchesから拾う。
+// 通常URLではイベントリスナーも監視タイマーも追加しない。
+const touchListRecovery=typeof location!=='undefined'&&new URLSearchParams(location.search).get('touchRecovery')==='1';
+const touchListStats={events:0,listed:0,missing:0,recovered:0,last:'—'};
+if(touchListRecovery){
+ const label=document.getElementById('titleUpdated');if(label)label.textContent+=' / 指一覧復帰テスト';
+ const known=new Set();
+ const reconcile=e=>{
+  touchListStats.events++;touchListStats.listed=e.touches.length;
+  if(e.type==='touchstart')for(const t of e.changedTouches)known.add(t.identifier);
+  for(const t of e.touches){
+   if(known.has(t.identifier))continue;
+   known.add(t.identifier);
+   // 一度見た指は再発動させない。停止中・取消中に存在した指から操作を始めない。
+   if(state!=='play'||e.type==='touchcancel')continue;
+   for(const [el,control] of touchControls){
+    if(!el.contains(t.target))continue;
+    touchListStats.missing++;touchListStats.last=e.type+' → '+el.id;
+    if(control.pointer()===null){
+     // passiveな観測経路なのでブラウザのイベントをキャンセルしない。
+     control.down(touchInput(t,{cancelable:false,preventDefault(){}}));
+     if(control.pointer()===touchId(t))touchListStats.recovered++;
+    }
+    break;
+   }
+  }
+  for(const id of known){let present=false;for(const t of e.touches)if(t.identifier===id){present=true;break;}if(!present)known.delete(id);}
+ };
+ // バブル段階で通常の開始・移動と、終了時の所有権解除が完了してから復帰する。
+ for(const type of ['touchstart','touchmove','touchend','touchcancel'])document.addEventListener(type,reconcile,{passive:true});
+}
+
 if(typeof inputDiagnostics!=='undefined'&&inputDiagnostics)inputDiagnostics.controls=()=>
- 'stick='+(act??'なし')+' dir='+Object.keys(st).filter(k=>st[k]).map(k=>k.replace('Arrow','')).join('/')+' B='+(actionPointer??'なし')+' S='+(buttonPointers.get(skillBtn)??'なし')+' A='+(buttonPointers.get(document.querySelector('[data-k="KeyA"]'))??'なし');
+ 'stick='+(act??'なし')+' dir='+Object.keys(st).filter(k=>st[k]).map(k=>k.replace('Arrow','')).join('/')+' B='+(actionPointer??'なし')+' S='+(buttonPointers.get(skillBtn)??'なし')+' A='+(buttonPointers.get(document.querySelector('[data-k="KeyA"]'))??'なし')+(touchListRecovery?'\n指一覧復帰 ON / 観測'+touchListStats.events+' 一覧'+touchListStats.listed+' 開始なし'+touchListStats.missing+' 復帰'+touchListStats.recovered+'\n'+touchListStats.last:'');
 
 // 古いiOS向けフォールバック: Pointer Events がない場合もタップ開始だけは動かす。
 if(!window.PointerEvent){

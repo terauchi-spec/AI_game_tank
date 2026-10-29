@@ -45,3 +45,37 @@ Normal URLs and mouse/keyboard input keep their usual release behavior.
 - This tests game-side release timing only. It cannot extend a physical touch or
   recover a whole touch sequence that the browser never delivers. Device behavior
   and any change in the reported handoff failures still require real-phone testing.
+
+## Recover starts from another event's full touch list
+
+Open the game at `/?touchRecovery=1&inputDebug=1` (without `buttonHold=200`).
+The title shows `指一覧復帰テスト`. The diagnostic overlay includes:
+
+- `観測`: touch events examined by the optional recovery observer.
+- `一覧`: the most recent event's number of currently active touches.
+- `開始なし`: previously unseen control touches found without a delivered start.
+- `復帰`: those touches actually accepted by a free control through this fallback.
+- The event type and control of the last such candidate. Existing cyan dots also
+  show the touches in the delivered list; dots cannot show an undelivered touch.
+
+Passive document bubble listeners inspect the authoritative `touches` list after
+normal handlers and touch-end cleanup. A previously unseen touch whose original
+DOM target belongs to an unoccupied control can begin that control. Coordinates
+are taken from that touch, never guessed from the finger that ended. Starts
+already delivered, occupied controls, outside targets, cancellation and non-play
+states cannot cause a recovery press. Once observed, a finger is not repeatedly
+started, even after input reset; ended identifiers are pruned from the set.
+
+This fallback can use another finger's event even when the affected finger never
+sends its own move. It cannot detect a physical touch absent from every event/list,
+or track subsequent motion for which no coordinates arrive. `復帰0` alone does not
+prove a platform fault, and no physical-phone result is claimed by unit tests.
+
+The normal URL adds no recovery observers or timers. The opt-in observers are
+passive, do no DOM updates themselves and do not poll. Diagnostic rendering still
+uses the existing throttled game-loop hook. The older input-only comparison page
+continues to use its unchanged input snapshots, not this experimental game path.
+
+If real-phone testing shows this fallback ineffective and no missing finger in the
+raw lists, the next experiment is a separate continuous-touch control mode; it is
+not enabled by this change.
