@@ -11,3 +11,4 @@
 /.assetsignore
 /server/
 /wrangler.json
+/wrangler.public.json
