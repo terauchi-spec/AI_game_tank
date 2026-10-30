@@ -65,3 +65,13 @@ test('capacity endpoints are explicit and unused reference-scale space is not dr
  const endpoints=h.rects.filter(r=>r.color==='#e6e9d8');assert.equal(endpoints.length,2);assert.deepEqual(endpoints.map(r=>r.x),[9,81]);assert.ok(endpoints.every(r=>r.y===18&&r.h===12));assert.ok(h.rects.every(r=>r.x+r.w<=83));
  h.rects.length=0;h.c.drawVehicleHudGauge(10,20,120,.3,'orange',.6);assert.deepEqual(h.rects.filter(r=>r.color==='#e6e9d8').map(r=>r.x),[9,81]);assert.equal(h.rects.find(r=>r.color==='orange').w,36);
 });
+
+test('training keeps the tank name and armor but omits ammunition, fuel and their empty rows',()=>{
+ for(const touch of [true,false]){
+  const h=harness(touch);h.c.stageMode='training';h.draw(tank());
+  assert.deepEqual(h.text.map(t=>t.s),['T-34(ソ連)']);assert.deepEqual(h.icons.map(i=>i[0]),['shield']);assert.equal(h.gauges.length,1);
+  assert.ok(h.rects.some(r=>r.x===8&&r.w===(touch?218:236)&&r.h===52));
+  h.c.stageMode='beginner';h.text.length=0;h.icons.length=0;h.draw(tank());
+  assert.deepEqual(h.text.map(t=>t.s),['T-34(ソ連)','8/11','57/72']);assert.deepEqual(h.icons.map(i=>i[0]),['shield','shell','ammo','fuel']);
+ }
+});

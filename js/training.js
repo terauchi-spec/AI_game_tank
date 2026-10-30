@@ -2,8 +2,8 @@
 let training=null;
 const TRAINING_DONE_KEY='tankGameTrainingCompleteV1';
 const TRAINING_LESSONS={
- 1:{name:'訓練を始めよう',y:12500,gate:12380,lines:['こっそり訓練施設にようこそ！','ここでは戦場の基本を、{こっそりネーム}さんに学んでもらいます','左スティックで移動します。中央の「停止」に戻すと、指を置いたまま止まれます','ここではダメージを受けません。安心して練習してください']},
- 2:{name:'設置爆弾',y:12100,gate:11820,lines:['まずは、設置爆弾の使い方です','ドラム缶に近づいて、爆弾を設置したら（Bボタン）、少し離れて起爆させてみましょう（再度Bボタン）']},
+ 1:{name:'訓練を始めよう',y:12500,gate:12380,lines:['こっそり訓練施設にようこそ！','ここでは戦場の基本を、{こっそりネーム}さんに学んでもらいます','左スティックで移動します。まずは前へ進んでみましょう']},
+ 2:{name:'設置爆弾',y:12100,gate:11820,lines:['ドラム缶に近づいて、爆弾を設置したら（Bボタン）、少し離れて起爆させてみましょう（再度Bボタン）']},
  3:{name:'草むらに隠れる',y:11080,gate:10740,lines:['次は、敵にみつからないように草むらに入ってみましょう','草むらの中は、敵から見つかりにくくなります','見つからずに草むらの中で2秒待てたらクリアです']},
  4:{name:'背後から気絶',y:11080,gate:10740,lines:['それでは、後ろから近づいて2人の敵を気絶させてみましょう（敵近くでA）','前から見つかったり、爆弾で倒してしまったら、この練習をやり直します']},
  5:{name:'戦車に乗って撃つ',y:10700,gate:10330,lines:['最後はこの戦場でもっとも重要な戦車です','戦車に乗り込んで（戦車近くでA）、大砲とマシンガンを撃ってみましょう（B・Sボタン）']},
@@ -192,10 +192,6 @@ function drawTrainingTarget(o){
  g.save();g.translate(o.x+o.w/2,o.y+o.h/2);g.fillStyle='#dbcfa8';g.strokeStyle='#594a35';g.lineWidth=3;g.fillRect(-26,-26,52,52);g.strokeRect(-26,-26,52,52);
  for(const [r,color] of [[19,'#b7473d'],[12,'#eee3c6'],[5,'#b7473d']]){g.fillStyle=color;g.beginPath();g.arc(0,0,r,0,Math.PI*2);g.fill();}
  g.fillStyle='#fff5d6';g.font='bold 14px system-ui';g.textAlign='center';g.fillText(o.label,0,-36);g.restore();
-}
-function drawTrainingBoundary(){
- if(stageMode!=='training'||!training||training.step===6)return;
- const y=training.gate;g.save();g.strokeStyle='#e2c873';g.lineWidth=4;g.setLineDash([16,10]);g.beginPath();g.moveTo(30,y);g.lineTo(WW-30,y);g.stroke();g.setLineDash([]);g.fillStyle='#eadba9';g.font='bold 16px system-ui';g.textAlign='center';g.fillText('課題をクリアして先へ進もう',WW/2,y-15);g.restore();
 }
 function syncTrainingHud(){
  const guide=document.getElementById('trainingGuide'),clear=document.getElementById('trainingClear'),advance=document.getElementById('trainingAdvance'),taskPanel=document.getElementById('trainingTask');

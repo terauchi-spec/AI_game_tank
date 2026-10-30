@@ -27,7 +27,7 @@ in steps 3/4. They use common sight/cover and real A-stun behavior, with a train
 only rear-angle requirement. Other steps contain no enemy soldiers. Checkpoints,
 guards, bombs, bullets, fire, fallen sprites and timer counters reset together.
 
-A north boundary limits both player progress and camera exposure until each clear.
+An invisible north boundary limits both player progress and camera exposure until each clear; there is no dashed line or boundary caption.
 The last drill uses a centered camera and targets sized/spaced to the viewport.
 Normal collisions, bomb burning/explosion, boarding and projectile hit handling are
 reused. Hooks into those systems are gated strictly by `stageMode==='training'`.
@@ -43,3 +43,5 @@ Abandoning training likewise cannot grant rewards or open a graded evaluation.
 Completed tasks latch for 2 seconds before the clear banner; input is released while explosion/fragment effects continue. The banner then lasts 1.05 seconds. Both delays pause with the menu. Only actual dialogue shows the assistant portrait and speech bubble. Objective/progress text has a separate dark rectangular panel. The triangle is absolutely placed in the bubble corner and reserves no extra row; dialogue fonts are 26 px desktop / 21 px mobile.
 
 The tank is at y=10700, 380 world units ahead of the bush/stun patch (previously 1960 units). Intro dialogue directly enters the bomb lesson, without a standalone movement objective or completion delay.
+
+The opening has two welcome lines followed by one combined movement explanation. The former separate introductory bomb line is omitted. Training vehicle HUD retains name/armor only; ammunition and fuel rows are not drawn and the panel is shortened. Other stages retain the complete HUD.

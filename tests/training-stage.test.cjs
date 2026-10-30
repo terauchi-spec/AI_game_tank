@@ -122,8 +122,8 @@ test('waiting for the side patrol then walking into the real bush patch complete
 });
 
 test('intro goes straight to bomb instruction without a walking task or clear banner; the tank is close to the stun area',()=>{
- const h=fixture();const y=h.run('p.y');h.run("training.line=training.lines.length-1;training.typed=training.lines[training.line].length;trainingAdvanceDialogue();syncTrainingHud()");assert.equal(h.run('training.step'),2);assert.equal(h.run('training.phase'),'talk');assert.equal(h.run('training.lines[0]'),'まずは、設置爆弾の使い方です');assert.equal(h.run('training.arrived'),true);assert.equal(h.run('p.y'),y);assert.equal(h.nodes.get('trainingClear').hidden,true);
- h.talk();assert.equal(h.run('training.phase'),'active');assert.equal(h.run('training.step'),2);assert.equal(h.run('TRAINING_LESSONS[1].lines.some(s=>s.includes("前へ進んで"))'),false);
+ const h=fixture();const y=h.run('p.y');h.run("training.line=training.lines.length-1;training.typed=training.lines[training.line].length;trainingAdvanceDialogue();syncTrainingHud()");assert.equal(h.run('training.step'),2);assert.equal(h.run('training.phase'),'talk');assert.match(h.run('training.lines[0]'),/^ドラム缶に近づいて/);assert.equal(h.run('training.arrived'),true);assert.equal(h.run('p.y'),y);assert.equal(h.nodes.get('trainingClear').hidden,true);
+ h.talk();assert.equal(h.run('training.phase'),'active');assert.equal(h.run('training.step'),2);assert.equal(h.run('TRAINING_LESSONS[1].lines.length'),3);assert.equal(h.run('TRAINING_LESSONS[1].lines[2]'),'左スティックで移動します。まずは前へ進んでみましょう');assert.equal(h.run('TRAINING_LESSONS[2].lines.length'),1);
  // Enter vehicle practice from the same location after stunning guards, then walk and actually board.
  h.lesson(4);h.run('p.x=WW/2;p.y=TRAINING_LESSONS[4].y;trainingClearLesson()');h.tick(3.1);assert.equal(h.run('training.step'),5);const distance=h.run('p.y-training.vehicle.y');assert.ok(distance>=200&&distance<=450);assert.ok(h.run('training.vehicle.y>TRAINING_LESSONS[4].gate-100'));
  for(let i=0;i<300&&!h.run('training.phase==="talk"');i++)h.run('keys.ArrowUp=true;update(.02)');assert.equal(h.run('training.phase'),'talk');h.talk();
