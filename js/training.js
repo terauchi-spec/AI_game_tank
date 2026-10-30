@@ -119,7 +119,8 @@ function updateTrainingPresentation(dt){
   return true;
  }
  if(training.phase==='clearPending'){
-  trainingClearInput();training.clearDelay-=dt;
+  // Held controls were released once on entry; suppress new requests without repeated DOM writes.
+  for(const key in keys)keys[key]=false;bombReq=false;cannonReq=false;interact=false;skillReq=false;mdown=false;training.clearDelay-=dt;
   if(training.clearDelay<=1e-8){training.phase='clear';training.hudKey='';if(training.step===4){humans=[];clearFallenEnemies();}return true;}
   // Let the real explosion, fragments and stun aftermath play before the clear banner.
   return false;
