@@ -160,3 +160,30 @@ test('a direct cannon hit on a target uses the standard explosion once, while MG
  h.run("var target=training.targets[1],angle=0;fire(p.x+44,p.y,angle,'p','v',630,700,1)");h.tick(.35);assert.equal(h.run('training.targets[1].hit'),true);assert.equal(h.c.targetSounds.filter(n=>n==='shellExplosion').length,1);assert.ok(h.c.targetSounds.includes('coverBreak'));
  h.run('draw(null);drawMission()');assert.equal(h.run('training.targets.every(t=>!("label" in t))'),true);
 });
+
+test('grass cover advice is followed immediately by the new stealth guidance; each displayed line gets one existing UI cue',()=>{
+ const h=fixture();const lines=h.run('TRAINING_LESSONS[3].lines');const i=lines.indexOf('草むらの中は、敵から見つかりにくくなります');assert.equal(lines[i+1],'青い兵士の視界に入らないように、こっそり移動するのがポイントです');
+ h.c.speechSounds=[];h.run('sfx=name=>speechSounds.push(name);trainingTalk(TRAINING_LESSONS[3].lines);update(.01)');assert.equal(h.c.speechSounds.filter(n=>n==='uiSelect').length,1);h.tick(.3);assert.equal(h.c.speechSounds.filter(n=>n==='uiSelect').length,1);
+ h.run('trainingAdvanceDialogue();update(.01)');assert.equal(h.c.speechSounds.filter(n=>n==='uiSelect').length,1,'revealing the rest of a line does not play another cue');h.run('trainingAdvanceDialogue();update(.01)');assert.equal(h.c.speechSounds.filter(n=>n==='uiSelect').length,2);
+ h.run("trainingAdvanceDialogue();trainingAdvanceDialogue();state='paused';update(1)");assert.equal(h.c.speechSounds.filter(n=>n==='uiSelect').length,2);h.run("state='play';update(.01)");assert.equal(h.c.speechSounds.filter(n=>n==='uiSelect').length,3);
+});
+test('success is labelled training complete only for stage 00',()=>{
+ const h=fixture();h.run("state='succeeded';syncMissionSuccess()");assert.equal(h.nodes.get('missionSuccessTitle').textContent,'訓練完了');h.run("stageMode='beginner';syncMissionSuccess()");assert.equal(h.nodes.get('missionSuccessTitle').textContent,'作戦成功');
+});
+test('two continuous side walls block walking and tank fire and survive bombs, cannon blasts and lesson resets',()=>{
+ const h=fixture();assert.equal(h.run('covers.length'),2);assert.equal(h.run('covers.every(c=>c.trainingWall)'),true);assert.equal(h.run('covers[0].h'),h.run('WH'));
+ h.run('var originalWalls=covers.slice()');for(const y of [12620,12100,11080,10700]){
+  h.run(`p.x=TRAINING_LEFT+10;p.y=${y};mv(p,-30,0,10)`);assert.equal(h.run('p.x'),h.run('TRAINING_LEFT+10'));h.run(`p.x=TRAINING_RIGHT-10;mv(p,30,0,10)`);assert.equal(h.run('p.x'),h.run('TRAINING_RIGHT-10'));
+  for(const source of ['bombBlast','bombDirect','cannonBlast','impact'])h.run(`carve(TRAINING_LEFT-8,${y},120,true,'${source}')`);
+ }
+ assert.equal(h.run('covers.length'),2);assert.equal(h.run('covers.every((c,i)=>c===originalWalls[i]&&!c.fr)'),true);
+ h.lesson(5);h.run("p.tank=training.vehicle;p.x=WW/2;p.y=training.vehicle.y;fire(p.x-44,p.y,Math.PI,'p','c',630,700,3)");h.tick(.6);assert.equal(h.run('bullets.length'),0);assert.equal(h.run('covers.length'),2);assert.equal(h.run('covers.some(c=>c.fr)'),false);
+ h.lesson(3);h.run('trainingResetLesson("再試行");draw(null)');assert.equal(h.run('covers.every((c,i)=>c===originalWalls[i])'),true);
+});
+test('stationary targets remain fully in the corridor and shootable after driving to either wall',()=>{
+ for(const side of ['TRAINING_LEFT+TANK_HIT','TRAINING_RIGHT-TANK_HIT']){
+  const h=fixture();h.lesson(5);h.run(`p.tank=training.vehicle;p.x=${side};p.y=training.vehicle.y;trainingEnterLesson(6)`);h.talk();assert.equal(h.run('training.targets.every(t=>t.x>TRAINING_LEFT&&t.x+t.w<TRAINING_RIGHT)'),true);
+  for(let i=0;i<4;i++){h.run(`var t=training.targets[${i}],a=Math.atan2(t.y+26-p.y,t.x+26-p.x);fire(p.x+Math.cos(a)*44,p.y+Math.sin(a)*44,a,'p','v',630,700,1)`);h.tick(.4);assert.equal(h.run(`training.targets[${i}].hit`),true);}
+  assert.equal(h.run('training.phase'),'clearPending');
+ }
+});

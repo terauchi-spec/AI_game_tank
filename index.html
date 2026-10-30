@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.30.2155</title>
+<title>こっそり戦車大作戦 2026.10.30.2223</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -992,7 +992,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.30.2155',FILE_CREATED_AT='2026/10/30 21:55',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.30.2223',FILE_CREATED_AT='2026/10/30 22:23',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -6024,6 +6024,7 @@ function carve(x,y,r,credit=false,objectDamageSource='impact'){
  if(objectDamageSource)damageObjectsInRadius(x,y,r,objectDamageSource);
  const out=[];let removedArea=0,styleRemoved=0,cannonDebris=[],coverChanged=false;
  for(const c of covers){
+  if(stageMode==='training'&&c.trainingWall){out.push(c);continue;}
   if(c.frontAntenna){if(c.frontCargo)damageFrontlineCargo(c,x,y,r);out.push(c);continue;}
   // Automatic panels stay owned by the door controller, never become concrete fragments.
   if(stageMode==='indoor'&&c.indoorDoor){out.push(c);continue;}
@@ -7465,6 +7466,7 @@ function draw(near){
  const indoorWallDrawAt=stageMode==='indoor'&&debugMode>0?performance.now():0;
  const indoorWallsCached=stageMode==='indoor'&&typeof drawInfiltrationWallChunks==='function'&&drawInfiltrationWallChunks(cx,cy);
  for(const c of coversInBox(cx-100,cy-100,cx+W+100,cy+H+100)){
+  if(c.trainingWall&&stageMode==='training'){drawTrainingWall(c,cy);continue;}
   if(c.buildGroup?.blinkHidden)continue;
   if(c.mazeWall&&mazeWallsCached)continue;
   if(c.indoorWall&&indoorWallsCached)continue;
@@ -8176,7 +8178,7 @@ let briefingFrameDrawn=false;
 let successFrameDrawn=false;
 function syncMissionSuccess(){
  const active=state==='succeeded',wasOpen=document.body.classList.contains('success-open');
- if(active!==wasOpen){document.body.classList.toggle('success-open',active);if(active){document.getElementById('missionSuccessEvaluate').textContent=stageMode==='training'?'訓練を振り返る':'作戦評価';sfx('win');document.getElementById('missionSuccessEvaluate').focus({preventScroll:true});}}
+ if(active!==wasOpen){document.body.classList.toggle('success-open',active);if(active){document.getElementById('missionSuccessTitle').textContent=stageMode==='training'?'訓練完了':'作戦成功';document.getElementById('missionSuccessEvaluate').textContent=stageMode==='training'?'訓練を振り返る':'作戦評価';sfx('win');document.getElementById('missionSuccessEvaluate').focus({preventScroll:true});}}
 }
 document.getElementById('missionSuccess').addEventListener('animationstart',event=>{
  if(state==='succeeded'&&event.animationName==='missionFireworkBurst')sfx('firework');
@@ -8446,7 +8448,7 @@ function reportGameError(error){
 <script src="js/characters.js?v=2026.10.19.1032"></script>
 <script src="js/fallen-enemies.js?v=2026.10.30.1058"></script>
 <script src="js/enemy-dogs.js?v=2026.10.28.0713"></script>
-<script src="js/training.js?v=2026.10.30.2155"></script>
+<script src="js/training.js?v=2026.10.30.2223"></script>
 <script src="js/partner.js?v=2026.10.28.0713"></script>
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/canyon.js?v=2026.10.28.0713"></script>

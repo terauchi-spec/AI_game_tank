@@ -1,10 +1,11 @@
 // Stage 00: isolated tutorial state, bounded props and two non-firing guards.
 let training=null;
 const TRAINING_DONE_KEY='tankGameTrainingCompleteV1';
+const TRAINING_LEFT=280,TRAINING_RIGHT=680;
 const TRAINING_LESSONS={
  1:{name:'訓練を始めよう',y:12500,gate:11820,lines:['こっそり訓練施設にようこそ！','ここでは戦場の基本を、{こっそりネーム}さんに学んでもらいます','左スティックで移動します。まずは前へ進んでみましょう']},
  2:{name:'設置爆弾',y:12100,gate:11820,lines:['ドラム缶に近づいて、爆弾を設置したら（Bボタン）、少し離れて起爆させてみましょう（再度Bボタン）']},
- 3:{name:'草むらに隠れる',y:11080,gate:10740,lines:['次は、敵にみつからないように草むらに入ってみましょう','草むらの中は、敵から見つかりにくくなります','見つからずに草むらの中で2秒待てたらクリアです']},
+ 3:{name:'草むらに隠れる',y:11080,gate:10740,lines:['次は、敵にみつからないように草むらに入ってみましょう','草むらの中は、敵から見つかりにくくなります','青い兵士の視界に入らないように、こっそり移動するのがポイントです','見つからずに草むらの中で2秒待てたらクリアです']},
  4:{name:'背後から気絶',y:11080,gate:10740,lines:['それでは、後ろから近づいて2人の敵を気絶させてみましょう（敵近くでA）','前から見つかったり、爆弾で倒してしまったら、この練習をやり直します']},
  5:{name:'戦車に乗って撃つ',y:10700,gate:10330,lines:['最後はこの戦場でもっとも重要な戦車の訓練です','戦車に乗り込んで（戦車近くでA）、大砲を1発、マシンガンを3発以上撃ってみましょう（B・Sボタン）']},
  6:{name:'砲塔を回して射撃',y:0,gate:0,lines:['戦車の砲塔は回転させることができます','4つのマトを破壊してください（BまたはSを長押ししながら操作）','この練習中は戦車が動きません。砲塔を上下左右に向けて狙いましょう']}
@@ -16,10 +17,10 @@ function trainingClearInput(){
  else{for(const k in keys)keys[k]=false;bombReq=false;cannonReq=false;interact=false;skillReq=false;mdown=false;}
 }
 function trainingStartTyping(){
- const t=training,text=t.lines[t.line];t.typed=matchMedia('(prefers-reduced-motion: reduce)').matches?text.length:1;t.typeElapsed=0;t.hudKey='';
+ const t=training,text=t.lines[t.line];t.typed=matchMedia('(prefers-reduced-motion: reduce)').matches?text.length:1;t.typeElapsed=0;t.hudKey='';t.speechCuePending=true;
 }
 function updateTrainingTyping(dt){
- const t=training,text=t.lines[t.line];if(t.typed>=text.length)return;
+ const t=training,text=t.lines[t.line];if(t.speechCuePending){t.speechCuePending=false;sfx('uiSelect');}if(t.typed>=text.length)return;
  t.typeElapsed+=dt;const count=Math.floor((t.typeElapsed+1e-8)/.04);if(!count)return;
  t.typeElapsed-=count*.04;t.typed=Math.min(text.length,t.typed+count);t.hudKey='';
 }
@@ -42,7 +43,7 @@ function trainingClearTransient(){
 function setupTrainingWorld(){
  skill='throw';
  const z=ZONE_STYLE['敵司令本部'];ZONES=[{n:'敵司令本部',y0:13200,y1:-400,g:z.g,p:z.p.slice()}];
- covers=[];objects=[];bushes=[];humans=[];etanks=[];cars=[];roadBands=[];water=[];bridges=[];mud=[];items=[];tankWrecks=[];radio=null;airstrike=null;airbombs=[];enemyDogs=[];
+ covers=[{kd:-1,trainingWall:true,x:0,y:0,w:TRAINING_LEFT,h:WH},{kd:-1,trainingWall:true,x:TRAINING_RIGHT,y:0,w:WW-TRAINING_RIGHT,h:WH}];objects=[];bushes=[];humans=[];etanks=[];cars=[];roadBands=[];water=[];bridges=[];mud=[];items=[];tankWrecks=[];radio=null;airstrike=null;airbombs=[];enemyDogs=[];
  base={x:-5000,y:-5000,w:10,h:10,hp:30,maxHp:30,deadAt:0};mission=null;
  Object.assign(p,{x:WW/2,y:12620,hp:3,tank:null,body:-Math.PI/2,ang:-Math.PI/2});
  // No skill use during basic controls; the user's selected skill remains unchanged for subsequent stages.
@@ -82,8 +83,10 @@ function trainingEnterLesson(step){
  if(step===6){
   // If a player dismounted after firing, board the same training vehicle for the stationary drill.
   if(!p.tank){p.tank=training.vehicle;p.x=p.tank.x;p.y=p.tank.y;}
+  const d=Math.max(100,Math.min(180,W*.32,H*.24,(TRAINING_RIGHT-TRAINING_LEFT)/2-34));
+  // Keep all four stationary targets inside the walls, even after driving to an edge.
+  p.x=Math.max(TRAINING_LEFT+d+34,Math.min(TRAINING_RIGHT-d-34,p.x));p.tank.x=p.x;
   training.anchor={x:p.x,y:p.y,body:p.body};training.gate=p.y-400;
-  const d=Math.max(100,Math.min(180,W*.32,H*.24));
   training.targets=[[0,-d],[d,0],[0,d],[-d,0]].map(([dx,dy],i)=>({kind:'crate',trainingTarget:true,targetIndex:i,x:p.x+dx-26,y:p.y+dy-26,w:52,h:52,hit:false}));objects=training.targets.slice();
   training.arrived=true;trainingTalk(lesson.lines);
  }
@@ -142,7 +145,7 @@ function constrainTrainingMovement(){
  if(stageMode!=='training'||!training||!p)return;
  p.hp=3;
  if(training.step===6&&training.anchor){p.x=training.anchor.x;p.y=training.anchor.y;p.body=training.anchor.body;return;}
- p.x=Math.max(100,Math.min(WW-100,p.x));p.y=Math.max(training.gate+24,Math.min(12720,p.y));
+ const radius=p.tank?TANK_HIT:10;p.x=Math.max(TRAINING_LEFT+radius,Math.min(TRAINING_RIGHT-radius,p.x));p.y=Math.max(training.gate+24,Math.min(12720,p.y));
 }
 function trainingCamera(){
  if(stageMode!=='training'||!training||!p)return null;
@@ -187,6 +190,13 @@ function trainingObjectDamage(o,source){
   if(!o.hit){o.hit=true;objects=objects.filter(q=>q!==o);if(source==='cannonDirect')cannonImpact(o.x+26,o.y+26,'p');else{burst(o.x+26,o.y+26,12,'#e9d69e',130);sfx('coverBreak',o);}rebuildSpatialGrid();}
  }
  return true;
+}
+function drawTrainingWall(c,cy){
+ const top=Math.max(0,cy-2),bottom=Math.min(WH,cy+H+2),inner=c.x===0?TRAINING_LEFT-12:TRAINING_RIGHT;
+ g.save();g.fillStyle='#373e40';g.fillRect(c.x,top,c.w,bottom-top);g.fillStyle='#65716f';g.fillRect(inner,top,12,bottom-top);
+ g.strokeStyle='#252d2d';g.lineWidth=2;g.beginPath();
+ for(let y=Math.floor(top/64)*64;y<bottom;y+=64){g.moveTo(c.x,y);g.lineTo(c.x+c.w,y);}
+ g.stroke();g.fillStyle='#9aab9c';g.fillRect(c.x===0?TRAINING_LEFT-3:TRAINING_RIGHT,top,3,bottom-top);g.restore();
 }
 function drawTrainingTarget(o){
  g.save();g.translate(o.x+o.w/2,o.y+o.h/2);
