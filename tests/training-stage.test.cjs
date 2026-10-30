@@ -6,8 +6,8 @@ test('00 is always selectable without entering progression or changing 01..07 lo
  assert.equal(h.run("STAGE_ORDER.some(s=>s.id==='training')"),false);h.run('renderStageLocks()');assert.equal(h.run('selectedStageId'),'training');
  h.run("selectedStageId='training';state='stage';selectedSkillId='throw';deploySelectedStage()");assert.equal(h.run('stageMode'),'training');
 });
-test('training starts with HQ tiles, no threats, no active skill and a sequential assistant introduction',()=>{
- const h=fixture();assert.equal(h.run('ZONES.length'),1);assert.equal(h.run('ZONES[0].n'),'敵司令本部');assert.equal(h.run('humans.length+etanks.length+enemyDogs.length'),0);assert.equal(h.run('training.step'),1);const y=h.run('p.y');h.run("keys.ArrowUp=true;update(1);updateHQSpawn(100)");assert.equal(h.run('p.y'),y);assert.equal(h.run('humans.length'),0);
+test('training starts with village tiles, no threats, no active skill and a sequential assistant introduction',()=>{
+ const h=fixture();assert.equal(h.run('ZONES.length'),1);assert.equal(h.run('ZONES[0].n'),'村');assert.equal(h.run('humans.length+etanks.length+enemyDogs.length'),0);assert.equal(h.run('training.step'),1);const y=h.run('p.y');h.run("keys.ArrowUp=true;update(1);updateHQSpawn(100)");assert.equal(h.run('p.y'),y);assert.equal(h.run('humans.length'),0);
  h.talk();assert.equal(h.run('training.phase'),'active');assert.equal(h.run('training.step'),2);assert.equal(h.run('training.arrived'),true);assert.equal(h.run('objects[0].kind'),'crate');
 });
 test('crate exercise requires an actual bomb hit and explosion; walking or unrelated removal cannot clear it',()=>{
@@ -118,7 +118,8 @@ test('guards start on either side and discovery shows the real found-mode reacti
 
 test('waiting for the side patrol then walking into the real bush patch completes hiding without discovery',()=>{
  const h=fixture();h.lesson(3);h.run('p.x=WW/2;p.y=11430');h.tick(4,.02);
- for(let i=0;i<400&&h.run("training.phase==='active'");i++)h.run('keys.ArrowUp=p.y>11080;update(.02)');
+ // Detour around the new horizontal shelter, then return to the center of the grass.
+ for(let i=0;i<800&&h.run("training.phase==='active'");i++)h.run("keys.ArrowLeft=false;keys.ArrowRight=false;keys.ArrowUp=false;if(p.y>11185){if(p.x>372)keys.ArrowLeft=true;else keys.ArrowUp=true;}else if(p.x<478)keys.ArrowRight=true;else keys.ArrowUp=p.y>11080;update(.02)");
  assert.equal(h.run('training.phase'),'clearPending');assert.equal(h.run('training.resets'),0);assert.ok(h.run('training.hold>=3'));
 });
 
@@ -171,13 +172,13 @@ test('success is labelled training complete only for stage 00',()=>{
  const h=fixture();h.run("state='succeeded';syncMissionSuccess()");assert.equal(h.nodes.get('missionSuccessTitle').textContent,'訓練完了');h.run("stageMode='beginner';syncMissionSuccess()");assert.equal(h.nodes.get('missionSuccessTitle').textContent,'作戦成功');
 });
 test('two continuous side walls block walking and tank fire and survive bombs, cannon blasts and lesson resets',()=>{
- const h=fixture();assert.equal(h.run('covers.length'),2);assert.equal(h.run('covers.every(c=>c.trainingWall)'),true);assert.equal(h.run('covers[0].h'),h.run('WH'));
+ const h=fixture();assert.equal(h.run('covers.length'),3);assert.equal(h.run('covers.filter(c=>c.trainingWall).length===2'),true);assert.equal(h.run('covers[0].h'),h.run('WH'));
  h.run('var originalWalls=covers.slice()');for(const y of [12620,12100,11080,10700]){
   h.run(`p.x=TRAINING_LEFT+10;p.y=${y};mv(p,-30,0,10)`);assert.equal(h.run('p.x'),h.run('TRAINING_LEFT+10'));h.run(`p.x=TRAINING_RIGHT-10;mv(p,30,0,10)`);assert.equal(h.run('p.x'),h.run('TRAINING_RIGHT-10'));
   for(const source of ['bombBlast','bombDirect','cannonBlast','impact'])h.run(`carve(TRAINING_LEFT-8,${y},120,true,'${source}')`);
  }
- assert.equal(h.run('covers.length'),2);assert.equal(h.run('covers.every((c,i)=>c===originalWalls[i]&&!c.fr)'),true);
- h.lesson(5);h.run("p.tank=training.vehicle;p.x=WW/2;p.y=training.vehicle.y;fire(p.x-44,p.y,Math.PI,'p','c',630,700,3)");h.tick(.6);assert.equal(h.run('bullets.length'),0);assert.equal(h.run('covers.length'),2);assert.equal(h.run('covers.some(c=>c.fr)'),false);
+ assert.equal(h.run('covers.length'),3);assert.equal(h.run('covers.every((c,i)=>c===originalWalls[i]&&!c.fr)'),true);
+ h.lesson(5);h.run("p.tank=training.vehicle;p.x=WW/2;p.y=training.vehicle.y;fire(p.x-44,p.y,Math.PI,'p','c',630,700,3)");h.tick(.6);assert.equal(h.run('bullets.length'),0);assert.equal(h.run('covers.length'),3);assert.equal(h.run('covers.some(c=>c.fr)'),false);
  h.lesson(3);h.run('trainingResetLesson("再試行");draw(null)');assert.equal(h.run('covers.every((c,i)=>c===originalWalls[i])'),true);
 });
 test('stationary targets remain fully in the corridor and shootable after driving to either wall',()=>{
@@ -201,12 +202,12 @@ test('training hides infantry status icons and restores hearts, bomb and stealth
 
 
 test('training WebP artwork reuses images and one repeating wall pattern; unloaded images keep safe fallbacks',()=>{
- const h=fixture();h.c.patternCalls=0;h.c.spriteCalls=[];
+ const h=fixture();h.run('startAssetLoading()');h.c.patternCalls=0;h.c.spriteCalls=[];
  h.run("g.createPattern=(image,repeat)=>{patternCalls++;if(repeat!=='repeat')throw Error('wall must repeat');return {image};};g.drawImage=(...args)=>spriteCalls.push(args);drawTrainingWall(covers[0],12000);drawTrainingWall(covers[1],12010);drawTrainingWall(covers[0],12020)");
- assert.equal(h.c.patternCalls,1);assert.equal(h.run('trainingArtwork.wall.src'),'assets/ui/training/concrete-wall.webp');
+ assert.equal(h.c.patternCalls,1);assert.equal(h.run('COVER_IMG.concrete_block.src'),h.run('COVER_ASSET_SRC.concrete_block'));
  h.lesson(5);h.lesson(6);h.run('drawTrainingTarget(training.targets[0])');assert.equal(h.c.spriteCalls.length,1);assert.equal(h.run('trainingArtwork.target.src'),'assets/ui/training/target.webp');assert.equal(h.run('training.targets.every(t=>t.w===52&&t.h===52&&!t.hit)'),true);
- h.run('var oldWallImage=trainingArtwork.wall,oldTargetImage=trainingArtwork.target;setupTrainingWorld()');assert.equal(h.run('trainingArtwork.wall===oldWallImage&&trainingArtwork.target===oldTargetImage'),true);
- h.run('trainingArtwork.wall.complete=false;trainingArtwork.target.complete=false;drawTrainingWall(covers[0],12000);drawTrainingTarget({x:400,y:100,w:52,h:52})');assert.equal(h.c.patternCalls,1);assert.equal(h.c.spriteCalls.length,1);
+ h.run('var oldWallImage=COVER_IMG.concrete_block,oldTargetImage=trainingArtwork.target;setupTrainingWorld()');assert.equal(h.run('COVER_IMG.concrete_block===oldWallImage&&trainingArtwork.target===oldTargetImage'),true);
+ h.run('COVER_IMG.concrete_block.complete=false;trainingArtwork.target.complete=false;drawTrainingWall(covers[0],12000);drawTrainingTarget({x:400,y:100,w:52,h:52})');assert.equal(h.c.patternCalls,1);assert.equal(h.c.spriteCalls.length,1);
 });
 
 
@@ -227,4 +228,15 @@ test('training draws from all seven actual tank types with their own vehicle par
  const h=fixture(),seen=new Set();for(let n=0;n<70;n++){
   h.lesson(5);seen.add(h.run('training.vehicle.t.id'));assert.equal(h.run('TYPES.includes(training.vehicle.t)&&training.vehicle.kind==="tank"'),true);assert.equal(h.run('training.vehicle.hp===training.vehicle.t.hp&&training.vehicle.c===training.vehicle.t.cmax&&training.vehicle.v===training.vehicle.t.vmax&&training.vehicle.f===training.vehicle.t.fmax'),true);
  }assert.equal(seen.size,7);
+});
+
+
+test('village terrain and one HQ concrete shelter persist across training transitions and block movement and sight',()=>{
+ const h=fixture();h.lesson(3);assert.equal(h.run('ZONES[0].n'),'村');assert.equal(h.run('ZONES[0].g===ZONE_STYLE["村"].g'),true);assert.equal(h.run('covers.filter(c=>c.trainingShelter).length'),1);
+ h.run('var shelter=covers.find(c=>c.trainingShelter)');assert.equal(h.run('shelter.kd===7&&shelter.w>shelter.h'),true);assert.equal(h.run('shelter.x+shelter.w/2'),h.run('WW/2'));assert.equal(h.run('shelter.y+shelter.h/2-TRAINING_LESSONS[3].y'),220);
+ h.run('p.x=WW/2;p.y=shelter.y+shelter.h+10;var before=p.y;mv(p,0,-30,10)');assert.equal(h.run('p.y'),h.run('before'));
+ h.run('p.x=WW/2;p.y=11360;var observer=trainingGuard(WW/2,11140,Math.PI/2)');assert.equal(h.run('canDetect(observer,p,observer.face,"p")'),false);
+ h.run('covers=covers.filter(c=>c!==shelter);rebuildSpatialGrid()');assert.equal(h.run('canDetect(observer,p,observer.face,"p")'),true);h.run('covers.push(shelter);rebuildSpatialGrid()');
+ h.lesson(4);h.lesson(5);assert.equal(h.run('covers.filter(c=>c.trainingShelter).length'),1);assert.equal(h.run('covers.includes(shelter)'),true);
+ h.run('drawTrainingWall(covers[0],11000);startAssetLoading();drawTrainingWall(covers[0],11000)');assert.equal(h.run('trainingWallTile.width'),60);assert.equal(h.run('trainingWallTile.height'),112);
 });

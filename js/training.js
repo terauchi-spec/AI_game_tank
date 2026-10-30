@@ -1,29 +1,25 @@
 // Stage 00: isolated tutorial state, bounded props and two non-firing guards.
 let training=null;
 // Load only when training is entered; reuse the decoded WebP and pattern across runs.
-const trainingArtwork={wall:null,target:null},trainingWallPatterns=new WeakMap();
+const trainingArtwork={target:null},trainingWallPatterns=new WeakMap();
 let trainingWallTile=null;
-function trainingArtworkImage(kind){
- if(!trainingArtwork[kind]){
-  const image=new Image();image.decoding='async';
-  image.src='assets/ui/training/'+(kind==='wall'?'concrete-wall':'target')+'.webp';
-  trainingArtwork[kind]=image;
+function trainingArtworkImage(){
+ if(!trainingArtwork.target){
+  const image=new Image();image.decoding='async';image.src='assets/ui/training/target.webp';
+  trainingArtwork.target=image;
  }
- return trainingArtwork[kind];
+ return trainingArtwork.target;
 }
 function trainingConcretePattern(){
- const image=trainingArtworkImage('wall');if(!assetOK(image))return null;
+ const image=COVER_IMG.concrete_block;if(!assetOK(image))return null;
  let pattern=trainingWallPatterns.get(g);if(pattern)return pattern;
  if(!trainingWallTile){
-  // Mirrored edge pairs guarantee seamless looping even at the source image boundary.
-  const tile=document.createElement('canvas');tile.width=tile.height=512;
-  const q=gameCanvasContext(tile);q.drawImage(image,0,0,256,256);
-  q.save();q.translate(512,0);q.scale(-1,1);q.drawImage(image,0,0,256,256);q.restore();
-  q.save();q.translate(0,512);q.scale(1,-1);q.drawImage(image,0,0,256,256);q.restore();
-  q.save();q.translate(512,512);q.scale(-1,-1);q.drawImage(image,0,0,256,256);q.restore();
-  trainingWallTile=tile;
+  // One vertical block, cached once; repeat only the visible wall strip.
+  const tile=document.createElement('canvas');tile.width=60;tile.height=112;
+  const q=gameCanvasContext(tile);q.translate(30,56);q.rotate(Math.PI/2);
+  q.drawImage(image,-56,-30,112,60);trainingWallTile=tile;
  }
- if(!pattern){pattern=g.createPattern(trainingWallTile,'repeat');if(pattern)trainingWallPatterns.set(g,pattern);}
+ pattern=g.createPattern(trainingWallTile,'repeat');if(pattern)trainingWallPatterns.set(g,pattern);
  return pattern;
 }
 const TRAINING_DONE_KEY='tankGameTrainingCompleteV1';
@@ -67,10 +63,10 @@ function trainingClearTransient(){
  trainingClearInput();bombs=[];bullets=[];waves=[];fx=[];parts=[];decoy=null;allies=[];partner=null;hound=null;builtWalls=[];burningNatureSet.clear();clearFallenEnemies();p.grappleT=0;p.grappleTarget=null;p.blastAirT=0;p.fireExposure=0;
 }
 function setupTrainingWorld(){
- trainingArtworkImage('wall');trainingArtworkImage('target');
+ trainingArtworkImage();
  skill='throw';
- const z=ZONE_STYLE['敵司令本部'];ZONES=[{n:'敵司令本部',y0:13200,y1:-400,g:z.g,p:z.p.slice()}];
- covers=[{kd:-1,trainingWall:true,x:0,y:0,w:TRAINING_LEFT,h:WH},{kd:-1,trainingWall:true,x:TRAINING_RIGHT,y:0,w:WW-TRAINING_RIGHT,h:WH}];objects=[];bushes=[];humans=[];etanks=[];cars=[];roadBands=[];water=[];bridges=[];mud=[];items=[];tankWrecks=[];radio=null;airstrike=null;airbombs=[];enemyDogs=[];
+ const z=ZONE_STYLE['村'];ZONES=[{n:'村',y0:13200,y1:-400,g:z.g,p:z.p.slice()}];
+ covers=[{kd:-1,trainingWall:true,x:0,y:0,w:TRAINING_LEFT,h:WH},{kd:-1,trainingWall:true,x:TRAINING_RIGHT,y:0,w:WW-TRAINING_RIGHT,h:WH},{kd:7,trainingShelter:true,x:WW/2-70,y:TRAINING_LESSONS[3].y+202,w:140,h:36}];objects=[];bushes=[];humans=[];etanks=[];cars=[];roadBands=[];water=[];bridges=[];mud=[];items=[];tankWrecks=[];radio=null;airstrike=null;airbombs=[];enemyDogs=[];
  base={x:-5000,y:-5000,w:10,h:10,hp:30,maxHp:30,deadAt:0};mission=null;
  Object.assign(p,{x:WW/2,y:12620,hp:3,tank:null,body:-Math.PI/2,ang:-Math.PI/2});
  // No skill use during basic controls; the user's selected skill remains unchanged for subsequent stages.
@@ -222,11 +218,9 @@ function trainingObjectDamage(o,source){
  return true;
 }
 function drawTrainingWall(c,cy){
- const top=Math.max(0,cy-2),bottom=Math.min(WH,cy+H+2),inner=c.x===0?TRAINING_LEFT-12:TRAINING_RIGHT;
- g.save();g.fillStyle=trainingConcretePattern()||'#c4c5bf';g.fillRect(c.x,top,c.w,bottom-top);
- // A narrow, clean coping marks the collision boundary without extra wall objects.
- g.fillStyle='#a9ada7';g.fillRect(inner,top,12,bottom-top);
- g.fillStyle='#e9e9df';g.fillRect(c.x===0?TRAINING_LEFT-3:TRAINING_RIGHT,top,3,bottom-top);g.restore();
+ const top=Math.max(0,cy-2),bottom=Math.min(WH,cy+H+2),x=c.x===0?TRAINING_LEFT-60:TRAINING_RIGHT;
+ g.save();g.translate(x,0);g.fillStyle=trainingConcretePattern()||'#b8bbb2';
+ g.fillRect(0,top,60,bottom-top);g.restore();
 }
 function drawTrainingTarget(o){
  g.save();g.translate(o.x+o.w/2,o.y+o.h/2);

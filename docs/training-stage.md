@@ -1,7 +1,7 @@
 # 00 準備 — 訓練施設
 
 Stage `training` is listed before 01, is always selectable, and uses the existing
-HQ terrain tile. It is intentionally absent from `STAGE_ORDER`: the 01–07 IDs,
+village terrain tile. It is intentionally absent from `STAGE_ORDER`: the 01–07 IDs,
 numbers, prerequisites, achievements, stage records and leaderboard remain intact.
 New players see it selected first until training is completed; the completion key
 `tankGameTrainingCompleteV1` affects only that default selection, not unlocks.
@@ -11,7 +11,7 @@ bubble, screen-wide tap-to-advance dialogue and an optional step-clear overlay. 
 and the 1.05-second clear presentation freeze simulation using the existing update
 loop; there are no additional polling or animation timers. Dialogue reveals one character per 40 ms using the same game loop; a tap reveals the full current line before advancing. A pulsing triangle appears once that line is complete. The menu stays above the tap surface, and opening it hides the guide and pauses typing. The greeting reads the saved player name. Pausing also pauses the
 training. Active progress text is updated at most 10 Hz; inactive training performs
-no repeated DOM writes. Field props and training guards are bounded.
+no repeated DOM writes. Field props and training guards are bounded. A single horizontal HQ concrete barrier (type 7, 140×36) is centered 220 units south of the hiding grass; it blocks movement and sight and remains across lessons. Players can detour around either end.
 
 | Step | Condition | Reset / progression |
 | --- | --- | --- |
@@ -48,6 +48,6 @@ The opening has two welcome lines followed by one combined movement explanation.
 
 Intro and bomb practice share the same initial north camera limit so advancing dialogue preserves both world and screen position on tall mobile viewports. Every task uses the existing capture-complete SE once when the delayed clear banner appears; it is preloaded for training. Bush rustling throughout the game now follows actual movement, stops on the first stationary frame, and safely cancels pending playback if decoding finishes after stopping.
 
-Side walls are two continuous indestructible cover colliders (inner faces x=220/740, 520-unit corridor), retained across lesson changes/resets. They reuse common collision/shot blocking and skip only training-wall carving; visible strips are drawn directly with no large raster allocations. Before stationary target setup, the tank x-position is constrained to the safe firing center range so all four targets remain inside the corridor even after driving along a wall. Each newly displayed assistant line plays the existing uiSelect cue once through the game loop; revealing the remaining text does not replay it. Stage 00 success uses 訓練完了 and normal stages restore 作戦成功.
+Side walls are two continuous indestructible cover colliders (inner faces x=220/740, 520-unit corridor), retained across lesson changes/resets. They reuse common collision/shot blocking and skip only training-wall carving; visible strips repeat a cached 60×112 canvas of the existing concrete-block sprite rotated vertically, with no added wall colliders. Before stationary target setup, the tank x-position is constrained to the safe firing center range so all four targets remain inside the corridor even after driving along a wall. Each newly displayed assistant line plays the existing uiSelect cue once through the game loop; revealing the remaining text does not replay it. Stage 00 success uses 訓練完了 and normal stages restore 作戦成功.
 
 Training hides the infantry status icons (hearts, bomb and stealth) and the entire vehicle HUD on both touch and desktop. Normal-stage HUDs remain unchanged. Bomb instructions now immediately warn that the player can take damage from their own bombs in real missions.
