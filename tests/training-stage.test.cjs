@@ -1,0 +1,66 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),path=require('node:path'),fs=require('node:fs');
+const {createGameEngine}=require('./helpers/game-engine.cjs'),root=path.join(__dirname,'..');
+function fixture(){const h=createGameEngine(root);h.run("stageMode='training';areaDebugEnabled=false;reset(false)");h.tick=(seconds,dt=.05)=>{for(let t=0;t<seconds-1e-8;t+=dt)h.run(`update(${Math.min(dt,seconds-t)})`);};h.talk=()=>h.run("while(training.phase==='talk')trainingAdvanceDialogue()");h.lesson=step=>{h.run(`trainingEnterLesson(${step});training.arrived=true;trainingTalk(TRAINING_LESSONS[${step}].lines)`);h.talk();};return h;}
+test('00 is always selectable without entering progression or changing 01..07 locks',()=>{
+ const h=fixture();assert.equal(h.run("stageDisplayNumber('training')"),'00');assert.equal(h.run("stageSelectable('training')"),true);assert.equal(h.run("stageAvailableForSelection('training')"),true);assert.equal(h.run("stageSelectable('beginner')"),true);assert.equal(h.run("stageSelectable('indoorBeginner')"),false);assert.equal(h.run('STAGE_ORDER.length'),7);
+ assert.equal(h.run("STAGE_ORDER.some(s=>s.id==='training')"),false);h.run('renderStageLocks()');assert.equal(h.run('selectedStageId'),'training');
+ h.run("selectedStageId='training';state='stage';selectedSkillId='throw';deploySelectedStage()");assert.equal(h.run('stageMode'),'training');
+});
+test('training starts with HQ tiles, no threats, no active skill and a sequential assistant introduction',()=>{
+ const h=fixture();assert.equal(h.run('ZONES.length'),1);assert.equal(h.run('ZONES[0].n'),'敵司令本部');assert.equal(h.run('humans.length+etanks.length+enemyDogs.length'),0);assert.equal(h.run('training.step'),1);const y=h.run('p.y');h.run("keys.ArrowUp=true;update(1);updateHQSpawn(100)");assert.equal(h.run('p.y'),y);assert.equal(h.run('humans.length'),0);
+ h.talk();assert.equal(h.run('training.phase'),'clear');h.tick(1.1);assert.equal(h.run('training.step'),2);assert.equal(h.run('objects[0].kind'),'barrel');
+});
+test('barrel exercise requires an actual bomb hit and explosion; walking or unrelated removal cannot clear it',()=>{
+ const h=fixture();h.lesson(2);h.run('objects=[];updateTrainingMission(.1)');assert.equal(h.run('training.phase'),'active');h.lesson(2);
+ h.run('p.x=training.barrel.x+training.barrel.w/2+42;p.y=training.barrel.y+training.barrel.h/2;bombReq=true;update(.01)');assert.equal(h.run('bombs.length'),1);
+ h.run('p.x+=90;bombReq=true;update(.01)');assert.equal(h.run('training.barrelBomb'),true);for(let i=0;i<80&&h.run('training.phase')==='active';i++)h.run('update(.05)');assert.equal(h.run('training.phase'),'clear');assert.equal(h.run('p.hp'),3);assert.equal(h.run('state'),'play');
+});
+test('round bush counts only two uninterrupted hidden seconds and gates northward travel until clear',()=>{
+ const h=fixture();h.lesson(3);h.run('p.x=WW/2;p.y=TRAINING_LESSONS[3].y;updateTrainingMission(1)');assert.equal(h.run('training.hold'),1);
+ h.run('p.x=100;p.y=12500;updateTrainingMission(.1)');assert.equal(h.run('training.hold'),0);
+ h.run('p.x=WW/2;p.y=TRAINING_LESSONS[3].y;updateTrainingMission(1.9)');assert.equal(h.run('training.phase'),'active');h.run('updateTrainingMission(.1)');assert.equal(h.run('training.phase'),'clear');
+ h.lesson(3);h.run('p.y=0;constrainTrainingMovement()');assert.equal(h.run('p.y'),h.run('training.gate+24'));assert.ok(h.run('trainingCamera().y')>=h.run('training.gate-220'));
+ h.run('p.x=training.bush.x+3;p.y=training.bush.y+3');assert.equal(h.run('inBush(p)'),false,'rounded corners are not counted as hidden');
+});
+test('being seen or killing a guard resets only the current bush/stun lesson and clears transient attacks',()=>{
+ const h=fixture();for(const step of [3,4]){
+  h.lesson(step);h.run('humans[0].st=1;updateTrainingMission(.01)');assert.equal(h.run('training.step'),step);assert.equal(h.run('training.phase'),'talk');assert.equal(h.run('humans.length'),2);assert.equal(h.run('humans.every(h=>h.alive&&!h.stun)'),true);assert.equal(h.run('training.hold'),0);
+  h.talk();h.run('humans[0].alive=false;bullets.push({});bombs.push({});updateTrainingMission(.01)');assert.equal(h.run('training.step'),step);assert.equal(h.run('training.phase'),'talk');assert.equal(h.run('bullets.length+bombs.length+fallenEnemies.length'),0);
+ }
+});
+test('two back A interactions clear stun training; a frontal interaction restarts it without counting a stun',()=>{
+ const h=fixture();h.lesson(4);h.run('p.x=humans[0].x;p.y=humans[0].y-25;stunHuman(humans[0])');assert.equal(h.run('training.phase'),'talk');assert.equal(h.run('humans.every(h=>!h.stun)'),true);
+ h.talk();h.run('p.x=humans[0].x;p.y=humans[0].y+25;interact=true;update(.01)');assert.equal(h.run('humans[0].trainingAStun'),true);assert.equal(h.run('training.phase'),'active');
+ h.tick(.35);h.run('p.x=humans[1].x;p.y=humans[1].y+25;interact=true;update(.01)');assert.equal(h.run('training.phase'),'clear');assert.equal(h.run('humans.length'),0);
+});
+test('boarding a real tank and firing both weapons is required before the four stationary targets',()=>{
+ const h=fixture();h.lesson(5);h.run('p.x=training.vehicle.x;p.y=training.vehicle.y+40;interact=true;update(.01)');assert.equal(h.run('p.tank===training.vehicle'),true);
+ h.run('keys.KeyD=true;update(.01);keys.KeyD=false');assert.equal(h.run('training.shots.c'),true);assert.equal(h.run('training.phase'),'active');h.run('keys.KeyS=true;update(.01);keys.KeyS=false');assert.equal(h.run('training.shots.v'),true);assert.equal(h.run('training.phase'),'clear');const y=h.run('p.y');
+ h.tick(1.1);assert.equal(h.run('training.step'),6);assert.equal(h.run('objects.length'),4);assert.equal(h.run('p.y'),y);h.talk();h.run('keys.ArrowUp=true;keys.ArrowLeft=true;update(.5)');assert.equal(h.run('p.y'),y);assert.equal(h.run('p.x'),h.run('training.anchor.x'));assert.equal(h.run('p.body'),h.run('training.anchor.body'));
+});
+test('actual tank projectiles destroy all four targets; blast radius and bombs cannot skip them',()=>{
+ const h=fixture();h.lesson(5);h.run('p.tank=training.vehicle;p.x=training.vehicle.x;p.y=training.vehicle.y;trainingEnterLesson(6)');h.talk();
+ h.run("for(const o of objects.slice())damageObject(o,'bombDirect')");assert.equal(h.run('objects.length'),4);
+ for(let i=0;i<4;i++){
+  h.run(`var target=training.targets[${i}],angle=Math.atan2(target.y+26-p.y,target.x+26-p.x);fire(p.x+Math.cos(angle)*44,p.y+Math.sin(angle)*44,angle,'p',${i%2?"'v'":"'c'"},630,700,3)`);
+  h.tick(.35);assert.equal(h.run(`training.targets[${i}].hit`),true);
+ }
+ assert.equal(h.run('training.phase'),'clear');h.tick(1.1);assert.equal(h.run('training.phase'),'talk');assert.equal(h.run('training.afterTalk'),'finish');assert.equal(h.run('training.lines.length'),4);h.talk();assert.equal(h.run('state'),'succeeded');
+});
+test('completion goes through success and empty unlock screen, skips evaluation and never changes skills, ranks or records',()=>{
+ const h=fixture();const before=new Map(h.storage);h.run("trainingTalk(TRAINING_FINALE,'finish')");h.talk();assert.equal(h.run('scoreStats.training'),true);assert.equal(h.run('scoreStats.final.cleared'),true);assert.equal(h.run('scoreStats.unlockedSkill'),undefined);
+ h.run('state=\'win\';syncResultScreen()');assert.equal(h.nodes.get('unlockEvaluate').textContent,'ステージ選択');assert.match(h.nodes.get('unlockList').innerHTML,/新しいアンロックはありません/);assert.doesNotMatch(h.nodes.get('unlockList').innerHTML,/評価画面/);assert.equal(h.run('scoreStats.unlockNoticeItems.length'),0);
+ h.run('acknowledgeRunUnlocks()');assert.equal(h.run('state'),'stage');assert.equal(h.run('selectedStageId'),'beginner');assert.equal(h.run('stageMode'),'beginner');
+ const allowed='tankGameTrainingCompleteV1';for(const key of ['tankGameSkillProgressV1','tankGameStageProgressV1','tankGameStageRecordsV1',h.run('RUN_HISTORY_KEY'),h.run('TITLE_ARCHIVE_KEY'),h.run('SCORE_KEY')])assert.equal(h.storage.get(key),before.get(key),key+' unchanged');assert.equal(h.storage.get(allowed),'1');
+});
+test('damage, supply exhaustion and infantry skills cannot break training; normal stages retain their behavior',()=>{
+ const h=fixture();h.lesson(2);h.run('damagePlayerByOwnBomb();triggerPlayerDeath();recordPlayerDamage(1);beginBlastFlight(p,p.x,p.y,95,60,8,5)');assert.equal(h.run('p.hp'),3);assert.equal(h.run('state'),'play');assert.ok(!h.run('p.blastAirT'));assert.equal(h.run('scoreStats.damageHits'),0);
+ h.run('skillReq=true;keys.KeyS=true;update(.01)');assert.equal(h.run('bombs.length'),0);
+ h.lesson(5);h.run('p.tank=training.vehicle;p.tank.c=0;p.tank.v=0;p.tank.f=0;updateTrainingPresentation(.01);wreck()');assert.ok(h.run('p.tank.c>0&&p.tank.v>0&&p.tank.f>0'));assert.equal(h.run('p.tank'),h.run('training.vehicle'));
+ h.run("stageMode='beginner';reset(false);damagePlayerByOwnBomb()");assert.equal(h.run('p.hp'),2);
+});
+test('burnt bush resets safely, all lesson views draw, and the final tank drill cannot be dismounted',()=>{
+ const h=fixture();for(let step=1;step<=5;step++){if(step>1)h.lesson(step);h.run('draw(null);drawMission()');}
+ h.lesson(3);h.run('training.bush.burnT=1;updateTrainingMission(.01)');assert.equal(h.run('training.phase'),'talk');assert.equal(h.run('bushes.length'),1);assert.ok(!h.run('training.bush.burnT'));
+ h.lesson(5);h.run('p.tank=training.vehicle;p.x=training.vehicle.x;p.y=training.vehicle.y;trainingEnterLesson(6)');h.talk();h.run('interact=true;update(.01);draw(null);drawMission()');assert.equal(h.run('p.tank===training.vehicle'),true);
+});

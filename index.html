@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.30.1058</title>
+<title>こっそり戦車大作戦 2026.10.30.1528</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -622,6 +622,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 1250ms ease-o
 <link rel="stylesheet" href="css/developer.css?v=2026.10.28.0713">
 <link rel="stylesheet" href="css/leaderboard.css?v=2026.10.28.0713">
 <link rel="stylesheet" href="css/intro.css?v=2026.10.28.0713">
+<link rel="stylesheet" href="css/training.css?v=2026.10.30.1528">
 <link rel="stylesheet" href="css/unlocks.css?v=2026.10.29.1223">
 </head>
 <body>
@@ -632,6 +633,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 1250ms ease-o
 <button id="debugRoutesBtn" type="button" aria-label="巡回ルート表示切替" title="巡回ルート表示切替" aria-pressed="false"><span class="icon" aria-hidden="true">↝</span><span class="key">L</span></button>
 <div id="debugBadge" hidden><span id="debugBadgeText">無敵モード</span><button id="mazeCompareButton" type="button" hidden>比較：通常 → 敵移動停止</button></div>
 <div id="pad"><div id="stick"><div id="knob"></div><span id="continuousStop">停止</span></div><div class="btns"><button class="b" id="skillBtn" data-k="KeyS"><span class="coolRing" id="skillCooldown"></span><span class="coolText" id="skillCooldownText"></span><b>S</b><small id="skillLabel">スキル</small></button><button class="b" id="actionBtn" type="button"><span class="coolRing" id="actionCooldown"></span><span class="coolText" id="actionCooldownText"></span><b id="actionGlyph">B</b><small id="actionLabel">爆弾</small></button><button class="b" data-k="KeyA"><b>A</b><small>操作</small></button><div id="continuousWait">待機</div><div id="continuousSurface" aria-label="B・A・Sのスライド操作領域"></div><p id="continuousHint">指を置いたまま 待機 ⇄ B・A・S<br>左スティックは中央で停止</p></div></div>
+<section id="trainingGuide" aria-label="訓練アシスタント" hidden><img src="assets/ui/training/assistant.svg" width="72" height="72" alt="女性の訓練アシスタント"><div class="training-speech"><h2 id="trainingHeading"></h2><p id="trainingText" aria-live="polite"></p><button id="trainingNext" type="button">次へ</button></div></section><div id="trainingClear" role="status" hidden>クリア</div>
 <div id="titleScreen" role="region" aria-label="タイトル画面"><div class="title-wrap">
 <div class="title-hero"><img class="title-art" alt="戦場を見下ろす兵士と戦車のイラスト" src="assets/ui/title_hero.webp?v=2026.10.14.1653"><div class="title-hero-text"><div class="title-tag">TACTICAL ACTION GAME</div><h1 class="title-main"><img class="title-logo" src="assets/ui/title_logo.webp?v=2026.10.14.1653" alt="こっそり戦車大作戦"></h1></div></div>
 <nav class="title-actions" aria-label="タイトルメニュー">
@@ -963,6 +965,7 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 <div id="stageScreen" role="region" aria-label="ステージ選択"><div class="stage-shell">
 <header class="stage-header"><div><div class="stage-kicker">CHOOSE YOUR MISSION</div><h1>ステージ選択</h1></div><button type="button" class="sk-home" id="stageBack">スキル選択</button></header><p id="stageSkill"></p>
 <div class="stage-options">
+<button type="button" class="stage-card" data-stage="training"><span class="stage-number" aria-hidden="true">00</span><span class="stage-copy"><strong>準備</strong><span class="stage-target">訓練施設</span></span><span class="stage-art"><img src="assets/ui/stages/headquarters.webp" alt="" width="144" height="96" loading="lazy" decoding="async"></span><span class="stage-records" hidden><span class="stage-record-metrics"><span><small>最高スコア</small><b class="stage-record-score">—</b></span><span class="stage-record-rank-group"><small>最高ランク</small><span class="stage-record-rank-value"><img alt="" width="42" height="42" decoding="async"><b class="stage-record-rank">—</b></span></span><span><small>成功/出撃回数</small><b class="stage-record-count">0 / 0回</b></span></span><small class="stage-record-note"></small></span></button>
 <button type="button" class="stage-card" data-stage="beginner"><span class="stage-number" aria-hidden="true">01</span><span class="stage-copy"><strong>破壊（初級）</strong><span class="stage-target">軍事衛星施設</span></span><span class="stage-art"><img src="assets/ui/stages/satellite.webp" alt="" width="144" height="96" loading="lazy" decoding="async"></span><span class="stage-records" hidden><span class="stage-record-metrics"><span><small>最高スコア</small><b class="stage-record-score">—</b></span><span class="stage-record-rank-group"><small>最高ランク</small><span class="stage-record-rank-value"><img alt="" width="42" height="42" decoding="async"><b class="stage-record-rank">—</b></span></span><span><small>成功/出撃回数</small><b class="stage-record-count">0 / 0回</b></span></span><small class="stage-record-note"></small></span></button>
 <button type="button" class="stage-card" data-stage="indoorBeginner" id="stageInfiltrationBeginner" aria-label="02 潜入（初級）"><span class="stage-number" aria-hidden="true">02</span><span class="stage-copy"><strong>潜入（初級）</strong><span class="stage-target">軍司令施設（南部）</span></span><span class="stage-art"><img src="assets/ui/stages/infiltration_beginner.webp" alt="夜の小型軍事施設" width="144" height="96" loading="lazy" decoding="async"></span><span class="stage-records" hidden><span class="stage-record-metrics"><span><small>最高スコア</small><b class="stage-record-score">—</b></span><span class="stage-record-rank-group"><small>最高ランク</small><span class="stage-record-rank-value"><img alt="" width="42" height="42" decoding="async"><b class="stage-record-rank">—</b></span></span><span><small>成功/出撃回数</small><b class="stage-record-count">0 / 0回</b></span></span><small class="stage-record-note"></small></span></button>
 <button type="button" class="stage-card" data-stage="frontBeginner"><span class="stage-number" aria-hidden="true">03</span><span class="stage-copy"><strong>制圧（初級）</strong><span class="stage-target">軍需物資</span></span><span class="stage-art"><img src="assets/ui/stages/supplies.webp" alt="" width="144" height="96" loading="lazy" decoding="async"></span><span class="stage-records" hidden><span class="stage-record-metrics"><span><small>最高スコア</small><b class="stage-record-score">—</b></span><span class="stage-record-rank-group"><small>最高ランク</small><span class="stage-record-rank-value"><img alt="" width="42" height="42" decoding="async"><b class="stage-record-rank">—</b></span></span><span><small>成功/出撃回数</small><b class="stage-record-count">0 / 0回</b></span></span><small class="stage-record-note"></small></span></button>
@@ -989,7 +992,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.30.1058',FILE_CREATED_AT='2026/10/30 10:58',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.30.1528',FILE_CREATED_AT='2026/10/30 15:28',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -1576,6 +1579,7 @@ function explodeObject(o,fxOn=true){
 function destroyObject(o,fxOn=true){return explodeObject(o,fxOn);}
 function damageObject(o,source='impact'){
  if(!objects||!o||!objects.includes(o))return false;
+ if(typeof stageMode!=='undefined'&&stageMode==='training'&&trainingObjectDamage(o,source))return true;
  if(source==='enemyBomb')o.enemyAirStrikeOrigin=true;else if(o.enemyAirStrikeOrigin)delete o.enemyAirStrikeOrigin;
  if(radioStrikeKillContext>0)o.radioStrikeOrigin=true;
  // 潜入の砲弾ケースは銃撃2発で即爆発。通常の木箱・ドラム缶には影響させない。
@@ -1615,6 +1619,7 @@ function updateBurningObjects(dt){
  for(let i=objects.length-1;i>=0;i--){const o=objects[i];if(!(o.burnT>0))continue;o.burnT-=dt;if(o.burnT<=0)explodeObject(o,true);}
 }
 function drawObject(o){
+ if(typeof stageMode!=='undefined'&&stageMode==='training'&&o.trainingTarget){drawTrainingTarget(o);return;}
  const cx=o.x+o.w/2,cy=o.y+o.h/2;
  if(o.kind==='shellPallet'){
   if(o.indoorExplosive&&drawInfiltrationShellPallet(o))return;
@@ -1978,7 +1983,7 @@ function rollSkillChoices(){
 }
 function skillMenuList(){return (typeof isDeveloperMode==='function'&&isDeveloperMode()&&skillDebugAll)?SK:skillChoices.map(id=>SK.find(k=>k.id===id)).filter(Boolean);}
 function unlockSkillOnClear(s){
- if(!s?.final?.cleared||areaDebugEnabled)return;
+ if(!s?.final?.cleared||s.training||s.stage==='training'||areaDebugEnabled)return;
  const progress=readSkillProgress();progress.clears++;
  const next=SK.find(k=>!progress.unlocked.includes(k.id));
  if(next){progress.unlocked.push(next.id);s.unlockedSkill=next.id;}
@@ -2001,7 +2006,7 @@ function selectSkillIndex(i,deploy=false){
    const loadingShownAt=performance.now();
    if(buildGen!==gameBuildGeneration)return;
    if(state!=='preparing'){gameBuildQueued=false;return;}
-   reset(false);skill=selected;
+   reset(false);skill=stageMode==='training'?'throw':selected;
    if(areaDebugEnabled&&hound)resetHoundPosition();
    if(buildGen!==gameBuildGeneration)return;
    // reset() sets play; keep simulation paused until the loading screen has been visible for 2 seconds.
@@ -2123,7 +2128,7 @@ function drawHelpInteract(x,y){
  g.fillStyle='#c8d68a';g.font='12px system-ui';g.fillText('司令部を破壊してクリア',x+516,y+150);
 }
 const ov2=(a,b,m)=>a.x<b.x+b.w+m&&a.x+a.w+m>b.x&&a.y<b.y+b.h+m&&a.y+a.h+m>b.y;
-const inBush=o=>nearbyBushes(o.x,o.y,2).some(b=>o.x>b.x&&o.x<b.x+b.w&&o.y>b.y&&o.y<b.y+b.h);
+const inBush=o=>nearbyBushes(o.x,o.y,2).some(b=>b.trainingRound?Math.hypot((o.x-b.x-b.w/2)/(b.w/2),(o.y-b.y-b.h/2)/(b.h/2))<1:o.x>b.x&&o.x<b.x+b.w&&o.y>b.y&&o.y<b.y+b.h);
 const CCol=['#8a7a55','#8c8c86','#7a5f3a','#55504a','#b9ab8a','#7a5f3a','#2f6b34','#4a5a4a','#7a7468','#666865','#b9ab8a'];
 const FRAG_COLORS={0:['#8a7a55','#6a5d40'],1:['#8c8c86','#6a6a66'],2:['#7a5f3a','#4e3c24'],3:['#55504a','#35322e'],4:['#b9ab8a','#8a4a3a','#5a2e24'],5:['#7a5f3a','#4e3c24'],6:['#2f6b34','#3d8a42','#4a3622'],7:['#4a5a4a','#33403a','#8fb0c4'],8:['#7a7468','#9a9484','#57534a'],9:['#666865','#8c8f8a','#4e514e'],10:['#b9ab8a','#8a4a3a','#5a2e24']};
 const labels=[];function lab(t,x,y,f,c,ns){labels.push({t,x,y,f,c,ns});}
@@ -3013,6 +3018,7 @@ function reset(rerollSkills=true){
  waterRipples=[];
  p={x:WW/2,y:3100,hp:3,tank:null,cc:0,vc:0,ang:-1.57,body:-1.57,dig:0,digPrep:0,digElapsed:0,digExitAnim:0,digExitX:0,digExitY:0,scd:0,scdMax:0,drill:0,drillHit:0,drillTarget:null,drillSfx:0,bushHide:0,grappleT:0,grappleTarget:null,flameFuel:3,flameActive:false,flameLockA:null,flamePath:[],flameSfx:0,flameReach:0,fireExposure:0,sniperMode:false,sniperLockA:null,sniperAimN:0,sniperZoom:1.5,sniperLensChangeT:0,sniperEnterT:0,sniperReadyT:0,sniperExitT:0,sniperFlash:0,sniperHitT:0,sniperHitX:0,sniperHitY:0,sniperFireCd:0,sniperNoiseEvents:[]};touchTurretAngle=null;
  if(areaDebugEnabled&&selectedAreaDebug){setupSelectedAreaDebugStage();if(skill==='hound')spawnHound();setupMission();return;}
+ if(stageMode==='training'){setupTrainingWorld();return;}
  if(stageMode==='indoor'){setupInfiltrationWorld();if(skill==='hound')spawnHound();setupMission();return;}
  const beginner=stageMode==='beginner'&&!areaDebugEnabled;
  const baseW=beginner?360:COMMAND_BASE_W,baseH=beginner?355:COMMAND_BASE_H;
@@ -3443,7 +3449,7 @@ function terrainMoveScale(o,dx,dy,r){
  }
  return 1;
 }
-function mv(o,dx,dy,r,slowOverride=null){if(stageMode==='indoor'&&o===p&&indoorWorld?.stairMoveLock>0)return;if(mazeComparisonEnemyFrozen(o))return;const slow=Number.isFinite(slowOverride)?slowOverride:terrainMoveScale(o,dx,dy,r);dx*=slow;dy*=slow;const nx=o.x+dx;if(!(stageMode==='indoor'&&(indoorFloorEdgeBlocked(o,nx,o.y,r)||o.indoorGuard&&indoorGuardStairBlocked(o,nx,o.y,r)))&&nx>r&&nx<WW-r&&!hitsC(nx,o.y,r)&&!enemyTankObjectBlocked(o,nx,o.y)&&!tankBlocked(o,nx,o.y,r)&&!enemyUnitBlocked(o,nx,o.y,r)&&(!o.dogHandler||dogHandlerStepAllowed(o,nx,o.y)))o.x=nx;const top=frontlineMovementTop(o,r),ny=top>r?Math.max(top,o.y+dy):o.y+dy;if(!(stageMode==='indoor'&&(indoorFloorEdgeBlocked(o,o.x,ny,r)||o.indoorGuard&&indoorGuardStairBlocked(o,o.x,ny,r)))&&ny>r&&ny<WH-r&&!hitsC(o.x,ny,r)&&!enemyTankObjectBlocked(o,o.x,ny)&&!tankBlocked(o,o.x,ny,r)&&!enemyUnitBlocked(o,o.x,ny,r)&&(!o.dogHandler||dogHandlerStepAllowed(o,o.x,ny)))o.y=ny;}
+function mv(o,dx,dy,r,slowOverride=null){if(stageMode==='training'&&o===p&&training?.step===6)return;if(stageMode==='indoor'&&o===p&&indoorWorld?.stairMoveLock>0)return;if(mazeComparisonEnemyFrozen(o))return;const slow=Number.isFinite(slowOverride)?slowOverride:terrainMoveScale(o,dx,dy,r);dx*=slow;dy*=slow;const nx=o.x+dx;if(!(stageMode==='indoor'&&(indoorFloorEdgeBlocked(o,nx,o.y,r)||o.indoorGuard&&indoorGuardStairBlocked(o,nx,o.y,r)))&&nx>r&&nx<WW-r&&!hitsC(nx,o.y,r)&&!enemyTankObjectBlocked(o,nx,o.y)&&!tankBlocked(o,nx,o.y,r)&&!enemyUnitBlocked(o,nx,o.y,r)&&(!o.dogHandler||dogHandlerStepAllowed(o,nx,o.y)))o.x=nx;const top=frontlineMovementTop(o,r),ny=top>r?Math.max(top,o.y+dy):o.y+dy;if(!(stageMode==='indoor'&&(indoorFloorEdgeBlocked(o,o.x,ny,r)||o.indoorGuard&&indoorGuardStairBlocked(o,o.x,ny,r)))&&ny>r&&ny<WH-r&&!hitsC(o.x,ny,r)&&!enemyTankObjectBlocked(o,o.x,ny)&&!tankBlocked(o,o.x,ny,r)&&!enemyUnitBlocked(o,o.x,ny,r)&&(!o.dogHandler||dogHandlerStepAllowed(o,o.x,ny)))o.y=ny;}
 let lastEnemySeparationAt=-1e9;
 function separateEnemyUnits(force=false){
  const now=performance.now();if(!force&&now-lastEnemySeparationAt<100)return;lastEnemySeparationAt=now;
@@ -3667,6 +3673,7 @@ function trackEnemyDeaths(){
  for(const e of (etanks||[]))if(!e.alive&&!e.scoreCounted){e.scoreCounted=true;scoreStats.tankKills++;}
 }
 function recordPlayerDamage(amount,vehicle=false){
+ if(typeof stageMode!=='undefined'&&stageMode==='training')return;
  if(!scoreStats||scoreStats.finalized||!(amount>0))return;
  if(vehicle&&p.tank){const v=p.tank,remaining=v.kind==='truck'?1-(v.mgHits||0)/5:v.kind==='fighter'?v.hp/FIGHTER_TYPE.hp:1-(v.ch||0)/(v.t?.armor||3);amount=Math.min(amount,Math.max(0,remaining));if(!(amount>0))return;}
  if(typeof sfx==='function')sfx(vehicle?'vehicleHit':'playerHit');
@@ -3738,6 +3745,7 @@ function calculateScore(s,cleared,front=false){
 }
 function finalizeScore(cleared){
  if(!scoreStats||scoreStats.finalized)return;
+ if(stageMode==='training'){scoreStats.training=true;scoreStats.finalized=true;scoreStats.final={cleared:!!cleared,total:0,rank:'F'};return;}
  trackEnemyDeaths();if(scoreStats.stage==='indoor'&&typeof indoorWorld!=='undefined'&&indoorWorld?.alarm?.active)scoreStats.indoorAlarm=true;scoreStats.finalized=true;
  scoreStats.final=calculateScore(scoreStats,cleared,stageMode==='front'||scoreStats.stage==='decisive');
  const {total,rank}=scoreStats.final;
@@ -4242,7 +4250,7 @@ function moveAllySmart(a,target,sp,dt){
  if(a.sideStep&&a.sideStep.t>0){a.sideStep.t-=dt;const aa=toT+a.sideStep.dir*Math.PI/2;mv(a,Math.cos(aa)*sp*.9*dt,Math.sin(aa)*sp*.9*dt,8);a.face=aa;if(a.sideStep.t<=0)a.sideStep=null;return;}
  mv(a,Math.cos(toT)*sp*dt,Math.sin(toT)*sp*dt,8);a.face=toT;
 }
-function stunHuman(h,source='player'){if(!h||!h.alive||h.stun>0)return false;if(scoreStats&&!scoreStats.finalized){scoreStats.stuns++;if(source==='player'){scoreStats.tacticalStuns++;if(!h.st)scoreStats.stealthStuns++;}else recordSupportResult('stun',source);}h.stun=60;h.grapple=.3;h.st=0;h.target=null;h.lost=0;h.foundPause=0;h.sharePause=0;h.susPause=0;h.wallFollow=null;h.burstLeft=0;h.cd=0;h.ct=0;h.bu=false;sfx(source==='player'?'fainting':'skill',h);say('敵兵を気絶させた');return true;}
+function stunHuman(h,source='player'){if(!h||!h.alive||h.stun>0)return false;if(typeof stageMode!=='undefined'&&stageMode==='training'&&!trainingTryStun(h,source))return false;if(scoreStats&&!scoreStats.finalized){scoreStats.stuns++;if(source==='player'){scoreStats.tacticalStuns++;if(!h.st)scoreStats.stealthStuns++;}else recordSupportResult('stun',source);}h.stun=60;h.grapple=.3;h.st=0;h.target=null;h.lost=0;h.foundPause=0;h.sharePause=0;h.susPause=0;h.wallFollow=null;h.burstLeft=0;h.cd=0;h.ct=0;h.bu=false;sfx(source==='player'?'fainting':'skill',h);say('敵兵を気絶させた');return true;}
 function setSkillCooldown(sec){p.scd=sec;p.scdMax=sec;}
 function clearPlayerDetection(){
  for(const h of (humans||[]))if(h.alive){
@@ -4358,11 +4366,13 @@ function toggleDebugInvincible(){
  say(debugMode===1?'DEBUG 無敵モード':debugMode===2?'DEBUG 無敵＋索敵解除':debugMode===3?'DEBUG 無敵＋戦闘機／燃料∞':debugMode===4?'描画診断：30秒間、画面に触れず見てください':'DEBUG OFF／歩兵モード');
 }
 function triggerPlayerDeath(){
+ if(typeof stageMode!=='undefined'&&stageMode==='training'){if(p)p.hp=3;return;}
  if(state!=='play')return;
  if(debugInvincible||areaDebugEnabled){p.hp=Math.max(3,p.hp||0);shake=Math.max(shake,3);flash=Math.max(flash,.12);return;}
  recordPlayerDamage(Math.max(0,p.hp||0)/3);p.hp=0;state='dying';deathT=1.35;p.drill=0;p.dig=0;p.digPrep=0;shake=Math.max(shake,16);flash=.65;sfx('deathHit');burst(p.x,p.y,12,'#c05a3a',160);
 }
 function damagePlayerByOwnBomb(){
+ if(stageMode==='training')return false;
  if(state!=='play'||p.tank||p.dig>0)return false;
  if(debugInvincible){shake=Math.max(shake,3);flash=Math.max(flash,.12);return true;}
  recordPlayerDamage(Math.min(1,p.hp||0)/3);p.hp=Math.max(0,(p.hp||0)-1);
@@ -4497,6 +4507,7 @@ function drawTankWrecks(cx,cy){
  }
 }
 function wreck(){
+ if(stageMode==='training'){if(p){p.hp=3;if(p.tank){p.tank.ch=0;p.tank.mgHits=0;}}return;}
  if((debugInvincible||areaDebugEnabled)&&p.tank){
   p.tank.ch=0;p.tank.mgHits=0;
   if(p.tank.kind==='fighter')p.tank.hp=FIGHTER_TYPE.hp;
@@ -4536,6 +4547,7 @@ function stunHumanBlast(h,sec=5){
  h.grapple=0;h.st=0;h.target=null;h.lost=0;h.foundPause=0;h.sharePause=0;h.sus=0;h.susPause=0;h.wallFollow=null;h.burstLeft=0;h.cd=0;h.ct=0;h.plantT=0;h.plantA=null;
 }
 function beginBlastFlight(o,x,y,rad,force,r,landStun=0){
+ if(stageMode==='training'&&o===p)return 0;
  if(!o)return 0;const dx=o.x-x,dy=o.y-y,d=Math.hypot(dx,dy);if(d>=rad)return 0;
  const a=d>.5?Math.atan2(dy,dx):R()*6.28318,push=Math.max(0,force*(1-d/rad));if(push<.5)return 0;
  o.blastAirDur=.42;o.blastAirT=.42;o.blastEase=0;o.blastDX=Math.cos(a)*push;o.blastDY=Math.sin(a)*push;o.blastR=r;o.blastLandStun=Math.max(o.blastLandStun||0,landStun);
@@ -4568,7 +4580,7 @@ function cannonBlastPush(x,y,from,allyStun=from==='e'?5:0){
  // 敵戦車砲を含め、歩兵状態のプレイヤーも爆風で吹き飛ぶ。
  if(p&&!p.tank&&!(p.dig>0))beginBlastFlight(p,x,y,rad,baseForce,8,0);
 }
-function fire(x,y,a,from,k,spd,rng,dmg,soundKey=null){if(from==='p'&&scoreStats&&!scoreStats.finalized){scoreStats.shots++;if(k==='s')scoreStats.sniperShots++;else if(k==='c')scoreStats.cannonShots++;else scoreStats.mgShots++;}if(from==='p')sfx(soundKey||(k==='c'?'cannon':k==='s'?'sniper':'mg'),{x,y});else if(from==='ally')sfx(soundKey||(k==='c'?'cannon':'mg'),{x,y});else if(from==='e')sfx(soundKey||(k==='c'?'enemyCannon':'enemyGun'),{x,y});const actionId=(from==='p'&&(k==='c'||k==='s'))?newCombatAction(k==='s'?'sniper':'cannon'):0;if(from==='p'&&k==='c')suspectTanksNear(x,y,520);bullets.push({x,y,sx:x,sy:y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,from,k,dmg:dmg||0,life:rng/spd,actionId});}
+function fire(x,y,a,from,k,spd,rng,dmg,soundKey=null){if(stageMode==='training')trainingRecordShot(from,k);if(from==='p'&&scoreStats&&!scoreStats.finalized){scoreStats.shots++;if(k==='s')scoreStats.sniperShots++;else if(k==='c')scoreStats.cannonShots++;else scoreStats.mgShots++;}if(from==='p')sfx(soundKey||(k==='c'?'cannon':k==='s'?'sniper':'mg'),{x,y});else if(from==='ally')sfx(soundKey||(k==='c'?'cannon':'mg'),{x,y});else if(from==='e')sfx(soundKey||(k==='c'?'enemyCannon':'enemyGun'),{x,y});const actionId=(from==='p'&&(k==='c'||k==='s'))?newCombatAction(k==='s'?'sniper':'cannon'):0;if(from==='p'&&k==='c')suspectTanksNear(x,y,520);bullets.push({x,y,sx:x,sy:y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,from,k,dmg:dmg||0,life:rng/spd,actionId});}
 function enemyCannonSpeed(){return p&&p.tank&&p.tank.kind==='tank'?(p.tank.t.cspd||630):630;}
 function cannonImpactFx(x,y){fb(x,y,125);burst(x,y,165,'#ff7a28',560);burst(x,y,78,'#fff2a6',720);burst(x,y,30,'#ffffff',820);shake=Math.max(shake,18);flash=Math.max(flash,.62);}
 function cannonImpact(x,y,from,allyStun=from==='e'?5:0,sound=true){if(sound)sfx('shellExplosion',{x,y});cannonImpactFx(x,y);scatterSpinifexAt(x,y,95);cannonBlastPush(x,y,from,allyStun);stunHoundAtBlast(x,y,95);damageObjectsInRadius(x,y,60,'cannonBlast');if(from==='p')suspectHumansNear(x,y,500,true);else suspectTanksNear(x,y,450);}
@@ -5712,6 +5724,7 @@ function drawSniperScope(){
  }
 
 function update(dt){
+ if(stageMode==='training'&&updateTrainingPresentation(dt))return null;
  if(typeof updateFallenEnemies==='function')updateFallenEnemies(dt);
  patrolSearchBudgetMs=2;
  for(const o of humans){o.modeStartX=o.x;o.modeStartY=o.y;o.modeFrozen=false;}
@@ -5724,7 +5737,7 @@ function update(dt){
  if(sniperLocked){bombReq=false;cannonReq=false;}
  const cy=Math.max(0,Math.min(WH-H,p.y-H*.6)),cx=Math.max(0,Math.min(WW-W,p.x-W/2)),wx=mx+cx,wy=my+cy;
  const autoFlight=debugMode===4;
- const ix=(partnerOrder.pressed||partnerOrder.drawing||isPartnerDrivenVehicle())?0:autoFlight?0:(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0),iy=(partnerOrder.pressed||partnerOrder.drawing||isPartnerDrivenVehicle())?0:autoFlight?-1:(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0),il=Math.hypot(ix,iy)||1,V=p.tank,T=V&&V.t,isTruck=!!(V&&V.kind==='truck'),isWheeled=truckLikeVehicle(V),isFighter=!!(V&&V.kind==='fighter');
+ const ix=(partnerOrder.pressed||partnerOrder.drawing||isPartnerDrivenVehicle()||stageMode==='training'&&training?.step===6)?0:autoFlight?0:(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0),iy=(partnerOrder.pressed||partnerOrder.drawing||isPartnerDrivenVehicle()||stageMode==='training'&&training?.step===6)?0:autoFlight?-1:(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0),il=Math.hypot(ix,iy)||1,V=p.tank,T=V&&V.t,isTruck=!!(V&&V.kind==='truck'),isWheeled=truckLikeVehicle(V),isFighter=!!(V&&V.kind==='fighter');
  const buildStartX=p.x,buildStartY=p.y;
  const prepDig=p.digPrep>0,sp=T?(debugMode>=3&&isFighter?T.sp*3:T.sp):150,r=T?(isFighter?24:isTruck?20:TANK_HIT):8;let frameMove=0;
  const areaDebugInfiniteFuel=!!(p.tank&&(p.tank.kind==='tank'||p.tank.kind==='truck')&&(areaDebugEnabled||p.tank.debugInfinite));
@@ -5786,6 +5799,7 @@ function update(dt){
  updateCommanderSignals(dt);updateCommanderMotion(dt);
  // 敵人間：プレイヤー・相棒・偽装を個別に索敵。遮蔽物があれば発見しない。
  for(const h of humans){if(!h.alive)continue;
+  if(stageMode==='training'&&h.trainingGuard)continue;
   h.frontAreaAlert=!(h.stun>0)&&!(h.stunRecover>0)&&!(h.blastAirT>0)&&!h.houndPinned&&!!frontlineCombatPoint(h);
   h.burnSuspicionHold=Math.max(0,(h.burnSuspicionHold||0)-dt);
   h.chatCooldown=Math.max(0,(h.chatCooldown||0)-dt);
@@ -5966,6 +5980,7 @@ function update(dt){
  separateFootPlayerEnemyTanks();enforceFrontlineBoundary();if(stageMode==='indoor')enforceInfiltrationBoundary();
  for(const f of fx)f.l-=dt;fx=fx.filter(f=>f.l>0);
  updateParts(dt);updateWaterRipples(dt);
+ if(stageMode==='training')constrainTrainingMovement();
  shake=Math.max(0,shake-35*dt);flash=Math.max(0,flash-dt*2.5);msgT-=dt;vehicleNameT=Math.max(0,vehicleNameT-dt);updateScoreTracking(dt,frameMove);if(state==='play')updateMission(dt);return near;
 }
 function skillIcon(id,x,y){
@@ -7404,7 +7419,7 @@ function draw(near){
  g=MOBILE_VIEW?gm:og;g.setTransform(MOBILE_VIEW?1:.5,0,0,MOBILE_VIEW?1:.5,0,0);g.imageSmoothingEnabled=false;labels.length=0;vehicleMarkers.length=0;
  fragmentDrawFrame++;fragmentAssetSignature=Object.values(COVER_IMG).reduce((n,im)=>n+(assetOK(im)?1:0),0);
  const bl=state==='blast'||((state==='win'||state==='succeeded')&&(stageMode==='base'||stageMode==='beginner'||base?.decisiveFortress));
- const victoryCamera=stageMode==='indoor'?infiltrationCamera():frontlineVictoryCamera();
+ const victoryCamera=stageMode==='training'?trainingCamera():stageMode==='indoor'?infiltrationCamera():frontlineVictoryCamera();
  if(victoryCamera){cam=victoryCamera.y;camX=victoryCamera.x;}else if(bl){cam+=((base?.decisiveFortress?Math.max(0,base.y+base.h/2-H/2):0)-cam)*.07;camX+=(Math.max(0,Math.min(WW-W,base.x+base.w/2-W/2))-camX)*.07;}else{cam=Math.max(frontlineNorthEdge(),Math.min(WH-H,p.y-H*.6));camX=Math.max(0,Math.min(WW-W,p.x-W/2));}
  const cy=Math.round(cam/2)*2,cx=Math.round(camX/2)*2;
  g.save();if(shake>0)g.translate((R()-.5)*shake,(R()-.5)*shake);
@@ -7443,6 +7458,7 @@ function draw(near){
  // 背景と建物の間に薄い建物跡を置く。建物破壊後も同じ位置に残る。
  drawBuildingGroundMarks(cx,cy);
  if(typeof drawFallenEnemies==='function')drawFallenEnemies(cx,cy);
+ if(stageMode==='training')drawTrainingBoundary();
  const mazeWallsCached=drawMazeWallChunks(cx,cy);
  const indoorWallDrawAt=stageMode==='indoor'&&debugMode>0?performance.now():0;
  const indoorWallsCached=stageMode==='indoor'&&typeof drawInfiltrationWallChunks==='function'&&drawInfiltrationWallChunks(cx,cy);
@@ -7993,6 +8009,7 @@ function syncResultScreen(){
  const show=(state==='win'||state==='lose')&&!!(scoreStats&&scoreStats.final);
  const open=document.body.classList.contains('result-open');
  if(typeof syncUnlockScreen==='function'&&syncUnlockScreen(show?scoreStats:null)){if(open){resultScoreAnimId++;document.body.classList.remove('result-open');}return;}
+ if(show&&scoreStats.training)return;
  if(show&&!open){sfx('results');if(typeof beginResultGameBgm==='function')beginResultGameBgm(scoreStats);renderResultScreen();document.body.classList.add('result-open');document.getElementById('resultScreen').scrollTop=0;animateResultScore(scoreStats.final.total);}
  else if(!show&&open){resultScoreAnimId++;document.body.classList.remove('result-open');}
 }
@@ -8148,7 +8165,7 @@ document.getElementById('specVersion').textContent=GAME_VERSION;
 
 
 let stageMode='beginner',frontlineBeginner=false,frontlineOni=false,indoorBeginner=false,mission=null;
-const STAGE_NAMES={decisive:'決戦：移動要塞',beginner:'破壊（初級）：軍事衛星施設',base:'破壊（上級）：軍司令施設',get front(){return typeof isDecisiveStage==='function'&&isDecisiveStage()?'決戦：移動要塞':frontlineBeginner?'制圧（初級）：軍需物資':'制圧（上級）：戦術アンテナ';},stealth:'潜入',indoorBeginner:'潜入（初級）：重要資料2箇所',get indoor(){return indoorBeginner?'潜入（初級）：重要資料2箇所':'潜入（上級）：重要資料3箇所';}};
+const STAGE_NAMES={training:'準備：訓練施設',decisive:'決戦：移動要塞',beginner:'破壊（初級）：軍事衛星施設',base:'破壊（上級）：軍司令施設',get front(){return typeof isDecisiveStage==='function'&&isDecisiveStage()?'決戦：移動要塞':frontlineBeginner?'制圧（初級）：軍需物資':'制圧（上級）：戦術アンテナ';},stealth:'潜入',indoorBeginner:'潜入（初級）：重要資料2箇所',get indoor(){return indoorBeginner?'潜入（初級）：重要資料2箇所':'潜入（上級）：重要資料3箇所';}};
 document.querySelectorAll('[data-stage]').forEach(b=>b.addEventListener('click',()=>{if(state!=='stage')return;if(setSelectedStage(b.dataset.stage))sfx('skill');}));
 document.getElementById('stageDeploy').addEventListener('click',()=>{deploySelectedStage();});
 document.getElementById('stageDebugAll').addEventListener('click',()=>{if(state!=='stage'||!isDeveloperMode())return;stageDebugAll=!stageDebugAll;renderStageLocks();sfx('skill');});
@@ -8157,7 +8174,7 @@ let briefingFrameDrawn=false;
 let successFrameDrawn=false;
 function syncMissionSuccess(){
  const active=state==='succeeded',wasOpen=document.body.classList.contains('success-open');
- if(active!==wasOpen){document.body.classList.toggle('success-open',active);if(active){sfx('win');document.getElementById('missionSuccessEvaluate').focus({preventScroll:true});}}
+ if(active!==wasOpen){document.body.classList.toggle('success-open',active);if(active){document.getElementById('missionSuccessEvaluate').textContent=stageMode==='training'?'訓練を振り返る':'作戦評価';sfx('win');document.getElementById('missionSuccessEvaluate').focus({preventScroll:true});}}
 }
 document.getElementById('missionSuccess').addEventListener('animationstart',event=>{
  if(state==='succeeded'&&event.animationName==='missionFireworkBurst')sfx('firework');
@@ -8169,7 +8186,7 @@ document.getElementById('missionSuccessEvaluate').addEventListener('click',()=>{
 let failureFrameDrawn=false;
 function syncMissionFailure(){
  const active=state==='failed',wasOpen=document.body.classList.contains('failure-open');
- if(active!==wasOpen){document.body.classList.toggle('failure-open',active);if(active)document.getElementById('missionEvaluate').focus({preventScroll:true});}
+ if(active!==wasOpen){document.body.classList.toggle('failure-open',active);if(active){document.getElementById('missionEvaluate').textContent=stageMode==='training'?'訓練を振り返る':'作戦評価';document.getElementById('missionEvaluate').focus({preventScroll:true});}}
 }
 document.getElementById('missionEvaluate').addEventListener('click',()=>{
  if(state!=='failed')return;
@@ -8226,6 +8243,7 @@ function missionEnemy(x,y,alert=false){
 }
 function missionAllies(y){const scale=frontlineAllyMultiplier(),count=Math.min(6*scale,10*scale-allies.filter(a=>a.alive&&a.frontline).length);for(let i=0;i<count;i++){const q=missionSpot(150+(i%6)*125,y+100+Math.floor(i/6)*70,14);allies.push({...q,id:++allySeq,alive:true,chute:0,shotCd:.2+i*.1,burstLeft:3,face:-Math.PI/2,slot:i,frontline:true,speedScale:.5+R()*.5});assignFrontlineAllyRole(allies[allies.length-1]);}}
 function setupMission(){
+ if(stageMode==='training'){mission=null;return;}
  if(stageMode==='decisive'){mission=null;return;}
  if(stageMode==='indoor'){setupInfiltrationMission();return;}
  mission=null;if(areaDebugEnabled||stageMode==='base'||stageMode==='beginner')return;
@@ -8246,6 +8264,7 @@ function setupMission(){
 }
 function completeMission(){if(state!=='play')return;const frontline=beginFrontlineVictory();if(!frontline)state='win';shake=0;finalizeScore(true);if(!frontline&&state==='win'&&stageMode!=='indoor')sfx('win');}
 function updateMission(dt){
+ if(stageMode==='training'){updateTrainingMission(dt);return;}
  if(typeof isDecisiveStage==='function'&&isDecisiveStage()){updateDecisiveMission(dt);return;}
  if(stageMode==='indoor'){updateInfiltrationMission(dt);return;}
  if(!mission||areaDebugEnabled)return;
@@ -8285,6 +8304,8 @@ function updateMission(dt){
 }
 let missionHudNextAt=0,missionHudText="";
 function drawMission(){
+ if(typeof syncTrainingHud==='function')syncTrainingHud();
+ if(stageMode==='training'){const hud=document.getElementById('missionHud');if(hud.style.display!=='none')hud.style.display='none';return;}
  if(typeof isDecisiveStage==='function'&&isDecisiveStage()){drawDecisiveMission();return;}
  if(stageMode==='indoor'){drawInfiltrationMission();return;}
  // 開始説明・撃破演出・結果待ちでも、同じ作戦の表示サイズを維持する。
@@ -8411,18 +8432,19 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/stage-progress.js?v=2026.10.28.0713"></script>
+<script src="js/stage-progress.js?v=2026.10.30.1528"></script>
 <script src="js/decisive.js?v=2026.10.28.0713"></script>
 <script src="js/frontline.js?v=2026.10.28.0713"></script>
 <script src="js/award-icons.js?v=2026.10.28.0713"></script>
 <script src="js/developer.js?v=2026.10.28.0713"></script>
 <script src="js/leaderboard.js?v=2026.10.28.0713"></script>
 <script src="js/intro.js?v=2026.10.28.0713"></script>
-<script src="js/unlocks.js?v=2026.10.29.1936"></script>
+<script src="js/unlocks.js?v=2026.10.30.1528"></script>
 <script src="js/enemy-bomber.js?v=2026.10.28.0713"></script>
 <script src="js/characters.js?v=2026.10.19.1032"></script>
 <script src="js/fallen-enemies.js?v=2026.10.30.1058"></script>
 <script src="js/enemy-dogs.js?v=2026.10.28.0713"></script>
+<script src="js/training.js?v=2026.10.30.1528"></script>
 <script src="js/partner.js?v=2026.10.28.0713"></script>
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/canyon.js?v=2026.10.28.0713"></script>
@@ -8744,6 +8766,7 @@ if(!window.PointerEvent){
 }
 
 const clearInputs=()=>{resetContinuousTouch();cancelButtonHolds();for(const k in keys)keys[k]=false;for(const k in st)st[k]=0;end();stickPointerType='';buttonPointers.clear();actionPointer=null;actionKey=null;actionAimPointer=null;skillAimPointer=null;touchTurretAngle=null;dPressHandled=false;bombReq=false;cannonReq=false;interact=false;skillReq=false;knob.style.transform='';document.querySelectorAll('[data-k]').forEach(el=>el.classList.remove('on'));actionBtn.classList.remove('on');mdown=false;};
+window.trainingClearInputs=clearInputs;
 const resetBtn=document.getElementById('resetBtn');
 const backToTitle=e=>{
  if(e){e.preventDefault();e.stopPropagation();}

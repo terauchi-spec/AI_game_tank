@@ -1,5 +1,6 @@
 // Stage progress is independent of skill unlocks and persists even when debug controls are used.
 let selectedStageId=null,expandedStageId=null,stageDebugAll=false;
+const TRAINING_STAGE={id:'training',target:'訓練施設',name:'準備',image:'headquarters'};
 const STAGE_PROGRESS_KEY='tankGameStageProgressV1';
 const STAGE_ORDER=[
  {id:'beginner',target:'軍事衛星施設',name:'破壊（初級）',image:'satellite'},
@@ -11,7 +12,7 @@ const STAGE_ORDER=[
  {id:'decisive',target:'移動要塞',name:'決戦',image:'decisive'}
 ];
 const STAGE_DISPLAY_ORDER=STAGE_ORDER.map(stage=>stage.id);
-function stageDisplayNumber(id){return String(STAGE_DISPLAY_ORDER.indexOf(id)+1).padStart(2,'0');}
+function stageDisplayNumber(id){if(id==='training')return '00';return String(STAGE_DISPLAY_ORDER.indexOf(id)+1).padStart(2,'0');}
 function stageSelectionName(name){return name.replace('拠点破壊','破壊').replace('前線制圧','制圧');}
 function currentStageId(){if(typeof isDecisiveStage==='function'&&isDecisiveStage())return 'decisive';return stageMode==='front'&&typeof frontlineOni!=='undefined'&&frontlineOni?'frontOni':stageMode==='front'&&frontlineBeginner?'frontBeginner':stageMode==='indoor'&&typeof indoorBeginner!=='undefined'&&indoorBeginner?'indoorBeginner':stageMode;}
 function readStageProgress(){
@@ -27,11 +28,12 @@ function readStageProgress(){
  return{version:2,cleared:STAGE_ORDER.filter(stage=>earned.has(stage.id)).map(stage=>stage.id)};
 }
 function stageSelectable(id,progress=readStageProgress()){
+ if(id==='training')return true;
  const index=STAGE_ORDER.findIndex(stage=>stage.id===id);
  return index>=0&&STAGE_ORDER.slice(0,index).every(stage=>progress.cleared.includes(stage.id));
 }
 function unlockStageOnClear(s){
- if(!s?.final?.cleared||areaDebugEnabled||s.stageProgressRecorded)return;
+ if(!s?.final?.cleared||s.training||s.stage==='training'||areaDebugEnabled||s.stageProgressRecorded)return;
  s.stageProgressRecorded=true;const progress=readStageProgress(),id=currentStageId();
  if(!stageSelectable(id,progress)||progress.cleared.includes(id))return;
  const before={cleared:[...progress.cleared]};progress.cleared.push(id);
@@ -42,6 +44,7 @@ function unlockStageOnClear(s){
 }
 // Debug visibility affects selection only; canonical progression still uses stageSelectable().
 function stageAvailableForSelection(id,progress=readStageProgress()){
+ if(id==='training')return true;
  const developer=typeof isDeveloperMode==='function'&&isDeveloperMode();
  return (id==='areaDebug'&&developer)||(STAGE_ORDER.some(stage=>stage.id===id)&&((developer&&stageDebugAll)||stageSelectable(id,progress)));
 }
@@ -81,7 +84,7 @@ function renderStageRecords(){
   panel.hidden=!open;card.setAttribute('aria-expanded',String(open));
   if(!open)return;
   const metrics=panel.querySelector('.stage-record-metrics'),note=panel.querySelector('.stage-record-note');
-  metrics.hidden=!v;note.hidden=!!v;note.textContent=v?'':'デバッグ・テストステージは記録対象外';
+  metrics.hidden=!v;note.hidden=!!v;note.textContent=v?'':id==='training'?'基本操作を順番に練習できます':'デバッグ・テストステージは記録対象外';
   if(!v)return;
   panel.querySelector('.stage-record-score').textContent=v.bestScore===null?'—':v.bestScore.toLocaleString('ja-JP');
   panel.querySelector('.stage-record-count').textContent=v.successes.toLocaleString('ja-JP')+' / '+v.sorties.toLocaleString('ja-JP')+'回';
@@ -95,7 +98,7 @@ function setSelectedStage(id,toggle=true){
  if(toggle)expandedStageId=expandedStageId===id?null:id;else if(selectedStageId!==id)expandedStageId=null;
  selectedStageId=id;
  document.querySelectorAll('[data-stage]').forEach(card=>{const chosen=card.dataset.stage===id;card.classList.toggle('selected',chosen);card.setAttribute('aria-pressed',String(chosen));});
- const stage=STAGE_ORDER.find(stage=>stage.id===id),button=document.getElementById('stageDeploy');
+ const stage=id==='training'?TRAINING_STAGE:STAGE_ORDER.find(stage=>stage.id===id),button=document.getElementById('stageDeploy');
  button.disabled=typeof gameBuildQueued!=='undefined'&&gameBuildQueued;
  button.textContent=id==='areaDebug'?'エリアデバッグへ':stage.name+'で出撃';
  renderStageRecords();
@@ -113,6 +116,7 @@ function renderStageLocks(){
  const progress=readStageProgress();
  document.querySelectorAll('[data-stage]').forEach(button=>{
   const id=button.dataset.stage,index=STAGE_ORDER.findIndex(stage=>stage.id===id),stage=STAGE_ORDER[index];
+  if(id==='training'){button.disabled=false;button.classList.toggle('locked',false);button.classList.toggle('stage-concealed',false);button.querySelector('.stage-target').textContent='訓練施設';button.querySelector('.stage-number').textContent='00';button.setAttribute('aria-label','00 準備 訓練施設');return;}
   if(id==='areaDebug'){
    button.disabled=!(typeof isDeveloperMode==='function'&&isDeveloperMode());button.classList.toggle('locked',false);button.setAttribute('aria-label','エリアデバッグ');return;
   }
@@ -131,7 +135,8 @@ function renderStageLocks(){
  const toggle=document.getElementById('stageDebugAll');
  if(toggle){toggle.textContent=stageDebugAll?'解放済みに戻す':'全ステージを表示';toggle.classList.toggle('enabled',stageDebugAll);toggle.setAttribute('aria-pressed',String(stageDebugAll));}
  if(document.getElementById('stageDeploy')){
-  const fallback=STAGE_ORDER.find(stage=>stageAvailableForSelection(stage.id,progress)&&!progress.cleared.includes(stage.id))||STAGE_ORDER[0];
+  const firstTraining=!progress.cleared.length&&typeof trainingCompleted==='function'&&!trainingCompleted();
+  const fallback=firstTraining?TRAINING_STAGE:STAGE_ORDER.find(stage=>stageAvailableForSelection(stage.id,progress)&&!progress.cleared.includes(stage.id))||STAGE_ORDER[0];
   setSelectedStage(stageAvailableForSelection(selectedStageId,progress)?selectedStageId:fallback.id,false);
  }
 }

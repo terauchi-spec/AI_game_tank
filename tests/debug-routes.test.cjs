@@ -5,7 +5,7 @@ function harness(){
  const get=id=>{if(!nodes.has(id))nodes.set(id,{events:{},style:{},classList:{toggle(k,v){this[k]=v;}},setAttribute(k,v){this[k]=v;},addEventListener(k,fn){this.events[k]=fn;}});return nodes.get(id);};
  const c={state:'play',developer:true,isDeveloperMode:()=>c.developer,patrolRoutesVisible:false,scoreStats:{debugUsed:false},say:text=>messages.push(text),debugMode:0,toggleDebugInvincible(){c.debugMode++;},document:{getElementById:get},setInterval(fn,ms){assert.equal(ms,250);intervals.push(fn);}};vm.createContext(c);
  vm.runInContext(html.split('\n').find(line=>line.startsWith('function togglePatrolRoutes(')),c);
- const a=html.indexOf("const debugToggleBtn=document.getElementById('debugToggleBtn')");vm.runInContext(html.slice(a,html.indexOf('const buttonPointers=new Map();',a)),c);
+ const a=html.indexOf("const debugToggleBtn=document.getElementById('debugToggleBtn')");vm.runInContext(html.slice(a,html.indexOf('const CONTROL_TYPE_KEY=',a)),c);
  const event=()=>({prevented:0,stopped:0,preventDefault(){this.prevented++;},stopPropagation(){this.stopped++;}});
  return{c,get,intervals,messages,click(){const e=event();get('debugRoutesBtn').events.click(e);return e;},down(){const e=event();get('debugRoutesBtn').events.pointerdown(e);return e;}};
 }

@@ -346,6 +346,7 @@ let unlockRun=null,unlockInstructorNext=0;
 try{const saved=Number(localStorage.getItem(UNLOCK_INSTRUCTOR_KEY));if(Number.isSafeInteger(saved)&&saved>=0)unlockInstructorNext=saved%UNLOCK_INSTRUCTORS.length;}catch(_){}
 function escapeUnlockText(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function collectRunUnlocks(s){
+ if(s?.training)return [];
  if(!s?.final||(typeof areaDebugEnabled!=='undefined'&&areaDebugEnabled)||s.awards?.disabled)return [];
  const items=[],stages=typeof STAGE_ORDER!=='undefined'?STAGE_ORDER:[],skills=typeof SK!=='undefined'?SK:[],titles=typeof TITLE_CATALOG!=='undefined'?TITLE_CATALOG:[];
  const stage=stages.find(v=>v.id===s.unlockedStage);
@@ -460,8 +461,9 @@ function syncUnlockScreen(s){
   unlockRun=s;image.src='assets/ui/instructors/'+UNLOCK_INSTRUCTORS[unlockInstructorNext]+'.webp?v=2026.10.25.1434';
   unlockInstructorNext=(unlockInstructorNext+1)%UNLOCK_INSTRUCTORS.length;
   try{localStorage.setItem(UNLOCK_INSTRUCTOR_KEY,String(unlockInstructorNext));}catch(_){}
-  document.getElementById('unlockDialogue').textContent=instructorDialogueForRun(s);
-  document.getElementById('unlockList').innerHTML=s.unlockNoticeItems.length?s.unlockNoticeItems.map(renderUnlockCard).join(''):'<p class="unlock-empty-note">新しいアンロックはありません。<br>今回の戦績を評価画面で振り返ろう。</p>';
+  document.getElementById('unlockEvaluate').textContent=s.training?'ステージ選択':'評価画面';
+  document.getElementById('unlockDialogue').textContent=s.training?(s.final.cleared?'訓練を最後までやり遂げたな！実戦でも、落ち着いてこっそり進むのだ':'訓練はいつでもやり直せるぞ。自分のペースで練習してよい'):instructorDialogueForRun(s);
+  document.getElementById('unlockList').innerHTML=s.training?'<p class="unlock-empty-note">新しいアンロックはありません。<br>次はステージを選んで実戦に挑戦しよう。</p>':s.unlockNoticeItems.length?s.unlockNoticeItems.map(renderUnlockCard).join(''):'<p class="unlock-empty-note">新しいアンロックはありません。<br>今回の戦績を評価画面で振り返ろう。</p>';
   screen.hidden=false;document.body.classList.add('unlock-open');screen.scrollTop=0;
   document.getElementById('unlockEvaluate').focus({preventScroll:true});
   beginUnlockReveal(screen);
@@ -470,7 +472,8 @@ function syncUnlockScreen(s){
 }
 function acknowledgeRunUnlocks(){
  if(!unlockRun||typeof scoreStats==='undefined'||scoreStats!==unlockRun)return;
- unlockRun.unlockNoticeAcknowledged=true;closeUnlockScreen();
+ const trainingRun=!!unlockRun.training;unlockRun.unlockNoticeAcknowledged=true;closeUnlockScreen();
+ if(trainingRun){state='stage';stageMode='beginner';selectedStageId='beginner';if(typeof syncStageScreen==='function')syncStageScreen();}
  if(typeof sfx==='function')sfx('uiConfirm');syncResultScreen();
 }
 document.getElementById('unlockEvaluate').addEventListener('click',acknowledgeRunUnlocks);

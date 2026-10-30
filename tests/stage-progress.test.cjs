@@ -44,8 +44,8 @@ test('current stage identity separates both difficulty pairs',()=>{
  const c=harness();for(const id of order){clear(c,id);assert.equal(c.currentStageId(),id);}
 });
 test('seven HTML selection cards match the canonical unlock order and launch paths enforce it',()=>{
- const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),data=[...html.matchAll(/<button[^>]*class="stage-card"[^>]*data-stage="([^"]+)"[^>]*>(.*?)<\/button>/g)];assert.deepEqual(data.map(m=>m[1]),['beginner','indoorBeginner','frontBeginner','base','indoor','front','decisive','areaDebug']);
- assert.deepEqual(data.filter(m=>m[1]!=='areaDebug').map(m=>m[2].match(/class="stage-number"[^>]*>(\d+)/)[1]),['01','02','03','04','05','06','07']);assert.match(html,/if\(setSelectedStage\(b.dataset.stage\)\)/);assert.match(html,/!areaDebugEnabled&&!stageAvailableForSelection\(currentStageId\(\)\)/);assert.ok(!html.includes('潜入は初級・上級とも最初から選べます'));
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),data=[...html.matchAll(/<button[^>]*class="stage-card"[^>]*data-stage="([^"]+)"[^>]*>(.*?)<\/button>/g)];assert.deepEqual(data.map(m=>m[1]),['training','beginner','indoorBeginner','frontBeginner','base','indoor','front','decisive','areaDebug']);
+ assert.deepEqual(data.filter(m=>m[1]!=='areaDebug').map(m=>m[2].match(/class="stage-number"[^>]*>(\d+)/)[1]),['00','01','02','03','04','05','06','07']);assert.match(html,/if\(setSelectedStage\(b.dataset.stage\)\)/);assert.match(html,/!areaDebugEnabled&&!stageAvailableForSelection\(currentStageId\(\)\)/);assert.ok(!html.includes('潜入は初級・上級とも最初から選べます'));
 });
 
 
@@ -98,7 +98,7 @@ test('selected stage records open, toggle closed and switch with matching score,
  for(const card of buttons){const entries={};for(const key of ['.stage-record-metrics','.stage-record-note','.stage-record-score','.stage-record-count','.stage-record-rank','img'])entries[key]={removeAttribute(k){delete this[k];}};const panel={hidden:true,entries,querySelector:k=>entries[k]};panels[card.dataset.stage]=panel;card.querySelector=sel=>sel==='.stage-records'?panel:sel==='.stage-target'?card.target:sel==='.stage-number'?card.number:null;}
  c.storage.set('tankGameStageRecordsV1',JSON.stringify({stages:{beginner:{sorties:12,successes:3,bestScore:8000,bestRank:'A'}}}));c.renderStageLocks();assert.equal(panels.beginner.hidden,true);c.setSelectedStage('beginner');let panel=panels.beginner;assert.equal(panel.hidden,false);assert.equal(panel.entries['.stage-record-score'].textContent,'8,000');assert.equal(panel.entries['.stage-record-count'].textContent,'3 / 12回');assert.match(panel.entries.img.src,/rank_a\.webp/);
  c.setSelectedStage('beginner');assert.equal(panel.hidden,true);c.renderStageLocks();assert.equal(panel.hidden,true);clear(c,'beginner');c.setSelectedStage('indoorBeginner');assert.equal(panel.hidden,true);panel=panels.indoorBeginner;assert.equal(panel.hidden,false);assert.equal(panel.entries['.stage-record-score'].textContent,'—');assert.equal(panel.entries.img.hidden,true);assert.equal(panel.entries['.stage-record-count'].textContent,'0 / 0回');
- const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');assert.match(html,/recordStageSortie\(scoreStats\);\s*state='play'/);assert.match(html,/recordStageResult\(scoreStats\)/);assert.match(html,/STAGE_PROGRESS_KEY,STAGE_RECORDS_KEY/);assert.equal((html.match(/class="stage-records" hidden/g)||[]).length,8);
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');assert.match(html,/recordStageSortie\(scoreStats\);\s*state='play'/);assert.match(html,/recordStageResult\(scoreStats\)/);assert.match(html,/STAGE_PROGRESS_KEY,STAGE_RECORDS_KEY/);assert.equal((html.match(/class="stage-records" hidden/g)||[]).length,9);
 });
 
 test('successes count completed clears once per sortie, preserving old records and including debug clears',()=>{

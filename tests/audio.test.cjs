@@ -230,7 +230,7 @@ test('unlock and fainting SE use the supplied revisions and cached decoded buffe
 
 test('player fainting sound fires only after a successful new stun and preserves score attribution',()=>{
  const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),line=html.split('\n').find(l=>l.startsWith('function stunHuman(')),sounds=[];
- const c={scoreStats:{stuns:0,tacticalStuns:0,stealthStuns:0},sfx:(name,position)=>sounds.push({name,position}),say(){},recordSupportResult(){}};vm.createContext(c);vm.runInContext(line,c);
+ const c={stageMode:'beginner',scoreStats:{stuns:0,tacticalStuns:0,stealthStuns:0},sfx:(name,position)=>sounds.push({name,position}),say(){},recordSupportResult(){}};vm.createContext(c);vm.runInContext(line,c);
  const enemy={alive:true,x:10,y:20,st:0};assert.equal(c.stunHuman(enemy),true);assert.equal(sounds[0].name,'fainting');assert.equal(sounds[0].position,enemy);assert.equal(c.scoreStats.stuns,1);assert.equal(c.scoreStats.tacticalStuns,1);assert.equal(c.scoreStats.stealthStuns,1);
  assert.equal(c.stunHuman(enemy),false);assert.equal(c.stunHuman({alive:false}),false);assert.equal(c.stunHuman(null),false);assert.equal(sounds.length,1);
  c.stunHuman({alive:true},'ally');assert.equal(sounds[1].name,'skill');assert.equal(c.scoreStats.tacticalStuns,1);
