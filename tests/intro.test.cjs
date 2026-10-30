@@ -16,7 +16,7 @@ test('first start shows instructor 0 and first page, then saves name and opens p
  const h=harness(),{c,get}=h;c.startFromTitle();assert.equal(c.state,'intro');assert.equal(c.rolls,0);assert.ok(h.classes.has('intro-open'));assert.ok(!h.classes.has('title-open'));assert.match(get('introInstructor').src,/instructor_0.webp/);assert.equal(get('introDialogue').textContent,'よくきたな！');
  h.toName();assert.equal(get('introNameForm').hidden,false);assert.equal(get('introDialogue').hidden,true);assert.equal(get('introName').focused,true);h.submit('こっそり隊長');assert.equal(get('introName').attrs['aria-invalid'],'true');assert.equal(h.storage.size,0);
  h.submit('こっそり01');assert.equal(h.storage.get('tankGamePlayerNameV1'),'こっそり01');assert.equal(c.state,'intro');assert.match(get('introDialogue').textContent,/ほほう、こっそり01か/);assert.equal(get('introName').focused,false);assert.equal(get('introNameForm').hidden,true);assert.equal(get('introScreen').scrollTop,0);
- h.finish();assert.equal(c.state,'skill');assert.equal(c.rolls,1);assert.equal(get('introScreen').hidden,true);assert.ok(!h.classes.has('intro-open'));for(const k of Object.keys(c.keys))assert.equal(c.keys[k],false);for(const k of ['bombReq','cannonReq','interact','skillReq','mdown'])assert.equal(c[k],false);h.next();assert.equal(c.rolls,1);
+ h.finish();assert.equal(c.state,'intro');assert.match(get('introDialogue').textContent,/私はアイラ/);h.next();h.next();c.now+=500;get('introSkipTraining').events.click();assert.equal(get('introDialogue').textContent,'オッケー！じゃあがんばってね');h.next();assert.equal(c.state,'skill');assert.equal(c.rolls,1);assert.equal(get('introScreen').hidden,true);assert.ok(!h.classes.has('intro-open'));for(const k of Object.keys(c.keys))assert.equal(c.keys[k],false);for(const k of ['bombReq','cannonReq','interact','skillReq','mdown'])assert.equal(c[k],false);h.next();assert.equal(c.rolls,1);
 });
 test('saved names skip intro across reloads, including after name confirmation before the last page is closed',()=>{
  const storage=new Map(),h=harness({storage});h.c.startFromTitle();h.toName();h.submit('タンク10');const reload=harness({storage});reload.c.startFromTitle();assert.equal(reload.c.state,'skill');assert.equal(reload.c.rolls,1);assert.equal(reload.get('introInstructor').src,undefined);
@@ -61,7 +61,7 @@ test('each window tap advances one phrase, ignores form taps and double taps, an
  h.get('introConversation').events.click({target:{closest:()=>({})}});assert.equal(h.get('introNameForm').hidden,false);
  h.submit('タンク');const second=[h.get('introDialogue').textContent];h.get('introConversation').events.click({target:{closest:()=>null}});assert.equal(h.get('introDialogue').textContent,second[0]);
  for(let i=0;i<4;i++){h.next();second.push(h.get('introDialogue').textContent);assert.equal(h.c.state,'intro');}
- assert.match(second.join(''),/ほほう、タンクか/);assert.match(second[3],/ではゆけ！タンクよ/);assert.match(second[4],/いきすぎたサバイバルゲームを決着させるのだ！/);assert.equal(h.get('introNext').attrs['aria-label'],'スキル選択へ');h.next();assert.equal(h.c.state,'skill');
+ assert.match(second.join(''),/ほほう、タンクか/);assert.match(second[3],/ではゆけ！タンクよ/);assert.match(second[4],/いきすぎたサバイバルゲームを決着させるのだ！/);assert.equal(h.get('introNext').attrs['aria-label'],'次のセリフへ');h.next();assert.equal(h.c.state,'intro');assert.equal(h.get('introDialogue').textContent,'よくきたわね！私はアイラ');
 });
 test('Enter and Space advance the focused conversation once, while repeats do not',()=>{
  const h=harness();h.c.startFromTitle();h.c.now+=500;let prevented=false;h.get('introDialogue').events.keydown({key:'Enter',repeat:false,preventDefault(){prevented=true;}});assert.ok(prevented);assert.match(h.get('introDialogue').textContent,/司令本部/);h.c.now+=500;h.get('introDialogue').events.keydown({key:' ',repeat:true,preventDefault(){}});assert.match(h.get('introDialogue').textContent,/司令本部/);
@@ -81,4 +81,25 @@ test('name form moves above the keyboard and reacts to visible viewport resize a
  h.c.startFromTitle();assert.ok(!h.classes.has('intro-naming'));h.toName();assert.ok(h.classes.has('intro-naming'));const values=h.get('introScreen').style.values;assert.equal(values['--intro-form-top'],'12px');assert.equal(values['--intro-form-height'],'676px');
  h.c.visualViewport.height=300;h.c.visualViewport.offsetTop=42;events.resize();assert.equal(values['--intro-form-height'],'276px');assert.equal(values['--intro-form-top'],'54px');h.c.visualViewport.offsetTop=70;events.scroll();assert.equal(values['--intro-form-top'],'82px');
  h.submit('タンク');assert.ok(!h.classes.has('intro-naming'));h.c.visualViewport.height=500;events.resize();assert.equal(values['--intro-form-height'],'276px');h.finish();assert.ok(!h.classes.has('intro-naming'));
+});
+
+
+test('Aira presents both choices after the full invitation; accept deploys training once without skill selection',()=>{
+ const h=harness();h.c.deployments=0;h.c.deploySelectedStage=()=>{h.c.deployments++;h.c.state='preparing';return true;};
+ h.c.startFromTitle();h.toName();h.submit('タンク');h.finish();
+ assert.match(h.get('introInstructor').src,/battlefield-assistant.webp/);assert.equal(h.get('introInstructor').alt,'戦場アシスタントのアイラ');
+ assert.equal(h.get('introChoices').hidden,true);h.next();h.next();assert.equal(h.get('introChoices').hidden,false);assert.equal(h.get('introNext').hidden,true);
+ h.next();assert.equal(h.c.state,'intro');assert.equal(h.c.deployments,0);
+ h.c.now+=500;h.get('introTrain').events.click();assert.equal(h.get('introChoices').hidden,true);assert.equal(h.get('introDialogue').textContent,'オッケー！じゃあがんばってね');
+ h.get('introSkipTraining').events.click();h.next();assert.equal(h.c.state,'preparing');assert.equal(h.c.selectedSkillId,'throw');assert.equal(h.c.selectedStageId,'training');assert.equal(h.c.deployments,1);assert.equal(h.get('introScreen').hidden,true);assert.ok(!h.classes.has('intro-open'));h.next();assert.equal(h.c.deployments,1);
+ h.c.resetIntroName();h.c.state='title';h.c.startFromTitle();assert.match(h.get('introInstructor').src,/instructor_0.webp/);
+});
+test('invitation cannot be accepted while typing and choices appear when the final character completes',()=>{
+ const h=harness({reducedMotion:false});h.c.startFromTitle();h.c.finishIntroTyping();h.toName();
+ // Navigate explicitly with complete phrases to keep typewriter timing independent.
+ while(h.get('introNameForm').hidden){h.c.finishIntroTyping();h.next();}
+ h.submit('タンク');for(let i=0;i<5;i++){h.c.finishIntroTyping();h.next();}
+ h.c.finishIntroTyping();h.next();h.c.finishIntroTyping();h.next();
+ assert.equal(h.get('introChoices').hidden,true);h.c.now+=500;h.get('introTrain').events.click();assert.equal(h.get('introChoices').hidden,true);
+ while(h.timers.size)h.tick();assert.equal(h.get('introChoices').hidden,false);assert.equal(h.get('introNext').hidden,true);
 });
