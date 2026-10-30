@@ -2,11 +2,11 @@
 let training=null;
 const TRAINING_DONE_KEY='tankGameTrainingCompleteV1';
 const TRAINING_LESSONS={
- 1:{name:'訓練を始めよう',y:12500,gate:12380,lines:['こっそり訓練施設にようこそ！','ここでは戦場の基本を、{こっそりネーム}さんに学んでもらいます','左スティックで移動します。中央の「停止」に戻すと、指を置いたまま止まれます','ここではダメージを受けません。まずは前へ進んでみましょう']},
+ 1:{name:'訓練を始めよう',y:12500,gate:12380,lines:['こっそり訓練施設にようこそ！','ここでは戦場の基本を、{こっそりネーム}さんに学んでもらいます','左スティックで移動します。中央の「停止」に戻すと、指を置いたまま止まれます','ここではダメージを受けません。安心して練習してください']},
  2:{name:'設置爆弾',y:12100,gate:11820,lines:['まずは、設置爆弾の使い方です','ドラム缶に近づいて、爆弾を設置したら（Bボタン）、少し離れて起爆させてみましょう（再度Bボタン）']},
  3:{name:'草むらに隠れる',y:11080,gate:10740,lines:['次は、敵にみつからないように草むらに入ってみましょう','草むらの中は、敵から見つかりにくくなります','見つからずに草むらの中で2秒待てたらクリアです']},
  4:{name:'背後から気絶',y:11080,gate:10740,lines:['それでは、後ろから近づいて2人の敵を気絶させてみましょう（敵近くでA）','前から見つかったり、爆弾で倒してしまったら、この練習をやり直します']},
- 5:{name:'戦車に乗って撃つ',y:9120,gate:8750,lines:['最後はこの戦場でもっとも重要な戦車です','戦車に乗り込んで（戦車近くでA）、大砲とマシンガンを撃ってみましょう（B・Sボタン）']},
+ 5:{name:'戦車に乗って撃つ',y:10700,gate:10330,lines:['最後はこの戦場でもっとも重要な戦車です','戦車に乗り込んで（戦車近くでA）、大砲とマシンガンを撃ってみましょう（B・Sボタン）']},
  6:{name:'砲塔を回して射撃',y:0,gate:0,lines:['戦車の砲塔は回転させることができます','4つのマトを破壊してください（BまたはSを長押ししながら操作）','この練習中は戦車が動きません。砲塔を上下左右に向けて狙いましょう']}
 };
 const TRAINING_FINALE=['おめでとう！これで訓練は以上です','おっと！スキルについての説明がまだでしたね！','スキルには種類があり、効果は様々です！色々と試してみてください','一人前のこっそり兵士になれるよう、がんばってくださいね！'];
@@ -32,7 +32,7 @@ function trainingAdvanceDialogue(){
  if(training.typed<training.lines[training.line].length){training.typed=training.lines[training.line].length;training.hudKey='';return;}
  if(++training.line<training.lines.length){trainingStartTyping();return;}
  if(training.afterTalk==='finish'){finishTraining();return;}
- if(training.step===1){trainingClearLesson();return;}
+ if(training.step===1){trainingEnterLesson(2);training.arrived=true;trainingTalk(TRAINING_LESSONS[2].lines);return;}
  training.phase=training.afterTalk;training.hudKey='';
 }
 function trainingGuard(x,y,face){return{x,y,face,alive:true,elite:false,commander:null,trainingGuard:true,trainingAStun:false,st:0,sus:0,cd:999,path:[{x,y}],wi:0,dir:1,stun:0,walking:false};}

@@ -15,7 +15,7 @@ no repeated DOM writes. Field props and training guards are bounded.
 
 | Step | Condition | Reset / progression |
 | --- | --- | --- |
-| 1 Introduction | Read the sequential control introduction | Clear banner, then north gate opens |
+| 1 Introduction | Read the sequential control introduction | Immediately show bomb instruction; no walking task or clear banner |
 | 2 Bomb | Place/detonate an actual bomb and destroy the barrel | Non-bomb removal cannot clear |
 | 3 Bush | Stay inside the natural seven-bush patch, unseen, for 2 consecutive seconds | Seen, guard hurt/killed, or destroyed/burning bush resets this step |
 | 4 Stun | Use A from behind to stun both live guards without detection | Front approach, detection or bomb casualties reset this step; both guards disappear on clear |
@@ -41,3 +41,5 @@ short-circuits all normal score, title/rank, history, unlock and leaderboard wri
 Abandoning training likewise cannot grant rewards or open a graded evaluation.
 
 Completed tasks latch for 2 seconds before the clear banner; input is released while explosion/fragment effects continue. The banner then lasts 1.05 seconds. Both delays pause with the menu. Only actual dialogue shows the assistant portrait and speech bubble. Objective/progress text has a separate dark rectangular panel. The triangle is absolutely placed in the bubble corner and reserves no extra row; dialogue fonts are 26 px desktop / 21 px mobile.
+
+The tank is at y=10700, 380 world units ahead of the bush/stun patch (previously 1960 units). Intro dialogue directly enters the bomb lesson, without a standalone movement objective or completion delay.
