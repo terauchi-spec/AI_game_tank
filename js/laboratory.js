@@ -13,32 +13,32 @@ let laboratoryFloorTile=null;
 function laboratoryImage(kind){
  const key=LABORATORY_ART[kind];if(!key)return null;
  if(!laboratoryImages[key]){
-  const image=new Image();image.decoding='async';image.src='assets/indoor/laboratory/'+key+'.webp';
+  const image=new Image();image.decoding='async';image.src='assets/indoor/laboratory/'+key+'.webp'+(key==='lab-floor'||key.startsWith('lab-wall-')?'?v=2000-r1':'');
   laboratoryImages[key]=image;
  }
  const image=laboratoryImages[key];return assetOK(image)?image:null;
 }
 function prepareLaboratoryAssets(){for(const kind of Object.keys(LABORATORY_ART))laboratoryImage(kind);}
 function laboratoryFloorPattern(context){
- const image=laboratoryImage('floor');if(!image)return '#edf5f6';
+ const image=laboratoryImage('floor');if(!image)return '#e9e8df';
  let pattern=laboratoryFloorPatterns.get(context);
  if(!pattern){
   // Build a seamless mirrored tile once, then reuse the cached pattern.
   if(!laboratoryFloorTile){
    const tile=document.createElement('canvas'),w=image.naturalWidth,h=image.naturalHeight;
    tile.width=w*2;tile.height=h*2;const q=gameCanvasContext(tile);
-   q.fillStyle='#edf5f6';q.fillRect(0,0,tile.width,tile.height);
+   q.fillStyle='#e9e8df';q.fillRect(0,0,tile.width,tile.height);
    for(let y=0;y<2;y++)for(let x=0;x<2;x++){q.save();q.translate(x?w*2:0,y?h*2:0);q.scale(x?-1:1,y?-1:1);q.drawImage(image,0,0);q.restore();}
    laboratoryFloorTile=tile;
   }
   pattern=context.createPattern(laboratoryFloorTile,'repeat');if(pattern)laboratoryFloorPatterns.set(context,pattern);
  }
- return pattern||'#edf5f6';
+ return pattern||'#e9e8df';
 }
 function drawLaboratoryWall(c){
  const horizontal=c.w>=c.h,image=laboratoryImage(horizontal?'wall':'wallVertical');
  // A seamless rectangular face matches the existing collider, including after wall fragmentation.
- if(!image){g.fillStyle='#e5f1f3';g.fillRect(c.x,c.y,c.w,c.h);return true;}
+ if(!image){g.fillStyle='#eeece5';g.fillRect(c.x,c.y,c.w,c.h);return true;}
  return drawAssetSprite(image,c.x+c.w/2,c.y+c.h/2,c.w*1.03,c.h*1.03,0,1);
 }
 function laboratoryAssetStamp(){

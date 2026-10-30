@@ -2783,7 +2783,7 @@ function drawInfiltrationFloors(cx,cy){
   if(!indoorWorld)return;
   const left=Math.max(0,cx-24),top=cy-24,right=Math.min(WW,cx+W+24),bottom=cy+H+24;
   // Upstairs has no exterior floor: use a flat void, never walkable ground.
-  g.fillStyle=typeof isLaboratoryStage==='function'&&isLaboratoryStage()?'#e0ebed':indoorWorld.currentFloor===1?'#11171c':terrainSurfacePattern(indoorOutdoorTerrain)||indoorOutdoorTerrain.g;
+  g.fillStyle=typeof isLaboratoryStage==='function'&&isLaboratoryStage()?'#e2e4df':indoorWorld.currentFloor===1?'#11171c':terrainSurfacePattern(indoorOutdoorTerrain)||indoorOutdoorTerrain.g;
   g.fillRect(left,top,right-left,bottom-top);
   const concrete=indoorConcretePattern()||'#777975';
   for(const f of indoorWorld.floors){
@@ -2803,7 +2803,7 @@ function drawInfiltrationFloors(cx,cy){
     // inset rectangle or mat may imply a wall along their walkable boundary.
     for(const room of f.rooms){
       if(room.y+room.h<cy-40||room.y>cy+H+40)continue;
-      g.fillStyle=typeof isLaboratoryStage==='function'&&isLaboratoryStage()?'rgba(123,211,225,.055)':room.id%2===0?'rgba(34,41,33,.08)':'rgba(34,41,33,.12)';
+      g.fillStyle=typeof isLaboratoryStage==='function'&&isLaboratoryStage()?'rgba(119,125,118,.045)':room.id%2===0?'rgba(34,41,33,.08)':'rgba(34,41,33,.12)';
       for(const tile of room.tiles){
         if(tile.y+tile.h<cy-30||tile.y>cy+H+30)continue;
         // Adjacent same-room tiles share an open interior, never draw an internal wall.
