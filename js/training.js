@@ -161,12 +161,12 @@ function syncTrainingHud(){
  const guide=document.getElementById('trainingGuide'),clear=document.getElementById('trainingClear');
  const active=stageMode==='training'&&state==='play'&&!!training;
  if(guide.hidden===active)guide.hidden=!active;const clearVisible=active&&training.phase==='clear';if(clear.hidden===clearVisible)clear.hidden=!clearVisible;if(!active)return;
- const t=training,lesson=TRAINING_LESSONS[t.step],talk=t.phase==='talk',now=performance.now();
+ const t=training,talk=t.phase==='talk',now=performance.now();
  if(t.hudKey&&now<t.hudAt&&t.hudPhase===t.phase&&t.hudLine===t.line)return;t.hudAt=now+100;t.hudPhase=t.phase;t.hudLine=t.line;
  const task=t.step===2?'ドラム缶を設置爆弾で爆破':t.step===3?'草むらに隠れる '+Math.min(2,t.hold).toFixed(1)+' / 2秒':t.step===4?'背後から気絶 '+humans.filter(h=>h.trainingAStun&&h.stun>0).length+' / 2人':t.step===5?'主砲 '+(t.shots.c?'✓':'—')+'　マシンガン '+(t.shots.v?'✓':'—'):t.step===6?'マト '+t.targets.filter(v=>v.hit).length+' / 4':'左スティックで移動';
  const text=talk?t.lines[t.line]:t.phase==='approach'?'前へ進んで、次の訓練に向かいましょう':task;
  const key=t.step+'|'+t.phase+'|'+text;if(key===t.hudKey)return;t.hudKey=key;
- document.getElementById('trainingHeading').textContent='訓練 '+t.step+' / 6　'+lesson.name;document.getElementById('trainingText').textContent=text;
+ document.getElementById('trainingText').textContent=text;
  const next=document.getElementById('trainingNext');next.hidden=!talk;next.textContent=t.line===t.lines.length-1?(t.afterTalk==='finish'?'訓練を終える':'やってみる'):'次へ';
 }
 document.getElementById('trainingNext').addEventListener('click',trainingAdvanceDialogue);
