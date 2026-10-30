@@ -22,7 +22,7 @@ no repeated DOM writes. Field props and training guards are bounded.
 | 5 Vehicle | Board the training tank and actually fire cannon and MG | Both real fire calls required; unlimited supplies and no damage |
 | 6 Turret | Destroy four cardinal targets with cannon direct hits or MG | Hull movement/dismount disabled; bombs and blast-radius hits do not count |
 
-There are no ordinary enemy spawns. The same grass patch, player position and two guards carry directly from hiding into the stun drill. Failed stun attempts restore that transition checkpoint. Only the two non-firing tutorial guards appear
+There are no ordinary enemy spawns. The same grass patch, player position and two guards carry directly from hiding into the stun drill. Failed stun attempts restore that transition checkpoint. The guards begin on the left/right sides of the patch; discovery calls the normal found-mode reaction (face the player, red ! and detection sound), then resets after 1.2 seconds. Only the two non-firing tutorial guards appear
 in steps 3/4. They use common sight/cover and real A-stun behavior, with a training-
 only rear-angle requirement. Other steps contain no enemy soldiers. Checkpoints,
 guards, bombs, bullets, fire, fallen sprites and timer counters reset together.
@@ -39,3 +39,5 @@ The next button opens the normal unlock presentation with no items and no reward
 Its button returns to stage selection (01 selected), never evaluation. Finalization
 short-circuits all normal score, title/rank, history, unlock and leaderboard writes.
 Abandoning training likewise cannot grant rewards or open a graded evaluation.
+
+Completed tasks latch for 2 seconds before the clear banner; input is released while explosion/fragment effects continue. The banner then lasts 1.05 seconds. Both delays pause with the menu. Only actual dialogue shows the assistant portrait and speech bubble. Objective/progress text has a separate dark rectangular panel. The triangle is absolutely placed in the bubble corner and reserves no extra row; dialogue fonts are 26 px desktop / 21 px mobile.

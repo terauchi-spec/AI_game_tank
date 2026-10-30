@@ -63,8 +63,8 @@ function trainingEnterLesson(step){
  objects=[];humans=[];bushes=[];cars=[];
  if(step===2){const size=typeof BARREL_SIZE==='number'?BARREL_SIZE:40;training.barrel={kind:'barrel',trainingBarrel:true,x:WW/2-size/2,y:lesson.y-size/2,w:size,h:size};objects=[training.barrel];training.barrelBomb=false;}
  if(step===3){
-  training.bushes=trainingBushCluster();bushes=training.bushes;training.bush=bushes[0];training.patrol=Math.PI/2;training.stunStart=null;
-  humans=[trainingGuard(WW/2,lesson.y+175,Math.PI),trainingGuard(WW/2,lesson.y-175,0)];
+  training.bushes=trainingBushCluster();bushes=training.bushes;training.bush=bushes[0];training.patrol=0;training.stunStart=null;
+  humans=[trainingGuard(WW/2+175,lesson.y,Math.PI/2),trainingGuard(WW/2-175,lesson.y,Math.PI*1.5)];
   training.checkpoint={x:WW/2,y:lesson.y+350};
  }
  if(step===4){
@@ -96,9 +96,12 @@ function trainingResetLesson(reason){
  trainingEnterLesson(step);training.resets=resets;training.arrived=true;trainingTalk([reason+'。もう一度やってみましょう',...TRAINING_LESSONS[step].lines]);
 }
 function trainingClearLesson(){
- if(!training||training.phase==='clear')return;
- training.phase='clear';training.clearT=1.05;training.hudKey='';trainingClearInput();
- if(training.step===4){humans=[];clearFallenEnemies();}
+ if(!training||training.phase==='clear'||training.phase==='clearPending')return;
+ training.phase='clearPending';training.clearDelay=2;training.clearT=1.05;training.hudKey='';trainingClearInput();
+}
+function trainingReactToDetection(h){
+ enterHumanFound(h,'p',null,true);h.face=Math.atan2(p.y-h.y,p.x-h.x);h.walking=false;
+ training.phase='reacting';training.reactionT=1.2;training.hudKey='';trainingClearInput();
 }
 function finishTraining(){
  trainingClearInput();training.phase='finished';state='succeeded';successFrameDrawn=false;shake=0;finalizeScore(true);
@@ -110,6 +113,17 @@ function updateTrainingPresentation(dt){
  if(state!=='play')return true;
  p.hp=3;weather='clear';rainIntensity=0;weatherNext=1e9;
  if(p.tank){p.tank.c=p.tank.t.cmax;p.tank.v=p.tank.t.vmax;p.tank.f=p.tank.t.fmax;p.tank.ch=0;p.tank.mgHits=0;}
+ if(training.phase==='reacting'){
+  training.reactionT-=dt;
+  if(training.reactionT<=1e-8)trainingResetLesson('見つかってしまいました');
+  return true;
+ }
+ if(training.phase==='clearPending'){
+  trainingClearInput();training.clearDelay-=dt;
+  if(training.clearDelay<=1e-8){training.phase='clear';training.hudKey='';if(training.step===4){humans=[];clearFallenEnemies();}return true;}
+  // Let the real explosion, fragments and stun aftermath play before the clear banner.
+  return false;
+ }
  if(training.phase==='talk'||training.phase==='clear'){
   if(training.phase==='talk')updateTrainingTyping(dt);
   if(training.phase==='clear'){
@@ -136,7 +150,7 @@ function trainingCamera(){
 function updateTrainingMission(dt){
  if(!training||stageMode!=='training'||state!=='play')return;
  constrainTrainingMovement();
- if(training.phase==='talk'||training.phase==='clear'||training.phase==='finished')return;
+ if(!['active','approach'].includes(training.phase))return;
  const lesson=TRAINING_LESSONS[training.step];
  if(!training.arrived&&p.y<=lesson.y+270){training.arrived=true;trainingTalk(lesson.lines);return;}
  if(!training.arrived)return;
@@ -147,7 +161,7 @@ function updateTrainingMission(dt){
   for(let i=0;i<humans.length;i++){
    const h=humans[i];if(h.stun>0)continue;
    if(training.step===3||training.stunStart){const a=training.patrol+i*Math.PI;h.x=WW/2+Math.cos(a)*175;h.y=lesson.y+Math.sin(a)*175;h.face=a+Math.PI/2;h.walking=true;}
-   if(h.st||canDetect(h,p,h.face,'p')){trainingResetLesson('見つかってしまいました');return;}
+   if(h.st||canDetect(h,p,h.face,'p')){trainingReactToDetection(h);return;}
   }
   training.patrol+=dt*.38;
   if(training.step===3){training.hold=inBush(p)?training.hold+dt:0;if(training.hold>=2)trainingClearLesson();}
@@ -183,17 +197,17 @@ function drawTrainingBoundary(){
  const y=training.gate;g.save();g.strokeStyle='#e2c873';g.lineWidth=4;g.setLineDash([16,10]);g.beginPath();g.moveTo(30,y);g.lineTo(WW-30,y);g.stroke();g.setLineDash([]);g.fillStyle='#eadba9';g.font='bold 16px system-ui';g.textAlign='center';g.fillText('課題をクリアして先へ進もう',WW/2,y-15);g.restore();
 }
 function syncTrainingHud(){
- const guide=document.getElementById('trainingGuide'),clear=document.getElementById('trainingClear'),advance=document.getElementById('trainingAdvance');
+ const guide=document.getElementById('trainingGuide'),clear=document.getElementById('trainingClear'),advance=document.getElementById('trainingAdvance'),taskPanel=document.getElementById('trainingTask');
  const active=stageMode==='training'&&state==='play'&&!!training;
  const talking=active&&training.phase==='talk';if(advance.hidden===talking)advance.hidden=!talking;
  const arrow=document.getElementById('trainingContinue'),ready=talking&&training.typed>=training.lines[training.line].length;if(arrow.hidden===ready)arrow.hidden=!ready;
- if(guide.hidden===active)guide.hidden=!active;const clearVisible=active&&training.phase==='clear';if(clear.hidden===clearVisible)clear.hidden=!clearVisible;if(!active)return;
+ if(guide.hidden===talking)guide.hidden=!talking;const taskVisible=active&&!talking&&training.phase!=='clear';if(taskPanel.hidden===taskVisible)taskPanel.hidden=!taskVisible;const clearVisible=active&&training.phase==='clear';if(clear.hidden===clearVisible)clear.hidden=!clearVisible;if(!active)return;
  const t=training,talk=t.phase==='talk',now=performance.now();
  if(t.hudKey&&now<t.hudAt&&t.hudPhase===t.phase&&t.hudLine===t.line)return;t.hudAt=now+100;t.hudPhase=t.phase;t.hudLine=t.line;
  const task=t.step===2?'ドラム缶を設置爆弾で爆破':t.step===3?'草むらに隠れる '+Math.min(2,t.hold).toFixed(1)+' / 2秒':t.step===4?'背後から気絶 '+humans.filter(h=>h.trainingAStun&&h.stun>0).length+' / 2人':t.step===5?'主砲 '+(t.shots.c?'✓':'—')+'　マシンガン '+(t.shots.v?'✓':'—'):t.step===6?'マト '+t.targets.filter(v=>v.hit).length+' / 4':'左スティックで移動';
- const text=talk?t.lines[t.line].slice(0,t.typed):t.phase==='approach'?'前へ進んで、次の訓練に向かいましょう':task;
+ const text=talk?t.lines[t.line].slice(0,t.typed):t.phase==='reacting'?'敵に発見されました':t.phase==='approach'?'前へ進んで、次の訓練に向かいましょう':task;
  const key=t.step+'|'+t.phase+'|'+text;if(key===t.hudKey)return;t.hudKey=key;
- document.getElementById('trainingText').textContent=text;
+ if(talk)document.getElementById('trainingText').textContent=text;else taskPanel.textContent=text;
 
 }
 function trainingScreenAdvance(event){
