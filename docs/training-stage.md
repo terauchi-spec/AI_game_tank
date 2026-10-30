@@ -1,10 +1,12 @@
-# 00 準備 — 訓練施設
+# 00 準備 — 訓練場
 
 Stage `training` is listed before 01, is always selectable, and uses the existing
 village terrain tile. It is intentionally absent from `STAGE_ORDER`: the 01–07 IDs,
 numbers, prerequisites, achievements, stage records and leaderboard remain intact.
 New players see it selected first until training is completed; the completion key
 `tankGameTrainingCompleteV1` affects only that default selection, not unlocks.
+
+Training now opens the common briefing with Aira, 訓練開始 title/button and a basic-training goal. The first tutorial phrase stays paused until the button is pressed. The left boundary sprite is mirrored horizontally while the right boundary and both collision faces remain unchanged.
 
 The guide uses a cached WebP face portrait of Aira, a speech
 bubble, screen-wide tap-to-advance dialogue and an optional step-clear overlay. Dialogues

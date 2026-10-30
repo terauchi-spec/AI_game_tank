@@ -1,6 +1,6 @@
 // Stage progress is independent of skill unlocks and persists even when debug controls are used.
 let selectedStageId=null,expandedStageId=null,stageDebugAll=false;
-const TRAINING_STAGE={id:'training',target:'訓練施設',name:'準備',image:'headquarters'};
+const TRAINING_STAGE={id:'training',target:'訓練場',name:'準備',image:'headquarters'};
 const STAGE_PROGRESS_KEY='tankGameStageProgressV1';
 const STAGE_ORDER=[
  {id:'beginner',target:'軍事衛星施設',name:'破壊（初級）',image:'satellite'},
@@ -116,7 +116,7 @@ function renderStageLocks(){
  const progress=readStageProgress();
  document.querySelectorAll('[data-stage]').forEach(button=>{
   const id=button.dataset.stage,index=STAGE_ORDER.findIndex(stage=>stage.id===id),stage=STAGE_ORDER[index];
-  if(id==='training'){button.disabled=false;button.classList.toggle('locked',false);button.classList.toggle('stage-concealed',false);button.querySelector('.stage-target').textContent='訓練施設';button.querySelector('.stage-number').textContent='00';button.setAttribute('aria-label','00 準備 訓練施設');return;}
+  if(id==='training'){button.disabled=false;button.classList.toggle('locked',false);button.classList.toggle('stage-concealed',false);button.querySelector('.stage-target').textContent='訓練場';button.querySelector('.stage-number').textContent='00';button.setAttribute('aria-label','00 準備 訓練場');return;}
   if(id==='areaDebug'){
    button.disabled=!(typeof isDeveloperMode==='function'&&isDeveloperMode());button.classList.toggle('locked',false);button.setAttribute('aria-label','エリアデバッグ');return;
   }

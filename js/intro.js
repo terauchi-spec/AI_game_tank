@@ -66,7 +66,7 @@ function introDialogueLines(){
  if(introStep===3)return [
   'よくきたわね！私はアイラ',
   'あなたが一人前のこっそり兵士になれるようにお手伝いをさせてもらうわ',
-  'じゃあさっそく、訓練施設で基本的な戦い方を学びましょうか！'
+  'じゃあさっそく、訓練場で基本的な戦い方を学びましょうか！'
  ];
  if(introStep===4)return ['オッケー！じゃあがんばってね'];
  if(introStep===0)return [
@@ -105,7 +105,7 @@ function showIntroStep(){
  copy.hidden=naming;
  document.getElementById('introNameForm').hidden=!naming;
  const next=document.getElementById('introNext');
- next.setAttribute('aria-label',introStep===4?(introTrainingChoice?'訓練施設へ':'スキル選択へ'):'次のセリフへ');
+ next.setAttribute('aria-label',introStep===4?(introTrainingChoice?'訓練場へ':'スキル選択へ'):'次のセリフへ');
  if(naming){stopIntroTyping();next.hidden=true;}else startIntroTyping(introDialogueLines()[introLine]);
  document.getElementById('introScreen').scrollTop=0;
  if(naming)document.getElementById('introName').focus({preventScroll:true});else copy.focus({preventScroll:true});

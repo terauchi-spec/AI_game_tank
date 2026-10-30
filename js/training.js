@@ -25,7 +25,7 @@ function trainingConcretePattern(){
 const TRAINING_DONE_KEY='tankGameTrainingCompleteV1';
 const TRAINING_LEFT=220,TRAINING_RIGHT=740;
 const TRAINING_LESSONS={
- 1:{name:'訓練を始めよう',y:12500,gate:11820,lines:['こっそり訓練施設にようこそ！','ここでは戦場の基本を、{こっそりネーム}さんに学んでもらうわ','左スティックで移動するのよ。まずは前へ進んでみましょうか']},
+ 1:{name:'訓練を始めよう',y:12500,gate:11820,lines:['こっそり訓練場にようこそ！','ここでは戦場の基本を、{こっそりネーム}さんに学んでもらうわ','左スティックで移動するのよ。まずは前へ進んでみましょうか']},
  2:{name:'設置爆弾',y:12100,gate:11820,lines:['木箱に近づいて、爆弾を設置したら（Bボタン）、少し離れて起爆させてみましょうか（再度Bボタン）','実戦では、自分の爆弾でもダメージを受けるから、しっかり離れてね']},
  3:{name:'草むらに隠れる',y:11080,gate:10740,lines:['次は、敵にみつからないように草むらに入ってみましょうか','草むらの中は、敵から見つかりにくくなるわ','青い兵士の視界に入らないように、こっそり移動するのがポイントよ','見つからずに草むらの中で3秒待てたらクリアよ']},
  4:{name:'背後から気絶',y:11080,gate:10740,lines:['じゃあ、後ろから近づいて2人の敵を気絶させてみましょうか（敵近くでA）','前から見つかったり、爆弾で倒してしまったら、この練習をやり直すわね']},
@@ -219,7 +219,8 @@ function trainingObjectDamage(o,source){
 }
 function drawTrainingWall(c,cy){
  const top=Math.max(0,cy-2),bottom=Math.min(WH,cy+H+2),x=c.x===0?TRAINING_LEFT-60:TRAINING_RIGHT;
- g.save();g.translate(x,0);g.fillStyle=trainingConcretePattern()||'#b8bbb2';
+ g.save();g.translate(c.x===0?x+60:x,0);if(c.x===0)g.scale(-1,1);
+ g.fillStyle=trainingConcretePattern()||'#b8bbb2';
  g.fillRect(0,top,60,bottom-top);g.restore();
 }
 function drawTrainingTarget(o){

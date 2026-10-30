@@ -26,7 +26,7 @@ test('a stale timer does not change the state or queue of a newer deployment',()
  const c=harness();c.selectSkillIndex(0,true);c.frame();c.frame();c.get("gameBuildGeneration++;gameBuildQueued=false;state='stage'");c.advance(1000);c.selectSkillIndex(0,true);c.frame();c.frame();c.advance(1000);assert.equal(c.state,'preparing');assert.equal(c.get('gameBuildQueued'),true);c.advance(1000);assert.equal(c.state,'briefing');assert.equal(c.builds,2);
 });
 test('all normal stage types retain briefing transitions, while debug starts play after the minimum',()=>{
- for(const stage of ['beginner','base','front','indoor','decisive','debug']){const c=harness();c.stageMode=stage;c.areaDebugEnabled=stage==='debug';c.selectSkillIndex(0,true);c.frame();c.frame();assert.equal(c.state,'preparing');c.advance(2000);assert.equal(c.state,stage==='debug'?'play':'briefing');}
+ for(const stage of ['beginner','base','front','indoor','decisive','training','debug']){const c=harness();c.stageMode=stage;c.areaDebugEnabled=stage==='debug';c.selectSkillIndex(0,true);c.frame();c.frame();assert.equal(c.state,'preparing');c.advance(2000);assert.equal(c.state,stage==='debug'?'play':'briefing');}
 });
 test('choosing a skill alone and invalid deployment requests do not generate or wait',()=>{
  const c=harness();assert.equal(c.selectSkillIndex(0),true);assert.equal(c.state,'stage');assert.equal(c.get('gameBuildQueued'),false);assert.equal(c.selectSkillIndex(1,true),false);assert.equal(c.timers.length,0);assert.equal(c.builds,0);

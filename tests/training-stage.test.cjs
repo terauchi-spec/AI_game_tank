@@ -87,7 +87,7 @@ test('full-screen conversation taps advance once, clear controls, and do not adv
 });
 
 test('assistant types at instructor speed, reveals a line before advancing, and shows the triangle only when ready',()=>{
- const h=fixture();h.storage.set('tankGamePlayerNameV1','テスト');h.run('trainingTalk(TRAINING_LESSONS[1].lines);syncTrainingHud()');assert.equal(h.run('training.lines[0]'),'こっそり訓練施設にようこそ！');assert.equal(h.run('training.lines[1]'),'ここでは戦場の基本を、テストさんに学んでもらうわ');
+ const h=fixture();h.storage.set('tankGamePlayerNameV1','テスト');h.run('trainingTalk(TRAINING_LESSONS[1].lines);syncTrainingHud()');assert.equal(h.run('training.lines[0]'),'こっそり訓練場にようこそ！');assert.equal(h.run('training.lines[1]'),'ここでは戦場の基本を、テストさんに学んでもらうわ');
  assert.equal(h.nodes.get('trainingText').textContent,'こ');assert.equal(h.nodes.get('trainingContinue').hidden,true);
  h.tick(.12,.04);h.run('syncTrainingHud()');assert.equal(h.run('training.typed'),4);assert.equal(h.nodes.get('trainingText').textContent,'こっそり');
  h.run('trainingAdvanceDialogue();syncTrainingHud()');assert.equal(h.run('training.line'),0);assert.equal(h.nodes.get('trainingContinue').hidden,false);assert.equal(h.nodes.get('trainingText').textContent,h.run('training.lines[0]'));
@@ -239,4 +239,18 @@ test('village terrain and one HQ concrete shelter persist across training transi
  h.run('covers=covers.filter(c=>c!==shelter);rebuildSpatialGrid()');assert.equal(h.run('canDetect(observer,p,observer.face,"p")'),true);h.run('covers.push(shelter);rebuildSpatialGrid()');
  h.lesson(4);h.lesson(5);assert.equal(h.run('covers.filter(c=>c.trainingShelter).length'),1);assert.equal(h.run('covers.includes(shelter)'),true);
  h.run('drawTrainingWall(covers[0],11000);startAssetLoading();drawTrainingWall(covers[0],11000)');assert.equal(h.run('trainingWallTile.width'),60);assert.equal(h.run('trainingWallTile.height'),112);
+});
+
+
+test('left wall mirrors horizontally without changing right wall or either collision boundary',()=>{
+ const h=fixture();h.c.wallTransforms=[];h.run('g.translate=(x,y)=>wallTransforms.push(["translate",x,y]);g.scale=(x,y)=>wallTransforms.push(["scale",x,y]);drawTrainingWall(covers[0],11000);drawTrainingWall(covers[1],11000)');
+ assert.deepEqual(h.c.wallTransforms.map(a=>Array.from(a)),[['translate',220,0],['scale',-1,1],['translate',740,0]]);assert.equal(h.run('covers[0].x+covers[0].w'),220);assert.equal(h.run('covers[1].x'),740);
+});
+test('training briefing shows Aira and training labels, pauses the first line until begin, and normal stages restore their briefing',()=>{
+ const h=fixture();h.run('state="briefing";syncMissionBriefing()');
+ assert.equal(h.nodes.get('missionBriefingTitle').textContent,'訓練開始');assert.equal(h.nodes.get('missionBegin').textContent,'訓練開始');assert.equal(h.nodes.get('missionBriefing.mission-briefing-image').src,'assets/characters/battlefield-assistant.webp');assert.equal(h.nodes.get('missionBriefing.mission-hud-guide').hidden,true);
+ const typed=h.run('training.typed'),y=h.run('p.y');h.tick(2);assert.equal(h.run('training.typed'),typed);assert.equal(h.run('p.y'),y);
+ const html=fs.readFileSync(path.join(root,'index.html'),'utf8'),start=html.indexOf("document.getElementById('missionBegin').addEventListener('click',()=>{"),body=html.slice(start,html.indexOf('\n});',start)).split('()=>{')[1];
+ h.run('(()=>{'+body+'})()');assert.equal(h.run('state'),'play');assert.equal(h.run('training.phase'),'talk');assert.equal(h.run('training.typed'),typed);h.tick(.08);assert.ok(h.run('training.typed')>typed);
+ h.run('stageMode="beginner";state="briefing";syncMissionBriefing()');assert.equal(h.nodes.get('missionBriefingTitle').textContent,'破壊（初級）');assert.equal(h.nodes.get('missionBegin').textContent,'作戦開始');assert.equal(h.nodes.get('missionBriefing.mission-hud-guide').hidden,false);assert.match(h.nodes.get('missionBriefing.mission-briefing-image').src,/mission_hero/);
 });
