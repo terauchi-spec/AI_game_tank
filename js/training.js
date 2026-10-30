@@ -10,7 +10,7 @@ const TRAINING_LESSONS={
  5:{name:'戦車に乗って撃つ',y:10700,gate:10330,lines:['最後はこの戦場でもっとも重要な戦車の訓練です','戦車に乗り込んで（戦車近くでA）、大砲を1発、マシンガンを3発以上撃ってみましょう（B・Sボタン）']},
  6:{name:'砲塔を回して射撃',y:0,gate:0,lines:['戦車の砲塔は回転させることができます','4つのマトを破壊してください（BまたはSを長押ししながら操作）','この練習中は戦車が動きません。砲塔を上下左右に向けて狙いましょう']}
 };
-const TRAINING_FINALE=['おめでとう！これで訓練は以上です','おっと！スキルについての説明がまだでしたね！','スキルには種類があり、効果は様々です！色々と試してみてください','一人前のこっそり兵士になれるよう、がんばってくださいね！'];
+const TRAINING_FINALE=['おめでとう！これで訓練は以上です','おっと！スキル（Sボタン）についての説明がまだでしたね！','スキルには種類があり、効果は様々です！実戦で色々と試してみてください','一人前のこっそり兵士になれるよう、がんばってくださいね！'];
 function trainingCompleted(){try{return localStorage.getItem(TRAINING_DONE_KEY)==='1';}catch(_){return false;}}
 function trainingClearInput(){
  if(typeof window.trainingClearInputs==='function')window.trainingClearInputs();
