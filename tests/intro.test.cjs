@@ -103,3 +103,18 @@ test('invitation cannot be accepted while typing and choices appear when the fin
  assert.equal(h.get('introChoices').hidden,true);h.c.now+=500;h.get('introTrain').events.click();assert.equal(h.get('introChoices').hidden,true);
  while(h.timers.size)h.tick();assert.equal(h.get('introChoices').hidden,false);assert.equal(h.get('introNext').hidden,true);
 });
+
+
+test('instructor and Aira phrases use exactly one training speech cue, including instant text and tap-to-complete',()=>{
+ for(const reducedMotion of [true,false]){
+  const h=harness({reducedMotion}),sounds=[];h.c.sfx=key=>sounds.push(key);
+  const completeNext=()=>{h.c.finishIntroTyping();h.next();};
+  h.c.startFromTitle();assert.deepEqual(sounds,['uiSelect']);
+  h.c.finishIntroTyping();assert.equal(sounds.length,1);
+  for(let i=0;i<5;i++)completeNext();assert.equal(sounds.length,5);
+  h.submit('タンク');assert.equal(sounds.length,6);
+  for(let i=0;i<5;i++)completeNext();assert.equal(h.get('introInstructor').alt,'戦場アシスタントのアイラ');assert.equal(sounds.length,11);
+  completeNext();completeNext();h.c.finishIntroTyping();h.c.now+=500;h.get('introSkipTraining').events.click();
+  assert.equal(sounds.length,14);assert.ok(sounds.every(key=>key==='uiSelect'));completeNext();assert.equal(sounds.length,14);assert.equal(h.c.state,'skill');
+ }
+});

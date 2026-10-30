@@ -28,6 +28,8 @@ function revealIntroCharacter(){
 }
 function startIntroTyping(text){
  stopIntroTyping();introFullText=text;introTypedCount=0;
+ // Match the training guide: one cue per displayed phrase, including reduced motion.
+ sfx('uiSelect');
  document.getElementById('introChoices').hidden=true;
  const copy=document.getElementById('introDialogue');copy.textContent='';copy.setAttribute('aria-label',text);
  document.getElementById('introNext').hidden=true;
@@ -110,7 +112,7 @@ function showIntroStep(){
 }
 function advanceIntroDialogue(){
  if(state!=='intro'||introStep===1||performance.now()<introReadyAt)return;
- introReadyAt=performance.now()+180;sfx('uiConfirm');
+ introReadyAt=performance.now()+180;
  if(introTypedCount<introFullText.length){finishIntroTyping();return;}
  if(introAwaitingChoice())return;
  if(introLine<introDialogueLines().length-1)introLine++;
@@ -144,7 +146,7 @@ function enterIntroTraining(){
 function chooseIntroTraining(train){
  if(state!=='intro'||!introAwaitingChoice()||introTypedCount<introFullText.length||performance.now()<introReadyAt)return;
  introTrainingChoice=train;introStep=4;introLine=0;introReadyAt=performance.now()+180;
- sfx('uiConfirm');showIntroStep();
+ showIntroStep();
 }
 document.getElementById('introTrain').addEventListener('click',()=>chooseIntroTraining(true));
 document.getElementById('introSkipTraining').addEventListener('click',()=>chooseIntroTraining(false));
@@ -165,5 +167,5 @@ document.getElementById('introNameForm').addEventListener('submit',event=>{
  if(!name){error.textContent='英数・ひらがな・カタカナの10文字以内で入力してください。';introNameInput.setAttribute('aria-invalid','true');introNameInput.focus();return;}
  introSessionName=name;introNameInput.value=name;introNameInput.removeAttribute('aria-invalid');error.textContent='';
  try{localStorage.setItem(INTRO_NAME_KEY,name);}catch(_){document.getElementById('introSaveNote').textContent='ブラウザに名前を保存できませんでした。次回は再入力が必要です。';}
- sfx('uiConfirm');introStep=2;introLine=0;introNameInput.blur();introReadyAt=performance.now()+400;showIntroStep();
+ introStep=2;introLine=0;introNameInput.blur();introReadyAt=performance.now()+400;showIntroStep();
 });

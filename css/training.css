@@ -4,7 +4,8 @@
 /* Reuse Aira’s cached portrait and frame her face without another image download. */
 .training-portrait img{position:absolute;display:block;width:200%;max-width:none;height:auto;left:-50%;top:-12%}
 .training-speech{position:relative;flex:1;min-width:0;background:#fffdf8;border:1px solid #e9e4d8;border-radius:28px;padding:16px 20px;box-shadow:0 7px 24px #0005;pointer-events:none}
-.training-speech:before{content:'';position:absolute;left:-10px;top:22px;border-top:8px solid transparent;border-bottom:8px solid transparent;border-right:10px solid #fffdf8}
+/* Overlap the bubble by 3px and move the tail above the rounded bottom edge. */
+.training-speech:before{content:'';position:absolute;left:-7px;top:18px;border-top:8px solid transparent;border-bottom:8px solid transparent;border-right:10px solid #fffdf8}
 #trainingText{display:block;opacity:1;color:#293026;text-align:left;font:650 26px/1.55 system-ui,-apple-system,'Hiragino Sans',sans-serif;margin:0;padding-right:20px;white-space:pre-line}
 #trainingClear{position:fixed;z-index:35;left:50%;top:40%;transform:translate(-50%,-50%);color:#ffe08b;text-shadow:0 3px 0 #4e3d1c,0 0 20px #302810;font:950 clamp(44px,10vw,76px) system-ui;pointer-events:none}
 @media(max-width:580px){#trainingGuide{gap:7px;top:max(54px,calc(env(safe-area-inset-top,0px) + 48px))}.training-portrait{width:50px;height:50px}.training-speech{padding:9px 10px}#trainingText{font-size:21px;line-height:1.55}}
