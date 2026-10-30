@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.30.0938</title>
+<title>こっそり戦車大作戦 2026.10.30.0944</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -24,7 +24,7 @@
 #gameMenu h2{font-size:23px;margin:0 0 20px}#gameMenu nav{display:grid;gap:12px}
 #gameMenu button{min-height:52px;border:1px solid #c4b47f;border-radius:12px;background:#354336;color:#fff4d0;font:700 19px system-ui;touch-action:manipulation;cursor:pointer}
 #gameMenu #gameMenuSound{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:10px 14px;margin:0}
-#gameMenu .control-type{border-top:1px solid #738269;padding-top:12px}#gameMenu .control-type h3{font-size:15px;margin:0 0 8px}#gameMenu .control-type-options{display:grid;grid-template-columns:1fr 1fr;gap:8px}#gameMenu .control-type-options button{font-size:15px;min-height:48px}#gameMenu .control-type-options button[aria-pressed="true"]{background:#e9cb85;color:#202b22}#controlTypeHelp{font-size:12px;line-height:1.5;margin:8px 0 0;color:#cfdbc4}
+#gameMenu .control-type{border-top:1px solid #738269;padding-top:12px}#gameMenu .control-type h3{font-size:15px;margin:0 0 8px}#gameMenu .control-type-options{display:grid;grid-template-columns:1fr 1fr;gap:8px}#gameMenu .control-type-options button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:15px;min-height:52px}#gameMenu .control-type-options button small{font-size:12px;white-space:nowrap}#gameMenu .control-type-options button[aria-pressed="true"]{background:#e9cb85;color:#202b22}#controlTypeHelp{font-size:12px;line-height:1.5;margin:8px 0 0;color:#cfdbc4}
 #gameMenu #gameMenuResume{background:#e9cb85;color:#202b22}
 body.game-paused #pad,body.game-paused #resetBtn,body.game-paused :is(#debugToggleBtn,#debugRoutesBtn),body.game-paused #debugBadge,body.game-paused #missionHud{display:none!important}
 body:not(.gameplay-active) #resetBtn{display:none!important}
@@ -627,7 +627,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 1250ms ease-o
 <body>
 <canvas id="c" width="840" height="720"></canvas>
 <button id="resetBtn" type="button" aria-label="メニューを開く" title="メニュー" aria-haspopup="dialog">☰</button>
-<dialog id="gameMenu" aria-labelledby="gameMenuHeading"><h2 id="gameMenuHeading">一時停止</h2><nav aria-label="ゲーム中メニュー"><button id="gameMenuTitle" type="button">タイトル</button><button id="gameMenuEnd" type="button">作戦終了</button><button id="gameMenuSound" class="sound-control" type="button" role="switch" aria-checked="true"><img class="sound-on" src="assets/ui/sound-on.webp" width="24" height="24" alt="" aria-hidden="true"><img class="sound-off" src="assets/ui/sound-off.webp" width="24" height="24" alt="" aria-hidden="true"><span>音声</span><span class="sound-switch" aria-hidden="true"></span></button><section class="control-type" aria-labelledby="controlTypeLabel"><h3 id="controlTypeLabel">操作タイプ</h3><div class="control-type-options" role="group" aria-labelledby="controlTypeLabel"><button id="controlType1Btn" type="button" aria-pressed="true">タイプ1：タップ</button><button id="controlType2Btn" type="button" aria-pressed="false">タイプ2：スライド</button></div><p id="controlTypeHelp">B・A・Sをタップ。左スティックは中央で停止</p></section><button id="gameMenuResume" type="button">ゲームに戻る</button></nav></dialog>
+<dialog id="gameMenu" aria-labelledby="gameMenuHeading"><h2 id="gameMenuHeading">一時停止</h2><nav aria-label="ゲーム中メニュー"><button id="gameMenuTitle" type="button">タイトル</button><button id="gameMenuEnd" type="button">作戦終了</button><button id="gameMenuSound" class="sound-control" type="button" role="switch" aria-checked="true"><img class="sound-on" src="assets/ui/sound-on.webp" width="24" height="24" alt="" aria-hidden="true"><img class="sound-off" src="assets/ui/sound-off.webp" width="24" height="24" alt="" aria-hidden="true"><span>音声</span><span class="sound-switch" aria-hidden="true"></span></button><section class="control-type" aria-labelledby="controlTypeLabel"><h3 id="controlTypeLabel">操作タイプ</h3><div class="control-type-options" role="group" aria-labelledby="controlTypeLabel"><button id="controlType1Btn" type="button" aria-pressed="true" aria-label="タイプ1：タップ"><span>タイプ1</span><small>タップ</small></button><button id="controlType2Btn" type="button" aria-pressed="false" aria-label="タイプ2：スライド"><span>タイプ2</span><small>スライド</small></button></div><p id="controlTypeHelp">B・A・Sをタップ。左スティックは中央で停止</p></section><button id="gameMenuResume" type="button">ゲームに戻る</button></nav></dialog>
 <button id="debugToggleBtn" type="button" aria-label="無敵モード切替" title="無敵モード切替"><span class="icon">🛡</span><span class="key">P</span></button>
 <button id="debugRoutesBtn" type="button" aria-label="巡回ルート表示切替" title="巡回ルート表示切替" aria-pressed="false"><span class="icon" aria-hidden="true">↝</span><span class="key">L</span></button>
 <div id="debugBadge" hidden><span id="debugBadgeText">無敵モード</span><button id="mazeCompareButton" type="button" hidden>比較：通常 → 敵移動停止</button></div>
@@ -989,7 +989,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.30.0938',FILE_CREATED_AT='2026/10/30 09:38',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.30.0944',FILE_CREATED_AT='2026/10/30 09:44',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
