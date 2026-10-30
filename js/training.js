@@ -3,9 +3,9 @@ let training=null;
 const TRAINING_DONE_KEY='tankGameTrainingCompleteV1';
 const TRAINING_LESSONS={
  1:{name:'訓練を始めよう',y:12500,gate:12380,lines:['訓練施設へようこそ！基本操作を一緒に練習しましょう','左スティックで移動します。中央の「停止」に戻すと、指を置いたまま止まれます','ここではダメージを受けません。まずは前へ進んでみましょう']},
- 2:{name:'設置爆弾',y:12100,gate:11820,lines:['まずは、設置爆弾の使い方です','ドラム缶に近づいて、爆弾を設置したら、少し離れて起爆させてみましょう（Bボタン）']},
+ 2:{name:'設置爆弾',y:12100,gate:11820,lines:['まずは、設置爆弾の使い方です','ドラム缶に近づいて、爆弾を設置したら（Bボタン）、少し離れて起爆させてみましょう（再度Bボタン）']},
  3:{name:'草むらに隠れる',y:11080,gate:10740,lines:['次は、敵にみつからないように草むらに入ってみましょう','草むらの中は、敵から見つかりにくくなります','見つからずに草むらの中で2秒待てたらクリアです']},
- 4:{name:'背後から気絶',y:10100,gate:9830,lines:['それでは、後ろから近づいて2人の敵を気絶させてみましょう（敵近くでA）','前から見つかったり、爆弾で倒してしまったら、この練習をやり直します']},
+ 4:{name:'背後から気絶',y:11080,gate:10740,lines:['それでは、後ろから近づいて2人の敵を気絶させてみましょう（敵近くでA）','前から見つかったり、爆弾で倒してしまったら、この練習をやり直します']},
  5:{name:'戦車に乗って撃つ',y:9120,gate:8750,lines:['最後はこの戦場でもっとも重要な戦車です','戦車に乗り込んで（戦車近くでA）、大砲とマシンガンを撃ってみましょう（B・Sボタン）']},
  6:{name:'砲塔を回して射撃',y:0,gate:0,lines:['戦車の砲塔は回転させることができます','4つのマトを破壊してください（BまたはSを長押ししながら操作）','この練習中は戦車が動きません。砲塔を上下左右に向けて狙いましょう']}
 };
@@ -40,18 +40,32 @@ function setupTrainingWorld(){
  training={step:1,phase:'talk',resets:0,hold:0,patrol:Math.PI/2,shots:{c:false,v:false},targets:[],hudKey:'',hudAt:0,gate:12380,checkpoint:{x:WW/2,y:12620},barrelBomb:false,vehicle:null};
  trainingClearTransient();rebuildSpatialGrid();trainingTalk(TRAINING_LESSONS[1].lines);syncTrainingHud();
 }
+function trainingBushCluster(){
+ const y=TRAINING_LESSONS[3].y;
+ // Seven overlapping, ordinary-sized bushes form a natural patch without scaling one sprite up.
+ return [[0,0,88,68],[-65,0,82,64],[65,0,86,66],[-33,-55,84,64],[33,-55,80,66],[-33,55,86,68],[33,55,82,64]].map(([dx,dy,w,h])=>({x:WW/2+dx-w/2,y:y+dy-h/2,w,h}));
+}
 function trainingEnterLesson(step){
+ const continuing=step===4&&training.step===3;
+ const previousBushes=bushes,previousGuards=humans;
+ if(continuing)training.stunStart={player:{x:p.x,y:p.y,body:p.body,ang:p.ang},bushes:bushes.map(b=>({...b})),guards:humans.map(h=>({...h})),patrol:training.patrol};
  trainingClearTransient();training.step=step;training.phase='approach';training.hold=0;training.hudKey='';training.arrived=false;
  const lesson=TRAINING_LESSONS[step];training.gate=lesson.gate;
  objects=[];humans=[];bushes=[];cars=[];
  if(step===2){const size=typeof BARREL_SIZE==='number'?BARREL_SIZE:40;training.barrel={kind:'barrel',trainingBarrel:true,x:WW/2-size/2,y:lesson.y-size/2,w:size,h:size};objects=[training.barrel];training.barrelBomb=false;}
  if(step===3){
-  const r=130;training.bush={x:WW/2-r,y:lesson.y-r,w:r*2,h:r*2,trainingRound:true};bushes=[training.bush];training.patrol=Math.PI/2;
+  training.bushes=trainingBushCluster();bushes=training.bushes;training.bush=bushes[0];training.patrol=Math.PI/2;training.stunStart=null;
   humans=[trainingGuard(WW/2,lesson.y+175,Math.PI),trainingGuard(WW/2,lesson.y-175,0)];
   training.checkpoint={x:WW/2,y:lesson.y+350};
  }
  if(step===4){
-  humans=[trainingGuard(WW/2-70,lesson.y,-Math.PI/2),trainingGuard(WW/2+70,lesson.y,-Math.PI/2)];training.checkpoint={x:WW/2,y:lesson.y+220};
+  if(training.stunStart){
+   const start=training.stunStart;
+   bushes=continuing?previousBushes:start.bushes.map(b=>({...b}));humans=continuing?previousGuards:start.guards.map(h=>({...h}));
+   training.bushes=bushes;training.bush=bushes[0];training.patrol=start.patrol;training.checkpoint={...start.player};
+   if(!continuing)Object.assign(p,start.player);
+  }else{humans=[trainingGuard(WW/2-70,lesson.y,-Math.PI/2),trainingGuard(WW/2+70,lesson.y,-Math.PI/2)];training.checkpoint={x:WW/2,y:lesson.y+220};}
+  training.arrived=true;trainingTalk(lesson.lines);
  }
  if(step===5){
   const t=TYPES[0];training.vehicle={x:WW/2,y:lesson.y,t,kind:'tank',hp:t.hp,c:t.cmax,v:t.vmax,f:t.fmax,ch:0,mgHits:0,body:-Math.PI/2};cars=[training.vehicle];training.shots={c:false,v:false};
@@ -117,11 +131,11 @@ function updateTrainingMission(dt){
  if(!training.arrived)return;
  if(training.step===2){if(training.barrelBomb&&!objects.includes(training.barrel))trainingClearLesson();return;}
  if(training.step===3||training.step===4){
-  if(training.step===3&&(!bushes.includes(training.bush)||training.bush.burnT>0)){trainingResetLesson('草むらを残して、隠れてみましょう');return;}
+  if(training.bushes&&training.bushes.some(b=>!bushes.includes(b)||b.burnT>0)){trainingResetLesson('草むらを残して、隠れてみましょう');return;}
   if(humans.some(h=>!h.alive||(h.stun>0&&!h.trainingAStun))){trainingResetLesson('爆弾ではなく、今回の操作で挑戦してください');return;}
   for(let i=0;i<humans.length;i++){
    const h=humans[i];if(h.stun>0)continue;
-   if(training.step===3){const a=training.patrol+i*Math.PI;h.x=WW/2+Math.cos(a)*175;h.y=lesson.y+Math.sin(a)*175;h.face=a+Math.PI/2;h.walking=true;}
+   if(training.step===3||training.stunStart){const a=training.patrol+i*Math.PI;h.x=WW/2+Math.cos(a)*175;h.y=lesson.y+Math.sin(a)*175;h.face=a+Math.PI/2;h.walking=true;}
    if(h.st||canDetect(h,p,h.face,'p')){trainingResetLesson('見つかってしまいました');return;}
   }
   training.patrol+=dt*.38;
@@ -158,8 +172,9 @@ function drawTrainingBoundary(){
  const y=training.gate;g.save();g.strokeStyle='#e2c873';g.lineWidth=4;g.setLineDash([16,10]);g.beginPath();g.moveTo(30,y);g.lineTo(WW-30,y);g.stroke();g.setLineDash([]);g.fillStyle='#eadba9';g.font='bold 16px system-ui';g.textAlign='center';g.fillText('課題をクリアして先へ進もう',WW/2,y-15);g.restore();
 }
 function syncTrainingHud(){
- const guide=document.getElementById('trainingGuide'),clear=document.getElementById('trainingClear');
+ const guide=document.getElementById('trainingGuide'),clear=document.getElementById('trainingClear'),advance=document.getElementById('trainingAdvance');
  const active=stageMode==='training'&&state==='play'&&!!training;
+ const talking=active&&training.phase==='talk';if(advance.hidden===talking)advance.hidden=!talking;
  if(guide.hidden===active)guide.hidden=!active;const clearVisible=active&&training.phase==='clear';if(clear.hidden===clearVisible)clear.hidden=!clearVisible;if(!active)return;
  const t=training,talk=t.phase==='talk',now=performance.now();
  if(t.hudKey&&now<t.hudAt&&t.hudPhase===t.phase&&t.hudLine===t.line)return;t.hudAt=now+100;t.hudPhase=t.phase;t.hudLine=t.line;
@@ -167,6 +182,14 @@ function syncTrainingHud(){
  const text=talk?t.lines[t.line]:t.phase==='approach'?'前へ進んで、次の訓練に向かいましょう':task;
  const key=t.step+'|'+t.phase+'|'+text;if(key===t.hudKey)return;t.hudKey=key;
  document.getElementById('trainingText').textContent=text;
- const next=document.getElementById('trainingNext');next.hidden=!talk;next.textContent=t.line===t.lines.length-1?(t.afterTalk==='finish'?'訓練を終える':'やってみる'):'次へ';
+
 }
-document.getElementById('trainingNext').addEventListener('click',trainingAdvanceDialogue);
+function trainingScreenAdvance(event){
+ if(stageMode!=='training'||state!=='play'||training?.phase!=='talk')return;
+ if(event.type==='keydown'&&event.key!=='Enter'&&event.key!==' ')return;
+ if(event.repeat)return;
+ event.preventDefault();event.stopPropagation();trainingAdvanceDialogue();syncTrainingHud();
+}
+const trainingAdvanceSurface=document.getElementById('trainingAdvance');
+trainingAdvanceSurface.addEventListener('click',trainingScreenAdvance);
+trainingAdvanceSurface.addEventListener('keydown',trainingScreenAdvance);

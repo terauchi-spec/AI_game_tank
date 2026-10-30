@@ -7,7 +7,7 @@ New players see it selected first until training is completed; the completion ke
 `tankGameTrainingCompleteV1` affects only that default selection, not unlocks.
 
 The guide uses a lightweight SVG portrait of a female military assistant, a speech
-bubble, explicit Next/Practice buttons and an optional step-clear overlay. Dialogues
+bubble, screen-wide tap-to-advance dialogue and an optional step-clear overlay. Dialogues
 and the 1.05-second clear presentation freeze simulation using the existing update
 loop; there are no additional polling or animation timers. Pausing also pauses the
 training. Active progress text is updated at most 10 Hz; inactive training performs
@@ -17,12 +17,12 @@ no repeated DOM writes. Field props and training guards are bounded.
 | --- | --- | --- |
 | 1 Introduction | Read the sequential control introduction | Clear banner, then north gate opens |
 | 2 Bomb | Place/detonate an actual bomb and destroy the barrel | Non-bomb removal cannot clear |
-| 3 Bush | Stay inside the circular bush, unseen, for 2 consecutive seconds | Seen, guard hurt/killed, or destroyed/burning bush resets this step |
+| 3 Bush | Stay inside the natural seven-bush patch, unseen, for 2 consecutive seconds | Seen, guard hurt/killed, or destroyed/burning bush resets this step |
 | 4 Stun | Use A from behind to stun both live guards without detection | Front approach, detection or bomb casualties reset this step; both guards disappear on clear |
 | 5 Vehicle | Board the training tank and actually fire cannon and MG | Both real fire calls required; unlimited supplies and no damage |
 | 6 Turret | Destroy four cardinal targets with cannon direct hits or MG | Hull movement/dismount disabled; bombs and blast-radius hits do not count |
 
-There are no ordinary enemy spawns. Only the two non-firing tutorial guards appear
+There are no ordinary enemy spawns. The same grass patch, player position and two guards carry directly from hiding into the stun drill. Failed stun attempts restore that transition checkpoint. Only the two non-firing tutorial guards appear
 in steps 3/4. They use common sight/cover and real A-stun behavior, with a training-
 only rear-angle requirement. Other steps contain no enemy soldiers. Checkpoints,
 guards, bombs, bullets, fire, fallen sprites and timer counters reset together.
