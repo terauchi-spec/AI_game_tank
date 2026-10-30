@@ -26,7 +26,7 @@ test('ground bodies survive removed/replenished actors, are bounded, and reset b
 test('only visible bodies on the active indoor floor are stamped; images load once without pixel processing',()=>{
  const h=harness(),{c}=h;c.loadFallenEnemyArtwork();c.loadFallenEnemyArtwork();assert.equal(h.requests.length,9);c.rememberFallenEnemy({x:100,y:100,alive:false});c.rememberFallenEnemy({x:5000,y:100,alive:false});c.drawFallenEnemies(0,0);assert.equal(h.draws.length,1);assert.equal(h.get('fallenEnemies.length'),1);assert.equal(h.depth(),0);
  c.drawFallenEnemies(1000,0);assert.equal(h.get('fallenEnemies.length'),0);c.drawFallenEnemies(0,0);assert.equal(h.draws.length,1);
- c.clearFallenEnemies();c.stageMode='indoor';c.indoorWorld={currentFloor:0};for(const indoorFloor of [0,1])c.rememberFallenEnemy({x:100,y:100,alive:false,indoorFloor});h.draws.length=0;c.drawFallenEnemies(0,0);assert.equal(h.draws.length,1);c.indoorWorld.currentFloor=1;c.drawFallenEnemies(0,0);assert.equal(h.draws.length,1);assert.equal(h.get('fallenEnemies.length'),0);assert.equal(h.depth(),0);
+ c.clearFallenEnemies();c.stageMode='indoor';c.indoorWorld={currentFloor:0};for(const indoorFloor of [1,2])c.rememberFallenEnemy({x:100,y:100,alive:false,indoorFloor});h.draws.length=0;c.drawFallenEnemies(0,0);assert.equal(h.draws.length,1);c.indoorWorld.currentFloor=1;c.drawFallenEnemies(0,0);assert.equal(h.draws.length,1);assert.equal(h.get('fallenEnemies.length'),0);assert.equal(h.depth(),0);
 });
 test('real bullets and piercing sniper shots preserve scoring and leave the crying reaction after effects finish',()=>{
  const {createGameEngine}=require('./helpers/game-engine.cjs'),e=createGameEngine(root,{seed:7}),{run}=e;
@@ -75,7 +75,7 @@ test('expiry emits one allied-style blue burst at the seated location, without o
  const h=harness(),{c}=h;c.rememberFallenEnemy({x:100,y:100,alive:false,face:0});
  c.updateFallenEnemies(9.99);assert.equal(h.bursts.length,0);c.updateFallenEnemies(.01);
  assert.deepEqual(h.bursts[0],[118,100,18,'#8fd7ff',180]);c.updateFallenEnemies(1);assert.equal(h.bursts.length,1);
- c.stageMode='indoor';c.indoorWorld={currentFloor:0};c.rememberFallenEnemy({x:100,y:100,alive:false,indoorFloor:1});c.updateFallenEnemies(10);assert.equal(h.bursts.length,1);
+ c.stageMode='indoor';c.indoorWorld={currentFloor:0};c.rememberFallenEnemy({x:100,y:100,alive:false,indoorFloor:2});c.updateFallenEnemies(10);assert.equal(h.bursts.length,1);
 });
 test('simultaneous expiries reuse the real particle cap and do not score additional kills',()=>{
  const {createGameEngine}=require('./helpers/game-engine.cjs'),{run}=createGameEngine(root,{seed:7});
@@ -161,4 +161,27 @@ test('white crying size correction is also applied inside the sniper scope',()=>
   assert.ok(Math.abs(visibleCryingSize(h.draws[0])-visibleCryingSize(h.draws[1]))<1e-8);
  }
  for(const variant of ['blue','white','ally']){h.c.drawStunnedEnemy(100,100,0,undefined,variant);assert.equal(h.draws.at(-1).length,5,'stun artwork is not cropped or resized by crying correction');}
+});
+
+test('real infiltration guards on both numbered floors use crying artwork instead of the live/dead soldier fallback',()=>{
+ const {createGameEngine}=require('./helpers/game-engine.cjs'),{run}=createGameEngine(root,{seed:7});
+ for(const beginner of [true,false])for(const index of [0,1]){
+  run(`stageMode='indoor';indoorBeginner=${beginner};areaDebugEnabled=false;reset(false);indoorWorld.currentFloor=${index};var victim=humans.find(h=>h.indoorFloor===${index+1}&&!h.elite);p.x=victim.x;p.y=victim.y;victim.alive=false;trackEnemyDeaths()`);
+  assert.equal(run('fallenEnemies[0].floor'),index+1);assert.equal(run('scoreStats.humanKills'),1);
+  run("var cryDraws=[];var oldVictimDraws=0;var normalSoldier=soldier;soldier=(...args)=>{if(args[10]===victim)oldVictimDraws++;return normalSoldier(...args);};og.drawImage=(im,...args)=>{if(im?.src?.includes('/fallen/'))cryDraws.push(im.src);};draw(null);soldier=normalSoldier");
+  assert.equal(run('oldVictimDraws'),0);assert.equal(run('fallenEnemies.length'),1);assert.equal(run("cryDraws.some(s=>s.endsWith('/cry-flying.webp'))"),true);
+  run("updateFallenEnemies(1);cryDraws=[];draw(null)");assert.equal(run("cryDraws.some(s=>s.endsWith('/cry-sitting.webp'))"),true);assert.equal(run('fallenEnemies.length'),1);
+  run("trackEnemyDeaths();updateFallenEnemies(9)");assert.equal(run('fallenEnemies.length'),0);assert.equal(run('scoreStats.humanKills'),1);
+ }
+});
+
+test('indoor fallback snapshots and expiry use the current numbered floor, while stun remains supine',()=>{
+ for(const index of [0,1]){
+  const h=harness(),{c}=h;c.stageMode='indoor';c.indoorWorld={currentFloor:index};c.loadFallenEnemyArtwork();
+  c.rememberFallenAlly({x:100,y:100,alive:false},1,0);assert.equal(h.get('fallenEnemies[0].floor'),index+1);c.drawFallenEnemies(0,0);assert.match(h.draws.at(-1)[0].src,/ally-cry-flying/);
+  c.updateFallenEnemies(10);assert.equal(h.bursts.length,1);assert.equal(h.get('fallenEnemies.length'),0);
+ }
+ const {createGameEngine}=require('./helpers/game-engine.cjs'),{run}=createGameEngine(root);
+ run("stageMode='indoor';indoorBeginner=true;reset(false);var stunned=humans.find(h=>h.indoorFloor===1&&!h.elite);p.x=stunned.x;p.y=stunned.y;stunned.stun=3;var stunArt=[];og.drawImage=(im,...args)=>{if(im?.src?.includes('/fallen/'))stunArt.push(im.src);};draw(null)");
+ assert.equal(run("stunArt.some(s=>s.endsWith('/supine.webp'))"),true);assert.equal(run('fallenEnemies.length'),0);assert.equal(run('stunned.alive'),true);assert.equal(run('scoreStats.humanKills'),0);
 });

@@ -38,11 +38,12 @@ function noteEnemyFallHit(h,dx,dy){
  if(!h||h.fallenSpriteRecorded||h.frontRetired||!Number.isFinite(dx)||!Number.isFinite(dy)||Math.hypot(dx,dy)<.001)return;
  h.fallImpactAngle=Math.atan2(dy,dx);
 }
+// Indoor actors store floor numbers 1/2; currentFloor is an array index 0/1.
 function rememberFallenEnemy(h,variant=fallenSoldierVariant(h)){
  if(!h||h.alive||h.frontRetired||h.fallenSpriteRecorded||!Number.isFinite(h.x)||!Number.isFinite(h.y))return;
  h.fallenSpriteRecorded=true;
  const impact=h.fallImpactAngle??h.sniperFallA,angle=Number.isFinite(impact)?impact:Number.isFinite(h.face)?h.face:0;
- fallenEnemies.push({variant,x:h.x,y:h.y,dx:Math.cos(angle)*18,dy:Math.sin(angle)*18,flip:Math.cos(angle)<0?-1:1,age:0,floor:stageMode==='indoor'?(h.indoorFloor??indoorWorld?.currentFloor??0):null});
+ fallenEnemies.push({variant,x:h.x,y:h.y,dx:Math.cos(angle)*18,dy:Math.sin(angle)*18,flip:Math.cos(angle)<0?-1:1,age:0,floor:stageMode==='indoor'?(h.indoorFloor??((indoorWorld?.currentFloor??0)+1)):null});
  if(fallenEnemies.length>FALLEN_ENEMY_LIMIT)fallenEnemies.shift();
 }
 function updateFallenEnemies(dt){
@@ -50,7 +51,7 @@ function updateFallenEnemies(dt){
  for(let i=fallenEnemies.length-1;i>=0;i--){
   const body=fallenEnemies[i];body.age+=dt;
   if(body.age>=ENEMY_CRY_LIFETIME){
-   const sameFloor=body.floor===null?stageMode!=='indoor':stageMode==='indoor'&&body.floor===indoorWorld?.currentFloor;
+   const sameFloor=body.floor===null?stageMode!=='indoor':stageMode==='indoor'&&body.floor===indoorWorld?.currentFloor+1;
    if(sameFloor)burst(body.x+body.dx,body.y+body.dy,18,'#8fd7ff',180);
    fallenEnemies.splice(i,1);
   }
@@ -59,7 +60,7 @@ function updateFallenEnemies(dt){
 function drawFallenEnemies(cx,cy){
  for(let i=fallenEnemies.length-1;i>=0;i--){
   const body=fallenEnemies[i];
-  const sameFloor=body.floor===null?stageMode!=='indoor':stageMode==='indoor'&&body.floor===indoorWorld?.currentFloor;
+  const sameFloor=body.floor===null?stageMode!=='indoor':stageMode==='indoor'&&body.floor===indoorWorld?.currentFloor+1;
   const t=Math.min(1,body.age/ENEMY_CRY_FLIGHT_DURATION),flying=t<1,lift=flying?Math.sin(Math.PI*t)*36:0;
   const x=body.x+body.dx*t,y=body.y+body.dy*t-lift,size=FALLEN_ENEMY_SIZE*(flying?ENEMY_CRY_FLY_SCALE:ENEMY_CRY_SIT_SCALE),radius=size*.6;
   if(!sameFloor||x+radius<cx||x-radius>cx+W||y+radius<cy||y-radius>cy+H){fallenEnemies.splice(i,1);continue;}
