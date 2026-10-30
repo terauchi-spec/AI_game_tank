@@ -42,8 +42,8 @@ test('old awards remain stored but never expand the 34-title collection or grant
  const c=harness(),titles={v2_single_1_elite:{count:7,at:'old'},v3_single_1_elite:{count:4,at:'old'},v3_ghost_agent:{count:2}};
  c.saved.set(c.get('TITLE_ARCHIVE_KEY'),JSON.stringify({titles,medals:{untouched:{count:2}},runs:8}));const a=c.readTitleArchive();assert.equal(a.titles.v2_single_1_elite.count,7);assert.equal(a.titles.v3_single_1_elite.count,4);assert.equal(a.medals.untouched.count,2);assert.equal(a.runs,8);assert.equal(a.titles.v3_legend_1,undefined);assert.equal(c.get('TITLE_CATALOG.length'),34);
 });
-test('fifth upper-title acquisition earns a new legend without double counting a run',()=>{
- const c=harness();for(let n=1;n<=5;n++){const s=c.scoreStats=Object.assign(c.newScoreStats(),rich,{final:{cleared:true,total:1000},vehicleKinds:{tank:true}});c.recordRunAchievements(s);c.recordRunAchievements(s);assert.equal(!!c.readTitleArchive().titles.v3_legend_1,n===5);}assert.equal(c.readTitleArchive().titles.v3_single_1_elite.count,5);assert.equal(c.readTitleArchive().runs,5);
+test('third upper-title acquisition earns a new legend without double counting a run',()=>{
+ const c=harness();for(let n=1;n<=3;n++){const s=c.scoreStats=Object.assign(c.newScoreStats(),rich,{final:{cleared:true,total:1000},vehicleKinds:{tank:true}});c.recordRunAchievements(s);c.recordRunAchievements(s);assert.equal(!!c.readTitleArchive().titles.v3_legend_1,n===3);}assert.equal(c.readTitleArchive().titles.v3_single_1_elite.count,3);assert.equal(c.readTitleArchive().runs,3);
 });
 test('debug results persist achievements',()=>{
  const c=harness(),s=Object.assign(c.scoreStats,rich,{debugUsed:true,final:{cleared:true,total:1000}});c.recordRunAchievements(s);assert.equal(c.readTitleArchive().runs,1);assert.equal(s.awards.disabled,false);assert.ok(s.awards.newTitles.length>0);
@@ -132,7 +132,7 @@ test('an already complete collection receives mythic on load without resetting c
 });
 test('debug saves the final title and mythic, and mythic has the highest priority',()=>{
  const c=harness(),ids=Array.from(c.get('TITLE_COLLECTION_TARGETS')),titles=Object.fromEntries(ids.filter(id=>id!=='v3_single_0_elite').map(id=>[id,{count:1}]));c.saved.set(c.get('TITLE_ARCHIVE_KEY'),JSON.stringify({titles,runs:2}));
- const s=Object.assign(c.scoreStats,rich,{debugUsed:true,final:{cleared:true,total:1000}});c.recordRunAchievements(s);assert.equal(s.awards.disabled,false);assert.equal(c.readTitleArchive().titles.v3_mythic_complete.count,1);assert.equal(c.readTitleArchive().runs,3);assert.equal(c.get('TITLE_MYTHIC.type'),'神話級');assert.ok(c.get('TITLE_CATALOG.filter(t=>!t.collection).every(t=>t.priority<TITLE_MYTHIC.priority)'));
+ const s=Object.assign(c.scoreStats,rich,{debugUsed:true,final:{cleared:true,total:1000}});c.recordRunAchievements(s);assert.equal(s.awards.disabled,false);assert.equal(c.readTitleArchive().titles.v3_mythic_complete.count,1);assert.equal(c.readTitleArchive().runs,3);assert.equal(c.get('TITLE_MYTHIC.type'),'神話級実績');assert.ok(c.get('TITLE_CATALOG.filter(t=>!t.collection).every(t=>t.priority<TITLE_MYTHIC.priority)'));
 });
 
 function stageHarness(cleared=[]){

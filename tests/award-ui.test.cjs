@@ -24,12 +24,12 @@ test('legacy award data never inflates the visible 34 titles',()=>{
 
 test('a completed archive shows all 34 titles and the no-ribbon mythic graphic',()=>{
  const c=harness(),ids=Array.from(c.run('TITLE_COLLECTION_TARGETS'));c.storage.set(c.run('TITLE_ARCHIVE_KEY'),JSON.stringify({titles:Object.fromEntries(ids.map(id=>[id,{count:1}])),runs:32}));c.openTrophyArchive();assert.match(c.nodes.get('trophyOverview').innerHTML,/>34<\/strong> \/ 34/);
- const myth=c.nodes.get('trophyGrid').children.find(card=>card.classList.contains('mythic'));assert.ok(myth);assert.ok(!myth.className.includes('locked'));assert.match(myth.children[1].innerHTML,/v3_mythic_complete\.webp/);assert.equal(myth.children[0].children[0].textContent,'神話級');assert.equal(myth.children[0].children[1].textContent,'戦場の神話');
+ const myth=c.nodes.get('trophyGrid').children.find(card=>card.classList.contains('mythic'));assert.ok(myth);assert.ok(!myth.className.includes('locked'));assert.match(myth.children[1].innerHTML,/v3_mythic_complete\.webp/);assert.equal(myth.children[0].children[0].textContent,'神話級実績');assert.equal(myth.children[0].children[1].textContent,'戦場の神話');
 });
 
 test('the all-stage legendary stays immediately before mythic even when one is locked',()=>{
  const c=harness();c.storage.set(c.run('TITLE_ARCHIVE_KEY'),JSON.stringify({titles:{v3_mythic_complete:{count:1}},runs:32}));c.openTrophyArchive();
- const cards=c.nodes.get('trophyGrid').children;assert.match(cards.at(-2).children[1].innerHTML,/v3_all_stages_clear\.webp/);assert.match(cards.at(-1).children[1].innerHTML,/v3_mythic_complete\.webp/);assert.equal(cards.at(-2).children[0].children[0].textContent,'伝説級');
+ const cards=c.nodes.get('trophyGrid').children;assert.match(cards.at(-2).children[1].innerHTML,/v3_all_stages_clear\.webp/);assert.match(cards.at(-1).children[1].innerHTML,/v3_mythic_complete\.webp/);assert.equal(cards.at(-2).children[0].children[0].textContent,'伝説級実績');
 });
 
 test('all 16 career ranks use distinct current titles and general requires all 34',()=>{
@@ -61,4 +61,12 @@ test('prominent collection rank agrees on both screens and stats, ignores repeat
  c.nodes.get('trophyTabStats').click();assert.equal(c.nodes.get('trophyCareerRank').innerHTML,result);
  c.recordRunAchievements(c.scoreStats);assert.equal(c.careerRank().total,rank.total);
  c.storage.set(c.run('TITLE_ARCHIVE_KEY'),JSON.stringify({titles:{},runs:0}));c.renderTrophyArchive();assert.match(c.nodes.get('trophyCareerRank').innerHTML,/career-rank-name">二等兵<\/strong>/);
+});
+
+
+test('renamed achievement categories retain elite conditions and legendary/mythic styling; title buttons are reordered',()=>{
+ const c=harness();assert.equal(c.run('TITLE_CATALOG.filter(t=>t.id.startsWith("v3_single_")&&t.type==="実績").length'),16);assert.equal(c.run('TITLE_CATALOG.filter(t=>t.type==="複合実績").length'),4);
+ assert.equal(c.run('TITLE_CATALOG.filter(t=>t.legendFrom).every(t=>t.note.includes("累計3回獲得")&&t.threshold===5&&t.evidence==="elite")'),true);
+ assert.match(c.run('renderAwardChip(TITLE_CATALOG.find(t=>t.legendFrom))'),/res-award-chip legendary/);assert.match(c.run('renderAwardChip(TITLE_MYTHIC)'),/res-award-chip mythic/);
+ const order=html.match(/<div class="title-secondaries">([\s\S]*?)<\/div>/)[1];assert.ok(order.indexOf('id="titleAwards"')<order.indexOf('id="titleLeaderboard"'));assert.match(order,/id="titleAwards">称号・戦績<\/button>/);
 });

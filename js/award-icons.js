@@ -98,5 +98,5 @@ function awardIcon(entry,kind='title'){
 }
 function renderAwardChip(entry,kind='title',fresh=false){
  if(!entry)return '';
- return '<span class="res-award-chip'+(fresh?' new':'')+(entry.type==='神話級'?' mythic':entry.type==='伝説級'?' legendary':'')+'">'+awardIcon(entry,kind)+'<span class="award-chip-label">'+(fresh?'<span class="award-new">NEW! </span>':'')+escapeAwardText(entry.name)+'</span></span>';
+ return '<span class="res-award-chip'+(fresh?' new':'')+(entry.type==='神話級実績'?' mythic':entry.type==='伝説級実績'?' legendary':'')+'">'+awardIcon(entry,kind)+'<span class="award-chip-label">'+(fresh?'<span class="award-new">NEW! </span>':'')+escapeAwardText(entry.name)+'</span></span>';
 }
