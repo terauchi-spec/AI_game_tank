@@ -19,7 +19,7 @@ no repeated DOM writes. Field props and training guards are bounded.
 | 2 Bomb | Place/detonate an actual bomb and destroy the barrel | Non-bomb removal cannot clear |
 | 3 Bush | Stay inside the natural seven-bush patch, unseen, for 2 consecutive seconds | Seen, guard hurt/killed, or destroyed/burning bush resets this step |
 | 4 Stun | Use A from behind to stun both live guards without detection | Front approach, detection or bomb casualties reset this step; both guards disappear on clear |
-| 5 Vehicle | Board the training tank and actually fire cannon and MG | Both real fire calls required; unlimited supplies and no damage |
+| 5 Vehicle | Board the training tank and actually fire cannon once and MG at least three times | One cannon and three real MG fire calls required; unlimited supplies and no damage |
 | 6 Turret | Destroy four cardinal targets with cannon direct hits or MG | Hull movement/dismount disabled; bombs and blast-radius hits do not count |
 
 There are no ordinary enemy spawns. The same grass patch, player position and two guards carry directly from hiding into the stun drill. Failed stun attempts restore that transition checkpoint. The guards begin on the left/right sides of the patch; discovery calls the normal found-mode reaction (face the player, red ! and detection sound), then resets after 1.2 seconds. Only the two non-firing tutorial guards appear
@@ -28,7 +28,7 @@ only rear-angle requirement. Other steps contain no enemy soldiers. Checkpoints,
 guards, bombs, bullets, fire, fallen sprites and timer counters reset together.
 
 An invisible north boundary limits both player progress and camera exposure until each clear; there is no dashed line or boundary caption.
-The last drill uses a centered camera and targets sized/spaced to the viewport.
+The last drill uses a centered camera and targets sized/spaced to the viewport. Targets are round bullseyes on poles with no direction labels. A direct cannon hit invokes the common cannon impact/explosion; MG hits use the smaller break effect. Step 5 shows completed weapons as red circles and displays MG progress out of three.
 Normal collisions, bomb burning/explosion, boarding and projectile hit handling are
 reused. Hooks into those systems are gated strictly by `stageMode==='training'`.
 The chosen skill is retained in selection state, but infantry skill use in training

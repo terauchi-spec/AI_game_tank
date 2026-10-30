@@ -35,7 +35,8 @@ test('two back A interactions clear stun training; a frontal interaction restart
 });
 test('boarding a real tank and firing both weapons is required before the four stationary targets',()=>{
  const h=fixture();h.lesson(5);h.run('p.x=training.vehicle.x;p.y=training.vehicle.y+40;interact=true;update(.01)');assert.equal(h.run('p.tank===training.vehicle'),true);
- h.run('keys.KeyD=true;update(.01);keys.KeyD=false');assert.equal(h.run('training.shots.c'),true);assert.equal(h.run('training.phase'),'active');h.run('keys.KeyS=true;update(.01);keys.KeyS=false');assert.equal(h.run('training.shots.v'),true);assert.equal(h.run('training.phase'),'clearPending');const y=h.run('p.y');
+ h.run('keys.KeyD=true;update(.01);keys.KeyD=false');assert.equal(h.run('training.shots.c'),true);assert.equal(h.run('training.phase'),'active');for(let count=1;count<=3;count++){h.run('keys.KeyS=true;update(.01);keys.KeyS=false');assert.equal(h.run('training.shots.v'),count);assert.equal(h.run('training.phase'),count<3?'active':'clearPending');if(count<3)h.tick(.2);}
+ const y=h.run('p.y');
  h.tick(3.1);assert.equal(h.run('training.step'),6);assert.equal(h.run('objects.length'),4);assert.equal(h.run('p.y'),y);h.talk();h.run('keys.ArrowUp=true;keys.ArrowLeft=true;update(.5)');assert.equal(h.run('p.y'),y);assert.equal(h.run('p.x'),h.run('training.anchor.x'));assert.equal(h.run('p.body'),h.run('training.anchor.body'));
 });
 test('actual tank projectiles destroy all four targets; blast radius and bombs cannot skip them',()=>{
@@ -145,4 +146,17 @@ test('each lesson plays the existing capture sound once when the delayed clear b
   h.run('trainingClearLesson()');const count=h.c.clearSounds.filter(n=>n==='capture').length;h.tick(1.95);assert.equal(h.c.clearSounds.filter(n=>n==='capture').length,count);h.tick(.05);assert.equal(h.c.clearSounds.filter(n=>n==='capture').length,count+1);h.tick(.5);assert.equal(h.c.clearSounds.filter(n=>n==='capture').length,count+1);
  }
  assert.equal(h.run('TRAINING_LESSONS[5].lines[0]'),'最後はこの戦場でもっとも重要な戦車の訓練です');
+});
+
+test('shot counters use red circles only after a real cannon shot and at least three actual MG rounds',()=>{
+ const h=fixture();h.lesson(5);h.run('p.tank=training.vehicle;syncTrainingHud()');assert.equal(h.nodes.get('trainingTask').textContent,'主砲 —　マシンガン — 0 / 3発');
+ h.run("fire(p.x,p.y,0,'ally','v',630,700,1)");assert.equal(h.run('training.shots.v'),0);
+ h.run("fire(p.x,p.y,0,'p','c',630,700,3);training.hudKey='';syncTrainingHud()");assert.match(h.nodes.get('trainingTask').textContent,/主砲 🔴/);
+ for(let n=1;n<=3;n++){h.run("fire(p.x,p.y,0,'p','v',630,700,1);training.hudKey='';syncTrainingHud();updateTrainingMission(.01)");assert.equal(h.run('training.shots.v'),n);assert.equal(h.run('training.phase'),n<3?'active':'clearPending');assert.ok(h.nodes.get('trainingTask').textContent.includes('マシンガン '+(n<3?'—':'🔴')+' '+n+' / 3発'));}
+});
+test('a direct cannon hit on a target uses the standard explosion once, while MG hits keep their smaller effect',()=>{
+ const h=fixture();h.lesson(5);h.run('p.tank=training.vehicle;p.x=training.vehicle.x;p.y=training.vehicle.y;trainingEnterLesson(6)');h.talk();h.c.targetSounds=[];h.run('sfx=(name)=>targetSounds.push(name)');
+ h.run("var target=training.targets[0],angle=-Math.PI/2;fire(p.x,p.y-44,angle,'p','c',630,700,3)");h.tick(.35);assert.equal(h.run('training.targets[0].hit'),true);assert.equal(h.c.targetSounds.filter(n=>n==='shellExplosion').length,1);assert.ok(h.run('fx.length>0'));assert.ok(h.run('flash>0'));assert.equal(h.run('training.targets.filter(t=>t.hit).length'),1);
+ h.run("var target=training.targets[1],angle=0;fire(p.x+44,p.y,angle,'p','v',630,700,1)");h.tick(.35);assert.equal(h.run('training.targets[1].hit'),true);assert.equal(h.c.targetSounds.filter(n=>n==='shellExplosion').length,1);assert.ok(h.c.targetSounds.includes('coverBreak'));
+ h.run('draw(null);drawMission()');assert.equal(h.run('training.targets.every(t=>!("label" in t))'),true);
 });
