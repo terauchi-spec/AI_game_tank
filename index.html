@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.30.2330</title>
+<title>こっそり戦車大作戦 2026.10.30.2333</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -622,7 +622,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 1250ms ease-o
 <link rel="stylesheet" href="css/developer.css?v=2026.10.28.0713">
 <link rel="stylesheet" href="css/leaderboard.css?v=2026.10.28.0713">
 <link rel="stylesheet" href="css/intro.css?v=2026.10.30.2330">
-<link rel="stylesheet" href="css/training.css?v=2026.10.30.2030">
+<link rel="stylesheet" href="css/training.css?v=2026.10.30.2333">
 <link rel="stylesheet" href="css/unlocks.css?v=2026.10.29.1223">
 </head>
 <body>
@@ -633,7 +633,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 1250ms ease-o
 <button id="debugRoutesBtn" type="button" aria-label="巡回ルート表示切替" title="巡回ルート表示切替" aria-pressed="false"><span class="icon" aria-hidden="true">↝</span><span class="key">L</span></button>
 <div id="debugBadge" hidden><span id="debugBadgeText">無敵モード</span><button id="mazeCompareButton" type="button" hidden>比較：通常 → 敵移動停止</button></div>
 <div id="pad"><div id="stick"><div id="knob"></div><span id="continuousStop">停止</span></div><div class="btns"><button class="b" id="skillBtn" data-k="KeyS"><span class="coolRing" id="skillCooldown"></span><span class="coolText" id="skillCooldownText"></span><b>S</b><small id="skillLabel">スキル</small></button><button class="b" id="actionBtn" type="button"><span class="coolRing" id="actionCooldown"></span><span class="coolText" id="actionCooldownText"></span><b id="actionGlyph">B</b><small id="actionLabel">爆弾</small></button><button class="b" data-k="KeyA"><b>A</b><small>操作</small></button><div id="continuousWait">待機</div><div id="continuousSurface" aria-label="B・A・Sのスライド操作領域"></div><p id="continuousHint">指を置いたまま 待機 ⇄ B・A・S<br>左スティックは中央で停止</p></div></div>
-<div id="trainingAdvance" role="button" tabindex="0" aria-label="画面をタップして次のセリフへ" hidden></div><section id="trainingGuide" aria-label="訓練アシスタント" hidden><img src="assets/ui/training/assistant.svg" width="72" height="72" alt="女性の訓練アシスタント"><div class="training-speech"><p id="trainingText" aria-live="off"></p><span id="trainingContinue" aria-hidden="true" hidden>▼</span></div></section><div id="trainingTask" role="status" aria-label="訓練の目標" hidden></div><div id="trainingClear" role="status" hidden>クリア</div>
+<div id="trainingAdvance" role="button" tabindex="0" aria-label="画面をタップして次のセリフへ" hidden></div><section id="trainingGuide" aria-label="戦場アシスタントのアイラ" hidden><span class="training-portrait"><img src="assets/characters/battlefield-assistant.webp" width="1024" height="1536" alt="戦場アシスタントのアイラ" decoding="async"></span><div class="training-speech"><p id="trainingText" aria-live="off"></p><span id="trainingContinue" aria-hidden="true" hidden>▼</span></div></section><div id="trainingTask" role="status" aria-label="訓練の目標" hidden></div><div id="trainingClear" role="status" hidden>クリア</div>
 <div id="titleScreen" role="region" aria-label="タイトル画面"><div class="title-wrap">
 <div class="title-hero"><img class="title-art" alt="戦場を見下ろす兵士と戦車のイラスト" src="assets/ui/title_hero.webp?v=2026.10.14.1653"><div class="title-hero-text"><div class="title-tag">TACTICAL ACTION GAME</div><h1 class="title-main"><img class="title-logo" src="assets/ui/title_logo.webp?v=2026.10.14.1653" alt="こっそり戦車大作戦"></h1></div></div>
 <nav class="title-actions" aria-label="タイトルメニュー">
@@ -996,7 +996,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.30.2330',FILE_CREATED_AT='2026/10/30 23:30',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.30.2333',FILE_CREATED_AT='2026/10/30 23:33',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
