@@ -10,7 +10,7 @@ function harness({storage=new Map(),fail=false,reducedMotion=true}={}){
  c.rollSkillChoices=()=>c.rolls++;
  vm.createContext(c);vm.runInContext(source,c);
  const next=()=>{c.now+=500;get('introConversation').events.click({target:{closest:()=>null}});},submit=value=>{get('introName').value=value;get('introNameForm').events.submit({preventDefault(){}});};
- const toName=()=>{for(let i=0;i<5;i++)next();},finish=()=>{for(let i=0;i<5;i++)next();};return {c,get,classes,storage,next,submit,toName,finish,timers,tick(){const [id,fn]=timers.entries().next().value;timers.delete(id);fn();}};
+ const toName=()=>{for(let i=0;i<4;i++)next();},finish=()=>{for(let i=0;i<5;i++)next();};return {c,get,classes,storage,next,submit,toName,finish,timers,tick(){const [id,fn]=timers.entries().next().value;timers.delete(id);fn();}};
 }
 test('first start shows instructor 0 and first page, then saves name and opens personalized second page before skills',()=>{
  const h=harness(),{c,get}=h;c.startFromTitle();assert.equal(c.state,'intro');assert.equal(c.rolls,0);assert.ok(h.classes.has('intro-open'));assert.ok(!h.classes.has('title-open'));assert.match(get('introInstructor').src,/instructor_0.webp/);assert.equal(get('introDialogue').textContent,'よくきたな！');
@@ -56,12 +56,12 @@ test('intro copy explicitly overrides the legacy mobile paragraph hiding while h
 
 test('each window tap advances one phrase, ignores form taps and double taps, and final conversation uses the saved name',()=>{
  const h=harness();h.c.startFromTitle();const seen=[h.get('introDialogue').textContent];
- for(let i=0;i<4;i++){h.next();seen.push(h.get('introDialogue').textContent);assert.equal(h.get('introNameForm').hidden,true);}
- assert.equal(seen.length,new Set(seen).size);assert.match(seen.join(''),/よくきたな！ここは、こっそり戦車師団/);assert.match(seen[4],/自分の名前もなのらん/);h.next();assert.equal(h.get('introNameForm').hidden,false);
+ for(let i=0;i<3;i++){h.next();seen.push(h.get('introDialogue').textContent);assert.equal(h.get('introNameForm').hidden,true);}
+ assert.equal(seen.length,new Set(seen).size);assert.match(seen.join(''),/よくきたな！ここは、こっそり戦車師団/);assert.equal(seen[2],'オマエさんにはこれから、こっそり戦車大隊の隊長となってもらう');assert.equal(seen[3],'まずは名前を教えてもらおう');assert.ok(!seen.includes('・・・'));h.next();assert.equal(h.get('introNameForm').hidden,false);
  h.get('introConversation').events.click({target:{closest:()=>({})}});assert.equal(h.get('introNameForm').hidden,false);
  h.submit('タンク');const second=[h.get('introDialogue').textContent];h.get('introConversation').events.click({target:{closest:()=>null}});assert.equal(h.get('introDialogue').textContent,second[0]);
  for(let i=0;i<4;i++){h.next();second.push(h.get('introDialogue').textContent);assert.equal(h.c.state,'intro');}
- assert.match(second.join(''),/ほほう、タンクか/);assert.match(second[3],/ではゆけ！タンクよ/);assert.match(second[4],/いきすぎたサバイバルゲームを決着させるのだ！/);assert.equal(h.get('introNext').attrs['aria-label'],'次のセリフへ');h.next();assert.equal(h.c.state,'intro');assert.equal(h.get('introDialogue').textContent,'よくきたわね！私はアイラ');
+ assert.match(second.join(''),/ほほう、タンクか/);assert.match(second[3],/ではゆけ！タンクよ/);assert.match(second[4],/この戦場にその名をしらしめるのだ！/);assert.equal(h.get('introNext').attrs['aria-label'],'次のセリフへ');h.next();assert.equal(h.c.state,'intro');assert.equal(h.get('introDialogue').textContent,'よくきたわね！私はアイラ');
 });
 test('Enter and Space advance the focused conversation once, while repeats do not',()=>{
  const h=harness();h.c.startFromTitle();h.c.now+=500;let prevented=false;h.get('introDialogue').events.keydown({key:'Enter',repeat:false,preventDefault(){prevented=true;}});assert.ok(prevented);assert.match(h.get('introDialogue').textContent,/司令本部/);h.c.now+=500;h.get('introDialogue').events.keydown({key:' ',repeat:true,preventDefault(){}});assert.match(h.get('introDialogue').textContent,/司令本部/);
@@ -111,10 +111,10 @@ test('instructor and Aira phrases use exactly one training speech cue, including
   const completeNext=()=>{h.c.finishIntroTyping();h.next();};
   h.c.startFromTitle();assert.deepEqual(sounds,['uiSelect']);
   h.c.finishIntroTyping();assert.equal(sounds.length,1);
-  for(let i=0;i<5;i++)completeNext();assert.equal(sounds.length,5);
-  h.submit('タンク');assert.equal(sounds.length,6);
-  for(let i=0;i<5;i++)completeNext();assert.equal(h.get('introInstructor').alt,'戦場アシスタントのアイラ');assert.equal(sounds.length,11);
+  for(let i=0;i<4;i++)completeNext();assert.equal(sounds.length,4);
+  h.submit('タンク');assert.equal(sounds.length,5);
+  for(let i=0;i<5;i++)completeNext();assert.equal(h.get('introInstructor').alt,'戦場アシスタントのアイラ');assert.equal(sounds.length,10);
   completeNext();completeNext();h.c.finishIntroTyping();h.c.now+=500;h.get('introSkipTraining').events.click();
-  assert.equal(sounds.length,14);assert.ok(sounds.every(key=>key==='uiSelect'));completeNext();assert.equal(sounds.length,14);assert.equal(h.c.state,'skill');
+  assert.equal(sounds.length,13);assert.ok(sounds.every(key=>key==='uiSelect'));completeNext();assert.equal(sounds.length,13);assert.equal(h.c.state,'skill');
  }
 });

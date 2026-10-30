@@ -72,9 +72,8 @@ function introDialogueLines(){
  if(introStep===0)return [
   'よくきたな！',
   'ここは、こっそり戦車師団の司令本部だ！',
-  '貴様にはこれから、こっそり戦車大隊の隊長となってもらう',
-  '・・・',
-  'ところで貴様は自分の名前もなのらんのか！？'
+  'オマエさんにはこれから、こっそり戦車大隊の隊長となってもらう',
+  'まずは名前を教えてもらおう'
  ];
  const name=readIntroName();
  return [
@@ -82,7 +81,7 @@ function introDialogueLines(){
   'なかなか良い名前ではないか',
   'その名にはじぬよう、一人前のこっそり兵士をめざすがよい',
   'ではゆけ！'+name+'よ',
-  'いきすぎたサバイバルゲームを決着させるのだ！'
+  'この戦場にその名をしらしめるのだ！'
  ];
 }
 // Keyboard changes the visible viewport on iOS without shrinking the layout viewport.
