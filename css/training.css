@@ -8,3 +8,10 @@
 @media(max-width:580px){#trainingGuide{gap:7px;top:max(54px,calc(env(safe-area-inset-top,0px) + 48px))}#trainingGuide>img{width:50px;height:50px}.training-speech{padding:9px 10px}#trainingText{font-size:24px;line-height:1.65}}
 
 #trainingAdvance{position:fixed;inset:0;z-index:50;touch-action:manipulation;cursor:pointer;background:transparent}
+
+/* Keep the game menu above the dialogue tap surface, including during typing. */
+body:has(#trainingGuide:not([hidden])) #resetBtn{z-index:52}
+body.game-paused #trainingGuide,body.game-paused #trainingAdvance,body.game-paused #trainingClear{display:none!important}
+#trainingContinue{display:block;margin:4px 0 0 auto;width:48px;height:40px;color:#687748;font:22px/40px system-ui;text-align:center;animation:introArrowPulse 2s ease-in-out infinite}
+#trainingContinue[hidden]{display:none}
+@media(prefers-reduced-motion:reduce){#trainingContinue{animation:none}}

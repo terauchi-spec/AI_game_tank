@@ -79,8 +79,20 @@ test('hiding flows directly into stuns with the same player, bushes and patrol; 
 });
 test('full-screen conversation taps advance once, clear controls, and do not advance during drills or pause',()=>{
  const h=fixture();let prevented=0,stopped=0;h.c.tapEvent={type:'click',preventDefault(){prevented++},stopPropagation(){stopped++}};
- h.run('keys.ArrowUp=true;bombReq=true;trainingScreenAdvance(tapEvent)');assert.equal(h.run('training.line'),1);assert.equal(h.run('keys.ArrowUp||bombReq'),false);assert.equal(prevented,1);assert.equal(stopped,1);
- h.run("state='paused';trainingScreenAdvance(tapEvent)");assert.equal(h.run('training.line'),1);h.run("state='play';trainingScreenAdvance(tapEvent);trainingScreenAdvance(tapEvent)");assert.equal(h.run('training.phase'),'clear');assert.equal(h.nodes.get('trainingAdvance').hidden,true);
+ h.run('training.typed=training.lines[0].length;keys.ArrowUp=true;bombReq=true;trainingScreenAdvance(tapEvent)');assert.equal(h.run('training.line'),1);assert.equal(h.run('keys.ArrowUp||bombReq'),false);assert.equal(prevented,1);assert.equal(stopped,1);
+ h.run("state='paused';trainingScreenAdvance(tapEvent)");assert.equal(h.run('training.line'),1);h.run("state='play';while(training.phase==='talk')trainingScreenAdvance(tapEvent)");assert.equal(h.run('training.phase'),'clear');assert.equal(h.nodes.get('trainingAdvance').hidden,true);
  const line=h.run('training.line');h.run('trainingScreenAdvance(tapEvent)');assert.equal(h.run('training.line'),line);
  h.lesson(2);assert.equal(h.run('training.phase'),'active');h.run('trainingScreenAdvance(tapEvent)');assert.equal(h.run('training.phase'),'active');
+});
+
+test('assistant types at instructor speed, reveals a line before advancing, and shows the triangle only when ready',()=>{
+ const h=fixture();h.storage.set('tankGamePlayerNameV1','テスト');h.run('trainingTalk(TRAINING_LESSONS[1].lines);syncTrainingHud()');assert.equal(h.run('training.lines[0]'),'こっそり訓練施設にようこそ！');assert.equal(h.run('training.lines[1]'),'ここでは戦場の基本を、テストさんに学んでもらいます');
+ assert.equal(h.nodes.get('trainingText').textContent,'こ');assert.equal(h.nodes.get('trainingContinue').hidden,true);
+ h.tick(.12,.04);h.run('syncTrainingHud()');assert.equal(h.run('training.typed'),4);assert.equal(h.nodes.get('trainingText').textContent,'こっそり');
+ h.run('trainingAdvanceDialogue();syncTrainingHud()');assert.equal(h.run('training.line'),0);assert.equal(h.nodes.get('trainingContinue').hidden,false);assert.equal(h.nodes.get('trainingText').textContent,h.run('training.lines[0]'));
+ h.run('trainingAdvanceDialogue();syncTrainingHud()');assert.equal(h.run('training.line'),1);assert.equal(h.nodes.get('trainingContinue').hidden,true);
+ const typed=h.run('training.typed');h.run("state='paused';update(1);syncTrainingHud()");assert.equal(h.run('training.typed'),typed);assert.equal(h.nodes.get('trainingAdvance').hidden,true);assert.equal(h.nodes.get('trainingContinue').hidden,true);
+ h.run("state='play';update(.08);syncTrainingHud()");assert.equal(h.run('training.typed'),typed+2);assert.equal(h.nodes.get('trainingAdvance').hidden,false);
+ h.tick(3);h.run('syncTrainingHud()');assert.equal(h.nodes.get('trainingContinue').hidden,false);
+ h.c.matchMedia=()=>({matches:true});h.run('trainingTalk(["動きを減らす設定"]);syncTrainingHud()');assert.equal(h.nodes.get('trainingText').textContent,'動きを減らす設定');assert.equal(h.nodes.get('trainingContinue').hidden,false);
 });

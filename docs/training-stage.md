@@ -9,7 +9,7 @@ New players see it selected first until training is completed; the completion ke
 The guide uses a lightweight SVG portrait of a female military assistant, a speech
 bubble, screen-wide tap-to-advance dialogue and an optional step-clear overlay. Dialogues
 and the 1.05-second clear presentation freeze simulation using the existing update
-loop; there are no additional polling or animation timers. Pausing also pauses the
+loop; there are no additional polling or animation timers. Dialogue reveals one character per 40 ms using the same game loop; a tap reveals the full current line before advancing. A pulsing triangle appears once that line is complete. The menu stays above the tap surface, and opening it hides the guide and pauses typing. The greeting reads the saved player name. Pausing also pauses the
 training. Active progress text is updated at most 10 Hz; inactive training performs
 no repeated DOM writes. Field props and training guards are bounded.
 

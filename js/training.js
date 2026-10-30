@@ -2,7 +2,7 @@
 let training=null;
 const TRAINING_DONE_KEY='tankGameTrainingCompleteV1';
 const TRAINING_LESSONS={
- 1:{name:'訓練を始めよう',y:12500,gate:12380,lines:['訓練施設へようこそ！基本操作を一緒に練習しましょう','左スティックで移動します。中央の「停止」に戻すと、指を置いたまま止まれます','ここではダメージを受けません。まずは前へ進んでみましょう']},
+ 1:{name:'訓練を始めよう',y:12500,gate:12380,lines:['こっそり訓練施設にようこそ！','ここでは戦場の基本を、{こっそりネーム}さんに学んでもらいます','左スティックで移動します。中央の「停止」に戻すと、指を置いたまま止まれます','ここではダメージを受けません。まずは前へ進んでみましょう']},
  2:{name:'設置爆弾',y:12100,gate:11820,lines:['まずは、設置爆弾の使い方です','ドラム缶に近づいて、爆弾を設置したら（Bボタン）、少し離れて起爆させてみましょう（再度Bボタン）']},
  3:{name:'草むらに隠れる',y:11080,gate:10740,lines:['次は、敵にみつからないように草むらに入ってみましょう','草むらの中は、敵から見つかりにくくなります','見つからずに草むらの中で2秒待てたらクリアです']},
  4:{name:'背後から気絶',y:11080,gate:10740,lines:['それでは、後ろから近づいて2人の敵を気絶させてみましょう（敵近くでA）','前から見つかったり、爆弾で倒してしまったら、この練習をやり直します']},
@@ -15,13 +15,22 @@ function trainingClearInput(){
  if(typeof window.trainingClearInputs==='function')window.trainingClearInputs();
  else{for(const k in keys)keys[k]=false;bombReq=false;cannonReq=false;interact=false;skillReq=false;mdown=false;}
 }
+function trainingStartTyping(){
+ const t=training,text=t.lines[t.line];t.typed=matchMedia('(prefers-reduced-motion: reduce)').matches?text.length:1;t.typeElapsed=0;t.hudKey='';
+}
+function updateTrainingTyping(dt){
+ const t=training,text=t.lines[t.line];if(t.typed>=text.length)return;
+ t.typeElapsed+=dt;const count=Math.floor((t.typeElapsed+1e-8)/.04);if(!count)return;
+ t.typeElapsed-=count*.04;t.typed=Math.min(text.length,t.typed+count);t.hudKey='';
+}
 function trainingTalk(lines,after='active'){
- training.phase='talk';training.lines=lines;training.line=0;training.afterTalk=after;training.hudKey='';trainingClearInput();
+ training.phase='talk';training.lines=lines.map(line=>line.replace('{こっそりネーム}',readIntroName()||'こっそり兵士'));training.line=0;training.afterTalk=after;trainingStartTyping();trainingClearInput();
 }
 function trainingAdvanceDialogue(){
  if(stageMode!=='training'||state!=='play'||training?.phase!=='talk')return;
  trainingClearInput();
- if(++training.line<training.lines.length){training.hudKey='';return;}
+ if(training.typed<training.lines[training.line].length){training.typed=training.lines[training.line].length;training.hudKey='';return;}
+ if(++training.line<training.lines.length){trainingStartTyping();return;}
  if(training.afterTalk==='finish'){finishTraining();return;}
  if(training.step===1){trainingClearLesson();return;}
  training.phase=training.afterTalk;training.hudKey='';
@@ -98,9 +107,11 @@ function finishTraining(){
 }
 function updateTrainingPresentation(dt){
  if(stageMode!=='training'||!training)return false;
+ if(state!=='play')return true;
  p.hp=3;weather='clear';rainIntensity=0;weatherNext=1e9;
  if(p.tank){p.tank.c=p.tank.t.cmax;p.tank.v=p.tank.t.vmax;p.tank.f=p.tank.t.fmax;p.tank.ch=0;p.tank.mgHits=0;}
  if(training.phase==='talk'||training.phase==='clear'){
+  if(training.phase==='talk')updateTrainingTyping(dt);
   if(training.phase==='clear'){
    training.clearT-=dt;
    if(training.clearT<=0){if(training.step===6)trainingTalk(TRAINING_FINALE,'finish');else trainingEnterLesson(training.step+1);}
@@ -175,11 +186,12 @@ function syncTrainingHud(){
  const guide=document.getElementById('trainingGuide'),clear=document.getElementById('trainingClear'),advance=document.getElementById('trainingAdvance');
  const active=stageMode==='training'&&state==='play'&&!!training;
  const talking=active&&training.phase==='talk';if(advance.hidden===talking)advance.hidden=!talking;
+ const arrow=document.getElementById('trainingContinue'),ready=talking&&training.typed>=training.lines[training.line].length;if(arrow.hidden===ready)arrow.hidden=!ready;
  if(guide.hidden===active)guide.hidden=!active;const clearVisible=active&&training.phase==='clear';if(clear.hidden===clearVisible)clear.hidden=!clearVisible;if(!active)return;
  const t=training,talk=t.phase==='talk',now=performance.now();
  if(t.hudKey&&now<t.hudAt&&t.hudPhase===t.phase&&t.hudLine===t.line)return;t.hudAt=now+100;t.hudPhase=t.phase;t.hudLine=t.line;
  const task=t.step===2?'ドラム缶を設置爆弾で爆破':t.step===3?'草むらに隠れる '+Math.min(2,t.hold).toFixed(1)+' / 2秒':t.step===4?'背後から気絶 '+humans.filter(h=>h.trainingAStun&&h.stun>0).length+' / 2人':t.step===5?'主砲 '+(t.shots.c?'✓':'—')+'　マシンガン '+(t.shots.v?'✓':'—'):t.step===6?'マト '+t.targets.filter(v=>v.hit).length+' / 4':'左スティックで移動';
- const text=talk?t.lines[t.line]:t.phase==='approach'?'前へ進んで、次の訓練に向かいましょう':task;
+ const text=talk?t.lines[t.line].slice(0,t.typed):t.phase==='approach'?'前へ進んで、次の訓練に向かいましょう':task;
  const key=t.step+'|'+t.phase+'|'+text;if(key===t.hudKey)return;t.hudKey=key;
  document.getElementById('trainingText').textContent=text;
 
