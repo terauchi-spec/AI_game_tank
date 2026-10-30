@@ -11,3 +11,5 @@
 /.assetsignore
 /server/
 /wrangler.json
+# Preserve PNG masters in GitHub; deploy only the optimized WebP assets.
+/assets/indoor/laboratory/*.png

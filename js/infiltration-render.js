@@ -51,6 +51,7 @@ function indoorSyncWallRasterMembers(){
   indoorRasterWallMembers=next;indoorRasterCovers=covers;indoorRasterCoverCount=covers.length;
 }
 function indoorRasterAssetStamp(layer){
+  if(typeof isLaboratoryStage==='function'&&isLaboratoryStage())return laboratoryAssetStamp()+'/'+indoorWorld.currentFloor;
   const ready=im=>assetOK(im)?(im.naturalWidth||im.width)+':'+(im.naturalHeight||im.height):'0';
   if(layer==='walls')return ready(COVER_IMG.maze_wall)+'/'+ready(COVER_IMG.maze_wall_vertical);
   if(layer==='floor')return indoorWorld.currentFloor+'/'+ready(indoorConcreteImage)+'/'+ready(TERRAIN_IMG['丘陵'])+'/'+ready(indoorPropImages.stairs_up)+'/'+ready(indoorPropImages.stairs_down);
@@ -101,7 +102,7 @@ function indoorDrawRasterLayer(layer,cx,cy,paint){
   // The desktop's existing half-size intermediate canvas stays unchanged.
   if(stageMode!=='indoor'||!indoorWorld||!MOBILE_VIEW)return false;
   if(indoorRasterWorld!==indoorWorld)indoorResetRenderCache();
-  if(layer==='walls'&&(!assetOK(COVER_IMG.maze_wall)||!assetOK(COVER_IMG.maze_wall_vertical)))return false;
+  if(layer==='walls'&&!(typeof isLaboratoryStage==='function'&&isLaboratoryStage())&&(!assetOK(COVER_IMG.maze_wall)||!assetOK(COVER_IMG.maze_wall_vertical)))return false;
   if(layer==='walls')indoorSyncWallRasterMembers();
   const t=INDOOR_RASTER_TILE,margin=24;
   const x0=Math.max(0,Math.floor((cx-margin)/t)),x1=Math.min(Math.ceil(WW/t)-1,Math.floor((cx+W+margin)/t));

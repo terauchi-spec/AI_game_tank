@@ -961,7 +961,7 @@ function drawInfiltrationLighting(cx,cy){
     indoorPaintLightingMask(q,left,top,mw,mh);
     cached=indoorShadeSnapshot={world:indoorWorld,x:left,y:top};
   }
-  gm.save();gm.drawImage(mask,cx-cached.x,cy-cached.y,W,H,0,0,W,H);gm.restore();
+  gm.save();if(typeof isLaboratoryStage==='function'&&isLaboratoryStage())gm.globalAlpha*=.35;gm.drawImage(mask,cx-cached.x,cy-cached.y,W,H,0,0,W,H);gm.restore();
 }
 
 const INDOOR_DOOR_WIDTH=84,INDOOR_DOOR_THICKNESS=6,INDOOR_DOOR_SPEED=5.2;
@@ -2755,6 +2755,7 @@ function drawInfiltrationExtraction(cx,cy){
 let indoorConcreteImage=null;
 const indoorConcretePatterns=new WeakMap();
 function indoorConcretePattern(){
+  if(typeof isLaboratoryStage==='function'&&isLaboratoryStage())return laboratoryFloorPattern(g);
   if(!indoorConcreteImage){
     indoorConcreteImage=new Image();indoorConcreteImage.decoding='async';
     indoorConcreteImage.src='assets/terrain/indoor_concrete.webp';
@@ -2782,7 +2783,7 @@ function drawInfiltrationFloors(cx,cy){
   if(!indoorWorld)return;
   const left=Math.max(0,cx-24),top=cy-24,right=Math.min(WW,cx+W+24),bottom=cy+H+24;
   // Upstairs has no exterior floor: use a flat void, never walkable ground.
-  g.fillStyle=indoorWorld.currentFloor===1?'#11171c':terrainSurfacePattern(indoorOutdoorTerrain)||indoorOutdoorTerrain.g;
+  g.fillStyle=typeof isLaboratoryStage==='function'&&isLaboratoryStage()?'#e0ebed':indoorWorld.currentFloor===1?'#11171c':terrainSurfacePattern(indoorOutdoorTerrain)||indoorOutdoorTerrain.g;
   g.fillRect(left,top,right-left,bottom-top);
   const concrete=indoorConcretePattern()||'#777975';
   for(const f of indoorWorld.floors){
@@ -2802,7 +2803,7 @@ function drawInfiltrationFloors(cx,cy){
     // inset rectangle or mat may imply a wall along their walkable boundary.
     for(const room of f.rooms){
       if(room.y+room.h<cy-40||room.y>cy+H+40)continue;
-      g.fillStyle=room.id%2===0?'rgba(34,41,33,.08)':'rgba(34,41,33,.12)';
+      g.fillStyle=typeof isLaboratoryStage==='function'&&isLaboratoryStage()?'rgba(123,211,225,.055)':room.id%2===0?'rgba(34,41,33,.08)':'rgba(34,41,33,.12)';
       for(const tile of room.tiles){
         if(tile.y+tile.h<cy-30||tile.y>cy+H+30)continue;
         // Adjacent same-room tiles share an open interior, never draw an internal wall.
@@ -2858,6 +2859,7 @@ function drawInfiltrationExitsForFloor(f,cx,cy){
 const indoorPropImages=Object.create(null);
 function indoorPropImage(kind){
   if(!kind)return null;
+  if(typeof isLaboratoryStage==='function'&&isLaboratoryStage()&&LABORATORY_ART[kind])return laboratoryImage(kind);
   if(!Object.prototype.hasOwnProperty.call(indoorPropImages,kind)){
     const image=new Image();image.decoding='async';
     image.src='assets/indoor/'+kind+'.webp'+(kind==='personal_lockers'?'?v=20261021-storage':kind==='automatic_door_horizontal_cyan'?'?v=20261021-door-slimlight':kind==='automatic_door_cyan'?'?v=20261021-continuous':INDOOR_PROP_ASPECT[kind]?'?v=20261020-r2':'');indoorPropImages[kind]=image;
@@ -2911,7 +2913,7 @@ function drawInfiltrationDoorPanels(q,open,half,part){
   const visible=sourceHalf*(1-open),verticalDepth=(INDOOR_DOOR_THICKNESS+4)*1.35;
   const top=q.vertical?-verticalDepth/2:-(INDOOR_DOOR_THICKNESS+4)/2;
   // Keep the old horizontal sprite's pixel scale; only the taller front extends downward.
-  const depth=q.vertical?verticalDepth:(INDOOR_DOOR_THICKNESS+7)*height/84;
+  const depth=q.vertical?verticalDepth:(INDOOR_DOOR_THICKNESS+7)*(typeof isLaboratoryStage==='function'&&isLaboratoryStage()?1:height/84);
   // Crop retracting leaves rather than squeezing the texture as the door opens.
   g.save();g.translate(q.x,q.y);if(q.vertical)g.rotate(Math.PI/2);
   g.drawImage(image,sourceHalf-visible,0,visible,height,-half,top,part,depth);

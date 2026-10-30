@@ -1,5 +1,6 @@
 // Stage progress is independent of skill unlocks and persists even when debug controls are used.
 let selectedStageId=null,expandedStageId=null,stageDebugAll=false;
+const LABORATORY_STAGE={id:'indoorLab',target:'先進科学研究所',name:'潜入（中級）',image:'laboratory/lab-building'};
 const TRAINING_STAGE={id:'training',target:'訓練場',name:'準備',image:'training'};
 const STAGE_PROGRESS_KEY='tankGameStageProgressV1';
 const STAGE_ORDER=[
@@ -12,9 +13,9 @@ const STAGE_ORDER=[
  {id:'decisive',target:'移動要塞',name:'決戦',image:'decisive'}
 ];
 const STAGE_DISPLAY_ORDER=STAGE_ORDER.map(stage=>stage.id);
-function stageDisplayNumber(id){if(id==='training')return '00';return String(STAGE_DISPLAY_ORDER.indexOf(id)+1).padStart(2,'0');}
+function stageDisplayNumber(id){if(id==='indoorLab')return 'TEST';if(id==='training')return '00';return String(STAGE_DISPLAY_ORDER.indexOf(id)+1).padStart(2,'0');}
 function stageSelectionName(name){return name.replace('拠点破壊','破壊').replace('前線制圧','制圧');}
-function currentStageId(){if(typeof isDecisiveStage==='function'&&isDecisiveStage())return 'decisive';return stageMode==='front'&&typeof frontlineOni!=='undefined'&&frontlineOni?'frontOni':stageMode==='front'&&frontlineBeginner?'frontBeginner':stageMode==='indoor'&&typeof indoorBeginner!=='undefined'&&indoorBeginner?'indoorBeginner':stageMode;}
+function currentStageId(){if(typeof isLaboratoryStage==='function'&&isLaboratoryStage())return 'indoorLab';if(typeof isDecisiveStage==='function'&&isDecisiveStage())return 'decisive';return stageMode==='front'&&typeof frontlineOni!=='undefined'&&frontlineOni?'frontOni':stageMode==='front'&&frontlineBeginner?'frontBeginner':stageMode==='indoor'&&typeof indoorBeginner!=='undefined'&&indoorBeginner?'indoorBeginner':stageMode;}
 function readStageProgress(){
  let saved;try{saved=JSON.parse(localStorage.getItem(STAGE_PROGRESS_KEY)||'null');}catch(_){}
  const earned=new Set();
@@ -46,6 +47,7 @@ function unlockStageOnClear(s){
 function stageAvailableForSelection(id,progress=readStageProgress()){
  if(id==='training')return true;
  const developer=typeof isDeveloperMode==='function'&&isDeveloperMode();
+ if(id==='indoorLab')return developer;
  return (id==='areaDebug'&&developer)||(STAGE_ORDER.some(stage=>stage.id===id)&&((developer&&stageDebugAll)||stageSelectable(id,progress)));
 }
 const STAGE_RECORDS_KEY='tankGameStageRecordsV1';
@@ -98,7 +100,7 @@ function setSelectedStage(id,toggle=true){
  if(toggle)expandedStageId=expandedStageId===id?null:id;else if(selectedStageId!==id)expandedStageId=null;
  selectedStageId=id;
  document.querySelectorAll('[data-stage]').forEach(card=>{const chosen=card.dataset.stage===id;card.classList.toggle('selected',chosen);card.setAttribute('aria-pressed',String(chosen));});
- const stage=id==='training'?TRAINING_STAGE:STAGE_ORDER.find(stage=>stage.id===id),button=document.getElementById('stageDeploy');
+ const stage=id==='training'?TRAINING_STAGE:id==='indoorLab'?LABORATORY_STAGE:STAGE_ORDER.find(stage=>stage.id===id),button=document.getElementById('stageDeploy');
  button.disabled=typeof gameBuildQueued!=='undefined'&&gameBuildQueued;
  button.textContent=id==='areaDebug'?'エリアデバッグへ':stage.name+'で出撃';
  renderStageRecords();
@@ -107,8 +109,9 @@ function setSelectedStage(id,toggle=true){
 function deploySelectedStage(){
  if(state!=='stage'||gameBuildQueued||!stageAvailableForSelection(selectedStageId))return false;
  const id=selectedStageId;selectedAreaDebug=null;if(typeof decisiveBattle!=='undefined')decisiveBattle=null;
+ indoorLaboratory=id==='indoorLab';if(indoorLaboratory&&typeof prepareLaboratoryAssets==='function')prepareLaboratoryAssets();
  areaDebugEnabled=id==='areaDebug';frontlineOni=false;frontlineBeginner=id==='frontBeginner';indoorBeginner=id==='indoorBeginner';
- stageMode=areaDebugEnabled?'base':frontlineBeginner||frontlineOni?'front':indoorBeginner?'indoor':id;
+ stageMode=areaDebugEnabled?'base':frontlineBeginner||frontlineOni?'front':indoorBeginner||indoorLaboratory?'indoor':id;
  if(areaDebugEnabled){state='areaPick';sfx('skill');return true;}
  return selectSkillIndex(skillMenuList().findIndex(skill=>skill.id===selectedSkillId),true);
 }
@@ -117,6 +120,7 @@ function renderStageLocks(){
  document.querySelectorAll('[data-stage]').forEach(button=>{
   const id=button.dataset.stage,index=STAGE_ORDER.findIndex(stage=>stage.id===id),stage=STAGE_ORDER[index];
   if(id==='training'){button.disabled=false;button.classList.toggle('locked',false);button.classList.toggle('stage-concealed',false);button.querySelector('.stage-target').textContent='訓練場';button.querySelector('.stage-number').textContent='00';button.setAttribute('aria-label','00 準備 訓練場');return;}
+  if(id==='indoorLab'){const visible=typeof isDeveloperMode==='function'&&isDeveloperMode();button.hidden=!visible;button.disabled=!visible;button.classList.toggle('locked',false);button.classList.toggle('stage-concealed',false);button.setAttribute('aria-label','テスト 潜入（中級） 先進科学研究所');return;}
   if(id==='areaDebug'){
    button.disabled=!(typeof isDeveloperMode==='function'&&isDeveloperMode());button.classList.toggle('locked',false);button.setAttribute('aria-label','エリアデバッグ');return;
   }

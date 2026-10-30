@@ -1,0 +1,50 @@
+[
+  {
+    "name": "lab-floor",
+    "prompt": "A square seamless tileable laboratory FLOOR SURFACE, flat directly overhead no perspective; edge-to-edge white porcelain tile grid, very fine pale gray joints, tiny subtle cyan inlaid seams. Uniform illumination and identical opposite edges, no shadow, no border frame. The square material tile itself is opaque white; everything outside the tile is transparent."
+  },
+  {
+    "name": "lab-wall-horizontal",
+    "prompt": "One straight modular wall segment seen from overhead with a visible SOUTH FRONT FACE. Very WIDE 3:1 horizontal rectangle, white ceramic wall top, silver frame, one clear cyan glass inset stripe in its front face. End faces straight to connect into walls, no objects attached. Long axis left to right. Crisp complete silhouette."
+  },
+  {
+    "name": "lab-wall-vertical",
+    "prompt": "One long narrow laboratory WALL segment in vertical NORTH-SOUTH orientation, seen directly from above. Tall slender 1:5 rectangle. White ceramic rectangular top, slim silver edge rails and transparent cyan inset glass on side, small visible bevel at bottom end. Straight ends for modular connections. No horizontal wall, no floor. Fully visible entire tall segment."
+  },
+  {
+    "name": "lab-bench",
+    "prompt": "One advanced laboratory workbench, rectangular long axis NORTH-SOUTH, length about twice its width. White ceramic worktop, clear cyan glass divider, compact microscope and a neat rack of transparent sample vials with pale blue liquid, silver legs barely visible. Top-down view, lower edge shows shallow front. Distinct worktable silhouette."
+  },
+  {
+    "name": "lab-storage",
+    "prompt": "One tall laboratory sample-storage cabinet in NORTH-SOUTH orientation, length about twice its width. White frame, clear blue glass panels showing neat transparent sample bottles and trays, silver latches. View from overhead with south/front face visible. Clean bright scientific sample storage, no weapons."
+  },
+  {
+    "name": "lab-analyzer",
+    "prompt": "One high-tech scientific analysis workstation, NORTH-SOUTH long narrow footprint about 1:2.5. White rectangular chassis, pale cyan transparent chamber, tiny luminous blue instrument readouts without text, compact round sample carousel and silver grilles. Bright clean overhead game prop."
+  },
+  {
+    "name": "lab-reactor",
+    "prompt": "One advanced laboratory cylindrical cell-culture bioreactor on a white rectangular base, vertical NORTH-SOUTH footprint about 1:1.5. Transparent cyan glass cylinder with luminous pale turquoise liquid and a central white apparatus, silver piping neatly integrated. Orthographic overhead with subtle visible south face, bright benign scientific equipment."
+  },
+  {
+    "name": "lab-medical",
+    "prompt": "One pristine research examination/sample-scanning bed or capsule, NORTH-SOUTH long rectangular footprint about 1:2.4. White padded bed on silver base, transparent cyan scanning hood over upper half, no person, blue edge indicators. Bright polished top-down game asset."
+  },
+  {
+    "name": "lab-samples",
+    "prompt": "One compact rectangular laboratory chemical sample transport crate, NORTH-SOUTH footprint about 1:1.3. White protective container with clear cyan lid, small colorful sealed reagent vials inside orderly compartments, silver protective corners. No hazard text, no military shells, clean scientific storage."
+  },
+  {
+    "name": "lab-door",
+    "prompt": "A SINGLE horizontal automatic laboratory sliding DOUBLE DOOR sprite, very wide 3:1 rectangle, symmetrical left/right moving leaves, white and silver frames with large TRANSPARENT pale cyan glass centers and narrow luminous turquoise center seam. Viewed overhead with visible south/front fascia. Nothing outside complete rectangular door; no surrounding wall, no portal frame extending upwards. Clean bright glass automatic doors."
+  },
+  {
+    "name": "lab-stairs",
+    "prompt": "One compact straight laboratory STAIRCASE sprite oriented NORTH-SOUTH, viewed directly from above, long 1:1.8 rectangle, white clean treads, pale gray risers, slim silver handrails and translucent cyan glass balustrades. No floor around it, no arrows, no text. Full staircase isolated."
+  },
+  {
+    "name": "lab-building",
+    "prompt": "A small advanced SCIENCE RESEARCH INSTITUTE building thumbnail, isometric elevated three-quarter southeast view. Contemporary white cubic architecture with curving clear cyan glass facade, bright laboratory interior glimpses, silver rooftop scientific sensor dishes and clean vents, modest entrance steps. Compact complete building on small neat rectangular foundation, no surrounding scene, no military features, transparent background. Friendly detailed 3D game building icon."
+  }
+]
