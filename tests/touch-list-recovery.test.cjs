@@ -7,7 +7,7 @@ function fixture(){
  h.statsOf=()=>h.run('({...touchListStats})');return h;
 }
 for(const old of ['actionBtn','skillBtn','aBtn'])test(`${old} release recovers a missing stick start from the surviving touches list`,()=>{
- const h=fixture();h.press(h.nodes[old],1);h.unannounced(h.nodes.stick,2,50,40);h.end(1);
+ const h=fixture();h.press(h.nodes[old],1);h.unannounced(h.nodes.stick,2,50,38);h.end(1);
  assert.equal(h.c.keys.ArrowUp,true);assert.equal(h.run('act'),'touch:2');assert.equal(h.statsOf().missing,1);assert.equal(h.statsOf().recovered,1);
  h.move(2,5,50);assert.equal(h.c.keys.ArrowLeft,true);h.end(2);assert.equal(h.c.keys.ArrowLeft,false);assert.equal(h.run('act'),null);
 });

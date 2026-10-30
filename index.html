@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.30.0819</title>
+<title>こっそり戦車大作戦 2026.10.30.0938</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -24,6 +24,7 @@
 #gameMenu h2{font-size:23px;margin:0 0 20px}#gameMenu nav{display:grid;gap:12px}
 #gameMenu button{min-height:52px;border:1px solid #c4b47f;border-radius:12px;background:#354336;color:#fff4d0;font:700 19px system-ui;touch-action:manipulation;cursor:pointer}
 #gameMenu #gameMenuSound{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:10px 14px;margin:0}
+#gameMenu .control-type{border-top:1px solid #738269;padding-top:12px}#gameMenu .control-type h3{font-size:15px;margin:0 0 8px}#gameMenu .control-type-options{display:grid;grid-template-columns:1fr 1fr;gap:8px}#gameMenu .control-type-options button{font-size:15px;min-height:48px}#gameMenu .control-type-options button[aria-pressed="true"]{background:#e9cb85;color:#202b22}#controlTypeHelp{font-size:12px;line-height:1.5;margin:8px 0 0;color:#cfdbc4}
 #gameMenu #gameMenuResume{background:#e9cb85;color:#202b22}
 body.game-paused #pad,body.game-paused #resetBtn,body.game-paused :is(#debugToggleBtn,#debugRoutesBtn),body.game-paused #debugBadge,body.game-paused #missionHud{display:none!important}
 body:not(.gameplay-active) #resetBtn{display:none!important}
@@ -479,7 +480,7 @@ body.area-picker-open #pad,body.area-picker-open #resetBtn,body.area-picker-open
 .res-award-chip.mythic{border-color:#e3b7f5;background:#49314d;color:#ffe4fa}
 .trophy-card.locked .award-icon{opacity:.65;filter:brightness(0)}
 @media(max-width:380px){.res-title-name{gap:8px;font-size:19px}.res-title-name .award-icon{width:60px;height:60px}.trophy-card{gap:9px;grid-template-columns:minmax(0,1fr) minmax(100px,40%)}}
-/* 検証専用：左右の指を離さず操作するモード。通常URLでは表示しない。 */
+/* 操作タイプ2：右指の連続スライド。停止位置は両タイプ共通。 */
 #continuousSurface,#continuousWait,#continuousHint,#continuousStop{display:none}
 body.continuous-input #pad{display:block;position:fixed;inset:0;z-index:20;pointer-events:none}
 body.continuous-input #stick{position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:max(18px,calc(env(safe-area-inset-bottom,0px) + 12px))}
@@ -490,7 +491,7 @@ body.continuous-input #continuousSurface{display:block;position:absolute;inset:-
 body.continuous-input #continuousWait{display:flex;grid-column:2;grid-row:2;align-items:center;justify-content:center;border:2px dashed #b9d2ac99;border-radius:50%;background:#102018a6;color:#e4f4da;font:700 12px system-ui;pointer-events:none}
 body.continuous-input #continuousWait.on{background:#73916c99;border-color:#d9f5b9}
 body.continuous-input #continuousHint{display:block;position:absolute;right:0;bottom:calc(100% + 9px);width:190px;margin:0;text-align:right;color:#f3f5dd;text-shadow:0 1px 2px #000;font:11px/1.5 system-ui;pointer-events:none}
-body.continuous-input #continuousStop{display:flex;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:22%;height:22%;align-items:center;justify-content:center;border:1px dashed #e4f4daaa;border-radius:50%;font:8px system-ui;color:#fff;pointer-events:none}
+body.adopted-stick #continuousStop{display:flex;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:22%;height:22%;align-items:center;justify-content:center;border:1px dashed #e4f4daaa;border-radius:50%;font:8px system-ui;color:#fff;pointer-events:none}
 </style>
 <style>
 /* 作戦説明は静止DOMで表示し、待機中のゲーム更新・再描画を止める。 */
@@ -626,7 +627,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 1250ms ease-o
 <body>
 <canvas id="c" width="840" height="720"></canvas>
 <button id="resetBtn" type="button" aria-label="メニューを開く" title="メニュー" aria-haspopup="dialog">☰</button>
-<dialog id="gameMenu" aria-labelledby="gameMenuHeading"><h2 id="gameMenuHeading">一時停止</h2><nav aria-label="ゲーム中メニュー"><button id="gameMenuTitle" type="button">タイトル</button><button id="gameMenuEnd" type="button">作戦終了</button><button id="gameMenuSound" class="sound-control" type="button" role="switch" aria-checked="true"><img class="sound-on" src="assets/ui/sound-on.webp" width="24" height="24" alt="" aria-hidden="true"><img class="sound-off" src="assets/ui/sound-off.webp" width="24" height="24" alt="" aria-hidden="true"><span>音声</span><span class="sound-switch" aria-hidden="true"></span></button><button id="gameMenuResume" type="button">ゲームに戻る</button></nav></dialog>
+<dialog id="gameMenu" aria-labelledby="gameMenuHeading"><h2 id="gameMenuHeading">一時停止</h2><nav aria-label="ゲーム中メニュー"><button id="gameMenuTitle" type="button">タイトル</button><button id="gameMenuEnd" type="button">作戦終了</button><button id="gameMenuSound" class="sound-control" type="button" role="switch" aria-checked="true"><img class="sound-on" src="assets/ui/sound-on.webp" width="24" height="24" alt="" aria-hidden="true"><img class="sound-off" src="assets/ui/sound-off.webp" width="24" height="24" alt="" aria-hidden="true"><span>音声</span><span class="sound-switch" aria-hidden="true"></span></button><section class="control-type" aria-labelledby="controlTypeLabel"><h3 id="controlTypeLabel">操作タイプ</h3><div class="control-type-options" role="group" aria-labelledby="controlTypeLabel"><button id="controlType1Btn" type="button" aria-pressed="true">タイプ1：タップ</button><button id="controlType2Btn" type="button" aria-pressed="false">タイプ2：スライド</button></div><p id="controlTypeHelp">B・A・Sをタップ。左スティックは中央で停止</p></section><button id="gameMenuResume" type="button">ゲームに戻る</button></nav></dialog>
 <button id="debugToggleBtn" type="button" aria-label="無敵モード切替" title="無敵モード切替"><span class="icon">🛡</span><span class="key">P</span></button>
 <button id="debugRoutesBtn" type="button" aria-label="巡回ルート表示切替" title="巡回ルート表示切替" aria-pressed="false"><span class="icon" aria-hidden="true">↝</span><span class="key">L</span></button>
 <div id="debugBadge" hidden><span id="debugBadgeText">無敵モード</span><button id="mazeCompareButton" type="button" hidden>比較：通常 → 敵移動停止</button></div>
@@ -654,8 +655,8 @@ body.success-open .mission-firework{animation:missionFireworkBurst 1250ms ease-o
       <div class="help-row"><span class="help-key"><span class="help-pill">A</span> 操作</span><span class="help-text">乗り物の乗降 ／ 敵兵の近接気絶 ／ 狙撃モード解除</span></div>
     </div></section>
     <section class="help-block"><h2>スマートフォン</h2><div class="help-rows">
-      <div class="help-row"><span class="help-key">左スティック</span><span class="help-text">動かした方向に移動。狙撃モードでは左右で視点、上下でレンズ交換。</span></div>
-      <div class="help-row"><span class="help-key"><span class="help-pill">B</span></span><span class="help-text">歩兵：爆弾 ／ 戦車：ドラッグで照準し、離して主砲発射</span></div>
+      <div class="help-row"><span class="help-key">左スティック</span><span class="help-text">動かした方向に移動。中央の「停止」へ戻すと、指を置いたまま停止できる。狙撃モードでは左右で視点、上下でレンズ交換。</span></div><div class="help-row"><span class="help-key">操作タイプ</span><span class="help-text">ゲーム中の☰メニューで切替。タイプ1はB・A・Sをタップ。タイプ2は指を離さず「待機」から各ボタンへスライドし、待機へ戻して繰り返す。</span></div>
+      <div class="help-row"><span class="help-key"><span class="help-pill">B</span></span><span class="help-text">歩兵：爆弾 ／ 戦車：ドラッグで照準。タイプ1は指を離すと発射、タイプ2はBの外へ出すと発射</span></div>
       <div class="help-row"><span class="help-key"><span class="help-pill">S</span></span><span class="help-text">歩兵：スキル ／ 戦車：長押し・ドラッグでMG照準と射撃</span></div>
       <div class="help-row"><span class="help-key"><span class="help-pill">A</span></span><span class="help-text">乗り物・近接アクション・狙撃解除</span></div>
     </div></section>
@@ -988,7 +989,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.30.0819',FILE_CREATED_AT='2026/10/30 08:19',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.30.0938',FILE_CREATED_AT='2026/10/30 09:38',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -8466,7 +8467,11 @@ if(debugToggleBtn){
  setInterval(syncDebugToggleButton,250);
 }
 
-const continuousTouchMode=typeof location!=='undefined'&&new URLSearchParams(location.search).get('continuousTouch')==='1';
+// 保存済みの選択を優先し、旧検証URLは未設定時だけタイプ2として開く。
+const CONTROL_TYPE_KEY='tankGameControlTypeV1';
+let savedControlType=null;try{savedControlType=localStorage.getItem(CONTROL_TYPE_KEY);}catch(_){}
+let continuousTouchMode=savedControlType==='2'||(savedControlType!=='1'&&typeof location!=='undefined'&&new URLSearchParams(location.search).get('continuousTouch')==='1');
+document.body.classList.add('adopted-stick');
 // 検証専用 ?buttonHold=200：物理的な指の追跡は即解除し、論理押下だけ最低200ms保持する。
 const buttonHoldMs=!continuousTouchMode&&typeof location!=='undefined'&&new URLSearchParams(location.search).get('buttonHold')==='200'?200:0;
 const buttonHolds=new Map();
@@ -8474,7 +8479,7 @@ if(buttonHoldMs){const label=document.getElementById('titleUpdated');if(label)la
 function beginButtonHold(el,e){
  const previous=buttonHolds.get(el);
  if(previous){clearTimeout(previous.timer);buttonHolds.delete(el);if(previous.finish)previous.finish();}
- if(buttonHoldMs&&e.pointerType==='touch')buttonHolds.set(el,{at:performance.now(),timer:null,finish:null});
+ if(buttonHoldMs&&!continuousTouchMode&&e.pointerType==='touch')buttonHolds.set(el,{at:performance.now(),timer:null,finish:null});
 }
 function finishButtonHold(el,finish,cancelled=false){
  const hold=buttonHolds.get(el),remaining=hold?buttonHoldMs-(performance.now()-hold.at):0;
@@ -8597,8 +8602,8 @@ skillBtn.addEventListener('pointerup',finishSkillAim,{passive:false});skillBtn.a
 syncActionButton();setInterval(syncActionButton,50);
 
 const pad=document.getElementById('stick'),knob=document.getElementById('knob'),st={ArrowUp:0,ArrowDown:0,ArrowLeft:0,ArrowRight:0};let act=null,stickPointerType='';
-// タッチは小さなスワイプでも応答させる。従来の30%（約20px）は切替直後の短い操作を無入力にしていた。
-function setDir(x,y){const m=stickPointerType==='touch'?(continuousTouchMode?.22:.12):.3,n={ArrowLeft:x<-m,ArrowRight:x>m,ArrowUp:y<-m,ArrowDown:y>m};for(const k in n)if(!!st[k]!==n[k]){st[k]=n[k]?1:0;n[k]?press(k):release(k);}}
+// 両タイプ共通：中央22%を停止範囲にし、指を置いたまま中央へ戻して停止できる。
+function setDir(x,y){const m=stickPointerType==='touch'?.22:.3,n={ArrowLeft:x<-m,ArrowRight:x>m,ArrowUp:y<-m,ArrowDown:y>m};for(const k in n)if(!!st[k]!==n[k]){st[k]=n[k]?1:0;n[k]?press(k):release(k);}}
 // 指を動かすたびのレイアウト読み戻しを避け、押下時の幾何情報を再利用する。
 let stickGeometry=null;
 function refreshStickGeometry(){const r=pad.getBoundingClientRect();stickGeometry={left:r.left,top:r.top,width:r.width,height:r.height,travel:pad.clientWidth*.3};}
@@ -8634,9 +8639,9 @@ bindTouchControl(pad,()=>act,beginStick,mvp,end,end);
 // 物理的には一続きのタッチ。照準は各ボタン内のドラッグで行う。
 let resetContinuousTouch=()=>{};
 const continuousStatus={pointer:null,button:'待機',actions:0};
-if(continuousTouchMode){
- document.body.classList.add('continuous-input');
- const label=document.getElementById('titleUpdated');if(label)label.textContent+=' / 指を離さない操作テスト';
+let continuousTouchInstalled=false;
+function installContinuousTouch(){
+ if(continuousTouchInstalled)return;continuousTouchInstalled=true;
  const surface=document.getElementById('continuousSurface'),wait=document.getElementById('continuousWait');
  const buttons=[actionBtn,skillBtn,document.querySelector('[data-k="KeyA"]')];
  let pointer=null,active=null,geometry=null,armed=false,lastInput=null,waiting=false;
@@ -8649,7 +8654,7 @@ if(continuousTouchMode){
   (cancelled?control.cancel:control.up)(endInput);lastInput=null;
  };
  const update=e=>{
-  if(pointer!==e.pointerId||!geometry||state!=='play')return;
+  if(!continuousTouchMode||pointer!==e.pointerId||!geometry||state!=='play')return;
   if(e.cancelable)e.preventDefault();
   const atWait=inside(geometry.wait,e);paintWait(atWait);
   if(active){
@@ -8665,7 +8670,7 @@ if(continuousTouchMode){
   touchControls.get(selected.el).down(input(e,center));lastInput=input(e);touchControls.get(selected.el).move?.(lastInput);
  };
  const down=e=>{
-  if(state!=='play'||pointer!==null)return;
+  if(!continuousTouchMode||state!=='play'||pointer!==null)return;
   if(e.cancelable)e.preventDefault();pointer=e.pointerId;continuousStatus.pointer=pointer;cap(surface,e);
   geometry={wait:wait.getBoundingClientRect(),buttons:buttons.map(el=>({el,rect:el.getBoundingClientRect()}))};armed=true;update(e);
  };
@@ -8682,6 +8687,22 @@ if(continuousTouchMode){
  resetContinuousTouch=()=>{const previous=pointer;pointer=null;continuousStatus.pointer=null;active=null;lastInput=null;geometry=null;armed=false;continuousStatus.button='待機';paintWait(false);if(previous!==null)releaseControlCapture(surface,previous);};
  addEventListener('resize',()=>finish(undefined,true));
 }
+if(continuousTouchMode)installContinuousTouch();
+document.body.classList.toggle('continuous-input',continuousTouchMode);
+function syncControlTypeMenu(){
+ const one=document.getElementById('controlType1Btn'),two=document.getElementById('controlType2Btn'),help=document.getElementById('controlTypeHelp');
+ if(one)one.setAttribute('aria-pressed',String(!continuousTouchMode));if(two)two.setAttribute('aria-pressed',String(continuousTouchMode));
+ if(help)help.textContent=continuousTouchMode?'待機からB・A・Sへスライド。照準ドラッグは各ボタン内':'B・A・Sをタップ。左スティックは中央で停止';
+}
+function setControlType(type){
+ if(type!==1&&type!==2)return;
+ // 切替前に入力・照準・遅延発射を消し、一時停止したままレイアウトを変更する。
+ clearInputs();continuousTouchMode=type===2;if(continuousTouchMode)installContinuousTouch();
+ document.body.classList.toggle('continuous-input',continuousTouchMode);
+ try{localStorage.setItem(CONTROL_TYPE_KEY,String(type));}catch(_){}
+ syncControlTypeMenu();
+}
+syncControlTypeMenu();
 // 検証専用：開始通知が欠けた指を、別の指のイベントに付くtouchesから拾う。
 // 通常URLではイベントリスナーも監視タイマーも追加しない。
 const touchListRecovery=typeof location!=='undefined'&&new URLSearchParams(location.search).get('touchRecovery')==='1';
@@ -8743,11 +8764,13 @@ function openGameMenu(){
  if(typeof finishPartnerOrder==='function')finishPartnerOrder(false);
  clearInputs();state='paused';document.body.classList.add('game-paused');
  if(typeof stopGameAudio==='function')stopGameAudio();
- gameMenu.showModal();document.getElementById('gameMenuResume').focus({preventScroll:true});
+ syncControlTypeMenu();gameMenu.showModal();document.getElementById('gameMenuResume').focus({preventScroll:true});
 }
 function resumeGameMenu(){if(state!=='paused')return;closeGameMenu();state='play';resetBtn.focus({preventScroll:true});}
 resetBtn.addEventListener('click',openGameMenu);
 document.getElementById('gameMenuResume').addEventListener('click',resumeGameMenu);
+document.getElementById('controlType1Btn').addEventListener('click',()=>{if(state==='paused')setControlType(1);});
+document.getElementById('controlType2Btn').addEventListener('click',()=>{if(state==='paused')setControlType(2);});
 document.getElementById('gameMenuSound').addEventListener('click',()=>{if(state==='paused')setGameSoundEnabled(!gameSoundEnabled);});
 document.getElementById('gameMenuTitle').addEventListener('click',()=>{if(state!=='paused')return;closeGameMenu();backToTitle();});
 document.getElementById('gameMenuEnd').addEventListener('click',()=>{

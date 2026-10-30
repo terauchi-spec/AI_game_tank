@@ -1,3 +1,26 @@
+# Adopted controls (2026-10-30)
+
+Both operation types use the adopted stick: 22% per-axis touch dead zone and a
+visible `停止` center. Mouse remains 30%; keyboard behavior is unchanged.
+The game defaults to **タイプ1：タップ** with the original right-hand buttons.
+The in-game ☰ pause menu offers **タイプ2：スライド** with the continuous-touch
+surface described below. Switching keeps the mission paused, clears all held
+inputs/aim/pending shots, and persists `1` or `2` as `tankGameControlTypeV1`.
+Failure to access storage does not block the current-session selection.
+
+Saved valid settings take precedence over the legacy `?continuousTouch=1` link.
+That link selects type 2 only when no valid saved preference exists. Slider
+handlers install lazily once, and remain guarded when switching back to type 1.
+There are no new polling timers or frame-loop work. The old 0.2s hold and full
+list recovery remain separate opt-in experiments and are not adopted here.
+
+Type 2 retains its narrower aim/partner-order drag region and main-gun firing
+on leaving B; the menu notes the aim limit. Type 1 retains the original aim and
+partner drag behavior. Full physical iPhone validation is still outstanding.
+
+The comparison snapshots below are historical and intentionally unchanged;
+their sensitivity settings do not describe the newly adopted game's defaults.
+
 # Input-only comparison
 
 Open `/input-test.html?mode=touch&zone=12` on the affected phone/browser.
@@ -80,16 +103,16 @@ If real-phone testing shows this fallback ineffective and no missing finger in t
 raw lists, the next experiment is a separate continuous-touch control mode; it is
 not enabled by this change.
 
-## Continuous physical touch control experiment
+## Continuous physical touch controls (now operation type 2)
 
-Open `/?continuousTouch=1` on the game. Add `&inputDebug=1` only if the full
-input diagnostic panel is needed. The title shows `指を離さない操作テスト`.
-This is a separate control experiment, not proof of a device/OS diagnosis.
-Normal URLs retain the original layout and controls.
+Select `タイプ2：スライド` in the in-game pause menu. The legacy
+`/?continuousTouch=1` URL is still usable when no valid preference is saved.
+Add `inputDebug=1` only if the full input diagnostic panel is needed.
+This layout is not proof of a device/OS diagnosis.
 
 1. Put the left thumb on the stick and keep it down. Return to the visible center
    `停止` circle to stop. This mode uses a 22% per-axis touch dead zone for easier
-   stopping (normal touch remains 12%, mouse 30%). The circle represents the
+   stopping (both types use 22%, mouse 30%). The circle represents the
    inscribed circle of that neutral square; its corners are neutral too.
 2. Put the right thumb on `待機` in the lower-right cell and keep it down.
    B is upper-left, S upper-right, A lower-left. Slide to a button to activate it.

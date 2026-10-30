@@ -59,7 +59,7 @@ test('geometry is cached for each gesture, with no timers or blocking document m
 test('continuous mode has its visible neutral stick zone and disables the unrelated 200ms hold',()=>{
  const h=fixture({buttonHold:200});h.start(h.nodes.stick,1,50,50);h.move(1,59,50);assert.equal(held(h,'ArrowRight'),false);h.move(1,62,50);assert.equal(h.c.keys.ArrowRight,true);
  h.start(h.nodes.continuousSurface,2,...positions.A);h.move(2,...wait);assert.equal(held(h,'KeyA'),false);assert.equal(h.timers.size,0);
- const normal=touchInputHarness();assert.equal(normal.nodes.continuousSurface.events.size,0);normal.start(normal.nodes.stick,1,59,50);assert.equal(normal.c.keys.ArrowRight,true);
+ const normal=touchInputHarness();assert.equal(normal.nodes.continuousSurface.events.size,0);normal.start(normal.nodes.stick,1,59,50);assert.equal(held(normal,'ArrowRight'),false);normal.move(1,62,50);assert.equal(normal.c.keys.ArrowRight,true);
 });
 test('continuous surface cannot start actions outside play',()=>{
  const h=fixture();h.c.state='paused';h.start(h.nodes.continuousSurface,1,...positions.A);assert.equal(h.c.interact,false);assert.equal(h.run('continuousStatus.pointer'),null);
