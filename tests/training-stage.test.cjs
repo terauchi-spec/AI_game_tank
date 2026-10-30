@@ -124,7 +124,7 @@ test('waiting for the side patrol then walking into the real bush patch complete
 
 test('intro goes straight to bomb instruction without a walking task or clear banner; the tank is close to the stun area',()=>{
  const h=fixture();const y=h.run('p.y');h.run("training.line=training.lines.length-1;training.typed=training.lines[training.line].length;trainingAdvanceDialogue();syncTrainingHud()");assert.equal(h.run('training.step'),2);assert.equal(h.run('training.phase'),'talk');assert.match(h.run('training.lines[0]'),/^ドラム缶に近づいて/);assert.equal(h.run('training.arrived'),true);assert.equal(h.run('p.y'),y);assert.equal(h.nodes.get('trainingClear').hidden,true);
- h.talk();assert.equal(h.run('training.phase'),'active');assert.equal(h.run('training.step'),2);assert.equal(h.run('TRAINING_LESSONS[1].lines.length'),3);assert.equal(h.run('TRAINING_LESSONS[1].lines[2]'),'左スティックで移動します。まずは前へ進んでみましょう');assert.equal(h.run('TRAINING_LESSONS[2].lines.length'),1);
+ h.talk();assert.equal(h.run('training.phase'),'active');assert.equal(h.run('training.step'),2);assert.equal(h.run('TRAINING_LESSONS[1].lines.length'),3);assert.equal(h.run('TRAINING_LESSONS[1].lines[2]'),'左スティックで移動します。まずは前へ進んでみましょう');assert.equal(h.run('TRAINING_LESSONS[2].lines.length'),2);
  // Enter vehicle practice from the same location after stunning guards, then walk and actually board.
  h.lesson(4);h.run('p.x=WW/2;p.y=TRAINING_LESSONS[4].y;trainingClearLesson()');h.tick(3.1);assert.equal(h.run('training.step'),5);const distance=h.run('p.y-training.vehicle.y');assert.ok(distance>=200&&distance<=450);assert.ok(h.run('training.vehicle.y>TRAINING_LESSONS[4].gate-100'));
  for(let i=0;i<300&&!h.run('training.phase==="talk"');i++)h.run('keys.ArrowUp=true;update(.02)');assert.equal(h.run('training.phase'),'talk');h.talk();
@@ -185,5 +185,16 @@ test('stationary targets remain fully in the corridor and shootable after drivin
   const h=fixture();h.lesson(5);h.run(`p.tank=training.vehicle;p.x=${side};p.y=training.vehicle.y;trainingEnterLesson(6)`);h.talk();assert.equal(h.run('training.targets.every(t=>t.x>TRAINING_LEFT&&t.x+t.w<TRAINING_RIGHT)'),true);
   for(let i=0;i<4;i++){h.run(`var t=training.targets[${i}],a=Math.atan2(t.y+26-p.y,t.x+26-p.x);fire(p.x+Math.cos(a)*44,p.y+Math.sin(a)*44,a,'p','v',630,700,1)`);h.tick(.4);assert.equal(h.run(`training.targets[${i}].hit`),true);}
   assert.equal(h.run('training.phase'),'clearPending');
+ }
+});
+
+
+test('training hides infantry status icons and restores hearts, bomb and stealth in normal stages',()=>{
+ for(const touch of [true,false]){
+  const h=fixture({touch});h.c.hudCalls=[];
+  h.run("drawHudHeart=(...a)=>hudCalls.push('heart');drawHudBomb=(...a)=>hudCalls.push('bomb');drawStealthHudIcon=(...a)=>hudCalls.push('stealth');p.tank=null;p.dig=1;drawInfantryBottomHud()");
+  assert.deepEqual(h.c.hudCalls,[]);
+  h.run("stageMode='beginner';drawInfantryBottomHud()");
+  assert.deepEqual(h.c.hudCalls,['heart','heart','heart','bomb','stealth']);
  }
 });

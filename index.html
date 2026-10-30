@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.30.2223</title>
+<title>こっそり戦車大作戦 2026.10.30.2243</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -992,7 +992,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.30.2223',FILE_CREATED_AT='2026/10/30 22:23',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.30.2243',FILE_CREATED_AT='2026/10/30 22:43',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -7291,7 +7291,7 @@ function drawStealthHudIcon(x,y,col){
  g.restore();
 }
 function drawInfantryBottomHud(){
- if(p.tank)return;
+ if(p.tank||typeof stageMode!=='undefined'&&stageMode==='training')return;
  const x=12,cy=TOUCH?94:H-71,riverStealth=weather==='rain'&&inWaterAt(p.x,p.y,0),bushStealth=inBush(p),stealth=!decoy&&(p.dig>0||bushStealth||riverStealth||inTumbleweed(p));
  const detected=stealth&&(humans.some(h=>h.alive&&h.st&&h.target==='p')||etanks.some(e=>e.alive&&e.st&&e.target==='p'));
  // UIアイコンはゲーム背景上に直接表示し、背後の黒い板・枠線を描画しない。
@@ -7378,10 +7378,9 @@ function drawVehicleHudGauge(x,y,w,ratio,color,capacityRatio=1){
  g.fillStyle='#e6e9d8';g.fillRect(x-1,y-2,2,12);g.fillRect(x+usable-1,y-2,2,12);
 }
 function drawVehicleBottomHud(){
- if(!p.tank)return;
+ if(!p.tank||typeof stageMode!=='undefined'&&stageMode==='training')return;
  const v=p.tank,t=v.t,truck=v.kind==='truck',fighter=v.kind==='fighter',armored=t.id==='armored';
- const trainingHud=typeof stageMode!=='undefined'&&stageMode==='training';
- const x=8,w=TOUCH?218:236,h=trainingHud?52:truck?78:102,y=TOUCH?70:H-8-h;
+ const x=8,w=TOUCH?218:236,h=truck?78:102,y=TOUCH?70:H-8-h;
  const infinite=fighter?debugMode>=3:!!(areaDebugEnabled||v.debugInfinite);
  const armorMax=fighter?(t.hp||8):truck?5:(t.armor||3);
  const armor=fighter?(v.hp||0):truck?5-(v.mgHits||0):armorMax-(v.ch||0);
@@ -7397,7 +7396,7 @@ function drawVehicleBottomHud(){
  g.fillStyle=fighter?'#d9efff':'#e6e9d8';g.font='bold 12px system-ui';g.fillText(t.n,x+8,y+17);
  drawVehicleHudIcon('shield',x+18,y+35,'#c8d7df');
  drawVehicleHudGauge(x+36,y+31,w-48,Math.max(0,Math.min(armorMax,armor))/armorScale,armorColor,armorMax/armorScale);
- if(!truck&&!trainingHud){
+ if(!truck){
   g.font=fighter?'bold 13px system-ui':'bold 16px system-ui';
   if(fighter){
    g.fillStyle=p.cc<=0?'#ffd27a':'#9aa7b2';g.fillText(p.cc<=0?'D  爆撃 READY':'D  爆撃 CHARGE',x+8,y+61);
@@ -7409,11 +7408,9 @@ function drawVehicleBottomHud(){
    drawVehicleHudIcon('ammo',right,y+58,'#d8e7ff');g.fillStyle='#d8e7ff';g.fillText(ammo(v.v,t.vmax||60),right+16,y+63);
   }
  }
- if(!trainingHud){
  const fuelY=y+(truck?59:83);
  drawVehicleHudIcon('fuel',x+18,fuelY,fuelColor);drawVehicleHudGauge(x+36,fuelY-4,w-48,Math.max(0,Math.min(t.fmax||100,v.f||0))/VEHICLE_HUD_FUEL_MAX,fuelColor,(t.fmax||100)/VEHICLE_HUD_FUEL_MAX);
  if(infinite){g.font='bold 13px system-ui';g.fillStyle='#e6e9d8';g.fillText('∞',x+w-21,fuelY+15);}
- }
  g.restore();
 }
 const STATIC_COVER_DRAW_COLORS=[['#8a7a55','#6a5d40'],['#8c8c86','#6a6a66'],['#7a5f3a','#4e3c24'],['#55504a','#35322e'],['#b9ab8a','#8f8263'],['#7a5f3a','#4e3c24'],['#2f6b34','#1d4a22'],['#4a5a4a','#33403a'],['#7a7468','#57534a'],['#666865','#4e514e'],['#b9ab8a','#8f8263']];
@@ -8448,7 +8445,7 @@ function reportGameError(error){
 <script src="js/characters.js?v=2026.10.19.1032"></script>
 <script src="js/fallen-enemies.js?v=2026.10.30.1058"></script>
 <script src="js/enemy-dogs.js?v=2026.10.28.0713"></script>
-<script src="js/training.js?v=2026.10.30.2223"></script>
+<script src="js/training.js?v=2026.10.30.2243"></script>
 <script src="js/partner.js?v=2026.10.28.0713"></script>
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/canyon.js?v=2026.10.28.0713"></script>
