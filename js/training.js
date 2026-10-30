@@ -3,14 +3,14 @@ let training=null;
 const TRAINING_DONE_KEY='tankGameTrainingCompleteV1';
 const TRAINING_LEFT=280,TRAINING_RIGHT=680;
 const TRAINING_LESSONS={
- 1:{name:'訓練を始めよう',y:12500,gate:11820,lines:['こっそり訓練施設にようこそ！','ここでは戦場の基本を、{こっそりネーム}さんに学んでもらいます','左スティックで移動します。まずは前へ進んでみましょう']},
- 2:{name:'設置爆弾',y:12100,gate:11820,lines:['ドラム缶に近づいて、爆弾を設置したら（Bボタン）、少し離れて起爆させてみましょう（再度Bボタン）','実戦では、自分の爆弾でもダメージを受けるので、しっかり離れてください']},
- 3:{name:'草むらに隠れる',y:11080,gate:10740,lines:['次は、敵にみつからないように草むらに入ってみましょう','草むらの中は、敵から見つかりにくくなります','青い兵士の視界に入らないように、こっそり移動するのがポイントです','見つからずに草むらの中で2秒待てたらクリアです']},
- 4:{name:'背後から気絶',y:11080,gate:10740,lines:['それでは、後ろから近づいて2人の敵を気絶させてみましょう（敵近くでA）','前から見つかったり、爆弾で倒してしまったら、この練習をやり直します']},
- 5:{name:'戦車に乗って撃つ',y:10700,gate:10330,lines:['最後はこの戦場でもっとも重要な戦車の訓練です','戦車に乗り込んで（戦車近くでA）、大砲を1発、マシンガンを3発以上撃ってみましょう（B・Sボタン）']},
- 6:{name:'砲塔を回して射撃',y:0,gate:0,lines:['戦車の砲塔は回転させることができます','4つのマトを破壊してください（BまたはSを長押ししながら操作）','この練習中は戦車が動きません。砲塔を上下左右に向けて狙いましょう']}
+ 1:{name:'訓練を始めよう',y:12500,gate:11820,lines:['こっそり訓練施設にようこそ！','ここでは戦場の基本を、{こっそりネーム}さんに学んでもらうわ','左スティックで移動するのよ。まずは前へ進んでみましょうか']},
+ 2:{name:'設置爆弾',y:12100,gate:11820,lines:['ドラム缶に近づいて、爆弾を設置したら（Bボタン）、少し離れて起爆させてみましょうか（再度Bボタン）','実戦では、自分の爆弾でもダメージを受けるから、しっかり離れてね']},
+ 3:{name:'草むらに隠れる',y:11080,gate:10740,lines:['次は、敵にみつからないように草むらに入ってみましょうか','草むらの中は、敵から見つかりにくくなるわ','青い兵士の視界に入らないように、こっそり移動するのがポイントよ','見つからずに草むらの中で2秒待てたらクリアよ']},
+ 4:{name:'背後から気絶',y:11080,gate:10740,lines:['じゃあ、後ろから近づいて2人の敵を気絶させてみましょうか（敵近くでA）','前から見つかったり、爆弾で倒してしまったら、この練習をやり直すわね']},
+ 5:{name:'戦車に乗って撃つ',y:10700,gate:10330,lines:['最後はこの戦場でもっとも重要な戦車の訓練よ','戦車に乗り込んで（戦車近くでA）、大砲を1発、マシンガンを3発以上撃ってみましょうか（B・Sボタン）']},
+ 6:{name:'砲塔を回して射撃',y:0,gate:0,lines:['戦車の砲塔は回転させることができるのよ','4つのマトを破壊してね（BまたはSを長押ししながら操作）','この練習中は戦車が動かないわ。砲塔を上下左右に向けて狙いましょうか']}
 };
-const TRAINING_FINALE=['おめでとう！これで訓練は以上です','おっと！スキル（Sボタン）についての説明がまだでしたね！','スキルには種類があり、効果は様々です！実戦で色々と試してみてください','一人前のこっそり兵士になれるよう、がんばってくださいね！'];
+const TRAINING_FINALE=['おめでとう！これで訓練は以上よ','おっと！スキル（Sボタン）についての説明がまだだったわね！','スキルには種類があって、効果は様々よ！実戦で色々と試してみてね','一人前のこっそり兵士になれるよう、がんばってね！'];
 function trainingCompleted(){try{return localStorage.getItem(TRAINING_DONE_KEY)==='1';}catch(_){return false;}}
 function trainingClearInput(){
  if(typeof window.trainingClearInputs==='function')window.trainingClearInputs();
@@ -96,7 +96,7 @@ function trainingResetLesson(reason){
  if(!training||![3,4].includes(training.step))return;
  const step=training.step,resets=training.resets+1,checkpoint={...training.checkpoint};
  p.tank=null;Object.assign(p,checkpoint);p.body=-Math.PI/2;p.ang=p.body;p.hp=3;
- trainingEnterLesson(step);training.resets=resets;training.arrived=true;trainingTalk([reason+'。もう一度やってみましょう',...TRAINING_LESSONS[step].lines]);
+ trainingEnterLesson(step);training.resets=resets;training.arrived=true;trainingTalk([reason+'。もう一度やってみましょうか',...TRAINING_LESSONS[step].lines]);
 }
 function trainingClearLesson(){
  if(!training||training.phase==='clear'||training.phase==='clearPending')return;
@@ -118,7 +118,7 @@ function updateTrainingPresentation(dt){
  if(p.tank){p.tank.c=p.tank.t.cmax;p.tank.v=p.tank.t.vmax;p.tank.f=p.tank.t.fmax;p.tank.ch=0;p.tank.mgHits=0;}
  if(training.phase==='reacting'){
   training.reactionT-=dt;
-  if(training.reactionT<=1e-8)trainingResetLesson('見つかってしまいました');
+  if(training.reactionT<=1e-8)trainingResetLesson('見つかっちゃったわね');
   return true;
  }
  if(training.phase==='clearPending'){
@@ -160,8 +160,8 @@ function updateTrainingMission(dt){
  if(!training.arrived)return;
  if(training.step===2){if(training.barrelBomb&&!objects.includes(training.barrel))trainingClearLesson();return;}
  if(training.step===3||training.step===4){
-  if(training.bushes&&training.bushes.some(b=>!bushes.includes(b)||b.burnT>0)){trainingResetLesson('草むらを残して、隠れてみましょう');return;}
-  if(humans.some(h=>!h.alive||(h.stun>0&&!h.trainingAStun))){trainingResetLesson('爆弾ではなく、今回の操作で挑戦してください');return;}
+  if(training.bushes&&training.bushes.some(b=>!bushes.includes(b)||b.burnT>0)){trainingResetLesson('草むらを残して、隠れてみましょうか');return;}
+  if(humans.some(h=>!h.alive||(h.stun>0&&!h.trainingAStun))){trainingResetLesson('爆弾ではなく、今回の操作で挑戦してね');return;}
   for(let i=0;i<humans.length;i++){
    const h=humans[i];if(h.stun>0)continue;
    if(training.step===3||training.stunStart){const a=training.patrol+i*Math.PI;h.x=WW/2+Math.cos(a)*175;h.y=lesson.y+Math.sin(a)*175;h.face=a+Math.PI/2;h.walking=true;}
@@ -176,9 +176,9 @@ function updateTrainingMission(dt){
 }
 function trainingTryStun(h,source){
  if(stageMode!=='training'||!h?.trainingGuard)return true;
- if(training?.step!==4||source!=='player'){trainingResetLesson('今は草むらに隠れる練習です');return false;}
+ if(training?.step!==4||source!=='player'){trainingResetLesson('今は草むらに隠れる練習よ');return false;}
  const angle=Math.abs(angD(Math.atan2(p.y-h.y,p.x-h.x),h.face));
- if(angle<Math.PI*.65){trainingResetLesson('敵の後ろから近づいてください');return false;}
+ if(angle<Math.PI*.65){trainingResetLesson('敵の後ろから近づいてね');return false;}
  h.trainingAStun=true;return true;
 }
 function trainingRecordShot(from,kind){if(stageMode==='training'&&training?.step===5&&training.arrived&&training.phase==='active'&&p.tank&&from==='p'&&(kind==='c'||kind==='v'))training.shots[kind]=kind==='v'?training.shots.v+1:true;}

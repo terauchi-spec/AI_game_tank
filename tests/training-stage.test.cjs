@@ -87,7 +87,7 @@ test('full-screen conversation taps advance once, clear controls, and do not adv
 });
 
 test('assistant types at instructor speed, reveals a line before advancing, and shows the triangle only when ready',()=>{
- const h=fixture();h.storage.set('tankGamePlayerNameV1','テスト');h.run('trainingTalk(TRAINING_LESSONS[1].lines);syncTrainingHud()');assert.equal(h.run('training.lines[0]'),'こっそり訓練施設にようこそ！');assert.equal(h.run('training.lines[1]'),'ここでは戦場の基本を、テストさんに学んでもらいます');
+ const h=fixture();h.storage.set('tankGamePlayerNameV1','テスト');h.run('trainingTalk(TRAINING_LESSONS[1].lines);syncTrainingHud()');assert.equal(h.run('training.lines[0]'),'こっそり訓練施設にようこそ！');assert.equal(h.run('training.lines[1]'),'ここでは戦場の基本を、テストさんに学んでもらうわ');
  assert.equal(h.nodes.get('trainingText').textContent,'こ');assert.equal(h.nodes.get('trainingContinue').hidden,true);
  h.tick(.12,.04);h.run('syncTrainingHud()');assert.equal(h.run('training.typed'),4);assert.equal(h.nodes.get('trainingText').textContent,'こっそり');
  h.run('trainingAdvanceDialogue();syncTrainingHud()');assert.equal(h.run('training.line'),0);assert.equal(h.nodes.get('trainingContinue').hidden,false);assert.equal(h.nodes.get('trainingText').textContent,h.run('training.lines[0]'));
@@ -124,7 +124,7 @@ test('waiting for the side patrol then walking into the real bush patch complete
 
 test('intro goes straight to bomb instruction without a walking task or clear banner; the tank is close to the stun area',()=>{
  const h=fixture();const y=h.run('p.y');h.run("training.line=training.lines.length-1;training.typed=training.lines[training.line].length;trainingAdvanceDialogue();syncTrainingHud()");assert.equal(h.run('training.step'),2);assert.equal(h.run('training.phase'),'talk');assert.match(h.run('training.lines[0]'),/^ドラム缶に近づいて/);assert.equal(h.run('training.arrived'),true);assert.equal(h.run('p.y'),y);assert.equal(h.nodes.get('trainingClear').hidden,true);
- h.talk();assert.equal(h.run('training.phase'),'active');assert.equal(h.run('training.step'),2);assert.equal(h.run('TRAINING_LESSONS[1].lines.length'),3);assert.equal(h.run('TRAINING_LESSONS[1].lines[2]'),'左スティックで移動します。まずは前へ進んでみましょう');assert.equal(h.run('TRAINING_LESSONS[2].lines.length'),2);
+ h.talk();assert.equal(h.run('training.phase'),'active');assert.equal(h.run('training.step'),2);assert.equal(h.run('TRAINING_LESSONS[1].lines.length'),3);assert.equal(h.run('TRAINING_LESSONS[1].lines[2]'),'左スティックで移動するのよ。まずは前へ進んでみましょうか');assert.equal(h.run('TRAINING_LESSONS[2].lines.length'),2);
  // Enter vehicle practice from the same location after stunning guards, then walk and actually board.
  h.lesson(4);h.run('p.x=WW/2;p.y=TRAINING_LESSONS[4].y;trainingClearLesson()');h.tick(3.1);assert.equal(h.run('training.step'),5);const distance=h.run('p.y-training.vehicle.y');assert.ok(distance>=200&&distance<=450);assert.ok(h.run('training.vehicle.y>TRAINING_LESSONS[4].gate-100'));
  for(let i=0;i<300&&!h.run('training.phase==="talk"');i++)h.run('keys.ArrowUp=true;update(.02)');assert.equal(h.run('training.phase'),'talk');h.talk();
@@ -145,7 +145,7 @@ test('each lesson plays the existing capture sound once when the delayed clear b
   if(step===6){h.lesson(5);h.run('p.tank=training.vehicle;trainingEnterLesson(6)');h.talk();}else h.lesson(step);
   h.run('trainingClearLesson()');const count=h.c.clearSounds.filter(n=>n==='capture').length;h.tick(1.95);assert.equal(h.c.clearSounds.filter(n=>n==='capture').length,count);h.tick(.05);assert.equal(h.c.clearSounds.filter(n=>n==='capture').length,count+1);h.tick(.5);assert.equal(h.c.clearSounds.filter(n=>n==='capture').length,count+1);
  }
- assert.equal(h.run('TRAINING_LESSONS[5].lines[0]'),'最後はこの戦場でもっとも重要な戦車の訓練です');
+ assert.equal(h.run('TRAINING_LESSONS[5].lines[0]'),'最後はこの戦場でもっとも重要な戦車の訓練よ');
 });
 
 test('shot counters use red circles only after a real cannon shot and at least three actual MG rounds',()=>{
@@ -162,7 +162,7 @@ test('a direct cannon hit on a target uses the standard explosion once, while MG
 });
 
 test('grass cover advice is followed immediately by the new stealth guidance; each displayed line gets one existing UI cue',()=>{
- const h=fixture();const lines=h.run('TRAINING_LESSONS[3].lines');const i=lines.indexOf('草むらの中は、敵から見つかりにくくなります');assert.equal(lines[i+1],'青い兵士の視界に入らないように、こっそり移動するのがポイントです');
+ const h=fixture();const lines=h.run('TRAINING_LESSONS[3].lines');const i=lines.indexOf('草むらの中は、敵から見つかりにくくなるわ');assert.equal(lines[i+1],'青い兵士の視界に入らないように、こっそり移動するのがポイントよ');
  h.c.speechSounds=[];h.run('sfx=name=>speechSounds.push(name);trainingTalk(TRAINING_LESSONS[3].lines);update(.01)');assert.equal(h.c.speechSounds.filter(n=>n==='uiSelect').length,1);h.tick(.3);assert.equal(h.c.speechSounds.filter(n=>n==='uiSelect').length,1);
  h.run('trainingAdvanceDialogue();update(.01)');assert.equal(h.c.speechSounds.filter(n=>n==='uiSelect').length,1,'revealing the rest of a line does not play another cue');h.run('trainingAdvanceDialogue();update(.01)');assert.equal(h.c.speechSounds.filter(n=>n==='uiSelect').length,2);
  h.run("trainingAdvanceDialogue();trainingAdvanceDialogue();state='paused';update(1)");assert.equal(h.c.speechSounds.filter(n=>n==='uiSelect').length,2);h.run("state='play';update(.01)");assert.equal(h.c.speechSounds.filter(n=>n==='uiSelect').length,3);
