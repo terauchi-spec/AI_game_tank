@@ -1,6 +1,6 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),path=require('node:path'),fs=require('node:fs');
 const {createGameEngine}=require('./helpers/game-engine.cjs'),root=path.join(__dirname,'..');
-function fixture(){const h=createGameEngine(root);h.run("stageMode='training';areaDebugEnabled=false;reset(false)");h.tick=(seconds,dt=.05)=>{for(let t=0;t<seconds-1e-8;t+=dt)h.run(`update(${Math.min(dt,seconds-t)})`);};h.talk=()=>h.run("while(training.phase==='talk')trainingAdvanceDialogue()");h.lesson=step=>{h.run(`trainingEnterLesson(${step});training.arrived=true;trainingTalk(TRAINING_LESSONS[${step}].lines)`);h.talk();};return h;}
+function fixture(options){const h=createGameEngine(root,options);h.run("stageMode='training';areaDebugEnabled=false;reset(false)");h.tick=(seconds,dt=.05)=>{for(let t=0;t<seconds-1e-8;t+=dt)h.run(`update(${Math.min(dt,seconds-t)})`);};h.talk=()=>h.run("while(training.phase==='talk')trainingAdvanceDialogue()");h.lesson=step=>{h.run(`trainingEnterLesson(${step});training.arrived=true;trainingTalk(TRAINING_LESSONS[${step}].lines)`);h.talk();};return h;}
 test('00 is always selectable without entering progression or changing 01..07 locks',()=>{
  const h=fixture();assert.equal(h.run("stageDisplayNumber('training')"),'00');assert.equal(h.run("stageSelectable('training')"),true);assert.equal(h.run("stageAvailableForSelection('training')"),true);assert.equal(h.run("stageSelectable('beginner')"),true);assert.equal(h.run("stageSelectable('indoorBeginner')"),false);assert.equal(h.run('STAGE_ORDER.length'),7);
  assert.equal(h.run("STAGE_ORDER.some(s=>s.id==='training')"),false);h.run('renderStageLocks()');assert.equal(h.run('selectedStageId'),'training');
@@ -128,4 +128,21 @@ test('intro goes straight to bomb instruction without a walking task or clear ba
  h.lesson(4);h.run('p.x=WW/2;p.y=TRAINING_LESSONS[4].y;trainingClearLesson()');h.tick(3.1);assert.equal(h.run('training.step'),5);const distance=h.run('p.y-training.vehicle.y');assert.ok(distance>=200&&distance<=450);assert.ok(h.run('training.vehicle.y>TRAINING_LESSONS[4].gate-100'));
  for(let i=0;i<300&&!h.run('training.phase==="talk"');i++)h.run('keys.ArrowUp=true;update(.02)');assert.equal(h.run('training.phase'),'talk');h.talk();
  for(let i=0;i<400&&h.run('p.y>training.vehicle.y+35');i++)h.run('keys.ArrowUp=true;update(.02)');h.run('keys.ArrowUp=false;interact=true;update(.01)');assert.equal(h.run('p.tank===training.vehicle'),true);
+});
+
+test('intro-to-bomb transition preserves world and screen position on short and tall viewports',()=>{
+ for(const height of [720,1440,1800]){
+  const h=fixture(height===720?undefined:{width:480,height,touch:true});assert.equal(h.run('H'),height);const before=h.run('({x:p.x,y:p.y,screenX:p.x-trainingCamera().x,screenY:p.y-trainingCamera().y})');
+  h.run('training.line=training.lines.length-1;training.typed=training.lines[training.line].length;trainingAdvanceDialogue()');assert.equal(h.run('training.step'),2);
+  const after=h.run('({x:p.x,y:p.y,screenX:p.x-trainingCamera().x,screenY:p.y-trainingCamera().y})');assert.deepEqual(after,before);
+  h.talk();h.tick(.1);assert.equal(h.run('p.y-trainingCamera().y'),before.screenY);assert.equal(h.run('p.y'),before.y);
+ }
+});
+test('each lesson plays the existing capture sound once when the delayed clear banner appears',()=>{
+ const h=fixture();h.c.clearSounds=[];h.run('sfx=(name)=>clearSounds.push(name)');
+ for(const step of [2,3,4,5,6]){
+  if(step===6){h.lesson(5);h.run('p.tank=training.vehicle;trainingEnterLesson(6)');h.talk();}else h.lesson(step);
+  h.run('trainingClearLesson()');const count=h.c.clearSounds.filter(n=>n==='capture').length;h.tick(1.95);assert.equal(h.c.clearSounds.filter(n=>n==='capture').length,count);h.tick(.05);assert.equal(h.c.clearSounds.filter(n=>n==='capture').length,count+1);h.tick(.5);assert.equal(h.c.clearSounds.filter(n=>n==='capture').length,count+1);
+ }
+ assert.equal(h.run('TRAINING_LESSONS[5].lines[0]'),'最後はこの戦場でもっとも重要な戦車の訓練です');
 });

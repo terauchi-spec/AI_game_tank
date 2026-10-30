@@ -114,7 +114,7 @@ function preloadGameSe(){
   const list=['bushEnter','unlockCard','fainting','firework','dirtStep','grassStep','objectiveDestroyed','enemyTankMove','win','lose','results','playerHit','deathHit','mg','enemyGun','cannon','enemyCannon','bazooka','sniper','soldierHit','vehicleHit','empty','bombPlace','bombExplosion','shellExplosion','propExplosion','vehicleDestroyed','coverBreak','enter','suspicion','detected','whistle'];
   if(stageMode==='indoor')list.push('indoorTick','indoorAlarm','door','document','allDocuments');
   if(stageMode==='front')list.push('airWarning','capture','aircraft','airExplosion');
-  if(stageMode==='decisive')list.push('capture');
+  if(stageMode==='decisive'||stageMode==='training')list.push('capture');
   const skillSounds={throw:['bombThrow'],dig:['hide','splash'],decoy:['decoyPlace','decoy'],buddy:['reinforcement'],drill:['drillStart','drillContact'],build:['build'],flame:['flameStart','flameLoop'],sniper:['sniperDeploy','sniperLens'],hound:['houndCommand','dogBark'],partner:['partnerCommand']};
   list.push(...(skillSounds[typeof skill!=='undefined'?skill:'']||[]));for(const name of list)loadGameSe(name);
  }
@@ -145,9 +145,9 @@ function updateGameAudio(){
  const bush=stageMode!=='indoor'&&(prior&&moved===0?prior.bush:typeof inBush==='function'&&inBush(p));
  gameSe.previous={x:p.x,y:p.y,at:now,bush};
  const speed=moved/dt,moving=dt<.3&&moved>.15&&speed<1200;
- // One shared source loops even while standing in the bush. Membership changes
- // bypass the 10Hz environment scan; unchanged loops need no parameter updates.
- const bushSound=bush&&!(p.dig>0)&&!(p.digPrep>0)&&(!p.tank||p.tank.kind!=='fighter')?'bushEnter':null;
+ // Rustling follows actual movement and stops on the first stationary frame.
+ // Bypass the 10Hz environment scan; unchanged loops need no parameter updates.
+ const bushSound=moving&&bush&&!(p.dig>0)&&!(p.digPrep>0)&&(!p.tank||p.tank.kind!=='fighter')?'bushEnter':null;
  if((gameSe.loops.get('bush')?.name||null)!==bushSound)setGameSeLoop('bush',bushSound,.18);
  const leftBush=prior?.bush&&!bush;
  if(leftBush)stopGameFootsteps();

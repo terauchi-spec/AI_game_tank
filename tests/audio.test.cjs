@@ -236,25 +236,35 @@ test('player fainting sound fires only after a successful new stun and preserves
  c.stunHuman({alive:true},'ally');assert.equal(sounds[1].name,'skill');assert.equal(c.scoreStats.tacticalStuns,1);
 });
 
-test('bush SE loops while standing inside, shares one source, and stops on the first exit frame',async()=>{
+test('bush SE shares one moving source, stops on the first stationary frame, resumes and stops on exit',async()=>{
  const h=harness(),{c}=h;let inside=false;c.inBush=()=>inside;await c.loadGameSe('bushEnter');await c.loadGameSe('grassStep');await c.loadGameSe('dirtStep');
  c.updateGameAudio();inside=true;c.now+=120;c.p.x+=10;c.updateGameAudio();await settle();
  const voice=c.get('gameSe.loops.get("bush").voice');assert.ok(voice);assert.equal(voice.source.loop,true);
- for(let i=0;i<5;i++){c.now+=16;c.updateGameAudio();await settle();assert.equal(c.get('gameSe.loops.get("bush").voice'),voice);}
- inside=false;c.now+=16;c.p.x+=10;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("bush")'),false);assert.equal(voice.source.stopped,true);assert.equal(c.get('gameSe.footstep.name'),'dirtStep');
+ for(let i=0;i<5;i++){c.now+=16;c.p.x+=1;c.updateGameAudio();await settle();assert.equal(c.get('gameSe.loops.get("bush").voice'),voice);}
+ c.now+=16;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("bush")'),false);assert.equal(voice.source.stopped,true);
+ c.now+=16;c.p.x+=1;c.updateGameAudio();await settle();const resumed=c.get('gameSe.loops.get("bush").voice');assert.ok(resumed);assert.notEqual(resumed,voice);
+ inside=false;c.now+=16;c.p.x+=10;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("bush")'),false);assert.equal(resumed.source.stopped,true);assert.equal(c.get('gameSe.footstep.name'),'dirtStep');
  inside=true;c.now+=16;c.p.x+=10;c.updateGameAudio();await settle();assert.notEqual(c.get('gameSe.loops.get("bush").voice'),voice);
  c.state='paused';c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("bush")'),false);
 });
-test('bush loops on spawn and ground vehicles, stays silent underground or in aircraft, and stops without a player',async()=>{
+test('bush is silent on spawn, rustles for moving infantry and ground vehicles, and stays silent underground or in aircraft',async()=>{
  for(const mode of ['spawn','dig','fighter','tank','truck']){
   const h=harness(),{c}=h;c.inBush=()=>true;await c.loadGameSe('bushEnter');
   if(mode==='dig')c.p.dig=1;if(['fighter','tank','truck'].includes(mode))c.p.tank={kind:mode,t:{id:'t34'}};
-  c.updateGameAudio();await settle();assert.equal(c.get('gameSe.loops.has("bush")'),!['dig','fighter'].includes(mode),mode);
+  c.updateGameAudio();await settle();assert.equal(c.get('gameSe.loops.has("bush")'),false);c.now+=16;c.p.x+=2;c.updateGameAudio();await settle();assert.equal(c.get('gameSe.loops.has("bush")'),!['dig','fighter'].includes(mode),mode);
   c.p=null;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("bush")'),false);
  }
 });
 test('leaving a bush before decoding finishes cannot start a delayed bush loop',async()=>{
  const h=harness({defer:true}),{c}=h;let inside=true;c.inBush=()=>inside;c.get('gameSe.preloaded=true');
- c.updateGameAudio();inside=false;c.now+=16;c.p.x+=1;c.updateGameAudio();
+ c.updateGameAudio();c.now+=16;c.p.x+=1;c.updateGameAudio();inside=false;c.now+=16;c.p.x+=1;c.updateGameAudio();
  for(const complete of [...h.waiting])complete();await settle();assert.equal(c.get('gameSe.loops.has("bush")'),false);assert.equal(h.sources.filter(s=>s.loop).length,0);
+});
+
+test('stopping inside the bush during decoding cannot start a late rustle',async()=>{
+ const h=harness({defer:true}),{c}=h;c.inBush=()=>true;c.get('gameSe.preloaded=true');c.updateGameAudio();c.now+=16;c.p.x+=2;c.updateGameAudio();c.now+=16;c.updateGameAudio();
+ for(const complete of [...h.waiting])complete();await settle();assert.equal(c.get('gameSe.loops.has("bush")'),false);assert.equal(h.sources.filter(s=>s.loop).length,0);
+});
+test('training preloads the existing capture-complete sound for lesson clears',()=>{
+ const h=harness(),{c}=h;c.state='preparing';c.stageMode='training';c.preloadGameSe();assert.ok(c.get('gameSe.queue.some(v=>v.name==="capture")||gameSe.pending.has("capture")||gameSe.cache.has("capture")'));
 });

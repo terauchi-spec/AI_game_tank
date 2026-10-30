@@ -45,3 +45,5 @@ Completed tasks latch for 2 seconds before the clear banner; input is released w
 The tank is at y=10700, 380 world units ahead of the bush/stun patch (previously 1960 units). Intro dialogue directly enters the bomb lesson, without a standalone movement objective or completion delay.
 
 The opening has two welcome lines followed by one combined movement explanation. The former separate introductory bomb line is omitted. Training vehicle HUD retains name/armor only; ammunition and fuel rows are not drawn and the panel is shortened. Other stages retain the complete HUD.
+
+Intro and bomb practice share the same initial north camera limit so advancing dialogue preserves both world and screen position on tall mobile viewports. Every task uses the existing capture-complete SE once when the delayed clear banner appears; it is preloaded for training. Bush rustling throughout the game now follows actual movement, stops on the first stationary frame, and safely cancels pending playback if decoding finishes after stopping.

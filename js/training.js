@@ -2,11 +2,11 @@
 let training=null;
 const TRAINING_DONE_KEY='tankGameTrainingCompleteV1';
 const TRAINING_LESSONS={
- 1:{name:'訓練を始めよう',y:12500,gate:12380,lines:['こっそり訓練施設にようこそ！','ここでは戦場の基本を、{こっそりネーム}さんに学んでもらいます','左スティックで移動します。まずは前へ進んでみましょう']},
+ 1:{name:'訓練を始めよう',y:12500,gate:11820,lines:['こっそり訓練施設にようこそ！','ここでは戦場の基本を、{こっそりネーム}さんに学んでもらいます','左スティックで移動します。まずは前へ進んでみましょう']},
  2:{name:'設置爆弾',y:12100,gate:11820,lines:['ドラム缶に近づいて、爆弾を設置したら（Bボタン）、少し離れて起爆させてみましょう（再度Bボタン）']},
  3:{name:'草むらに隠れる',y:11080,gate:10740,lines:['次は、敵にみつからないように草むらに入ってみましょう','草むらの中は、敵から見つかりにくくなります','見つからずに草むらの中で2秒待てたらクリアです']},
  4:{name:'背後から気絶',y:11080,gate:10740,lines:['それでは、後ろから近づいて2人の敵を気絶させてみましょう（敵近くでA）','前から見つかったり、爆弾で倒してしまったら、この練習をやり直します']},
- 5:{name:'戦車に乗って撃つ',y:10700,gate:10330,lines:['最後はこの戦場でもっとも重要な戦車です','戦車に乗り込んで（戦車近くでA）、大砲とマシンガンを撃ってみましょう（B・Sボタン）']},
+ 5:{name:'戦車に乗って撃つ',y:10700,gate:10330,lines:['最後はこの戦場でもっとも重要な戦車の訓練です','戦車に乗り込んで（戦車近くでA）、大砲とマシンガンを撃ってみましょう（B・Sボタン）']},
  6:{name:'砲塔を回して射撃',y:0,gate:0,lines:['戦車の砲塔は回転させることができます','4つのマトを破壊してください（BまたはSを長押ししながら操作）','この練習中は戦車が動きません。砲塔を上下左右に向けて狙いましょう']}
 };
 const TRAINING_FINALE=['おめでとう！これで訓練は以上です','おっと！スキルについての説明がまだでしたね！','スキルには種類があり、効果は様々です！色々と試してみてください','一人前のこっそり兵士になれるよう、がんばってくださいね！'];
@@ -46,7 +46,7 @@ function setupTrainingWorld(){
  base={x:-5000,y:-5000,w:10,h:10,hp:30,maxHp:30,deadAt:0};mission=null;
  Object.assign(p,{x:WW/2,y:12620,hp:3,tank:null,body:-Math.PI/2,ang:-Math.PI/2});
  // No skill use during basic controls; the user's selected skill remains unchanged for subsequent stages.
- training={step:1,phase:'talk',resets:0,hold:0,patrol:Math.PI/2,shots:{c:false,v:false},targets:[],hudKey:'',hudAt:0,gate:12380,checkpoint:{x:WW/2,y:12620},barrelBomb:false,vehicle:null};
+ training={step:1,phase:'talk',resets:0,hold:0,patrol:Math.PI/2,shots:{c:false,v:false},targets:[],hudKey:'',hudAt:0,gate:TRAINING_LESSONS[1].gate,checkpoint:{x:WW/2,y:12620},barrelBomb:false,vehicle:null};
  trainingClearTransient();rebuildSpatialGrid();trainingTalk(TRAINING_LESSONS[1].lines);syncTrainingHud();
 }
 function trainingBushCluster(){
@@ -121,7 +121,7 @@ function updateTrainingPresentation(dt){
  if(training.phase==='clearPending'){
   // Held controls were released once on entry; suppress new requests without repeated DOM writes.
   for(const key in keys)keys[key]=false;bombReq=false;cannonReq=false;interact=false;skillReq=false;mdown=false;training.clearDelay-=dt;
-  if(training.clearDelay<=1e-8){training.phase='clear';training.hudKey='';if(training.step===4){humans=[];clearFallenEnemies();}return true;}
+  if(training.clearDelay<=1e-8){training.phase='clear';training.hudKey='';sfx('capture');if(training.step===4){humans=[];clearFallenEnemies();}return true;}
   // Let the real explosion, fragments and stun aftermath play before the clear banner.
   return false;
  }
