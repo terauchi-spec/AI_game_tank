@@ -8,17 +8,17 @@ test('00 is always selectable without entering progression or changing 01..07 lo
 });
 test('training starts with HQ tiles, no threats, no active skill and a sequential assistant introduction',()=>{
  const h=fixture();assert.equal(h.run('ZONES.length'),1);assert.equal(h.run('ZONES[0].n'),'敵司令本部');assert.equal(h.run('humans.length+etanks.length+enemyDogs.length'),0);assert.equal(h.run('training.step'),1);const y=h.run('p.y');h.run("keys.ArrowUp=true;update(1);updateHQSpawn(100)");assert.equal(h.run('p.y'),y);assert.equal(h.run('humans.length'),0);
- h.talk();assert.equal(h.run('training.phase'),'active');assert.equal(h.run('training.step'),2);assert.equal(h.run('training.arrived'),true);assert.equal(h.run('objects[0].kind'),'barrel');
+ h.talk();assert.equal(h.run('training.phase'),'active');assert.equal(h.run('training.step'),2);assert.equal(h.run('training.arrived'),true);assert.equal(h.run('objects[0].kind'),'crate');
 });
-test('barrel exercise requires an actual bomb hit and explosion; walking or unrelated removal cannot clear it',()=>{
+test('crate exercise requires an actual bomb hit and explosion; walking or unrelated removal cannot clear it',()=>{
  const h=fixture();h.lesson(2);h.run('objects=[];updateTrainingMission(.1)');assert.equal(h.run('training.phase'),'active');h.lesson(2);
- h.run('p.x=training.barrel.x+training.barrel.w/2+42;p.y=training.barrel.y+training.barrel.h/2;bombReq=true;update(.01)');assert.equal(h.run('bombs.length'),1);
- h.run('p.x+=90;bombReq=true;update(.01)');assert.equal(h.run('training.barrelBomb'),true);for(let i=0;i<80&&h.run('training.phase')==='active';i++)h.run('update(.05)');assert.equal(h.run('training.phase'),'clearPending');assert.equal(h.run('p.hp'),3);assert.equal(h.run('state'),'play');
+ h.run('p.x=training.crate.x+training.crate.w/2+42;p.y=training.crate.y+training.crate.h/2;bombReq=true;update(.01)');assert.equal(h.run('bombs.length'),1);
+ h.run('p.x+=90;bombReq=true;update(.01)');assert.equal(h.run('training.crateBomb'),true);for(let i=0;i<80&&h.run('training.phase')==='active';i++)h.run('update(.05)');assert.equal(h.run('training.phase'),'clearPending');assert.equal(h.run('p.hp'),3);assert.equal(h.run('state'),'play');
 });
-test('natural bush cluster counts only two uninterrupted hidden seconds and gates northward travel until clear',()=>{
+test('natural bush cluster counts only three uninterrupted hidden seconds and gates northward travel until clear',()=>{
  const h=fixture();h.lesson(3);h.run('p.x=WW/2;p.y=TRAINING_LESSONS[3].y;updateTrainingMission(1)');assert.equal(h.run('training.hold'),1);
  h.run('p.x=100;p.y=12500;updateTrainingMission(.1)');assert.equal(h.run('training.hold'),0);
- h.run('p.x=WW/2;p.y=TRAINING_LESSONS[3].y;updateTrainingMission(1.9)');assert.equal(h.run('training.phase'),'active');h.run('updateTrainingMission(.1)');assert.equal(h.run('training.phase'),'clearPending');
+ h.run('p.x=WW/2;p.y=TRAINING_LESSONS[3].y;updateTrainingMission(2.9)');assert.equal(h.run('training.phase'),'active');h.run('updateTrainingMission(.1)');assert.equal(h.run('training.phase'),'clearPending');
  h.lesson(3);h.run('p.y=0;constrainTrainingMovement()');assert.equal(h.run('p.y'),h.run('training.gate+24'));assert.ok(h.run('trainingCamera().y')>=h.run('training.gate-220'));
  assert.equal(h.run('bushes.length'),7);assert.ok(h.run('bushes.every(b=>b.w<=94&&b.h<=72&&!b.trainingRound)'));h.run('p.x=WW/2+125;p.y=TRAINING_LESSONS[3].y+120');assert.equal(h.run('inBush(p)'),false,'outside the natural patch is exposed');
 });
@@ -35,7 +35,7 @@ test('two back A interactions clear stun training; a frontal interaction restart
 });
 test('boarding a real tank and firing both weapons is required before the four stationary targets',()=>{
  const h=fixture();h.lesson(5);h.run('p.x=training.vehicle.x;p.y=training.vehicle.y+40;interact=true;update(.01)');assert.equal(h.run('p.tank===training.vehicle'),true);
- h.run('keys.KeyD=true;update(.01);keys.KeyD=false');assert.equal(h.run('training.shots.c'),true);assert.equal(h.run('training.phase'),'active');for(let count=1;count<=3;count++){h.run('keys.KeyS=true;update(.01);keys.KeyS=false');assert.equal(h.run('training.shots.v'),count);assert.equal(h.run('training.phase'),count<3?'active':'clearPending');if(count<3)h.tick(.2);}
+ h.run('keys.KeyD=true;update(.01);keys.KeyD=false');assert.equal(h.run('training.shots.c'),true);assert.equal(h.run('training.phase'),'active');for(let count=1;count<=3;count++){h.run('keys.KeyS=true;update(.01);keys.KeyS=false');assert.equal(h.run('training.shots.v'),count);assert.equal(h.run('training.phase'),count<3?'active':'clearPending');if(count<3)h.tick(h.run('training.vehicle.t.vcd')+.02);}
  const y=h.run('p.y');
  h.tick(3.1);assert.equal(h.run('training.step'),6);assert.equal(h.run('objects.length'),4);assert.equal(h.run('p.y'),y);h.talk();h.run('keys.ArrowUp=true;keys.ArrowLeft=true;update(.5)');assert.equal(h.run('p.y'),y);assert.equal(h.run('p.x'),h.run('training.anchor.x'));assert.equal(h.run('p.body'),h.run('training.anchor.body'));
 });
@@ -67,7 +67,7 @@ test('burnt bush resets safely, all lesson views draw, and the final tank drill 
 });
 
 test('hiding flows directly into stuns with the same player, bushes and patrol; failures restore that checkpoint',()=>{
- const h=fixture();h.lesson(3);h.run('p.x=WW/2;p.y=TRAINING_LESSONS[3].y;updateTrainingMission(2)');assert.equal(h.run('training.phase'),'clearPending');
+ const h=fixture();h.lesson(3);h.run('p.x=WW/2;p.y=TRAINING_LESSONS[3].y;updateTrainingMission(3)');assert.equal(h.run('training.phase'),'clearPending');
  h.run('var savedBushes=bushes,savedGuards=humans,savedPlayer={x:p.x,y:p.y},savedGuardState=humans.map(h=>({x:h.x,y:h.y,face:h.face}));');
  h.tick(3.1);assert.equal(h.run('training.step'),4);assert.equal(h.run('training.phase'),'talk');assert.equal(h.run('training.arrived'),true);
  assert.equal(h.run('bushes===savedBushes&&humans===savedGuards'),true);assert.equal(h.run('p.x===savedPlayer.x&&p.y===savedPlayer.y'),true);assert.equal(h.run('humans.every((h,i)=>h.x===savedGuardState[i].x&&h.y===savedGuardState[i].y&&h.face===savedGuardState[i].face)'),true);
@@ -106,7 +106,7 @@ test('objective text uses its own panel and every lesson waits two seconds befor
   h.run("state='paused';update(4);syncTrainingHud()");assert.equal(h.run('training.phase'),'clearPending');assert.equal(h.nodes.get('trainingTask').hidden,true);
   h.run("state='play';update(.05);syncTrainingHud()");assert.equal(h.run('training.phase'),'clear');assert.equal(h.nodes.get('trainingClear').hidden,false);assert.equal(h.nodes.get('trainingTask').hidden,true);
  }
- h.lesson(2);h.run('syncTrainingHud()');assert.equal(h.nodes.get('trainingGuide').hidden,true);assert.equal(h.nodes.get('trainingTask').textContent,'ドラム缶を設置爆弾で爆破');
+ h.lesson(2);h.run('syncTrainingHud()');assert.equal(h.nodes.get('trainingGuide').hidden,true);assert.equal(h.nodes.get('trainingTask').textContent,'木箱を設置爆弾で爆破');
  h.run('trainingTalk(TRAINING_LESSONS[2].lines);syncTrainingHud()');assert.equal(h.nodes.get('trainingGuide').hidden,false);assert.equal(h.nodes.get('trainingTask').hidden,true);
 });
 test('guards start on either side and discovery shows the real found-mode reaction before resetting',()=>{
@@ -119,14 +119,14 @@ test('guards start on either side and discovery shows the real found-mode reacti
 test('waiting for the side patrol then walking into the real bush patch completes hiding without discovery',()=>{
  const h=fixture();h.lesson(3);h.run('p.x=WW/2;p.y=11430');h.tick(4,.02);
  for(let i=0;i<400&&h.run("training.phase==='active'");i++)h.run('keys.ArrowUp=p.y>11080;update(.02)');
- assert.equal(h.run('training.phase'),'clearPending');assert.equal(h.run('training.resets'),0);assert.ok(h.run('training.hold>=2'));
+ assert.equal(h.run('training.phase'),'clearPending');assert.equal(h.run('training.resets'),0);assert.ok(h.run('training.hold>=3'));
 });
 
-test('intro goes straight to bomb instruction without a walking task or clear banner; the tank is close to the stun area',()=>{
- const h=fixture();const y=h.run('p.y');h.run("training.line=training.lines.length-1;training.typed=training.lines[training.line].length;trainingAdvanceDialogue();syncTrainingHud()");assert.equal(h.run('training.step'),2);assert.equal(h.run('training.phase'),'talk');assert.match(h.run('training.lines[0]'),/^ドラム缶に近づいて/);assert.equal(h.run('training.arrived'),true);assert.equal(h.run('p.y'),y);assert.equal(h.nodes.get('trainingClear').hidden,true);
+test('intro goes straight to bomb instruction without a walking task or clear banner; the tank is ahead of the stun area',()=>{
+ const h=fixture();const y=h.run('p.y');h.run("training.line=training.lines.length-1;training.typed=training.lines[training.line].length;trainingAdvanceDialogue();syncTrainingHud()");assert.equal(h.run('training.step'),2);assert.equal(h.run('training.phase'),'talk');assert.match(h.run('training.lines[0]'),/^木箱に近づいて/);assert.equal(h.run('training.arrived'),true);assert.equal(h.run('p.y'),y);assert.equal(h.nodes.get('trainingClear').hidden,true);
  h.talk();assert.equal(h.run('training.phase'),'active');assert.equal(h.run('training.step'),2);assert.equal(h.run('TRAINING_LESSONS[1].lines.length'),3);assert.equal(h.run('TRAINING_LESSONS[1].lines[2]'),'左スティックで移動するのよ。まずは前へ進んでみましょうか');assert.equal(h.run('TRAINING_LESSONS[2].lines.length'),2);
  // Enter vehicle practice from the same location after stunning guards, then walk and actually board.
- h.lesson(4);h.run('p.x=WW/2;p.y=TRAINING_LESSONS[4].y;trainingClearLesson()');h.tick(3.1);assert.equal(h.run('training.step'),5);const distance=h.run('p.y-training.vehicle.y');assert.ok(distance>=200&&distance<=450);assert.ok(h.run('training.vehicle.y>TRAINING_LESSONS[4].gate-100'));
+ h.lesson(4);h.run('p.x=WW/2;p.y=TRAINING_LESSONS[4].y;trainingClearLesson()');h.tick(3.1);assert.equal(h.run('training.step'),5);const distance=h.run('p.y-training.vehicle.y');assert.ok(distance>=500&&distance<=1000);assert.ok(h.run('training.vehicle.y<TRAINING_LESSONS[4].gate-270'));
  for(let i=0;i<300&&!h.run('training.phase==="talk"');i++)h.run('keys.ArrowUp=true;update(.02)');assert.equal(h.run('training.phase'),'talk');h.talk();
  for(let i=0;i<400&&h.run('p.y>training.vehicle.y+35');i++)h.run('keys.ArrowUp=true;update(.02)');h.run('keys.ArrowUp=false;interact=true;update(.01)');assert.equal(h.run('p.tank===training.vehicle'),true);
 });
@@ -207,4 +207,24 @@ test('training WebP artwork reuses images and one repeating wall pattern; unload
  h.lesson(5);h.lesson(6);h.run('drawTrainingTarget(training.targets[0])');assert.equal(h.c.spriteCalls.length,1);assert.equal(h.run('trainingArtwork.target.src'),'assets/ui/training/target.webp');assert.equal(h.run('training.targets.every(t=>t.w===52&&t.h===52&&!t.hit)'),true);
  h.run('var oldWallImage=trainingArtwork.wall,oldTargetImage=trainingArtwork.target;setupTrainingWorld()');assert.equal(h.run('trainingArtwork.wall===oldWallImage&&trainingArtwork.target===oldTargetImage'),true);
  h.run('trainingArtwork.wall.complete=false;trainingArtwork.target.complete=false;drawTrainingWall(covers[0],12000);drawTrainingTarget({x:400,y:100,w:52,h:52})');assert.equal(h.c.patternCalls,1);assert.equal(h.c.spriteCalls.length,1);
+});
+
+
+test('wider walls and three-second hide objective agree with collision bounds and HUD',()=>{
+ const h=fixture();assert.equal(h.run('TRAINING_RIGHT-TRAINING_LEFT'),520);assert.equal(h.run('covers[0].x+covers[0].w'),220);assert.equal(h.run('covers[1].x'),740);
+ h.lesson(3);h.run('canDetect=()=>false;p.x=WW/2;p.y=TRAINING_LESSONS[3].y;updateTrainingMission(2.99);syncTrainingHud()');assert.equal(h.run('training.phase'),'active');assert.match(h.nodes.get('trainingTask').textContent,/3秒/);h.run('updateTrainingMission(.02)');assert.equal(h.run('training.phase'),'clearPending');
+});
+test('stun completion preserves bushes and screen position, then requires walking before the tank dialogue',()=>{
+ for(const height of [720,1440,1800])for(const y of [11080,10764]){
+  const h=fixture(height===720?undefined:{width:480,height,touch:true});h.lesson(3);h.run(`p.x=WW/2;p.y=${y}`);h.lesson(4);
+  h.run('var retainedBushes=bushes,retainedPlayer={x:p.x,y:p.y},retainedCamera=trainingCamera();trainingClearLesson()');h.tick(3.1);h.run('syncTrainingHud()');
+  assert.equal(h.run('training.step'),5);assert.equal(h.run('training.phase'),'approach');assert.equal(h.run('training.arrived'),false);assert.equal(h.run('bushes===retainedBushes'),true);assert.equal(h.run('p.x===retainedPlayer.x&&p.y===retainedPlayer.y'),true);assert.deepEqual(h.run('trainingCamera()'),h.run('retainedCamera'));assert.equal(h.nodes.get('trainingTask').textContent,'前へ進んで、次の訓練に向かいましょう');assert.ok(h.run('training.vehicle.y<retainedCamera.y'));
+  h.run('p.y-=1;updateTrainingMission(.01)');assert.ok(Math.abs(h.run('trainingCamera().y-retainedCamera.y'))<=1.001);assert.equal(h.run('training.phase'),'approach');
+  for(let n=0;n<400&&h.run('training.phase')==='approach';n++)h.run('keys.ArrowUp=true;update(.05)');assert.equal(h.run('training.phase'),'talk');assert.equal(h.run('bushes===retainedBushes'),true);h.talk();h.run('p.tank=training.vehicle;p.x=training.vehicle.x;p.y=training.vehicle.y;trainingEnterLesson(6)');assert.equal(h.run('bushes===retainedBushes'),true);
+ }
+});
+test('training draws from all seven actual tank types with their own vehicle parameters',()=>{
+ const h=fixture(),seen=new Set();for(let n=0;n<70;n++){
+  h.lesson(5);seen.add(h.run('training.vehicle.t.id'));assert.equal(h.run('TYPES.includes(training.vehicle.t)&&training.vehicle.kind==="tank"'),true);assert.equal(h.run('training.vehicle.hp===training.vehicle.t.hp&&training.vehicle.c===training.vehicle.t.cmax&&training.vehicle.v===training.vehicle.t.vmax&&training.vehicle.f===training.vehicle.t.fmax'),true);
+ }assert.equal(seen.size,7);
 });

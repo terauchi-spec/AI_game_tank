@@ -27,13 +27,13 @@ function trainingConcretePattern(){
  return pattern;
 }
 const TRAINING_DONE_KEY='tankGameTrainingCompleteV1';
-const TRAINING_LEFT=280,TRAINING_RIGHT=680;
+const TRAINING_LEFT=220,TRAINING_RIGHT=740;
 const TRAINING_LESSONS={
  1:{name:'訓練を始めよう',y:12500,gate:11820,lines:['こっそり訓練施設にようこそ！','ここでは戦場の基本を、{こっそりネーム}さんに学んでもらうわ','左スティックで移動するのよ。まずは前へ進んでみましょうか']},
- 2:{name:'設置爆弾',y:12100,gate:11820,lines:['ドラム缶に近づいて、爆弾を設置したら（Bボタン）、少し離れて起爆させてみましょうか（再度Bボタン）','実戦では、自分の爆弾でもダメージを受けるから、しっかり離れてね']},
- 3:{name:'草むらに隠れる',y:11080,gate:10740,lines:['次は、敵にみつからないように草むらに入ってみましょうか','草むらの中は、敵から見つかりにくくなるわ','青い兵士の視界に入らないように、こっそり移動するのがポイントよ','見つからずに草むらの中で2秒待てたらクリアよ']},
+ 2:{name:'設置爆弾',y:12100,gate:11820,lines:['木箱に近づいて、爆弾を設置したら（Bボタン）、少し離れて起爆させてみましょうか（再度Bボタン）','実戦では、自分の爆弾でもダメージを受けるから、しっかり離れてね']},
+ 3:{name:'草むらに隠れる',y:11080,gate:10740,lines:['次は、敵にみつからないように草むらに入ってみましょうか','草むらの中は、敵から見つかりにくくなるわ','青い兵士の視界に入らないように、こっそり移動するのがポイントよ','見つからずに草むらの中で3秒待てたらクリアよ']},
  4:{name:'背後から気絶',y:11080,gate:10740,lines:['じゃあ、後ろから近づいて2人の敵を気絶させてみましょうか（敵近くでA）','前から見つかったり、爆弾で倒してしまったら、この練習をやり直すわね']},
- 5:{name:'戦車に乗って撃つ',y:10700,gate:10330,lines:['最後はこの戦場でもっとも重要な戦車の訓練よ','戦車に乗り込んで（戦車近くでA）、大砲を1発、マシンガンを3発以上撃ってみましょうか（B・Sボタン）']},
+ 5:{name:'戦車に乗って撃つ',y:10200,gate:9830,lines:['最後はこの戦場でもっとも重要な戦車の訓練よ','戦車に乗り込んで（戦車近くでA）、大砲を1発、マシンガンを3発以上撃ってみましょうか（B・Sボタン）']},
  6:{name:'砲塔を回して射撃',y:0,gate:0,lines:['戦車の砲塔は回転させることができるのよ','4つのマトを破壊してね（BまたはSを長押ししながら操作）','この練習中は戦車が動かないわ。砲塔を上下左右に向けて狙いましょうか']}
 };
 const TRAINING_FINALE=['おめでとう！これで訓練は以上よ','おっと！スキル（Sボタン）についての説明がまだだったわね！','スキルには種類があって、効果は様々よ！実戦で色々と試してみてね','一人前のこっそり兵士になれるよう、がんばってね！'];
@@ -74,7 +74,7 @@ function setupTrainingWorld(){
  base={x:-5000,y:-5000,w:10,h:10,hp:30,maxHp:30,deadAt:0};mission=null;
  Object.assign(p,{x:WW/2,y:12620,hp:3,tank:null,body:-Math.PI/2,ang:-Math.PI/2});
  // No skill use during basic controls; the user's selected skill remains unchanged for subsequent stages.
- training={step:1,phase:'talk',resets:0,hold:0,patrol:Math.PI/2,shots:{c:false,v:0},targets:[],hudKey:'',hudAt:0,gate:TRAINING_LESSONS[1].gate,checkpoint:{x:WW/2,y:12620},barrelBomb:false,vehicle:null};
+ training={step:1,phase:'talk',resets:0,hold:0,patrol:Math.PI/2,shots:{c:false,v:0},targets:[],hudKey:'',hudAt:0,gate:TRAINING_LESSONS[1].gate,checkpoint:{x:WW/2,y:12620},crateBomb:false,vehicle:null};
  trainingClearTransient();rebuildSpatialGrid();trainingTalk(TRAINING_LESSONS[1].lines);syncTrainingHud();
 }
 function trainingBushCluster(){
@@ -84,12 +84,14 @@ function trainingBushCluster(){
 }
 function trainingEnterLesson(step){
  const continuing=step===4&&training.step===3;
+ const enteringVehicle=step===5&&training.step===4;
+ const previousCamera=enteringVehicle?trainingCamera():null;
  const previousBushes=bushes,previousGuards=humans;
  if(continuing)training.stunStart={player:{x:p.x,y:p.y,body:p.body,ang:p.ang},bushes:bushes.map(b=>({...b})),guards:humans.map(h=>({...h})),patrol:training.patrol};
  trainingClearTransient();training.step=step;training.phase='approach';training.hold=0;training.hudKey='';training.arrived=false;
  const lesson=TRAINING_LESSONS[step];training.gate=lesson.gate;
- objects=[];humans=[];bushes=[];cars=[];
- if(step===2){const size=typeof BARREL_SIZE==='number'?BARREL_SIZE:40;training.barrel={kind:'barrel',trainingBarrel:true,x:WW/2-size/2,y:lesson.y-size/2,w:size,h:size};objects=[training.barrel];training.barrelBomb=false;}
+ objects=[];humans=[];bushes=step>=5?previousBushes:[];cars=[];
+ if(step===2){const w=CRATE_W,h=CRATE_H;training.crate={kind:'crate',trainingCrate:true,x:WW/2-w/2,y:lesson.y-h/2,w,h};objects=[training.crate];training.crateBomb=false;}
  if(step===3){
   training.bushes=trainingBushCluster();bushes=training.bushes;training.bush=bushes[0];training.patrol=0;training.stunStart=null;
   humans=[trainingGuard(WW/2+175,lesson.y,Math.PI/2),trainingGuard(WW/2-175,lesson.y,Math.PI*1.5)];
@@ -105,7 +107,8 @@ function trainingEnterLesson(step){
   training.arrived=true;trainingTalk(lesson.lines);
  }
  if(step===5){
-  const t=TYPES[0];training.vehicle={x:WW/2,y:lesson.y,t,kind:'tank',hp:t.hp,c:t.cmax,v:t.vmax,f:t.fmax,ch:0,mgHits:0,body:-Math.PI/2};cars=[training.vehicle];training.shots={c:false,v:0};
+  training.vehicleCameraOffset=previousCamera?previousCamera.y-(p.y-H*.6):0;
+  const t=TYPES[Math.floor(R()*TYPES.length)];training.vehicle={x:WW/2,y:lesson.y,t,kind:'tank',hp:t.hp,c:t.cmax,v:t.vmax,f:t.fmax,ch:0,mgHits:0,body:-Math.PI/2};cars=[training.vehicle];training.shots={c:false,v:0};
  }
  if(step===6){
   // If a player dismounted after firing, board the same training vehicle for the stationary drill.
@@ -176,7 +179,7 @@ function constrainTrainingMovement(){
 }
 function trainingCamera(){
  if(stageMode!=='training'||!training||!p)return null;
- return{x:Math.max(0,Math.min(WW-W,p.x-W/2)),y:training.step===6?p.y-H/2:Math.max(training.gate-220,Math.min(WH-H,p.y-H*.6))};
+ return{x:Math.max(0,Math.min(WW-W,p.x-W/2)),y:training.step===6?p.y-H/2:Math.max(training.gate-220,Math.min(WH-H,p.y-H*.6+(training.step===5?(training.vehicleCameraOffset||0):0)))};
 }
 function updateTrainingMission(dt){
  if(!training||stageMode!=='training'||state!=='play')return;
@@ -185,7 +188,7 @@ function updateTrainingMission(dt){
  const lesson=TRAINING_LESSONS[training.step];
  if(!training.arrived&&p.y<=lesson.y+270){training.arrived=true;trainingTalk(lesson.lines);return;}
  if(!training.arrived)return;
- if(training.step===2){if(training.barrelBomb&&!objects.includes(training.barrel))trainingClearLesson();return;}
+ if(training.step===2){if(training.crateBomb&&!objects.includes(training.crate))trainingClearLesson();return;}
  if(training.step===3||training.step===4){
   if(training.bushes&&training.bushes.some(b=>!bushes.includes(b)||b.burnT>0)){trainingResetLesson('草むらを残して、隠れてみましょうか');return;}
   if(humans.some(h=>!h.alive||(h.stun>0&&!h.trainingAStun))){trainingResetLesson('爆弾ではなく、今回の操作で挑戦してね');return;}
@@ -195,7 +198,7 @@ function updateTrainingMission(dt){
    if(h.st||canDetect(h,p,h.face,'p')){trainingReactToDetection(h);return;}
   }
   training.patrol+=dt*.38;
-  if(training.step===3){training.hold=inBush(p)?training.hold+dt:0;if(training.hold>=2)trainingClearLesson();}
+  if(training.step===3){training.hold=inBush(p)?training.hold+dt:0;if(training.hold>=3)trainingClearLesson();}
   else if(humans.length===2&&humans.every(h=>h.trainingAStun&&h.stun>0))trainingClearLesson();
  }
  if(training.step===5&&training.shots.c&&training.shots.v>=3)trainingClearLesson();
@@ -211,7 +214,7 @@ function trainingTryStun(h,source){
 function trainingRecordShot(from,kind){if(stageMode==='training'&&training?.step===5&&training.arrived&&training.phase==='active'&&p.tank&&from==='p'&&(kind==='c'||kind==='v'))training.shots[kind]=kind==='v'?training.shots.v+1:true;}
 function trainingObjectDamage(o,source){
  if(stageMode!=='training'||!training)return false;
- if(o.trainingBarrel&&['bomb','bombBlast','bombDirect'].includes(source))training.barrelBomb=true;
+ if(o.trainingCrate&&['bomb','bombBlast','bombDirect'].includes(source))training.crateBomb=true;
  if(!o.trainingTarget)return false;
  if(training.step===6&&training.phase==='active'&&['cannonDirect','mg'].includes(source)){
   if(!o.hit){o.hit=true;objects=objects.filter(q=>q!==o);if(source==='cannonDirect')cannonImpact(o.x+26,o.y+26,'p');else{burst(o.x+26,o.y+26,12,'#e9d69e',130);sfx('coverBreak',o);}rebuildSpatialGrid();}
@@ -248,7 +251,7 @@ function syncTrainingHud(){
  if(guide.hidden===talking)guide.hidden=!talking;const taskVisible=active&&!talking&&training.phase!=='clear';if(taskPanel.hidden===taskVisible)taskPanel.hidden=!taskVisible;const clearVisible=active&&training.phase==='clear';if(clear.hidden===clearVisible)clear.hidden=!clearVisible;if(!active)return;
  const t=training,talk=t.phase==='talk',now=performance.now();
  if(t.hudKey&&now<t.hudAt&&t.hudPhase===t.phase&&t.hudLine===t.line)return;t.hudAt=now+100;t.hudPhase=t.phase;t.hudLine=t.line;
- const task=t.step===2?'ドラム缶を設置爆弾で爆破':t.step===3?'草むらに隠れる '+Math.min(2,t.hold).toFixed(1)+' / 2秒':t.step===4?'背後から気絶 '+humans.filter(h=>h.trainingAStun&&h.stun>0).length+' / 2人':t.step===5?'主砲 '+(t.shots.c?'🔴':'—')+'　マシンガン '+(t.shots.v>=3?'🔴':'—')+' '+Math.min(3,t.shots.v)+' / 3発':t.step===6?'マト '+t.targets.filter(v=>v.hit).length+' / 4':'左スティックで移動';
+ const task=t.step===2?'木箱を設置爆弾で爆破':t.step===3?'草むらに隠れる '+Math.min(3,t.hold).toFixed(1)+' / 3秒':t.step===4?'背後から気絶 '+humans.filter(h=>h.trainingAStun&&h.stun>0).length+' / 2人':t.step===5?'主砲 '+(t.shots.c?'🔴':'—')+'　マシンガン '+(t.shots.v>=3?'🔴':'—')+' '+Math.min(3,t.shots.v)+' / 3発':t.step===6?'マト '+t.targets.filter(v=>v.hit).length+' / 4':'左スティックで移動';
  const text=talk?t.lines[t.line].slice(0,t.typed):t.phase==='reacting'?'敵に発見されました':t.phase==='approach'?'前へ進んで、次の訓練に向かいましょう':task;
  const key=t.step+'|'+t.phase+'|'+text;if(key===t.hudKey)return;t.hudKey=key;
  if(talk)document.getElementById('trainingText').textContent=text;else taskPanel.textContent=text;

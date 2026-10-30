@@ -6,7 +6,7 @@ numbers, prerequisites, achievements, stage records and leaderboard remain intac
 New players see it selected first until training is completed; the completion key
 `tankGameTrainingCompleteV1` affects only that default selection, not unlocks.
 
-The guide uses a lightweight SVG portrait of a female military assistant, a speech
+The guide uses a cached WebP face portrait of Aira, a speech
 bubble, screen-wide tap-to-advance dialogue and an optional step-clear overlay. Dialogues
 and the 1.05-second clear presentation freeze simulation using the existing update
 loop; there are no additional polling or animation timers. Dialogue reveals one character per 40 ms using the same game loop; a tap reveals the full current line before advancing. A pulsing triangle appears once that line is complete. The menu stays above the tap surface, and opening it hides the guide and pauses typing. The greeting reads the saved player name. Pausing also pauses the
@@ -16,10 +16,10 @@ no repeated DOM writes. Field props and training guards are bounded.
 | Step | Condition | Reset / progression |
 | --- | --- | --- |
 | 1 Introduction | Read the sequential control introduction | Immediately show bomb instruction; no walking task or clear banner |
-| 2 Bomb | Place/detonate an actual bomb and destroy the barrel | Non-bomb removal cannot clear |
-| 3 Bush | Stay inside the natural seven-bush patch, unseen, for 2 consecutive seconds | Seen, guard hurt/killed, or destroyed/burning bush resets this step |
+| 2 Bomb | Place/detonate an actual bomb and destroy the wooden crate | Non-bomb removal cannot clear |
+| 3 Bush | Stay inside the natural seven-bush patch, unseen, for 3 consecutive seconds | Seen, guard hurt/killed, or destroyed/burning bush resets this step |
 | 4 Stun | Use A from behind to stun both live guards without detection | Front approach, detection or bomb casualties reset this step; both guards disappear on clear |
-| 5 Vehicle | Board the training tank and actually fire cannon once and MG at least three times | One cannon and three real MG fire calls required; unlimited supplies and no damage |
+| 5 Vehicle | Board one of seven randomly selected training tanks and actually fire cannon once and MG at least three times | One cannon and three real MG fire calls required; unlimited supplies and no damage |
 | 6 Turret | Destroy four cardinal targets with cannon direct hits or MG | Hull movement/dismount disabled; bombs and blast-radius hits do not count |
 
 There are no ordinary enemy spawns. The same grass patch, player position and two guards carry directly from hiding into the stun drill. Failed stun attempts restore that transition checkpoint. The guards begin on the left/right sides of the patch; discovery calls the normal found-mode reaction (face the player, red ! and detection sound), then resets after 1.2 seconds. Only the two non-firing tutorial guards appear
@@ -42,12 +42,12 @@ Abandoning training likewise cannot grant rewards or open a graded evaluation.
 
 Completed tasks latch for 2 seconds before the clear banner; input is released while explosion/fragment effects continue. The banner then lasts 1.05 seconds. Both delays pause with the menu. Only actual dialogue shows the assistant portrait and speech bubble. Objective/progress text has a separate dark rectangular panel. The triangle is absolutely placed in the bubble corner and reserves no extra row; dialogue fonts are 26 px desktop / 21 px mobile.
 
-The tank is at y=10700, 380 world units ahead of the bush/stun patch (previously 1960 units). Intro dialogue directly enters the bomb lesson, without a standalone movement objective or completion delay.
+The tank is at y=10200, 880 world units ahead of the bush/stun patch. Stun completion preserves the player and camera position and the existing grass patch, then shows the normal forward-walking objective. A fixed camera offset in vehicle practice preserves screen continuity on tall phones. Grass also remains through the final turret exercise. Intro dialogue directly enters the bomb lesson, without a standalone movement objective or completion delay.
 
 The opening has two welcome lines followed by one combined movement explanation. The former separate introductory bomb line is omitted. Training vehicle HUD retains name/armor only; ammunition and fuel rows are not drawn and the panel is shortened. Other stages retain the complete HUD.
 
 Intro and bomb practice share the same initial north camera limit so advancing dialogue preserves both world and screen position on tall mobile viewports. Every task uses the existing capture-complete SE once when the delayed clear banner appears; it is preloaded for training. Bush rustling throughout the game now follows actual movement, stops on the first stationary frame, and safely cancels pending playback if decoding finishes after stopping.
 
-Side walls are two continuous indestructible cover colliders (inner faces x=280/680, 400-unit corridor), retained across lesson changes/resets. They reuse common collision/shot blocking and skip only training-wall carving; visible strips are drawn directly with no large raster allocations. Before stationary target setup, the tank x-position is constrained to the safe firing center range so all four targets remain inside the corridor even after driving along a wall. Each newly displayed assistant line plays the existing uiSelect cue once through the game loop; revealing the remaining text does not replay it. Stage 00 success uses 訓練完了 and normal stages restore 作戦成功.
+Side walls are two continuous indestructible cover colliders (inner faces x=220/740, 520-unit corridor), retained across lesson changes/resets. They reuse common collision/shot blocking and skip only training-wall carving; visible strips are drawn directly with no large raster allocations. Before stationary target setup, the tank x-position is constrained to the safe firing center range so all four targets remain inside the corridor even after driving along a wall. Each newly displayed assistant line plays the existing uiSelect cue once through the game loop; revealing the remaining text does not replay it. Stage 00 success uses 訓練完了 and normal stages restore 作戦成功.
 
 Training hides the infantry status icons (hearts, bomb and stealth) and the entire vehicle HUD on both touch and desktop. Normal-stage HUDs remain unchanged. Bomb instructions now immediately warn that the player can take damage from their own bombs in real missions.
