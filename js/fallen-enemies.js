@@ -1,7 +1,25 @@
 // Cosmetic only: bounded snapshots, independent of actors, collision, AI and scoring.
 const FALLEN_ENEMY_LIMIT=80,FALLEN_ENEMY_SIZE=44,ENEMY_CRY_FLIGHT_DURATION=.65,ENEMY_CRY_LIFETIME=10;
 const ENEMY_CRY_FLY_SCALE=1.10*1.10,ENEMY_CRY_SIT_SCALE=.95*.95;
+// Source frames exclude generated transparent padding (alpha >=32 bounds plus a 2px fringe).
+// Blue artwork's solid longest edge is 188px on a 192px canvas; use the same visible extent.
+// Precomputed offline: never scan pixels, crop images or allocate canvases during gameplay.
+const FALLEN_CRY_FRAMES={
+ white:{'cry-flying':{x:1,y:7,w:252,h:211,solid:248},'cry-sitting':{x:39,y:22,w:201,h:190,solid:197}},
+ ally:{'cry-flying':{x:1,y:1,w:254,h:214,solid:250},'cry-sitting':{x:33,y:3,w:216,h:207,solid:212}}
+};
 const fallenEnemyArt={},fallenEnemies=[];
+function drawCryingSoldier(im,pose,variant,size){
+ const frame=FALLEN_CRY_FRAMES[variant]?.[pose];
+ if(frame){
+  const scale=size*(188/192)/frame.solid,w=frame.w*scale,h=frame.h*scale;
+  g.drawImage(im,frame.x,frame.y,frame.w,frame.h,-w/2,-h/2,w,h);
+ }else{
+  // Keep the reference blue sprites exactly as before.
+  const scale=size/Math.max(im.naturalWidth,im.naturalHeight),w=im.naturalWidth*scale,h=im.naturalHeight*scale;
+  g.drawImage(im,-w/2,-h/2,w,h);
+ }
+}
 function loadFallenEnemyArtwork(){
  for(const variant of ['blue','white','ally'])for(const pose of ['cry-flying','cry-sitting','supine']){
   const key=variant==='blue'?pose:variant+'-'+pose;
@@ -45,9 +63,8 @@ function drawFallenEnemies(cx,cy){
   const t=Math.min(1,body.age/ENEMY_CRY_FLIGHT_DURATION),flying=t<1,lift=flying?Math.sin(Math.PI*t)*36:0;
   const x=body.x+body.dx*t,y=body.y+body.dy*t-lift,size=FALLEN_ENEMY_SIZE*(flying?ENEMY_CRY_FLY_SCALE:ENEMY_CRY_SIT_SCALE),radius=size*.6;
   if(!sameFloor||x+radius<cx||x-radius>cx+W||y+radius<cy||y-radius>cy+H){fallenEnemies.splice(i,1);continue;}
-  const im=fallenSoldierArt(flying?'cry-flying':'cry-sitting',body.variant);if(!assetOK(im))continue;
-  const scale=size/Math.max(im.naturalWidth,im.naturalHeight),w=im.naturalWidth*scale,h=im.naturalHeight*scale;
-  g.save();g.translate(x,y);if(flying)g.rotate(body.flip*Math.sin(Math.PI*t)*.18);if(body.flip<0)g.scale(-1,1);g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';g.drawImage(im,-w/2,-h/2,w,h);g.restore();
+  const pose=flying?'cry-flying':'cry-sitting',im=fallenSoldierArt(pose,body.variant);if(!assetOK(im))continue;
+  g.save();g.translate(x,y);if(flying)g.rotate(body.flip*Math.sin(Math.PI*t)*.18);if(body.flip<0)g.scale(-1,1);g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';drawCryingSoldier(im,pose,body.variant,size);g.restore();
  }
 }
 function drawStunnedEnemy(x,y,face,size=FALLEN_ENEMY_SIZE*1.15,variant='blue'){
@@ -59,7 +76,6 @@ function drawStunnedEnemy(x,y,face,size=FALLEN_ENEMY_SIZE*1.15,variant='blue'){
 // The scope has its own projected character layer; keep the same gentle reaction there.
 function drawScopedCryingEnemy(h,x,y,size){
  const t=Math.min(1,Math.max(0,(h.sniperFallMax||.72)-(h.sniperFallT||0))/ENEMY_CRY_FLIGHT_DURATION),flying=t<1;
- const im=fallenSoldierArt(flying?'cry-flying':'cry-sitting',fallenSoldierVariant(h));if(!assetOK(im))return false;
- const scale=size*(flying?ENEMY_CRY_FLY_SCALE:ENEMY_CRY_SIT_SCALE)/Math.max(im.naturalWidth,im.naturalHeight),w=im.naturalWidth*scale,height=im.naturalHeight*scale;
- g.save();g.translate(x,y-(flying?Math.sin(Math.PI*t)*size*.3:0));if(Number.isFinite(h.sniperFallA)&&Math.cos(h.sniperFallA)<0)g.scale(-1,1);g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';g.drawImage(im,-w/2,-height/2,w,height);g.restore();return true;
+ const pose=flying?'cry-flying':'cry-sitting',variant=fallenSoldierVariant(h),im=fallenSoldierArt(pose,variant);if(!assetOK(im))return false;
+ g.save();g.translate(x,y-(flying?Math.sin(Math.PI*t)*size*.3:0));if(Number.isFinite(h.sniperFallA)&&Math.cos(h.sniperFallA)<0)g.scale(-1,1);g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';drawCryingSoldier(im,pose,variant,size*(flying?ENEMY_CRY_FLY_SCALE:ENEMY_CRY_SIT_SCALE));g.restore();return true;
 }

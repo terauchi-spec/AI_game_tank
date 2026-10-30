@@ -127,3 +127,38 @@ test('enemy bullets and mines leave one olive reaction even after dead allies ar
   run('updateAlly(.1)');assert.equal(run('allies.length'),0);assert.equal(run('fallenEnemies.length'),1);assert.equal(run('scoreStats.humanKills'),0);
  }
 });
+
+// Measured from the shipped assets' alpha >=32 silhouette, independent of render constants.
+const cryingAssetMeasurements={
+ 'cry-flying':{width:192,height:165,solid:188},'cry-sitting':{width:191,height:192,solid:188},
+ 'white-cry-flying':{width:256,height:221,solid:248},'white-cry-sitting':{width:256,height:219,solid:197},
+ 'ally-cry-flying':{width:256,height:216,solid:250},'ally-cry-sitting':{width:256,height:212,solid:212}
+};
+function measuredArt(h){
+ for(const [name,m] of Object.entries(cryingAssetMeasurements))Object.assign(h.get(`fallenEnemyArt[${JSON.stringify(name)}]`),{naturalWidth:m.width,naturalHeight:m.height});
+}
+function visibleCryingSize(draw){
+ const name=path.basename(draw[0].src,'.webp'),m=cryingAssetMeasurements[name];
+ if(draw.length===5)return m.solid*draw[3]/m.width;
+ assert.equal(draw.length,9);const [,sx,sy,sw,sh,dx,dy,dw,dh]=draw;
+ assert.ok(sx>=0&&sy>=0&&sx+sw<=m.width&&sy+sh<=m.height,'source frame stays inside its image');
+ assert.ok(Math.abs(dw/sw-dh/sh)<1e-10,'aspect ratio preserved');assert.equal(dx,-dw/2);assert.equal(dy,-dh/2);
+ return m.solid*dw/sw;
+}
+test('white and allied crying silhouettes match the blue reference in both world poses',()=>{
+ const h=harness();h.c.loadFallenEnemyArtwork();measuredArt(h);
+ for(const variant of ['blue','white','ally'])h.c.rememberFallenEnemy({x:100,y:100,alive:false},variant);
+ for(const dt of [0,1]){
+  h.c.updateFallenEnemies(dt);h.draws.length=0;h.c.drawFallenEnemies(0,0);assert.equal(h.draws.length,3);
+  const sizes=h.draws.map(visibleCryingSize);for(const size of sizes)assert.ok(Math.abs(size-sizes[0])<1e-8);
+  const blue=h.draws.find(d=>!/(white|ally)-/.test(d[0].src));assert.equal(blue.length,5,'reference blue uses its original untrimmed draw');
+ }
+});
+test('white crying size correction is also applied inside the sniper scope',()=>{
+ const h=harness();h.c.loadFallenEnemyArtwork();measuredArt(h);
+ for(const remaining of [.72,.01]){
+  h.draws.length=0;for(const elite of [false,true])h.c.drawScopedCryingEnemy({elite,sniperFallMax:.72,sniperFallT:remaining},100,100,70);
+  assert.ok(Math.abs(visibleCryingSize(h.draws[0])-visibleCryingSize(h.draws[1]))<1e-8);
+ }
+ for(const variant of ['blue','white','ally']){h.c.drawStunnedEnemy(100,100,0,undefined,variant);assert.equal(h.draws.at(-1).length,5,'stun artwork is not cropped or resized by crying correction');}
+});
