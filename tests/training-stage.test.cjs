@@ -198,3 +198,13 @@ test('training hides infantry status icons and restores hearts, bomb and stealth
   assert.deepEqual(h.c.hudCalls,['heart','heart','heart','bomb','stealth']);
  }
 });
+
+
+test('training WebP artwork reuses images and one repeating wall pattern; unloaded images keep safe fallbacks',()=>{
+ const h=fixture();h.c.patternCalls=0;h.c.spriteCalls=[];
+ h.run("g.createPattern=(image,repeat)=>{patternCalls++;if(repeat!=='repeat')throw Error('wall must repeat');return {image};};g.drawImage=(...args)=>spriteCalls.push(args);drawTrainingWall(covers[0],12000);drawTrainingWall(covers[1],12010);drawTrainingWall(covers[0],12020)");
+ assert.equal(h.c.patternCalls,1);assert.equal(h.run('trainingArtwork.wall.src'),'assets/ui/training/concrete-wall.webp');
+ h.lesson(5);h.lesson(6);h.run('drawTrainingTarget(training.targets[0])');assert.equal(h.c.spriteCalls.length,1);assert.equal(h.run('trainingArtwork.target.src'),'assets/ui/training/target.webp');assert.equal(h.run('training.targets.every(t=>t.w===52&&t.h===52&&!t.hit)'),true);
+ h.run('var oldWallImage=trainingArtwork.wall,oldTargetImage=trainingArtwork.target;setupTrainingWorld()');assert.equal(h.run('trainingArtwork.wall===oldWallImage&&trainingArtwork.target===oldTargetImage'),true);
+ h.run('trainingArtwork.wall.complete=false;trainingArtwork.target.complete=false;drawTrainingWall(covers[0],12000);drawTrainingTarget({x:400,y:100,w:52,h:52})');assert.equal(h.c.patternCalls,1);assert.equal(h.c.spriteCalls.length,1);
+});

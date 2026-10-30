@@ -1,5 +1,31 @@
 // Stage 00: isolated tutorial state, bounded props and two non-firing guards.
 let training=null;
+// Load only when training is entered; reuse the decoded WebP and pattern across runs.
+const trainingArtwork={wall:null,target:null},trainingWallPatterns=new WeakMap();
+let trainingWallTile=null;
+function trainingArtworkImage(kind){
+ if(!trainingArtwork[kind]){
+  const image=new Image();image.decoding='async';
+  image.src='assets/ui/training/'+(kind==='wall'?'concrete-wall':'target')+'.webp';
+  trainingArtwork[kind]=image;
+ }
+ return trainingArtwork[kind];
+}
+function trainingConcretePattern(){
+ const image=trainingArtworkImage('wall');if(!assetOK(image))return null;
+ let pattern=trainingWallPatterns.get(g);if(pattern)return pattern;
+ if(!trainingWallTile){
+  // Mirrored edge pairs guarantee seamless looping even at the source image boundary.
+  const tile=document.createElement('canvas');tile.width=tile.height=512;
+  const q=gameCanvasContext(tile);q.drawImage(image,0,0,256,256);
+  q.save();q.translate(512,0);q.scale(-1,1);q.drawImage(image,0,0,256,256);q.restore();
+  q.save();q.translate(0,512);q.scale(1,-1);q.drawImage(image,0,0,256,256);q.restore();
+  q.save();q.translate(512,512);q.scale(-1,-1);q.drawImage(image,0,0,256,256);q.restore();
+  trainingWallTile=tile;
+ }
+ if(!pattern){pattern=g.createPattern(trainingWallTile,'repeat');if(pattern)trainingWallPatterns.set(g,pattern);}
+ return pattern;
+}
 const TRAINING_DONE_KEY='tankGameTrainingCompleteV1';
 const TRAINING_LEFT=280,TRAINING_RIGHT=680;
 const TRAINING_LESSONS={
@@ -41,6 +67,7 @@ function trainingClearTransient(){
  trainingClearInput();bombs=[];bullets=[];waves=[];fx=[];parts=[];decoy=null;allies=[];partner=null;hound=null;builtWalls=[];burningNatureSet.clear();clearFallenEnemies();p.grappleT=0;p.grappleTarget=null;p.blastAirT=0;p.fireExposure=0;
 }
 function setupTrainingWorld(){
+ trainingArtworkImage('wall');trainingArtworkImage('target');
  skill='throw';
  const z=ZONE_STYLE['敵司令本部'];ZONES=[{n:'敵司令本部',y0:13200,y1:-400,g:z.g,p:z.p.slice()}];
  covers=[{kd:-1,trainingWall:true,x:0,y:0,w:TRAINING_LEFT,h:WH},{kd:-1,trainingWall:true,x:TRAINING_RIGHT,y:0,w:WW-TRAINING_RIGHT,h:WH}];objects=[];bushes=[];humans=[];etanks=[];cars=[];roadBands=[];water=[];bridges=[];mud=[];items=[];tankWrecks=[];radio=null;airstrike=null;airbombs=[];enemyDogs=[];
@@ -193,13 +220,20 @@ function trainingObjectDamage(o,source){
 }
 function drawTrainingWall(c,cy){
  const top=Math.max(0,cy-2),bottom=Math.min(WH,cy+H+2),inner=c.x===0?TRAINING_LEFT-12:TRAINING_RIGHT;
- g.save();g.fillStyle='#373e40';g.fillRect(c.x,top,c.w,bottom-top);g.fillStyle='#65716f';g.fillRect(inner,top,12,bottom-top);
- g.strokeStyle='#252d2d';g.lineWidth=2;g.beginPath();
- for(let y=Math.floor(top/64)*64;y<bottom;y+=64){g.moveTo(c.x,y);g.lineTo(c.x+c.w,y);}
- g.stroke();g.fillStyle='#9aab9c';g.fillRect(c.x===0?TRAINING_LEFT-3:TRAINING_RIGHT,top,3,bottom-top);g.restore();
+ g.save();g.fillStyle=trainingConcretePattern()||'#c4c5bf';g.fillRect(c.x,top,c.w,bottom-top);
+ // A narrow, clean coping marks the collision boundary without extra wall objects.
+ g.fillStyle='#a9ada7';g.fillRect(inner,top,12,bottom-top);
+ g.fillStyle='#e9e9df';g.fillRect(c.x===0?TRAINING_LEFT-3:TRAINING_RIGHT,top,3,bottom-top);g.restore();
 }
 function drawTrainingTarget(o){
  g.save();g.translate(o.x+o.w/2,o.y+o.h/2);
+ const image=trainingArtworkImage('target');
+ if(assetOK(image)){
+  // Keep the circular board centered on the unchanged 52px hitbox; the stand extends below.
+  const w=64,h=w*image.naturalHeight/image.naturalWidth;
+  g.drawImage(image,-w/2,-h*.365,w,h);g.restore();return;
+ }
+ // While the sprite loads, retain the same readable circular target.
  // The pole and foot sit behind an ordinary circular bullseye.
  g.strokeStyle='#594a35';g.lineWidth=5;g.lineCap='round';g.beginPath();g.moveTo(0,18);g.lineTo(0,42);g.moveTo(-12,42);g.lineTo(12,42);g.stroke();
  g.fillStyle='#dbcfa8';g.lineWidth=3;g.beginPath();g.arc(0,0,24,0,Math.PI*2);g.fill();g.stroke();
