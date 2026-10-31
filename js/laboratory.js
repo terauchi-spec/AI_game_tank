@@ -142,6 +142,10 @@ for(const asset of [...Object.keys(LABORATORY_VERTICAL_ART),...Object.values(LAB
 for(const asset of ['lab-wash-sink','lab-wash-sink-vertical']){
  const size=LABORATORY_COVER_SIZES[asset];size.w*=1.1;size.h*=1.1;
 }
+// Transport containers grow another 30% in each authored orientation.
+for(const asset of ['lab-transport-container','lab-transport-container-vertical']){
+ const size=LABORATORY_COVER_SIZES[asset];size.w*=1.3;size.h*=1.3;
+}
 function laboratoryBaseArt(kind){return kind.endsWith('_vertical')?kind.slice(0,-9):kind;}
 function laboratoryPlacementKinds(kind){return LABORATORY_ART[kind+'_vertical']?[kind,kind+'_vertical']:[kind];}
 function laboratoryPropSize(kind){const asset=kind==='wooden_crate'?kind:LABORATORY_ART[kind];return LABORATORY_COVER_SIZES[asset]||LABORATORY_PROP_SIZES[asset]||null;}

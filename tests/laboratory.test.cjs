@@ -120,7 +120,7 @@ test('lab cargo uses the requested tank and sample case sizes and retains wooden
  })`),true);
  assert.equal(lab.run("objects.some(o=>o.laboratoryArt==='waste_tank')&&objects.some(o=>o.laboratoryArt==='cooling_unit')"),true);
  assert.equal(lab.run("objects.filter(o=>o.kind==='shellPallet').every(o=>Math.max(o.w,o.h)<=112)"),true);
- assert.equal(lab.run(`indoorWorld.floors.every(f=>f.props.every(o=>Math.max(o.w,o.h)<=136))`),true);
+ assert.equal(lab.run(`indoorWorld.floors.every(f=>f.props.every(o=>Math.max(o.w,o.h)<=138))`),true);
  assert.equal(lab.run(`(()=>{let calls=[];g.drawImage=(im,...args)=>calls.push(args);for(const o of objects){calls=[];drawObject(o);if(calls.length!==1||calls[0][2]>o.w+.001||calls[0][3]>o.h+.001)return false;}return true;})()`),true);
  const advanced=game(false);assert.equal(advanced.run('objects.some(o=>o.laboratoryArt)'),false);
  assert.equal(advanced.run("objects.some(o=>o.kind==='shellPallet'&&o.h>100)"),true);
@@ -168,7 +168,7 @@ test('laboratory furniture keeps 110 percent, sinks grow again and vertical artw
  const h=game(true);
  for(const [asset,[w,d]] of Object.entries(original)){
   const size=JSON.parse(h.run(`JSON.stringify(LABORATORY_COVER_SIZES[${JSON.stringify(asset)}])`));
-  const scale=asset==='lab-wash-sink'?1.21:1.1;
+  const scale=asset==='lab-wash-sink'?1.21:asset==='lab-transport-container'?1.43:1.1;
   assert.ok(Math.abs(size.w-w*scale)<.001&&Math.abs(size.h-d*scale)<.001,asset+' scales correctly');
  }
  assert.equal(h.run(`indoorWorld.floors.every(f=>f.props.some(o=>{
