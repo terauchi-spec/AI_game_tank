@@ -467,12 +467,27 @@ function updatePartner(dt){
   }
  }
 }
-// 添付のハンドサインと同じグー／指差しを静止吹き出しで表示。
+// 手招きは端末の絵文字に依存せず、指を手のひら側へ曲げた形で描く。
+function drawPartnerBeckoningHand(){
+ g.save();g.lineCap='round';g.lineJoin='round';g.lineWidth=1.1;g.strokeStyle='#bd801b';
+ // 左の手首から、上向きの手のひらへ。
+ g.fillStyle='#efb83e';g.beginPath();g.moveTo(-14,4);g.lineTo(-7,3);g.quadraticCurveTo(-4,0,2,0);g.lineTo(10,1);g.quadraticCurveTo(12,6,6,9);g.quadraticCurveTo(0,12,-7,9);g.lineTo(-14,10);g.closePath();g.fill();g.stroke();
+ // 奥から手前へ4本の指を重ね、指先を内側へ折り返す。
+ for(let i=0;i<4;i++){
+  const x=10-i*3,y=1+i*1.5;
+  g.fillStyle=i%2?'#ffd76b':'#ffcf58';g.beginPath();g.moveTo(x-3,y+3);g.quadraticCurveTo(x+5,y+1,x+4,y-6);g.quadraticCurveTo(x+3,y-10,x,y-8);g.quadraticCurveTo(x-2,y-7,x,y-5);g.quadraticCurveTo(x+1,y-2,x-3,y);g.closePath();g.fill();g.stroke();
+ }
+ // 親指は手のひらの左側で自然に開く。
+ g.fillStyle='#ffd76b';g.beginPath();g.moveTo(-7,6);g.quadraticCurveTo(-10,0,-5,-6);g.quadraticCurveTo(-3,-9,-1,-7);g.quadraticCurveTo(0,-6,-3,-2);g.lineTo(0,3);g.quadraticCurveTo(-1,7,-7,6);g.fill();g.stroke();
+ g.strokeStyle='#ffe69a';g.lineWidth=1.3;g.beginPath();g.moveTo(-12,5);g.lineTo(-12,9);g.stroke();g.restore();
+}
+// グー／指差し／手招きを静止吹き出しで表示。
 function drawPartnerHandSign(x,y,pointing){
  g.save();g.translate(x,y-43);g.fillStyle='#fff4d7';g.strokeStyle='#473e2c';g.lineWidth=1.5;
  g.beginPath();g.roundRect(-19,-17,38,32,8);g.fill();g.stroke();
  g.beginPath();g.moveTo(-4,14);g.lineTo(0,21);g.lineTo(5,14);g.fill();g.stroke();
- g.font='25px system-ui';g.textAlign='center';g.textBaseline='middle';g.fillStyle='#222';g.fillText(pointing==='call'?'🫴':pointing?'👉':'✊',0,0);g.restore();
+ if(pointing==='call')drawPartnerBeckoningHand();
+ else{g.font='25px system-ui';g.textAlign='center';g.textBaseline='middle';g.fillStyle='#222';g.fillText(pointing?'👉':'✊',0,0);}g.restore();
 }
 function drawPartnerOrderSignal(){
  const q=partner;if(skill!=='partner'||!q||!p||q.down||q.stunT>0)return;
