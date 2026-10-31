@@ -215,5 +215,100 @@
       "h": 45.5625
     },
     "runtime_bytes": 8056
+  },
+  {
+    "name": "lab-fume-hood",
+    "prompt": "One isolated transparent PNG sprite for a 2D top-down game. Camera exactly 90 degrees OVERHEAD, flat orthographic PLAN VIEW, parallel sides with NO perspective distortion. TOP SURFACE occupies almost all silhouette, front is an extremely thin south/bottom strip at most 3% of total depth. Fine hand-painted digital illustration, dark thin outline, tiny grain/noise, subtle grime, worn off-white paint, dull gray steel, restrained dusty olive details and a few rusty orange fasteners. Early-2000s corporate research laboratory, practical rather than futuristic, no glow or shiny toy render. Light from overhead, narrow north-edge highlight. One whole centered object, tight transparent margins. Genuinely transparent background. NO ground, NO floor, NO external shadows or drop shadow, NO people, NO text, letters, numbers or logos. Subject: one wide laboratory fume hood, rectangular off-white workstation with a shallow hood roof covering the north third, a short square extraction duct on top pointing NORTH, visible gray recessed work surface beneath, a thin sliding glass sash/rail along the SOUTH front edge and tiny unlettered control buttons on the right edge. Top-down footprint width:depth about 1.8:1. Do NOT show a tall front wall or an eye-level view.",
+    "mode": "built-in ImageGen, transparent background",
+    "updated": "2026-10-31",
+    "png_pixels": [
+      768,
+      408
+    ],
+    "runtime_pixels": [
+      256,
+      136
+    ],
+    "world_size": {
+      "w": 104.0,
+      "h": 55.25
+    },
+    "runtime_bytes": 6316
+  },
+  {
+    "name": "lab-freezer",
+    "prompt": "One isolated transparent PNG sprite for a 2D top-down game. Camera exactly 90 degrees OVERHEAD, flat orthographic PLAN VIEW, parallel sides with NO perspective distortion. TOP SURFACE occupies almost all silhouette, front is an extremely thin south/bottom strip at most 3% of total depth. Fine hand-painted digital illustration, dark thin outline, tiny grain/noise, subtle grime, worn off-white paint, dull gray steel, restrained dusty olive details and a few rusty orange fasteners. Early-2000s corporate research laboratory, practical rather than futuristic, no glow or shiny toy render. Light from overhead, narrow north-edge highlight. One whole centered object, tight transparent margins. Genuinely transparent background. NO ground, NO floor, NO external shadows or drop shadow, NO people, NO text, letters, numbers or logos. Subject: one chest-type ultra-low-temperature laboratory freezer, rectangular off-white insulated body viewed from directly above, a thick closed insulated TOP lid with a recessed long handle along the south edge, a small blank temperature indicator beside the lid and a short vent strip at the north edge. Slightly worn early-2000s appliance. Width:depth about 1.5:1.",
+    "mode": "built-in ImageGen, transparent background",
+    "updated": "2026-10-31",
+    "png_pixels": [
+      768,
+      427
+    ],
+    "runtime_pixels": [
+      256,
+      142
+    ],
+    "world_size": {
+      "w": 98.0,
+      "h": 54.359375
+    },
+    "runtime_bytes": 5886
+  },
+  {
+    "name": "lab-centrifuge",
+    "prompt": "One isolated transparent PNG sprite for a 2D top-down game. Camera exactly 90 degrees OVERHEAD, flat orthographic PLAN VIEW, parallel sides with NO perspective distortion. TOP SURFACE occupies almost all silhouette, front is an extremely thin south/bottom strip at most 3% of total depth. Fine hand-painted digital illustration, dark thin outline, tiny grain/noise, subtle grime, worn off-white paint, dull gray steel, restrained dusty olive details and a few rusty orange fasteners. Early-2000s corporate research laboratory, practical rather than futuristic, no glow or shiny toy render. Light from overhead, narrow north-edge highlight. One whole centered object, tight transparent margins. Genuinely transparent background. NO ground, NO floor, NO external shadows or drop shadow, NO people, NO text, letters, numbers or logos. Subject: one large floor-standing laboratory centrifuge, square gray-white housing viewed directly above, dominant large round heavy CLOSED lid on its TOP with a thick circular seam, small central hub, a compact blank control panel on its lower right top corner and a short vent grille on the left edge. Width:depth about 1.2:1. No side view.",
+    "mode": "built-in ImageGen, transparent background",
+    "updated": "2026-10-31",
+    "png_pixels": [
+      768,
+      617
+    ],
+    "runtime_pixels": [
+      256,
+      206
+    ],
+    "world_size": {
+      "w": 96.0,
+      "h": 77.25
+    },
+    "runtime_bytes": 12178
+  },
+  {
+    "name": "lab-incubator",
+    "prompt": "One isolated transparent PNG sprite for a 2D top-down game. Camera exactly 90 degrees OVERHEAD, flat orthographic PLAN VIEW, parallel sides with NO perspective distortion. TOP SURFACE occupies almost all silhouette, front is an extremely thin south/bottom strip at most 3% of total depth. Fine hand-painted digital illustration, dark thin outline, tiny grain/noise, subtle grime, worn off-white paint, dull gray steel, restrained dusty olive details and a few rusty orange fasteners. Early-2000s corporate research laboratory, practical rather than futuristic, no glow or shiny toy render. Light from overhead, narrow north-edge highlight. One whole centered object, tight transparent margins. Genuinely transparent background. NO ground, NO floor, NO external shadows or drop shadow, NO people, NO text, letters, numbers or logos. Subject: one large laboratory temperature-controlled incubator cabinet viewed directly above, rectangular off-white housing with TWO side-by-side top panel sections, subtle ventilation grille and a small recessed blank control panel, thin south-facing glass door edges and handles only along the bottom 3% edge. Institutional early-2000s equipment. Width:depth about 1.6:1.",
+    "mode": "built-in ImageGen, transparent background",
+    "updated": "2026-10-31",
+    "png_pixels": [
+      768,
+      430
+    ],
+    "runtime_pixels": [
+      256,
+      143
+    ],
+    "world_size": {
+      "w": 104.0,
+      "h": 58.09375
+    },
+    "runtime_bytes": 6876
+  },
+  {
+    "name": "lab-wash-sink",
+    "prompt": "One isolated transparent PNG sprite for a 2D top-down game. Camera exactly 90 degrees OVERHEAD, flat orthographic PLAN VIEW, parallel sides with NO perspective distortion. TOP SURFACE occupies almost all silhouette, front is an extremely thin south/bottom strip at most 3% of total depth. Fine hand-painted digital illustration, dark thin outline, tiny grain/noise, subtle grime, worn off-white paint, dull gray steel, restrained dusty olive details and a few rusty orange fasteners. Early-2000s corporate research laboratory, practical rather than futuristic, no glow or shiny toy render. Light from overhead, narrow north-edge highlight. One whole centered object, tight transparent margins. Genuinely transparent background. NO ground, NO floor, NO external shadows or drop shadow, NO people, NO text, letters, numbers or logos. Subject: one long stainless steel laboratory wash station viewed exactly from above, one deep square sink basin with visible drain and a short faucet at the NORTH rim, ribbed draining surface beside it and a thin front storage-cabinet edge on SOUTH. Dull gray brushed steel, slight water staining and wear, restrained hand-painted detail. Width:depth about 2.5:1.",
+    "mode": "built-in ImageGen, transparent background",
+    "updated": "2026-10-31",
+    "png_pixels": [
+      768,
+      277
+    ],
+    "runtime_pixels": [
+      256,
+      92
+    ],
+    "world_size": {
+      "w": 112.0,
+      "h": 40.25
+    },
+    "runtime_bytes": 7068
   }
 ]

@@ -593,7 +593,8 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
       ![...furniture,...explosiveObjects].some(q=>q!==item&&overlap(o,q,6)));
     if(near){item.x=near.x;item.y=near.y;}
   }
-  if(laboratory)laboratoryFurnishFloor({rooms,walls,doors:doorMarks,stair,postRoom,postTile,postGuards,furniture,explosiveObjects});
+  if(laboratory)laboratoryFurnishFloor({rooms,walls,doors:doorMarks,stair,postRoom,postTile,postGuards,furniture,explosiveObjects,
+    corridors:halls.map(i=>{const {c,r}=coord(i);return{x:X0+c*SIZE,y:Y0+r*SIZE,w:SIZE,h:SIZE,index:i,lobby:lobbyIds.includes(i)};}),entrances:hasExterior?[...frontDoors,...(hasEmergency?[emergencyDoor]:[])]:[]});
   // Ceiling lights are centered on real room/table locations, never in the walls.
   // All geometry and light strengths below are confined to the infiltration stage.
   const lightFixtures=[];
@@ -776,7 +777,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     const id=indoorGridPoint(documentGrid,indoorAt(p.x,p.y,0));
     return id>=0&&!documentGrid.solid[id]&&!!reachable[id];
   };
-  const documentArts=new Set(['cabinet','desk','server_rack','operations_table','personal_lockers','shelf','equipment']);
+  const documentArts=new Set(['cabinet','desk','server_rack','operations_table','personal_lockers','shelf','equipment',...(laboratory?['fume_hood','ultra_freezer','centrifuge','incubator','wash_station']:[])]);
   const worldDistance=(a,b)=>Math.hypot((a.x-b.x)*INDOOR_SCALE_X,(a.y-b.y)*INDOOR_SCALE_Y);
   const intelCandidates=rooms.filter(r=>r!==postRoom).map(room=>{
     const fixtures=furniture.filter(o=>o.roomId===room.id&&documentArts.has(o.artKind));
@@ -1101,14 +1102,14 @@ function setupInfiltrationWorld(){
     const props=[];
     for(const piece of raw.furniture){
       const q=indoorRect(piece,off);
-      const prop={...q,kd:1,indoorProp:true,propKind:piece.kind,propArt:piece.artKind,propZone:piece.zone,roomId:piece.roomId,purpose:piece.purpose,...(piece.laboratoryRole?{laboratoryRole:piece.laboratoryRole}:{}),hp:999999};
+      const prop={...q,kd:1,indoorProp:true,propKind:piece.kind,propArt:piece.artKind,propZone:piece.zone,roomId:piece.roomId,purpose:piece.purpose,...(piece.laboratoryRole?{laboratoryRole:piece.laboratoryRole,laboratoryWallSide:piece.laboratoryWallSide}:{}),hp:999999};
       covers.push(prop);props.push(prop);
     }
     // 共通の木箱/ドラム缶/砲弾ケースを通常の爆発オブジェクトとして登録。
     for(const item of raw.explosiveObjects){
       const q=indoorRect(item,off);
       objects.push({...q,kind:item.kind==='shellPallet'?'shellPallet':item.kind,
-        indoorExplosive:true,indoorGroup:item.group,mgHits:0,...(item.laboratoryArt?{laboratoryArt:item.laboratoryArt,laboratoryRoomId:item.roomId,laboratoryRole:item.laboratoryRole}:{})});
+        indoorExplosive:true,indoorGroup:item.group,mgHits:0,...(item.laboratoryArt?{laboratoryArt:item.laboratoryArt,laboratoryRoomId:item.roomId,laboratoryRole:item.laboratoryRole,laboratoryWallSide:item.laboratoryWallSide}:{})});
     }
     const corridors=raw.corridors.map(tile=>indoorRect(tile,off));
     const lobbyArea=raw.lobbyArea?indoorRect(raw.lobbyArea,off):null;
@@ -2776,7 +2777,7 @@ function indoorConcretePattern(){
   return pattern;
 }
 const indoorOutdoorTerrain={n:'丘陵',g:'#6b7a3a'};
-const indoorLaboratoryOutdoorTerrain={n:'草原',g:'#4a8a34'};
+const indoorLaboratoryOutdoorTerrain=indoorOutdoorTerrain;
 function drawInfiltrationStairSprite(floor){
   const image=indoorPropImage(floor.number===1?'stairs_up':'stairs_down');if(!image)return false;
   const iw=image.naturalWidth||image.width,ih=image.naturalHeight||image.height;
