@@ -138,3 +138,7 @@ prototype. This mode is intended first to test whether uninterrupted physical
 contacts avoid the reported interruption; full gameplay usability is not yet
 validated on an affected iPhone. Diagnostic status includes right touch ownership,
 current selection and cumulative zone activations.
+
+## 相棒指示の中断（2026-10-31）
+
+フォーカス喪失・非表示・入力リセットでは相棒の指示をキャンセルし、押下・描画状態を解除する。タップ／スライド両操作のネイティブ取消でも未完成ルートを確定しない。通常の指離しは従来どおりルートを確定する。追加のタイマーや毎フレーム処理はない。

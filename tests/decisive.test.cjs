@@ -4,7 +4,7 @@ function start(seed=7){
  const e=createGameEngine(root,{seed});
  e.run("localStorage.setItem(STAGE_PROGRESS_KEY,JSON.stringify({version:2,cleared:STAGE_ORDER.slice(0,-1).map(s=>s.id)}));localStorage.setItem(INTRO_NAME_KEY,'テスト');stageMode='decisive';areaDebugEnabled=false;skillDebugAll=false;stageDebugAll=false;skill='throw';reset(false);recordStageSortie(scoreStats)");return e;
 }
-test('10 unlocks after 09 and preserves its identity through the AI phase change, score submission and victory',()=>{
+test('developer-only 10 preserves its identity through phase change and victory while public completion is already earned',()=>{
  const {run,storage}=start();assert.equal(run('currentStageId()'),'decisive');assert.equal(run('stageDisplayNumber(currentStageId())'),'10');
  assert.equal(run('allies.length'),0);assert.equal(run('p.tank'),null);assert.equal(run('zoneAt(p.y)===ZONES[0]'),true);assert.equal(run('scoreStats.stageRecordId'),'decisive');
  run('humans=[];etanks=[];p.x=decisiveBattle.gate.x;p.y=decisiveBattle.gate.y;for(let i=0;i<48;i++)updateMission(1)');
@@ -13,7 +13,7 @@ test('10 unlocks after 09 and preserves its identity through the AI phase change
  run('draw();for(let i=0;i<90;i++)update(1/60);draw()');assert.equal(run('state'),'play');
  run("damageBase(1000,base.x+base.w/2,base.y+base.h/2,100,1,'player')");assert.equal(run('state'),'blast');
  run('blastUpdate(3)');assert.equal(run('state'),'succeeded');assert.equal(run('scoreStats.final.cleared'),true);assert.equal(run('scoreStats.objectiveProgress'),1);
- assert.equal(run('scoreStats.stageRecordId'),'decisive');assert.equal(run('readStageRecords().stages.decisive.successes'),1);assert.equal(run('readStageRecords().stages.front.successes'),0);assert.equal(run('leaderboardPending.decisive.stage'),'decisive');assert.equal(run('readStageProgress().cleared.length'),10);assert.ok(run("scoreStats.awards.newTitles.includes('v3_all_stages_clear')"));
+ assert.equal(run('scoreStats.stageRecordId'),'decisive');assert.equal(run('readStageRecords().stages.decisive.successes'),1);assert.equal(run('readStageRecords().stages.front.successes'),0);assert.equal(run('leaderboardPending.decisive.stage'),'decisive');assert.equal(run('readStageProgress().cleared.length'),10);assert.ok(run("readTitleArchive().titles.v3_all_stages_clear"));assert.equal(run("scoreStats.awards.newTitles.includes('v3_all_stages_clear')"),false);
 });
 test('layout is starting grass, three distinct random areas and three contiguous desert areas',()=>{
  const {run}=start();const variants=new Set();

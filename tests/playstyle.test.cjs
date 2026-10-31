@@ -142,16 +142,16 @@ function stageHarness(cleared=[]){
 }
 const allStages=['beginner','indoorBeginner','frontBeginner','baseIntermediate','indoor','frontIntermediate','base','indoorLab','front','decisive'];
 test('last normal stage grants the legendary and mythic together before stage persistence, only once',()=>{
- const c=stageHarness(allStages.slice(0,-1));c.stageMode='decisive';const ids=Array.from(c.get('TITLE_COLLECTION_TARGETS'));
+ const c=stageHarness(allStages.slice(0,-2));c.stageMode='front';const ids=Array.from(c.get('TITLE_COLLECTION_TARGETS'));
  c.saved.set(c.get('TITLE_ARCHIVE_KEY'),JSON.stringify({titles:Object.fromEntries(ids.filter(id=>id!=='v3_all_stages_clear').map(id=>[id,{count:1}])),runs:32}));
  const s=Object.assign(c.scoreStats,{final:{cleared:true,total:1000}});c.recordRunAchievements(s);
  for(const id of ['v3_all_stages_clear','v3_mythic_complete'])assert.ok(s.awards.newTitles.includes(id));
- assert.equal(c.readStageProgress().cleared.length,9);c.unlockStageOnClear(s);assert.equal(c.readStageProgress().cleared.length,10);
+ assert.equal(c.readStageProgress().cleared.length,8);c.unlockStageOnClear(s);assert.equal(c.readStageProgress().cleared.length,9);
  c.recordRunAchievements(s);const a=c.readTitleArchive();assert.equal(a.runs,33);assert.equal(a.titles.v3_all_stages_clear.count,1);assert.equal(a.titles.v3_mythic_complete.count,1);
 });
 test('failure, area debug, test Oni and missing normal stages cannot complete the legendary condition',()=>{
  for(const mode of ['failure','areaDebug','oni','missing']){
-  const c=stageHarness(mode==='missing'?allStages.filter(id=>!['front','indoor'].includes(id)):allStages.slice(0,-1));
+  const c=stageHarness(mode==='missing'?allStages.filter(id=>!['front','indoor'].includes(id)):allStages.slice(0,-2));
   const s=Object.assign(c.scoreStats,{debugUsed:mode==='debug',final:{cleared:mode!=='failure',total:1000}});c.areaDebugEnabled=mode==='areaDebug';c.frontlineOni=mode==='oni';
   c.recordRunAchievements(s);assert.equal(c.readTitleArchive().titles.v3_all_stages_clear,undefined,mode);
  }
@@ -187,7 +187,7 @@ test('debug finalization persists unlocks, high score, achievements and history 
  }
 });
 test('debug clear of the last normal stage earns the all-stage title in the same result',()=>{
- const c=stageHarness(allStages.slice(0,-1));c.stageMode='decisive';const s=Object.assign(c.scoreStats,{debugUsed:true,final:{cleared:true,total:1000}});c.recordRunAchievements(s);assert.ok(s.awards.newTitles.includes('v3_all_stages_clear'));
+ const c=stageHarness(allStages.slice(0,-2));c.stageMode='front';const s=Object.assign(c.scoreStats,{debugUsed:true,final:{cleared:true,total:1000}});c.recordRunAchievements(s);assert.ok(s.awards.newTitles.includes('v3_all_stages_clear'));
 });
 
 test('persisted new titles announce the highest new career rank once, while repeats do not promote',()=>{

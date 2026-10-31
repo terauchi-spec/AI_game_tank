@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.31.2206</title>
+<title>こっそり戦車大作戦 2026.10.31.2322</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -907,7 +907,7 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
  #stageScreen .stage-copy strong,#stageScreen .stage-target{font-size:15px}
 }
 </style>
-<section id="developerLogin" role="dialog" aria-modal="true" aria-labelledby="developerLoginHeading" hidden><div class="dev-panel"><h1 id="developerLoginHeading">開発者モード</h1><form id="developerLoginForm" novalidate><label for="developerPin">数字4桁のパスワード</label><input id="developerPin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off"><p id="developerLoginStatus" role="status"></p><div class="dev-actions"><button id="developerCancel" type="button">キャンセル</button><button id="developerSubmit" type="submit">開始</button></div></form></div></section>
+<section id="developerLogin" role="dialog" aria-modal="true" aria-labelledby="developerLoginHeading" hidden><div class="dev-panel"><h1 id="developerLoginHeading">開発者モード</h1><form id="developerLoginForm" novalidate><label for="developerPin">開発者パスワード</label><input id="developerPin" type="password" minlength="16" maxlength="256" autocomplete="current-password"><p id="developerLoginStatus" role="status"></p><div class="dev-actions"><button id="developerCancel" type="button">キャンセル</button><button id="developerSubmit" type="submit">開始</button></div></form></div></section>
 <section id="developerScreen" aria-labelledby="developerHeading" hidden><div class="dev-panel"><h1 id="developerHeading">開発者</h1><button id="developerHome" type="button">タイトル</button><button id="developerLeaderboard" type="button">開発者用スコアボード</button><button id="developerResetScores" type="button">スコアボードをリセット</button><p id="developerStatus" role="status"></p></div></section>
 <section id="leaderboardScreen" aria-labelledby="leaderboardHeading" hidden>
  <div class="lb-shell">
@@ -1000,7 +1000,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.31.2206',FILE_CREATED_AT='2026/10/31 22:06',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.10.31.2322',FILE_CREATED_AT='2026/10/31 23:22',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -7794,7 +7794,7 @@ const legendNames=['任務の覇者','幽影の覇者','戦場の覇王','爆炎
 const TITLE_LEGENDS=Object.freeze(TITLE_BASE.map(([axis],i)=>({id:'v3_legend_'+i,name:legendNames[i],from:'v3_single_'+i+'_elite',axis:i,flavor:axis+'を極め、幾度も戦果を重ねた伝説の兵士'})));
 const TITLE_LEGEND_REQUIRED=3;
 for(const t of TITLE_LEGENDS)TITLE_CATALOG.push({id:t.id,name:t.name,type:'伝説級実績',priority:650,note:'上級称号「'+TITLE_BASE[t.axis][2]+'」を累計'+TITLE_LEGEND_REQUIRED+'回獲得',legendFrom:t.from,axis:t.axis,threshold:5,evidence:'elite'});
-const TITLE_ALL_STAGES=Object.freeze({id:'v3_all_stages_clear',name:'全戦域の覇者',type:'伝説級実績',priority:700,note:'通常の全10ステージをクリア（破壊・潜入・制圧の初級／中級／上級と決戦）',flavor:'すべての戦域で作戦を完遂した、歴戦の覇者',valid:(lv,s,r)=>allNormalStagesCleared(s,r)});
+const TITLE_ALL_STAGES=Object.freeze({id:'v3_all_stages_clear',name:'全戦域の覇者',type:'伝説級実績',priority:700,note:'公開中の全9ステージをクリア（破壊・潜入・制圧の初級／中級／上級）',flavor:'すべての戦域で作戦を完遂した、歴戦の覇者',valid:(lv,s,r)=>allNormalStagesCleared(s,r)});
 TITLE_CATALOG.push(TITLE_ALL_STAGES);
 const TITLE_COLLECTION_TARGETS=Object.freeze(TITLE_CATALOG.map(t=>t.id));
 const TITLE_MYTHIC=Object.freeze({id:'v3_mythic_complete',name:'戦場の神話',type:'神話級実績',priority:900,collection:true,note:'ほかの称号33種類をすべて獲得',flavor:'あらゆる作戦を極めた者だけが辿り着く、神話の頂'});
@@ -7833,7 +7833,8 @@ function allNormalStagesCleared(s=null,r=null){
   const id=currentStageId();
   if(STAGE_ORDER.some(stage=>stage.id===id)&&stageSelectable(id,progress))cleared.add(id);
  }
- return STAGE_ORDER.every(stage=>cleared.has(stage.id));
+ // Developer-only stages never prevent public collection completion.
+ return STAGE_ORDER.filter(stage=>stage.id!=='decisive').every(stage=>cleared.has(stage.id));
 }
 function readTitleArchive(){
  let archive={titles:{},medals:{},runs:0};
@@ -8452,7 +8453,7 @@ function reportGameError(error){
 <script src="js/decisive.js?v=2026.10.28.0713"></script>
 <script src="js/frontline.js?v=2026.10.28.0713"></script>
 <script src="js/award-icons.js?v=2026.10.31.0807"></script>
-<script src="js/developer.js?v=2026.10.28.0713"></script>
+<script src="js/developer.js?v=2026.10.31.2322"></script>
 <script src="js/leaderboard.js?v=2026.10.28.0713"></script>
 <script src="js/intro.js?v=2026.10.31.0745"></script>
 <script src="js/unlocks.js?v=2026.10.31.2206"></script>
@@ -8563,7 +8564,7 @@ document.addEventListener('touchend',e=>finishControlTouches(e,false),{capture:t
 document.addEventListener('touchcancel',e=>finishControlTouches(e,true),{capture:true,passive:false});
 document.querySelectorAll('[data-k]').forEach(el=>{const c=el.dataset.k;
  const down=e=>{e.preventDefault();if(buttonPointers.has(el))return;beginButtonHold(el,e);buttonPointers.set(el,e.pointerId);cap(el,e);el.classList.add('on');press(c);};
- const up=(e,cancelled=false)=>{if(!buttonPointers.has(el)||(e&&buttonPointers.get(el)!==e.pointerId))return;if(e&&e.cancelable)e.preventDefault();const id=buttonPointers.get(el);buttonPointers.delete(el);if(el.id==='skillBtn')finishSkillAim();releaseControlCapture(el,id);finishButtonHold(el,()=>{el.classList.remove('on');release(c);},cancelled);};
+ const up=(e,cancelled=false)=>{if(!buttonPointers.has(el)||(e&&buttonPointers.get(el)!==e.pointerId))return;if(e&&e.cancelable)e.preventDefault();const id=buttonPointers.get(el);buttonPointers.delete(el);if(el.id==='skillBtn'){finishSkillAim();if(cancelled&&skill==='partner')finishPartnerOrder(false);}releaseControlCapture(el,id);finishButtonHold(el,()=>{el.classList.remove('on');release(c);},cancelled);};
  const cancel=e=>up(e,true);
  el.addEventListener('pointerdown',e=>{if(e.pointerType!=='touch')down(e);},{passive:false});
  el.addEventListener('pointerup',up,{passive:false});
@@ -8782,7 +8783,7 @@ if(!window.PointerEvent){
  cv.addEventListener('touchstart',e=>{const t=e.changedTouches[0];if(!t)return;e.preventDefault();const r=cv.getBoundingClientRect();mx=(t.clientX-r.left)*W/r.width;my=(t.clientY-r.top)*H/r.height;if(state==='title')handleTitlePointer(mx,my);else if(state==='help')handleHelpPointer(mx,my);else if(state==='skill'){handleSkillMenuPointer(mx,my);}else if(state==='win'||state==='lose'){handleResultPointer(mx,my);}},{passive:false});
 }
 
-const clearInputs=()=>{resetContinuousTouch();cancelButtonHolds();for(const k in keys)keys[k]=false;for(const k in st)st[k]=0;end();stickPointerType='';buttonPointers.clear();actionPointer=null;actionKey=null;actionAimPointer=null;skillAimPointer=null;touchTurretAngle=null;dPressHandled=false;bombReq=false;cannonReq=false;interact=false;skillReq=false;knob.style.transform='';document.querySelectorAll('[data-k]').forEach(el=>el.classList.remove('on'));actionBtn.classList.remove('on');mdown=false;};
+const clearInputs=()=>{if(typeof finishPartnerOrder==='function')finishPartnerOrder(false);resetContinuousTouch();cancelButtonHolds();for(const k in keys)keys[k]=false;for(const k in st)st[k]=0;end();stickPointerType='';buttonPointers.clear();actionPointer=null;actionKey=null;actionAimPointer=null;skillAimPointer=null;touchTurretAngle=null;dPressHandled=false;bombReq=false;cannonReq=false;interact=false;skillReq=false;knob.style.transform='';document.querySelectorAll('[data-k]').forEach(el=>el.classList.remove('on'));actionBtn.classList.remove('on');mdown=false;};
 window.trainingClearInputs=clearInputs;
 const resetBtn=document.getElementById('resetBtn');
 const backToTitle=e=>{

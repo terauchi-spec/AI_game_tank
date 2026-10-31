@@ -1,5 +1,6 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const mod=import('../server/worker.mjs');
+const testPassword='test-only-password-2026';
 const sample=(extra={})=>({name:'たんく01',stage:'beginner',skill:'throw',score:1234,rank:'B',titles:['v3_single_0'],debug:false,...extra});
 function storageHarness(){
  const data=new Map();let tail=Promise.resolve();const tx={async get(k){return structuredClone(data.get(k));},async put(k,v){data.set(k,structuredClone(v));},async delete(k){data.delete(k);}};
@@ -15,11 +16,11 @@ test('top thirty keep one best per player, preserve metadata at that score, and 
  rows=insertBest(rows,{player:'new',score:70,at:102});assert.equal(rows[0].player,'p49');assert.equal(rows[1].player,'new');
 });
 test('durable storage atomically saves stage and overall boards, preserves stage-specific snapshots and survives recreation',async()=>{
- const {Scoreboard}=await mod,h=storageHarness(),board=new Scoreboard(h),id='12345678-1234-1234-1234-123456789012';
+ const {Scoreboard}=await mod,h=storageHarness(),board=new Scoreboard(h,{DEVELOPER_PASSWORD:testPassword}),id='12345678-1234-1234-1234-123456789012';
  const post=(player,entry)=>board.fetch(new Request('https://game.test/api/leaderboard',{method:'POST',body:JSON.stringify({player,entry})}));
  await Promise.all(Array.from({length:50},(_,i)=>post(i.toString(16).padStart(8,'0')+'-1234-1234-1234-123456789012',sample({score:100+i}))));assert.equal(h.data.get('board:overall').length,30);assert.equal(h.data.get('board:overall')[0].score,149);
  await post(id,sample({score:2000}));await post(id,sample({stage:'indoor',score:3000,skill:'sniper',titles:['v3_single_1_elite']}));await post(id,sample({score:500}));
- const revived=new Scoreboard(h);const all=await (await revived.fetch(new Request('https://game.test/api/leaderboard'))).json();assert.equal(all.entries[0].stage,'indoor');assert.equal(all.entries[0].skill,'sniper');assert.equal(all.entries[0].player,undefined);
+ const revived=new Scoreboard(h,{DEVELOPER_PASSWORD:testPassword});const all=await (await revived.fetch(new Request('https://game.test/api/leaderboard'))).json();assert.equal(all.entries[0].stage,'indoor');assert.equal(all.entries[0].skill,'sniper');assert.equal(all.entries[0].player,undefined);
  const stage=await (await revived.fetch(new Request('https://game.test/api/leaderboard?board=beginner'))).json();assert.equal(stage.entries[0].score,2000);assert.equal(stage.entries[0].skill,'throw');assert.equal((await revived.fetch(new Request('https://game.test/api/leaderboard?board=invalid'))).status,400);
 });
 test('worker routes static assets unchanged and rejects cross-origin, invalid or oversized uploads',async()=>{
@@ -31,34 +32,61 @@ test('worker routes static assets unchanged and rejects cross-origin, invalid or
  assert.equal((await worker.fetch(new Request('https://game.test/api/nope'),env)).status,404);
 });
 test('submission response identifies actual changed top-30 boards and ranks, excluding unchanged or non-ranking scores',async()=>{
- const {Scoreboard}=await mod,h=storageHarness(),board=new Scoreboard(h),id='12345678-1234-1234-1234-123456789012';
+ const {Scoreboard}=await mod,h=storageHarness(),board=new Scoreboard(h,{DEVELOPER_PASSWORD:testPassword}),id='12345678-1234-1234-1234-123456789012';
  const post=async(player,entry)=>(await board.fetch(new Request('https://game.test/api/leaderboard',{method:'POST',body:JSON.stringify({player,entry})}))).json();
  const first=await post(id,sample({score:100}));assert.deepEqual(first.updated,[{board:'overall',position:1},{board:'beginner',position:1}]);assert.deepEqual((await post(id,sample({score:100}))).updated,[]);
  for(let i=0;i<30;i++)await post(i.toString(16).padStart(8,'0')+'-1234-1234-1234-123456789012',sample({score:200+i}));assert.deepEqual((await post(id,sample({score:150}))).updated,[]);
  const stageOnly=await post(id,sample({stage:'indoor',score:160}));assert.deepEqual(stageOnly.updated,[{board:'indoor',position:1}]);
 });
 test('developer reset is protected by server-issued sessions, wrong PINs fail and logout revokes permission',async()=>{
- const {Scoreboard}=await mod,h=storageHarness(),board=new Scoreboard(h),base='https://game.test/api/developer/';
+ const {Scoreboard}=await mod,h=storageHarness(),board=new Scoreboard(h,{DEVELOPER_PASSWORD:testPassword}),base='https://game.test/api/developer/';
  const call=async(path,body,cookie)=>board.fetch(new Request(base+path,{method:body===undefined?'GET':'POST',headers:cookie?{Cookie:cookie}:{},body:body===undefined?undefined:JSON.stringify(body)}));
  h.data.set('board:overall',[{score:123}]);h.data.set('board:beginner',[{score:123}]);
- assert.equal((await call('reset-scoreboard',{})).status,401);assert.equal(h.data.get('board:overall').length,1);assert.equal((await call('login',{pin:'1111'})).status,401);
- const login=await call('login',{pin:'5555'});assert.equal(login.status,200);const cookie=login.headers.get('set-cookie').split(';')[0];assert.match(login.headers.get('set-cookie'),/HttpOnly; Secure; SameSite=Strict/);assert.equal((await (await call('session',undefined,cookie)).json()).active,true);
- assert.equal((await call('reset-scoreboard',{},cookie)).status,200);assert.equal(h.data.has('board:overall'),false);assert.equal(h.data.has('board:beginner'),false);assert.ok(h.data.has('developer:sessions'));
+ assert.equal((await call('reset-scoreboard',{})).status,401);assert.equal(h.data.get('board:overall').length,1);assert.equal((await call('login',{password:'wrong-password-2026'})).status,401);
+ const login=await call('login',{password:testPassword});assert.equal(login.status,200);const cookie=login.headers.get('set-cookie').split(';')[0];assert.match(login.headers.get('set-cookie'),/HttpOnly; Secure; SameSite=Strict/);assert.equal((await (await call('session',undefined,cookie)).json()).active,true);
+ assert.equal((await call('reset-scoreboard',{},cookie)).status,200);assert.equal(h.data.has('board:overall'),false);assert.equal(h.data.has('board:beginner'),false);assert.ok([...h.data.keys()].some(k=>k.startsWith('developer:sessions:v2:')));
  await call('logout',{},cookie);assert.equal((await call('reset-scoreboard',{},cookie)).status,401);assert.equal((await (await call('session',undefined,cookie)).json()).active,false);
 });
 test('developer login attempts are bounded and cookie-looking forgeries cannot reset the scoreboard',async()=>{
- const {Scoreboard}=await mod,h=storageHarness(),board=new Scoreboard(h),url='https://game.test/api/developer/';
- for(let i=0;i<8;i++)assert.equal((await board.fetch(new Request(url+'login',{method:'POST',body:JSON.stringify({pin:'0000'})}))).status,401);
- assert.equal((await board.fetch(new Request(url+'login',{method:'POST',body:JSON.stringify({pin:'5555'})}))).status,429);
+ const {Scoreboard}=await mod,h=storageHarness(),board=new Scoreboard(h,{DEVELOPER_PASSWORD:testPassword}),url='https://game.test/api/developer/';
+ for(let i=0;i<8;i++)assert.equal((await board.fetch(new Request(url+'login',{method:'POST',body:JSON.stringify({password:'incorrect-password-2026'})}))).status,401);
+ assert.equal((await board.fetch(new Request(url+'login',{method:'POST',body:JSON.stringify({password:testPassword})}))).status,429);
  assert.equal((await board.fetch(new Request(url+'reset-scoreboard',{method:'POST',headers:{Cookie:'__Host-tankDeveloper='+'a'.repeat(64)},body:'{}'}))).status,401);
 });
 
 
 test('new official middle and laboratory stages have independent writable and readable boards',async()=>{
- const {Scoreboard,validateScore}=await mod,h=storageHarness(),board=new Scoreboard(h);
+ const {Scoreboard,validateScore}=await mod,h=storageHarness(),board=new Scoreboard(h,{DEVELOPER_PASSWORD:testPassword});
  for(const stage of ['baseIntermediate','frontIntermediate','indoorLab']){
   assert.equal(validateScore(sample({stage})).stage,stage);
   const post=await board.fetch(new Request('https://game.test/api/leaderboard',{method:'POST',body:JSON.stringify({player:'12345678-1234-1234-1234-123456789012',entry:sample({stage})})}));assert.equal(post.status,200);
   const result=await (await board.fetch(new Request('https://game.test/api/leaderboard?board='+stage))).json();assert.equal(result.entries[0].stage,stage);
  }
+});
+
+test('missing or weak deployment secrets fail closed, legacy sessions and legacy PIN cannot authorize reset',async()=>{
+ const {Scoreboard}=await mod,h=storageHarness(),base='https://game.test/api/developer/';
+ const oldToken='a'.repeat(64),cookie='__Host-tankDeveloper='+oldToken;
+ h.data.set('developer:sessions',{[oldToken]:Date.now()+60000});h.data.set('board:overall',[{score:123}]);
+ const call=(board,path,body)=>board.fetch(new Request(base+path,{method:'POST',headers:{Cookie:cookie},body:JSON.stringify(body)}));
+ for(const password of [undefined,'short']){
+  const board=new Scoreboard(h,{DEVELOPER_PASSWORD:password});
+  assert.equal((await board.fetch(new Request('https://game.test/api/leaderboard'))).status,200);
+  assert.equal((await call(board,'login',{pin:'5555'})).status,503);
+  assert.equal((await call(board,'reset-scoreboard',{})).status,503);
+ }
+ const board=new Scoreboard(h,{DEVELOPER_PASSWORD:testPassword});
+ assert.equal((await call(board,'login',{pin:'5555'})).status,401);
+ assert.equal((await call(board,'reset-scoreboard',{})).status,401);
+ assert.equal(h.data.get('board:overall').length,1);
+});
+test('rotating the deployment password revokes existing sessions without losing scores',async()=>{
+ const {Scoreboard}=await mod,h=storageHarness(),base='https://game.test/api/developer/';
+ const board=new Scoreboard(h,{DEVELOPER_PASSWORD:testPassword});
+ const login=await board.fetch(new Request(base+'login',{method:'POST',body:JSON.stringify({password:testPassword})}));
+ const cookie=login.headers.get('set-cookie').split(';')[0];
+ h.data.set('board:overall',[{score:123}]);
+ const rotated=new Scoreboard(h,{DEVELOPER_PASSWORD:'rotated-test-password-2026'});
+ assert.equal((await rotated.fetch(new Request(base+'reset-scoreboard',{method:'POST',headers:{Cookie:cookie},body:'{}'}))).status,401);
+ assert.equal(h.data.get('board:overall').length,1);
 });
