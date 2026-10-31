@@ -2808,6 +2808,11 @@ function drawInfiltrationFloors(cx,cy){
   const outdoor=typeof isLaboratoryStage==='function'&&isLaboratoryStage()?indoorLaboratoryOutdoorTerrain:indoorOutdoorTerrain;
   g.fillStyle=indoorWorld.currentFloor===1?'#11171c':terrainSurfacePattern(outdoor)||outdoor.g;
   g.fillRect(left,top,right-left,bottom-top);
+  // Lab rescue roads belong to the static floor layer. Drawing them in the
+  // global outdoor pass would paint over live EXIT circles and countdowns.
+  if(typeof isLaboratoryStage==='function'&&isLaboratoryStage()){
+    for(const road of roadBands)if(road.y+road.h+24>=cy&&road.y-24<=cy+H)drawRoadBand(road);
+  }
   const concrete=indoorConcretePattern()||'#777975';
   for(const f of indoorWorld.floors){
     const minY=f.footprint.y-INDOOR_FORECOURT_DEPTH,maxY=f.footprint.y+f.footprint.h+INDOOR_FORECOURT_DEPTH;

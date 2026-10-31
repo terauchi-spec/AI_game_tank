@@ -233,3 +233,33 @@ test('lab rescue routes reuse cached asphalt roads and leave exterior scenery cl
  assert.equal(h.run(`roadBands.every(r=>{const a=roadVisualCache(r);return a&&roadVisualCache(r)===a;})`),true);
  const standard=game(false);assert.equal(standard.run('roadBands.length'),0);
 });
+
+
+test('lab EXIT stays above rescue roads on desktop, cold mobile frames and warm cached frames',()=>{
+ for(const touch of [false,true]){
+  const h=createGameEngine(root,{seed:17,touch});h.run("stageMode='indoor';indoorLaboratory=true;state='play';reset(false);state='play';");
+  h.run(`var exitEvents=[];drawRoadBand=r=>exitEvents.push('road');g.fillText=t=>{if(t==='EXIT')exitEvents.push('EXIT');};
+    var pickupExit=indoorWorld.exits[0],viewY=pickupExit.y-H/2;indoorWorld.currentFloor=0;`);
+  h.run('indoorUncachedFloors(0,viewY);');
+  assert.equal(h.run("exitEvents.includes('road')&&exitEvents.includes('EXIT')&&exitEvents.lastIndexOf('road')<exitEvents.indexOf('EXIT')"),true,'uncached order '+touch);
+  h.run(`exitEvents=[];var oldExitDraw=drawInfiltrationExitsForFloor;drawInfiltrationExitsForFloor=(...args)=>{exitEvents.push('EXIT');oldExitDraw(...args);};
+    for(let i=0;i<30;i++)drawInfiltrationFloors(0,viewY);exitEvents=[];drawInfiltrationFloors(0,viewY);`);
+  assert.equal(h.run("exitEvents.includes('EXIT')&&(exitEvents.lastIndexOf('road')<exitEvents.indexOf('EXIT'))"),true,'cached order '+touch);
+  const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+  assert.match(html,/if\(stageMode!=='indoor'\)for\(const r of roadBands\)/,'outdoor road pass cannot cover indoor EXIT');
+  h.run('ROAD_TEXTURE_IMG.asphalt.complete=true;');const stamp=h.run("indoorRasterAssetStamp('floor')");
+  h.run('ROAD_TEXTURE_IMG.asphalt.complete=false;');assert.notEqual(h.run("indoorRasterAssetStamp('floor')"),stamp);
+ }
+});
+
+test('lab can collect every document, wait at EXIT, board rescue jeep and finish successfully',()=>{
+ for(const seed of [7,17,42]){
+  const h=game(true,seed);h.run(`state='play';for(const q of mission.points){indoorWorld.currentFloor=q.floor-1;p.x=q.x;p.y=q.y;updateInfiltrationMission(8);}`);
+  assert.equal(h.run('mission.index'),3);assert.equal(h.run('mission.points.every(q=>q.done)'),true);
+  h.run(`indoorWorld.currentFloor=0;p.x=indoorWorld.exits[0].x;p.y=indoorWorld.exits[0].y;updateInfiltrationMission(4.9);`);
+  assert.equal(h.run('state'),'play');assert.equal(h.run('mission.escapeProgress'),4.9);
+  h.run('updateInfiltrationMission(.1);');assert.equal(h.run('state'),'indoorEscape');
+  h.run('updateInfiltrationExtraction(2.8);');assert.equal(h.run('state'),'succeeded');assert.equal(h.run('mission.extraction.boarded'),true);
+  h.run('updateInfiltrationExtraction(1.8);');assert.equal(h.run('mission.extraction.phase'),'departed');
+ }
+});
