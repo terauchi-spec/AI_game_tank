@@ -31,7 +31,7 @@ test('test selection is developer-only and switching stages resets the skin and 
 });
 test('laboratory has separate assets and floor cache, and all generated indoor furniture has a replacement',()=>{
  const h=game(true);assert.equal(h.run('indoorWorld.floors.flatMap(f=>f.props).every(p=>!!LABORATORY_ART[p.propArt])'),true);
- assert.match(h.run("indoorPropImage('desk').src"),/laboratory\/lab-bench.webp\?v=2000-r3$/);
+ assert.match(h.run("indoorPropImage('desk').src"),/laboratory\/lab-bench.webp\?v=overhead-r4$/);
  assert.equal(h.run('laboratoryFloorPattern(g)===laboratoryFloorPattern(g)'),true);
  const stamp=h.run('laboratoryAssetStamp()');h.run("laboratoryImages['lab-bench'].complete=false");assert.notEqual(h.run('laboratoryAssetStamp()'),stamp);
  h.run('indoorLaboratory=false');assert.match(h.run("indoorPropImage('desk').src"),/assets\/indoor\/desk.webp/);assert.equal(h.run('isLaboratoryStage()'),false);
@@ -48,8 +48,8 @@ test('mobile laboratory scenery warms the bounded cache and invalidates it when 
  const stamp=h.run("indoorRasterAssetStamp('walls')");h.run("laboratoryImages['lab-wall-horizontal'].complete=false");assert.notEqual(h.run("indoorRasterAssetStamp('walls')"),stamp);
  const html=fs.readFileSync(path.join(root,'index.html'),'utf8');assert.match(html,/#stageScreen \.stage-card\[hidden\]\{display:none\}/);
 });
-test('all twelve master PNGs and runtime WebPs exist and only WebPs are referenced by the theme',()=>{
- const h=createGameEngine(root),names=Array.from(h.run('[...new Set(Object.values(LABORATORY_ART))]'));assert.equal(names.length,12);
+test('all thirteen master PNGs and runtime WebPs exist and only WebPs are referenced by the theme',()=>{
+ const h=createGameEngine(root),names=Array.from(h.run('[...new Set(Object.values(LABORATORY_ART))]'));assert.equal(names.length,13);
  for(const name of names){const dir=path.join(root,'assets/indoor/laboratory'),png=fs.readFileSync(path.join(dir,name+'.png')),webp=fs.readFileSync(path.join(dir,name+'.webp'));assert.equal(png.subarray(1,4).toString(),'PNG');assert.equal(webp.subarray(8,12).toString(),'WEBP');assert.ok(png.length>1000&&webp.length>1000);}
 });
 test('laboratory exterior reuses grassland, preserves upstairs void and invalidates an unloaded grass placeholder',()=>{
@@ -75,4 +75,31 @@ test('laboratory physical paths connect perimeter, documents and doors to stairs
    return [...f.corridors.map(t=>({x:t.x+t.w/2,y:t.y+t.h/2})),...indoorWorld.intel.filter(p=>p.floor===f.number),...f.openings.map(p=>({x:p.x,y:p.y-p.side*40}))].every(p=>seen.has(indoorGridFreeNearest(g,indoorGridPoint(g,p))));
   })`),true,'seed '+seed);
  }
+});
+
+test('laboratory uses common automatic-door assets and identical leaf geometry at every open amount',()=>{
+ const lab=game(true),advanced=game(false);
+ for(const vertical of [false,true])for(const open of [0,.3,.8]){
+  const capture=h=>h.run(`(()=>{let calls=[];g.drawImage=(im,...args)=>calls.push({src:im.src,args});drawInfiltrationDoorPanels({x:30,y:40,vertical:${vertical}},${open},42,42*(1-${open}));return JSON.stringify(calls);})()`);
+  assert.equal(capture(lab),capture(advanced));
+ }
+ assert.equal(lab.run("!!laboratoryImages['lab-door']"),false);
+});
+test('lab cargo has human-scale fixed geometry including the former giant shell pallet',()=>{
+ const lab=game(true);
+ assert.equal(lab.run(`objects.length>0&&objects.every(o=>{
+  const size=laboratoryObjectSize(o.kind),hit=objectHitRect(o);
+  return o.laboratoryArt===LABORATORY_OBJECT_ART[o.kind]&&Math.abs(o.w-size.w)<.001&&Math.abs(o.h-size.h)<.001&&
+   Math.max(o.w,o.h)<=40&&hit.x===o.x&&hit.y===o.y&&hit.w===o.w&&hit.h===o.h;
+ })`),true);
+ assert.equal(lab.run("objects.some(o=>o.laboratoryArt==='waste_tank')&&objects.some(o=>o.laboratoryArt==='cooling_unit')"),true);
+ assert.equal(lab.run("objects.filter(o=>o.kind==='shellPallet').every(o=>Math.max(o.w,o.h)<=24)"),true);
+ assert.equal(lab.run(`indoorWorld.floors.every(f=>f.props.every(o=>Math.max(o.w,o.h)<=64))`),true);
+ assert.equal(lab.run(`(()=>{let calls=[];g.drawImage=(im,...args)=>calls.push(args);for(const o of objects){calls=[];drawObject(o);if(calls.length!==1||calls[0][2]>o.w+.001||calls[0][3]>o.h+.001)return false;}return true;})()`),true);
+ const advanced=game(false);assert.equal(advanced.run('objects.some(o=>o.laboratoryArt)'),false);
+ assert.equal(advanced.run("objects.some(o=>o.kind==='shellPallet'&&o.h>100)"),true);
+});
+test('laboratory furniture and cargo use south-facing art without automatic rotation',()=>{
+ const lab=game(true);
+ assert.equal(lab.run(`(()=>{let turns=0;g.rotate=()=>turns++;for(const f of indoorWorld.floors)for(const o of f.props)drawInfiltrationPropSprite(o);for(const o of objects)drawObject(o);return turns;})()`),0);
 });

@@ -5,44 +5,69 @@ const LABORATORY_ART={
  operations_table:'lab-bench',desk:'lab-bench',shelf:'lab-storage',cabinet:'lab-storage',
  personal_lockers:'lab-storage',weapon_rack:'lab-storage',container:'lab-samples',
  equipment:'lab-analyzer',server_rack:'lab-analyzer',generator:'lab-reactor',bed:'lab-medical',
- shell_pallet_hd:'lab-samples',automatic_door_cyan:'lab-door',automatic_door_horizontal_cyan:'lab-door',
+ shell_pallet_hd:'lab-samples',waste_tank:'lab-waste-tank',cooling_unit:'lab-cooling-unit',
  stairs_up:'lab-stairs',stairs_down:'lab-stairs',building:'lab-building'
 };
 // Fixed world dimensions for each lab sprite, shared by every placement path.
 // Aspect ratios match the tightly cropped transparent runtime assets.
 const LABORATORY_PROP_SIZES={
  "lab-bench": {
-  "w": 47.333333,
-  "h": 128
+  "w": 60.0,
+  "h": 18.984375
  },
  "lab-storage": {
-  "w": 42.25,
-  "h": 104
+  "w": 40.0,
+  "h": 15.15625
  },
  "lab-analyzer": {
-  "w": 60.3125,
-  "h": 120
+  "w": 34.0,
+  "h": 23.375
  },
  "lab-reactor": {
-  "w": 76.854167,
-  "h": 136
+  "w": 40.0,
+  "h": 22.34375
  },
  "lab-medical": {
-  "w": 45.3125,
-  "h": 116
+  "w": 21.25,
+  "h": 64.0
  },
  "lab-samples": {
-  "w": 50.552083,
-  "h": 92
+  "w": 22.0,
+  "h": 12.375
+ },
+ "lab-waste-tank": {
+  "w": 25.429688,
+  "h": 30.0
+ },
+ "lab-cooling-unit": {
+  "w": 34.0,
+  "h": 21.515625
  }
 };
 function laboratoryPropSize(kind){return LABORATORY_PROP_SIZES[LABORATORY_ART[kind]]||null;}
+// Shared explosive rules are retained; only lab artwork and physical sizes differ.
+const LABORATORY_OBJECT_ART={barrel:'waste_tank',crate:'cooling_unit',shellPallet:'container'};
+function laboratoryObjectSize(kind){return laboratoryPropSize(LABORATORY_OBJECT_ART[kind]);}
+function drawLaboratoryPropSprite(image,o){
+ // Every sprite faces south. Uniform scale preserves the top-down artwork.
+ const scale=Math.min(o.w/image.naturalWidth,o.h/image.naturalHeight);
+ const w=image.naturalWidth*scale,h=image.naturalHeight*scale;
+ g.save();g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
+ g.drawImage(image,o.x+(o.w-w)/2,o.y+(o.h-h)/2,w,h);g.restore();return true;
+}
+function drawLaboratoryObject(o){
+ const image=laboratoryImage(o.laboratoryArt);
+ if(image)return drawLaboratoryPropSprite(image,o);
+ // Lightweight loading fallback uses precisely the same bounds.
+ g.fillStyle=o.kind==='barrel'?'#68715b':'#777368';g.fillRect(o.x,o.y,o.w,o.h);
+ g.strokeStyle='#353a32';g.lineWidth=1;g.strokeRect(o.x,o.y,o.w,o.h);return true;
+}
 const laboratoryImages=Object.create(null),laboratoryFloorPatterns=new WeakMap();
 let laboratoryFloorTile=null;
 function laboratoryImage(kind){
  const key=LABORATORY_ART[kind];if(!key)return null;
  if(!laboratoryImages[key]){
-  const image=new Image();image.decoding='async';image.src='assets/indoor/laboratory/'+key+'.webp'+'?v=2000-r3';
+  const image=new Image();image.decoding='async';image.src='assets/indoor/laboratory/'+key+'.webp'+'?v=overhead-r4';
   laboratoryImages[key]=image;
  }
  const image=laboratoryImages[key];return assetOK(image)?image:null;

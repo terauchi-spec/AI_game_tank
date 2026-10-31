@@ -461,9 +461,9 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     for(const scale of laboratory||large?[1]:[1,.88,.76,.67,.6]){
       const labSize=laboratory?laboratoryPropSize(artKind):null;
       const h=(labSize?labSize.h:INDOOR_PROP_LENGTH[artKind]*scale)/INDOOR_SCALE_Y,w=labSize?labSize.w/INDOOR_SCALE_X:INDOOR_PROP_LENGTH[artKind]*scale*INDOOR_PROP_ASPECT[artKind];
-      placementSearch: for(const [pw,ph] of [[w,h],laboratory?[h*INDOOR_SCALE_Y/INDOOR_SCALE_X,w*INDOOR_SCALE_X/INDOOR_SCALE_Y]:[h*INDOOR_SCALE_Y,w/INDOOR_SCALE_Y]]){
+      placementSearch: for(const [pw,ph] of laboratory?[[w,h]]:[[w,h],[h*INDOOR_SCALE_Y,w/INDOOR_SCALE_Y]]){
         // 発電機は南向きの原画を回転せず置く。
-        if(artKind==='generator'&&pw>ph*INDOOR_SCALE_Y)continue;
+        if(!laboratory&&artKind==='generator'&&pw>ph*INDOOR_SCALE_Y)continue;
         for(let y=room.y+14;y+ph<=room.y+room.h-14;y+=8)for(let x=room.x+14;x+pw<=room.x+room.w-14;x+=8){
           const o={kind:'cabinet',artKind,roomId:room.id,purpose:room.purpose,primaryAsset:true,zone:'room',x,y,w:pw,h:ph};
           const area=room.tiles.reduce((sum,t)=>sum+Math.max(0,Math.min(x+pw,t.x+t.w)-Math.max(x,t.x))*
@@ -573,6 +573,13 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
   if(!explosiveObjects.some(o=>o.kind==='crate'))reserve('room','crate')||reserve('hallway','crate');
   if(!explosiveObjects.some(o=>o.kind==='barrel'))reserve('room','barrel')||reserve('hallway','barrel');
   // 廊下の家具・貨物を同じ区画の実在する壁へ寄せる。生成時に一度だけ実行。
+  // The old shell-pallet slot is a portable reagent case in the laboratory.
+  // Resize cargo before wall alignment, lighting and physical navigation are built.
+  if(laboratory)for(const o of explosiveObjects){
+    const size=laboratoryObjectSize(o.kind);if(!size)continue;
+    o.w=size.w/INDOOR_SCALE_X;o.h=size.h/INDOOR_SCALE_Y;
+    o.laboratoryArt=LABORATORY_OBJECT_ART[o.kind];
+  }
   const hallPieces=[...furniture,...explosiveObjects].filter(o=>o.zone==='hallway');
   for(const item of hallPieces){
     const tx=X0+Math.floor((item.x-X0)/SIZE)*SIZE,ty=Y0+Math.floor((item.y-Y0)/SIZE)*SIZE;
@@ -1107,7 +1114,7 @@ function setupInfiltrationWorld(){
     for(const item of raw.explosiveObjects){
       const q=indoorRect(item,off);
       objects.push({...q,kind:item.kind==='shellPallet'?'shellPallet':item.kind,
-        indoorExplosive:true,indoorGroup:item.group,mgHits:0});
+        indoorExplosive:true,indoorGroup:item.group,mgHits:0,...(item.laboratoryArt?{laboratoryArt:item.laboratoryArt}:{})});
     }
     const corridors=raw.corridors.map(tile=>indoorRect(tile,off));
     const lobbyArea=raw.lobbyArea?indoorRect(raw.lobbyArea,off):null;
@@ -2879,6 +2886,7 @@ function indoorPropImage(kind){
   const image=indoorPropImages[kind];return assetOK(image)?image:null;
 }
 function drawInfiltrationShellPallet(o){
+  if(o.laboratoryArt)return drawLaboratoryObject(o);
   const image=indoorPropImage('shell_pallet_hd');if(!image)return false;
   const iw=image.naturalWidth||image.width,ih=image.naturalHeight||image.height;
   const scale=Math.min(o.w*1.12/iw,o.h*1.12/ih),w=iw*scale,h=ih*scale;
@@ -2887,6 +2895,7 @@ function drawInfiltrationShellPallet(o){
 }
 function drawInfiltrationPropSprite(o){
   const image=indoorPropImage(o.propArt);if(!image)return false;
+  if(typeof isLaboratoryStage==='function'&&isLaboratoryStage())return drawLaboratoryPropSprite(image,o);
   // 拡縮は常に等倍率。万一旧サイズの家具があっても画像を引き伸ばさない。
   const horizontal=o.propArt!=='generator'&&o.w>o.h,iw=image.naturalWidth||image.width,ih=image.naturalHeight||image.height;
   const scale=Math.min((horizontal?o.h:o.w)/iw,(horizontal?o.w:o.h)/ih),w=iw*scale,h=ih*scale;
@@ -2925,7 +2934,7 @@ function drawInfiltrationDoorPanels(q,open,half,part){
   const visible=sourceHalf*(1-open),verticalDepth=(INDOOR_DOOR_THICKNESS+4)*1.35;
   const top=q.vertical?-verticalDepth/2:-(INDOOR_DOOR_THICKNESS+4)/2;
   // Keep the old horizontal sprite's pixel scale; only the taller front extends downward.
-  const depth=q.vertical?verticalDepth:(INDOOR_DOOR_THICKNESS+7)*(typeof isLaboratoryStage==='function'&&isLaboratoryStage()?1:height/84);
+  const depth=q.vertical?verticalDepth:(INDOOR_DOOR_THICKNESS+7)*(height/84);
   // Crop retracting leaves rather than squeezing the texture as the door opens.
   g.save();g.translate(q.x,q.y);if(q.vertical)g.rotate(Math.PI/2);
   g.drawImage(image,sourceHalf-visible,0,visible,height,-half,top,part,depth);

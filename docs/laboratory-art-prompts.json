@@ -3,7 +3,8 @@
     "name": "lab-floor",
     "prompt": "Use case: precise-object-edit. Edit target: supplied top-down laboratory floor tile game texture. Change ONLY its cleanliness: make the early-2000s ivory and pale gray vinyl checkerboard tiles gently used, with very faint gray-beige dirt along a few joints, subtle soft shoe scuffs, light uneven wear and a few muted dusty smudges. The floor still looks bright and regularly cleaned, only slightly worn; keep marks sparse and low contrast. Preserve the exact four-by-four square tile layout, palette, perfectly flat overhead view, thin straight seams, scale and game texture style. Uniform diffuse lighting. No perspective, objects, footprints with recognizable shoe patterns, debris, cracks, major stains, dramatic grime, glow, text or borders. Opposite edges suitable for repeating. Entire material square opaque, preserve genuinely transparent outside margin.",
     "mode": "built-in ImageGen edit, transparent background",
-    "reference": "7c826a630503a740084a11f973809989c3537cf1/assets/indoor/laboratory/lab-floor.png"
+    "reference": "7c826a630503a740084a11f973809989c3537cf1/assets/indoor/laboratory/lab-floor.png",
+    "active_theme": false
   },
   {
     "name": "lab-wall-horizontal",
@@ -19,73 +20,147 @@
   },
   {
     "name": "lab-bench",
-    "prompt": "Use case: stylized-concept. Asset type: one transparent top-down game furniture sprite. Subject: an early-2000s corporate research laboratory workbench, off-white painted steel drawers, lightly worn gray laminate worktop with a few glass test tubes and a small beige benchtop instrument. Early-2000s corporate research laboratory. Light wear, no luminous accents, no futuristic shapes. Cute detailed toy-like 3D raster style matching overhead stealth-game furniture. Orthographic top-down view with a small visible south front face. Elongated vertical silhouette, width about half height. Complete centered object, tight transparent margin. No floor plane, scenery, people, text, logo, external cast shadow. Genuinely transparent background.",
-    "previous_prompt": "One advanced laboratory workbench, rectangular long axis NORTH-SOUTH, length about twice its width. White ceramic worktop, clear cyan glass divider, compact microscope and a neat rack of transparent sample vials with pale blue liquid, silver legs barely visible. Top-down view, lower edge shows shallow front. Distinct worktable silhouette.",
-    "mode": "built-in ImageGen, transparent background",
+    "prompt": "Edit target: supplied laboratory workbench sprite. Correct ONLY the camera angle to a true 90-degree straight-down plan view. Keep the same hand-painted worn gray tabletop, tiny hotplate and test-tube rack, palette and textured illustration style. The TOP is a complete flat rectangle with parallel opposite edges. REMOVE the entire visible cabinet front: no drawers, cupboard doors or legs may be visible. South-facing front edge is only a thin dark rim, at most 2% of the sprite depth. Top surface must occupy 98% of the object silhouette. No perspective, no ground, no floor, no shadows, no text. One complete centered horizontal workbench, tightly cropped on a genuinely transparent background.",
+    "mode": "built-in ImageGen generation followed by camera-angle edit, transparent background",
     "updated": "2026-10-31",
+    "source_pixel_size": [
+      1774,
+      887
+    ],
+    "png_pixels": [
+      768,
+      244
+    ],
+    "runtime_pixels": [
+      256,
+      81
+    ],
     "world_size": {
-      "w": 47.333333,
-      "h": 128
-    }
+      "w": 60.0,
+      "h": 18.984375
+    },
+    "runtime_bytes": 4724,
+    "generation_prompt": "One 2D game asset sprite on genuinely transparent background. Pure flat orthographic PLAN VIEW, camera exactly 90 degrees overhead like a floor plan. ONLY TOP SURFACE visible, front edge at south no thicker than 2% of total depth. NO eye-level, NO isometric view, NO perspective convergence, NO visible tall front wall. Fine hand-drawn digital illustration, fine grain, dark thin outline, subtle worn paint, speckled grime, slight rust streaks, restrained seams. Muted industrial gray, dusty olive, dull brown, rusty orange accents; year-2000 corporate laboratory aesthetic. North edge small highlight from overhead light. One complete centered object tightly cropped. No ground, no floor, no shadow, no drop shadow, no glow, no words, no letters, no numbers, no logos. Not a glossy 3D render. Subject: rectangular laboratory workbench, wide east-west, gray laminate worktop with a SMALL hotplate, tiny test-tube rack, off-white metal cabinet. The entire tabletop is visible from directly above. Ratio width:depth=2:1."
   },
   {
     "name": "lab-storage",
-    "prompt": "Use case: stylized-concept. Asset type: one transparent top-down game furniture sprite. Subject: a closed off-white painted steel laboratory storage cabinet with clear plain glass doors and shelves holding a few brown reagent bottles. Early-2000s corporate research laboratory. Light wear, no luminous accents, no futuristic shapes. Cute detailed toy-like 3D raster style matching overhead stealth-game furniture. Orthographic top-down view with a small visible south front face. Elongated vertical silhouette, width about half height. Complete centered object, tight transparent margin. No floor plane, scenery, people, text, logo, external cast shadow. Genuinely transparent background.",
-    "previous_prompt": "One tall laboratory sample-storage cabinet in NORTH-SOUTH orientation, length about twice its width. White frame, clear blue glass panels showing neat transparent sample bottles and trays, silver latches. View from overhead with south/front face visible. Clean bright scientific sample storage, no weapons.",
+    "prompt": "One 2D game asset sprite on genuinely transparent background. Pure flat orthographic PLAN VIEW, camera exactly 90 degrees overhead like a floor plan. ONLY TOP SURFACE visible, front edge at south no thicker than 2% of total depth. NO eye-level, NO isometric view, NO perspective convergence, NO visible tall front wall. Fine hand-drawn digital illustration, fine grain, dark thin outline, subtle worn paint, speckled grime, slight rust streaks, restrained seams. Muted industrial gray, dusty olive, dull brown, rusty orange accents; year-2000 corporate laboratory aesthetic. North edge small highlight from overhead light. One complete centered object tightly cropped. No ground, no floor, no shadow, no drop shadow, no glow, no words, no letters, no numbers, no logos. Not a glossy 3D render. Subject: rectangular low laboratory storage cabinet, wide east-west, dusty olive-gray painted metal flat top with subtle seams and four screws, only an extremely thin 2% strip of the south-facing glass doors visible at the bottom. From above it looks like a closed flat rectangular lid. Ratio width:depth=1.8:1.",
     "mode": "built-in ImageGen, transparent background",
     "updated": "2026-10-31",
+    "source_pixel_size": [
+      1681,
+      936
+    ],
+    "png_pixels": [
+      768,
+      292
+    ],
+    "runtime_pixels": [
+      256,
+      97
+    ],
     "world_size": {
-      "w": 42.25,
-      "h": 104
-    }
+      "w": 40.0,
+      "h": 15.15625
+    },
+    "runtime_bytes": 3644
   },
   {
     "name": "lab-analyzer",
-    "prompt": "Use case: stylized-concept. Asset type: one transparent top-down game furniture sprite. Subject: a beige early-2000s benchtop chemical analyzer on a compact off-white trolley, small inset LCD, physical buttons and cables. Early-2000s corporate research laboratory. Light wear, no luminous accents, no futuristic shapes. Cute detailed toy-like 3D raster style matching overhead stealth-game furniture. Orthographic top-down view with a small visible south front face. Elongated vertical silhouette, width about half height. Complete centered object, tight transparent margin. No floor plane, scenery, people, text, logo, external cast shadow. Genuinely transparent background.",
-    "previous_prompt": "One high-tech scientific analysis workstation, NORTH-SOUTH long narrow footprint about 1:2.5. White rectangular chassis, pale cyan transparent chamber, tiny luminous blue instrument readouts without text, compact round sample carousel and silver grilles. Bright clean overhead game prop.",
+    "prompt": "One 2D game asset sprite on genuinely transparent background. Pure flat orthographic PLAN VIEW, camera exactly 90 degrees overhead like a floor plan. ONLY TOP SURFACE visible, front edge at south no thicker than 2% of total depth. NO eye-level, NO isometric view, NO perspective convergence, NO visible tall front wall. Fine hand-drawn digital illustration, fine grain, dark thin outline, subtle worn paint, speckled grime, slight rust streaks, restrained seams. Muted industrial gray, dusty olive, dull brown, rusty orange accents; year-2000 corporate laboratory aesthetic. North edge small highlight from overhead light. One complete centered object tightly cropped. No ground, no floor, no shadow, no drop shadow, no glow, no words, no letters, no numbers, no logos. Not a glossy 3D render. Subject: compact beige-gray year-2000 benchtop analysis instrument, viewed directly above, top contains a recessed sample tray, small vent slots, tiny unlettered LCD and control buttons. Ratio width:depth=1.3:1.",
     "mode": "built-in ImageGen, transparent background",
     "updated": "2026-10-31",
+    "source_pixel_size": [
+      1430,
+      1100
+    ],
+    "png_pixels": [
+      768,
+      528
+    ],
+    "runtime_pixels": [
+      256,
+      176
+    ],
     "world_size": {
-      "w": 60.3125,
-      "h": 120
-    }
+      "w": 34.0,
+      "h": 23.375
+    },
+    "runtime_bytes": 8496
   },
   {
     "name": "lab-reactor",
-    "prompt": "Use case: stylized-concept. Asset type: one transparent top-down game furniture sprite. Subject: a practical early-2000s laboratory water purification unit, off-white rectangular steel housing, two plain transparent filter vessels, simple gauges and rubber tubes. Early-2000s corporate research laboratory. Light wear, no luminous accents, no futuristic shapes. Cute detailed toy-like 3D raster style matching overhead stealth-game furniture. Orthographic top-down view with a small visible south front face. Elongated vertical silhouette, width about half height. Complete centered object, tight transparent margin. No floor plane, scenery, people, text, logo, external cast shadow. Genuinely transparent background.",
-    "previous_prompt": "One advanced laboratory cylindrical cell-culture bioreactor on a white rectangular base, vertical NORTH-SOUTH footprint about 1:1.5. Transparent cyan glass cylinder with luminous pale turquoise liquid and a central white apparatus, silver piping neatly integrated. Orthographic overhead with subtle visible south face, bright benign scientific equipment.",
+    "prompt": "One 2D game asset sprite on genuinely transparent background. Pure flat orthographic PLAN VIEW, camera exactly 90 degrees overhead like a floor plan. ONLY TOP SURFACE visible, front edge at south no thicker than 2% of total depth. NO eye-level, NO isometric view, NO perspective convergence, NO visible tall front wall. Fine hand-drawn digital illustration, fine grain, dark thin outline, subtle worn paint, speckled grime, slight rust streaks, restrained seams. Muted industrial gray, dusty olive, dull brown, rusty orange accents; year-2000 corporate laboratory aesthetic. North edge small highlight from overhead light. One complete centered object tightly cropped. No ground, no floor, no shadow, no drop shadow, no glow, no words, no letters, no numbers, no logos. Not a glossy 3D render. Subject: compact gray-green year-2000 laboratory water purification cabinet, viewed directly above, top housing contains two capped filter canisters, small valve, a few short pipes, one tiny unlettered pressure gauge. Ratio width:depth=1.3:1.",
     "mode": "built-in ImageGen, transparent background",
     "updated": "2026-10-31",
+    "source_pixel_size": [
+      1430,
+      1100
+    ],
+    "png_pixels": [
+      768,
+      428
+    ],
+    "runtime_pixels": [
+      256,
+      143
+    ],
     "world_size": {
-      "w": 76.854167,
-      "h": 136
-    }
+      "w": 40.0,
+      "h": 22.34375
+    },
+    "runtime_bytes": 9758
   },
   {
     "name": "lab-medical",
-    "prompt": "Use case: stylized-concept. Asset type: one transparent top-down game furniture sprite. Subject: a plain early-2000s laboratory examination cot with muted pale green vinyl mattress, off-white steel frame and modest raised pillow, no scanner arch. Early-2000s corporate research laboratory. Light wear, no luminous accents, no futuristic shapes. Cute detailed toy-like 3D raster style matching overhead stealth-game furniture. Orthographic top-down view with a small visible south front face. Elongated vertical silhouette, width about half height. Complete centered object, tight transparent margin. No floor plane, scenery, people, text, logo, external cast shadow. Genuinely transparent background.",
-    "previous_prompt": "One pristine research examination/sample-scanning bed or capsule, NORTH-SOUTH long rectangular footprint about 1:2.4. White padded bed on silver base, transparent cyan scanning hood over upper half, no person, blue edge indicators. Bright polished top-down game asset.",
+    "prompt": "One 2D game asset sprite on genuinely transparent background. Pure flat orthographic PLAN VIEW, camera exactly 90 degrees overhead like a floor plan. ONLY TOP SURFACE visible, front edge at south no thicker than 2% of total depth. NO eye-level, NO isometric view, NO perspective convergence, NO visible tall front wall. Fine hand-drawn digital illustration, fine grain, dark thin outline, subtle worn paint, speckled grime, slight rust streaks, restrained seams. Muted industrial gray, dusty olive, dull brown, rusty orange accents; year-2000 corporate laboratory aesthetic. North edge small highlight from overhead light. One complete centered object tightly cropped. No ground, no floor, no shadow, no drop shadow, no glow, no words, no letters, no numbers, no logos. Not a glossy 3D render. Subject: simple examination cot, viewed directly above, pale desaturated green vinyl mattress, small pillow at NORTH top end, thin gray metal frame, no legs visible. Ratio width:depth=1:2.2.",
     "mode": "built-in ImageGen, transparent background",
     "updated": "2026-10-31",
+    "source_pixel_size": [
+      845,
+      1860
+    ],
+    "png_pixels": [
+      255,
+      768
+    ],
+    "runtime_pixels": [
+      85,
+      256
+    ],
     "world_size": {
-      "w": 45.3125,
-      "h": 116
-    }
+      "w": 21.25,
+      "h": 64.0
+    },
+    "runtime_bytes": 4280
   },
   {
     "name": "lab-samples",
-    "prompt": "Use case: stylized-concept. Asset type: one transparent top-down game furniture sprite. Subject: a compact rectangular gray plastic reagent transport case with plain translucent lid showing brown glass bottles in foam compartments. Early-2000s corporate research laboratory. Light wear, no luminous accents, no futuristic shapes. Cute detailed toy-like 3D raster style matching overhead stealth-game furniture. Orthographic top-down view with a small visible south front face. Elongated vertical silhouette, width about half height. Complete centered object, tight transparent margin. No floor plane, scenery, people, text, logo, external cast shadow. Genuinely transparent background.",
-    "previous_prompt": "One compact rectangular laboratory chemical sample transport crate, NORTH-SOUTH footprint about 1:1.3. White protective container with clear cyan lid, small colorful sealed reagent vials inside orderly compartments, silver protective corners. No hazard text, no military shells, clean scientific storage.",
+    "prompt": "One 2D game asset sprite on genuinely transparent background. Pure flat orthographic PLAN VIEW, camera exactly 90 degrees overhead like a floor plan. ONLY TOP SURFACE visible, front edge at south no thicker than 2% of total depth. NO eye-level, NO isometric view, NO perspective convergence, NO visible tall front wall. Fine hand-drawn digital illustration, fine grain, dark thin outline, subtle worn paint, speckled grime, slight rust streaks, restrained seams. Muted industrial gray, dusty olive, dull brown, rusty orange accents; year-2000 corporate laboratory aesthetic. North edge small highlight from overhead light. One complete centered object tightly cropped. No ground, no floor, no shadow, no drop shadow, no glow, no words, no letters, no numbers, no logos. Not a glossy 3D render. Subject: SMALL portable gray reagent transport case, viewed directly above, rectangular closed cloudy-clear lid reveals a few small brown bottles, tiny hinge north, latch south. Ratio width:depth=1.5:1.",
     "mode": "built-in ImageGen, transparent background",
     "updated": "2026-10-31",
+    "source_pixel_size": [
+      1536,
+      1024
+    ],
+    "png_pixels": [
+      768,
+      432
+    ],
+    "runtime_pixels": [
+      256,
+      144
+    ],
     "world_size": {
-      "w": 50.552083,
-      "h": 92
-    }
+      "w": 22.0,
+      "h": 12.375
+    },
+    "runtime_bytes": 11756
   },
   {
     "name": "lab-door",
-    "prompt": "A SINGLE horizontal automatic laboratory sliding DOUBLE DOOR sprite, very wide 3:1 rectangle, symmetrical left/right moving leaves, white and silver frames with large TRANSPARENT pale cyan glass centers and narrow luminous turquoise center seam. Viewed overhead with visible south/front fascia. Nothing outside complete rectangular door; no surrounding wall, no portal frame extending upwards. Clean bright glass automatic doors."
+    "prompt": "A SINGLE horizontal automatic laboratory sliding DOUBLE DOOR sprite, very wide 3:1 rectangle, symmetrical left/right moving leaves, white and silver frames with large TRANSPARENT pale cyan glass centers and narrow luminous turquoise center seam. Viewed overhead with visible south/front fascia. Nothing outside complete rectangular door; no surrounding wall, no portal frame extending upwards. Clean bright glass automatic doors.",
+    "active_theme": false
   },
   {
     "name": "lab-stairs",
@@ -94,5 +169,51 @@
   {
     "name": "lab-building",
     "prompt": "A small advanced SCIENCE RESEARCH INSTITUTE building thumbnail, isometric elevated three-quarter southeast view. Contemporary white cubic architecture with curving clear cyan glass facade, bright laboratory interior glimpses, silver rooftop scientific sensor dishes and clean vents, modest entrance steps. Compact complete building on small neat rectangular foundation, no surrounding scene, no military features, transparent background. Friendly detailed 3D game building icon."
+  },
+  {
+    "name": "lab-waste-tank",
+    "prompt": "Use case: stylized-concept. Asset type: one transparent PNG sprite for an existing 2D military tactical action game. Strict nearly vertical overhead orthographic camera: 90-95% of visible object is its TOP, only a very thin front face at the SOUTH bottom edge. No perspective distortion and no isometric/oblique product photography. Fine hand-painted DIGITAL ILLUSTRATION, dark restrained outline, fine grain/noise texture, lightly worn surfaces, subtle grime and rust streaks, panel seams and weathering. Muted military palette: concrete gray, dusty olive green, dull brown and rusty orange. Light from above with a narrow highlight along the north top edge. EXACTLY ONE whole centered isolated object, tightly fitted in image. GENUINELY TRANSPARENT background. NO ground, NO floor, NO shadow, NO exterior drop shadow or glow, NO text, NO numbers, NO letters, NO logo, NO people, NO futuristic styling, NO glossy 3D toy render. Subject: one compact laboratory waste-liquid collection tank assembly, squat rectangular muted gray-green polyethylene tank with one round screw cap and a short collection hose neatly clipped on TOP, small weathered gray metal protective base, a restrained yellow-black warning stripe at one corner. Year-2000 corporate research laboratory equipment, functional and gently used. Footprint 0.6 units east-west by 0.7 units north-south. Not a metal drum or wooden crate.",
+    "mode": "built-in ImageGen, transparent background",
+    "updated": "2026-10-31",
+    "source_pixel_size": [
+      1161,
+      1355
+    ],
+    "png_pixels": [
+      651,
+      768
+    ],
+    "runtime_pixels": [
+      217,
+      256
+    ],
+    "world_size": {
+      "w": 25.429688,
+      "h": 30.0
+    },
+    "runtime_bytes": 14934
+  },
+  {
+    "name": "lab-cooling-unit",
+    "prompt": "A single ordinary laboratory water-circulation cooler, one compact rectangular gray-green steel cabinet. A flat 2D game sprite seen in a pure 90-degree OVERHEAD PLAN VIEW: top rectangular surface is almost the entire silhouette, only a 2% thin south edge is visible. The top has one small circular ventilation fan grille, a tiny blank control panel, short paired coolant hoses tucked neatly along the top edge, four recessed screws and subtle panel seams. Fine hand-painted digital illustration, dark thin outlines, fine grain, muted industrial gray and dusty olive, tiny rusty fasteners, slight surface grime and wear, light highlight on north edge. Year-2000 corporate laboratory aesthetic. Width to depth about 1.4 to 1. Exactly one object, centered, complete silhouette, tight margins. Genuinely transparent background. No floor, no ground, no shadows or drop shadow, no words, no numbers, no logo, no perspective or isometric view.",
+    "mode": "built-in ImageGen, transparent background",
+    "updated": "2026-10-31",
+    "source_pixel_size": [
+      1484,
+      1060
+    ],
+    "png_pixels": [
+      768,
+      486
+    ],
+    "runtime_pixels": [
+      256,
+      162
+    ],
+    "world_size": {
+      "w": 34.0,
+      "h": 21.515625
+    },
+    "runtime_bytes": 8056
   }
 ]
