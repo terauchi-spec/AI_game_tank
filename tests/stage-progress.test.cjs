@@ -132,3 +132,16 @@ test('v2 migration preserves old unlocked stages and records without fabricating
  for(const id of old)assert.equal(restored.stageSelectable(id),true,id+' after save');
  assert.equal(restored.stageSelectable('frontIntermediate'),true);clear(restored,'frontIntermediate');assert.equal(restored.stageSelectable('indoorLab'),true);
 });
+
+
+test('stage 10 is hidden and cannot deploy outside developer mode even with all clears',()=>{
+ const c=harness(JSON.stringify({version:3,cleared:order,unlocked:order})),{buttons}=cards(c),card=buttons.find(b=>b.dataset.stage==='decisive');
+ c.isDeveloperMode=()=>false;vm.runInContext('stageDebugAll=true',c);c.renderStageLocks();assert.equal(card.hidden,true);assert.equal(card.disabled,true);assert.equal(c.stageAvailableForSelection('decisive'),false);assert.equal(c.setSelectedStage('decisive'),false);
+ Object.assign(c,{state:'stage',gameBuildQueued:false});vm.runInContext("selectedStageId='decisive'",c);assert.equal(c.deploySelectedStage(),false);
+ c.isDeveloperMode=()=>true;c.renderStageLocks();assert.equal(card.hidden,false);assert.equal(c.stageAvailableForSelection('decisive'),true);
+ c.isDeveloperMode=()=>false;c.renderStageLocks();assert.equal(card.hidden,true);assert.notEqual(c.currentStageId(),'decisive');
+});
+test('normal clearing of stage 09 does not announce a developer-only stage unlock',()=>{
+ const c=harness(JSON.stringify({version:3,cleared:order.slice(0,8),unlocked:[]}));c.isDeveloperMode=()=>false;
+ assert.equal(clear(c,'front').unlockedStage,undefined);assert.ok(c.readStageProgress().cleared.includes('front'));assert.equal(c.stageAvailableForSelection('decisive'),false);
+});

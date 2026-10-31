@@ -46,13 +46,14 @@ function unlockStageOnClear(s){
  const before={cleared:[...progress.cleared],unlocked:[...(progress.unlocked||[])]};progress.cleared.push(id);
  progress.cleared=STAGE_ORDER.filter(stage=>progress.cleared.includes(stage.id)).map(stage=>stage.id);
  try{localStorage.setItem(STAGE_PROGRESS_KEY,JSON.stringify(progress));}catch(_){s.stageUnlockSaveFailed=true;return;}
- const next=STAGE_ORDER.find(stage=>!progress.cleared.includes(stage.id)&&!stageSelectable(stage.id,before)&&stageSelectable(stage.id,progress));
+ const next=STAGE_ORDER.find(stage=>(stage.id!=='decisive'||(typeof isDeveloperMode==='function'&&isDeveloperMode()))&&!progress.cleared.includes(stage.id)&&!stageSelectable(stage.id,before)&&stageSelectable(stage.id,progress));
  if(next)s.unlockedStage=next.id;
 }
 // Debug visibility affects selection only; canonical progression still uses stageSelectable().
 function stageAvailableForSelection(id,progress=readStageProgress()){
  if(id==='training')return true;
  const developer=typeof isDeveloperMode==='function'&&isDeveloperMode();
+ if(id==='decisive'&&!developer)return false;
  return (id==='areaDebug'&&developer)||(STAGE_ORDER.some(stage=>stage.id===id)&&((developer&&stageDebugAll)||stageSelectable(id,progress)));
 }
 const STAGE_RECORDS_KEY='tankGameStageRecordsV1';
@@ -129,6 +130,7 @@ function renderStageLocks(){
    button.disabled=!(typeof isDeveloperMode==='function'&&isDeveloperMode());button.classList.toggle('locked',false);button.setAttribute('aria-label','エリアデバッグ');return;
   }
   if(!stage){button.disabled=true;return;}
+  button.hidden=id==='decisive'&&!(typeof isDeveloperMode==='function'&&isDeveloperMode());
   const locked=!stageAvailableForSelection(id,progress);
   button.disabled=locked;button.classList.toggle('locked',locked);
   const concealed=!stageSelectable(id,progress)&&!(id==='decisive'&&stageDebugAll&&typeof isDeveloperMode==='function'&&isDeveloperMode());
