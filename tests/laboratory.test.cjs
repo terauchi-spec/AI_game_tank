@@ -66,6 +66,8 @@ test('laboratory exterior reuses city, preserves upstairs void and invalidates a
 test('laboratory role layouts and physical paths stay coherent across 60 seeds',()=>{
  for(let seed=1;seed<=60;seed++){
   const h=game(true,seed);
+  assert.equal(h.run(`indoorWorld.floors.length===3&&indoorWorld.floors.every(f=>
+   mission.points.filter(q=>q.floor===f.number).length===1&&enemyDogs.filter(d=>d.indoorFloor===f.number&&d.handler?.alive&&d.handler.dog===d&&d.handler.dogHandler).length===1)`),true,'three floors, documents and dog pairs seed '+seed);
   assert.equal(h.run(`indoorWorld.floors.every(f=>{
    const cargo=objects.filter(o=>o.y>=f.footprint.y&&o.y<f.footprint.y+f.footprint.h);
    return ['waste_tank','container'].every(k=>cargo.some(o=>o.laboratoryArt===k))&&cargo.every(o=>{
@@ -262,4 +264,22 @@ test('lab can collect every document, wait at EXIT, board rescue jeep and finish
   h.run('updateInfiltrationExtraction(2.8);');assert.equal(h.run('state'),'succeeded');assert.equal(h.run('mission.extraction.boarded'),true);
   h.run('updateInfiltrationExtraction(1.8);');assert.equal(h.run('mission.extraction.phase'),'departed');
  }
+});
+
+
+test('three-floor laboratory stair travel reaches 1-2-3-2-1, retains partner and does not bounce',()=>{
+ const h=game(true);h.run("state='play';skill='partner';partner={alive:true,x:p.x,y:p.y,hp:3};");
+ for(const [target,side] of [[1,1],[2,1],[1,1],[0,-1]]){
+  h.run(`(()=>{const w=indoorWorld,f=w.floors[w.currentFloor],b=indoorStairBounds(f.stair,f.number);w.stairsCooldown=0;w.stairMoveLock=0;w.stairEntryFloor=null;p.tank=null;p.x=f.stair.x+${side}*12;p.y=b.y+b.h-14;updateInfiltrationMission(.01);p.y=b.y+20;updateInfiltrationMission(.01);})()`);
+  assert.equal(h.run('indoorWorld.currentFloor'),target);
+  assert.equal(h.run(`(()=>{const f=indoorWorld.floors[indoorWorld.currentFloor],landing=indoorStairLanding(f);return p.x===landing.x&&p.y===landing.y&&partner.x===landing.x+14&&partner.y===landing.y+12&&indoorStairProtected();})()`),true);
+  h.run('updateInfiltrationMission(2.1);');assert.equal(h.run('indoorWorld.currentFloor'),target,'no immediate return at landing');
+ }
+ const standard=game(false);assert.equal(standard.run('indoorWorld.floors.length'),2);assert.equal(standard.run('enemyDogs.length'),1);
+});
+
+test('third-floor boundary remains solid after exterior walls are destroyed',()=>{
+ const h=game(true);h.run('indoorWorld.currentFloor=2;');
+ assert.equal(h.run(`(()=>{const f=indoorWorld.floors[2].footprint;p.x=f.x-100;p.y=f.y-100;enforceInfiltrationBoundary();return p.x===f.x+8&&p.y===f.y+8&&indoorFloorEdgeBlocked(p,f.x-1,p.y,8);})()`),true);
+ h.run('indoorWorld.currentFloor=2;var terrainCalls=0;terrainSurfacePattern=()=>{terrainCalls++;};indoorUncachedFloors(camX,cam);');assert.equal(h.run('terrainCalls'),0);
 });
