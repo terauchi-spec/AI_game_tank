@@ -7,7 +7,7 @@ function syncPartnerDriverPassenger(){
 function releasePartnerSharedWreck(v){
  if(!partner||partner.vehicle!==v)return;
  partner.vehicle=null;partner.route=null;partner.boardTarget=null;partner.backup=false;partner.moving=false;
- partner.hp=Math.max(0,partner.hp-1);partner.down=partner.hp<=0;partner.stunT=partner.down?0:2;partner.stunContactDelay=.3;
+ partner.hp=Math.max(0,partner.hp-1);partner.down=partner.hp<=0;partner.stunT=partner.down||partner.stunImmuneT>0?0:2;partner.stunContactDelay=.3;
  p.partnerDriver=false;
 }
 function updatePartnerPassenger(q,dt){
@@ -105,7 +105,7 @@ function partnerVehicleDestroyed(q){
  burst(q.x,q.y,32,'#ff8244',220);sfx('vehicleDestroyed',q);
  q.hp=Math.max(0,q.hp-1);
  if(!q.hp){q.down=true;say('相棒の乗り物が大破！救助が必要');}
- else{q.stunT=2;q.stunContactDelay=.3;say('相棒の乗り物が大破！');}
+ else{q.stunT=q.stunImmuneT>0?0:2;q.stunContactDelay=.3;say('相棒の乗り物が大破！');}
 }
 function partnerVehicleMove(q,goal,speed,dt){
  const v=q.vehicle;if(!v||!goal||v.f<=0)return;
@@ -252,7 +252,7 @@ function updatePartnerOrder(dt){
  if(Math.hypot(c.x-prev.x,c.y-prev.y)>11&&partnerOrder.path.length<145)partnerOrder.path.push({x:c.x,y:c.y});
 }
 function stunPartnerByOwnBlast(x,y){
- if(!partner||partner.down||Math.hypot(partner.x-x,partner.y-y)>95)return;
+ if(!partner||partner.down||partner.stunImmuneT>0||Math.hypot(partner.x-x,partner.y-y)>95)return;
  partner.stunT=5;partner.stunContactDelay=.3;partner.backup=false;partner.route=null;partner.routeWait=0;
  partner.wallFollow=null;partner.sideStep=null;partner.moving=false;
  say('相棒が爆風で気絶！触れるか5秒で復帰');
@@ -338,6 +338,7 @@ function updatePartner(dt){
   recallSeparatedPartner(partner,0);
  }
  const q=partner;
+ q.stunImmuneT=Math.max(0,(q.stunImmuneT||0)-dt);
  if(stageMode==='indoor'&&indoorWorld?.stairMoveLock>0){q.moving=false;return;}
  if(updatePartnerPassenger(q,dt))return;
  q.grappleT=Math.max(0,(q.grappleT||0)-dt);
@@ -352,10 +353,10 @@ function updatePartner(dt){
   if(!q.down)return;
  }
  if(q.down){
-  if(!p.tank&&Math.hypot(p.x-q.x,p.y-q.y)<22){q.down=false;q.hp=3;recordSupportResult('rescue','partner');q.modeT=0;q.planT=0;burst(q.x,q.y,10,'#8ad9ff',75);say('相棒を救助！');}
+  if(!p.tank&&Math.hypot(p.x-q.x,p.y-q.y)<22){q.down=false;q.hp=3;finishAllyStunRecovery(q,true);recordSupportResult('rescue','partner');q.modeT=0;q.planT=0;burst(q.x,q.y,10,'#8ad9ff',75);say('相棒を救助！');}
   return;
  }
- if(q.stunT>0){q.stunT=Math.max(0,q.stunT-dt);q.stunContactDelay=Math.max(0,(q.stunContactDelay||0)-dt);q.moving=false;if(q.stunContactDelay<=0&&!p.tank&&D(q,p)<22)q.stunT=0;if(q.stunT<=0){q.planT=0;burst(q.x,q.y,8,'#8ad9ff',70);say('相棒が気絶から復帰！');}return;}
+ if(q.stunT>0){q.stunT=Math.max(0,q.stunT-dt);q.stunContactDelay=Math.max(0,(q.stunContactDelay||0)-dt);q.moving=false;const contact=q.stunContactDelay<=0&&!p.tank&&D(q,p)<22;if(contact)q.stunT=0;if(q.stunT<=0){finishAllyStunRecovery(q,contact);q.planT=0;burst(q.x,q.y,8,'#8ad9ff',70);say('相棒が気絶から復帰！');}return;}
  partnerVehicleAttack(q,dt);
  if(partnerKnockoutPatrol(dt))return;
  // 命令は通常の自律判断より優先。ただしルート入力中はその場で待機する。

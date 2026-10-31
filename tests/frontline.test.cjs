@@ -6,7 +6,7 @@ function harness(){
  const c={WW:960,WH:12800,W:480,H:800,TANK_HIT:28,cars:[],etanks:[],p:{x:480,y:10000,body:0},stageMode:'front',debugMode:0,weather:'clear',areaDebugEnabled:false,mission:{points:[],index:0,enemyRoster:[],enemyRosterIndex:0},humans:[],enemyDogs:[],allies:[],allySeq:0,covers:[],bridges:[],gm,
  performance:{now:()=>1000},patrolRoutePlanAt:0,PATROL_SEARCH_PENDING:Symbol('pending'),findPatrolReturnPath:()=>null,R:()=>((seed=(seed*1664525+1013904223)>>>0)/2**32),D:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),hitsM:()=>false,hitsC:()=>false,inWaterAt:()=>false,inBase:()=>false,patrolLineClear:()=>true,missionSpot:(x,y)=>({x,y}),rebuildSpatialGrid(){},ensureEnemyTankSpawns(){},setSkillCooldown(){},sfx(){},say(){},
  mv:(a,dx,dy)=>{a.x+=dx;a.y+=dy;},dogMoveAround:(h,q,sp,dt)=>{const angle=Math.atan2(q.y-h.y,q.x-h.x);h.x+=Math.cos(angle)*sp*dt;h.y+=Math.sin(angle)*sp*dt;}};
- vm.createContext(c);vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/frontline.js'),'utf8'),c);
+ c.spawnRescueCross=()=>{};vm.createContext(c);vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/frontline.js'),'utf8'),c);
  vm.runInContext(html.slice(html.indexOf('function missionAllies('),html.indexOf('function setupMission(')),c);
  vm.runInContext(html.slice(html.indexOf('function moveAllySmart('),html.indexOf('function stunHuman(')),c);
  vm.runInContext(html.slice(html.indexOf('function summonAlly('),html.indexOf('let partner=null;')),c);
@@ -144,7 +144,7 @@ test('Frontline blast stun lasts ten seconds without adding an extra recovery de
  const a={x:480,y:9500,alive:true};c.allies=[a];c.stunHumanBlast(a,5);assert.equal(a.stun,10);assert.equal(a.stunRecover,0);
  c.updateFrontlineAllyStun(a,9.9);assert.ok(a.stun>0);c.updateFrontlineAllyStun(a,.11);assert.equal(a.stun,0);assert.equal(a.stunRecover,0);
  const enemy={alive:true};c.stunHumanBlast(enemy,5);assert.equal(enemy.stun,5);assert.equal(enemy.stunRecover,1);
- c.stageMode='base';a.stun=0;c.stunHumanBlast(a,5);assert.equal(a.stun,5);assert.equal(a.stunRecover,1);
+ assert.equal(a.stunImmuneT,5);c.stunHumanBlast(a,5);assert.equal(a.stun,0);c.stageMode='base';a.stun=0;a.stunImmuneT=0;c.stunHumanBlast(a,5);assert.equal(a.stun,5);assert.equal(a.stunRecover,1);
 });
 test('contact still recovers a Frontline ally before the ten-second timeout',()=>{
  const c=harness();c.los=()=>true;const a={x:c.p.x,y:c.p.y-10,alive:true,stun:9,stunRecover:0};c.updateFrontlineAllyStun(a,.1);assert.equal(a.stun,0);assert.equal(a.shotCd,.2);

@@ -69,7 +69,7 @@ function enemyBomberBlast(x,y,radius=88){
  const playerVehicle=p.tank;
  if(partner&&!partner.down&&hit(partner)&&(!playerVehicle||partner.vehicle!==playerVehicle&&partner.passengerVehicle!==playerVehicle)){
   if(partner.vehicle)enemyBomberVehicleDamage(partner.vehicle,false,()=>partnerVehicleDestroyed(partner));
-  else{partner.hp=Math.max(0,partner.hp-1);partner.down=partner.hp<=0;partner.stunT=partner.down?0:2;partner.stunContactDelay=.3;}
+  else{partner.hp=Math.max(0,partner.hp-1);partner.down=partner.hp<=0;partner.stunT=partner.down||partner.stunImmuneT>0?0:2;partner.stunContactDelay=.3;}
  }
  if(!hit(p)||p.dig>0||debugInvincible)return;
  if(playerVehicle)enemyBomberVehicleDamage(playerVehicle,true,()=>wreck());

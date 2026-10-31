@@ -1,0 +1,26 @@
+const test=require('node:test'),assert=require('node:assert/strict'),path=require('node:path');
+const {createGameEngine}=require('./helpers/game-engine.cjs');
+function setup(){const h=createGameEngine(path.join(__dirname,'..'));h.run("stageMode='front';state='play';skill='partner';p={x:400,y:400,body:0};allies=[];parts=[];covers=[];humans=[];etanks=[];cars=[];fx=[];waves=[];water=[];bridges=[];mud=[];mission=null;base={x:100,y:50,w:100,h:100,hp:30};scoreStats=newScoreStats();los=()=>true;");return h;}
+test('contact rescue emits exactly one rising, fading, bounded rescue cross',()=>{
+ const h=setup();h.run("a={x:400,y:410,alive:true,stun:10};allies=[a];rescueFrontlineAlly(a);rescueFrontlineAlly(a);");
+ assert.equal(h.run('a.stun'),0);assert.equal(h.run('a.stunImmuneT'),5);assert.equal(h.run('parts.filter(q=>q.rescueCross).length'),1);
+ const y=h.run('parts[0].y');h.run('updateParts(.4)');assert.ok(h.run('parts[0].y')<y);assert.ok(h.run('parts[0].life')<.8);h.run('updateParts(.41)');assert.equal(h.run('parts.length'),0);
+});
+test('automatic soldier recovery has no cross and blocks blast stun until five seconds elapse',()=>{
+ const h=setup();h.run("a={x:700,y:700,alive:true,stun:.1};allies=[a];updateFrontlineAllyStun(a,.1);stunHumanBlast(a,10);");
+ assert.equal(h.run('a.stun'),0);assert.equal(h.run('parts.length'),0);assert.equal(h.run('a.stunImmuneT'),5);
+ h.run('for(let i=0;i<49;i++)updateAlly(.1);stunHumanBlast(a,10)');assert.equal(h.run('a.stun'),0);
+ h.run('updateAlly(.11);stunHumanBlast(a,10)');assert.equal(h.run('a.stun'),10);
+});
+test('partner contact and automatic recovery protect from repeat own blasts without changing HP',()=>{
+ for(const contact of [true,false]){
+  const h=setup();h.c.contact=contact;h.run("partner={x:contact?400:700,y:400,hp:3,down:false,stunT:.1,stunContactDelay:0};updatePartner(.1);stunPartnerByOwnBlast(partner.x,partner.y);");
+  assert.equal(h.run('partner.stunT'),0);assert.equal(h.run('partner.stunImmuneT'),5);assert.equal(h.run('partner.hp'),3);assert.equal(h.run('parts.filter(q=>q.rescueCross).length'),contact?1:0);
+  h.run('for(let i=0;i<49;i++)updatePartner(.1);stunPartnerByOwnBlast(partner.x,partner.y)');assert.equal(h.run('partner.stunT'),0);
+  h.run('updatePartner(.11);stunPartnerByOwnBlast(partner.x,partner.y)');assert.equal(h.run('partner.stunT'),5);
+ }
+});
+test('rescuing a downed partner also signals the rescue and protects against immediate stun',()=>{
+ const h=setup();h.run("partner={x:400,y:400,hp:0,down:true,stunT:0};updatePartner(.1);stunPartnerByOwnBlast(400,400);");
+ assert.equal(h.run('partner.down'),false);assert.equal(h.run('partner.hp'),3);assert.equal(h.run('partner.stunT'),0);assert.equal(h.run('partner.stunImmuneT'),5);assert.equal(h.run('parts.filter(q=>q.rescueCross).length'),1);
+});
