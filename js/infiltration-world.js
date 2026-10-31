@@ -49,16 +49,20 @@ function indoorRoomEquipmentWalkable(room,rects){
 function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
   // 5×7の180px区画を接続。廊下の形だけ先に確定し、残りを10室に分割する。
   // 同じ部屋に割り当てた区画間は壁を作らず、大小さまざまな連結部屋にする。
-  const COLS=5,ROWS=7,SIZE=180,X0=70,Y0=80,ROOM_COUNT=10;
+  const laboratory=typeof isLaboratoryStage==='function'&&isLaboratoryStage();
+  const COLS=5,ROWS=7,SIZE=180,X0=70,Y0=80,ROOM_COUNT=laboratory?6:10;
   const index=(c,r)=>r*COLS+c;
   const coord=i=>({c:i%COLS,r:Math.floor(i/COLS)});
   const all=Array.from({length:COLS*ROWS},(_,i)=>i);
   const neighbors=i=>{const {c,r}=coord(i),a=[];if(r>0)a.push(index(c,r-1));if(c<COLS-1)a.push(index(c+1,r));if(r<ROWS-1)a.push(index(c,r+1));if(c>0)a.push(index(c-1,r));return a;};
   const center=i=>{const {c,r}=coord(i);return{x:X0+(c+.5)*SIZE,y:Y0+(r+.5)*SIZE};};
   const patterns=['H','L','T','四角','コ'];
-  const pattern=patterns[Math.floor(rng()*patterns.length)];
+  const pattern=laboratory?'外周':patterns[Math.floor(rng()*patterns.length)];
   const hall=new Set(),add=(c,r)=>hall.add(index(c,r));
-  if(pattern==='H'){
+  if(laboratory){
+    for(let c=0;c<COLS;c++){add(c,0);add(c,ROWS-1);}
+    for(let r=1;r<ROWS-1;r++){add(0,r);add(COLS-1,r);}
+  }else if(pattern==='H'){
     for(let r=1;r<=5;r++){add(1,r);add(3,r);}
     const bridge=2+Math.floor(rng()*3);
     for(let c=1;c<=3;c++)add(c,bridge);
@@ -79,12 +83,12 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
   }
   // Exterior entrances and the broad lobby belong only to the ground floor.
   const hasExterior=number===1,emergencyRoll=hasExterior?rng():1,hasEmergency=hasExterior&&emergencyRoll<.5&&!isInfiltrationBeginner();
-  add(2,1);add(1,1);if(hasExterior)add(2,0);
+  if(!laboratory){add(2,1);add(1,1);}if(hasExterior)add(2,0);
   const south=[1,2,3].filter(c=>hall.has(index(c,5)));
   const entranceCol=south.length?south[Math.floor(rng()*south.length)]:1;
   // 南端の縦2×横2区画をつなぎ、ゆったりした玄関ホールとする。
   const lobbyIds=[],lobbyLeft=entranceCol===3?2:entranceCol;
-  if(hasExterior)for(let r=5;r<=6;r++)for(let c=lobbyLeft;c<=lobbyLeft+1;c++){add(c,r);lobbyIds.push(index(c,r));}
+  if(hasExterior)for(let r=laboratory?6:5;r<=6;r++)for(let c=lobbyLeft;c<=lobbyLeft+1;c++){add(c,r);lobbyIds.push(index(c,r));}
   const mainDoor={x:center(index(entranceCol,6)).x,y:Y0+ROWS*SIZE,side:'bottom'};
   const frontDoors=hasExterior?[mainDoor,{...mainDoor,x:center(index(entranceCol===lobbyLeft?lobbyLeft+1:lobbyLeft,6)).x}]:[];
   const entrances=frontDoors.map(d=>({x:d.x,y:d.y+384}));
@@ -397,12 +401,14 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     item.artKind=item.kind==='postTable'?'desk':palette?palette[Math.min(slot,palette.length-1)]:
       ({ammo:'container',supply:'shelf',kit:'equipment'}[item.kind]||null);
     item.primaryAsset=!!(room&&slot===0);
-    const ar=INDOOR_PROP_ASPECT[item.artKind];if(!ar)continue;
+    const labSize=laboratory?laboratoryPropSize(item.artKind):null;
+    const ar=labSize?labSize.w/labSize.h:INDOOR_PROP_ASPECT[item.artKind];if(!ar)continue;
     const maxW=item.w*INDOOR_SCALE_X,maxH=item.h*INDOOR_SCALE_Y;
     let h=Math.min(maxH,maxW/ar),w=h*ar;
     if(item.artKind==='bed'){h=104;w=h*ar;}
     if(INDOOR_PROP_LENGTH[item.artKind]){h=INDOOR_PROP_LENGTH[item.artKind];w=h*ar;}
     if(item.artKind==='container'){w*=2;h*=2;}
+    if(labSize){w=labSize.w;h=labSize.h;}
     item.w=w/INDOOR_SCALE_X;item.h=h/INDOOR_SCALE_Y;
     const tx=X0+Math.floor((cx-X0)/SIZE)*SIZE,ty=Y0+Math.floor((cy-Y0)/SIZE)*SIZE;
     item.x=item.zone==='hallway'?tx+(hallLeft?14:SIZE-item.w-14):
@@ -452,9 +458,10 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     if(furniture.some(o=>o.roomId===room.id&&o.artKind===artKind))continue;
     let best=null;
     const large=artKind==='server_rack'||artKind==='generator';let walkChecks=0;
-    for(const scale of large?[1]:[1,.88,.76,.67,.6]){
-      const h=INDOOR_PROP_LENGTH[artKind]*scale/INDOOR_SCALE_Y,w=INDOOR_PROP_LENGTH[artKind]*scale*INDOOR_PROP_ASPECT[artKind];
-      placementSearch: for(const [pw,ph] of [[w,h],[h*INDOOR_SCALE_Y,w/INDOOR_SCALE_Y]]){
+    for(const scale of laboratory||large?[1]:[1,.88,.76,.67,.6]){
+      const labSize=laboratory?laboratoryPropSize(artKind):null;
+      const h=(labSize?labSize.h:INDOOR_PROP_LENGTH[artKind]*scale)/INDOOR_SCALE_Y,w=labSize?labSize.w/INDOOR_SCALE_X:INDOOR_PROP_LENGTH[artKind]*scale*INDOOR_PROP_ASPECT[artKind];
+      placementSearch: for(const [pw,ph] of [[w,h],laboratory?[h*INDOOR_SCALE_Y/INDOOR_SCALE_X,w*INDOOR_SCALE_X/INDOOR_SCALE_Y]:[h*INDOOR_SCALE_Y,w/INDOOR_SCALE_Y]]){
         // 発電機は南向きの原画を回転せず置く。
         if(artKind==='generator'&&pw>ph*INDOOR_SCALE_Y)continue;
         for(let y=room.y+14;y+ph<=room.y+room.h-14;y+=8)for(let x=room.x+14;x+pw<=room.x+room.w-14;x+=8){
@@ -728,7 +735,8 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
         const artKind=palette[(slot+pass+room.id)%palette.length];
         if(artKind==='bed'&&furniture.some(o=>o.roomId===room.id&&o.artKind==='bed'))continue;
         const worldH=artKind==='bed'?104:artKind==='container'?140:(INDOOR_PROP_LENGTH[artKind]||70);
-        const w=worldH*INDOOR_PROP_ASPECT[artKind],h=worldH/INDOOR_SCALE_Y;
+        const labSize=laboratory?laboratoryPropSize(artKind):null;
+        const w=labSize?labSize.w/INDOOR_SCALE_X:worldH*INDOOR_PROP_ASPECT[artKind],h=(labSize?labSize.h:worldH)/INDOOR_SCALE_Y;
         const positions=[[14,14],[SIZE-w-14,14],[14,SIZE-h-14],[SIZE-w-14,SIZE-h-14],
           [14,(SIZE-h)/2],[SIZE-w-14,(SIZE-h)/2],[(SIZE-w)/2,14],[(SIZE-w)/2,SIZE-h-14]];
         for(const [dx,dy] of positions){
@@ -961,7 +969,7 @@ function drawInfiltrationLighting(cx,cy){
     indoorPaintLightingMask(q,left,top,mw,mh);
     cached=indoorShadeSnapshot={world:indoorWorld,x:left,y:top};
   }
-  gm.save();if(typeof isLaboratoryStage==='function'&&isLaboratoryStage())gm.globalAlpha*=.35;gm.drawImage(mask,cx-cached.x,cy-cached.y,W,H,0,0,W,H);gm.restore();
+  gm.save();if(typeof isLaboratoryStage==='function'&&isLaboratoryStage())gm.globalAlpha*=.68;gm.drawImage(mask,cx-cached.x,cy-cached.y,W,H,0,0,W,H);gm.restore();
 }
 
 const INDOOR_DOOR_WIDTH=84,INDOOR_DOOR_THICKNESS=6,INDOOR_DOOR_SPEED=5.2;
@@ -1039,7 +1047,7 @@ function setupInfiltrationWorld(){
   // Scale physical floor area, retaining the same rendering resolution and two-floor layout.
   const beginner=isInfiltrationBeginner(),size=beginner?Math.sqrt(.8):1;
   INDOOR_FILES_TOTAL=beginner?2:3;
-  INDOOR_SCALE_X=size;INDOOR_SCALE_Y=1.75*size;INDOOR_OFFSET_X=480-520*size;
+  INDOOR_SCALE_X=size*(typeof isLaboratoryStage==='function'&&isLaboratoryStage() ? .95 : 1);INDOOR_SCALE_Y=1.75*size;INDOOR_OFFSET_X=480-520*INDOOR_SCALE_X;
   const ground=ZONE_STYLE['敵迷路基地'];
   ZONES=[{n:'敵迷路基地',y0:WH,y1:-400,g:'#202820',p:ground.p.slice(),pat:null,indoor:true}];
   roadBands=[];areaDebugLabels=[];covers=[];objects=[];bushes=[];mud=[];water=[];bridges=[];cars=[];
@@ -2798,12 +2806,14 @@ function drawInfiltrationFloors(cx,cy){
     // 玄関前と非常口前は丘陵地面のまま。帯状の舗装は描かない。
     g.fillStyle='rgba(145,153,142,.07)';
     for(const tile of f.corridors){
+      if(typeof isLaboratoryStage==='function'&&isLaboratoryStage())continue;
       if(tile.y+tile.h<cy-30||tile.y>cy+H+30)continue;
       g.fillRect(tile.x,tile.y,tile.w,tile.h);
     }
     // Open lobby and corridors share one continuous floor. No decorative border,
     // inset rectangle or mat may imply a wall along their walkable boundary.
     for(const room of f.rooms){
+      if(typeof isLaboratoryStage==='function'&&isLaboratoryStage())continue;
       if(room.y+room.h<cy-40||room.y>cy+H+40)continue;
       g.fillStyle=typeof isLaboratoryStage==='function'&&isLaboratoryStage()?'rgba(119,125,118,.045)':room.id%2===0?'rgba(34,41,33,.08)':'rgba(34,41,33,.12)';
       for(const tile of room.tiles){

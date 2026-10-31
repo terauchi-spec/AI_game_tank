@@ -19,27 +19,69 @@
   },
   {
     "name": "lab-bench",
-    "prompt": "One advanced laboratory workbench, rectangular long axis NORTH-SOUTH, length about twice its width. White ceramic worktop, clear cyan glass divider, compact microscope and a neat rack of transparent sample vials with pale blue liquid, silver legs barely visible. Top-down view, lower edge shows shallow front. Distinct worktable silhouette."
+    "prompt": "Use case: stylized-concept. Asset type: one transparent top-down game furniture sprite. Subject: an early-2000s corporate research laboratory workbench, off-white painted steel drawers, lightly worn gray laminate worktop with a few glass test tubes and a small beige benchtop instrument. Early-2000s corporate research laboratory. Light wear, no luminous accents, no futuristic shapes. Cute detailed toy-like 3D raster style matching overhead stealth-game furniture. Orthographic top-down view with a small visible south front face. Elongated vertical silhouette, width about half height. Complete centered object, tight transparent margin. No floor plane, scenery, people, text, logo, external cast shadow. Genuinely transparent background.",
+    "previous_prompt": "One advanced laboratory workbench, rectangular long axis NORTH-SOUTH, length about twice its width. White ceramic worktop, clear cyan glass divider, compact microscope and a neat rack of transparent sample vials with pale blue liquid, silver legs barely visible. Top-down view, lower edge shows shallow front. Distinct worktable silhouette.",
+    "mode": "built-in ImageGen, transparent background",
+    "updated": "2026-10-31",
+    "world_size": {
+      "w": 47.333333,
+      "h": 128
+    }
   },
   {
     "name": "lab-storage",
-    "prompt": "One tall laboratory sample-storage cabinet in NORTH-SOUTH orientation, length about twice its width. White frame, clear blue glass panels showing neat transparent sample bottles and trays, silver latches. View from overhead with south/front face visible. Clean bright scientific sample storage, no weapons."
+    "prompt": "Use case: stylized-concept. Asset type: one transparent top-down game furniture sprite. Subject: a closed off-white painted steel laboratory storage cabinet with clear plain glass doors and shelves holding a few brown reagent bottles. Early-2000s corporate research laboratory. Light wear, no luminous accents, no futuristic shapes. Cute detailed toy-like 3D raster style matching overhead stealth-game furniture. Orthographic top-down view with a small visible south front face. Elongated vertical silhouette, width about half height. Complete centered object, tight transparent margin. No floor plane, scenery, people, text, logo, external cast shadow. Genuinely transparent background.",
+    "previous_prompt": "One tall laboratory sample-storage cabinet in NORTH-SOUTH orientation, length about twice its width. White frame, clear blue glass panels showing neat transparent sample bottles and trays, silver latches. View from overhead with south/front face visible. Clean bright scientific sample storage, no weapons.",
+    "mode": "built-in ImageGen, transparent background",
+    "updated": "2026-10-31",
+    "world_size": {
+      "w": 42.25,
+      "h": 104
+    }
   },
   {
     "name": "lab-analyzer",
-    "prompt": "One high-tech scientific analysis workstation, NORTH-SOUTH long narrow footprint about 1:2.5. White rectangular chassis, pale cyan transparent chamber, tiny luminous blue instrument readouts without text, compact round sample carousel and silver grilles. Bright clean overhead game prop."
+    "prompt": "Use case: stylized-concept. Asset type: one transparent top-down game furniture sprite. Subject: a beige early-2000s benchtop chemical analyzer on a compact off-white trolley, small inset LCD, physical buttons and cables. Early-2000s corporate research laboratory. Light wear, no luminous accents, no futuristic shapes. Cute detailed toy-like 3D raster style matching overhead stealth-game furniture. Orthographic top-down view with a small visible south front face. Elongated vertical silhouette, width about half height. Complete centered object, tight transparent margin. No floor plane, scenery, people, text, logo, external cast shadow. Genuinely transparent background.",
+    "previous_prompt": "One high-tech scientific analysis workstation, NORTH-SOUTH long narrow footprint about 1:2.5. White rectangular chassis, pale cyan transparent chamber, tiny luminous blue instrument readouts without text, compact round sample carousel and silver grilles. Bright clean overhead game prop.",
+    "mode": "built-in ImageGen, transparent background",
+    "updated": "2026-10-31",
+    "world_size": {
+      "w": 60.3125,
+      "h": 120
+    }
   },
   {
     "name": "lab-reactor",
-    "prompt": "One advanced laboratory cylindrical cell-culture bioreactor on a white rectangular base, vertical NORTH-SOUTH footprint about 1:1.5. Transparent cyan glass cylinder with luminous pale turquoise liquid and a central white apparatus, silver piping neatly integrated. Orthographic overhead with subtle visible south face, bright benign scientific equipment."
+    "prompt": "Use case: stylized-concept. Asset type: one transparent top-down game furniture sprite. Subject: a practical early-2000s laboratory water purification unit, off-white rectangular steel housing, two plain transparent filter vessels, simple gauges and rubber tubes. Early-2000s corporate research laboratory. Light wear, no luminous accents, no futuristic shapes. Cute detailed toy-like 3D raster style matching overhead stealth-game furniture. Orthographic top-down view with a small visible south front face. Elongated vertical silhouette, width about half height. Complete centered object, tight transparent margin. No floor plane, scenery, people, text, logo, external cast shadow. Genuinely transparent background.",
+    "previous_prompt": "One advanced laboratory cylindrical cell-culture bioreactor on a white rectangular base, vertical NORTH-SOUTH footprint about 1:1.5. Transparent cyan glass cylinder with luminous pale turquoise liquid and a central white apparatus, silver piping neatly integrated. Orthographic overhead with subtle visible south face, bright benign scientific equipment.",
+    "mode": "built-in ImageGen, transparent background",
+    "updated": "2026-10-31",
+    "world_size": {
+      "w": 76.854167,
+      "h": 136
+    }
   },
   {
     "name": "lab-medical",
-    "prompt": "One pristine research examination/sample-scanning bed or capsule, NORTH-SOUTH long rectangular footprint about 1:2.4. White padded bed on silver base, transparent cyan scanning hood over upper half, no person, blue edge indicators. Bright polished top-down game asset."
+    "prompt": "Use case: stylized-concept. Asset type: one transparent top-down game furniture sprite. Subject: a plain early-2000s laboratory examination cot with muted pale green vinyl mattress, off-white steel frame and modest raised pillow, no scanner arch. Early-2000s corporate research laboratory. Light wear, no luminous accents, no futuristic shapes. Cute detailed toy-like 3D raster style matching overhead stealth-game furniture. Orthographic top-down view with a small visible south front face. Elongated vertical silhouette, width about half height. Complete centered object, tight transparent margin. No floor plane, scenery, people, text, logo, external cast shadow. Genuinely transparent background.",
+    "previous_prompt": "One pristine research examination/sample-scanning bed or capsule, NORTH-SOUTH long rectangular footprint about 1:2.4. White padded bed on silver base, transparent cyan scanning hood over upper half, no person, blue edge indicators. Bright polished top-down game asset.",
+    "mode": "built-in ImageGen, transparent background",
+    "updated": "2026-10-31",
+    "world_size": {
+      "w": 45.3125,
+      "h": 116
+    }
   },
   {
     "name": "lab-samples",
-    "prompt": "One compact rectangular laboratory chemical sample transport crate, NORTH-SOUTH footprint about 1:1.3. White protective container with clear cyan lid, small colorful sealed reagent vials inside orderly compartments, silver protective corners. No hazard text, no military shells, clean scientific storage."
+    "prompt": "Use case: stylized-concept. Asset type: one transparent top-down game furniture sprite. Subject: a compact rectangular gray plastic reagent transport case with plain translucent lid showing brown glass bottles in foam compartments. Early-2000s corporate research laboratory. Light wear, no luminous accents, no futuristic shapes. Cute detailed toy-like 3D raster style matching overhead stealth-game furniture. Orthographic top-down view with a small visible south front face. Elongated vertical silhouette, width about half height. Complete centered object, tight transparent margin. No floor plane, scenery, people, text, logo, external cast shadow. Genuinely transparent background.",
+    "previous_prompt": "One compact rectangular laboratory chemical sample transport crate, NORTH-SOUTH footprint about 1:1.3. White protective container with clear cyan lid, small colorful sealed reagent vials inside orderly compartments, silver protective corners. No hazard text, no military shells, clean scientific storage.",
+    "mode": "built-in ImageGen, transparent background",
+    "updated": "2026-10-31",
+    "world_size": {
+      "w": 50.552083,
+      "h": 92
+    }
   },
   {
     "name": "lab-door",
