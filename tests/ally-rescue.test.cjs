@@ -47,3 +47,18 @@ test('hound contact rescue emits exactly one cross; automatic recovery emits non
   h.run('updateHound(.016)');assert.equal(h.run('parts.filter(q=>q.rescueCross).length'),contact?1:0);
  }
 });
+
+test('all three skill companions resist repeat stun for five seconds after contact rescue',()=>{
+ for(const kind of ['reinforcement','partner','hound']){
+  const h=setup();h.c.kind=kind;
+  h.run("if(kind==='reinforcement'){stageMode='base';a={x:400,y:410,alive:true,stun:5,chute:0,shotCd:1,slot:0};allies=[a];tick=dt=>updateAlly(dt);hit=()=>stunHumanBlast(a,5);getStun=()=>a.stun;}else if(kind==='partner'){partner={x:400,y:410,hp:3,stunT:5,stunContactDelay:0};a=partner;tick=dt=>updatePartner(dt);hit=()=>stunPartnerByOwnBlast(a.x,a.y);getStun=()=>a.stunT;}else{skill='hound';spawnHound();hound.x=400;hound.y=410;hound.stun=5;hound.state='stunned';a=hound;tick=dt=>updateHound(dt);hit=()=>stunHound(5);getStun=()=>a.stun;}tick(.016);hit();");
+  assert.equal(h.run('a.stunImmuneT'),5,kind);assert.equal(h.run('getStun()'),0,kind);
+  h.run('for(let i=0;i<49;i++){tick(.1);hit();}');assert.equal(h.run('getStun()'),0,kind);
+  h.run('tick(.11);hit();');assert.ok(h.run('getStun()')>0,kind);
+ }
+});
+test('hound blast stun obeys contact-rescue protection and can stun again after it expires',()=>{
+ const h=setup();h.run("skill='hound';spawnHound();hound.x=400;hound.y=410;hound.stun=5;updateHound(.016);stunHoundAtBlast(hound.x,hound.y,95);");
+ assert.equal(h.run('hound.stun'),0);assert.equal(h.run('hound.state'),'return');
+ h.run('for(let i=0;i<51;i++)updateHound(.1);stunHoundAtBlast(hound.x,hound.y,95);');assert.equal(h.run('hound.stun'),5);
+});

@@ -14,3 +14,9 @@
 - 自然復帰時や復帰後の接触では赤十字を追加しない。猟犬の気絶時間・接触範囲は変更しない。
 
 追加検証: `node --test tests/ally-rescue.test.cjs tests/frontline.test.cjs tests/infiltration-partner.test.cjs tests/enemy-bomber.test.cjs`（142件成功）。スマートフォン実機表示は未確認。
+
+## 3スキル共通の接触救助後保護
+
+増援・相棒に加え、猟犬にも接触救助後5秒間の再気絶防止を適用する。猟犬の気絶入口 `stunHound` で判定し、弾・爆風・爆撃からの再気絶を防ぐ。時間はゲーム更新のdtで減らし、停止中は進めない。猟犬の自然復帰時の挙動は維持する。
+
+検証: `node --test tests/ally-rescue.test.cjs tests/frontline.test.cjs tests/infiltration-partner.test.cjs tests/enemy-bomber.test.cjs tests/tank-combat-bridge.test.cjs`（151件成功）。3スキルすべてで救助直後・4.9秒・5秒超過後を確認。実機での操作は未確認。
