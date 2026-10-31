@@ -2767,6 +2767,7 @@ function indoorConcretePattern(){
   return pattern;
 }
 const indoorOutdoorTerrain={n:'丘陵',g:'#6b7a3a'};
+const indoorLaboratoryOutdoorTerrain={n:'草原',g:'#4a8a34'};
 function drawInfiltrationStairSprite(floor){
   const image=indoorPropImage(floor.number===1?'stairs_up':'stairs_down');if(!image)return false;
   const iw=image.naturalWidth||image.width,ih=image.naturalHeight||image.height;
@@ -2783,7 +2784,8 @@ function drawInfiltrationFloors(cx,cy){
   if(!indoorWorld)return;
   const left=Math.max(0,cx-24),top=cy-24,right=Math.min(WW,cx+W+24),bottom=cy+H+24;
   // Upstairs has no exterior floor: use a flat void, never walkable ground.
-  g.fillStyle=typeof isLaboratoryStage==='function'&&isLaboratoryStage()?'#e2e4df':indoorWorld.currentFloor===1?'#11171c':terrainSurfacePattern(indoorOutdoorTerrain)||indoorOutdoorTerrain.g;
+  const outdoor=typeof isLaboratoryStage==='function'&&isLaboratoryStage()?indoorLaboratoryOutdoorTerrain:indoorOutdoorTerrain;
+  g.fillStyle=indoorWorld.currentFloor===1?'#11171c':terrainSurfacePattern(outdoor)||outdoor.g;
   g.fillRect(left,top,right-left,bottom-top);
   const concrete=indoorConcretePattern()||'#777975';
   for(const f of indoorWorld.floors){

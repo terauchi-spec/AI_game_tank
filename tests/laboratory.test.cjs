@@ -37,3 +37,13 @@ test('all twelve master PNGs and runtime WebPs exist and only WebPs are referenc
  const h=createGameEngine(root),names=Array.from(h.run('[...new Set(Object.values(LABORATORY_ART))]'));assert.equal(names.length,12);
  for(const name of names){const dir=path.join(root,'assets/indoor/laboratory'),png=fs.readFileSync(path.join(dir,name+'.png')),webp=fs.readFileSync(path.join(dir,name+'.webp'));assert.equal(png.subarray(1,4).toString(),'PNG');assert.equal(webp.subarray(8,12).toString(),'WEBP');assert.ok(png.length>1000&&webp.length>1000);}
 });
+test('laboratory exterior reuses grassland, preserves upstairs void and invalidates an unloaded grass placeholder',()=>{
+ const h=game(true);
+ h.run("var exteriorSamples=[];terrainSurfacePattern=t=>{exteriorSamples.push(t.n);return 'terrain:'+t.n;};indoorWorld.currentFloor=0;indoorUncachedFloors(camX,cam);");
+ assert.equal(h.run('exteriorSamples[0]'),'草原');
+ h.run("exteriorSamples=[];indoorLaboratory=false;indoorUncachedFloors(camX,cam);");assert.equal(h.run('exteriorSamples[0]'),'丘陵');
+ h.run("exteriorSamples=[];indoorLaboratory=true;indoorWorld.currentFloor=1;var exteriorFill;g.fillRect=()=>{if(exteriorFill===undefined)exteriorFill=g.fillStyle;};indoorUncachedFloors(camX,cam);");
+ assert.equal(h.run('exteriorSamples.length'),0);assert.equal(h.run('exteriorFill'),'#11171c');
+ h.run("TERRAIN_IMG['草原']={complete:true,naturalWidth:256,naturalHeight:256};");
+ const ready=h.run("indoorRasterAssetStamp('floor')");h.run("TERRAIN_IMG['草原'].complete=false");assert.notEqual(h.run("indoorRasterAssetStamp('floor')"),ready);
+});

@@ -51,7 +51,7 @@ function indoorSyncWallRasterMembers(){
   indoorRasterWallMembers=next;indoorRasterCovers=covers;indoorRasterCoverCount=covers.length;
 }
 function indoorRasterAssetStamp(layer){
-  if(typeof isLaboratoryStage==='function'&&isLaboratoryStage())return laboratoryAssetStamp()+'/'+indoorWorld.currentFloor;
+  if(typeof isLaboratoryStage==='function'&&isLaboratoryStage())return laboratoryAssetStamp()+'/'+indoorWorld.currentFloor+(layer==='floor'?'/grass:'+Number(assetOK(TERRAIN_IMG['草原'])):'');
   const ready=im=>assetOK(im)?(im.naturalWidth||im.width)+':'+(im.naturalHeight||im.height):'0';
   if(layer==='walls')return ready(COVER_IMG.maze_wall)+'/'+ready(COVER_IMG.maze_wall_vertical);
   if(layer==='floor')return indoorWorld.currentFloor+'/'+ready(indoorConcreteImage)+'/'+ready(TERRAIN_IMG['丘陵'])+'/'+ready(indoorPropImages.stairs_up)+'/'+ready(indoorPropImages.stairs_down);

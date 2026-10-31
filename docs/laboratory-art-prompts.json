@@ -1,9 +1,9 @@
 [
   {
     "name": "lab-floor",
-    "prompt": "Use case: precise-object-edit. Edit target is the provided lab-floor game asset. Restyle only its surface/materials to an early-2000s science laboratory, with a bright grounded ordinary institutional appearance. Keep the polished gently rounded 3D game-art style and asset purpose. A square flat seamless floor material tile, directly overhead. Replace futuristic glowing panels with ordinary small pale ivory and light gray vinyl composition square tiles typical of a well-maintained scientific laboratory around year 2000. Very subtle fine speckle, thin neutral gray seams, matte finish, uniform soft illumination. Four by four equal tiles, flat edge-to-edge square with no framing, no perspective, no bevels, no screws, no cyan, no lighting or luminous seams. The material square is opaque; transparent only outside its straight square silhouette. Opposite edges must tile cleanly. No scene, extra objects, people, text, logo, watermark or cast shadow outside silhouette. Actual alpha transparency required.",
+    "prompt": "Use case: precise-object-edit. Edit target: supplied top-down laboratory floor tile game texture. Change ONLY its cleanliness: make the early-2000s ivory and pale gray vinyl checkerboard tiles gently used, with very faint gray-beige dirt along a few joints, subtle soft shoe scuffs, light uneven wear and a few muted dusty smudges. The floor still looks bright and regularly cleaned, only slightly worn; keep marks sparse and low contrast. Preserve the exact four-by-four square tile layout, palette, perfectly flat overhead view, thin straight seams, scale and game texture style. Uniform diffuse lighting. No perspective, objects, footprints with recognizable shoe patterns, debris, cracks, major stains, dramatic grime, glow, text or borders. Opposite edges suitable for repeating. Entire material square opaque, preserve genuinely transparent outside margin.",
     "mode": "built-in ImageGen edit, transparent background",
-    "reference": "0240bcb9e64f6c9e145b2964f341a28192a6100c/assets/indoor/laboratory/lab-floor.png"
+    "reference": "7c826a630503a740084a11f973809989c3537cf1/assets/indoor/laboratory/lab-floor.png"
   },
   {
     "name": "lab-wall-horizontal",

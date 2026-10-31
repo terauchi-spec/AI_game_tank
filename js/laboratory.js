@@ -13,7 +13,7 @@ let laboratoryFloorTile=null;
 function laboratoryImage(kind){
  const key=LABORATORY_ART[kind];if(!key)return null;
  if(!laboratoryImages[key]){
-  const image=new Image();image.decoding='async';image.src='assets/indoor/laboratory/'+key+'.webp'+(key==='lab-floor'||key.startsWith('lab-wall-')?'?v=2000-r1':'');
+  const image=new Image();image.decoding='async';image.src='assets/indoor/laboratory/'+key+'.webp'+(key==='lab-floor'?'?v=2000-r2':key.startsWith('lab-wall-')?'?v=2000-r1':'');
   laboratoryImages[key]=image;
  }
  const image=laboratoryImages[key];return assetOK(image)?image:null;
