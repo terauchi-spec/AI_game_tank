@@ -23,7 +23,7 @@ test('swept gatling rounds hit nearer enemy infantry during friendly fire and sp
 test('the gun keeps a strict shared 500-round limit with superior fire rate and range',()=>{
  const h=scene();h.run("for(let i=0;i<510;i++)fireGunTower(v,0,'p');");
  assert.equal(h.run('v.v'),0);assert.equal(h.run('bullets.length'),500);assert.equal(h.run('fireGunTower(v,0,\'p\')'),false);
- assert.ok(h.run('GUN_TOWER_TYPE.vcd<Math.min(...TYPES.map(t=>t.vcd))'));assert.ok(h.run('GUN_TOWER_TYPE.range>306'));
+ assert.ok(h.run('GUN_TOWER_TYPE.vcd<Math.min(...TYPES.map(t=>t.vcd))'));assert.equal(h.run('GUN_TOWER_TYPE.range'),150*4);assert.equal(h.run('bullets[0].life*GUN_TOWER_TYPE.speed'),600);
 });
 test('cover is chipped only after sustained hits and always stops gatling rounds before a soldier behind it',()=>{
  const h=scene();h.run("wall={x:150,y:380,w:80,h:60,kd:1};covers=[wall];victim={x:260,y:400,alive:true};humans=[victim];rebuildSpatialGrid();v.x=100;v.y=400;Math.random=()=>.5;for(let i=0;i<7;i++){fireGunTower(v,0,'p');b=bullets.pop();b.x=300;b.y=400;updateGatlingBullet(b,137,400,false);}");
@@ -56,7 +56,7 @@ test('real advanced worlds place towers on land clear of scenery while intermedi
  }
 });
 test('nearby blue infantry can occupy a vacant tower and fire without walking the emplacement',()=>{
- const h=scene();h.run("cars=[v];v.reboardT=0;p.x=v.x+600;p.y=v.y;enemy={x:v.x+25,y:v.y,alive:true,elite:false};humans=[enemy];updateGunTowers(.016);updateGunTowerEnemy(enemy,.016);updateGunTowerEnemy(enemy,.08);");
+ const h=scene();h.run("cars=[v];v.reboardT=0;p.x=v.x+500;p.y=v.y;enemy={x:v.x+25,y:v.y,alive:true,elite:false};humans=[enemy];updateGunTowers(.016);updateGunTowerEnemy(enemy,.016);updateGunTowerEnemy(enemy,.08);");
  assert.equal(h.run('enemy.gunTower===v'),true);assert.equal(h.run('v.v'),498);assert.equal(h.run('bullets.every(b=>b.gatling&&b.from===\'e\')'),true);assert.equal(h.run('v.x'),480);assert.equal(h.run('v.y'),11000);assert.ok(h.run('D(enemy,v)')>20);
 });
 test('a player can shoot the visible gunner and immediately claim the unchanged mount',()=>{
