@@ -41,11 +41,11 @@ document.getElementById('developerTrigger').addEventListener('click',developerCr
 document.getElementById('developerCancel').addEventListener('click',closeDeveloperLogin);
 document.getElementById('developerLoginForm').addEventListener('submit',async event=>{
  event.preventDefault();if(state!=='developerPass'||developerBusy)return;
- const password=document.getElementById('developerPin').value,status=document.getElementById('developerLoginStatus');
- if(password.length<16||password.length>256){status.textContent='16〜256文字のパスワードを入力してください。';return;}
+ const pin=document.getElementById('developerPin').value,status=document.getElementById('developerLoginStatus');
+ if(!/^\d{4}$/.test(pin)){status.textContent='数字4桁で入力してください。';return;}
  developerBusy=true;document.getElementById('developerSubmit').disabled=true;document.getElementById('developerCancel').disabled=true;status.textContent='確認中…';
- try{await developerApi('login',{password});setDeveloperMode(true);document.getElementById('developerPin').value='';document.getElementById('developerPin').blur();document.getElementById('developerLogin').hidden=true;state='title';sfx('uiConfirm');}
- catch(error){status.textContent=error.status===401?'パスワードが違います。':error.status===429?'しばらく待ってから再入力してください。':error.message==='developer_not_configured'?'開発者ログインは現在停止中です。':'認証できませんでした。通信をご確認ください。';}
+ try{await developerApi('login',{pin});setDeveloperMode(true);document.getElementById('developerPin').blur();document.getElementById('developerLogin').hidden=true;state='title';sfx('uiConfirm');}
+ catch(error){status.textContent=error.status===401?'パスワードが違います。':error.status===429?'しばらく待ってから再入力してください。':'認証できませんでした。通信をご確認ください。';}
  finally{developerBusy=false;document.getElementById('developerSubmit').disabled=false;document.getElementById('developerCancel').disabled=false;}
 });
 document.getElementById('titleDeveloper').addEventListener('click',()=>{

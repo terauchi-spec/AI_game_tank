@@ -17,7 +17,7 @@ const DEVELOPER_COOKIE='__Host-tankDeveloper';
 const developerToken=request=>(request.headers.get('Cookie')||'').match(/(?:^|;\s*)__Host-tankDeveloper=([a-f0-9]{64})(?:;|$)/)?.[1];
 const developerCookie=(value,age)=>DEVELOPER_COOKIE+'='+value+'; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age='+age;
 export class Scoreboard{
- constructor(ctx,env={}){this.ctx=ctx;this.env=env;}
+ constructor(ctx){this.ctx=ctx;}
  async fetch(request){
   const url=new URL(request.url);
   if(url.pathname.startsWith('/api/developer/'))return this.developer(request,url.pathname);
@@ -44,12 +44,7 @@ export class Scoreboard{
   return json({ok:true,updated});
  }
  async developer(request,path){
-  const now=Date.now(),token=developerToken(request),password=this.env.DEVELOPER_PASSWORD;
-  // No embedded fallback. A new namespace revokes pre-fix sessions; rotation revokes new sessions too.
-  if(typeof password!=='string'||password.length<16||password.length>256)return json({error:'developer_not_configured'},503);
-  const digest=async value=>new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)));
-  const expected=await digest(password),fingerprint=Array.from(expected,b=>b.toString(16).padStart(2,'0')).join('');
-  const key='developer:sessions:v2:'+fingerprint;
+  const now=Date.now(),token=developerToken(request),key='developer:sessions:fixed-v1';
   if(path==='/api/developer/session'&&request.method==='GET'){
    const sessions=await this.ctx.storage.get(key)||{};return json({active:!!token&&sessions[token]>now});
   }
@@ -61,15 +56,13 @@ export class Scoreboard{
     if(now-attempts.at>=60000){attempts.at=now;attempts.count=0;}
     if(attempts.count>=8)return {status:429};
     attempts.count++;await tx.put('developer:attempts',attempts);
-    if(typeof body?.password!=='string'||body.password.length<16||body.password.length>256)return {status:401};
-    const actual=await digest(body.password);let difference=0;for(let i=0;i<expected.length;i++)difference|=expected[i]^actual[i];
-    if(difference)return {status:401};
+    if(body?.pin!=='5555')return {status:401};
     const sessions=Object.fromEntries(Object.entries(await tx.get(key)||{}).filter(([,until])=>until>now));
     const ids=Object.keys(sessions);while(ids.length>=20)delete sessions[ids.shift()];
     const fresh=crypto.randomUUID().replaceAll('-','')+crypto.randomUUID().replaceAll('-','');
     sessions[fresh]=now+28800000;await tx.put(key,sessions);return {status:200,token:fresh};
    });
-   return result.status===200?json({active:true},200,{'Set-Cookie':developerCookie(result.token,28800)}):json({error:result.status===429?'rate_limited':'incorrect_password'},result.status);
+   return result.status===200?json({active:true},200,{'Set-Cookie':developerCookie(result.token,28800)}):json({error:result.status===429?'rate_limited':'incorrect_pin'},result.status);
   }
   if(path==='/api/developer/logout'){
    await this.ctx.storage.transaction(async tx=>{const sessions=await tx.get(key)||{};if(token)delete sessions[token];await tx.put(key,sessions);});
