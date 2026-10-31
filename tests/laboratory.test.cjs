@@ -52,15 +52,15 @@ test('all twenty-eight master PNGs and runtime WebPs exist and only WebPs are re
  const h=createGameEngine(root),names=Array.from(h.run('[...new Set(Object.values(LABORATORY_ART))]'));assert.equal(names.length,28);
  for(const name of names){const dir=path.join(root,'assets/indoor/laboratory'),png=fs.readFileSync(path.join(dir,name+'.png')),webp=fs.readFileSync(path.join(dir,name+'.webp'));assert.equal(png.subarray(1,4).toString(),'PNG');assert.equal(webp.subarray(8,12).toString(),'WEBP');assert.ok(png.length>1000&&webp.length>1000);}
 });
-test('laboratory exterior reuses hills, preserves upstairs void and invalidates an unloaded hills placeholder',()=>{
+test('laboratory exterior reuses city, preserves upstairs void and invalidates an unloaded city placeholder',()=>{
  const h=game(true);
  h.run("var exteriorSamples=[];terrainSurfacePattern=t=>{exteriorSamples.push(t.n);return 'terrain:'+t.n;};indoorWorld.currentFloor=0;indoorUncachedFloors(camX,cam);");
- assert.equal(h.run('exteriorSamples[0]'),'丘陵');
+ assert.equal(h.run('exteriorSamples[0]'),'街');
  h.run("exteriorSamples=[];indoorLaboratory=false;indoorUncachedFloors(camX,cam);");assert.equal(h.run('exteriorSamples[0]'),'丘陵');
  h.run("exteriorSamples=[];indoorLaboratory=true;indoorWorld.currentFloor=1;var exteriorFill;g.fillRect=()=>{if(exteriorFill===undefined)exteriorFill=g.fillStyle;};indoorUncachedFloors(camX,cam);");
  assert.equal(h.run('exteriorSamples.length'),0);assert.equal(h.run('exteriorFill'),'#11171c');
- h.run("TERRAIN_IMG['丘陵']={complete:true,naturalWidth:256,naturalHeight:256};");
- const ready=h.run("indoorRasterAssetStamp('floor')");h.run("TERRAIN_IMG['丘陵'].complete=false");assert.notEqual(h.run("indoorRasterAssetStamp('floor')"),ready);
+ h.run("TERRAIN_IMG['街']={complete:true,naturalWidth:256,naturalHeight:256};");
+ const ready=h.run("indoorRasterAssetStamp('floor')");h.run("TERRAIN_IMG['街'].complete=false");assert.notEqual(h.run("indoorRasterAssetStamp('floor')"),ready);
 });
 
 test('laboratory role layouts and physical paths stay coherent across 60 seeds',()=>{
@@ -215,4 +215,21 @@ test('laboratory stair walls and safe landings match the tall sprite on both flo
  h.run('indoorLaboratory=false');
  assert.equal(h.run('indoorStairBounds({x:0,y:0},1).h'),192);
  assert.ok(Math.abs(h.run('indoorStairBounds({x:0,y:0},2).h')-60*320/162)<.001);
+});
+
+
+test('lab rescue routes reuse cached asphalt roads and leave exterior scenery clear',()=>{
+ const h=game(true);
+ assert.equal(h.run(`roadBands.length===indoorWorld.exits.length&&indoorWorld.exits.every(exit=>{
+  const r=roadBands.find(r=>r.indoorExtractionRoad&&r.y+r.h/2===exit.y);
+  return r&&r.x===0&&r.w===WW&&r.h===320&&r.kind==='asphalt'&&r.lanes===4&&
+    (r.y+r.h<=indoorWorld.floors[0].footprint.y||r.y>=indoorWorld.floors[0].footprint.y+indoorWorld.floors[0].footprint.h);
+ })&&indoorWorld.exterior.every(o=>!roadBands.some(r=>o.x+o.w>r.x&&o.x<r.x+r.w&&o.y+o.h>r.y-12&&o.y<r.y+r.h+12))`),true);
+ assert.equal(h.run(`indoorWorld.exits.every(exit=>[-1,1].every(side=>{
+  mission.extraction=null;state='play';p.x=exit.x;p.y=exit.y+side*50;beginInfiltrationExtraction(exit);
+  const v=mission.extraction,r=roadBands.find(r=>r.y+r.h/2===exit.y);
+  return v.y-38>=r.y&&v.y+38<=r.y+r.h&&v.startX<v.stopX&&v.endX>v.stopX;
+ }))`),true);
+ assert.equal(h.run(`roadBands.every(r=>{const a=roadVisualCache(r);return a&&roadVisualCache(r)===a;})`),true);
+ const standard=game(false);assert.equal(standard.run('roadBands.length'),0);
 });

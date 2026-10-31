@@ -1222,7 +1222,15 @@ function setupInfiltrationWorld(){
   indoorWorld.emergency=entrance.emergency?{...entrance.emergency}:null;
   indoorWorld.exits=[entrance.entrance,entrance.emergency].filter(Boolean);
   indoorWorld.currentFloor=0;
+  // Lab pickup roads reuse destruction-stage asphalt, markings and its shared
+  // one-time visual cache. Both possible jeep lanes (+/-68px) fit the 320px road.
+  if(typeof isLaboratoryStage==='function'&&isLaboratoryStage()){
+    roadBands=indoorWorld.exits.map(exit=>({x:0,y:exit.y-160,w:WW,h:320,
+      kind:'asphalt',lanes:4,indoorExtractionRoad:true}));
+  }
   indoorWorld.exterior=indoorGenerateExterior(entrance,indoorSeedRng(seeds[0]^0x7e31ac09));
+  if(roadBands.length)indoorWorld.exterior=indoorWorld.exterior.filter(o=>!roadBands.some(r=>
+    o.x+o.w>r.x&&o.x<r.x+r.w&&o.y+o.h>r.y-12&&o.y<r.y+r.h+12));
   covers.push(...indoorWorld.exterior);
   patrolRoutesVisible=false;
   rebuildSpatialGrid();
@@ -2780,7 +2788,7 @@ function indoorConcretePattern(){
   return pattern;
 }
 const indoorOutdoorTerrain={n:'丘陵',g:'#6b7a3a'};
-const indoorLaboratoryOutdoorTerrain=indoorOutdoorTerrain;
+const indoorLaboratoryOutdoorTerrain={n:'街',g:'#57595e'};
 function drawInfiltrationStairSprite(floor){
   const image=indoorPropImage(floor.number===1?'stairs_up':'stairs_down');if(!image)return false;
   const iw=image.naturalWidth||image.width,ih=image.naturalHeight||image.height;
