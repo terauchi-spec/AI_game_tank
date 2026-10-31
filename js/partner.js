@@ -18,7 +18,7 @@ function updatePartnerPassenger(q,dt){
    if(x>12&&x<WW-12&&y>12&&y<WH-12&&!hitsC(x,y,9)&&!inWaterAt(x,y,8)){q.x=x;q.y=y;break;}
   }
  }
- if(!q.passengerVehicle&&p.tank&&!q.vehicle&&!q.down&&!(q.stunT>0)&&D(q,p)<=200){
+ if(!q.passengerVehicle&&p.tank&&p.tank.kind!=='tower'&&!q.vehicle&&!q.down&&!(q.stunT>0)&&D(q,p)<=200){
   q.passengerVehicle=p.tank;p.partnerDriver=false;q.route=null;q.boardTarget=null;q.reentryT=0;q.passengerScan=0;q.passengerTarget=null;
  }
  if(!q.passengerVehicle)return false;
@@ -58,7 +58,7 @@ function partnerRouteVehicle(points){
   const a=points[i-1],b=points[i],dx=b.x-a.x,dy=b.y-a.y,len2=dx*dx+dy*dy,len=Math.sqrt(len2);
   if(len<.001)continue;
   for(const car of cars){
-   if(!car||!car.t||car.f<=0||!['tank','truck','fighter'].includes(car.kind))continue;
+   if(!car||!car.t||(car.kind==='tower'?car.v<=0||!gunTowerAvailable(car):car.f<=0)||!['tank','truck','fighter','tower'].includes(car.kind))continue;
    const t=Math.max(0,Math.min(1,((car.x-a.x)*dx+(car.y-a.y)*dy)/len2));
    const x=a.x+dx*t,y=a.y+dy*t,distance=Math.hypot(car.x-x,car.y-y);
    if(distance>50)continue;
@@ -70,7 +70,7 @@ function partnerRouteVehicle(points){
  return best;
 }
 function partnerBoardVehicle(q,car){
- if(!q||!car||q.vehicle||car.f<=0||D(q,car)>50)return false;
+ if(!q||!car||q.vehicle||(car.kind==='tower'?car.v<=0||!gunTowerAvailable(car):car.f<=0)||D(q,car)>50)return false;
  const index=cars.indexOf(car);if(index<0)return false;
  cars.splice(index,1);q.vehicle=car;q.boardTarget=null;
  q.x=car.x;q.y=car.y;q.face=car.body??q.face;q.vehicleAim=q.face;
@@ -108,7 +108,7 @@ function partnerVehicleDestroyed(q){
  else{q.stunT=q.stunImmuneT>0?0:2;q.stunContactDelay=.3;say('相棒の乗り物が大破！');}
 }
 function partnerVehicleMove(q,goal,speed,dt){
- const v=q.vehicle;if(!v||!goal||v.f<=0)return;
+ const v=q.vehicle;if(!v||!goal||v.kind==='tower'||v.f<=0)return;
  const a=Math.atan2(goal.y-q.y,goal.x-q.x),d=Math.hypot(goal.x-q.x,goal.y-q.y);
  const step=Math.min(d,Math.min(speed,v.t.sp||speed)*dt),radius=v.kind==='fighter'?23:v.t.id==='armored'?27:v.kind==='truck'?20:27;
  const oldX=q.x,oldY=q.y;
@@ -156,6 +156,7 @@ function partnerCompanionMove(q,goal,speed,dt){
 }
 function partnerVehicleAttack(q,dt){
  const v=q.vehicle;if(!v||q.down||q.stunT>0)return;
+ if(v.kind==='tower'){partnerGunTowerAttack(q,dt);return;}
  q.vehicleCannonT=Math.max(0,(q.vehicleCannonT||0)-dt);
  q.vehicleGunT=Math.max(0,(q.vehicleGunT||0)-dt);
  let closestHuman=null,hd=320;
@@ -307,6 +308,7 @@ function recallSeparatedPartner(q,dt){
   }
  }
  if(!pos)pos={x:clamp(p.x+20,15,WW-15),y:clamp(p.y+30,15,WH-15)};
+ if(q.vehicle?.kind==='tower'&&!partnerExitVehicle(q))return false;
  q.x=pos.x;q.y=pos.y;q.off=0;q.farT=0;q.moving=false;
  q.reentryT=q.down?0:1.5;q.reentryGoalY=Math.max(cy+34,Math.min(cy+H-95,pos.y-110));
  q.wallFollow=null;q.sideStep=null;q.route=null;q.routeWait=0;q.routeIndex=0;q.routeStart=null;
@@ -357,17 +359,18 @@ function updatePartner(dt){
   return;
  }
  if(q.stunT>0){q.stunT=Math.max(0,q.stunT-dt);q.stunContactDelay=Math.max(0,(q.stunContactDelay||0)-dt);q.moving=false;const contact=q.stunContactDelay<=0&&!p.tank&&D(q,p)<22;if(contact)q.stunT=0;if(q.stunT<=0){finishAllyStunRecovery(q,contact);q.planT=0;burst(q.x,q.y,8,'#8ad9ff',70);say('相棒が気絶から復帰！');}return;}
+ if(q.vehicle?.kind==='tower'){q.x=q.vehicle.x;q.y=q.vehicle.y;q.moving=false;partnerVehicleAttack(q,dt);if(q.backup||q.route){const route=q.route;partnerExitVehicle(q);if(route){q.route=route;q.routeIndex=0;q.routeStart={x:q.x,y:q.y};}}return;}
  partnerVehicleAttack(q,dt);
  if(partnerKnockoutPatrol(dt))return;
  // 命令は通常の自律判断より優先。ただしルート入力中はその場で待機する。
  if(partnerOrder.drawing){q.moving=false;return;}
  if(q.routeWait>0){q.routeWait=Math.max(0,q.routeWait-dt);q.moving=false;return;}
  if(q.route&&q.routeIndex<q.route.length){
-  if(q.boardTarget&&(!cars.includes(q.boardTarget)||q.boardTarget.f<=0)){q.boardTarget=null;q.boardAt=null;}
+  if(q.boardTarget&&(!cars.includes(q.boardTarget)||(q.boardTarget.kind==='tower'?q.boardTarget.v<=0||!gunTowerAvailable(q.boardTarget):q.boardTarget.f<=0))){q.boardTarget=null;q.boardAt=null;}
   // 搭乗成功後は当フレームから車両としてルートの次区間へ進む。
   let goingToBoard=!!(q.boardTarget&&!q.vehicle&&q.routeIndex>=q.boardAt);
   if(goingToBoard&&D(q,q.boardTarget)<=50){
-   if(partnerBoardVehicle(q,q.boardTarget))goingToBoard=false;
+   if(partnerBoardVehicle(q,q.boardTarget)){if(q.vehicle.kind==='tower'){q.route=null;q.routeStart=null;q.moving=false;return;}goingToBoard=false;}
   }
   const destination=goingToBoard?q.boardTarget:q.route[q.routeIndex],
         oldX=q.x,oldY=q.y,before=D(q,destination);

@@ -9,12 +9,12 @@ test('official stage selection deploys independent middle copies and advanced la
   if(id==='indoorLab'){assert.equal(h.run('indoorWorld.floors.length'),3);assert.equal(h.run('enemyDogs.length'),3);}
  }
 });
-test('middle copies reuse upper-stage generation while records remain independent',()=>{
+test('middle copies reuse upper-stage terrain and patrols while excluding advanced-only gun towers',()=>{
  for(const [id,mode] of [['baseIntermediate','base'],['frontIntermediate','front']]){
-  const project=h=>h.run(`JSON.stringify({zones:ZONES.map(z=>({n:z.n,y0:z.y0,y1:z.y1})),covers:covers.length,objects:objects.length,humans:humans.length,points:mission?.points.map(q=>({x:q.x,y:q.y,need:q.need,captureSeconds:q.captureSeconds})),base:{x:base.x,y:base.y,w:base.w,h:base.h,maxHp:base.maxHp}})`);
+  const project=h=>h.run(`JSON.stringify({zones:ZONES.map(z=>({n:z.n,y0:z.y0,y1:z.y1})),covers:covers.length,objects:objects.length,humans:humans.filter(h=>!h.gunTower).length,points:mission?.points.map(q=>({x:q.x,y:q.y,need:q.need,captureSeconds:q.captureSeconds})),base:{x:base.x,y:base.y,w:base.w,h:base.h,maxHp:base.maxHp}})`);
   const a=createGameEngine(root,{seed:42}),b=createGameEngine(root,{seed:42});
   a.run(`stageMode='${mode}';frontlineBeginner=false;intermediateStageId='${id}';reset(false);`);b.run(`stageMode='${mode}';frontlineBeginner=false;reset(false);`);
-  assert.equal(project(a),project(b));a.run('scoreStats.time=90;finalizeScore(true);');
+  assert.equal(project(a),project(b));assert.equal(a.run("cars.filter(v=>v.kind==='tower').length"),0);assert.equal(b.run("cars.filter(v=>v.kind==='tower').length"),3);a.run('scoreStats.time=90;finalizeScore(true);');
   assert.equal(a.run(`readStageRecords().stages['${id}'].successes`),1);assert.equal(a.run(`readStageRecords().stages['${mode}'].sorties`),0);
  }
 });
