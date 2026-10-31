@@ -85,7 +85,7 @@ test('laboratory role layouts and physical paths stay coherent across 60 seeds',
   })`),true,'dense corridors seed '+seed);
   assert.equal(h.run(`indoorWorld.floors.every(f=>{
    const roles=new Set(f.rooms.map(r=>r.laboratoryRole));
-   return roles.size===6&&f.rooms.every(r=>{
+   return f.stairs.length===(f.number===2?2:1)&&f.walls.filter(w=>w.indoorStairWall).length===f.stairs.length*3&&roles.size===6&&f.rooms.every(r=>{
     const plan=LABORATORY_ROOM_ROLES[r.purpose]||LABORATORY_ROOM_ROLES.inspection,props=f.props.filter(o=>o.roomId===r.id);
     return r.name===plan.name&&r.laboratoryRole===plan.id&&props.some(o=>laboratoryBaseArt(o.propArt)===plan.furniture[0])&&props.every(o=>o.laboratoryRole===plan.id&&plan.furniture.includes(laboratoryBaseArt(o.propArt)));
    })&&f.props.some(o=>o.propZone==='hallway')&&f.postGuards.every(h=>!f.props.some(o=>circleHitsRect(h.x,h.y,8,o)));
@@ -100,7 +100,7 @@ test('laboratory role layouts and physical paths stay coherent across 60 seeds',
     const id=q[i],x=id%g.cols,y=Math.floor(id/g.cols);
     for(const j of [x?id-1:-1,x+1<g.cols?id+1:-1,y?id-g.cols:-1,y+1<g.rows?id+g.cols:-1])if(j>=0&&!g.solid[j]&&!seen.has(j)){seen.add(j);q.push(j);}
    }
-   return [...f.corridors.map(t=>({x:t.x+t.w/2,y:t.y+t.h/2})),...indoorWorld.intel.filter(p=>p.floor===f.number),...f.openings.map(p=>({x:p.x,y:p.y-p.side*40}))].every(p=>seen.has(indoorGridFreeNearest(g,indoorGridPoint(g,p))));
+   return [...f.corridors.map(t=>({x:t.x+t.w/2,y:t.y+t.h/2})),...f.stairs.map(s=>{const b=indoorStairBounds(s,f.number);return{x:s.x,y:b.y+b.h+18};}),...indoorWorld.intel.filter(p=>p.floor===f.number),...f.openings.map(p=>({x:p.x,y:p.y-p.side*40}))].every(p=>seen.has(indoorGridFreeNearest(g,indoorGridPoint(g,p))));
   })`),true,'seed '+seed);
  }
 });
@@ -267,12 +267,12 @@ test('lab can collect every document, wait at EXIT, board rescue jeep and finish
 });
 
 
-test('three-floor laboratory stair travel reaches 1-2-3-2-1, retains partner and does not bounce',()=>{
+test('separate stairs travel 1-2-3-2-1 with matching partner landings and no immediate bounce',()=>{
  const h=game(true);h.run("state='play';skill='partner';partner={alive:true,x:p.x,y:p.y,hp:3};");
- for(const [target,side] of [[1,1],[2,1],[1,1],[0,-1]]){
-  h.run(`(()=>{const w=indoorWorld,f=w.floors[w.currentFloor],b=indoorStairBounds(f.stair,f.number);w.stairsCooldown=0;w.stairMoveLock=0;w.stairEntryFloor=null;p.tank=null;p.x=f.stair.x+${side}*12;p.y=b.y+b.h-14;updateInfiltrationMission(.01);p.y=b.y+20;updateInfiltrationMission(.01);})()`);
+ for(const target of [1,2,1,0]){
+  h.run(`(()=>{const w=indoorWorld,f=w.floors[w.currentFloor],stair=f.stairs.find(q=>q.destination===${target}),b=indoorStairBounds(stair,f.number);w.stairsCooldown=0;w.stairMoveLock=0;w.stairEntryFloor=null;w.stairEntryId=null;p.tank=null;p.x=stair.x;p.y=b.y+b.h-14;updateInfiltrationMission(.01);p.y=b.y+20;updateInfiltrationMission(.01);w.testArrivalId=stair.id;})()`);
   assert.equal(h.run('indoorWorld.currentFloor'),target);
-  assert.equal(h.run(`(()=>{const f=indoorWorld.floors[indoorWorld.currentFloor],landing=indoorStairLanding(f);return p.x===landing.x&&p.y===landing.y&&partner.x===landing.x+14&&partner.y===landing.y+12&&indoorStairProtected();})()`),true);
+  assert.equal(h.run(`(()=>{const f=indoorWorld.floors[indoorWorld.currentFloor],stair=f.stairs.find(q=>q.id===indoorWorld.testArrivalId),landing=indoorStairLanding(f,stair);return p.x===landing.x&&p.y===landing.y&&partner.x===landing.x+14&&partner.y===landing.y+12&&indoorStairProtected();})()`),true);
   h.run('updateInfiltrationMission(2.1);');assert.equal(h.run('indoorWorld.currentFloor'),target,'no immediate return at landing');
  }
  const standard=game(false);assert.equal(standard.run('indoorWorld.floors.length'),2);assert.equal(standard.run('enemyDogs.length'),1);
@@ -282,4 +282,22 @@ test('third-floor boundary remains solid after exterior walls are destroyed',()=
  const h=game(true);h.run('indoorWorld.currentFloor=2;');
  assert.equal(h.run(`(()=>{const f=indoorWorld.floors[2].footprint;p.x=f.x-100;p.y=f.y-100;enforceInfiltrationBoundary();return p.x===f.x+8&&p.y===f.y+8&&indoorFloorEdgeBlocked(p,f.x-1,p.y,8);})()`),true);
  h.run('indoorWorld.currentFloor=2;var terrainCalls=0;terrainSurfacePattern=()=>{terrainCalls++;};indoorUncachedFloors(camX,cam);');assert.equal(h.run('terrainCalls'),0);
+});
+
+
+test('separate staircases have fixed destinations and visible up/down arrows inside their landings',()=>{
+ const h=game(true);
+ assert.equal(h.run(`(()=>{const f=indoorWorld.floors[1],a=f.stairs[0],b=f.stairs[1];return Math.hypot(a.x-b.x,a.y-b.y)>400&&a.destination===0&&b.destination===2;})()`),true);
+ h.run(`(()=>{const f=indoorWorld.floors[1],s=f.stairs[1];indoorRefreshDamagedNavigation(s.x,s.y,150);})()`);
+ assert.equal(h.run(`(()=>{const f=indoorWorld.floors[1];return f.stairs.every(s=>f.navigation.grid.solid[indoorGridPoint(f.navigation.grid,s)]&&indoorGuardStairBlocked({indoorGuard:true,indoorFloor:2},s.x,s.y));})()`),true,'both staircase obstacles survive navigation refresh');
+ h.run("laboratoryImages['lab-stairs']={complete:true,naturalWidth:107,naturalHeight:384};");
+ assert.equal(h.run(`indoorWorld.floors.every(f=>f.stairs.every(stair=>{
+  let points=[],labels=[];const oldMove=g.moveTo,oldLine=g.lineTo,oldText=g.fillText;
+  g.moveTo=(x,y)=>points.push({x,y});g.lineTo=(x,y)=>points.push({x,y});g.fillText=t=>labels.push(t);
+  drawInfiltrationStairSprite(f,stair);g.moveTo=oldMove;g.lineTo=oldLine;g.fillText=oldText;
+  const safe=indoorStairSafeArea(f,stair);
+  return points.length===7&&points.every(q=>q.x>=safe.x&&q.x<=safe.x+safe.w&&q.y>=safe.y&&q.y<=safe.y+safe.h)&&
+   (points[1].y<points[0].y)===(stair.direction>0)&&labels.includes((stair.destination+1)+'Fへ')&&
+   [-12,12].every(dx=>{p.x=stair.x+dx;return indoorStairDestination(f,stair)===stair.destination;});
+ }))`),true);
 });

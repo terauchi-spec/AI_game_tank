@@ -219,12 +219,12 @@ const LABORATORY_ROOM_ROLES={
  armory:{id:'reagent_storage',name:'試薬保管室',furniture:['ultra_freezer','cabinet','shelf','transport_container','container'],cargo:['wooden_crate','shellPallet']},
  inspection:{id:'inspection',name:'培養・検査室',furniture:['incubator','bed','cabinet','equipment'],cargo:['shellPallet']}
 };
-function laboratoryFurnishFloor({rooms,walls,doors,stair,postRoom,postTile,postGuards,furniture,explosiveObjects,corridors,entrances}){
+function laboratoryFurnishFloor({rooms,walls,doors,stair,stairs=[stair],postRoom,postTile,postGuards,furniture,explosiveObjects,corridors,entrances}){
  furniture.length=0;explosiveObjects.length=0;
  const sx=INDOOR_SCALE_X,sy=INDOOR_SCALE_Y,all=[],guardSpace=[],gap=4;
  const overlap=(a,b,pad=0)=>a.x<b.x+b.w+pad&&a.x+a.w>b.x-pad&&a.y<b.y+b.h+pad&&a.y+a.h>b.y-pad;
  const doorLanes=doors.map(d=>d.vertical?{x:d.x-26,y:d.y-35,w:52,h:70}:{x:d.x-46,y:d.y-18,w:92,h:36});
- const stairSpace={x:stair.x-54/sx,y:stair.y-145/sy,w:108/sx,h:290/sy};
+ const stairSpaces=stairs.map(p=>({x:p.x-54/sx,y:p.y-145/sy,w:108/sx,h:290/sy}));
  const entranceSpace=entrances.map(p=>({x:p.x-100/sx,y:p.y-80/sy,w:200/sx,h:160/sy}));
  // Merge adjacent collinear wall fragments so equipment lines follow real walls,
  // rather than the invisible 180px cells used by the procedural floor generator.
@@ -241,7 +241,7 @@ function laboratoryFurnishFloor({rooms,walls,doors,stair,postRoom,postTile,postG
  }
  const inside=(o,region)=>Math.abs(region.tiles.reduce((sum,t)=>sum+Math.max(0,Math.min(o.x+o.w,t.x+t.w)-Math.max(o.x,t.x))*Math.max(0,Math.min(o.y+o.h,t.y+t.h)-Math.max(o.y,t.y)),0)-o.w*o.h)<.01;
  const fits=(o,region)=>inside(o,region)&&!walls.some(q=>overlap(o,q,2))&&!doorLanes.some(q=>overlap(o,q,5))&&
-  !all.some(q=>overlap(o,q,7))&&!guardSpace.some(q=>overlap(o,q,3))&&!overlap(o,stairSpace)&&!entranceSpace.some(q=>overlap(o,q));
+  !all.some(q=>overlap(o,q,7))&&!guardSpace.some(q=>overlap(o,q,3))&&!stairSpaces.some(q=>overlap(o,q))&&!entranceSpace.some(q=>overlap(o,q));
  function wallCandidates(w,h){
   const result=[];
   for(const wall of horizontal){
@@ -330,7 +330,7 @@ function laboratoryFurnishFloor({rooms,walls,doors,stair,postRoom,postTile,postG
  // container orientations are tried first; crates and shelving fill the rest.
  const hallSpecs=[['transport_container',null],['transport_container_vertical',null],
   ...Array.from({length:22},(_,i)=>i%2?['wooden_crate','crate']:['cabinet',null])];
- const eligible=corridors.filter(t=>!t.lobby&&Math.hypot((t.x+90-stair.x)*sx,(t.y+90-stair.y)*sy)>260);
+ const eligible=corridors.filter(t=>!t.lobby&&stairs.every(p=>Math.hypot((t.x+90-p.x)*sx,(t.y+90-p.y)*sy)>260));
  const used=new Map();
  for(let slot=0;slot<hallSpecs.length;slot++){
   const [art,cargoKind]=hallSpecs[slot];
