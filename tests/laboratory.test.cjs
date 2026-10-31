@@ -67,6 +67,14 @@ test('laboratory role layouts and physical paths stay coherent across 60 seeds',
  for(let seed=1;seed<=60;seed++){
   const h=game(true,seed);
   assert.equal(h.run(`indoorWorld.floors.every(f=>{
+   const cargo=objects.filter(o=>o.y>=f.footprint.y&&o.y<f.footprint.y+f.footprint.h);
+   return ['waste_tank','container'].every(k=>cargo.some(o=>o.laboratoryArt===k))&&cargo.every(o=>{
+    const expected=o.laboratoryArt==='waste_tank'?[91.546875,108]:o.laboratoryArt==='container'?[112,63]:null;
+    if(!expected)return true;
+    const hit=objectHitRect(o);return Math.abs(o.w-expected[0])<.001&&Math.abs(o.h-expected[1])<.001&&hit.w===o.w&&hit.h===o.h;
+   });
+  })`),true,'doubled cargo deployed seed '+seed);
+  assert.equal(h.run(`indoorWorld.floors.every(f=>{
    const hall=f.props.filter(o=>o.propZone==='hallway'),cargo=objects.filter(o=>o.laboratoryRole==='corridor'&&o.y>=f.footprint.y&&o.y<f.footprint.y+f.footprint.h);
    return hall.length+cargo.length>=20&&hall.length+cargo.length<=24&&cargo.filter(o=>o.laboratoryArt==='wooden_crate').length>=8&&
     hall.filter(o=>laboratoryBaseArt(o.propArt)==='cabinet').length>=8&&
@@ -103,15 +111,15 @@ test('laboratory uses common automatic-door assets and identical leaf geometry a
  }
  assert.equal(lab.run("!!laboratoryImages['lab-door']"),false);
 });
-test('lab cargo uses reference-stage cover sizes without restoring the giant shell pallet',()=>{
+test('lab cargo uses the requested tank and sample case sizes and retains wooden crate sizes',()=>{
  const lab=game(true);
  assert.equal(lab.run(`objects.length>0&&objects.every(o=>{
   const size=laboratoryObjectSize(o.kind,o.laboratoryArt),hit=objectHitRect(o);
   return (o.laboratoryArt===LABORATORY_OBJECT_ART[o.kind]||o.kind==='crate'&&o.laboratoryArt==='wooden_crate')&&Math.abs(o.w-size.w)<.001&&Math.abs(o.h-size.h)<.001&&
-   Math.max(o.w,o.h)<=80&&hit.x===o.x&&hit.y===o.y&&hit.w===o.w&&hit.h===o.h;
+   Math.max(o.w,o.h)<=112&&hit.x===o.x&&hit.y===o.y&&hit.w===o.w&&hit.h===o.h;
  })`),true);
  assert.equal(lab.run("objects.some(o=>o.laboratoryArt==='waste_tank')&&objects.some(o=>o.laboratoryArt==='cooling_unit')"),true);
- assert.equal(lab.run("objects.filter(o=>o.kind==='shellPallet').every(o=>Math.max(o.w,o.h)<=56)"),true);
+ assert.equal(lab.run("objects.filter(o=>o.kind==='shellPallet').every(o=>Math.max(o.w,o.h)<=112)"),true);
  assert.equal(lab.run(`indoorWorld.floors.every(f=>f.props.every(o=>Math.max(o.w,o.h)<=136))`),true);
  assert.equal(lab.run(`(()=>{let calls=[];g.drawImage=(im,...args)=>calls.push(args);for(const o of objects){calls=[];drawObject(o);if(calls.length!==1||calls[0][2]>o.w+.001||calls[0][3]>o.h+.001)return false;}return true;})()`),true);
  const advanced=game(false);assert.equal(advanced.run('objects.some(o=>o.laboratoryArt)'),false);
@@ -128,7 +136,7 @@ test('laboratory cover sizes follow the existing indoor worktables, lockers, bed
  assert.equal(h.run("laboratoryPropSize('cabinet').w>=INDOOR_PROP_LENGTH.personal_lockers*.8"),true);
  assert.equal(h.run("laboratoryPropSize('generator').w>=INDOOR_PROP_LENGTH.generator*.7"),true);
  assert.equal(h.run("laboratoryPropSize('bed').h>=104"),true);
- assert.equal(h.run("objects.every(o=>Math.max(o.w,o.h)>=50&&Math.max(o.w,o.h)<=80)"),true);
+ assert.equal(h.run("objects.every(o=>Math.max(o.w,o.h)>=50&&Math.max(o.w,o.h)<=112)"),true);
 });
 
 test('research machines, large wooden crates and corridor covers are installed along real walls',()=>{
@@ -153,7 +161,7 @@ test('research machines, large wooden crates and corridor covers are installed a
 test('laboratory furniture keeps 110 percent, sinks grow again and vertical artwork is actually deployed',()=>{
  const original={
   'lab-bench':[112,35.4375],'lab-storage':[96,36.375],'lab-analyzer':[84,57.75],
-  'lab-reactor':[112,62.5625],'lab-medical':[34.53125,104],'lab-samples':[56,31.5],
+  'lab-reactor':[112,62.5625],'lab-medical':[34.53125,104],'lab-samples':[112,63],
   'lab-transport-container':[96,44.625],'lab-freezer':[98,54.359375],'lab-centrifuge':[96,77.25],
   'lab-incubator':[104,58.09375],'lab-wash-sink':[112,40.25]
  };
@@ -179,4 +187,14 @@ test('retired fume hoods are not loaded and both sink orientations grow another 
   const size=JSON.parse(h.run(`JSON.stringify(laboratoryPropSize('${kind}'))`));
   assert.ok(Math.abs(size.w-w*1.21)<.001&&Math.abs(size.h-d*1.21)<.001);
  }
+});
+
+
+test('sample cases in furniture and both orientations are exactly twice their preceding size',()=>{
+ const h=game(true);
+ for(const [kind,w,d] of [['container',61.6,34.65],['container_vertical',23.340625,61.6],['waste_tank',45.7734375,54]]){
+  const size=JSON.parse(h.run(`JSON.stringify(laboratoryPropSize('${kind}'))`));
+  assert.ok(Math.abs(size.w-w*2)<.001&&Math.abs(size.h-d*2)<.001,kind);
+ }
+ assert.equal(h.run("objects.filter(o=>o.laboratoryArt==='cooling_unit').every(o=>o.w===72&&o.h===45.5625)"),true);
 });

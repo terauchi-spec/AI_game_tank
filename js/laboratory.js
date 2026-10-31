@@ -128,6 +128,11 @@ const LABORATORY_VERTICAL_SIZES={
  }
 };
 Object.assign(LABORATORY_PROP_SIZES,LABORATORY_VERTICAL_SIZES);
+// Tank and sample-case silhouettes grow 2x in both axes. Furniture and cargo
+// resolve these same dimensions before placing, colliding or drawing.
+for(const asset of ['lab-waste-tank','lab-samples','lab-samples-vertical']){
+ const size=LABORATORY_PROP_SIZES[asset];size.w*=2;size.h*=2;
+}
 for(const [kind,asset] of Object.entries(LABORATORY_ART))if(LABORATORY_VERTICAL_ART[asset])LABORATORY_ART[kind+'_vertical']=LABORATORY_VERTICAL_ART[asset];
 const LABORATORY_COVER_SIZES=Object.create(null);
 for(const asset of [...Object.keys(LABORATORY_VERTICAL_ART),...Object.values(LABORATORY_VERTICAL_ART),'lab-medical']){
