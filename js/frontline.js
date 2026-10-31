@@ -500,12 +500,13 @@ function finishAllyStunRecovery(a,contact=false){
  a.stunImmuneT=5;
  if(contact)spawnRescueCross(a);
 }
-function rescueFrontlineAlly(a){
- if(stageMode!=='front'||!a.alive||!(a.stun>0)||p.tank||p.dig>0||D(a,p)>=22||!los(p,a))return false;
+function rescueAlly(a){
+ if(!a.alive||!(a.stun>0)||p.tank||p.dig>0||D(a,p)>=22||!los(p,a))return false;
  a.stun=0;a.stunRecover=0;a.frontAimT=0;a.frontAimTarget=null;a._combatTarget=null;
  a.burstLeft=3;a.shotCd=.2;a.dogWall=null;a.dogEscape=null;
  finishAllyStunRecovery(a,true);sfx('ally');say('味方兵を救助！');return true;
 }
+function rescueFrontlineAlly(a){return stageMode==='front'&&rescueAlly(a);}
 function updateFrontlineCounterattack(point,dt){
  if(!point||point.done)return;
  if(!point.counterTriggered&&D(p,point)<frontlineCaptureRadius(point)){

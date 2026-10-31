@@ -24,3 +24,26 @@ test('rescuing a downed partner also signals the rescue and protects against imm
  const h=setup();h.run("partner={x:400,y:400,hp:0,down:true,stunT:0};updatePartner(.1);stunPartnerByOwnBlast(400,400);");
  assert.equal(h.run('partner.down'),false);assert.equal(h.run('partner.hp'),3);assert.equal(h.run('partner.stunT'),0);assert.equal(h.run('partner.stunImmuneT'),5);assert.equal(h.run('parts.filter(q=>q.rescueCross).length'),1);
 });
+
+test('reinforcement contact rescue works outside Frontline and emits one cross per rescue',()=>{
+ for(const stage of ['base','indoor','front']){
+  const h=setup();h.c.sampleStage=stage;
+  h.run("stageMode=sampleStage;a={x:400,y:410,alive:true,stun:5,stunRecover:1,chute:0,shotCd:1,slot:0};allies=[a];updateAlly(.016);");
+  assert.equal(h.run('a.stun'),0);assert.equal(h.run('a.stunRecover'),0);assert.equal(h.run('a.stunImmuneT'),5);assert.equal(h.run('parts.filter(q=>q.rescueCross).length'),1);
+  h.run('updateAlly(.016)');assert.equal(h.run('parts.filter(q=>q.rescueCross).length'),1);
+ }
+});
+test('reinforcement rescue still requires on-foot contact and unobstructed sight',()=>{
+ for(const block of ["p.tank={}","p.dig=1","p.x=500","los=()=>false"]){
+  const h=setup();h.run("stageMode='base';a={x:400,y:410,alive:true,stun:5};allies=[a];"+block+";updateAlly(.016)");
+  assert.ok(h.run('a.stun')>0);assert.equal(h.run('parts.filter(q=>q.rescueCross).length'),0);
+ }
+});
+test('hound contact rescue emits exactly one cross; automatic recovery emits none',()=>{
+ for(const contact of [true,false]){
+  const h=setup();h.c.contact=contact;
+  h.run("skill='hound';hound={x:contact?400:450,y:400,face:0,stun:contact?5:.01,state:'stunned'};updateHound(.016);");
+  assert.equal(h.run('hound.stun'),0);assert.equal(h.run('parts.filter(q=>q.rescueCross).length'),contact?1:0);
+  h.run('updateHound(.016)');assert.equal(h.run('parts.filter(q=>q.rescueCross).length'),contact?1:0);
+ }
+});

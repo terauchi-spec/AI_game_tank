@@ -6,3 +6,11 @@
 - 赤十字は既存の上限付きパーティクル配列・画面外カリング・更新処理を共用する。画像読み込みや独立タイマーは増やさない。
 
 検証: `node --test tests/ally-rescue.test.cjs tests/frontline.test.cjs tests/infiltration-partner.test.cjs tests/tank-combat-bridge.test.cjs tests/enemy-bomber.test.cjs`（146件成功）。接触時のみの表示、消滅、5秒前後の再気絶判定、相棒救助、既存戦闘を確認。スマートフォン実機での見た目は未確認。
+
+## スキルの味方への表示拡張
+
+- 増援は制圧以外のステージでも、徒歩・非潜伏・視線が通る距離22px未満の接触で気絶解除でき、赤十字を表示する。
+- 相棒は従来の接触救助時の赤十字表示を維持。猟犬も既存の接触解除時に同じ赤十字を表示する。
+- 自然復帰時や復帰後の接触では赤十字を追加しない。猟犬の気絶時間・接触範囲は変更しない。
+
+追加検証: `node --test tests/ally-rescue.test.cjs tests/frontline.test.cjs tests/infiltration-partner.test.cjs tests/enemy-bomber.test.cjs`（142件成功）。スマートフォン実機表示は未確認。
