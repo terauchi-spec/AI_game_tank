@@ -37,9 +37,18 @@ function setupGunTowers(){
 function gunTowerBlast(x,y,r){
  for(const v of cars||[])if(v.kind==='tower'&&v.gunner&&Math.hypot(v.x-x,v.y-y)<r){const h=v.gunner;releaseGunTower(v);stunHumanBlast(h,5);}
 }
+function updateGunTowerBurst(v,dt){
+ if(v.aiRestT>0){v.aiRestT=Math.max(0,v.aiRestT-dt);return;}
+ if(v.aiBurstT>0){
+  const remaining=v.aiBurstT-dt;v.aiBurstT=Math.max(0,remaining);
+  if(remaining<=1e-9){v.aiBurstT=0;v.aiRestT=Math.max(0,3+Math.min(0,remaining));}
+ }
+}
 function updateGunTowers(dt){
+ if(p?.tank?.kind==='tower')updateGunTowerBurst(p.tank,dt);
+ if(partner?.vehicle?.kind==='tower'&&partner.vehicle!==p?.tank)updateGunTowerBurst(partner.vehicle,dt);
  for(const v of cars||[])if(v.kind==='tower'){
-  v.f=0;v.reboardT=Math.max(0,(v.reboardT||0)-dt);gunTowerAvailable(v);
+  updateGunTowerBurst(v,dt);v.f=0;v.reboardT=Math.max(0,(v.reboardT||0)-dt);gunTowerAvailable(v);
   if(!v.gunner&&v.v>0&&v.reboardT<=0){
    v.reboardT=.5;
    const h=(humans||[]).find(h=>h.alive&&!h.gunTower&&!h.elite&&!h.dog&&!h.commander&&!(h.stun>0)&&!(h.stunRecover>0)&&!(h.blastAirT>0)&&!h.houndPinned&&D(h,v)<40&&los(h,v));
@@ -50,24 +59,23 @@ function updateGunTowers(dt){
 function updateGunTowerEnemy(h,dt){
  const v=h.gunTower;if(!v)return false;
  if(!h.alive||h.stun>0||h.blastAirT>0||!cars.includes(v)){releaseGunTower(v);return false;}
- h.x=v.x-Math.cos(v.aim??v.body)*22;h.y=v.y-Math.sin(v.aim??v.body)*22;h.walking=false;v.gunT=Math.max(0,(v.gunT||0)-dt);v.scanT=(v.scanT||0)-dt;
+ h.x=v.x-Math.cos(v.aim??v.body)*22;h.y=v.y-Math.sin(v.aim??v.body)*22;h.walking=false;h.sus=Math.max(0,(h.sus||0)-dt);h.burnSuspicionHold=Math.max(0,(h.burnSuspicionHold||0)-dt);v.gunT=Math.max(0,(v.gunT||0)-dt);v.scanT=(v.scanT||0)-dt;
  if(v.scanT<=0){
-  v.scanT=.15;v.scanTarget=null;let best=GUN_TOWER_TYPE.range;
-  const targets=[];
-  if(debugMode<2&&p&&!(p.dig>0)&&!(p.digPrep>0)&&!(!p.tank&&inBush(p)))targets.push({actor:p,key:'p'});
-  if(partner&&!partner.down&&!(partner.stunT>0))targets.push({actor:partner,key:'partner'});
-  for(const a of allies||[])if(a.alive&&!(a.chute>0)&&!(a.stun>0))targets.push({actor:a,key:'ally:'+a.id});
-  if(decoy)targets.unshift({actor:decoy,key:'decoy'});
-  for(const t of targets){const d=D(v,t.actor);if(d<best&&los(v,t.actor)){best=d;v.scanTarget=t;}if(v.scanTarget?.key==='decoy')break;}
+  v.scanT=.15;
+  // Reuse ordinary blue infantry perception, including its cone, weather,
+  // concealment, known-target drop distance and capture-area alerts.
+  const detected=findDetectedTarget(h,h.face);
+  v.scanTarget=detected?{actor:detected.obj,key:detected.key}:null;
  }
  const target=v.scanTarget,actor=target?.actor;
  if(!actor||target.key==='decoy'&&actor!==decoy||actor.alive===false||actor.down||actor.stun>0||actor===p&&(p.dig>0||debugMode>=2)||D(v,actor)>GUN_TOWER_TYPE.range||!los(v,actor)){h.st=0;h.target=null;return true;}
  h.st=1;h.target=target.key;h.face=v.aim=Math.atan2(actor.y-v.y,actor.x-v.x);h.x=v.x-Math.cos(h.face)*22;h.y=v.y-Math.sin(h.face)*22;
- if(v.gunT<=0&&v.v>0){v.gunT=GUN_TOWER_TYPE.vcd;fireGunTower(v,h.face,'e',h);}
+ if(v.gunT<=0&&v.v>0&&!(v.aiRestT>0)){v.gunT=GUN_TOWER_TYPE.vcd;fireGunTower(v,h.face,'e',h);}
  return true;
 }
 function fireGunTower(v,angle,from,operator=null){
- if(v?.kind!=='tower'||!(v.v>0))return false;
+ if(v?.kind!=='tower'||!(v.v>0)||from!=='p'&&v.aiRestT>0)return false;
+ if(from!=='p'&&!(v.aiBurstT>0))v.aiBurstT=1.5;
  v.v--;v.aim=angle;v.f=0;
  const a=angle+(R()-.5)*.045;
  fire(v.x+Math.cos(a)*37,v.y+Math.sin(a)*37,a,from,'v',GUN_TOWER_TYPE.speed,GUN_TOWER_TYPE.range,0,from==='e'?'enemyGun':'mg');
@@ -143,5 +151,5 @@ function partnerGunTowerAttack(q,dt){
  if(q.towerScanT<=0){q.towerScanT=.15;q.towerTarget=null;let best=GUN_TOWER_TYPE.range;for(const h of humans||[])if(h.alive&&!(h.stun>0)){const d=D(q,h);if(d<best&&los(q,h)){best=d;q.towerTarget=h;}}}
  const h=q.towerTarget;if(!h||!h.alive||h.stun>0||D(q,h)>GUN_TOWER_TYPE.range||!los(q,h))return;
  q.vehicleAim=q.face=Math.atan2(h.y-q.y,h.x-q.x);v.aim=q.vehicleAim;
- if(v.v>0&&q.vehicleGunT<=0){q.vehicleGunT=GUN_TOWER_TYPE.vcd;fireGunTower(v,q.vehicleAim,'ally',q);}
+ if(v.v>0&&q.vehicleGunT<=0&&!(v.aiRestT>0)){q.vehicleGunT=GUN_TOWER_TYPE.vcd;fireGunTower(v,q.vehicleAim,'ally',q);}
 }
