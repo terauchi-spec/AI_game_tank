@@ -1,6 +1,6 @@
-// Range: 4 × the ordinary enemy single-shot rifle (150px).
+// Gatling hardware is drawn at 2×; people retain their ordinary size.
 // Stationary single-seat vehicle. Ammunition belongs to the emplacement, not its operator.
-const GUN_TOWER_TYPE=Object.freeze({id:'gunTower',n:'機関銃塔',hp:8,armor:1.5,cmax:0,vmax:500,fmax:0,sp:0,ccd:.065,vcd:.065,range:600,speed:1000,col:'#66705a'});
+const GUN_TOWER_TYPE=Object.freeze({id:'gunTower',n:'機関銃塔',hp:8,armor:1.5,cmax:0,vmax:500,fmax:0,sp:0,ccd:.065,vcd:.065,range:400,speed:1000,drawScale:2,seatOffset:44,muzzleOffset:74,clearance:84,boardRadius:96,col:'#66705a'});
 function gunTowerAvailable(v){
  if(v?.kind!=='tower')return true;
  if(v.gunner&&(!v.gunner.alive||v.gunner.stun>0||v.gunner.blastAirT>0))releaseGunTower(v);
@@ -13,18 +13,25 @@ function releaseGunTower(v){
 }
 function boardEnemyGunTower(v,h){
  if(!gunTowerAvailable(v)||v.v<=0||!h.alive||h.elite||h.commander==='white'||h.stun>0||h.stunRecover>0||h.blastAirT>0||h.dog||h.houndPinned)return false;
- h.gunTower=v;v.gunner=h;h.face=v.aim??v.body;h.x=v.x-Math.cos(h.face)*22;h.y=v.y-Math.sin(h.face)*22;h.walking=false;h.frontMarch=false;h.chatT=0;h.chatMate=null;return true;
+ h.gunTower=v;v.gunner=h;h.face=v.aim??v.body;h.x=v.x-Math.cos(h.face)*GUN_TOWER_TYPE.seatOffset;h.y=v.y-Math.sin(h.face)*GUN_TOWER_TYPE.seatOffset;h.walking=false;h.frontMarch=false;h.chatT=0;h.chatMate=null;return true;
 }
 function setupGunTowers(){
  if(areaDebugEnabled||!['base','front'].includes(currentStageId()))return 0;
  const anchors=stageMode==='front'?mission.points.map(q=>({x:q.x+(q.x<WW/2?160:-160),y:q.y-150})):[{x:220,y:9000},{x:740,y:6100},{x:230,y:2600}];
  let count=0;
+ const clear=(x,y)=>x>=96&&x<=WW-96&&y>=100&&y<=WH-100&&(stageMode!=='front'||y>=frontlineNorthEdge()+96)&&D({x,y},p)>=650&&!hitsC(x,y,GUN_TOWER_TYPE.clearance)&&!inWaterAt(x,y,GUN_TOWER_TYPE.clearance)&&!(cars||[]).some(v=>D(v,{x,y})<164)&&!(etanks||[]).some(e=>e.alive&&D(e,{x,y})<132);
  for(const anchor of anchors){
   let spot=null;
-  for(let k=0;k<160&&!spot;k++){
+  for(let k=0;k<320&&!spot;k++){
    const a=k*2.4,rad=k?32+Math.floor(k/12)*24:0,x=anchor.x+Math.cos(a)*rad,y=anchor.y+Math.sin(a)*rad;
-   if(x<60||x>WW-60||y<100||y>WH-100||D({x,y},p)<650||hitsC(x,y,38)||inWaterAt(x,y,38)||(cars||[]).some(v=>D(v,{x,y})<100)||(etanks||[]).some(e=>e.alive&&D(e,{x,y})<80))continue;
+   if(!clear(x,y))continue;
    spot={x,y};
+  }
+  // A broad platform may not fit the original zone (for example a wide river).
+  // Startup-only fallback finds open ground inside the playable area.
+  for(let dy=0;dy<=2400&&!spot;dy+=64)for(const sign of (dy?[1,-1]:[1])){
+   if(spot)break;const y=anchor.y+dy*sign;
+   for(let x=96;x<=WW-96;x+=64)if(clear(x,y)){spot={x,y};break;}
   }
   if(!spot)continue;
   const v={...spot,t:GUN_TOWER_TYPE,kind:'tower',hp:8,c:0,v:500,f:0,ch:0,mgHits:0,body:Math.PI/2,aim:Math.PI/2,reboardT:2,gunT:0,scanT:0};cars.push(v);count++;
@@ -51,7 +58,7 @@ function updateGunTowers(dt){
   updateGunTowerBurst(v,dt);v.f=0;v.reboardT=Math.max(0,(v.reboardT||0)-dt);gunTowerAvailable(v);
   if(!v.gunner&&v.v>0&&v.reboardT<=0){
    v.reboardT=.5;
-   const h=(humans||[]).find(h=>h.alive&&!h.gunTower&&!h.elite&&!h.dog&&!h.commander&&!(h.stun>0)&&!(h.stunRecover>0)&&!(h.blastAirT>0)&&!h.houndPinned&&D(h,v)<40&&los(h,v));
+   const h=(humans||[]).find(h=>h.alive&&!h.gunTower&&!h.elite&&!h.dog&&!h.commander&&!(h.stun>0)&&!(h.stunRecover>0)&&!(h.blastAirT>0)&&!h.houndPinned&&D(h,v)<90&&los(h,v));
    if(h)boardEnemyGunTower(v,h);
   }
  }
@@ -59,7 +66,7 @@ function updateGunTowers(dt){
 function updateGunTowerEnemy(h,dt){
  const v=h.gunTower;if(!v)return false;
  if(!h.alive||h.stun>0||h.blastAirT>0||!cars.includes(v)){releaseGunTower(v);return false;}
- h.x=v.x-Math.cos(v.aim??v.body)*22;h.y=v.y-Math.sin(v.aim??v.body)*22;h.walking=false;h.sus=Math.max(0,(h.sus||0)-dt);h.burnSuspicionHold=Math.max(0,(h.burnSuspicionHold||0)-dt);v.gunT=Math.max(0,(v.gunT||0)-dt);v.scanT=(v.scanT||0)-dt;
+ h.x=v.x-Math.cos(v.aim??v.body)*GUN_TOWER_TYPE.seatOffset;h.y=v.y-Math.sin(v.aim??v.body)*GUN_TOWER_TYPE.seatOffset;h.walking=false;h.sus=Math.max(0,(h.sus||0)-dt);h.burnSuspicionHold=Math.max(0,(h.burnSuspicionHold||0)-dt);v.gunT=Math.max(0,(v.gunT||0)-dt);v.scanT=(v.scanT||0)-dt;
  if(v.scanT<=0){
   v.scanT=.15;
   // Reuse ordinary blue infantry perception, including its cone, weather,
@@ -69,7 +76,7 @@ function updateGunTowerEnemy(h,dt){
  }
  const target=v.scanTarget,actor=target?.actor;
  if(!actor||target.key==='decoy'&&actor!==decoy||actor.alive===false||actor.down||actor.stun>0||actor===p&&(p.dig>0||debugMode>=2)||D(v,actor)>GUN_TOWER_TYPE.range||!los(v,actor)){h.st=0;h.target=null;return true;}
- h.st=1;h.target=target.key;h.face=v.aim=Math.atan2(actor.y-v.y,actor.x-v.x);h.x=v.x-Math.cos(h.face)*22;h.y=v.y-Math.sin(h.face)*22;
+ h.st=1;h.target=target.key;h.face=v.aim=Math.atan2(actor.y-v.y,actor.x-v.x);h.x=v.x-Math.cos(h.face)*GUN_TOWER_TYPE.seatOffset;h.y=v.y-Math.sin(h.face)*GUN_TOWER_TYPE.seatOffset;
  if(v.gunT<=0&&v.v>0&&!(v.aiRestT>0)){v.gunT=GUN_TOWER_TYPE.vcd;fireGunTower(v,h.face,'e',h);}
  return true;
 }
@@ -78,7 +85,7 @@ function fireGunTower(v,angle,from,operator=null){
  if(from!=='p'&&!(v.aiBurstT>0))v.aiBurstT=1.5;
  v.v--;v.aim=angle;v.f=0;
  const a=angle+(R()-.5)*.045;
- fire(v.x+Math.cos(a)*37,v.y+Math.sin(a)*37,a,from,'v',GUN_TOWER_TYPE.speed,GUN_TOWER_TYPE.range,0,from==='e'?'enemyGun':'mg');
+ fire(v.x+Math.cos(a)*GUN_TOWER_TYPE.muzzleOffset,v.y+Math.sin(a)*GUN_TOWER_TYPE.muzzleOffset,a,from,'v',GUN_TOWER_TYPE.speed,GUN_TOWER_TYPE.range,0,from==='e'?'enemyGun':'mg');
  const b=bullets[bullets.length-1];b.gatling=true;b.operator=operator;b.sourceTower=v;
  return true;
 }
@@ -132,19 +139,20 @@ function updateGatlingBullet(b,ox,oy,expired){
  burst(b.x,b.y,2,'#ffe1a0',60);return true;
 }
 function drawGunTower(v,x,y,angle){
- g.save();g.translate(x,y);g.fillStyle='rgba(0,0,0,.25)';g.beginPath();g.ellipse(2,5,31,25,0,0,Math.PI*2);g.fill();
+ g.save();g.translate(x,y);g.scale(GUN_TOWER_TYPE.drawScale,GUN_TOWER_TYPE.drawScale);g.fillStyle='rgba(0,0,0,.25)';g.beginPath();g.ellipse(2,5,39,35,0,0,Math.PI*2);g.fill();
+ g.fillStyle='#8b8d7d';g.strokeStyle='#4c5548';g.lineWidth=2;g.beginPath();g.arc(0,0,32,0,Math.PI*2);g.fill();g.stroke();g.strokeStyle='#b4b5a2';g.lineWidth=1;g.beginPath();g.arc(0,0,28,0,Math.PI*2);g.stroke();
  g.strokeStyle='#343b32';g.lineWidth=7;for(let i=0;i<3;i++){const a=i*Math.PI*2/3+.5;g.beginPath();g.moveTo(0,0);g.lineTo(Math.cos(a)*26,Math.sin(a)*26);g.stroke();}
  g.save();g.rotate(angle);g.fillStyle='#384535';g.fillRect(-33,-10,17,20);g.strokeStyle='#202a24';g.lineWidth=3;g.strokeRect(-34,-10,17,20);g.restore();
  g.fillStyle='#626b50';g.strokeStyle='#27352a';g.lineWidth=2;g.beginPath();g.arc(0,0,19,0,Math.PI*2);g.fill();g.stroke();g.restore();
  const enemy=!!v.gunner,occupied=enemy||p?.tank===v||partner?.vehicle===v;
  const enemyAlpha=enemy?digEnemyAlpha()*(1-sandIntensity):1;
- if(occupied){g.save();g.globalAlpha*=enemyAlpha;soldier(x-Math.cos(angle)*22,y-Math.sin(angle)*22,angle,!enemy,enemy&&!!v.gunner.st,false,false,'',false,!enemy&&p?.tank===v,enemy?v.gunner:partner?.vehicle===v?partner:p);g.restore();}
- g.save();g.translate(x,y);g.rotate(angle);g.fillStyle='#3b4a3c';g.strokeStyle='#202a24';g.lineWidth=2;
+ if(occupied){g.save();g.globalAlpha*=enemyAlpha;soldier(x-Math.cos(angle)*GUN_TOWER_TYPE.seatOffset,y-Math.sin(angle)*GUN_TOWER_TYPE.seatOffset,angle,!enemy,enemy&&!!v.gunner.st,false,false,'',false,!enemy&&p?.tank===v,enemy?v.gunner:partner?.vehicle===v?partner:p);g.restore();}
+ g.save();g.translate(x,y);g.rotate(angle);g.scale(GUN_TOWER_TYPE.drawScale,GUN_TOWER_TYPE.drawScale);g.fillStyle='#3b4a3c';g.strokeStyle='#202a24';g.lineWidth=2;
  g.beginPath();g.roundRect(-2,-15,11,30,3);g.fill();g.stroke();g.fillStyle='#718067';g.fillRect(-5,-19,11,9);g.fillRect(-5,10,11,9);
  g.fillStyle='#262f30';g.fillRect(3,-6,30,12);g.strokeStyle='#9aa5a0';g.lineWidth=1.8;
  for(let i=-1;i<=1;i++){g.beginPath();g.moveTo(5,i*3.5);g.lineTo(36,i*3.5);g.stroke();}
  g.fillStyle='#454e49';g.fillRect(16,-7,4,14);g.fillRect(31,-7,5,14);g.fillStyle='#242c24';g.fillRect(-16,-9,12,18);g.fillStyle='#d2b965';for(let i=0;i<4;i++)g.fillRect(-14+i*3,-8,2,6);
- g.restore();if(enemy&&v.gunner.st&&enemyAlpha>.18)lab('!',x,y-43,'bold 17px system-ui','#ff5a5a');
+ g.restore();if(enemy&&v.gunner.st&&enemyAlpha>.18)lab('!',x,y-86,'bold 17px system-ui','#ff5a5a');
 }
 function partnerGunTowerAttack(q,dt){
  const v=q.vehicle;q.vehicleGunT=Math.max(0,(q.vehicleGunT||0)-dt);q.towerScanT=(q.towerScanT||0)-dt;

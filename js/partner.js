@@ -61,7 +61,7 @@ function partnerRouteVehicle(points){
    if(!car||!car.t||(car.kind==='tower'?car.v<=0||!gunTowerAvailable(car):car.f<=0)||!['tank','truck','fighter','tower'].includes(car.kind))continue;
    const t=Math.max(0,Math.min(1,((car.x-a.x)*dx+(car.y-a.y)*dy)/len2));
    const x=a.x+dx*t,y=a.y+dy*t,distance=Math.hypot(car.x-x,car.y-y);
-   if(distance>50)continue;
+   if(distance>(car.kind==='tower'?90:50))continue;
    const at=progress+len*t;
    if(at<bestProgress){bestProgress=at;best={car,index:i-1,distance};}
   }
@@ -70,7 +70,7 @@ function partnerRouteVehicle(points){
  return best;
 }
 function partnerBoardVehicle(q,car){
- if(!q||!car||q.vehicle||(car.kind==='tower'?car.v<=0||!gunTowerAvailable(car):car.f<=0)||D(q,car)>50)return false;
+ if(!q||!car||q.vehicle||(car.kind==='tower'?car.v<=0||!gunTowerAvailable(car):car.f<=0)||D(q,car)>(car.kind==='tower'?90:50))return false;
  const index=cars.indexOf(car);if(index<0)return false;
  cars.splice(index,1);q.vehicle=car;q.boardTarget=null;
  q.x=car.x;q.y=car.y;q.face=car.body??q.face;q.vehicleAim=q.face;
@@ -85,7 +85,7 @@ function partnerExitVehicle(q){
  const v=q.vehicle,ang=q.face||0;
  const options=[ang+Math.PI/2,ang-Math.PI/2,ang+Math.PI,ang,0,Math.PI];
  let spot=null;
- for(const a of options)for(const d of [47,62,78]){
+ for(const a of options)for(const d of (v.kind==='tower'?[90,104,120]:[47,62,78])){
   const x=q.x+Math.cos(a)*d,y=q.y+Math.sin(a)*d;
   if(x>12&&x<WW-12&&y>12&&y<WH-12&&!hitsC(x,y,9)&&!inWaterAt(x,y,8)){spot={x,y};break;}
   if(spot)break;
@@ -369,7 +369,7 @@ function updatePartner(dt){
   if(q.boardTarget&&(!cars.includes(q.boardTarget)||(q.boardTarget.kind==='tower'?q.boardTarget.v<=0||!gunTowerAvailable(q.boardTarget):q.boardTarget.f<=0))){q.boardTarget=null;q.boardAt=null;}
   // 搭乗成功後は当フレームから車両としてルートの次区間へ進む。
   let goingToBoard=!!(q.boardTarget&&!q.vehicle&&q.routeIndex>=q.boardAt);
-  if(goingToBoard&&D(q,q.boardTarget)<=50){
+  if(goingToBoard&&D(q,q.boardTarget)<=(q.boardTarget.kind==='tower'?90:50)){
    if(partnerBoardVehicle(q,q.boardTarget)){if(q.vehicle.kind==='tower'){q.route=null;q.routeStart=null;q.moving=false;return;}goingToBoard=false;}
   }
   const destination=goingToBoard?q.boardTarget:q.route[q.routeIndex],
