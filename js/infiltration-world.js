@@ -357,7 +357,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
   }
   const furniture=[];
   const addFurniture=(kind,x,y,w,h,zone)=>furniture.push({kind,x,y,w,h,zone});
-  for(const room of rooms){
+  for(const room of laboratory?[]:rooms){
     const tiles=indoorShuffle(room.tiles.slice(),rng);
     for(let k=0;k<Math.min(room.size>=3?3:2,tiles.length);k++){
       const tile=tiles[k];
@@ -368,11 +368,11 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     }
   }
   // 各部屋に補助家具を一つ追加。入口・壁との衝突があれば後段で移動または省略する。
-  for(const room of rooms)if(room!==postRoom){
+  for(const room of rooms)if(!laboratory&&room!==postRoom){
     const tile=room.tiles[0];
     addFurniture('roomSupport',tile.x+SIZE-68,tile.y+SIZE-62,50,40,'room');
   }
-  addFurniture('postTable',postCenter.x-47,postCenter.y-28,94,56,'post');
+  if(!laboratory)addFurniture('postTable',postCenter.x-47,postCenter.y-28,94,56,'post');
   // Keep one consistent side throughout each floor, including doorway fallback
   // positions and explosive cargo. Never alternate sides in adjacent hall cells.
   let hallLeft;
@@ -381,7 +381,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     return [[x,margin],[x,SIZE-h-margin]];
   };
   const supplies=indoorShuffle(['ammo','supply','barrel','sandbag','kit'],rng);
-  const safeHalls=indoorShuffle(halls.filter(i=>i!==stairIndex&&i!==index(2,0)&&!lobbyIds.includes(i)),rng);
+  const safeHalls=indoorShuffle(laboratory?[]:halls.filter(i=>i!==stairIndex&&i!==index(2,0)&&!lobbyIds.includes(i)),rng);
   const supplyCount=safeHalls.length;
   for(let k=0;k<supplyCount;k++){
     // Preserve random draws so unrelated room layouts and patrol routes stay stable.
@@ -419,8 +419,8 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
   // Stage-exclusive cargo: each cluster contains one kind; collisions match visual scale.
   // Crates use a vertical 2:1 world ratio; shell pallets keep their large footprint.
   const explosiveObjects=[];
-  const clusterCells=indoorShuffle(halls.filter(i=>!lobbyIds.includes(i)&&i!==stairIndex&&i!==index(2,0)),rng);
-  const roomCells=indoorShuffle(rooms.filter(r=>r!==postRoom).flatMap(r=>r.cellIds),rng);
+  const clusterCells=indoorShuffle(laboratory?[]:halls.filter(i=>!lobbyIds.includes(i)&&i!==stairIndex&&i!==index(2,0)),rng);
+  const roomCells=indoorShuffle(laboratory?[]:rooms.filter(r=>r!==postRoom).flatMap(r=>r.cellIds),rng);
   const overlap=(a,b,pad=0)=>a.x<b.x+b.w+pad&&a.x+a.w>b.x-pad&&a.y<b.y+b.h+pad&&a.y+a.h>b.y-pad;
   const doorLane=d=>d.vertical
     ?{x:d.x-35,y:d.y-30,w:70,h:60}
@@ -453,7 +453,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
   }
   // 主設備が入口との干渉で省略された場合、同じ部屋内で安全な配置を探し直す。
   // 補助家具だけを置き換え、部屋の主設備・階段・扉の通行域を守る。
-  for(const room of rooms.filter(r=>['operations','armory','communications','utilities'].includes(r.purpose))){
+  for(const room of laboratory?[]:rooms.filter(r=>['operations','armory','communications','utilities'].includes(r.purpose))){
     const artKind=INDOOR_ROOM_ART[room.purpose][0];
     if(furniture.some(o=>o.roomId===room.id&&o.artKind===artKind))continue;
     let best=null;
@@ -573,13 +573,6 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
   if(!explosiveObjects.some(o=>o.kind==='crate'))reserve('room','crate')||reserve('hallway','crate');
   if(!explosiveObjects.some(o=>o.kind==='barrel'))reserve('room','barrel')||reserve('hallway','barrel');
   // 廊下の家具・貨物を同じ区画の実在する壁へ寄せる。生成時に一度だけ実行。
-  // The old shell-pallet slot is a portable reagent case in the laboratory.
-  // Resize cargo before wall alignment, lighting and physical navigation are built.
-  if(laboratory)for(const o of explosiveObjects){
-    const size=laboratoryObjectSize(o.kind);if(!size)continue;
-    o.w=size.w/INDOOR_SCALE_X;o.h=size.h/INDOOR_SCALE_Y;
-    o.laboratoryArt=LABORATORY_OBJECT_ART[o.kind];
-  }
   const hallPieces=[...furniture,...explosiveObjects].filter(o=>o.zone==='hallway');
   for(const item of hallPieces){
     const tx=X0+Math.floor((item.x-X0)/SIZE)*SIZE,ty=Y0+Math.floor((item.y-Y0)/SIZE)*SIZE;
@@ -600,6 +593,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
       ![...furniture,...explosiveObjects].some(q=>q!==item&&overlap(o,q,6)));
     if(near){item.x=near.x;item.y=near.y;}
   }
+  if(laboratory)laboratoryFurnishFloor({rooms,walls,doors:doorMarks,stair,postRoom,postTile,postGuards,furniture,explosiveObjects});
   // Ceiling lights are centered on real room/table locations, never in the walls.
   // All geometry and light strengths below are confined to the infiltration stage.
   const lightFixtures=[];
@@ -729,7 +723,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
   // This is a bounded generation-only pass: no new assets or per-frame planning.
   let extraFurniture=0;
   for(const room of rooms){
-    if(room===postRoom)continue; // Keep the seated guard formation and its table clear.
+    if(laboratory||room===postRoom)continue; // Lab density is planned by room role.
     const target=Math.min(9,Math.max(3,room.size*2));
     const palette=INDOOR_ROOM_ART[room.purpose].filter(art=>
       art!=='server_rack'&&art!=='generator'&&(art!=='bed'||room.size===1)&&
@@ -1085,7 +1079,7 @@ function setupInfiltrationWorld(){
     const raw=rawFloors[n-1],off=INDOOR_FLOOR_OFFSETS[n-1];
     const to=pt=>indoorAt(pt.x,pt.y,off);
     const rooms=raw.rooms.map(r=>{const rect=indoorRect(r,off);
-      return{...rect,id:r.id,name:r.name,purpose:r.purpose,size:r.size,isGuardPost:!!r.isGuardPost,tiles:r.tiles.map(tile=>indoorRect(tile,off))};
+      return{...rect,id:r.id,name:r.name,purpose:r.purpose,size:r.size,isGuardPost:!!r.isGuardPost,...(r.laboratoryRole?{laboratoryRole:r.laboratoryRole}:{}),tiles:r.tiles.map(tile=>indoorRect(tile,off))};
     });
     // Walls use the existing concrete wall cover kind. Doors remain actual gaps in the core collision grid.
     const windows=raw.windows.map(q=>({...to(q),vertical:q.vertical,broken:false}));
@@ -1107,14 +1101,14 @@ function setupInfiltrationWorld(){
     const props=[];
     for(const piece of raw.furniture){
       const q=indoorRect(piece,off);
-      const prop={...q,kd:1,indoorProp:true,propKind:piece.kind,propArt:piece.artKind,propZone:piece.zone,roomId:piece.roomId,purpose:piece.purpose,hp:999999};
+      const prop={...q,kd:1,indoorProp:true,propKind:piece.kind,propArt:piece.artKind,propZone:piece.zone,roomId:piece.roomId,purpose:piece.purpose,...(piece.laboratoryRole?{laboratoryRole:piece.laboratoryRole}:{}),hp:999999};
       covers.push(prop);props.push(prop);
     }
     // 共通の木箱/ドラム缶/砲弾ケースを通常の爆発オブジェクトとして登録。
     for(const item of raw.explosiveObjects){
       const q=indoorRect(item,off);
       objects.push({...q,kind:item.kind==='shellPallet'?'shellPallet':item.kind,
-        indoorExplosive:true,indoorGroup:item.group,mgHits:0,...(item.laboratoryArt?{laboratoryArt:item.laboratoryArt}:{})});
+        indoorExplosive:true,indoorGroup:item.group,mgHits:0,...(item.laboratoryArt?{laboratoryArt:item.laboratoryArt,laboratoryRoomId:item.roomId,laboratoryRole:item.laboratoryRole}:{})});
     }
     const corridors=raw.corridors.map(tile=>indoorRect(tile,off));
     const lobbyArea=raw.lobbyArea?indoorRect(raw.lobbyArea,off):null;

@@ -36,8 +36,8 @@
       81
     ],
     "world_size": {
-      "w": 60.0,
-      "h": 18.984375
+      "w": 112,
+      "h": 35.4375
     },
     "runtime_bytes": 4724,
     "generation_prompt": "One 2D game asset sprite on genuinely transparent background. Pure flat orthographic PLAN VIEW, camera exactly 90 degrees overhead like a floor plan. ONLY TOP SURFACE visible, front edge at south no thicker than 2% of total depth. NO eye-level, NO isometric view, NO perspective convergence, NO visible tall front wall. Fine hand-drawn digital illustration, fine grain, dark thin outline, subtle worn paint, speckled grime, slight rust streaks, restrained seams. Muted industrial gray, dusty olive, dull brown, rusty orange accents; year-2000 corporate laboratory aesthetic. North edge small highlight from overhead light. One complete centered object tightly cropped. No ground, no floor, no shadow, no drop shadow, no glow, no words, no letters, no numbers, no logos. Not a glossy 3D render. Subject: rectangular laboratory workbench, wide east-west, gray laminate worktop with a SMALL hotplate, tiny test-tube rack, off-white metal cabinet. The entire tabletop is visible from directly above. Ratio width:depth=2:1."
@@ -60,8 +60,8 @@
       97
     ],
     "world_size": {
-      "w": 40.0,
-      "h": 15.15625
+      "w": 96,
+      "h": 36.375
     },
     "runtime_bytes": 3644
   },
@@ -83,8 +83,8 @@
       176
     ],
     "world_size": {
-      "w": 34.0,
-      "h": 23.375
+      "w": 84,
+      "h": 57.75
     },
     "runtime_bytes": 8496
   },
@@ -106,8 +106,8 @@
       143
     ],
     "world_size": {
-      "w": 40.0,
-      "h": 22.34375
+      "w": 112,
+      "h": 62.5625
     },
     "runtime_bytes": 9758
   },
@@ -129,8 +129,8 @@
       256
     ],
     "world_size": {
-      "w": 21.25,
-      "h": 64.0
+      "w": 34.53125,
+      "h": 104
     },
     "runtime_bytes": 4280
   },
@@ -152,8 +152,8 @@
       144
     ],
     "world_size": {
-      "w": 22.0,
-      "h": 12.375
+      "w": 56,
+      "h": 31.5
     },
     "runtime_bytes": 11756
   },
@@ -188,8 +188,8 @@
       256
     ],
     "world_size": {
-      "w": 25.429688,
-      "h": 30.0
+      "w": 45.7734375,
+      "h": 54
     },
     "runtime_bytes": 14934
   },
@@ -211,8 +211,8 @@
       162
     ],
     "world_size": {
-      "w": 34.0,
-      "h": 21.515625
+      "w": 72,
+      "h": 45.5625
     },
     "runtime_bytes": 8056
   }

@@ -63,9 +63,20 @@ test('laboratory exterior reuses grassland, preserves upstairs void and invalida
  const ready=h.run("indoorRasterAssetStamp('floor')");h.run("TERRAIN_IMG['草原'].complete=false");assert.notEqual(h.run("indoorRasterAssetStamp('floor')"),ready);
 });
 
-test('laboratory physical paths connect perimeter, documents and doors to stairs across 60 seeds',()=>{
+test('laboratory role layouts and physical paths stay coherent across 60 seeds',()=>{
  for(let seed=1;seed<=60;seed++){
   const h=game(true,seed);
+  assert.equal(h.run(`indoorWorld.floors.every(f=>{
+   const roles=new Set(f.rooms.map(r=>r.laboratoryRole));
+   return roles.size===6&&f.rooms.every(r=>{
+    const plan=LABORATORY_ROOM_ROLES[r.purpose]||LABORATORY_ROOM_ROLES.inspection,props=f.props.filter(o=>o.roomId===r.id);
+    return r.name===plan.name&&r.laboratoryRole===plan.id&&props.some(o=>o.propArt===plan.furniture[0])&&props.every(o=>o.laboratoryRole===plan.id&&plan.furniture.includes(o.propArt));
+   })&&f.props.every(o=>o.propZone!=='hallway')&&f.postGuards.every(h=>!f.props.some(o=>circleHitsRect(h.x,h.y,8,o)));
+  })`),true,'room roles seed '+seed);
+  assert.equal(h.run(`objects.every(o=>indoorWorld.floors.some(f=>f.rooms.some(r=>{
+   const plan=LABORATORY_ROOM_ROLES[r.purpose]||LABORATORY_ROOM_ROLES.inspection;
+   return r.id===o.laboratoryRoomId&&r.laboratoryRole===o.laboratoryRole&&plan.cargo.includes(o.kind)&&r.tiles.some(t=>o.x>=t.x-.001&&o.y>=t.y-.001&&o.x+o.w<=t.x+t.w+.001&&o.y+o.h<=t.y+t.h+.001);
+  })))`),true,'cargo roles seed '+seed);
   assert.equal(h.run(`indoorWorld.floors.every(f=>{
    const g=f.navigation.grid,start=indoorGridFreeNearest(g,indoorGridPoint(g,f.stair)),seen=new Set([start]),q=[start];
    for(let i=0;i<q.length;i++){
@@ -85,16 +96,16 @@ test('laboratory uses common automatic-door assets and identical leaf geometry a
  }
  assert.equal(lab.run("!!laboratoryImages['lab-door']"),false);
 });
-test('lab cargo has human-scale fixed geometry including the former giant shell pallet',()=>{
+test('lab cargo uses reference-stage cover sizes without restoring the giant shell pallet',()=>{
  const lab=game(true);
  assert.equal(lab.run(`objects.length>0&&objects.every(o=>{
   const size=laboratoryObjectSize(o.kind),hit=objectHitRect(o);
   return o.laboratoryArt===LABORATORY_OBJECT_ART[o.kind]&&Math.abs(o.w-size.w)<.001&&Math.abs(o.h-size.h)<.001&&
-   Math.max(o.w,o.h)<=40&&hit.x===o.x&&hit.y===o.y&&hit.w===o.w&&hit.h===o.h;
+   Math.max(o.w,o.h)<=72&&hit.x===o.x&&hit.y===o.y&&hit.w===o.w&&hit.h===o.h;
  })`),true);
  assert.equal(lab.run("objects.some(o=>o.laboratoryArt==='waste_tank')&&objects.some(o=>o.laboratoryArt==='cooling_unit')"),true);
- assert.equal(lab.run("objects.filter(o=>o.kind==='shellPallet').every(o=>Math.max(o.w,o.h)<=24)"),true);
- assert.equal(lab.run(`indoorWorld.floors.every(f=>f.props.every(o=>Math.max(o.w,o.h)<=64))`),true);
+ assert.equal(lab.run("objects.filter(o=>o.kind==='shellPallet').every(o=>Math.max(o.w,o.h)<=56)"),true);
+ assert.equal(lab.run(`indoorWorld.floors.every(f=>f.props.every(o=>Math.max(o.w,o.h)<=112))`),true);
  assert.equal(lab.run(`(()=>{let calls=[];g.drawImage=(im,...args)=>calls.push(args);for(const o of objects){calls=[];drawObject(o);if(calls.length!==1||calls[0][2]>o.w+.001||calls[0][3]>o.h+.001)return false;}return true;})()`),true);
  const advanced=game(false);assert.equal(advanced.run('objects.some(o=>o.laboratoryArt)'),false);
  assert.equal(advanced.run("objects.some(o=>o.kind==='shellPallet'&&o.h>100)"),true);
@@ -102,4 +113,13 @@ test('lab cargo has human-scale fixed geometry including the former giant shell 
 test('laboratory furniture and cargo use south-facing art without automatic rotation',()=>{
  const lab=game(true);
  assert.equal(lab.run(`(()=>{let turns=0;g.rotate=()=>turns++;for(const f of indoorWorld.floors)for(const o of f.props)drawInfiltrationPropSprite(o);for(const o of objects)drawObject(o);return turns;})()`),0);
+});
+
+test('laboratory cover sizes follow the existing indoor worktables, lockers, beds and cargo',()=>{
+ const h=game(true);
+ assert.equal(h.run("laboratoryPropSize('desk').w>=INDOOR_PROP_LENGTH.operations_table*.75"),true);
+ assert.equal(h.run("laboratoryPropSize('cabinet').w>=INDOOR_PROP_LENGTH.personal_lockers*.8"),true);
+ assert.equal(h.run("laboratoryPropSize('generator').w>=INDOOR_PROP_LENGTH.generator*.7"),true);
+ assert.equal(h.run("laboratoryPropSize('bed').h>=104"),true);
+ assert.equal(h.run("objects.every(o=>Math.max(o.w,o.h)>=50&&Math.max(o.w,o.h)<=80)"),true);
 });
