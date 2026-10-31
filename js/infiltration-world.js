@@ -673,7 +673,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     const roomFurniture=furniture.filter(o=>o.zone==='room'&&
       room.tiles.some(t=>o.x>=t.x&&o.x<t.x+SIZE&&o.y>=t.y&&o.y<t.y+SIZE));
     let table=room===postRoom?furniture.find(o=>o.kind==='postTable'):
-      roomFurniture.filter(o=>o.artKind==='desk'||o.artKind==='operations_table')
+      roomFurniture.filter(o=>['desk','operations_table'].includes(laboratory?laboratoryBaseArt(o.artKind):o.artKind))
         .sort((a,b)=>distance({x:a.x+a.w/2,y:a.y+a.h/2},mid)-
           distance({x:b.x+b.w/2,y:b.y+b.h/2},mid))[0];
     const inRoom=room.tiles.some(t=>mid.x>=t.x&&mid.x<=t.x+t.w&&
@@ -681,7 +681,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     const primary=inRoom?mid:centers.slice().sort((a,b)=>distance(a,mid)-distance(b,mid))[0];
     roomLight(primary,'room-center',room);
     if(table&&distance({x:table.x+table.w/2,y:table.y+table.h/2},primary)<5){
-      table=roomFurniture.find(o=>(o.artKind==='desk'||o.artKind==='operations_table')&&
+      table=roomFurniture.find(o=>(['desk','operations_table'].includes(laboratory?laboratoryBaseArt(o.artKind):o.artKind))&&
         distance({x:o.x+o.w/2,y:o.y+o.h/2},primary)>5)||table;
     }
     // A ceiling task light highlights the nearby table while general room lighting remains central.
@@ -780,7 +780,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
   const documentArts=new Set(['cabinet','desk','server_rack','operations_table','personal_lockers','shelf','equipment',...(laboratory?['fume_hood','ultra_freezer','centrifuge','incubator','wash_station']:[])]);
   const worldDistance=(a,b)=>Math.hypot((a.x-b.x)*INDOOR_SCALE_X,(a.y-b.y)*INDOOR_SCALE_Y);
   const intelCandidates=rooms.filter(r=>r!==postRoom).map(room=>{
-    const fixtures=furniture.filter(o=>o.roomId===room.id&&documentArts.has(o.artKind));
+    const fixtures=furniture.filter(o=>o.roomId===room.id&&documentArts.has(laboratory?laboratoryBaseArt(o.artKind):o.artKind));
     const candidates=[];
     for(const fixture of fixtures){
       const cx=fixture.x+fixture.w/2,cy=fixture.y+fixture.h/2;

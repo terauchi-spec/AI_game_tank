@@ -71,12 +71,76 @@ Object.assign(LABORATORY_PROP_SIZES,{
   "h": 55.625
  }
 });
-function laboratoryPropSize(kind){return LABORATORY_PROP_SIZES[kind==='wooden_crate'?kind:LABORATORY_ART[kind]]||null;}
-// Shared explosive rules are retained; only lab artwork and physical sizes differ.
+// Furniture covers grow by 10%; explosives and wooden crates keep their existing sizes.
+const LABORATORY_COVER_SCALE=1.1;
+const LABORATORY_VERTICAL_ART={
+ "lab-bench": "lab-bench-vertical",
+ "lab-storage": "lab-storage-vertical",
+ "lab-analyzer": "lab-analyzer-vertical",
+ "lab-reactor": "lab-reactor-vertical",
+ "lab-samples": "lab-samples-vertical",
+ "lab-fume-hood": "lab-fume-hood-vertical",
+ "lab-freezer": "lab-freezer-vertical",
+ "lab-centrifuge": "lab-centrifuge-vertical",
+ "lab-incubator": "lab-incubator-vertical",
+ "lab-wash-sink": "lab-wash-sink-vertical"
+};
+const LABORATORY_VERTICAL_SIZES={
+ "lab-bench-vertical": {
+  "w": 42.875,
+  "h": 112
+ },
+ "lab-storage-vertical": {
+  "w": 28.5,
+  "h": 96
+ },
+ "lab-analyzer-vertical": {
+  "w": 42.984375,
+  "h": 84
+ },
+ "lab-reactor-vertical": {
+  "w": 46.375,
+  "h": 112
+ },
+ "lab-samples-vertical": {
+  "w": 21.21875,
+  "h": 56
+ },
+ "lab-fume-hood-vertical": {
+  "w": 31.28125,
+  "h": 104
+ },
+ "lab-freezer-vertical": {
+  "w": 39.4296875,
+  "h": 98
+ },
+ "lab-centrifuge-vertical": {
+  "w": 58.5,
+  "h": 96
+ },
+ "lab-incubator-vertical": {
+  "w": 43.0625,
+  "h": 104
+ },
+ "lab-wash-sink-vertical": {
+  "w": 34.125,
+  "h": 112
+ }
+};
+Object.assign(LABORATORY_PROP_SIZES,LABORATORY_VERTICAL_SIZES);
+for(const [kind,asset] of Object.entries(LABORATORY_ART))if(LABORATORY_VERTICAL_ART[asset])LABORATORY_ART[kind+'_vertical']=LABORATORY_VERTICAL_ART[asset];
+const LABORATORY_COVER_SIZES=Object.create(null);
+for(const asset of [...Object.keys(LABORATORY_VERTICAL_ART),...Object.values(LABORATORY_VERTICAL_ART),'lab-medical']){
+ const size=LABORATORY_PROP_SIZES[asset];LABORATORY_COVER_SIZES[asset]={w:size.w*LABORATORY_COVER_SCALE,h:size.h*LABORATORY_COVER_SCALE};
+}
+function laboratoryBaseArt(kind){return kind.endsWith('_vertical')?kind.slice(0,-9):kind;}
+function laboratoryPlacementKinds(kind){return LABORATORY_ART[kind+'_vertical']?[kind,kind+'_vertical']:[kind];}
+function laboratoryPropSize(kind){const asset=kind==='wooden_crate'?kind:LABORATORY_ART[kind];return LABORATORY_COVER_SIZES[asset]||LABORATORY_PROP_SIZES[asset]||null;}
+// Cargo uses the same source art, but has an independent physical size.
 const LABORATORY_OBJECT_ART={barrel:'waste_tank',crate:'cooling_unit',shellPallet:'container'};
-function laboratoryObjectSize(kind,art=null){return laboratoryPropSize(art||LABORATORY_OBJECT_ART[kind]);}
+function laboratoryObjectSize(kind,art=null){const key=art||LABORATORY_OBJECT_ART[kind];return LABORATORY_PROP_SIZES[key==='wooden_crate'?key:LABORATORY_ART[key]]||null;}
 function drawLaboratoryPropSprite(image,o){
- // Every sprite faces south. Uniform scale preserves the top-down artwork.
+ // Each orientation uses its own authored image. No per-frame image rotation.
  const scale=Math.min(o.w/image.naturalWidth,o.h/image.naturalHeight);
  const w=image.naturalWidth*scale,h=image.naturalHeight*scale;
  g.save();g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
@@ -188,12 +252,19 @@ function laboratoryFurnishFloor({rooms,walls,doors,stair,postRoom,postTile,postG
   return result;
  }
  function place(region,artKind,{cargoKind=null,primary=false,post=false,near=null,slot=0,hall=false}={}){
-  const size=laboratoryPropSize(artKind),w=size.w/sx,h=size.h/sy;
-  let candidates=wallCandidates(w,h).filter(o=>inside(o,region));
-  if(post){
-   candidates=region.tiles.flatMap(t=>[16,(t.w-w)/2].map(dx=>({x:t.x+dx,y:t.y+(t.h-h)/2,w,h,laboratoryWallSide:null})));
-   candidates.sort((a,b)=>Math.hypot(a.x+a.w/2-postTile.x-90,a.y+a.h/2-postTile.y-90)-Math.hypot(b.x+b.w/2-postTile.x-90,b.y+b.h/2-postTile.y-90));
-  }else if(near)candidates.sort((a,b)=>Math.hypot((a.x+a.w/2-near.x)*sx,(a.y+a.h/2-near.y)*sy)-Math.hypot((b.x+b.w/2-near.x)*sx,(b.y+b.h/2-near.y)*sy));
+  const variants=cargoKind?[artKind]:laboratoryPlacementKinds(artKind);
+  let candidates=[];
+  for(const placedArt of variants){
+   const size=cargoKind?laboratoryObjectSize(cargoKind,placedArt):laboratoryPropSize(placedArt),w=size.w/sx,h=size.h/sy;
+   if(post){
+    candidates.push(...region.tiles.flatMap(t=>[16,(t.w-w)/2].map(dx=>({x:t.x+dx,y:t.y+(t.h-h)/2,w,h,laboratoryWallSide:null,laboratoryPlacedArt:placedArt}))));
+   }else{
+    const vertical=size.h>size.w;
+    candidates.push(...wallCandidates(w,h).filter(o=>inside(o,region)&&(variants.length===1||vertical===(o.laboratoryWallSide==='west'||o.laboratoryWallSide==='east'))).map(o=>({...o,laboratoryPlacedArt:placedArt})));
+   }
+  }
+  if(post)candidates.sort((a,b)=>Math.hypot(a.x+a.w/2-postTile.x-90,a.y+a.h/2-postTile.y-90)-Math.hypot(b.x+b.w/2-postTile.x-90,b.y+b.h/2-postTile.y-90));
+  else if(near)candidates.sort((a,b)=>Math.hypot((a.x+a.w/2-near.x)*sx,(a.y+a.h/2-near.y)*sy)-Math.hypot((b.x+b.w/2-near.x)*sx,(b.y+b.h/2-near.y)*sy));
   let checks=0;
   for(const q of candidates){
    const o={...q,zone:post?'post':hall?'hallway':'room',roomId:region.id,purpose:region.purpose,laboratoryRole:region.laboratoryRole};
@@ -201,7 +272,7 @@ function laboratoryFurnishFloor({rooms,walls,doors,stair,postRoom,postTile,postG
    if(++checks>(primary?30:14))break;
    if(!indoorRoomEquipmentWalkable(region,[...walls,...all,o]))continue;
    if(cargoKind){Object.assign(o,{kind:cargoKind,laboratoryArt:artKind,group:'lab-'+region.id+'-'+slot});explosiveObjects.push(o);}
-   else{Object.assign(o,{kind:post?'postTable':'laboratoryEquipment',artKind,primaryAsset:primary});furniture.push(o);}
+   else{Object.assign(o,{kind:post?'postTable':'laboratoryEquipment',artKind:q.laboratoryPlacedArt,primaryAsset:primary});furniture.push(o);}
    all.push(o);return o;
   }
   return null;
@@ -216,8 +287,13 @@ function laboratoryFurnishFloor({rooms,walls,doors,stair,postRoom,postTile,postG
    const rows=[Math.ceil(postGuards.length/2),Math.floor(postGuards.length/2)];
    for(let i=0;i<postGuards.length;i++){
     const row=i<rows[0]?0:1,k=row?i-rows[0]:i,n=rows[row],h=postGuards[i];
-    h.x=center.x+(n===1?0:(k/(n-1)-.5)*primary.w*.7);
-    h.y=center.y+(row?1:-1)*(primary.h/2+25/sy);
+    if(primary.h*sy>primary.w*sx){
+     h.x=center.x+(row?1:-1)*(primary.w/2+25/sx);
+     h.y=center.y+(n===1?0:(k/(n-1)-.5)*primary.h*.7);
+    }else{
+     h.x=center.x+(n===1?0:(k/(n-1)-.5)*primary.w*.7);
+     h.y=center.y+(row?1:-1)*(primary.h/2+25/sy);
+    }
     h.face=Math.atan2(center.y-h.y,center.x-h.x);h.waypoints=[{x:h.x,y:h.y}];
     guardSpace.push({x:h.x-13/sx,y:h.y-13/sy,w:26/sx,h:26/sy});
    }

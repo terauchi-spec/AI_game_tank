@@ -40,7 +40,8 @@
       "h": 35.4375
     },
     "runtime_bytes": 4724,
-    "generation_prompt": "One 2D game asset sprite on genuinely transparent background. Pure flat orthographic PLAN VIEW, camera exactly 90 degrees overhead like a floor plan. ONLY TOP SURFACE visible, front edge at south no thicker than 2% of total depth. NO eye-level, NO isometric view, NO perspective convergence, NO visible tall front wall. Fine hand-drawn digital illustration, fine grain, dark thin outline, subtle worn paint, speckled grime, slight rust streaks, restrained seams. Muted industrial gray, dusty olive, dull brown, rusty orange accents; year-2000 corporate laboratory aesthetic. North edge small highlight from overhead light. One complete centered object tightly cropped. No ground, no floor, no shadow, no drop shadow, no glow, no words, no letters, no numbers, no logos. Not a glossy 3D render. Subject: rectangular laboratory workbench, wide east-west, gray laminate worktop with a SMALL hotplate, tiny test-tube rack, off-white metal cabinet. The entire tabletop is visible from directly above. Ratio width:depth=2:1."
+    "generation_prompt": "One 2D game asset sprite on genuinely transparent background. Pure flat orthographic PLAN VIEW, camera exactly 90 degrees overhead like a floor plan. ONLY TOP SURFACE visible, front edge at south no thicker than 2% of total depth. NO eye-level, NO isometric view, NO perspective convergence, NO visible tall front wall. Fine hand-drawn digital illustration, fine grain, dark thin outline, subtle worn paint, speckled grime, slight rust streaks, restrained seams. Muted industrial gray, dusty olive, dull brown, rusty orange accents; year-2000 corporate laboratory aesthetic. North edge small highlight from overhead light. One complete centered object tightly cropped. No ground, no floor, no shadow, no drop shadow, no glow, no words, no letters, no numbers, no logos. Not a glossy 3D render. Subject: rectangular laboratory workbench, wide east-west, gray laminate worktop with a SMALL hotplate, tiny test-tube rack, off-white metal cabinet. The entire tabletop is visible from directly above. Ratio width:depth=2:1.",
+    "cover_scale": 1.1
   },
   {
     "name": "lab-storage",
@@ -63,7 +64,8 @@
       "w": 96,
       "h": 36.375
     },
-    "runtime_bytes": 3644
+    "runtime_bytes": 3644,
+    "cover_scale": 1.1
   },
   {
     "name": "lab-analyzer",
@@ -86,7 +88,8 @@
       "w": 84,
       "h": 57.75
     },
-    "runtime_bytes": 8496
+    "runtime_bytes": 8496,
+    "cover_scale": 1.1
   },
   {
     "name": "lab-reactor",
@@ -109,7 +112,8 @@
       "w": 112,
       "h": 62.5625
     },
-    "runtime_bytes": 9758
+    "runtime_bytes": 9758,
+    "cover_scale": 1.1
   },
   {
     "name": "lab-medical",
@@ -132,7 +136,8 @@
       "w": 34.53125,
       "h": 104
     },
-    "runtime_bytes": 4280
+    "runtime_bytes": 4280,
+    "cover_scale": 1.1
   },
   {
     "name": "lab-samples",
@@ -155,7 +160,8 @@
       "w": 56,
       "h": 31.5
     },
-    "runtime_bytes": 11756
+    "runtime_bytes": 11756,
+    "cover_scale": 1.1
   },
   {
     "name": "lab-door",
@@ -233,7 +239,8 @@
       "w": 104.0,
       "h": 55.25
     },
-    "runtime_bytes": 6316
+    "runtime_bytes": 6316,
+    "cover_scale": 1.1
   },
   {
     "name": "lab-freezer",
@@ -252,7 +259,8 @@
       "w": 98.0,
       "h": 54.359375
     },
-    "runtime_bytes": 5886
+    "runtime_bytes": 5886,
+    "cover_scale": 1.1
   },
   {
     "name": "lab-centrifuge",
@@ -271,7 +279,8 @@
       "w": 96.0,
       "h": 77.25
     },
-    "runtime_bytes": 12178
+    "runtime_bytes": 12178,
+    "cover_scale": 1.1
   },
   {
     "name": "lab-incubator",
@@ -290,7 +299,8 @@
       "w": 104.0,
       "h": 58.09375
     },
-    "runtime_bytes": 6876
+    "runtime_bytes": 6876,
+    "cover_scale": 1.1
   },
   {
     "name": "lab-wash-sink",
@@ -309,6 +319,248 @@
       "w": 112.0,
       "h": 40.25
     },
-    "runtime_bytes": 7068
+    "runtime_bytes": 7068,
+    "cover_scale": 1.1
+  },
+  {
+    "name": "lab-bench-vertical",
+    "mode": "built-in ImageGen edit, transparent background",
+    "reference": "assets/indoor/laboratory/lab-bench.png",
+    "prompt_summary": "Rebuild matching early-2000s laboratory equipment with north-south long axis, true overhead plan view, restrained worn military palette, north lighting, thin south front edge; no ground, cast shadow or text. Preserve identity and materials without stretching the horizontal sprite.",
+    "png_pixels": [
+      294,
+      768
+    ],
+    "runtime_pixels": [
+      98,
+      256
+    ],
+    "world_size": {
+      "w": 42.875,
+      "h": 112
+    },
+    "cover_world_size": {
+      "w": 47.1625,
+      "h": 123.20000000000002
+    },
+    "runtime_bytes": 10710,
+    "prompt": "Edit target: supplied horizontal laboratory game sprite. Create its matching VERTICAL-placement artwork, not a stretched horizontal image. Rebuild the same object with its LONG footprint axis running NORTH-SOUTH (top to bottom). Preserve the reference identity, materials, muted colors, hand-painted grain, thin dark outline, light wear and early-2000s research-lab style. Pure 90-degree overhead orthographic plan view, no perspective distortion; almost entirely TOP surface, very thin southern/front rim. Keep the overhead light direction and north-edge highlight fixed. One complete centered isolated object, tight margin, GENUINELY TRANSPARENT background, no floor, no ground, no cast shadow or drop shadow, no text/numbers/logos. Target silhouette WIDTH:HEIGHT ratio 1:3.16. Long slim laboratory workbench, NORTH-SOUTH long countertop; tiny hotplate at the north end, test tubes arranged along one side. Only tabletop visible; NO tall cabinet front.",
+    "refinement": "Edit this vertical laboratory workbench sprite to correct its footprint proportions. Keep its width and all current textures and the hotplate and test tubes unchanged. SHORTEN the unnecessarily long EMPTY LOWER HALF of the countertop substantially. The entire remaining complete workbench silhouette must be WIDTH:HEIGHT = 1:3.16, not a tall 1:6 strip. Reposition the scuff marks on the shortened south end naturally. No stretching, no extra objects, no scene. Exact straight-down orthographic plan view, no perspective, only tabletop and very thin south edge. Preserve the existing illustration, north-edge lighting and muted palette. Genuine transparent background, tight margin, no floor, shadow or text."
+  },
+  {
+    "name": "lab-storage-vertical",
+    "mode": "built-in ImageGen edit, transparent background",
+    "reference": "assets/indoor/laboratory/lab-storage.png",
+    "prompt_summary": "Rebuild matching early-2000s laboratory equipment with north-south long axis, true overhead plan view, restrained worn military palette, north lighting, thin south front edge; no ground, cast shadow or text. Preserve identity and materials without stretching the horizontal sprite.",
+    "png_pixels": [
+      228,
+      768
+    ],
+    "runtime_pixels": [
+      76,
+      256
+    ],
+    "world_size": {
+      "w": 28.5,
+      "h": 96
+    },
+    "cover_world_size": {
+      "w": 31.35,
+      "h": 105.60000000000001
+    },
+    "runtime_bytes": 4798,
+    "prompt": "Edit target: supplied horizontal laboratory game sprite. Create its matching VERTICAL-placement artwork, not a stretched horizontal image. Rebuild the same object with its LONG footprint axis running NORTH-SOUTH (top to bottom). Preserve the reference identity, materials, muted colors, hand-painted grain, thin dark outline, light wear and early-2000s research-lab style. Pure 90-degree overhead orthographic plan view, no perspective distortion; almost entirely TOP surface, very thin southern/front rim. Keep the overhead light direction and north-edge highlight fixed. One complete centered isolated object, tight margin, GENUINELY TRANSPARENT background, no floor, no ground, no cast shadow or drop shadow, no text/numbers/logos. Target silhouette WIDTH:HEIGHT ratio 1:2.64. Long slim low storage cabinet, NORTH-SOUTH long plain dusty olive top panel; recessed metal handles in a very thin SOUTH edge."
+  },
+  {
+    "name": "lab-analyzer-vertical",
+    "mode": "built-in ImageGen edit, transparent background",
+    "reference": "assets/indoor/laboratory/lab-analyzer.png",
+    "prompt_summary": "Rebuild matching early-2000s laboratory equipment with north-south long axis, true overhead plan view, restrained worn military palette, north lighting, thin south front edge; no ground, cast shadow or text. Preserve identity and materials without stretching the horizontal sprite.",
+    "png_pixels": [
+      394,
+      768
+    ],
+    "runtime_pixels": [
+      131,
+      256
+    ],
+    "world_size": {
+      "w": 42.984375,
+      "h": 84
+    },
+    "cover_world_size": {
+      "w": 47.282812500000006,
+      "h": 92.4
+    },
+    "runtime_bytes": 7650,
+    "prompt": "Edit target: supplied horizontal laboratory game sprite. Create its matching VERTICAL-placement artwork, not a stretched horizontal image. Rebuild the same object with its LONG footprint axis running NORTH-SOUTH (top to bottom). Preserve the reference identity, materials, muted colors, hand-painted grain, thin dark outline, light wear and early-2000s research-lab style. Pure 90-degree overhead orthographic plan view, no perspective distortion; almost entirely TOP surface, very thin southern/front rim. Keep the overhead light direction and north-edge highlight fixed. One complete centered isolated object, tight margin, GENUINELY TRANSPARENT background, no floor, no ground, no cast shadow or drop shadow, no text/numbers/logos. Target silhouette WIDTH:HEIGHT ratio 1:1.46. Compact chemical analyzer with sample tray at the north, small blank display and physical control buttons at the south. Its footprint is longer NORTH-SOUTH."
+  },
+  {
+    "name": "lab-reactor-vertical",
+    "mode": "built-in ImageGen edit, transparent background",
+    "reference": "assets/indoor/laboratory/lab-reactor.png",
+    "prompt_summary": "Rebuild matching early-2000s laboratory equipment with north-south long axis, true overhead plan view, restrained worn military palette, north lighting, thin south front edge; no ground, cast shadow or text. Preserve identity and materials without stretching the horizontal sprite.",
+    "png_pixels": [
+      319,
+      768
+    ],
+    "runtime_pixels": [
+      106,
+      256
+    ],
+    "world_size": {
+      "w": 46.375,
+      "h": 112
+    },
+    "cover_world_size": {
+      "w": 51.0125,
+      "h": 123.20000000000002
+    },
+    "runtime_bytes": 10542,
+    "prompt": "Edit target: supplied horizontal laboratory game sprite. Create its matching VERTICAL-placement artwork, not a stretched horizontal image. Rebuild the same object with its LONG footprint axis running NORTH-SOUTH (top to bottom). Preserve the reference identity, materials, muted colors, hand-painted grain, thin dark outline, light wear and early-2000s research-lab style. Pure 90-degree overhead orthographic plan view, no perspective distortion; almost entirely TOP surface, very thin southern/front rim. Keep the overhead light direction and north-edge highlight fixed. One complete centered isolated object, tight margin, GENUINELY TRANSPARENT background, no floor, no ground, no cast shadow or drop shadow, no text/numbers/logos. Target silhouette WIDTH:HEIGHT ratio 1:1.79. Water purification equipment, TWO circular filter tops stacked NORTH to SOUTH, short pipes tucked beside them, one small blank gauge. No long visible cylinder sides."
+  },
+  {
+    "name": "lab-samples-vertical",
+    "mode": "built-in ImageGen edit, transparent background",
+    "reference": "assets/indoor/laboratory/lab-samples.png",
+    "prompt_summary": "Rebuild matching early-2000s laboratory equipment with north-south long axis, true overhead plan view, restrained worn military palette, north lighting, thin south front edge; no ground, cast shadow or text. Preserve identity and materials without stretching the horizontal sprite.",
+    "png_pixels": [
+      290,
+      768
+    ],
+    "runtime_pixels": [
+      97,
+      256
+    ],
+    "world_size": {
+      "w": 21.21875,
+      "h": 56
+    },
+    "cover_world_size": {
+      "w": 23.340625000000003,
+      "h": 61.60000000000001
+    },
+    "runtime_bytes": 9876,
+    "prompt": "Edit target: supplied horizontal laboratory game sprite. Create its matching VERTICAL-placement artwork, not a stretched horizontal image. Rebuild the same object with its LONG footprint axis running NORTH-SOUTH (top to bottom). Preserve the reference identity, materials, muted colors, hand-painted grain, thin dark outline, light wear and early-2000s research-lab style. Pure 90-degree overhead orthographic plan view, no perspective distortion; almost entirely TOP surface, very thin southern/front rim. Keep the overhead light direction and north-edge highlight fixed. One complete centered isolated object, tight margin, GENUINELY TRANSPARENT background, no floor, no ground, no cast shadow or drop shadow, no text/numbers/logos. Target silhouette WIDTH:HEIGHT ratio 1:1.78. Portable reagent hard case, NORTH-SOUTH long cloudy transparent closed lid, small brown bottles arranged along its long axis, hinge at NORTH and latch SOUTH."
+  },
+  {
+    "name": "lab-fume-hood-vertical",
+    "mode": "built-in ImageGen edit, transparent background",
+    "reference": "assets/indoor/laboratory/lab-fume-hood.png",
+    "prompt_summary": "Rebuild matching early-2000s laboratory equipment with north-south long axis, true overhead plan view, restrained worn military palette, north lighting, thin south front edge; no ground, cast shadow or text. Preserve identity and materials without stretching the horizontal sprite.",
+    "png_pixels": [
+      230,
+      768
+    ],
+    "runtime_pixels": [
+      77,
+      256
+    ],
+    "world_size": {
+      "w": 31.28125,
+      "h": 104
+    },
+    "cover_world_size": {
+      "w": 34.409375000000004,
+      "h": 114.4
+    },
+    "runtime_bytes": 4796,
+    "prompt": "Edit target: supplied horizontal laboratory game sprite. Create its matching VERTICAL-placement artwork, not a stretched horizontal image. Rebuild the same object with its LONG footprint axis running NORTH-SOUTH (top to bottom). Preserve the reference identity, materials, muted colors, hand-painted grain, thin dark outline, light wear and early-2000s research-lab style. Pure 90-degree overhead orthographic plan view, no perspective distortion; almost entirely TOP surface, very thin southern/front rim. Keep the overhead light direction and north-edge highlight fixed. One complete centered isolated object, tight margin, GENUINELY TRANSPARENT background, no floor, no ground, no cast shadow or drop shadow, no text/numbers/logos. Target silhouette WIDTH:HEIGHT ratio 1:1.88. A NORTH-SOUTH long narrow fume-hood workstation, roof/exhaust duct at NORTH, elongated recessed work surface down the center and thin glass sash at SOUTH. Mostly its top, no tall front wall."
+  },
+  {
+    "name": "lab-freezer-vertical",
+    "mode": "built-in ImageGen edit, transparent background",
+    "reference": "assets/indoor/laboratory/lab-freezer.png",
+    "prompt_summary": "Rebuild matching early-2000s laboratory equipment with north-south long axis, true overhead plan view, restrained worn military palette, north lighting, thin south front edge; no ground, cast shadow or text. Preserve identity and materials without stretching the horizontal sprite.",
+    "png_pixels": [
+      309,
+      768
+    ],
+    "runtime_pixels": [
+      103,
+      256
+    ],
+    "world_size": {
+      "w": 39.4296875,
+      "h": 98
+    },
+    "cover_world_size": {
+      "w": 43.372656250000006,
+      "h": 107.80000000000001
+    },
+    "runtime_bytes": 5244,
+    "prompt": "Edit target: supplied horizontal laboratory game sprite. Create its matching VERTICAL-placement artwork, not a stretched horizontal image. Rebuild the same object with its LONG footprint axis running NORTH-SOUTH (top to bottom). Preserve the reference identity, materials, muted colors, hand-painted grain, thin dark outline, light wear and early-2000s research-lab style. Pure 90-degree overhead orthographic plan view, no perspective distortion; almost entirely TOP surface, very thin southern/front rim. Keep the overhead light direction and north-edge highlight fixed. One complete centered isolated object, tight margin, GENUINELY TRANSPARENT background, no floor, no ground, no cast shadow or drop shadow, no text/numbers/logos. Target silhouette WIDTH:HEIGHT ratio 1:1.80. NORTH-SOUTH long insulated chest freezer lid, small top vent at NORTH and recessed handle at SOUTH, thin side rim, blank display at the south end."
+  },
+  {
+    "name": "lab-centrifuge-vertical",
+    "mode": "built-in ImageGen edit, transparent background",
+    "reference": "assets/indoor/laboratory/lab-centrifuge.png",
+    "prompt_summary": "Rebuild matching early-2000s laboratory equipment with north-south long axis, true overhead plan view, restrained worn military palette, north lighting, thin south front edge; no ground, cast shadow or text. Preserve identity and materials without stretching the horizontal sprite.",
+    "png_pixels": [
+      468,
+      768
+    ],
+    "runtime_pixels": [
+      156,
+      256
+    ],
+    "world_size": {
+      "w": 58.5,
+      "h": 96
+    },
+    "cover_world_size": {
+      "w": 64.35000000000001,
+      "h": 105.60000000000001
+    },
+    "runtime_bytes": 8912,
+    "prompt": "Edit target: supplied horizontal laboratory game sprite. Create its matching VERTICAL-placement artwork, not a stretched horizontal image. Rebuild the same object with its LONG footprint axis running NORTH-SOUTH (top to bottom). Preserve the reference identity, materials, muted colors, hand-painted grain, thin dark outline, light wear and early-2000s research-lab style. Pure 90-degree overhead orthographic plan view, no perspective distortion; almost entirely TOP surface, very thin southern/front rim. Keep the overhead light direction and north-edge highlight fixed. One complete centered isolated object, tight margin, GENUINELY TRANSPARENT background, no floor, no ground, no cast shadow or drop shadow, no text/numbers/logos. Target silhouette WIDTH:HEIGHT ratio 1:1.24. Floor-standing centrifuge with dominant circular closed lid, housing elongated NORTH-SOUTH, blank controls on the SOUTH top edge."
+  },
+  {
+    "name": "lab-incubator-vertical",
+    "mode": "built-in ImageGen edit, transparent background",
+    "reference": "assets/indoor/laboratory/lab-incubator.png",
+    "prompt_summary": "Rebuild matching early-2000s laboratory equipment with north-south long axis, true overhead plan view, restrained worn military palette, north lighting, thin south front edge; no ground, cast shadow or text. Preserve identity and materials without stretching the horizontal sprite.",
+    "png_pixels": [
+      318,
+      768
+    ],
+    "runtime_pixels": [
+      106,
+      256
+    ],
+    "world_size": {
+      "w": 43.0625,
+      "h": 104
+    },
+    "cover_world_size": {
+      "w": 47.368750000000006,
+      "h": 114.4
+    },
+    "runtime_bytes": 4686,
+    "prompt": "Edit target: supplied horizontal laboratory game sprite. Create its matching VERTICAL-placement artwork, not a stretched horizontal image. Rebuild the same object with its LONG footprint axis running NORTH-SOUTH (top to bottom). Preserve the reference identity, materials, muted colors, hand-painted grain, thin dark outline, light wear and early-2000s research-lab style. Pure 90-degree overhead orthographic plan view, no perspective distortion; almost entirely TOP surface, very thin southern/front rim. Keep the overhead light direction and north-edge highlight fixed. One complete centered isolated object, tight margin, GENUINELY TRANSPARENT background, no floor, no ground, no cast shadow or drop shadow, no text/numbers/logos. Target silhouette WIDTH:HEIGHT ratio 1:1.79. NORTH-SOUTH long incubator cabinet, two top panel sections arranged one above the other, tiny vents at NORTH, blank controls and a very thin glass door strip SOUTH."
+  },
+  {
+    "name": "lab-wash-sink-vertical",
+    "mode": "built-in ImageGen edit, transparent background",
+    "reference": "assets/indoor/laboratory/lab-wash-sink.png",
+    "prompt_summary": "Rebuild matching early-2000s laboratory equipment with north-south long axis, true overhead plan view, restrained worn military palette, north lighting, thin south front edge; no ground, cast shadow or text. Preserve identity and materials without stretching the horizontal sprite.",
+    "png_pixels": [
+      235,
+      768
+    ],
+    "runtime_pixels": [
+      78,
+      256
+    ],
+    "world_size": {
+      "w": 34.125,
+      "h": 112
+    },
+    "cover_world_size": {
+      "w": 37.5375,
+      "h": 123.20000000000002
+    },
+    "runtime_bytes": 4896,
+    "prompt": "Edit target: supplied horizontal laboratory game sprite. Create its matching VERTICAL-placement artwork, not a stretched horizontal image. Rebuild the same object with its LONG footprint axis running NORTH-SOUTH (top to bottom). Preserve the reference identity, materials, muted colors, hand-painted grain, thin dark outline, light wear and early-2000s research-lab style. Pure 90-degree overhead orthographic plan view, no perspective distortion; almost entirely TOP surface, very thin southern/front rim. Keep the overhead light direction and north-edge highlight fixed. One complete centered isolated object, tight margin, GENUINELY TRANSPARENT background, no floor, no ground, no cast shadow or drop shadow, no text/numbers/logos. Target silhouette WIDTH:HEIGHT ratio 1:2.78. Long narrow NORTH-SOUTH stainless wash station, square sink basin at NORTH with faucet on north rim, ribbed drainboard stretching SOUTH, no tall cabinet front."
   }
 ]

@@ -48,8 +48,8 @@ test('mobile laboratory scenery warms the bounded cache and invalidates it when 
  const stamp=h.run("indoorRasterAssetStamp('walls')");h.run("laboratoryImages['lab-wall-horizontal'].complete=false");assert.notEqual(h.run("indoorRasterAssetStamp('walls')"),stamp);
  const html=fs.readFileSync(path.join(root,'index.html'),'utf8');assert.match(html,/#stageScreen \.stage-card\[hidden\]\{display:none\}/);
 });
-test('all eighteen master PNGs and runtime WebPs exist and only WebPs are referenced by the theme',()=>{
- const h=createGameEngine(root),names=Array.from(h.run('[...new Set(Object.values(LABORATORY_ART))]'));assert.equal(names.length,18);
+test('all twenty-eight master PNGs and runtime WebPs exist and only WebPs are referenced by the theme',()=>{
+ const h=createGameEngine(root),names=Array.from(h.run('[...new Set(Object.values(LABORATORY_ART))]'));assert.equal(names.length,28);
  for(const name of names){const dir=path.join(root,'assets/indoor/laboratory'),png=fs.readFileSync(path.join(dir,name+'.png')),webp=fs.readFileSync(path.join(dir,name+'.webp'));assert.equal(png.subarray(1,4).toString(),'PNG');assert.equal(webp.subarray(8,12).toString(),'WEBP');assert.ok(png.length>1000&&webp.length>1000);}
 });
 test('laboratory exterior reuses hills, preserves upstairs void and invalidates an unloaded hills placeholder',()=>{
@@ -70,7 +70,7 @@ test('laboratory role layouts and physical paths stay coherent across 60 seeds',
    const roles=new Set(f.rooms.map(r=>r.laboratoryRole));
    return roles.size===6&&f.rooms.every(r=>{
     const plan=LABORATORY_ROOM_ROLES[r.purpose]||LABORATORY_ROOM_ROLES.inspection,props=f.props.filter(o=>o.roomId===r.id);
-    return r.name===plan.name&&r.laboratoryRole===plan.id&&props.some(o=>o.propArt===plan.furniture[0])&&props.every(o=>o.laboratoryRole===plan.id&&plan.furniture.includes(o.propArt));
+    return r.name===plan.name&&r.laboratoryRole===plan.id&&props.some(o=>laboratoryBaseArt(o.propArt)===plan.furniture[0])&&props.every(o=>o.laboratoryRole===plan.id&&plan.furniture.includes(laboratoryBaseArt(o.propArt)));
    })&&f.props.some(o=>o.propZone==='hallway')&&f.postGuards.every(h=>!f.props.some(o=>circleHitsRect(h.x,h.y,8,o)));
   })`),true,'room roles seed '+seed);
   assert.equal(h.run(`objects.every(o=>indoorWorld.floors.some(f=>o.laboratoryRole==='corridor'?f.corridors.some(t=>o.x>=t.x-.001&&o.y>=t.y-.001&&o.x+o.w<=t.x+t.w+.001&&o.y+o.h<=t.y+t.h+.001):f.rooms.some(r=>{
@@ -105,12 +105,12 @@ test('lab cargo uses reference-stage cover sizes without restoring the giant she
  })`),true);
  assert.equal(lab.run("objects.some(o=>o.laboratoryArt==='waste_tank')&&objects.some(o=>o.laboratoryArt==='cooling_unit')"),true);
  assert.equal(lab.run("objects.filter(o=>o.kind==='shellPallet').every(o=>Math.max(o.w,o.h)<=56)"),true);
- assert.equal(lab.run(`indoorWorld.floors.every(f=>f.props.every(o=>Math.max(o.w,o.h)<=112))`),true);
+ assert.equal(lab.run(`indoorWorld.floors.every(f=>f.props.every(o=>Math.max(o.w,o.h)<=124))`),true);
  assert.equal(lab.run(`(()=>{let calls=[];g.drawImage=(im,...args)=>calls.push(args);for(const o of objects){calls=[];drawObject(o);if(calls.length!==1||calls[0][2]>o.w+.001||calls[0][3]>o.h+.001)return false;}return true;})()`),true);
  const advanced=game(false);assert.equal(advanced.run('objects.some(o=>o.laboratoryArt)'),false);
  assert.equal(advanced.run("objects.some(o=>o.kind==='shellPallet'&&o.h>100)"),true);
 });
-test('laboratory furniture and cargo use south-facing art without automatic rotation',()=>{
+test('laboratory furniture and cargo draw authored orientation art without runtime rotation',()=>{
  const lab=game(true);
  assert.equal(lab.run(`(()=>{let turns=0;g.rotate=()=>turns++;for(const f of indoorWorld.floors)for(const o of f.props)drawInfiltrationPropSprite(o);for(const o of objects)drawObject(o);return turns;})()`),0);
 });
@@ -128,7 +128,7 @@ test('five new machines, large wooden crates and corridor covers are installed a
  for(const seed of [7,17,42,91,125]){
   const h=game(true,seed);
   assert.equal(h.run(`indoorWorld.floors.every(f=>{
-   const art=new Set(f.props.map(o=>o.propArt));
+   const art=new Set(f.props.map(o=>laboratoryBaseArt(o.propArt)));
    if(!['fume_hood','ultra_freezer','centrifuge','incubator','wash_station'].every(k=>art.has(k)))return false;
    if(!f.props.some(o=>o.propZone==='hallway'))return false;
    const cargo=objects.filter(o=>o.y>=f.footprint.y&&o.y<f.footprint.y+f.footprint.h);
@@ -141,4 +141,24 @@ test('five new machines, large wooden crates and corridor covers are installed a
    }));
   })`),true,'seed '+seed);
  }
+});
+
+test('existing laboratory furniture is exactly 110 percent and vertical artwork is actually deployed',()=>{
+ const original={
+  'lab-bench':[112,35.4375],'lab-storage':[96,36.375],'lab-analyzer':[84,57.75],
+  'lab-reactor':[112,62.5625],'lab-medical':[34.53125,104],'lab-samples':[56,31.5],
+  'lab-fume-hood':[104,55.25],'lab-freezer':[98,54.359375],'lab-centrifuge':[96,77.25],
+  'lab-incubator':[104,58.09375],'lab-wash-sink':[112,40.25]
+ };
+ const h=game(true);
+ for(const [asset,[w,d]] of Object.entries(original)){
+  const size=JSON.parse(h.run(`JSON.stringify(LABORATORY_COVER_SIZES[${JSON.stringify(asset)}])`));
+  assert.ok(Math.abs(size.w-w*1.1)<.001&&Math.abs(size.h-d*1.1)<.001,asset+' scales once');
+ }
+ assert.equal(h.run(`indoorWorld.floors.every(f=>f.props.some(o=>{
+  if(!o.propArt.endsWith('_vertical'))return false;
+  const base=laboratoryBaseArt(o.propArt),src=indoorPropImage(o.propArt).src,original=indoorPropImage(base).src;
+  return src!==original&&src.includes('-vertical.webp')&&o.h>o.w&&(o.laboratoryWallSide==='west'||o.laboratoryWallSide==='east');
+ }))`),true);
+ assert.equal(h.run("objects.filter(o=>o.laboratoryArt==='wooden_crate').every(o=>Math.abs(o.w-80)<.001&&Math.abs(o.h-55.625)<.001)"),true);
 });
