@@ -4,7 +4,8 @@ function isFrontlineBeginner(){return stageMode==='front'&&typeof frontlineBegin
 function isFrontlineOni(){return stageMode==='front'&&typeof frontlineOni!=='undefined'&&frontlineOni&&!areaDebugEnabled;}
 function frontlineEnemyMultiplier(){return isFrontlineOni()?3:1;}
 function frontlineAllyMultiplier(){return isFrontlineOni()?2:1;}
-function frontlineEnemyLimit(){return isFrontlineBeginner()?10:FRONTLINE_ENEMY_LIMIT*frontlineEnemyMultiplier();}
+function frontlineEnemyCount(count){return isFrontlineBeginner()?Math.round(count*.8):count;}
+function frontlineEnemyLimit(){return isFrontlineBeginner()?frontlineEnemyCount(10):FRONTLINE_ENEMY_LIMIT*frontlineEnemyMultiplier();}
 function frontlineCaptureRadius(point){return point?.captureRadius||FRONTLINE_CAPTURE_RADIUS;}
 function frontlineTankSightScale(unit){return stageMode==='front'&&(etanks||[]).includes(unit)?2:1;}
 // North of the last capture circle is outside this operation. Keep reserve
@@ -43,7 +44,7 @@ function frontlineSpawnSpot(hasDog=false){
  }
  return null;
 }
-function spawnFrontlineWave(count=3*frontlineEnemyMultiplier(),counterPoint=null){
+function spawnFrontlineWave(count=frontlineEnemyCount(3*frontlineEnemyMultiplier()),counterPoint=null){
  if(stageMode!=='front'||!mission||areaDebugEnabled||mission.enemyWavesStarted===false)return 0;
  const m=mission,active=humans.reduce((n,h)=>n+Number(!!h.alive),0),available=Math.min(count,frontlineEnemyLimit()-active);
  let spawned=0;
@@ -504,7 +505,7 @@ function rescueFrontlineAlly(a){
 function updateFrontlineCounterattack(point,dt){
  if(!point||point.done)return;
  if(!point.counterTriggered&&D(p,point)<frontlineCaptureRadius(point)){
-  point.counterTriggered=true;point.counterPending=(isFrontlineBeginner()?4:6)*frontlineEnemyMultiplier();point.counterBluePending=(isFrontlineBeginner()?1:2)*frontlineEnemyMultiplier();point.counterRetry=0;
+  point.counterTriggered=true;point.counterPending=frontlineEnemyCount((isFrontlineBeginner()?4:6)*frontlineEnemyMultiplier());point.counterBluePending=(isFrontlineBeginner()?1:2)*frontlineEnemyMultiplier();point.counterRetry=0;
   mission.waveT=Math.max(mission.waveT||0,6);say('敵の反撃部隊が接近！');
  }
  if(!(point.counterPending>0))return;
@@ -587,7 +588,7 @@ function updateFrontlineAdvance(){
 
 function updateFrontlineEnemyEntry(){
  if(stageMode!=='front'||!mission||mission.enemyWavesStarted!==false||p.y>mission.enemyEntryY)return;
- mission.enemyWavesStarted=true;spawnFrontlineWave((isFrontlineBeginner()?4:6)*frontlineEnemyMultiplier());mission.waveT=6;mission.waveCheckT=1;
+ mission.enemyWavesStarted=true;spawnFrontlineWave(frontlineEnemyCount((isFrontlineBeginner()?4:6)*frontlineEnemyMultiplier()));mission.waveT=6;mission.waveCheckT=1;
 }
 function updateFrontlineWaves(dt){
  const m=mission;if(stageMode!=='front'||!m||m.enemyWavesStarted!==true||areaDebugEnabled)return;
@@ -597,7 +598,7 @@ function updateFrontlineWaves(dt){
   for(const h of humans)if(h.alive&&h.x>=view.x-80&&h.x<=view.x+view.w+80&&h.y>=view.y-160&&h.y<=view.y+view.h+80)nearby++;
   m.nearbyEnemies=nearby;if(nearby<4*frontlineEnemyMultiplier())m.waveT=Math.min(m.waveT,3);
  }
- if(m.waveT<=0)m.waveT=spawnFrontlineWave(2*frontlineEnemyMultiplier())>0?((m.nearbyEnemies??4*frontlineEnemyMultiplier())<4*frontlineEnemyMultiplier()?3:6):1;
+ if(m.waveT<=0)m.waveT=spawnFrontlineWave(frontlineEnemyCount(2*frontlineEnemyMultiplier()))>0?((m.nearbyEnemies??4*frontlineEnemyMultiplier())<4*frontlineEnemyMultiplier()?3:6):1;
 }
 function frontlineCombatPoint(unit){
  if(stageMode!=='front'||!mission)return null;

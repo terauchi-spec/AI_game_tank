@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.10.31.2349</title>
+<title>こっそり戦車大作戦 2026.11.01.0011</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -1000,7 +1000,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.10.31.2349',FILE_CREATED_AT='2026/10/31 23:49',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.01.0011',FILE_CREATED_AT='2026/11/01 00:11',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -3144,9 +3144,9 @@ function reset(rerollSkills=true){
  for(const z of ZONES)if(z.n==='敵前線基地')addZoneHumans(z,12,'敵前線基地');
  // 敵迷路基地は、マップ拡大後に迷路専用ロジックで通路上へ確実に配置する。
  // Radio is placed after world scaling and after the special units.
- etanks=[[2300,0],[1700,1],[1450,0],[1100,1],[800,0],[560,1],[420,0],[330,1],[210,0],[210,1]].map(([y,hf])=>{const o=route(y,hf?500:30,hf?860:400,15,1,'mixed');return o&&Object.assign(o,{alive:true,st:0,lost:0,cc:1,vc:0,ang:0,body:0,target:null,scanTurret:R()<.5,scanPhase:R()*6.28318,scanRate:.42+R()*.22});}).filter(Boolean);
+ etanks=beginner?[]:[[2300,0],[1700,1],[1450,0],[1100,1],[800,0],[560,1],[420,0],[330,1],[210,0],[210,1]].map(([y,hf])=>{const o=route(y,hf?500:30,hf?860:400,15,1,'mixed');return o&&Object.assign(o,{alive:true,st:0,lost:0,cc:1,vc:0,ang:0,body:0,target:null,scanTurret:R()<.5,scanPhase:R()*6.28318,scanRate:.42+R()*.22});}).filter(Boolean);
  // ランダム選出で再登場した草原には、巡回する敵戦車も出現。
- const addZoneTanks=(z,n)=>{if(!z)return;const y1=z.y1/MAP_SCALE+70,y0=z.y0/MAP_SCALE-70;for(let i=0;i<n;i++){for(let t=0;t<100;t++){const yy=y1+R()*Math.max(70,y0-y1),o=route(yy,45,915,15,1,'mixed');if(!o)continue;if(etanks.every(e=>D(e,o)>80)){etanks.push(Object.assign(o,{alive:true,st:0,lost:0,cc:R()*1.5,vc:0,ang:R()*6.28,body:R()*6.28,target:null,zoneHeavy:'randomGrass',scanTurret:R()<.5,scanPhase:R()*6.28318,scanRate:.42+R()*.22}));break;}}}};
+ const addZoneTanks=(z,n)=>{if(beginner||!z)return;const y1=z.y1/MAP_SCALE+70,y0=z.y0/MAP_SCALE-70;for(let i=0;i<n;i++){for(let t=0;t<100;t++){const yy=y1+R()*Math.max(70,y0-y1),o=route(yy,45,915,15,1,'mixed');if(!o)continue;if(etanks.every(e=>D(e,o)>80)){etanks.push(Object.assign(o,{alive:true,st:0,lost:0,cc:R()*1.5,vc:0,ang:R()*6.28,body:R()*6.28,target:null,zoneHeavy:'randomGrass',scanTurret:R()<.5,scanPhase:R()*6.28318,scanRate:.42+R()*.22}));break;}}}};
  for(const z of ZONES.slice(1,-1))if(z.n==='草原')addZoneTanks(z,2);
  const fz=ZONES.find(z=>z.n==='敵前線基地');if(fz){const fy1=fz.y1/MAP_SCALE+70,fy0=fz.y0/MAP_SCALE-70,staticDirs=[0,Math.PI/2,Math.PI,-Math.PI/2];for(let i=staticDirs.length-1;i>0;i--){const j=R()*(i+1)|0;[staticDirs[i],staticDirs[j]]=[staticDirs[j],staticDirs[i]];}for(let i=0;i<3;i++){for(let t=0;t<80;t++){const sp=freeSpot(70+R()*820,fy1+R()*Math.max(70,fy0-fy1),18,20);if(etanks.every(e=>D(e,sp)>70)){const a=staticDirs[i];etanks.push({x:sp.x,y:sp.y,path:[{x:sp.x,y:sp.y}],loop:false,wi:0,dir:1,stk:0,alive:true,st:0,lost:0,cc:R()*1.5,vc:0,ang:a,body:a,target:null,static:true,scanTurret:R()<.5,scanPhase:R()*6.28318,scanRate:.42+R()*.22});break;}}}}
  // 森林・村・丘陵・街は各3人のエリート。前線基地は20%、司令本部は1/3。
@@ -3246,11 +3246,9 @@ function reset(rerollSkills=true){
  // This prevents late-added patrol buildings from obstructing new guard routes.
  distributeFlankPatrols();patrolRoutesVisible=!!(skillDebugAll||areaDebugEnabled);
  if(beginner){
-  // 通常の青兵のみ。敵戦車は全域で最大2台。
+  // 破壊（初級）は敵戦車なし。乗れる車両と歩兵の設定は維持する。
   for(const h of humans){h.elite=false;h.commander=null;}
-  etanks=etanks.filter(e=>e.alive&&zoneAt(e.y)!==ZONES[0]);
-  for(let i=etanks.length-1;i>0;i--){const j=R()*(i+1)|0;[etanks[i],etanks[j]]=[etanks[j],etanks[i]];}
-  etanks.length=Math.min(2,etanks.length);
+  etanks=[];
  }
  if(skill==='hound')spawnHound();setupMission();
  if(!isFrontlineBeginner()){spawnCommanderClasses(beginner?['blue']:['blue','white']);if(!beginner)spawnEnemyDogs();}
@@ -8451,7 +8449,7 @@ function reportGameError(error){
 </script>
 <script src="js/stage-progress.js?v=2026.10.31.2206"></script>
 <script src="js/decisive.js?v=2026.10.28.0713"></script>
-<script src="js/frontline.js?v=2026.10.28.0713"></script>
+<script src="js/frontline.js?v=2026.11.01.0011"></script>
 <script src="js/award-icons.js?v=2026.10.31.0807"></script>
 <script src="js/developer.js?v=2026.10.31.2335"></script>
 <script src="js/leaderboard.js?v=2026.10.28.0713"></script>

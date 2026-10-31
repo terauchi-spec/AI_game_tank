@@ -589,14 +589,14 @@ test('beginner Frontline army caps enemy tanks at two and removes reserve comman
  const c=harness();c.frontlineBeginner=true;c.etanks=Array.from({length:8},(_,i)=>({x:100,y:2000+i*1200,alive:true}));c.humans=[{alive:true,commander:'white',elite:true,dog:{},dogHandler:true},{alive:true,commander:'blue'}];c.setupFrontlineArmy();
  assert.equal(c.etanks.length,2);assert.ok(c.etanks.every(e=>e.y<10800));assert.ok(c.mission.enemyRoster.every(h=>!h.commander&&!h.elite&&!h.dog&&!h.dogHandler));assert.equal(c.enemyDogs.length,0);
 });
-test('beginner regular reinforcements use one blue commander per eight soldiers and cap active infantry at ten',()=>{
+test('beginner regular reinforcements use one blue commander per eight soldiers and cap active infantry at eight',()=>{
  const c=harness();c.frontlineBeginner=true;c.frontlineSpawnSpot=()=>({x:480,y:9000});
- c.spawnFrontlineWave(8);assert.equal(c.humans.filter(h=>h.commander==='blue').length,1);assert.equal(c.humans[7].commander,'blue');c.spawnFrontlineWave(8);assert.equal(c.humans.length,10);
- c.humans=[];c.spawnFrontlineWave(6);assert.equal(c.humans.filter(h=>h.commander==='blue').length,1);
+ c.spawnFrontlineWave(8);assert.equal(c.humans.filter(h=>h.commander==='blue').length,1);assert.equal(c.humans[7].commander,'blue');c.spawnFrontlineWave(8);assert.equal(c.humans.length,8);
+ c.humans=[];c.spawnFrontlineWave(8);assert.equal(c.humans.filter(h=>h.commander==='blue').length,1);
 });
-test('beginner first entry sends four attackers including exactly one blue commander',()=>{
+test('beginner first objective counterattack sends three attackers including exactly one blue commander',()=>{
  const c=harness();c.frontlineBeginner=true;c.frontlineSpawnSpot=()=>({x:480,y:9000});const q={...c.p};c.mission.points=[q];c.mission.enemySpawned=7;c.updateFrontlineCounterattack(q,.1);
- assert.equal(c.humans.length,4);assert.equal(c.humans.filter(h=>h.commander==='blue').length,1);assert.equal(q.counterPending,0);c.updateFrontlineCounterattack(q,10);assert.equal(c.humans.length,4);
+ assert.equal(c.humans.length,3);assert.equal(c.humans.filter(h=>h.commander==='blue').length,1);assert.equal(q.counterPending,0);c.updateFrontlineCounterattack(q,10);assert.equal(c.humans.length,3);
 });
 
 
@@ -705,9 +705,9 @@ test('Oni reserve classes and dog handlers have three independent copies',()=>{
  const c=harness();c.frontlineOni=true;const dog={},handler={alive:true,dogHandler:true,dog},blue={alive:true,commander:'blue'},white={alive:true,elite:true,commander:'white'};dog.handler=handler;c.humans=[handler,blue,white];c.enemyDogs=[dog];c.setupFrontlineArmy();const roster=c.mission.enemyRoster;
  assert.equal(roster.length,9);assert.equal(new Set(roster).size,9);assert.equal(roster.filter(h=>h.commander==='blue').length,3);assert.equal(roster.filter(h=>h.commander==='white').length,3);const handlers=roster.filter(h=>h.dogHandler);assert.equal(new Set(handlers.map(h=>h.dog)).size,3);assert.ok(handlers.every(h=>h.dog.handler===h));assert.equal(c.humans.length,0);assert.equal(c.enemyDogs.length,0);
 });
-test('Oni cannot exceed 48 active infantry; beginner and other stages keep their original settings',()=>{
+test('Oni caps at 48, beginner at eight and normal stages at sixteen',()=>{
  const c=harness();c.W=960;c.frontlineOni=true;for(let i=0;i<10;i++){for(const h of c.humans)h.y+=200;c.spawnFrontlineWave(100);}assert.equal(c.humans.length,48);assert.equal(c.frontlineEnemyLimit(),48);
- c.frontlineOni=false;c.frontlineBeginner=true;assert.equal(c.frontlineEnemyLimit(),10);assert.equal(c.frontlineEnemyMultiplier(),1);c.frontlineBeginner=false;assert.equal(c.frontlineEnemyLimit(),16);
+ c.frontlineOni=false;c.frontlineBeginner=true;assert.equal(c.frontlineEnemyLimit(),8);assert.equal(c.frontlineEnemyMultiplier(),1);c.frontlineBeginner=false;assert.equal(c.frontlineEnemyLimit(),16);
  c.frontlineOni=true;c.stageMode='base';assert.equal(c.isFrontlineOni(),false);assert.equal(c.frontlineEnemyMultiplier(),1);c.stageMode='front';c.areaDebugEnabled=true;assert.equal(c.isFrontlineOni(),false);
 });
 
