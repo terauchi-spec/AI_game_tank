@@ -1,4 +1,4 @@
-const STAGES=new Set(['beginner','indoorBeginner','frontBeginner','base','indoor','front','decisive']);
+const STAGES=new Set(['beginner','indoorBeginner','frontBeginner','baseIntermediate','indoor','frontIntermediate','base','indoorLab','front','decisive']);
 const SKILLS=new Set(['throw','dig','decoy','buddy','drill','build','flame','sniper','hound','partner']);
 const json=(data,status=200,headers={})=>Response.json(data,{status,headers:{'Cache-Control':'no-store',...headers}});
 export function validateScore(v){

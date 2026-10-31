@@ -52,3 +52,13 @@ test('developer login attempts are bounded and cookie-looking forgeries cannot r
  assert.equal((await board.fetch(new Request(url+'login',{method:'POST',body:JSON.stringify({pin:'5555'})}))).status,429);
  assert.equal((await board.fetch(new Request(url+'reset-scoreboard',{method:'POST',headers:{Cookie:'__Host-tankDeveloper='+'a'.repeat(64)},body:'{}'}))).status,401);
 });
+
+
+test('new official middle and laboratory stages have independent writable and readable boards',async()=>{
+ const {Scoreboard,validateScore}=await mod,h=storageHarness(),board=new Scoreboard(h);
+ for(const stage of ['baseIntermediate','frontIntermediate','indoorLab']){
+  assert.equal(validateScore(sample({stage})).stage,stage);
+  const post=await board.fetch(new Request('https://game.test/api/leaderboard',{method:'POST',body:JSON.stringify({player:'12345678-1234-1234-1234-123456789012',entry:sample({stage})})}));assert.equal(post.status,200);
+  const result=await (await board.fetch(new Request('https://game.test/api/leaderboard?board='+stage))).json();assert.equal(result.entries[0].stage,stage);
+ }
+});

@@ -140,13 +140,13 @@ function stageHarness(cleared=[]){
  vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/stage-progress.js'),'utf8'),c);
  c.saved.set('tankGameStageProgressV1',JSON.stringify({version:2,cleared}));return c;
 }
-const allStages=['beginner','indoorBeginner','frontBeginner','base','indoor','front','decisive'];
+const allStages=['beginner','indoorBeginner','frontBeginner','baseIntermediate','indoor','frontIntermediate','base','indoorLab','front','decisive'];
 test('last normal stage grants the legendary and mythic together before stage persistence, only once',()=>{
  const c=stageHarness(allStages.slice(0,-1));c.stageMode='decisive';const ids=Array.from(c.get('TITLE_COLLECTION_TARGETS'));
  c.saved.set(c.get('TITLE_ARCHIVE_KEY'),JSON.stringify({titles:Object.fromEntries(ids.filter(id=>id!=='v3_all_stages_clear').map(id=>[id,{count:1}])),runs:32}));
  const s=Object.assign(c.scoreStats,{final:{cleared:true,total:1000}});c.recordRunAchievements(s);
  for(const id of ['v3_all_stages_clear','v3_mythic_complete'])assert.ok(s.awards.newTitles.includes(id));
- assert.equal(c.readStageProgress().cleared.length,6);c.unlockStageOnClear(s);assert.equal(c.readStageProgress().cleared.length,7);
+ assert.equal(c.readStageProgress().cleared.length,9);c.unlockStageOnClear(s);assert.equal(c.readStageProgress().cleared.length,10);
  c.recordRunAchievements(s);const a=c.readTitleArchive();assert.equal(a.runs,33);assert.equal(a.titles.v3_all_stages_clear.count,1);assert.equal(a.titles.v3_mythic_complete.count,1);
 });
 test('failure, area debug, test Oni and missing normal stages cannot complete the legendary condition',()=>{
@@ -156,7 +156,7 @@ test('failure, area debug, test Oni and missing normal stages cannot complete th
   c.recordRunAchievements(s);assert.equal(c.readTitleArchive().titles.v3_all_stages_clear,undefined,mode);
  }
 });
-test('all seven persisted clears award the legendary; a legacy six-stage save awaits decisive',()=>{
+test('all ten persisted clears award the legendary; legacy saves await newly added stages',()=>{
  for(const legacy of [false,true]){
   const c=stageHarness(allStages);
   if(legacy)c.saved.set('tankGameStageProgressV1',JSON.stringify({cleared:['beginner','frontBeginner','base','front'],indoorCleared:['indoorBeginner','indoor']}));

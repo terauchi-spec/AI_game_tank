@@ -1,6 +1,6 @@
 # Shared scoreboard
 
-The title menu opens a public overall board plus the six normal stage boards. Each
+The title menu opens a public overall board plus the ten normal stage boards. Each
 board holds at most 30 entries and one personal best per browser identity. Overall
 means the player's highest single-run score across normal stages, not a sum.
 Equal scores retain the first submission (server time). Names, rank, skill and
@@ -51,3 +51,5 @@ when there are no stage/skill/title unlocks. Late results append to an open noti
 if evaluation has already opened they produce a score-only notice once. A delayed
 submission never interrupts another sortie. The instructor bubble uses the outcome
 of the run and does not add another animation timer.
+
+Official stage IDs include `baseIntermediate`, `frontIntermediate`, and `indoorLab`. The former `indoor` board remains intact and is now labeled 潜入（中級）. Existing base/front boards retain their upper-stage records. The laboratory is now eligible for awards and scoreboard submission.

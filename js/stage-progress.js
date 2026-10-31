@@ -1,43 +1,49 @@
 // Stage progress is independent of skill unlocks and persists even when debug controls are used.
-let selectedStageId=null,expandedStageId=null,stageDebugAll=false;
-const LABORATORY_STAGE={id:'indoorLab',target:'先進科学研究所',name:'潜入（中級）',image:'laboratory/lab-building'};
+let selectedStageId=null,expandedStageId=null,stageDebugAll=false,intermediateStageId=null;
+const LABORATORY_STAGE={id:'indoorLab',target:'先進科学研究所',name:'潜入（上級）',image:'laboratory/lab-building'};
 const TRAINING_STAGE={id:'training',target:'訓練場',name:'準備',image:'training'};
 const STAGE_PROGRESS_KEY='tankGameStageProgressV1';
+const LEGACY_STAGE_ORDER=['beginner','indoorBeginner','frontBeginner','base','indoor','front','decisive'];
 const STAGE_ORDER=[
  {id:'beginner',target:'軍事衛星施設',name:'破壊（初級）',image:'satellite'},
  {id:'indoorBeginner',target:'軍司令施設（南部）',name:'潜入（初級）',image:'infiltration_beginner'},
  {id:'frontBeginner',target:'軍需物資',name:'制圧（初級）',image:'supplies'},
+ {id:'baseIntermediate',target:'軍司令施設（北部）',name:'破壊（中級）',image:'headquarters'},
+ {id:'indoor',target:'軍需格納庫',name:'潜入（中級）',image:'infiltration_advanced'},
+ {id:'frontIntermediate',target:'戦術アンテナ',name:'制圧（中級）',image:'antenna'},
  {id:'base',target:'軍司令施設（北部）',name:'破壊（上級）',image:'headquarters'},
- {id:'indoor',target:'軍需格納庫',name:'潜入（上級）',image:'infiltration_advanced'},
+ LABORATORY_STAGE,
  {id:'front',target:'戦術アンテナ',name:'制圧（上級）',image:'antenna'},
  {id:'decisive',target:'移動要塞',name:'決戦',image:'decisive'}
 ];
 const STAGE_DISPLAY_ORDER=STAGE_ORDER.map(stage=>stage.id);
-function stageDisplayNumber(id){if(id==='indoorLab')return 'TEST';if(id==='training')return '00';return String(STAGE_DISPLAY_ORDER.indexOf(id)+1).padStart(2,'0');}
+function stageDisplayNumber(id){if(id==='training')return '00';return String(STAGE_DISPLAY_ORDER.indexOf(id)+1).padStart(2,'0');}
 function stageSelectionName(name){return name.replace('拠点破壊','破壊').replace('前線制圧','制圧');}
-function currentStageId(){if(typeof isLaboratoryStage==='function'&&isLaboratoryStage())return 'indoorLab';if(typeof isDecisiveStage==='function'&&isDecisiveStage())return 'decisive';return stageMode==='front'&&typeof frontlineOni!=='undefined'&&frontlineOni?'frontOni':stageMode==='front'&&frontlineBeginner?'frontBeginner':stageMode==='indoor'&&typeof indoorBeginner!=='undefined'&&indoorBeginner?'indoorBeginner':stageMode;}
+function currentStageId(){if((stageMode==='base'&&intermediateStageId==='baseIntermediate')||(stageMode==='front'&&!frontlineBeginner&&!(typeof frontlineOni!=='undefined'&&frontlineOni)&&intermediateStageId==='frontIntermediate'))return intermediateStageId;if(typeof isLaboratoryStage==='function'&&isLaboratoryStage())return 'indoorLab';if(typeof isDecisiveStage==='function'&&isDecisiveStage())return 'decisive';return stageMode==='front'&&typeof frontlineOni!=='undefined'&&frontlineOni?'frontOni':stageMode==='front'&&frontlineBeginner?'frontBeginner':stageMode==='indoor'&&typeof indoorBeginner!=='undefined'&&indoorBeginner?'indoorBeginner':stageMode;}
 function readStageProgress(){
  let saved;try{saved=JSON.parse(localStorage.getItem(STAGE_PROGRESS_KEY)||'null');}catch(_){}
  const earned=new Set();
- if(saved?.version===2){
+ if(saved?.version===2||saved?.version===3){
   for(const stage of STAGE_ORDER)if(Array.isArray(saved.cleared)&&saved.cleared.includes(stage.id))earned.add(stage.id);
  }else{
   // 旧4ステージの連続クリアと、別保存だった潜入の実績を引き継ぐ。
   for(const id of ['beginner','frontBeginner','base','front']){if(!Array.isArray(saved?.cleared)||!saved.cleared.includes(id))break;earned.add(id);}
   for(const id of ['indoorBeginner','indoor'])if(Array.isArray(saved?.indoorCleared)&&saved.indoorCleared.includes(id))earned.add(id);
  }
- return{version:2,cleared:STAGE_ORDER.filter(stage=>earned.has(stage.id)).map(stage=>stage.id)};
+ // Version 3 preserves previously selectable stages without pretending new stages were cleared.
+ const unlocked=saved?.version===3?(Array.isArray(saved.unlocked)?saved.unlocked:[]):saved?LEGACY_STAGE_ORDER.filter((id,i)=>LEGACY_STAGE_ORDER.slice(0,i).every(q=>earned.has(q))):[];
+ return{version:3,cleared:STAGE_ORDER.filter(stage=>earned.has(stage.id)).map(stage=>stage.id),unlocked:STAGE_ORDER.filter(stage=>unlocked.includes(stage.id)).map(stage=>stage.id)};
 }
 function stageSelectable(id,progress=readStageProgress()){
  if(id==='training')return true;
  const index=STAGE_ORDER.findIndex(stage=>stage.id===id);
- return index>=0&&STAGE_ORDER.slice(0,index).every(stage=>progress.cleared.includes(stage.id));
+ return index>=0&&(progress.unlocked?.includes(id)||STAGE_ORDER.slice(0,index).every(stage=>progress.cleared.includes(stage.id)));
 }
 function unlockStageOnClear(s){
  if(!s?.final?.cleared||s.training||s.stage==='training'||areaDebugEnabled||s.stageProgressRecorded)return;
  s.stageProgressRecorded=true;const progress=readStageProgress(),id=currentStageId();
  if(!stageSelectable(id,progress)||progress.cleared.includes(id))return;
- const before={cleared:[...progress.cleared]};progress.cleared.push(id);
+ const before={cleared:[...progress.cleared],unlocked:[...(progress.unlocked||[])]};progress.cleared.push(id);
  progress.cleared=STAGE_ORDER.filter(stage=>progress.cleared.includes(stage.id)).map(stage=>stage.id);
  try{localStorage.setItem(STAGE_PROGRESS_KEY,JSON.stringify(progress));}catch(_){s.stageUnlockSaveFailed=true;return;}
  const next=STAGE_ORDER.find(stage=>!progress.cleared.includes(stage.id)&&!stageSelectable(stage.id,before)&&stageSelectable(stage.id,progress));
@@ -47,7 +53,6 @@ function unlockStageOnClear(s){
 function stageAvailableForSelection(id,progress=readStageProgress()){
  if(id==='training')return true;
  const developer=typeof isDeveloperMode==='function'&&isDeveloperMode();
- if(id==='indoorLab')return developer;
  return (id==='areaDebug'&&developer)||(STAGE_ORDER.some(stage=>stage.id===id)&&((developer&&stageDebugAll)||stageSelectable(id,progress)));
 }
 const STAGE_RECORDS_KEY='tankGameStageRecordsV1';
@@ -108,10 +113,10 @@ function setSelectedStage(id,toggle=true){
 }
 function deploySelectedStage(){
  if(state!=='stage'||gameBuildQueued||!stageAvailableForSelection(selectedStageId))return false;
- const id=selectedStageId;selectedAreaDebug=null;if(typeof decisiveBattle!=='undefined')decisiveBattle=null;
+ const id=selectedStageId;intermediateStageId=['baseIntermediate','frontIntermediate'].includes(id)?id:null;selectedAreaDebug=null;if(typeof decisiveBattle!=='undefined')decisiveBattle=null;
  indoorLaboratory=id==='indoorLab';if(indoorLaboratory&&typeof prepareLaboratoryAssets==='function')prepareLaboratoryAssets();
  areaDebugEnabled=id==='areaDebug';frontlineOni=false;frontlineBeginner=id==='frontBeginner';indoorBeginner=id==='indoorBeginner';
- stageMode=areaDebugEnabled?'base':frontlineBeginner||frontlineOni?'front':indoorBeginner||indoorLaboratory?'indoor':id;
+ stageMode=areaDebugEnabled||id==='baseIntermediate'?'base':frontlineBeginner||frontlineOni||id==='frontIntermediate'?'front':indoorBeginner||indoorLaboratory?'indoor':id;
  if(areaDebugEnabled){state='areaPick';sfx('skill');return true;}
  return selectSkillIndex(skillMenuList().findIndex(skill=>skill.id===selectedSkillId),true);
 }
@@ -120,7 +125,6 @@ function renderStageLocks(){
  document.querySelectorAll('[data-stage]').forEach(button=>{
   const id=button.dataset.stage,index=STAGE_ORDER.findIndex(stage=>stage.id===id),stage=STAGE_ORDER[index];
   if(id==='training'){button.disabled=false;button.classList.toggle('locked',false);button.classList.toggle('stage-concealed',false);button.querySelector('.stage-target').textContent='訓練場';button.querySelector('.stage-number').textContent='00';button.setAttribute('aria-label','00 準備 訓練場');return;}
-  if(id==='indoorLab'){const visible=typeof isDeveloperMode==='function'&&isDeveloperMode();button.hidden=!visible;button.disabled=!visible;button.classList.toggle('locked',false);button.classList.toggle('stage-concealed',false);button.setAttribute('aria-label','テスト 潜入（中級） 先進科学研究所');return;}
   if(id==='areaDebug'){
    button.disabled=!(typeof isDeveloperMode==='function'&&isDeveloperMode());button.classList.toggle('locked',false);button.setAttribute('aria-label','エリアデバッグ');return;
   }
@@ -148,5 +152,5 @@ function renderStageUnlock(s){
  const stage=STAGE_ORDER.find(stage=>stage.id===s.unlockedStage),notice=document.getElementById('resStageUnlock'),image=document.getElementById('resStageUnlockImage');
  notice.hidden=!stage;
  document.getElementById('resStageUnlockName').textContent=stage?stageDisplayNumber(stage.id)+' '+stageSelectionName(stage.name):'';
- if(stage)image.src='assets/ui/stages/'+stage.image+'.webp';else image.removeAttribute('src');
+ if(stage)image.src=(stage.image.startsWith('laboratory/')?'assets/indoor/':'assets/ui/stages/')+stage.image+'.webp';else image.removeAttribute('src');
 }

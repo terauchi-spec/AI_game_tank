@@ -256,8 +256,9 @@ test('automatic door WebP leaves retract without stretching with independent hor
   assert.equal(draw({x:100,y:100,vertical},open,half,part),true);
   const chosen=vertical?image:horizontalImage,height=chosen.naturalHeight,depth=vertical?13.5:13*206/84,top=vertical?-6.75:-5;
   const [left,right]=calls.slice(before);assert.equal(left[0],chosen);assert.equal(right[0],chosen);
-  assert.deepEqual(left.slice(1),[256*open,0,256*(1-open),height,-half,top,part,depth]);
-  assert.deepEqual(right.slice(1),[256,0,256*(1-open),height,half-part,top,part,depth]);
+  const sameGeometry=(actual,expected)=>{assert.equal(actual.length,expected.length);actual.forEach((v,i)=>assert.ok(Math.abs(v-expected[i])<1e-10,'door coordinate '+i));};
+  sameGeometry(left.slice(1),[256*open,0,256*(1-open),height,-half,top,part,depth]);
+  sameGeometry(right.slice(1),[256,0,256*(1-open),height,half-part,top,part,depth]);
  }
  assert.deepEqual(rotations,[Math.PI/2,Math.PI/2]);
  assert.deepEqual(requests,['automatic_door_horizontal_cyan','automatic_door_horizontal_cyan','automatic_door_cyan','automatic_door_cyan']);

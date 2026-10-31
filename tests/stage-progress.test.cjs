@@ -1,13 +1,13 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const source=fs.readFileSync(path.join(__dirname,'../js/stage-progress.js'),'utf8');
-const order=['beginner','indoorBeginner','frontBeginner','base','indoor','front','decisive'];
+const order=['beginner','indoorBeginner','frontBeginner','baseIntermediate','indoor','frontIntermediate','base','indoorLab','front','decisive'];
 function harness(saved){const storage=new Map(saved?[['tankGameStageProgressV1',saved]]:[]),c={isDeveloperMode:()=>true,stageMode:'beginner',frontlineBeginner:false,indoorBeginner:false,areaDebugEnabled:false,localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)}};vm.createContext(c);vm.runInContext(source,c);c.storage=storage;c.ids=()=>order.filter(id=>c.stageSelectable(id));return c;}
 function clear(c,id){c.frontlineBeginner=id==='frontBeginner';c.indoorBeginner=id==='indoorBeginner';c.stageMode=c.frontlineBeginner?'front':c.indoorBeginner?'indoor':id;const s={final:{cleared:true}};c.unlockStageOnClear(s);return s;}
 function cards(c){const buttons=order.map(id=>({dataset:{stage:id},classList:{toggle(k,v){this[k]=v;}},number:{},target:{},querySelector(sel){return sel==='.stage-target'?this.target:sel==='.stage-number'?this.number:null;},setAttribute(k,v){this[k]=v;}})),nodes={};c.document={querySelectorAll:()=>buttons,getElementById:id=>nodes[id]??={classList:{toggle(k,v){this[k]=v;}},setAttribute(k,v){this[k]=v;},removeAttribute(k){delete this[k];}}};return{buttons,nodes};}
-test('only 01 starts open and all seven stages unlock exactly in display order',()=>{
+test('only 01 starts open and all ten stages unlock exactly in display order',()=>{
  const c=harness();assert.deepEqual(c.ids(),['beginner']);assert.equal(c.stageSelectable('unknown'),false);
  for(let i=0;i<order.length;i++){const s=clear(c,order[i]);assert.equal(s.unlockedStage,order[i+1]);assert.deepEqual(c.ids(),order.slice(0,Math.min(order.length,i+2)));assert.equal(clear(c,order[i]).unlockedStage,undefined);}
- assert.deepEqual(JSON.parse(c.storage.get('tankGameStageProgressV1')),{version:2,cleared:order});
+ assert.deepEqual(JSON.parse(c.storage.get('tankGameStageProgressV1')),{version:3,cleared:order,unlocked:[]});
 });
 test('locked stages, failures, area debug and duplicate finalization cannot advance progress',()=>{
  const c=harness();for(const id of order.slice(1))clear(c,id);assert.equal(c.storage.size,0);
@@ -15,16 +15,16 @@ test('locked stages, failures, area debug and duplicate finalization cannot adva
  c.areaDebugEnabled=true;clear(c,'beginner');assert.deepEqual(c.ids(),['beginner']);c.areaDebugEnabled=false;
  const s=clear(c,'beginner');c.unlockStageOnClear(s);assert.deepEqual(c.ids(),order.slice(0,2));assert.equal(JSON.parse(c.storage.get('tankGameStageProgressV1')).cleared.length,1);
 });
-test('both infiltration difficulties persist and announce the next stage across reloads',()=>{
+test('all infiltration difficulties persist and announce the next stage across reloads',()=>{
  let c=harness();for(let i=0;i<order.length;i++){const s=clear(c,order[i]);assert.equal(s.unlockedStage,order[i+1]);c=harness(c.storage.get('tankGameStageProgressV1'));assert.deepEqual(c.ids(),order.slice(0,Math.min(order.length,i+2)));}
 });
 test('old destruction/capture clears are retained but cannot bypass missing infiltration prerequisites',()=>{
  const c=harness(JSON.stringify({cleared:['beginner','frontBeginner','base','front']}));assert.deepEqual(c.ids(),order.slice(0,2));
  assert.deepEqual(Array.from(c.readStageProgress().cleared),['beginner','frontBeginner','base','front']);
- assert.equal(clear(c,'indoorBeginner').unlockedStage,'indoor');assert.deepEqual(c.ids(),order.slice(0,5));clear(c,'indoor');assert.deepEqual(c.ids(),order);assert.equal(JSON.parse(c.storage.get('tankGameStageProgressV1')).cleared.length,6);
+ assert.equal(clear(c,'indoorBeginner').unlockedStage,'baseIntermediate');clear(c,'baseIntermediate');clear(c,'indoor');clear(c,'frontIntermediate');clear(c,'indoorLab');assert.deepEqual(c.ids(),order);assert.equal(JSON.parse(c.storage.get('tankGameStageProgressV1')).cleared.length,9);
 });
 test('legacy independent infiltration clears and their locked status survive migration and later saves',()=>{
- let c=harness(JSON.stringify({cleared:['beginner'],indoorCleared:['indoor']}));assert.deepEqual(c.ids(),order.slice(0,2));assert.ok(c.readStageProgress().cleared.includes('indoor'));clear(c,'indoorBeginner');c=harness(c.storage.get('tankGameStageProgressV1'));assert.ok(c.readStageProgress().cleared.includes('indoor'));assert.equal(c.stageSelectable('indoor'),false);clear(c,'frontBeginner');clear(c,'base');assert.deepEqual(c.ids(),order.slice(0,-1));
+ let c=harness(JSON.stringify({cleared:['beginner'],indoorCleared:['indoor']}));assert.deepEqual(c.ids(),order.slice(0,2));assert.ok(c.readStageProgress().cleared.includes('indoor'));clear(c,'indoorBeginner');c=harness(c.storage.get('tankGameStageProgressV1'));assert.ok(c.readStageProgress().cleared.includes('indoor'));assert.equal(c.stageSelectable('indoor'),false);clear(c,'frontBeginner');clear(c,'baseIntermediate');assert.deepEqual(c.ids(),order.slice(0,6));
 });
 test('malformed, unknown and incomplete records never bypass prerequisites',()=>{
  for(const saved of ['broken','null','{"cleared":["front","base"]}','{"cleared":"beginner"}','{"version":2,"cleared":["front","unknown"]}','{"version":2,"cleared":{}}'])assert.deepEqual(harness(saved).ids(),['beginner']);
@@ -32,20 +32,20 @@ test('malformed, unknown and incomplete records never bypass prerequisites',()=>
 test('failed storage writes do not announce a lost unlock for destruction or infiltration',()=>{
  for(const saved of [undefined,JSON.stringify({version:2,cleared:['beginner']})]){const c=harness(saved);c.localStorage.setItem=()=>{throw Error('quota')};const id=saved?'indoorBeginner':'beginner',s=clear(c,id);assert.equal(s.stageUnlockSaveFailed,true);assert.equal(s.unlockedStage,undefined);assert.equal(c.stageSelectable(saved?'frontBeginner':'indoorBeginner'),false);}
 });
-test('all seven cards show matching locks, prerequisite text, numbers and clear markers',()=>{
- const c=harness(),{buttons,nodes}=cards(c);c.renderStageLocks();assert.deepEqual(buttons.map(b=>b.disabled),[false,true,true,true,true,true,true]);assert.deepEqual(buttons.map(b=>b.number.textContent),['01','02','03','04','05','06','07']);
- assert.equal(buttons[1].title,'破壊（初級）をクリアすると解放');assert.equal(buttons[2].title,'潜入（初級）をクリアすると解放');assert.equal(buttons[4].title,'破壊（上級）をクリアすると解放');
+test('all ten cards show matching locks, prerequisite text, numbers and clear markers',()=>{
+ const c=harness(),{buttons,nodes}=cards(c);c.renderStageLocks();assert.deepEqual(buttons.map(b=>b.disabled),[false,true,true,true,true,true,true,true,true,true]);assert.deepEqual(buttons.map(b=>b.number.textContent),['01','02','03','04','05','06','07','08','09','10']);
+ assert.equal(buttons[1].title,'破壊（初級）をクリアすると解放');assert.equal(buttons[2].title,'潜入（初級）をクリアすると解放');assert.equal(buttons[4].title,'破壊（中級）をクリアすると解放');
  for(let i=0;i<order.length;i++){const s=clear(c,order[i]);c.renderStageLocks();assert.equal(buttons[i].classList['stage-cleared'],true);assert.match(buttons[i]['aria-label'],/クリア済み/);c.renderStageUnlock(s);if(i<order.length-1){assert.equal(nodes.resStageUnlock.hidden,false);assert.ok(nodes.resStageUnlockName.textContent.startsWith(String(i+2).padStart(2,'0')));assert.ok(nodes.resStageUnlockImage.src.endsWith('.webp'));}else assert.equal(nodes.resStageUnlock.hidden,true);}
 });
 test('infiltration unlock notices use the correct facility artwork',()=>{
- const c=harness(),{nodes}=cards(c);c.renderStageUnlock(clear(c,'beginner'));assert.equal(nodes.resStageUnlockImage.src,'assets/ui/stages/infiltration_beginner.webp');clear(c,'indoorBeginner');clear(c,'frontBeginner');c.renderStageUnlock(clear(c,'base'));assert.equal(nodes.resStageUnlockImage.src,'assets/ui/stages/infiltration_advanced.webp');
+ const c=harness(),{nodes}=cards(c);c.renderStageUnlock(clear(c,'beginner'));assert.equal(nodes.resStageUnlockImage.src,'assets/ui/stages/infiltration_beginner.webp');clear(c,'indoorBeginner');clear(c,'frontBeginner');c.renderStageUnlock(clear(c,'baseIntermediate'));assert.equal(nodes.resStageUnlockImage.src,'assets/ui/stages/infiltration_advanced.webp');
 });
 test('current stage identity separates both difficulty pairs',()=>{
  const c=harness();for(const id of order){clear(c,id);assert.equal(c.currentStageId(),id);}
 });
-test('seven HTML selection cards match the canonical unlock order and launch paths enforce it',()=>{
- const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),data=[...html.matchAll(/<button[^>]*class="stage-card"[^>]*data-stage="([^"]+)"[^>]*>(.*?)<\/button>/g)];assert.deepEqual(data.map(m=>m[1]),['training','beginner','indoorBeginner','frontBeginner','base','indoor','front','decisive','indoorLab','areaDebug']);
- assert.deepEqual(data.filter(m=>!['areaDebug','indoorLab'].includes(m[1])).map(m=>m[2].match(/class="stage-number"[^>]*>(\d+)/)[1]),['00','01','02','03','04','05','06','07']);assert.match(html,/if\(setSelectedStage\(b.dataset.stage\)\)/);assert.match(html,/!areaDebugEnabled&&!stageAvailableForSelection\(currentStageId\(\)\)/);assert.ok(!html.includes('潜入は初級・上級とも最初から選べます'));
+test('ten HTML selection cards match the canonical unlock order and launch paths enforce it',()=>{
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),data=[...html.matchAll(/<button[^>]*class="stage-card"[^>]*data-stage="([^"]+)"[^>]*>(.*?)<\/button>/g)];assert.deepEqual(data.map(m=>m[1]),['training',...order,'areaDebug']);
+ assert.deepEqual(data.filter(m=>m[1]!=='areaDebug').map(m=>m[2].match(/class="stage-number"[^>]*>(\d+)/)[1]),['00','01','02','03','04','05','06','07','08','09','10']);assert.match(html,/if\(setSelectedStage\(b.dataset.stage\)\)/);assert.match(html,/!areaDebugEnabled&&!stageAvailableForSelection\(currentStageId\(\)\)/);assert.ok(!html.includes('潜入は初級・上級とも最初から選べます'));
 });
 
 
@@ -98,7 +98,7 @@ test('selected stage records open, toggle closed and switch with matching score,
  for(const card of buttons){const entries={};for(const key of ['.stage-record-metrics','.stage-record-note','.stage-record-score','.stage-record-count','.stage-record-rank','img'])entries[key]={removeAttribute(k){delete this[k];}};const panel={hidden:true,entries,querySelector:k=>entries[k]};panels[card.dataset.stage]=panel;card.querySelector=sel=>sel==='.stage-records'?panel:sel==='.stage-target'?card.target:sel==='.stage-number'?card.number:null;}
  c.storage.set('tankGameStageRecordsV1',JSON.stringify({stages:{beginner:{sorties:12,successes:3,bestScore:8000,bestRank:'A'}}}));c.renderStageLocks();assert.equal(panels.beginner.hidden,true);c.setSelectedStage('beginner');let panel=panels.beginner;assert.equal(panel.hidden,false);assert.equal(panel.entries['.stage-record-score'].textContent,'8,000');assert.equal(panel.entries['.stage-record-count'].textContent,'3 / 12回');assert.match(panel.entries.img.src,/rank_a\.webp/);
  c.setSelectedStage('beginner');assert.equal(panel.hidden,true);c.renderStageLocks();assert.equal(panel.hidden,true);clear(c,'beginner');c.setSelectedStage('indoorBeginner');assert.equal(panel.hidden,true);panel=panels.indoorBeginner;assert.equal(panel.hidden,false);assert.equal(panel.entries['.stage-record-score'].textContent,'—');assert.equal(panel.entries.img.hidden,true);assert.equal(panel.entries['.stage-record-count'].textContent,'0 / 0回');
- const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');assert.match(html,/recordStageSortie\(scoreStats\);\s*state='play'/);assert.match(html,/recordStageResult\(scoreStats\)/);assert.match(html,/STAGE_PROGRESS_KEY,STAGE_RECORDS_KEY/);assert.equal((html.match(/class="stage-records" hidden/g)||[]).length,10);
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');assert.match(html,/recordStageSortie\(scoreStats\);\s*state='play'/);assert.match(html,/recordStageResult\(scoreStats\)/);assert.match(html,/STAGE_PROGRESS_KEY,STAGE_RECORDS_KEY/);assert.equal((html.match(/class="stage-records" hidden/g)||[]).length,12);
 });
 
 test('successes count completed clears once per sortie, preserving old records and including debug clears',()=>{
@@ -118,4 +118,17 @@ test('locked facility names stay unknown until normal unlock, including during a
 });
 test('non-developers cannot bypass unlocks or select area debug and Oni even with stale all-stage flags',()=>{
  const c=harness();c.isDeveloperMode=()=>false;vm.runInContext('stageDebugAll=true',c);assert.equal(c.stageAvailableForSelection('beginner'),true);for(const id of ['front','areaDebug','frontOni','decisive'])assert.equal(c.stageAvailableForSelection(id),false,id);c.isDeveloperMode=()=>true;for(const id of ['front','areaDebug','decisive'])assert.equal(c.stageAvailableForSelection(id),true,id);assert.equal(c.stageAvailableForSelection('frontOni'),false);
+});
+
+
+test('v2 migration preserves old unlocked stages and records without fabricating new clears',()=>{
+ const old=['beginner','indoorBeginner','frontBeginner','base','indoor','front','decisive'];
+ const c=harness(JSON.stringify({version:2,cleared:old}));
+ for(const id of old)assert.equal(c.stageSelectable(id),true,id);
+ const p=c.readStageProgress();assert.equal(p.version,3);
+ for(const id of ['baseIntermediate','frontIntermediate','indoorLab'])assert.equal(p.cleared.includes(id),false);
+ assert.equal(c.stageSelectable('baseIntermediate'),true);clear(c,'baseIntermediate');
+ const restored=harness(c.storage.get('tankGameStageProgressV1'));
+ for(const id of old)assert.equal(restored.stageSelectable(id),true,id+' after save');
+ assert.equal(restored.stageSelectable('frontIntermediate'),true);clear(restored,'frontIntermediate');assert.equal(restored.stageSelectable('indoorLab'),true);
 });

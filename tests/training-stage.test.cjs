@@ -1,8 +1,8 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),path=require('node:path'),fs=require('node:fs');
 const {createGameEngine}=require('./helpers/game-engine.cjs'),root=path.join(__dirname,'..');
 function fixture(options){const h=createGameEngine(root,options);h.run("stageMode='training';areaDebugEnabled=false;reset(false)");h.tick=(seconds,dt=.05)=>{for(let t=0;t<seconds-1e-8;t+=dt)h.run(`update(${Math.min(dt,seconds-t)})`);};h.talk=()=>h.run("while(training.phase==='talk')trainingAdvanceDialogue()");h.lesson=step=>{h.run(`trainingEnterLesson(${step});training.arrived=true;trainingTalk(TRAINING_LESSONS[${step}].lines)`);h.talk();};return h;}
-test('00 is always selectable without entering progression or changing 01..07 locks',()=>{
- const h=fixture();assert.equal(h.run("stageDisplayNumber('training')"),'00');assert.equal(h.run("stageSelectable('training')"),true);assert.equal(h.run("stageAvailableForSelection('training')"),true);assert.equal(h.run("stageSelectable('beginner')"),true);assert.equal(h.run("stageSelectable('indoorBeginner')"),false);assert.equal(h.run('STAGE_ORDER.length'),7);
+test('00 is always selectable without entering progression or changing 01..10 locks',()=>{
+ const h=fixture();assert.equal(h.run("stageDisplayNumber('training')"),'00');assert.equal(h.run("stageSelectable('training')"),true);assert.equal(h.run("stageAvailableForSelection('training')"),true);assert.equal(h.run("stageSelectable('beginner')"),true);assert.equal(h.run("stageSelectable('indoorBeginner')"),false);assert.equal(h.run('STAGE_ORDER.length'),10);
  assert.equal(h.run("STAGE_ORDER.some(s=>s.id==='training')"),false);h.run('renderStageLocks()');assert.equal(h.run('selectedStageId'),'training');
  h.run("selectedStageId='training';state='stage';selectedSkillId='throw';deploySelectedStage()");assert.equal(h.run('stageMode'),'training');
 });
