@@ -497,7 +497,7 @@ function updateFrontlineAlly(a,target,dt){
 }
 
 function finishAllyStunRecovery(a,contact=false){
- a.stunImmuneT=5;
+ a.stunImmuneT=contact?15:5;
  if(contact)spawnRescueCross(a);
 }
 function rescueAlly(a){
