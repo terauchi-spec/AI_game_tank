@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.01.0011</title>
+<title>こっそり戦車大作戦 2026.11.01.0020</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -1000,7 +1000,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.01.0011',FILE_CREATED_AT='2026/11/01 00:11',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.01.0020',FILE_CREATED_AT='2026/11/01 00:20',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -3549,15 +3549,23 @@ function canDetect(o,target,face,key){
 function findDetectedTarget(o,face){
  if(stageMode==='indoor'&&o?.indoorGuard&&indoorStairProtected()&&o._detectCache?.key==='p'){o._detectCache=null;o._nextDetectAt=0;}
  if(o&&o.burnSuspicionHold>0){o._detectCache=null;o._nextDetectAt=0;return null;}
- const now=performance.now();if(o&&o._nextDetectAt>now)return o._detectCache||null;
- const areaTarget=frontlineEnemyAreaTarget(o);if(areaTarget){o._detectCache=areaTarget;o._nextDetectAt=now+100;return areaTarget;}
- let best=null;
- // 偽装は音で注意を引くため、遮蔽物越しでも一定範囲の敵を誘導する。
- if(decoy){const dd=D(o,decoy);if(dd<500*((o&&o.chatT>0)?.5:1))best={key:'decoy',obj:decoy,d:dd};else if(canDetect(o,decoy,face,'decoy'))best={key:'decoy',obj:decoy,d:dd};}
- if(!best&&canDetect(o,p,face,'p'))best={key:'p',obj:p,d:D(o,p)};
- if(partner&&!partner.down&&canDetect(o,partner,face,'partner')){const d=D(o,partner);if(!best||d<best.d)best={key:'partner',obj:partner,d};}
- for(const a of (allies||[]))if(a.alive&&canDetect(o,a,face,'ally:'+a.id)){const d=D(o,a);if(!best||d<best.d)best={key:'ally:'+a.id,obj:a,d};}
- if(o){o._detectCache=best;o._nextDetectAt=now+90+((o.x+o.y)|0)%21;}
+ const now=performance.now(),lure=decoy&&decoy.t>0?decoy:null;
+ // New placement, replacement and expiry invalidate only this target-choice cache.
+ if(o&&o._nextDetectAt>now&&(o._detectLure||null)===lure)return o._detectCache||null;
+ let best=null,areaTarget=null;
+ // Sound can lure through cover; weapon firing still requires its existing line of sight.
+ // Once selected, a nearby ally or capture alarm must not overwrite the decoy.
+ if(lure&&!(stageMode==='indoor'&&o?.indoorGuard&&lure.indoorFloor!==o.indoorFloor)){
+  const dd=D(o,lure);
+  if(dd<500*((o&&o.chatT>0)?.5:1)||canDetect(o,lure,face,'decoy'))best={key:'decoy',obj:lure,d:dd};
+ }
+ if(!best){areaTarget=frontlineEnemyAreaTarget(o);best=areaTarget;}
+ if(!best){
+  if(canDetect(o,p,face,'p'))best={key:'p',obj:p,d:D(o,p)};
+  if(partner&&!partner.down&&canDetect(o,partner,face,'partner')){const d=D(o,partner);if(!best||d<best.d)best={key:'partner',obj:partner,d};}
+  for(const a of (allies||[]))if(a.alive&&canDetect(o,a,face,'ally:'+a.id)){const d=D(o,a);if(!best||d<best.d)best={key:'ally:'+a.id,obj:a,d};}
+ }
+ if(o){o._detectCache=best;o._detectLure=lure;o._nextDetectAt=now+(areaTarget?100:90+((o.x+o.y)|0)%21);}
  return best;
 }
 const MAX_PARTS=MOBILE_VIEW?240:360;
@@ -5862,7 +5870,7 @@ function update(dt){
   let tg=targetObj(h.target);if(h.st&&!tg){h.st=0;h.target=null;h.foundPause=0;h.sharePause=0;pauseAfterEnemyDetection(h);}tg=targetObj(h.target);
   if(h.st&&tg){const d=D(h,tg),toT=Math.atan2(tg.y-h.y,tg.x-h.x),vis=cachedLos(h,tg),moveSp=95*(h.elite?1.2:1);
    if(!detected&&!h.hq){h.lost-=dt;if(h.lost<=0||d>detectDropRange(h.target)*(h.elite?1.2:1)){h.st=0;h.target=null;h.sharePause=0;h.foundPause=0;pauseAfterEnemyDetection(h);}}
-   if(h.st){h.cd-=dt;h.ct=(h.ct||0)+dt;const sharedPause=(h.sharePause||0)>0,foundPause=(h.foundPause||0)>0;if(sharedPause)h.sharePause=Math.max(0,h.sharePause-dt);if(foundPause)h.foundPause=Math.max(0,h.foundPause-dt);const movePause=sharedPause||foundPause||(h.chatResumeT||0)>0;h.face=(foundPause&&p)?Math.atan2(p.y-h.y,p.x-h.x):toT;
+   if(h.st){h.cd-=dt;h.ct=(h.ct||0)+dt;const sharedPause=(h.sharePause||0)>0,foundPause=(h.foundPause||0)>0;if(sharedPause)h.sharePause=Math.max(0,h.sharePause-dt);if(foundPause)h.foundPause=Math.max(0,h.foundPause-dt);const movePause=sharedPause||foundPause||(h.chatResumeT||0)>0;h.face=(foundPause&&p&&h.target!=='decoy')?Math.atan2(p.y-h.y,p.x-h.x):toT;
     // 通常兵だけが設置爆弾を使う。発見モード突入時に設置タイミングを個体ごとにランダム決定。
     if(!h.indoorGuard&&!h.elite&&!h.bu&&!h.plantT&&h.ct>(h.bombAt??1.5)&&!movePause){h.bu=true;h.plantT=.35+R()*.4;h.plantA=toT;}
     if(h.plantT>0){h.plantT=Math.max(0,h.plantT-dt);h.face=h.plantA??toT;if(h.plantT<=0){const bp=enemyBombPoint(h,h.plantA??toT,100);bombs.push({x:h.x,y:h.y,own:'e',armed:true,t:4,fly:.35,sx:h.x,sy:h.y,tx:bp.x,ty:bp.y});h.plantA=null;}}
@@ -5878,7 +5886,9 @@ function update(dt){
   if(e.areaDebugStatic){e.st=0;e.target=null;e.lost=0;e.sus=0;e.cc=99;e.vc=99;continue;}
   if(enemyModePaused(e,dt))continue;
   const silentDrill=!!(p.drill>0&&p.drillSilentTank===e&&p.drillTankTarget===e&&!e.st&&!e.static);
-  const detected=frontlineTankAreaTarget(e)||(silentDrill?null:findDetectedTarget(e,e.ang));if(detected)enterTankFound(e,detected.key,.5);
+  const areaTarget=frontlineTankAreaTarget(e);
+  const sensed=!silentDrill&&(!areaTarget||decoy)?findDetectedTarget(e,e.ang):null;
+  const detected=sensed?.key==='decoy'?sensed:areaTarget||sensed;if(detected)enterTankFound(e,detected.key,.5);
   let tg=targetObj(e.target);if(e.st&&!tg){e.st=0;e.target=null;e.foundPause=0;pauseAfterEnemyDetection(e);}tg=targetObj(e.target);
   if(e.st&&tg){const d=D(e,tg),toT=Math.atan2(tg.y-e.y,tg.x-e.x),vis=cachedLos(e,tg);
    if(!detected){e.lost-=dt;if(e.lost<=0||d>detectDropRange(e.target)*frontlineTankSightScale(e)){e.st=0;e.target=null;e.foundPause=0;pauseAfterEnemyDetection(e);}}
