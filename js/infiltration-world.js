@@ -1879,7 +1879,19 @@ function indoorUpdateAlarmSweep(h,a,dt){
  if(h.indoorEntranceGuard){
   const home=h.indoorEntranceHome;
   if(D(h,home)>14)indoorMoveGuardTo(h,home,dt,62);
-  else h.face+=dt*.45;
+  else{
+   // Hold a sampled glimpse instead of rotating out of sight before it can be confirmed.
+   const notice=h.indoorNotice;
+   if(notice?.visible&&notice.spot){
+    const angle=Math.atan2(notice.spot.y-h.y,notice.spot.x-h.x);
+    h.face+=Math.max(-dt*2,Math.min(dt*2,angD(angle,h.face)));
+    a.watchFace=h.face;a.watchTime=0;
+   }else{
+    if(!Number.isFinite(a.watchFace)){a.watchFace=h.face;a.watchTime=0;}
+    a.watchTime+=dt;
+    h.face=a.watchFace+Math.sin(a.watchTime*.65)*.65;
+   }
+  }
   return;
  }
  const floor=indoorWorld.floors[h.indoorFloor-1],points=indoorAlarmSweepPoints(floor);
@@ -2821,16 +2833,20 @@ function drawInfiltrationStairSprite(floor){
     g.fillStyle='rgba(0,0,0,.14)';
     g.fillRect(stair.x-w*.4,stair.y-h/2+h*.035,w*.8,h*.16);
   }
-  if(typeof isLaboratoryStage==='function'&&isLaboratoryStage()){
-    const direction=stair.direction|| (floor.number===1?1:-1),x=stair.x,y=stair.y-h/2+24;
-    g.fillStyle='rgba(20,30,35,.8)';g.beginPath();g.arc(x,y,15,0,Math.PI*2);g.fill();
-    // A north-pointing arrow denotes up a floor, a south-pointing arrow down.
-    g.beginPath();const pts=[[-9,0],[0,-11],[9,0],[4,0],[4,10],[-4,10],[-4,0]];
-    for(let i=0;i<pts.length;i++){const [dx,dy]=pts[i];if(i)g.lineTo(x+dx,y+dy*direction);else g.moveTo(x+dx,y+dy*direction);}
-    g.closePath();g.fillStyle=direction>0?'#fff0a8':'#a5e8ff';g.strokeStyle='#15232b';g.lineWidth=1.5;g.fill();g.stroke();
-    if(Number.isInteger(stair.destination)){g.font='bold 12px system-ui';g.textAlign='center';g.fillStyle='#ffe1a0';g.fillText((stair.destination+1)+'Fへ',stair.x,stair.y-h/2-12);}
-  }
+  drawInfiltrationStairArrow(floor,stair,h);
   g.restore();return true;
+}
+function drawInfiltrationStairArrow(floor,stair,height){
+  const direction=stair.direction||(floor.number===1?1:-1),x=stair.x,y=stair.y-height/2+24;
+  g.save();
+  g.fillStyle='rgba(20,30,35,.8)';g.beginPath();g.arc(x,y,15,0,Math.PI*2);g.fill();
+  // A north-pointing arrow denotes up a floor, a south-pointing arrow down.
+  g.beginPath();const pts=[[-9,0],[0,-11],[9,0],[4,0],[4,10],[-4,10],[-4,0]];
+  for(let i=0;i<pts.length;i++){const [dx,dy]=pts[i];if(i)g.lineTo(x+dx,y+dy*direction);else g.moveTo(x+dx,y+dy*direction);}
+  g.closePath();g.fillStyle=direction>0?'#fff0a8':'#a5e8ff';g.strokeStyle='#15232b';g.lineWidth=1.5;g.fill();g.stroke();
+  const destination=Number.isInteger(stair.destination)?stair.destination:floor.number===1?1:0;
+  g.font='bold 12px system-ui';g.textAlign='center';g.fillStyle='#ffe1a0';g.fillText((destination+1)+'Fへ',stair.x,stair.y-height/2-12);
+  g.restore();
 }
 function drawInfiltrationFloors(cx,cy){
   if(!indoorWorld)return;
@@ -2889,9 +2905,8 @@ function drawInfiltrationFloors(cx,cy){
         g.beginPath();g.moveTo(-33,yy+12);g.lineTo(33,yy+12);g.stroke();
       }
       g.fillStyle='#ced7bc';g.fillRect(-42,-50,5,96);g.fillRect(37,-50,5,96);
-      g.strokeStyle='#e1f5dd';g.lineWidth=2;g.beginPath();
-      g.moveTo(0,20);g.lineTo(0,-24);g.lineTo(-11,-12);g.moveTo(0,-24);g.lineTo(11,-12);g.stroke();
       g.restore();
+      drawInfiltrationStairArrow(f,stair,116);
       }
     }
     if(arguments[2]!==false)drawInfiltrationExitsForFloor(f,cx,cy);

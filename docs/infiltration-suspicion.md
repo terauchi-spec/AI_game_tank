@@ -16,3 +16,16 @@ Tests cover cue combinations, weak glimpses, faster recognition of movement in b
 Patrol range and angular multipliers are 1.4 (previously 1.2). Confirmed pursuit uses a 2.4 range multiplier, exactly twice its previous release range, and still respects lighting, walls and hiding. Audible placed-bomb and object explosions investigate the event snapshot and add one warning eye per explosion with at least one conscious, unalerted listener on the active floor. Noise warnings combine with existing visual witnesses and body reports; three total warnings activate the existing building alarm. Gunshots keep their existing behavior.
 
 Indoor wall destruction scars target a lighter charcoal RGB (28,34,36). Each visible scar is compensated once against the shared static ceiling-light mask, then cached. After lighting, its core retains the target color in both bright and dark locations; there is no repeated readback or extra per-frame lighting pass. Scars remain below walls, props and characters, and outdoor building shadow sprites are unchanged.
+
+## Entrance sentry watch correction (2026-10-31)
+
+Alarm entrance sentries now scan left and right within ±0.65 radians instead of
+continuously spinning. When an existing vision sample sees a player, the sentry
+turns toward that observed snapshot while evidence builds. This prevents a narrow
+edge-of-vision glimpse from being lost solely because the idle scan rotates away.
+Normal confirmation, sight-loss, concealment, floor isolation and collision rules
+remain intact. No additional sight rays, polling or assets are introduced.
+
+A real-engine regression covers an exposed stationary player 300 world pixels
+away, initially near the central cone edge: the previous scan never confirms the
+player within five seconds; the corrected watch confirms, pursues and fires.

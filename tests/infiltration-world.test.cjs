@@ -1244,7 +1244,7 @@ test('upper-floor drawing omits exterior paths and entrance signs while preservi
   {get:(o,k)=>k in o?o[k]:()=>{}});
  for(const floorNo of [1,2]){
   const f=indoorGenerateFloor(floorNo,random(313));
-  const draw=new Function('g','indoorWorld','WW','H','INDOOR_FORECOURT_DEPTH','W','terrainSurfacePattern','indoorOutdoorTerrain','indoorConcretePattern','INDOOR_EXIT_RADIUS','INDOOR_EXIT_SECONDS','drawInfiltrationStairSprite',src.slice(from,to)+';return drawInfiltrationFloors;')(
+  const draw=new Function('g','indoorWorld','WW','H','INDOOR_FORECOURT_DEPTH','W','terrainSurfacePattern','indoorOutdoorTerrain','indoorConcretePattern','INDOOR_EXIT_RADIUS','INDOOR_EXIT_SECONDS','drawInfiltrationStairSprite',src.slice(src.indexOf('function drawInfiltrationStairArrow('),from)+src.slice(from,to)+';return drawInfiltrationFloors;')(
    g,{floors:[f]},960,2500,900,960,()=>null,{g:0},()=>null,90,5,()=>false);
   labels.length=0;fills.length=0;draw(0,0);
   if(floorNo===1){

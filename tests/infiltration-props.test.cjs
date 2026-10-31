@@ -143,7 +143,7 @@ test('exit marker uses the escape radius and a half ring at 2.5 seconds',()=>{
 
 test('stair sprites select ascending and descending artwork and preserve image proportions',()=>{
  const start=source.indexOf('function drawInfiltrationStairSprite(floor){'),end=source.indexOf('function drawInfiltrationFloors(cx,cy){',start);
- const calls=[],requests=[],shades=[],g={save(){},restore(){},drawImage:(...a)=>calls.push(a),fillRect(...r){shades.push({r,color:this.fillStyle});}};
+ const calls=[],requests=[],shades=[],g={beginPath(){},arc(){},fill(){},moveTo(){},lineTo(){},closePath(){},stroke(){},fillText(){},save(){},restore(){},drawImage:(...a)=>calls.push(a),fillRect(...r){shades.push({r,color:this.fillStyle});}};
  const image={naturalWidth:100,naturalHeight:240};
  const draw=new Function('g','indoorPropImage','INDOOR_STAIR_WIDTH',source.slice(start,end)+';return drawInfiltrationStairSprite;')(g,key=>{requests.push(key);return image;},60);
  for(const number of [1,2])assert.equal(draw({number,stair:{x:500,y:1000}}),true);
