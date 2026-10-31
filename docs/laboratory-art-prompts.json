@@ -562,5 +562,36 @@
     },
     "runtime_bytes": 4896,
     "prompt": "Edit target: supplied horizontal laboratory game sprite. Create its matching VERTICAL-placement artwork, not a stretched horizontal image. Rebuild the same object with its LONG footprint axis running NORTH-SOUTH (top to bottom). Preserve the reference identity, materials, muted colors, hand-painted grain, thin dark outline, light wear and early-2000s research-lab style. Pure 90-degree overhead orthographic plan view, no perspective distortion; almost entirely TOP surface, very thin southern/front rim. Keep the overhead light direction and north-edge highlight fixed. One complete centered isolated object, tight margin, GENUINELY TRANSPARENT background, no floor, no ground, no cast shadow or drop shadow, no text/numbers/logos. Target silhouette WIDTH:HEIGHT ratio 1:2.78. Long narrow NORTH-SOUTH stainless wash station, square sink basin at NORTH with faucet on north rim, ribbed drainboard stretching SOUTH, no tall cabinet front."
+  },
+  {
+    "name": "lab-transport-container",
+    "prompt": "Use case: stylized-concept. Asset: one transparent PNG sprite for a 2D top-down military tactical action game, early-2000s scientific laboratory. Subject: ONE closed, wheeled laboratory transport container, a low rectangular reusable dull gray steel cargo box with dusty olive reinforced corner rails, two recessed lid panels, small latch hardware, subtle yellow-black hazard markings, and a tiny ventilation grille. HORIZONTAL footprint, width:depth about 2:1. Camera directly overhead, 90 degree orthographic plan view; top lid occupies nearly all silhouette, only a very thin SOUTH/bottom front edge (no more than 3 percent depth) visible. Parallel sides, no perspective distortion. Fine detailed hand-painted digital illustration with dark outlines, fine grain, worn paint, faint dirt, rusty orange streaks, panel seams and weathering. Restrained military palette concrete gray, dusty green, dull brown. Lighting from above, highlight along NORTH/top edge. One centered entire object filling frame, tight transparent margin. Actual transparent background, NO floor, NO ground, NO cast or external shadows, no text, numbers, letters, logos, people or other objects. Container access/latches face south.",
+    "mode": "built-in ImageGen, transparent background",
+    "updated": "2026-10-31",
+    "runtime_pixels": [
+      256,
+      119
+    ],
+    "world_size": {
+      "w": 105.6,
+      "h": 49.0875
+    },
+    "runtime_bytes": 10236
+  },
+  {
+    "name": "lab-transport-container-vertical",
+    "prompt": "Use case: stylized-concept. Asset: one transparent PNG sprite for a 2D top-down military tactical action game, early-2000s scientific laboratory. Subject: ONE closed, wheeled laboratory transport container, a low rectangular reusable dull gray steel cargo box with dusty olive reinforced corner rails, two recessed lid panels, small latch hardware, subtle yellow-black hazard markings, and a tiny ventilation grille. VERTICAL footprint, width:depth about 1:2, long axis runs NORTH-SOUTH. The lid's two recessed panels are stacked north-south; short SOUTH end has small latch hardware. Do not put a long side face on the left or right, keep lighting and the tiny south-facing front edge oriented correctly. Camera directly overhead, 90 degree orthographic plan view; top lid occupies nearly all silhouette, only a very thin SOUTH/bottom front edge (no more than 3 percent depth) visible. Parallel sides, no perspective distortion. Fine detailed hand-painted digital illustration with dark outlines, fine grain, worn paint, faint dirt, rusty orange streaks, panel seams and weathering. Restrained military palette concrete gray, dusty green, dull brown. Lighting from above, highlight along NORTH/top edge. One centered entire object filling frame, tight transparent margin. Actual transparent background, NO floor, NO ground, NO cast or external shadows, no text, numbers, letters, logos, people or other objects. Container access/latches face south.",
+    "cleanup": "Transparent cutout, no external shadow or halo.",
+    "mode": "built-in ImageGen, transparent background",
+    "updated": "2026-10-31",
+    "runtime_pixels": [
+      127,
+      256
+    ],
+    "world_size": {
+      "w": 52.3875,
+      "h": 105.6
+    },
+    "runtime_bytes": 9160
   }
 ]

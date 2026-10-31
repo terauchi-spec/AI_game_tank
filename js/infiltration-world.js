@@ -777,7 +777,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null){
     const id=indoorGridPoint(documentGrid,indoorAt(p.x,p.y,0));
     return id>=0&&!documentGrid.solid[id]&&!!reachable[id];
   };
-  const documentArts=new Set(['cabinet','desk','server_rack','operations_table','personal_lockers','shelf','equipment',...(laboratory?['fume_hood','ultra_freezer','centrifuge','incubator','wash_station']:[])]);
+  const documentArts=new Set(['cabinet','desk','server_rack','operations_table','personal_lockers','shelf','equipment',...(laboratory?['transport_container','ultra_freezer','centrifuge','incubator','wash_station']:[])]);
   const worldDistance=(a,b)=>Math.hypot((a.x-b.x)*INDOOR_SCALE_X,(a.y-b.y)*INDOOR_SCALE_Y);
   const intelCandidates=rooms.filter(r=>r!==postRoom).map(room=>{
     const fixtures=furniture.filter(o=>o.roomId===room.id&&documentArts.has(laboratory?laboratoryBaseArt(o.artKind):o.artKind));

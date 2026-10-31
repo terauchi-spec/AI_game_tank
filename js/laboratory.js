@@ -6,7 +6,7 @@ const LABORATORY_ART={
  personal_lockers:'lab-storage',weapon_rack:'lab-storage',container:'lab-samples',
  equipment:'lab-analyzer',server_rack:'lab-analyzer',generator:'lab-reactor',bed:'lab-medical',
  shell_pallet_hd:'lab-samples',waste_tank:'lab-waste-tank',cooling_unit:'lab-cooling-unit',
- fume_hood:'lab-fume-hood',ultra_freezer:'lab-freezer',centrifuge:'lab-centrifuge',incubator:'lab-incubator',wash_station:'lab-wash-sink',
+ transport_container:'lab-transport-container',ultra_freezer:'lab-freezer',centrifuge:'lab-centrifuge',incubator:'lab-incubator',wash_station:'lab-wash-sink',
  stairs_up:'lab-stairs',stairs_down:'lab-stairs',building:'lab-building'
 };
 // Fixed world dimensions for each lab sprite, shared by every placement path.
@@ -46,9 +46,9 @@ const LABORATORY_PROP_SIZES={
  }
 };
 Object.assign(LABORATORY_PROP_SIZES,{
- "lab-fume-hood": {
-  "w": 104.0,
-  "h": 55.25
+ "lab-transport-container": {
+  "w": 96,
+  "h": 44.625
  },
  "lab-freezer": {
   "w": 98.0,
@@ -79,7 +79,7 @@ const LABORATORY_VERTICAL_ART={
  "lab-analyzer": "lab-analyzer-vertical",
  "lab-reactor": "lab-reactor-vertical",
  "lab-samples": "lab-samples-vertical",
- "lab-fume-hood": "lab-fume-hood-vertical",
+ "lab-transport-container": "lab-transport-container-vertical",
  "lab-freezer": "lab-freezer-vertical",
  "lab-centrifuge": "lab-centrifuge-vertical",
  "lab-incubator": "lab-incubator-vertical",
@@ -106,9 +106,9 @@ const LABORATORY_VERTICAL_SIZES={
   "w": 21.21875,
   "h": 56
  },
- "lab-fume-hood-vertical": {
-  "w": 31.28125,
-  "h": 104
+ "lab-transport-container-vertical": {
+  "w": 47.625,
+  "h": 96
  },
  "lab-freezer-vertical": {
   "w": 39.4296875,
@@ -132,6 +132,10 @@ for(const [kind,asset] of Object.entries(LABORATORY_ART))if(LABORATORY_VERTICAL_
 const LABORATORY_COVER_SIZES=Object.create(null);
 for(const asset of [...Object.keys(LABORATORY_VERTICAL_ART),...Object.values(LABORATORY_VERTICAL_ART),'lab-medical']){
  const size=LABORATORY_PROP_SIZES[asset];LABORATORY_COVER_SIZES[asset]={w:size.w*LABORATORY_COVER_SCALE,h:size.h*LABORATORY_COVER_SCALE};
+}
+// Enlarge both sink orientations a further 10% from the previous release.
+for(const asset of ['lab-wash-sink','lab-wash-sink-vertical']){
+ const size=LABORATORY_COVER_SIZES[asset];size.w*=1.1;size.h*=1.1;
 }
 function laboratoryBaseArt(kind){return kind.endsWith('_vertical')?kind.slice(0,-9):kind;}
 function laboratoryPlacementKinds(kind){return LABORATORY_ART[kind+'_vertical']?[kind,kind+'_vertical']:[kind];}
@@ -199,11 +203,11 @@ function laboratoryAssetStamp(){
 
 // Research room recipes. Required machines are placed before optional storage.
 const LABORATORY_ROOM_ROLES={
- guard_post:{id:'central_lab',name:'中央実験室',furniture:['desk','wash_station','fume_hood','cabinet'],required:['wash_station'],cargo:['shellPallet']},
+ guard_post:{id:'central_lab',name:'中央実験室',furniture:['desk','wash_station','transport_container','cabinet'],required:['wash_station'],cargo:['shellPallet']},
  utilities:{id:'utilities',name:'純水・冷却設備室',furniture:['generator','wash_station','cabinet','equipment'],cargo:['crate','barrel']},
  communications:{id:'analysis',name:'機器分析室',furniture:['centrifuge','server_rack','cabinet','desk'],cargo:['crate','shellPallet']},
- operations:{id:'experiment',name:'実験室',furniture:['fume_hood','operations_table','wash_station','cabinet'],cargo:['barrel','shellPallet']},
- armory:{id:'reagent_storage',name:'試薬保管室',furniture:['ultra_freezer','cabinet','shelf','container'],cargo:['wooden_crate','shellPallet']},
+ operations:{id:'experiment',name:'実験室',furniture:['operations_table','wash_station','transport_container','cabinet'],cargo:['barrel','shellPallet']},
+ armory:{id:'reagent_storage',name:'試薬保管室',furniture:['ultra_freezer','cabinet','shelf','transport_container','container'],cargo:['wooden_crate','shellPallet']},
  inspection:{id:'inspection',name:'培養・検査室',furniture:['incubator','bed','cabinet','equipment'],cargo:['shellPallet']}
 };
 function laboratoryFurnishFloor({rooms,walls,doors,stair,postRoom,postTile,postGuards,furniture,explosiveObjects,corridors,entrances}){
@@ -260,7 +264,7 @@ function laboratoryFurnishFloor({rooms,walls,doors,stair,postRoom,postTile,postG
     candidates.push(...region.tiles.flatMap(t=>[16,(t.w-w)/2].map(dx=>({x:t.x+dx,y:t.y+(t.h-h)/2,w,h,laboratoryWallSide:null,laboratoryPlacedArt:placedArt}))));
    }else{
     const vertical=size.h>size.w;
-    candidates.push(...wallCandidates(w,h).filter(o=>inside(o,region)&&(variants.length===1||vertical===(o.laboratoryWallSide==='west'||o.laboratoryWallSide==='east'))).map(o=>({...o,laboratoryPlacedArt:placedArt})));
+    candidates.push(...wallCandidates(w,h).filter(o=>inside(o,region)&&((variants.length===1&&!placedArt.endsWith('_vertical'))||vertical===(o.laboratoryWallSide==='west'||o.laboratoryWallSide==='east'))).map(o=>({...o,laboratoryPlacedArt:placedArt})));
    }
   }
   if(post)candidates.sort((a,b)=>Math.hypot(a.x+a.w/2-postTile.x-90,a.y+a.h/2-postTile.y-90)-Math.hypot(b.x+b.w/2-postTile.x-90,b.y+b.h/2-postTile.y-90));
@@ -313,13 +317,20 @@ function laboratoryFurnishFloor({rooms,walls,doors,stair,postRoom,postTile,postG
  }
  // Small local passage checks retain connections through each corridor cell.
  // No full-building search or layout work is added to the frame loop.
- const hallSpecs=[['cabinet',null],['wooden_crate','crate'],['container',null],['wooden_crate','crate'],['cabinet',null],['cooling_unit',null]];
+ // Up to 24 wall-side props (was 6), at most two per cell. Required
+ // container orientations are tried first; crates and shelving fill the rest.
+ const hallSpecs=[['transport_container',null],['transport_container_vertical',null],
+  ...Array.from({length:22},(_,i)=>i%2?['wooden_crate','crate']:['cabinet',null])];
  const eligible=corridors.filter(t=>!t.lobby&&Math.hypot((t.x+90-stair.x)*sx,(t.y+90-stair.y)*sy)>260);
- const used=new Set();
+ const used=new Map();
  for(let slot=0;slot<hallSpecs.length;slot++){
   const [art,cargoKind]=hallSpecs[slot];
-  for(let k=0;k<eligible.length;k++){
-   const t=eligible[(k+slot*3)%eligible.length];if(used.has(t.index))continue;
+  // Fill unused cells before adding a second object to a cell, distributing
+  // cover around the whole perimeter rather than crowding the first corner.
+  const ordered=eligible.map((_,k)=>eligible[(k+slot*3)%eligible.length])
+   .sort((a,b)=>(used.get(a.index)||0)-(used.get(b.index)||0));
+  for(const t of ordered){
+   if((used.get(t.index)||0)>=2)continue;
    const exits=[];
    for(const n of corridors){
     if(n.x===t.x&&Math.abs(n.y-t.y)===180)exits.push({x:t.x+90,y:Math.max(t.y,n.y)});
@@ -327,7 +338,7 @@ function laboratoryFurnishFloor({rooms,walls,doors,stair,postRoom,postTile,postG
    }
    if(!exits.length)continue;
    const region={...t,id:-1,purpose:'corridor',laboratoryRole:'corridor',tiles:[t],doors:exits};
-   if(place(region,art,{cargoKind,slot,hall:true})){used.add(t.index);break;}
+   if(place(region,art,{cargoKind,slot,hall:true})){used.set(t.index,(used.get(t.index)||0)+1);break;}
   }
  }
 }
