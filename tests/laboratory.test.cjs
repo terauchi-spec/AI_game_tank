@@ -198,3 +198,21 @@ test('sample cases in furniture and both orientations are exactly twice their pr
  }
  assert.equal(h.run("objects.filter(o=>o.laboratoryArt==='cooling_unit').every(o=>o.w===72&&o.h===45.5625)"),true);
 });
+
+
+test('laboratory stair walls and safe landings match the tall sprite on both floors',()=>{
+ const h=game(true);
+ h.run("laboratoryImages['lab-stairs']={complete:true,naturalWidth:107,naturalHeight:384};");
+ assert.equal(h.run(`indoorWorld.floors.every(f=>{
+  const b=indoorStairBounds(f.stair,f.number),walls=indoorStairWalls(f.stair,f.number),landing=indoorStairLanding(f),safe=indoorStairSafeArea(f);
+  let imageBounds;const old=g.drawImage;g.drawImage=(image,x,y,w,h)=>{imageBounds={x,y,w,h};};
+  drawInfiltrationStairSprite(f);g.drawImage=old;
+  return ['x','y','w','h'].every(k=>Math.abs(b[k]-imageBounds[k])<.001)&&
+   walls.every(w=>w.x+w.w<=b.x||w.x>=b.x+b.w||w.y+w.h<=b.y)&&
+   landing.x>=safe.x&&landing.x<=safe.x+safe.w&&landing.y>=safe.y&&landing.y<=safe.y+safe.h&&
+   f.walls.filter(w=>w.indoorStairWall).every(w=>w.x+w.w<=b.x+.001||w.x>=b.x+b.w-.001||w.y+w.h<=b.y+.001);
+ })`),true);
+ h.run('indoorLaboratory=false');
+ assert.equal(h.run('indoorStairBounds({x:0,y:0},1).h'),192);
+ assert.ok(Math.abs(h.run('indoorStairBounds({x:0,y:0},2).h')-60*320/162)<.001);
+});

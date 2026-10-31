@@ -1400,7 +1400,10 @@ function setupInfiltrationMission(){
 
 const INDOOR_STAIR_WIDTH=60;
 function indoorStairBounds(stair,number){
-  const h=INDOOR_STAIR_WIDTH*(number===1?320/100:320/162);
+  // The lab shares one tall staircase on both floors. Its surrounding walls,
+  // landing and sanctuary must follow that silhouette, not the military down stair.
+  const laboratory=typeof isLaboratoryStage==='function'&&isLaboratoryStage();
+  const h=INDOOR_STAIR_WIDTH*(laboratory?384/107:number===1?320/100:320/162);
   return{x:stair.x-INDOOR_STAIR_WIDTH/2,y:stair.y-h/2,w:INDOOR_STAIR_WIDTH,h};
 }
 function indoorStairWalls(stair,number){
