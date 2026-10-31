@@ -1,6 +1,6 @@
 // Gatling hardware is drawn at 2×; people retain their ordinary size.
 // Stationary single-seat vehicle. Ammunition belongs to the emplacement, not its operator.
-const GUN_TOWER_TYPE=Object.freeze({id:'gunTower',n:'機関銃塔',hp:8,armor:1.5,cmax:0,vmax:500,fmax:0,sp:0,ccd:.065,vcd:.065,range:400,speed:1000,drawScale:2,seatOffset:44,muzzleOffset:74,clearance:84,boardRadius:96,col:'#66705a'});
+const GUN_TOWER_TYPE=Object.freeze({id:'gunTower',n:'機関銃塔',hp:8,armor:1.5,cmax:0,vmax:500,fmax:0,sp:0,ccd:.065,vcd:.065,range:400,speed:1000,antiTankHits:20,coverRadius:10*Math.SQRT2,drawScale:2,seatOffset:44,muzzleOffset:74,clearance:84,boardRadius:96,col:'#66705a'});
 function gunTowerAvailable(v){
  if(v?.kind!=='tower')return true;
  if(v.gunner&&(!v.gunner.alive||v.gunner.stun>0||v.gunner.blastAirT>0))releaseGunTower(v);
@@ -98,7 +98,7 @@ function gunTowerSegmentT(a,b,o,r){
 function damageGunTowerCover(c,x,y,from){
  if(c.frontAntenna&&!c.frontCargo||c.trainingWall||c.indoorDoor)return;
  c.gatlingHits=(c.gatlingHits||0)+1;if(c.gatlingHits<8)return;c.gatlingHits=0;
- if(c.frontCargo)damageFrontlineCargo(c,x,y,6);else carve(x,y,10,from==='p',null);
+ if(c.frontCargo)damageFrontlineCargo(c,x,y,6);else carve(x,y,GUN_TOWER_TYPE.coverRadius,from==='p',null);
 }
 function updateGatlingBullet(b,ox,oy,expired){
  const a={x:ox,y:oy},end={x:b.x,y:b.y},hits=[];
@@ -127,9 +127,17 @@ function updateGatlingBullet(b,ox,oy,expired){
  }else if(hit.type==='cover')damageGunTowerCover(o,b.x,b.y,b.from);
  else if(hit.type==='object')damageObject(o,'mg');
  else if(hit.type==='base'){if(b.from!=='e')damageBase(.035,b.x,b.y,5,1,b.from==='p'?'player':'support');}
- else if(hit.type==='tank'){enterTankFound(o,'p',.5);sfx('vehicleHit',o);}
+ else if(hit.type==='tank'){
+  enterTankFound(o,'p',.5);sfx('vehicleHit',o);
+  if(b.from==='p'){
+   o.gatlingHits=(o.gatlingHits||0)+1;
+   if(o.gatlingHits>=GUN_TOWER_TYPE.antiTankHits&&destroyEnemyTank(o,b.x,b.y)){
+    recordPlayerKill(0,'mg',o);fb(o.x,o.y,38);burst(o.x,o.y,28,'#ff8a3a',230);
+   }
+  }
+ }
  else if(hit.type==='player'){
-  if(p.tank){const v=p.tank;if(v.kind==='truck'){recordPlayerDamage(.2,true);v.mgHits=(v.mgHits||0)+1;if(v.mgHits>=5)wreck();}else if(v.kind==='fighter'){recordPlayerDamage(Math.min(v.hp,1)/v.t.hp,true);v.hp--;if(v.hp<=0)wreck();}else{const armor=v.t.armor||1.5,amount=v.t.id==='armored'?armor/7.5:.066;v.ch=(v.ch||0)+amount;recordPlayerDamage(amount/armor,true);if(v.ch>=armor)wreck();}sfx('vehicleHit');}
+  if(p.tank){const v=p.tank;if(v.kind==='tank'&&v.t.id!=='armored'){sfx('vehicleHit');burst(b.x,b.y,2,'#ffe1a0',60);return true;}if(v.kind==='truck'){recordPlayerDamage(.2,true);v.mgHits=(v.mgHits||0)+1;if(v.mgHits>=5)wreck();}else if(v.kind==='fighter'){recordPlayerDamage(Math.min(v.hp,1)/v.t.hp,true);v.hp--;if(v.hp<=0)wreck();}else{const armor=v.t.armor||1.5,amount=v.t.id==='armored'?armor/7.5:.066;v.ch=(v.ch||0)+amount;recordPlayerDamage(amount/armor,true);if(v.ch>=armor)wreck();}sfx('vehicleHit');}
   else{recordPlayerDamage(Math.min(p.hp,.5)/3);p.hp-=.5;if(p.hp<=0)triggerPlayerDeath();}
  }else if(hit.type==='partner'){
   if(o.vehicle){o.vehicle.hp=Math.max(0,o.vehicle.hp-1);if(o.vehicle.hp<=0)partnerVehicleDestroyed(o);}

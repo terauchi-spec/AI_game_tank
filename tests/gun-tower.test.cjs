@@ -94,3 +94,25 @@ test('temporary suspicion and fire-related detection holds expire for a seated g
  const h=scene();h.run("cars=[v];enemy={alive:true,elite:false,sus:.01,burnSuspicionHold:.01};boardEnemyGunTower(v,enemy);humans=[enemy];p.x=enemy.x+300;p.y=enemy.y;updateGunTowerEnemy(enemy,.02);");
  assert.equal(h.run('enemy.sus'),0);assert.equal(h.run('enemy.burnSuspicionHold'),0);assert.equal(h.run('bullets.length'),0);
 });
+
+test('enemy gatling rounds stop at every player tank without damage or damage-stat changes',()=>{
+ for(const id of ['t34','tiger','type10','m1','sherman','churchill','kingtiger']){
+  const h=scene();h.c.testId=id;
+  h.run("p.x=400;p.y=400;p.tank={kind:'tank',t:TYPES.find(t=>t.id===testId),ch:0,hp:10};for(let i=0;i<50;i++){b={x:450,y:400,vx:1000,vy:0,from:'e',k:'v',gatling:true};updateGatlingBullet(b,350,400,false);}");
+  assert.equal(h.run('p.tank.ch'),0,id);assert.equal(h.run('p.tank.hp'),10,id);assert.equal(h.run('scoreStats.damageHits'),0,id);assert.equal(h.run('scoreStats.vehicleDamage'),0,id);
+ }
+});
+test('player gatling damage accumulates on an enemy tank and awards exactly one kill at twenty hits',()=>{
+ const h=scene();h.run("enemyTank={x:400,y:400,alive:true,body:0,ang:0};etanks=[enemyTank];hit=()=>{const round={x:450,y:400,vx:1000,vy:0,from:'p',k:'v',gatling:true};updateGatlingBullet(round,350,400,false);};for(let i=0;i<19;i++)hit();");
+ assert.equal(h.run('enemyTank.alive'),true);assert.equal(h.run('enemyTank.gatlingHits'),19);assert.equal(h.run('scoreStats.playerKills'),0);
+ h.run('hit();for(let i=0;i<5;i++)hit();');assert.equal(h.run('enemyTank.alive'),false);assert.equal(h.run('enemyTank.wreckSpawned'),true);assert.equal(h.run('scoreStats.playerKills'),1);assert.equal(h.run('scoreStats.playerTankKills'),1);
+});
+test('partner gatling retains its previous tank behavior and enemy rounds still harm infantry',()=>{
+ const h=scene();h.run("enemyTank={x:400,y:400,alive:true,body:0,ang:0};etanks=[enemyTank];for(let i=0;i<30;i++)updateGatlingBullet({x:450,y:400,vx:1000,vy:0,from:'ally',k:'v',gatling:true},350,400,false);etanks=[];p.x=400;p.y=400;updateGatlingBullet({x:450,y:400,vx:1000,vy:0,from:'e',k:'v',gatling:true},350,400,false);");
+ assert.equal(h.run('enemyTank.alive'),true);assert.equal(h.run('enemyTank.gatlingHits||0'),0);assert.equal(h.run('p.hp'),2.5);
+});
+test('cover cut area doubles without increasing the number of carve operations',()=>{
+ const h=scene();h.run("calls=[];carve=(x,y,r,credit,source)=>calls.push({r,credit,source});wall={};for(let i=0;i<7;i++)damageGunTowerCover(wall,100,100,'p');");assert.equal(h.run('calls.length'),0);
+ h.run("damageGunTowerCover(wall,100,100,'p')");assert.equal(h.run('calls.length'),1);assert.ok(Math.abs(h.run('calls[0].r**2')-200)<1e-9);assert.equal(h.run('calls[0].credit'),true);
+ h.run("damageGunTowerCover({frontAntenna:true},100,100,'p')");assert.equal(h.run('calls.length'),1);
+});
