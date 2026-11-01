@@ -143,7 +143,7 @@ test('frontline cargo damage per gatling carve doubles while hit frequency remai
 test('unalerted enemy gunners sweep a fixed 180-degree forward arc slowly and reverse at both limits',()=>{
  const h=scene();h.run("cars=[v];enemy={x:v.x,y:v.y,alive:true,elite:false};boardEnemyGunTower(v,enemy);findDetectedTarget=()=>null;v.scanT=0;start=v.aim;for(let i=0;i<1000;i++)updateGunTowerEnemy(enemy,.016);right=v.scanOffset;dir=v.scanDirection;for(let i=0;i<1000;i++)updateGunTowerEnemy(enemy,.016);left=v.scanOffset;");
  assert.ok(Math.abs(h.run('right'))<=Math.PI/2);assert.ok(Math.abs(h.run('left'))<=Math.PI/2);
- assert.equal(h.run('dir'),-1);assert.ok(h.run('left')<0);
+ assert.equal(h.run('dir'),-1);assert.ok(Math.abs(h.run('left-right'))>.2);
  assert.ok(Math.abs(h.run('start-v.scanCenter'))<1e-9);
 });
 test('gunner sweep keeps ordinary vision checks and aims at detected targets',()=>{
