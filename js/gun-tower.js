@@ -1,6 +1,6 @@
 // Gatling hardware is drawn at 80% of its former size; people retain their ordinary size.
 // Stationary single-seat vehicle. Ammunition belongs to the emplacement, not its operator.
-const GUN_TOWER_TYPE=Object.freeze({id:'gunTower',n:'機関銃塔',hp:8,armor:1.5,cmax:0,vmax:500,fmax:0,sp:0,ccd:.065,vcd:.065,range:400,speed:1000,antiTankHits:30,playerTankHits:200,spinUpSeconds:.5,coverRadius:20,drawScale:1.6,seatOffset:35.2,muzzleOffset:59.2,clearance:67.2,boardRadius:96,col:'#66705a'});
+const GUN_TOWER_TYPE=Object.freeze({id:'gunTower',n:'機関銃塔',hp:8,armor:1.5,cmax:0,vmax:500,fmax:0,sp:0,ccd:.065,vcd:.065,range:400,speed:1000,antiTankHits:30,playerTankHits:200,spinUpSeconds:.5,coverRadius:20,drawScale:1.6,seatOffset:22.4,muzzleOffset:59.2,clearance:67.2,boardRadius:96,col:'#66705a'});
 function gunTowerAvailable(v){
  if(v?.kind!=='tower')return true;
  if(v.destroyed)return false;
@@ -222,40 +222,51 @@ const gunTowerSprites={base:null,body:null};
 if(typeof Image!=='undefined')for(const part of ['base','body']){const im=new Image();im.src='assets/vehicles/gatling_'+part+'.webp?v='+GAME_VERSION;gunTowerSprites[part]=im;}
 function drawGunTower(v,x,y,angle){
  const s=GUN_TOWER_TYPE.drawScale;
- // Fixed pedestal with layered steel, braces and riveted retaining ring.
+ const baseSprite=gunTowerSprites.base;
+ const bodySprite=gunTowerSprites.body;
+ const baseReady=!!(baseSprite?.complete&&baseSprite.naturalWidth);
+ const bodyReady=!!(bodySprite?.complete&&bodySprite.naturalWidth);
+ // Fixed transparent pedestal. Only the gun body and its operator rotate.
  g.save();g.translate(x,y);g.scale(s,s);
- g.fillStyle='rgba(0,0,0,.28)';g.beginPath();g.ellipse(2,5,36,32,0,0,Math.PI*2);g.fill();
- g.fillStyle='#313c32';g.strokeStyle='#1b2823';g.lineWidth=2;g.beginPath();g.arc(0,0,32,0,Math.PI*2);g.fill();g.stroke();
- g.fillStyle='#667360';g.beginPath();g.arc(0,-2,28,0,Math.PI*2);g.fill();
- g.strokeStyle='#9ca393';g.lineWidth=1.1;g.beginPath();g.arc(0,-2,25,0,Math.PI*2);g.stroke();
- g.strokeStyle='#364238';g.lineWidth=6;for(let i=0;i<4;i++){const a=Math.PI*i/2+.35;g.beginPath();g.moveTo(0,-2);g.lineTo(Math.cos(a)*24,Math.sin(a)*24-2);g.stroke();}
- g.fillStyle='#27342d';g.beginPath();g.arc(0,-2,19,0,Math.PI*2);g.fill();
- g.fillStyle='#a9ad9c';for(let i=0;i<8;i++){const a=i*Math.PI/4;g.beginPath();g.arc(Math.cos(a)*28,Math.sin(a)*28-2,1.5,0,Math.PI*2);g.fill();}
- if(gunTowerSprites.base?.complete&&gunTowerSprites.base.naturalWidth)g.drawImage(gunTowerSprites.base,-36,-36,72,72);
+ if(baseReady)g.drawImage(baseSprite,-36,-36,72,72);
+ else{
+  g.fillStyle='#313c32';g.strokeStyle='#1b2823';g.lineWidth=2;
+  g.beginPath();g.arc(0,0,32,0,Math.PI*2);g.fill();g.stroke();
+  g.fillStyle='#667360';g.beginPath();g.arc(0,0,25,0,Math.PI*2);g.fill();
+ }
+ g.restore();
+ g.save();g.translate(x,y);g.rotate(angle);g.scale(s,s);
+ if(bodyReady){
+  // Pivot on the central mounting ring, not on the bounding-box center.
+  // The larger barrel assembly extends farther to the right than the mounting ring.
+  g.drawImage(bodySprite,-24,-36,72,72);
+ }else{
+  g.fillStyle='#566758';g.strokeStyle='#1b2823';g.lineWidth=2;
+  g.fillRect(-21,-13,41,26);g.strokeRect(-21,-13,41,26);
+  g.fillStyle='#303c34';g.fillRect(10,-7,32,14);
+  g.strokeStyle='#b0b9b1';g.lineWidth=2;g.beginPath();
+  for(let i=-2;i<=2;i++){g.moveTo(12,i*2.7);g.lineTo(40,i*2.7);}g.stroke();
+ }
+ // Thin highlights shift along the multi-barrel bundle while it spins.
+ // Keep the rotation inside the barrel region and outside the seat and receiver.
+ if(v.spinActive){
+  g.save();g.beginPath();g.rect(22,-7.5,21,15);g.clip();
+  for(let k=0;k<6;k++){
+   const z=Math.sin((v.spinPhase||0)+k*Math.PI/3);
+   g.strokeStyle=z>0?'rgba(224,231,220,.52)':'rgba(10,17,13,.35)';
+   g.lineWidth=1.4;g.beginPath();g.moveTo(23,z*5.3);g.lineTo(42,z*5.3);g.stroke();
+  }
+  g.restore();
+ }
  g.restore();
  const enemy=!!v.gunner,occupied=enemy||p?.tank===v||partner?.vehicle===v;
  const enemyAlpha=enemy?digEnemyAlpha()*(1-sandIntensity):1;
- if(occupied){g.save();g.globalAlpha*=enemyAlpha;soldier(x-Math.cos(angle)*GUN_TOWER_TYPE.seatOffset,y-Math.sin(angle)*GUN_TOWER_TYPE.seatOffset,angle,!enemy,enemy&&!!v.gunner.st,false,false,'',false,!enemy&&p?.tank===v,enemy?v.gunner:partner?.vehicle===v?partner:p);g.restore();}
- // Rotating receiver and sheet-metal guard; multi-barrel cooling shroud and ammo feed.
- g.save();g.translate(x,y);g.rotate(angle);g.scale(s,s);g.lineJoin='round';
- g.fillStyle='#242d29';g.strokeStyle='#101b18';g.lineWidth=2;
- g.beginPath();g.moveTo(-18,-13);g.lineTo(10,-16);g.lineTo(15,16);g.lineTo(-18,13);g.closePath();g.fill();g.stroke();
- g.fillStyle='#566758';g.beginPath();g.moveTo(-14,-12);g.lineTo(5,-14);g.lineTo(5,14);g.lineTo(-14,12);g.closePath();g.fill();
- g.strokeStyle='#a0aa9b';g.lineWidth=1;g.beginPath();g.moveTo(-11,-10);g.lineTo(2,-11);g.moveTo(-11,10);g.lineTo(2,11);g.stroke();
- g.fillStyle='#303c34';g.fillRect(-12,-18,12,7);g.fillRect(-12,11,12,7);
- g.fillStyle='#1c2627';g.strokeStyle='#66726e';g.lineWidth=1.2;g.fillRect(6,-7.5,30,15);g.strokeRect(6,-7.5,30,15);
- g.strokeStyle='#b0b9b1';g.lineWidth=1;g.beginPath();for(let i=-2;i<=2;i++){g.moveTo(9,i*2.8);g.lineTo(39,i*2.8);}g.stroke();
- g.fillStyle='#29332e';g.fillRect(19,-9,5,18);g.fillRect(34,-9,6,18);
- g.fillStyle='#596861';g.fillRect(39,-7,4,14);
- if(gunTowerSprites.body?.complete&&gunTowerSprites.body.naturalWidth)g.drawImage(gunTowerSprites.body,-24,-24,68,48);
- // Barrel tubes rotate longitudinally; no independently spinning muzzle-cap illusion.
- if(v.spinActive){g.save();g.beginPath();g.rect(8,-7,32,14);g.clip();
-  for(let k=0;k<6;k++){const z=Math.sin((v.spinPhase||0)+k*Math.PI/3);g.strokeStyle=z>0?'#c6cec4':'#24352e';g.lineWidth=z>0?2.6:2;g.beginPath();g.moveTo(9,z*5.5);g.lineTo(38,z*5.5);g.stroke();}
+ // Draw the gunner after the sprite so they are visible sitting in the cockpit.
+ if(occupied){
+  g.save();g.globalAlpha*=enemyAlpha;
+  soldier(x-Math.cos(angle)*GUN_TOWER_TYPE.seatOffset,y-Math.sin(angle)*GUN_TOWER_TYPE.seatOffset,angle,!enemy,enemy&&!!v.gunner.st,false,false,'',false,!enemy&&p?.tank===v,enemy?v.gunner:partner?.vehicle===v?partner:p);
   g.restore();
  }
- g.fillStyle='#828a7c';g.fillRect(-20,-6,8,12);g.fillStyle='#c3a566';for(let i=0;i<4;i++)g.fillRect(-19+i*2,-5,1.4,4);
- g.fillStyle='#87917c';g.beginPath();g.arc(-3,0,5,0,Math.PI*2);g.fill();
- g.restore();
  if(enemy&&v.gunner.st&&enemyAlpha>.18)lab('!',x,y-68,'bold 17px system-ui','#ff5a5a');
 }
 function drawGunTowerWreck(w,q){

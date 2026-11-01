@@ -197,3 +197,9 @@ test('enemy gunner holds target alert for two seconds after sight is lost',()=>{
  assert.equal(h.run('enemy.st'),1);assert.equal(h.run('bullets.length'),h.run('before'));
  h.run("for(let i=0;i<6;i++)updateGunTowerEnemy(enemy,.15);");assert.equal(h.run('enemy.st'),0);
 });
+
+test('transparent Gatling sprites are drawn at the fixed base and rotating gun pivot',()=>{
+ const h=scene();h.run("baseDraw=0;bodyDraw=0;gunTowerSprites.base={complete:true,naturalWidth:624};gunTowerSprites.body={complete:true,naturalWidth:624};prevDrawImage=g.drawImage;g.drawImage=(image,x,y,w,h)=>{if(image===gunTowerSprites.base)baseDraw++;if(image===gunTowerSprites.body)bodyDraw++;};drawGunTower(v,v.x,v.y,Math.PI/3);g.drawImage=prevDrawImage;");
+ assert.equal(h.run('baseDraw'),1);assert.equal(h.run('bodyDraw'),1);
+ assert.equal(h.run('GUN_TOWER_TYPE.seatOffset'),22.4);
+});
