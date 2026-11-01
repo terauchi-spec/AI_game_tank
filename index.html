@@ -1000,7 +1000,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.01.0927',FILE_CREATED_AT='2026/11/01 09:27',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.01.0933',FILE_CREATED_AT='2026/11/01 09:33',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -5794,7 +5794,8 @@ function update(dt){
   }
  }
  if(p.dig>0&&inMudAt(p.x,p.y,5)){finishDig('泥では潜伏を継続できない',false);burst(p.x,p.y,14,'#705238',120);}
- if(T&&!isTruck&&!isFighter){if(TOUCH&&Number.isFinite(touchTurretAngle))p.ang=touchTurretAngle;else p.ang=(performance.now()-lastMouse<1500)?Math.atan2(wy-p.y,wx-p.x):p.body;}
+ if(V?.kind==='tower'){if(ix||iy){p.ang=Math.atan2(iy,ix);V.aim=p.ang;}}
+ else if(T&&!isTruck&&!isFighter){if(TOUCH&&Number.isFinite(touchTurretAngle))p.ang=touchTurretAngle;else p.ang=(performance.now()-lastMouse<1500)?Math.atan2(wy-p.y,wx-p.x):p.body;}
  p.cc=Math.max(0,p.cc-dt);p.vc=Math.max(0,p.vc-dt);p.scd=Math.max(0,p.scd-dt);p.digExitAnim=Math.max(0,(p.digExitAnim||0)-dt);p.grappleT=Math.max(0,(p.grappleT||0)-dt);if(p.grappleT<=0)p.grappleTarget=null;if(p.scd<=0)p.scdMax=0;if(decoy){decoy.t-=dt;decoy.sound=(decoy.sound||0)-dt;if(decoy.sound<=0){decoy.sound=.75;sfx('decoy',decoy);burst(decoy.x,decoy.y,3,'#ffd27a',35);}if(decoy.t<=0){burst(decoy.x,decoy.y,12,'#ff6666',75);decoy=null;}}
  if(p.dig>0){p.digElapsed=(p.digElapsed||0)+dt;p.dig-=dt;if(R()<.6){const wet=digUsesWaterFx(p.x,p.y);trimParts(1);parts.push({x:p.x,y:p.y,vx:(R()-.5)*60,vy:(R()-.5)*60,life:.35,col:wet?(R()<.5?'#8ed3ef':'#d4f4ff'):'#7a5a38',sz:wet?2+R()*3:4+R()*3});}if(p.dig<=0)finishDig('潜航解除：地上に出た');}
  if(p.grappleT>0||playerAir){skillReq=false;bombReq=false;interact=false;}
@@ -8624,7 +8625,7 @@ const syncActionButton=()=>{
 };
 let actionPointer=null,actionAimPointer=null,actionAimStartX=0,actionAimStartY=0,skillAimPointer=null,skillAimStartX=0,skillAimStartY=0;
 const updateTouchTurretAim=(e,sx,sy)=>{
- if(!p||!p.tank||!['tank','tower'].includes(p.tank.kind))return false;
+ if(!p||!p.tank||p.tank.kind!=='tank')return false;
  const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.hypot(dx,dy)<7)return false;
  touchTurretAngle=Math.atan2(dy,dx);p.ang=touchTurretAngle;return true;
 };
@@ -8633,7 +8634,7 @@ const actionDown=e=>{
  if(p&&p.sniperMode){say('狙撃中：Sで発射 / Aで解除');actionKey=null;return;}
  if(p&&p.tank&&p.tank.kind==='truck'){say('トラックは攻撃できない');actionKey=null;return;}
  if(p&&p.tank&&(p.tank.kind==='tank'||p.tank.kind==='tower')){
-  if(p.tank.kind==='tower'){actionAimPointer=e.pointerId;actionAimStartX=e.clientX;actionAimStartY=e.clientY;actionKey='KeyD';press(actionKey);return;}
+  if(p.tank.kind==='tower'){actionKey='KeyD';press(actionKey);return;}
   // スマホ戦車: Dは照準スティック。ドラッグで砲塔旋回し、指を離した時だけ主砲を発射する。
   actionAimPointer=e.pointerId;actionAimStartX=e.clientX;actionAimStartY=e.clientY;actionKey=null;return;
  }
@@ -8661,7 +8662,7 @@ addEventListener('pointerup',e=>finishAction(e,true),{capture:true,passive:false
 addEventListener('pointercancel',e=>finishAction(e,false),{capture:true,passive:false});
 bindTouchControl(actionBtn,()=>actionPointer,actionDown,moveActionAim,e=>finishAction(e,true),e=>finishAction(e,false));
 // スマホ戦車: SはMGを押下中ずっと発射。ドラッグ中は射撃しながら砲塔を旋回する。
-const beginSkillAim=e=>{if(buttonPointers.get(skillBtn)!==e.pointerId)return;if(p&&p.tank&&(p.tank.kind==='tank'||p.tank.kind==='tower')){skillAimPointer=e.pointerId;skillAimStartX=e.clientX;skillAimStartY=e.clientY;}};
+const beginSkillAim=e=>{if(buttonPointers.get(skillBtn)!==e.pointerId)return;if(p&&p.tank&&p.tank.kind==='tank'){skillAimPointer=e.pointerId;skillAimStartX=e.clientX;skillAimStartY=e.clientY;}};
 skillBtn.addEventListener('pointerdown',beginSkillAim,{passive:false});
 const moveSkillAim=e=>{if(skillAimPointer===e.pointerId){e.preventDefault();updateTouchTurretAim(e,skillAimStartX,skillAimStartY);}};
 skillBtn.addEventListener('pointermove',moveSkillAim,{passive:false});

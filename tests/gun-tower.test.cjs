@@ -151,3 +151,17 @@ test('gunner sweep keeps ordinary vision checks and aims at detected targets',()
  assert.equal(h.run('enemy.st'),1);assert.ok(Math.abs(h.run('v.aim-Math.atan2(90,180)'))<1e-9);
  assert.equal(h.run('bullets.length'),1);
 });
+
+test('enemy gunner scanning turns at 80 percent of previous speed',()=>{
+ const h=scene();h.run("cars=[v];enemy={x:v.x,y:v.y,alive:true,elite:false};boardEnemyGunTower(v,enemy);findDetectedTarget=()=>null;updateGunTowerEnemy(enemy,1);");
+ assert.ok(Math.abs(h.run('v.scanOffset')-.208)<1e-10);
+});
+test('player gun tower is aimed by left-stick directions, and does not move with the stick',()=>{
+ const h=scene();h.run("cars=[];p.tank=v;p.x=v.x;p.y=v.y;state='play';keys.ArrowLeft=true;touchTurretAngle=Math.PI/3;mx=0;my=0;lastMouse=performance.now();px=p.x;py=p.y;update(.016);");
+ assert.ok(Math.abs(h.run('p.ang')-Math.PI)<1e-10);
+ assert.equal(h.run('p.x===px&&p.y===py'),true);
+ h.run("keys.ArrowLeft=false;keys.ArrowUp=true;update(.016);");
+ assert.ok(Math.abs(h.run('p.ang')+Math.PI/2)<1e-10);
+ h.run("keys.ArrowUp=false;update(.016);");
+ assert.ok(Math.abs(h.run('p.ang')+Math.PI/2)<1e-10);
+});

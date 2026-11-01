@@ -107,7 +107,7 @@ function updateGunTowerEnemy(h,dt){
  // Slowly patrol the fixed 180-degree forward arc (+/-90 degrees).
  // Sweep only while idle; avoid adding per-frame allocations or extra sight queries.
  if(!v.scanTarget){
-  const limit=Math.PI/2,speed=.26;
+  const limit=Math.PI/2,speed=.26*.8;
   let offset=(v.scanOffset||0)+speed*(v.scanDirection||1)*dt;
   if(offset>limit){offset=limit-(offset-limit);v.scanDirection=-1;}
   else if(offset< -limit){offset=-limit+(-limit-offset);v.scanDirection=1;}
