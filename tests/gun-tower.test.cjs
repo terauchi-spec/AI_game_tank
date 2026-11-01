@@ -199,7 +199,19 @@ test('enemy gunner holds target alert for two seconds after sight is lost',()=>{
 });
 
 test('transparent Gatling sprites are drawn at the fixed base and rotating gun pivot',()=>{
- const h=scene();h.run("baseDraw=0;bodyDraw=0;gunTowerSprites.base={complete:true,naturalWidth:624};gunTowerSprites.body={complete:true,naturalWidth:624};prevDrawImage=g.drawImage;g.drawImage=(image,x,y,w,h)=>{if(image===gunTowerSprites.base)baseDraw++;if(image===gunTowerSprites.body)bodyDraw++;};drawGunTower(v,v.x,v.y,Math.PI/3);g.drawImage=prevDrawImage;");
- assert.equal(h.run('baseDraw'),1);assert.equal(h.run('bodyDraw'),1);
+ const h=scene();h.run("baseDraw=0;bodyDraw=0;bodyLeft=null;gunTowerSprites.base={complete:true,naturalWidth:312};gunTowerSprites.body={complete:true,naturalWidth:312};prevDrawImage=g.drawImage;g.drawImage=(image,x,y,w,h)=>{if(image===gunTowerSprites.base)baseDraw++;if(image===gunTowerSprites.body){bodyDraw++;bodyLeft=x;}};drawGunTower(v,v.x,v.y,Math.PI/3);g.drawImage=prevDrawImage;");
+ assert.equal(h.run('baseDraw'),1);assert.equal(h.run('bodyDraw'),1);assert.equal(h.run('bodyLeft'),-31);
  assert.equal(h.run('GUN_TOWER_TYPE.seatOffset'),22.4);
+});
+
+test('new Gatling WebP sprites are both exactly 312x312 and have alpha',()=>{
+ const fs=require('node:fs');
+ for(const part of ['base','body']){
+  const data=fs.readFileSync(path.join(__dirname,'..','assets','vehicles','gatling_'+part+'.webp'));
+  assert.equal(data.toString('ascii',0,4),'RIFF');assert.equal(data.toString('ascii',8,12),'WEBP');
+  assert.equal(data.toString('ascii',12,16),'VP8X');
+  assert.equal((data[24]|(data[25]<<8)|(data[26]<<16))+1,312);
+  assert.equal((data[27]|(data[28]<<8)|(data[29]<<16))+1,312);
+  assert.ok(data[20]&16,'WebP should declare alpha');
+ }
 });

@@ -226,7 +226,7 @@ function drawGunTower(v,x,y,angle){
  const bodySprite=gunTowerSprites.body;
  const baseReady=!!(baseSprite?.complete&&baseSprite.naturalWidth);
  const bodyReady=!!(bodySprite?.complete&&bodySprite.naturalWidth);
- // Fixed transparent pedestal. Only the gun body and its operator rotate.
+ // 312px alpha WebP: fixed pedestal; the gun body and its operator rotate.
  g.save();g.translate(x,y);g.scale(s,s);
  if(baseReady)g.drawImage(baseSprite,-36,-36,72,72);
  else{
@@ -239,7 +239,7 @@ function drawGunTower(v,x,y,angle){
  if(bodyReady){
   // Pivot on the central mounting ring, not on the bounding-box center.
   // The larger barrel assembly extends farther to the right than the mounting ring.
-  g.drawImage(bodySprite,-24,-36,72,72);
+  g.drawImage(bodySprite,-31,-36,72,72);
  }else{
   g.fillStyle='#566758';g.strokeStyle='#1b2823';g.lineWidth=2;
   g.fillRect(-21,-13,41,26);g.strokeRect(-21,-13,41,26);
