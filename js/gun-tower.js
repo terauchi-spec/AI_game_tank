@@ -247,6 +247,7 @@ function drawGunTower(v,x,y,angle){
  g.strokeStyle='#b0b9b1';g.lineWidth=1;g.beginPath();for(let i=-2;i<=2;i++){g.moveTo(9,i*2.8);g.lineTo(39,i*2.8);}g.stroke();
  g.fillStyle='#29332e';g.fillRect(19,-9,5,18);g.fillRect(34,-9,6,18);
  g.fillStyle='#596861';g.fillRect(39,-7,4,14);
+ if(gunTowerSprites.body?.complete&&gunTowerSprites.body.naturalWidth)g.drawImage(gunTowerSprites.body,-24,-24,68,48);
  // Barrel tubes rotate longitudinally; no independently spinning muzzle-cap illusion.
  if(v.spinActive){g.save();g.beginPath();g.rect(8,-7,32,14);g.clip();
   for(let k=0;k<6;k++){const z=Math.sin((v.spinPhase||0)+k*Math.PI/3);g.strokeStyle=z>0?'#c6cec4':'#24352e';g.lineWidth=z>0?2.6:2;g.beginPath();g.moveTo(9,z*5.5);g.lineTo(38,z*5.5);g.stroke();}
@@ -254,7 +255,6 @@ function drawGunTower(v,x,y,angle){
  }
  g.fillStyle='#828a7c';g.fillRect(-20,-6,8,12);g.fillStyle='#c3a566';for(let i=0;i<4;i++)g.fillRect(-19+i*2,-5,1.4,4);
  g.fillStyle='#87917c';g.beginPath();g.arc(-3,0,5,0,Math.PI*2);g.fill();
- if(gunTowerSprites.body?.complete&&gunTowerSprites.body.naturalWidth)g.drawImage(gunTowerSprites.body,-24,-24,68,48);
  g.restore();
  if(enemy&&v.gunner.st&&enemyAlpha>.18)lab('!',x,y-68,'bold 17px system-ui','#ff5a5a');
 }

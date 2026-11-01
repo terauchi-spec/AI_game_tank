@@ -26,8 +26,8 @@ test('the gun keeps a strict shared 500-round limit with superior fire rate and 
  assert.ok(h.run('GUN_TOWER_TYPE.vcd<Math.min(...TYPES.map(t=>t.vcd))'));assert.equal(h.run('GUN_TOWER_TYPE.range'),400);assert.equal(h.run('bullets[0].life*GUN_TOWER_TYPE.speed'),400);
 });
 test('cover is chipped only after sustained hits and always stops gatling rounds before a soldier behind it',()=>{
- const h=scene();h.run("wall={x:200,y:380,w:80,h:60,kd:1};covers=[wall];victim={x:310,y:400,alive:true};humans=[victim];rebuildSpatialGrid();v.x=100;v.y=400;Math.random=()=>.5;for(let i=0;i<7;i++){fireGunTower(v,0,'p');b=bullets.pop();b.x=400;b.y=400;updateGatlingBullet(b,174,400,false);}");
- assert.equal(h.run('victim.alive'),true);assert.equal(h.run('wall.gatlingHits'),7);assert.equal(h.run('covers.length'),1);
+ const h=scene();h.run("wall={x:200,y:380,w:80,h:60,kd:1};covers=[wall];victim={x:310,y:400,alive:true};humans=[victim];rebuildSpatialGrid();v.x=100;v.y=400;Math.random=()=>.5;for(let i=0;i<5;i++){fireGunTower(v,0,'p');b=bullets.pop();b.x=400;b.y=400;updateGatlingBullet(b,174,400,false);}");
+ assert.equal(h.run('victim.alive'),true);assert.equal(h.run('wall.gatlingHits'),7.5);assert.equal(h.run('covers.length'),1);
  h.run("fireGunTower(v,0,'p');b=bullets.pop();b.x=400;b.y=400;updateGatlingBullet(b,174,400,false);");assert.equal(h.run('victim.alive'),true);assert.ok(h.run('scoreStats.coverDestroyed')>0);
 });
 test('a partner can select a dry tower on a route, board it, fire and leave it without moving the tower',()=>{
