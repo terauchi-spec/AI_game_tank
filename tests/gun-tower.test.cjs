@@ -131,8 +131,23 @@ test('partner gatling retains its previous tank behavior and enemy rounds still 
  const h=scene();h.run("enemyTank={x:400,y:400,alive:true,body:0,ang:0};etanks=[enemyTank];for(let i=0;i<30;i++)updateGatlingBullet({x:450,y:400,vx:1000,vy:0,from:'ally',k:'v',gatling:true},350,400,false);etanks=[];p.x=400;p.y=400;updateGatlingBullet({x:450,y:400,vx:1000,vy:0,from:'e',k:'v',gatling:true},350,400,false);");
  assert.equal(h.run('enemyTank.alive'),true);assert.equal(h.run('enemyTank.gatlingHits||0'),0);assert.equal(h.run('p.hp'),2.5);
 });
-test('cover cut area doubles without increasing the number of carve operations',()=>{
+test('gatling doubles the previous cover carve area again without extra carving calls',()=>{
  const h=scene();h.run("calls=[];carve=(x,y,r,credit,source)=>calls.push({r,credit,source});wall={};for(let i=0;i<7;i++)damageGunTowerCover(wall,100,100,'p');");assert.equal(h.run('calls.length'),0);
- h.run("damageGunTowerCover(wall,100,100,'p')");assert.equal(h.run('calls.length'),1);assert.ok(Math.abs(h.run('calls[0].r**2')-200)<1e-9);assert.equal(h.run('calls[0].credit'),true);
+ h.run("damageGunTowerCover(wall,100,100,'p')");assert.equal(h.run('calls.length'),1);assert.ok(Math.abs(h.run('calls[0].r**2')-400)<1e-9);assert.equal(h.run('calls[0].credit'),true);
  h.run("damageGunTowerCover({frontAntenna:true},100,100,'p')");assert.equal(h.run('calls.length'),1);
+});
+test('frontline cargo damage per gatling carve doubles while hit frequency remains eight',()=>{
+ const h=scene();h.run("damageFrontlineCargo=(c,x,y,r)=>{cargoRadius=r};cargo={frontCargo:true};for(let i=0;i<8;i++)damageGunTowerCover(cargo,100,100,'e');");
+ assert.equal(h.run('cargoRadius'),12);
+});
+test('unalerted enemy gunners sweep a fixed 180-degree forward arc slowly and reverse at both limits',()=>{
+ const h=scene();h.run("cars=[v];enemy={x:v.x,y:v.y,alive:true,elite:false};boardEnemyGunTower(v,enemy);findDetectedTarget=()=>null;v.scanT=0;start=v.aim;for(let i=0;i<1000;i++)updateGunTowerEnemy(enemy,.016);right=v.scanOffset;dir=v.scanDirection;for(let i=0;i<1000;i++)updateGunTowerEnemy(enemy,.016);left=v.scanOffset;");
+ assert.ok(Math.abs(h.run('right'))<=Math.PI/2);assert.ok(Math.abs(h.run('left'))<=Math.PI/2);
+ assert.equal(h.run('dir'),-1);assert.ok(h.run('left')<0);
+ assert.ok(Math.abs(h.run('start-v.scanCenter'))<1e-9);
+});
+test('gunner sweep keeps ordinary vision checks and aims at detected targets',()=>{
+ const h=scene();h.run("cars=[v];enemy={x:v.x,y:v.y,alive:true,elite:false};boardEnemyGunTower(v,enemy);target={x:v.x+180,y:v.y+90,alive:true};findDetectedTarget=()=>({obj:target,key:'p'});updateGunTowerEnemy(enemy,.2);");
+ assert.equal(h.run('enemy.st'),1);assert.ok(Math.abs(h.run('v.aim-Math.atan2(90,180)'))<1e-9);
+ assert.equal(h.run('bullets.length'),1);
 });
