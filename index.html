@@ -1000,7 +1000,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.01.0848',FILE_CREATED_AT='2026/11/01 08:48',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.01.0913',FILE_CREATED_AT='2026/11/01 09:13',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -4500,6 +4500,7 @@ function drawWheeledWreck(w,q){
 }
 function drawOneTankWreck(w){
  const q=tankWreckPose(w),sz=w.sz||TANK_DRAW,id=w.id||'enemy';
+ if(id==='gunTower'){drawGunTowerWreck(w,q);return;}
  if(id==='truck'||id==='armored'){drawWheeledWreck(w,q);return;}
  // 黒焦げの車体。破壊後は静止画相当の軽いCanvas描画のみ。
  g.save();g.translate(q.bx,q.by);g.rotate(q.ba+1.5708);
@@ -4536,7 +4537,7 @@ function wreck(){
   shake=Math.max(shake,4);flash=Math.max(flash,.14);return;
  }
  if(p.tank)recordPlayerDamage(Math.max(0,1-(p.tank.scoreDamageRecorded||0)),true);
- const veh=p.tank,kind=veh&&veh.kind,wasTruck=kind==='truck',wasFighter=kind==='fighter';if(kind==='tank'||wasTruck)spawnVehicleWreck(veh,p.x,p.y,p.body,p.ang);sfx('vehicleDestroyed');fb(p.x,p.y,50);burst(p.x,p.y,50,wasTruck?'#d48a52':wasFighter?'#9fc8e8':'#ff7b3a',330);releasePartnerSharedWreck(veh);p.partnerDriver=false;p.tank=null;p.hp=3;p.cc=0;p.vc=0;shake=16;flash=.5;say(veh&&veh.t.id==='armored'?'装甲車大破! 歩兵として脱出':wasTruck?'トラック大破! 歩兵として脱出':wasFighter?'戦闘機撃墜! 歩兵として脱出':kind==='tower'?'機関銃塔破損! 歩兵として脱出':'戦車大破!歩兵として脱出');
+ const veh=p.tank,kind=veh&&veh.kind,wasTruck=kind==='truck',wasFighter=kind==='fighter';if(kind==='tank'||wasTruck||kind==='tower')spawnVehicleWreck(veh,p.x,p.y,p.body,p.ang);sfx('vehicleDestroyed');fb(p.x,p.y,50);burst(p.x,p.y,50,wasTruck?'#d48a52':wasFighter?'#9fc8e8':'#ff7b3a',330);releasePartnerSharedWreck(veh);p.partnerDriver=false;p.tank=null;p.hp=3;p.cc=0;p.vc=0;shake=16;flash=.5;say(veh&&veh.t.id==='armored'?'装甲車大破! 歩兵として脱出':wasTruck?'トラック大破! 歩兵として脱出':wasFighter?'戦闘機撃墜! 歩兵として脱出':kind==='tower'?'機関銃塔破損! 歩兵として脱出':'戦車大破!歩兵として脱出');
 }
 function truckTankCrashFx(x,y,e,actionId=0){
  if(e&&e.alive){destroyEnemyTank(e,x,y);if(actionId)recordPlayerKill(actionId,'',e);burst(e.x,e.y,46,'#ff6a2a',380);}
@@ -5965,6 +5966,7 @@ function update(dt){
     if(hitCover){dead=true;if(stageMode==='indoor'&&hitCover.indoorWindow)indoorBreakWindow(hitCover.window);if(b.from==='e'&&(hitCover.playerBuilt||hitCover.pb)&&scoreStats&&!scoreStats.finalized)scoreStats.wallBlocks++;if(b.k==='c'){if(b.from==='p')playerCannonGroundImpact(b.x,b.y,b.actionId,95);else{cannonImpact(b.x,b.y,b.from);explode(b.x,b.y,28,false,b.from,0);carve(b.x,b.y,48,false,'cannonBlast');burst(b.x,b.y,22,'#a89a74',260);shake=Math.max(shake,8);}}else{if(hitCover.frontCargo)damageFrontlineCargo(hitCover,b.x,b.y,4);burst(b.x,b.y,4,'#b9b39a',90);}}
    }
   }
+  if(!dead&&b.from==='e'&&b.k==='c'&&hitGunTowerByEnemyCannon(b,ox,oy))dead=true;
   if(!dead&&(b.from==='p'||b.from==='ally')){
    for(const e of etanks)if(e.alive&&Math.hypot(b.x-e.x,b.y-e.y)<TANK_HIT){
     dead=true;
@@ -7420,7 +7422,7 @@ function drawVehicleBottomHud(){
  const armorScale=fighter||truck?armorMax:VEHICLE_HUD_ARMOR_MAX;
  const armorColor=armorRatio>.5?'#9bd477':armorRatio>.25?'#ffd27a':'#ff7666';
  const fuelRatio=Math.max(0,Math.min(1,(v.f||0)/(t.fmax||100)));
- const fuelColor=fuelRatio>.25?'#dce7b8':fuelRatio>0?'#ffd27a':'#ff7666';
+ const fuelColor='#c83d32'; // Gasoline pickup can color, shared across all vehicles.
  const ammo=(count,max)=>infinite?'∞/'+max:Math.max(0,Math.ceil(count||0))+'/'+max;
  g.save();g.textAlign='left';
  g.fillStyle='rgba(8,10,7,.58)';g.fillRect(x,y,w,h);

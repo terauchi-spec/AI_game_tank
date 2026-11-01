@@ -54,7 +54,7 @@ test('all seven real tanks show capacity differences on common absolute armor an
 test('equal absolute remaining armor and fuel have equal lengths across vehicles; warning colors use local remaining fraction',()=>{
  const h=harness(),types=h.c.get('TYPES'),result=[];
  for(const t of [types[0],types[6]]){h.gauges.length=0;h.draw({kind:'tank',t,ch:t.armor-1,f:50,c:0,v:0});result.push(h.gauges.map(a=>a[3]));}
- assertRatios(result[0],result[1]);h.gauges.length=0;h.draw({kind:'tank',t:types[0],ch:0,f:types[0].fmax,c:0,v:0});assert.equal(h.gauges[0][4],'#9bd477');assert.equal(h.gauges[1][4],'#dce7b8');
+ assertRatios(result[0],result[1]);h.gauges.length=0;h.draw({kind:'tank',t:types[0],ch:0,f:types[0].fmax,c:0,v:0});assert.equal(h.gauges[0][4],'#9bd477');assert.equal(h.gauges[1][4],'#c83d32');
 });
 test('ticks are limited to the filled active portion, stay on the common scale and require no more than eleven marks',()=>{
  const h=harness();for(const [fill,capacity] of [[0,.6],[.25,.6],[.6,.6],[1,1]]){h.lines.length=0;h.rects.length=0;h.c.drawVehicleHudGauge(10,20,120,fill,'green',capacity);assert.ok(h.lines.length<=11);for(const tick of h.lines)assert.ok(tick.x>10&&tick.x<10+120*fill);if(!fill)assert.equal(h.lines.length,0);const color=h.rects.find(r=>r.color==='green');assert.equal(color.w,120*fill);}
@@ -72,5 +72,13 @@ test('training hides the entire vehicle HUD and restores it for normal stages',(
   assert.equal(h.text.length,0);assert.equal(h.icons.length,0);assert.equal(h.gauges.length,0);assert.equal(h.rects.length,0);
   h.c.stageMode='beginner';h.text.length=0;h.icons.length=0;h.draw(tank());
   assert.deepEqual(h.text.map(t=>t.s),['T-34(ソ連)','8/11','57/72']);assert.deepEqual(h.icons.map(i=>i[0]),['shield','shell','ammo','fuel']);
+ }
+});
+
+test('fuel icons and gauges match the pickup can red for every vehicle type',()=>{
+ const h=harness();for(const v of [tank(),{kind:'truck',t:{id:'truck',n:'トラック',fmax:100},mgHits:0,f:5},{kind:'fighter',t:{id:'fighter',n:'戦闘機',hp:8,fmax:100},hp:8,f:5},{kind:'tank',t:{id:'armored',n:'装甲車',armor:1.1,vmax:120,fmax:95},ch:0,v:70,f:5}]){
+  v.f=5;h.icons.length=0;h.gauges.length=0;h.draw(v);
+  assert.equal(h.icons.find(x=>x[0]==='fuel')[3],'#c83d32');
+  assert.equal(h.gauges.at(-1)[4],'#c83d32');
  }
 });

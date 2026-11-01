@@ -4,7 +4,7 @@ function scene(){const h=createGameEngine(path.join(__dirname,'..'));h.run("stag
 test('emplacements spawn only in the two advanced stages and start with zero fuel and 500 rounds',()=>{
  for(const id of ['beginner','baseIntermediate','base','frontBeginner','frontIntermediate','front','indoor','indoorLab','decisive','training']){
   const h=scene();h.c.sampleId=id;h.run("currentStageId=()=>sampleId;stageMode=sampleId==='front'?'front':'base';mission={points:[{x:240,y:9000},{x:720,y:6000},{x:240,y:3000}]};setupGunTowers();");
-  assert.equal(h.run("cars.filter(v=>v.kind==='tower').length"),['base','front'].includes(id)?3:0,id);
+  assert.equal(h.run("cars.filter(v=>v.kind==='tower').length"),id==='base'?6:id==='front'?3:0,id);
   assert.equal(h.run("cars.every(v=>v.v===500&&v.f===0&&v.t.sp===0)"),true,id);
  }
 });
@@ -46,7 +46,7 @@ test('stationary mounts cannot be pushed by movement, blast flight or river curr
 test('real advanced worlds place towers on land clear of scenery while intermediate worlds exclude them',()=>{
  for(const stage of ['base','front']){
   const h=createGameEngine(path.join(__dirname,'..'));h.c.testStage=stage;h.run("stageMode=testStage;skill='throw';reset(false);");
-  assert.equal(h.run("cars.filter(v=>v.kind==='tower').length"),3,stage);
+  assert.equal(h.run("cars.filter(v=>v.kind==='tower').length"),stage==='base'?6:3,stage);
   assert.equal(h.run("cars.filter(v=>v.kind==='tower').every(v=>!hitsC(v.x,v.y,GUN_TOWER_TYPE.clearance)&&!inWaterAt(v.x,v.y,GUN_TOWER_TYPE.clearance))"),true,stage);
   h.run("draw(null);station=cars.find(v=>v.kind==='tower');if(station.gunner){station.gunner.alive=false;releaseGunTower(station);}humans=humans.filter(h=>D(h,station)>1000);allies=[];p.x=station.x;p.y=station.y+45;interact=true;update(.016);");
   assert.equal(h.run('p.tank===station'),true,stage);
@@ -95,12 +95,32 @@ test('temporary suspicion and fire-related detection holds expire for a seated g
  assert.equal(h.run('enemy.sus'),0);assert.equal(h.run('enemy.burnSuspicionHold'),0);assert.equal(h.run('bullets.length'),0);
 });
 
-test('enemy gatling rounds stop at every player tank without damage or damage-stat changes',()=>{
+test('200 enemy gatling hits destroy every player tank, while 199 do not',()=>{
  for(const id of ['t34','tiger','type10','m1','sherman','churchill','kingtiger']){
   const h=scene();h.c.testId=id;
-  h.run("p.x=400;p.y=400;p.tank={kind:'tank',t:TYPES.find(t=>t.id===testId),ch:0,hp:10};for(let i=0;i<50;i++){b={x:450,y:400,vx:1000,vy:0,from:'e',k:'v',gatling:true};updateGatlingBullet(b,350,400,false);}");
-  assert.equal(h.run('p.tank.ch'),0,id);assert.equal(h.run('p.tank.hp'),10,id);assert.equal(h.run('scoreStats.damageHits'),0,id);assert.equal(h.run('scoreStats.vehicleDamage'),0,id);
+  h.run("p.x=400;p.y=400;p.tank={kind:'tank',t:TYPES.find(t=>t.id===testId),ch:0,hp:10};round=()=>{b={x:450,y:400,vx:1000,vy:0,from:'e',k:'v',gatling:true};updateGatlingBullet(b,350,400,false);};for(let i=0;i<199;i++)round();");
+  assert.equal(h.run('!!p.tank'),true,id);assert.ok(h.run('p.tank.ch')>0,id);
+  h.run('round()');assert.equal(h.run('p.tank'),null,id);
+  assert.ok(h.run('scoreStats.vehicleDamage')>0,id);
  }
+});
+test('enemy cannon destroys occupied and empty towers in one direct hit and leaves wreckage',()=>{
+ for(const occupier of ['empty','enemy','player','partner']){
+  const h=scene();h.c.occupier=occupier;
+  h.run("cars=[v];if(occupier==='enemy'){enemy={x:v.x,y:v.y,alive:true};humans=[enemy];boardEnemyGunTower(v,enemy);}if(occupier==='player'){cars=[];p.tank=v;p.x=v.x;p.y=v.y;}if(occupier==='partner'){cars=[];partner={x:v.x,y:v.y,vehicle:v,hp:3,face:0};}shell={x:v.x+120,y:v.y,from:'e',k:'c'};hit=hitGunTowerByEnemyCannon(shell,v.x-120,v.y);");
+  assert.equal(h.run('hit'),true,occupier);assert.equal(h.run('v.destroyed'),true,occupier);
+  assert.equal(h.run("tankWrecks.filter(w=>w.id==='gunTower').length"),1,occupier);
+  assert.equal(h.run('gunTowerAvailable(v)'),false,occupier);
+  assert.equal(h.run('cars.includes(v)'),false,occupier);
+  if(occupier==='player')assert.equal(h.run('p.tank'),null);
+  if(occupier==='partner')assert.equal(h.run('partner.vehicle'),null);
+  if(occupier==='enemy')assert.equal(h.run('enemy.alive'),false);
+ }
+});
+test('gun tower geometry shrinks to 80 percent of prior dimensions',()=>{
+ const h=scene();assert.equal(h.run('GUN_TOWER_TYPE.drawScale'),1.6);
+ assert.equal(h.run('GUN_TOWER_TYPE.muzzleOffset'),59.2);
+ assert.equal(h.run('GUN_TOWER_TYPE.playerTankHits'),200);
 });
 test('player gatling damage accumulates on an enemy tank and awards exactly one kill at twenty hits',()=>{
  const h=scene();h.run("enemyTank={x:400,y:400,alive:true,body:0,ang:0};etanks=[enemyTank];hit=()=>{const round={x:450,y:400,vx:1000,vy:0,from:'p',k:'v',gatling:true};updateGatlingBullet(round,350,400,false);};for(let i=0;i<19;i++)hit();");
