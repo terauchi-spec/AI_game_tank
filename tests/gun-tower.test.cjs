@@ -122,9 +122,9 @@ test('gun tower geometry shrinks to 80 percent of prior dimensions',()=>{
  assert.equal(h.run('GUN_TOWER_TYPE.muzzleOffset'),59.2);
  assert.equal(h.run('GUN_TOWER_TYPE.playerTankHits'),200);
 });
-test('player gatling damage accumulates on an enemy tank and awards exactly one kill at twenty hits',()=>{
- const h=scene();h.run("enemyTank={x:400,y:400,alive:true,body:0,ang:0};etanks=[enemyTank];hit=()=>{const round={x:450,y:400,vx:1000,vy:0,from:'p',k:'v',gatling:true};updateGatlingBullet(round,350,400,false);};for(let i=0;i<19;i++)hit();");
- assert.equal(h.run('enemyTank.alive'),true);assert.equal(h.run('enemyTank.gatlingHits'),19);assert.equal(h.run('scoreStats.playerKills'),0);
+test('player gatling damage accumulates on an enemy tank and awards exactly one kill at thirty hits',()=>{
+ const h=scene();h.run("enemyTank={x:400,y:400,alive:true,body:0,ang:0};etanks=[enemyTank];hit=()=>{const round={x:450,y:400,vx:1000,vy:0,from:'p',k:'v',gatling:true};updateGatlingBullet(round,350,400,false);};for(let i=0;i<29;i++)hit();");
+ assert.equal(h.run('enemyTank.alive'),true);assert.equal(h.run('enemyTank.gatlingHits'),29);assert.equal(h.run('scoreStats.playerKills'),0);
  h.run('hit();for(let i=0;i<5;i++)hit();');assert.equal(h.run('enemyTank.alive'),false);assert.equal(h.run('enemyTank.wreckSpawned'),true);assert.equal(h.run('scoreStats.playerKills'),1);assert.equal(h.run('scoreStats.playerTankKills'),1);
 });
 test('partner gatling retains its previous tank behavior and enemy rounds still harm infantry',()=>{
@@ -133,12 +133,12 @@ test('partner gatling retains its previous tank behavior and enemy rounds still 
 });
 test('gatling doubles the previous cover carve area again without extra carving calls',()=>{
  const h=scene();h.run("calls=[];carve=(x,y,r,credit,source)=>calls.push({r,credit,source});wall={};for(let i=0;i<7;i++)damageGunTowerCover(wall,100,100,'p');");assert.equal(h.run('calls.length'),0);
- h.run("damageGunTowerCover(wall,100,100,'p')");assert.equal(h.run('calls.length'),1);assert.ok(Math.abs(h.run('calls[0].r**2')-400)<1e-9);assert.equal(h.run('calls[0].credit'),true);
+ h.run("damageGunTowerCover(wall,100,100,'p')");assert.equal(h.run('calls.length'),1);assert.ok(Math.abs(h.run('calls[0].r**2')-600)<1e-9);assert.equal(h.run('calls[0].credit'),true);
  h.run("damageGunTowerCover({frontAntenna:true},100,100,'p')");assert.equal(h.run('calls.length'),1);
 });
 test('frontline cargo damage per gatling carve doubles while hit frequency remains eight',()=>{
  const h=scene();h.run("damageFrontlineCargo=(c,x,y,r)=>{cargoRadius=r};cargo={frontCargo:true};for(let i=0;i<8;i++)damageGunTowerCover(cargo,100,100,'e');");
- assert.equal(h.run('cargoRadius'),12);
+ assert.ok(Math.abs(h.run('cargoRadius')-12*Math.sqrt(1.5))<1e-10);
 });
 test('unalerted enemy gunners sweep a fixed 180-degree forward arc slowly and reverse at both limits',()=>{
  const h=scene();h.run("cars=[v];enemy={x:v.x,y:v.y,alive:true,elite:false};boardEnemyGunTower(v,enemy);findDetectedTarget=()=>null;v.scanT=0;start=v.aim;for(let i=0;i<1000;i++)updateGunTowerEnemy(enemy,.016);right=v.scanOffset;dir=v.scanDirection;for(let i=0;i<1000;i++)updateGunTowerEnemy(enemy,.016);left=v.scanOffset;");
@@ -164,4 +164,26 @@ test('player gun tower is aimed by left-stick directions, and does not move with
  assert.ok(Math.abs(h.run('p.ang')+Math.PI/2)<1e-10);
  h.run("keys.ArrowUp=false;update(.016);");
  assert.ok(Math.abs(h.run('p.ang')+Math.PI/2)<1e-10);
+});
+
+test('gun tower spin-up prevents firing for the first half second and keeps spinning while held',()=>{
+ const h=scene();h.run("spinSounds=0;sfx=(name)=>{if(name==='gatlingSpin')spinSounds++};ready=updateGunTowerSpin(v,.25,true);");
+ assert.equal(h.run('ready'),false);assert.equal(h.run('v.spinActive'),true);assert.equal(h.run('spinSounds'),1);
+ h.run("phase=v.spinPhase;ready=updateGunTowerSpin(v,.24,true);");assert.equal(h.run('ready'),false);assert.ok(h.run('v.spinPhase!==phase'));
+ h.run("ready=updateGunTowerSpin(v,.01,true);fireIfReady=ready&&fireGunTower(v,0,'p');");assert.equal(h.run('fireIfReady'),true);assert.equal(h.run('v.v'),499);
+ h.run("phase=v.spinPhase;ready=updateGunTowerSpin(v,.1,true);");assert.equal(h.run('ready'),true);assert.ok(h.run('phase!==v.spinPhase'));assert.equal(h.run('spinSounds'),1);
+ h.run("updateGunTowerSpin(v,.01,false);");assert.equal(h.run('v.spinTime'),0);assert.equal(h.run('v.spinActive'),false);
+});
+test('left joystick keeps continuous analog axes rather than quantizing turret to 8 directions',()=>{
+ const h=scene();h.run("cars=[];p.tank=v;p.x=v.x;p.y=v.y;state='play';analogStickX=.7;analogStickY=.3;keys.ArrowRight=true;keys.ArrowDown=true;update(.016);");
+ assert.ok(Math.abs(h.run('p.ang')-Math.atan2(.3,.7))<1e-10);
+ h.run("analogStickX=0;analogStickY=0;keys.ArrowRight=false;keys.ArrowDown=false;update(.016);");
+ assert.ok(Math.abs(h.run('p.ang')-Math.atan2(.3,.7))<1e-10);
+});
+test('enemy and partner tower operators warm up before the first bullet',()=>{
+ for(const owner of ['enemy','partner']){
+  const h=scene();h.c.mode=owner;h.run("p.x=v.x+180;p.y=v.y;if(mode==='enemy'){cars=[v];enemy={alive:true,elite:false};humans=[enemy];boardEnemyGunTower(v,enemy);attack=dt=>updateGunTowerEnemy(enemy,dt);}else{cars=[];partner={x:v.x,y:v.y,hp:3,vehicle:v};humans=[{x:v.x+180,y:v.y,alive:true}];attack=dt=>partnerGunTowerAttack(partner,dt);}attack(.25);");
+  assert.equal(h.run('bullets.length'),0,owner);
+  h.run('attack(.25)');assert.equal(h.run('bullets.length'),1,owner);
+ }
 });

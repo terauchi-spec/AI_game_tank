@@ -1,6 +1,6 @@
 // Gatling hardware is drawn at 80% of its former size; people retain their ordinary size.
 // Stationary single-seat vehicle. Ammunition belongs to the emplacement, not its operator.
-const GUN_TOWER_TYPE=Object.freeze({id:'gunTower',n:'機関銃塔',hp:8,armor:1.5,cmax:0,vmax:500,fmax:0,sp:0,ccd:.065,vcd:.065,range:400,speed:1000,antiTankHits:20,playerTankHits:200,coverRadius:20,drawScale:1.6,seatOffset:35.2,muzzleOffset:59.2,clearance:67.2,boardRadius:96,col:'#66705a'});
+const GUN_TOWER_TYPE=Object.freeze({id:'gunTower',n:'機関銃塔',hp:8,armor:1.5,cmax:0,vmax:500,fmax:0,sp:0,ccd:.065,vcd:.065,range:400,speed:1000,antiTankHits:30,playerTankHits:200,spinUpSeconds:.5,coverRadius:20*Math.sqrt(1.5),drawScale:1.6,seatOffset:35.2,muzzleOffset:59.2,clearance:67.2,boardRadius:96,col:'#66705a'});
 function gunTowerAvailable(v){
  if(v?.kind!=='tower')return true;
  if(v.destroyed)return false;
@@ -10,7 +10,7 @@ function gunTowerAvailable(v){
 function releaseGunTower(v){
  const h=v?.gunner;if(!h)return;
  h.gunTower=null;h.st=0;h.target=null;h.frontMarch=stageMode==='front';h.path=[{x:h.x,y:h.y},{x:h.x+30,y:h.y+30}];h.wi=1;
- v.gunner=null;v.reboardT=10;v.scanTarget=null;
+ v.gunner=null;v.reboardT=10;v.scanTarget=null;v.spinActive=false;v.spinTime=0;
 }
 function boardEnemyGunTower(v,h){
  if(!gunTowerAvailable(v)||v.v<=0||!h.alive||h.elite||h.commander==='white'||h.stun>0||h.stunRecover>0||h.blastAirT>0||h.dog||h.houndPinned)return false;
@@ -48,6 +48,7 @@ function gunTowerBlast(x,y,r){
 
 function destroyGunTower(v,impactX=v?.x,impactY=v?.y){
  if(!v||v.kind!=='tower'||v.destroyed)return false;
+ updateGunTowerSpin(v,0,false);
  if(p?.tank===v&&(debugInvincible||areaDebugEnabled)){shake=Math.max(shake,4);return true;}
  v.destroyed=true;
  if(v.gunner){
@@ -81,6 +82,22 @@ function hitGunTowerByEnemyCannon(b,ox,oy){
  b.x=x;b.y=y;
  return destroyGunTower(target,x,y);
 }
+// Warm up once per trigger hold. The barrel continues spinning during sustained fire.
+function updateGunTowerSpin(v,dt,active){
+ if(!v||v.kind!=='tower')return false;
+ if(!active||v.destroyed||v.v<=0){
+  v.spinActive=false;v.spinTime=0;return false;
+ }
+ if(!v.spinActive){
+  v.spinActive=true;v.spinTime=0;
+  sfx('gatlingSpin',{x:v.x,y:v.y});
+ }
+ v.spinTime=Math.min(GUN_TOWER_TYPE.spinUpSeconds,(v.spinTime||0)+Math.max(0,dt));
+ // Phase is updated in gameplay, never by drawing.
+ const t=v.spinTime/GUN_TOWER_TYPE.spinUpSeconds;
+ v.spinPhase=((v.spinPhase||0)+Math.max(0,dt)*(12+34*t))%(Math.PI*2);
+ return v.spinTime>=GUN_TOWER_TYPE.spinUpSeconds-1e-9;
+}
 function updateGunTowerBurst(v,dt){
  if(v.aiRestT>0){v.aiRestT=Math.max(0,v.aiRestT-dt);return;}
  if(v.aiBurstT>0){
@@ -93,6 +110,7 @@ function updateGunTowers(dt){
  if(partner?.vehicle?.kind==='tower'&&partner.vehicle!==p?.tank)updateGunTowerBurst(partner.vehicle,dt);
  for(const v of cars||[])if(v.kind==='tower'){
   updateGunTowerBurst(v,dt);v.f=0;v.reboardT=Math.max(0,(v.reboardT||0)-dt);gunTowerAvailable(v);
+  if(!v.gunner&&p?.tank!==v&&partner?.vehicle!==v)updateGunTowerSpin(v,dt,false);
   if(!v.gunner&&v.v>0&&v.reboardT<=0){
    v.reboardT=.5;
    const h=(humans||[]).find(h=>h.alive&&!h.gunTower&&!h.elite&&!h.dog&&!h.commander&&!(h.stun>0)&&!(h.stunRecover>0)&&!(h.blastAirT>0)&&!h.houndPinned&&D(h,v)<90&&los(h,v));
@@ -102,7 +120,7 @@ function updateGunTowers(dt){
 }
 function updateGunTowerEnemy(h,dt){
  const v=h.gunTower;if(!v)return false;
- if(v.destroyed||!h.alive||h.stun>0||h.blastAirT>0||!cars.includes(v)){releaseGunTower(v);return false;}
+ if(v.destroyed||!h.alive||h.stun>0||h.blastAirT>0||!cars.includes(v)){updateGunTowerSpin(v,dt,false);releaseGunTower(v);return false;}
  h.walking=false;h.sus=Math.max(0,(h.sus||0)-dt);h.burnSuspicionHold=Math.max(0,(h.burnSuspicionHold||0)-dt);v.gunT=Math.max(0,(v.gunT||0)-dt);v.scanT=(v.scanT||0)-dt;
  // Slowly patrol the fixed 180-degree forward arc (+/-90 degrees).
  // Sweep only while idle; avoid adding per-frame allocations or extra sight queries.
@@ -123,11 +141,12 @@ function updateGunTowerEnemy(h,dt){
  }
  const target=v.scanTarget,actor=target?.actor;
  if(!actor||target.key==='decoy'&&actor!==decoy||actor.alive===false||actor.down||actor.stun>0||actor===p&&(p.dig>0||debugMode>=2)||D(v,actor)>GUN_TOWER_TYPE.range||!los(v,actor)){
-  h.st=0;h.target=null;v.scanTarget=null;return true;
+  h.st=0;h.target=null;v.scanTarget=null;updateGunTowerSpin(v,dt,false);return true;
  }
  h.st=1;h.target=target.key;h.face=v.aim=Math.atan2(actor.y-v.y,actor.x-v.x);
  h.x=v.x-Math.cos(h.face)*GUN_TOWER_TYPE.seatOffset;h.y=v.y-Math.sin(h.face)*GUN_TOWER_TYPE.seatOffset;
- if(v.gunT<=0&&v.v>0&&!(v.aiRestT>0)){v.gunT=GUN_TOWER_TYPE.vcd;fireGunTower(v,h.face,'e',h);}
+ const ready=updateGunTowerSpin(v,dt,v.v>0&&!(v.aiRestT>0));
+ if(ready&&v.gunT<=0){v.gunT=GUN_TOWER_TYPE.vcd;fireGunTower(v,h.face,'e',h);}
  return true;
 }
 function fireGunTower(v,angle,from,operator=null){
@@ -148,7 +167,7 @@ function gunTowerSegmentT(a,b,o,r){
 function damageGunTowerCover(c,x,y,from){
  if(c.frontAntenna&&!c.frontCargo||c.trainingWall||c.indoorDoor)return;
  c.gatlingHits=(c.gatlingHits||0)+1;if(c.gatlingHits<8)return;c.gatlingHits=0;
- if(c.frontCargo)damageFrontlineCargo(c,x,y,12);else carve(x,y,GUN_TOWER_TYPE.coverRadius,from==='p',null);
+ if(c.frontCargo)damageFrontlineCargo(c,x,y,12*Math.sqrt(1.5));else carve(x,y,GUN_TOWER_TYPE.coverRadius,from==='p',null);
 }
 function updateGatlingBullet(b,ox,oy,expired){
  const a={x:ox,y:oy},end={x:b.x,y:b.y},hits=[];
@@ -222,6 +241,12 @@ function drawGunTower(v,x,y,angle){
  g.strokeStyle='#b0b9b1';g.lineWidth=1;g.beginPath();for(let i=-2;i<=2;i++){g.moveTo(9,i*2.8);g.lineTo(39,i*2.8);}g.stroke();
  g.fillStyle='#29332e';g.fillRect(19,-9,5,18);g.fillRect(34,-9,6,18);
  g.fillStyle='#596861';g.fillRect(39,-7,4,14);
+ // The cooling-barrel muzzle rotates during warm-up and continuously while firing.
+ if(v.spinActive){
+  g.save();g.translate(38,0);g.rotate(v.spinPhase||0);
+  g.fillStyle='#aeb8b0';for(let k=0;k<6;k++){const a=k*Math.PI/3;g.beginPath();g.arc(Math.cos(a)*4.5,Math.sin(a)*4.5,1.5,0,Math.PI*2);g.fill();}
+  g.strokeStyle='#202825';g.lineWidth=1.3;g.beginPath();g.arc(0,0,6.8,0,Math.PI*2);g.stroke();g.restore();
+ }
  g.fillStyle='#828a7c';g.fillRect(-20,-6,8,12);g.fillStyle='#c3a566';for(let i=0;i<4;i++)g.fillRect(-19+i*2,-5,1.4,4);
  g.fillStyle='#87917c';g.beginPath();g.arc(-3,0,5,0,Math.PI*2);g.fill();
  g.restore();
@@ -247,7 +272,8 @@ function drawGunTowerWreck(w,q){
 function partnerGunTowerAttack(q,dt){
  const v=q.vehicle;q.vehicleGunT=Math.max(0,(q.vehicleGunT||0)-dt);q.towerScanT=(q.towerScanT||0)-dt;
  if(q.towerScanT<=0){q.towerScanT=.15;q.towerTarget=null;let best=GUN_TOWER_TYPE.range;for(const h of humans||[])if(h.alive&&!(h.stun>0)){const d=D(q,h);if(d<best&&los(q,h)){best=d;q.towerTarget=h;}}}
- const h=q.towerTarget;if(!h||!h.alive||h.stun>0||D(q,h)>GUN_TOWER_TYPE.range||!los(q,h))return;
+ const h=q.towerTarget;if(!h||!h.alive||h.stun>0||D(q,h)>GUN_TOWER_TYPE.range||!los(q,h)){updateGunTowerSpin(v,dt,false);return;}
  q.vehicleAim=q.face=Math.atan2(h.y-q.y,h.x-q.x);v.aim=q.vehicleAim;
- if(v.v>0&&q.vehicleGunT<=0&&!(v.aiRestT>0)){q.vehicleGunT=GUN_TOWER_TYPE.vcd;fireGunTower(v,q.vehicleAim,'ally',q);}
+ const ready=updateGunTowerSpin(v,dt,v.v>0&&!(v.aiRestT>0));
+ if(ready&&q.vehicleGunT<=0){q.vehicleGunT=GUN_TOWER_TYPE.vcd;fireGunTower(v,q.vehicleAim,'ally',q);}
 }

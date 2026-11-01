@@ -1000,7 +1000,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.01.0933',FILE_CREATED_AT='2026/11/01 09:33',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.01.1029',FILE_CREATED_AT='2026/11/01 10:29',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -1022,7 +1022,7 @@ function syncSoundButton(){for(const id of ['titleSound','gameMenuSound']){const
 function ensureAudio(event){if(typeof recoverGameAudio==='function')return recoverGameAudio(event);if(!gameSoundEnabled)return;try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});}catch(_){}}
 function tone(f=440,d=.08,v=.035,type='square',f2=null){if(!audioCtx||!gameSoundEnabled)return;const t=audioCtx.currentTime,o=audioCtx.createOscillator(),a=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t+d);a.gain.setValueAtTime(v,t);a.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(a);a.connect(gameAudioDestination(audioCtx));o.start(t);o.stop(t+d+.02);}
 function noise(d=.12,v=.025){if(!audioCtx||!gameSoundEnabled)return;const sr=audioCtx.sampleRate,n=Math.max(1,Math.floor(sr*d)),buf=audioCtx.createBuffer(1,n,sr),ch=buf.getChannelData(0);for(let i=0;i<n;i++)ch[i]=(Math.random()*2-1)*(1-i/n);const src=audioCtx.createBufferSource(),a=audioCtx.createGain();src.buffer=buf;a.gain.value=v;src.connect(a);a.connect(gameAudioDestination(audioCtx));src.start();}
-function legacySfx(n){ensureAudio();if(!audioCtx)return;switch(n){case'cannon':tone(105,.14,.065,'sawtooth',45);noise(.18,.045);break;case'mg':tone(250,.045,.018,'square',150);break;case'explosion':tone(80,.22,.055,'sawtooth',32);noise(.28,.055);break;case'airExplosion':tone(80,.22,.033,'sawtooth',32);noise(.28,.033);break;case'pickup':tone(620,.08,.03,'sine',900);setTimeout(()=>tone(900,.09,.025,'sine',1200),65);break;case'skill':tone(420,.1,.025,'triangle',650);break;case'sniper':noise(.055,.070);tone(1180,.032,.045,'square',430);tone(185,.105,.050,'sawtooth',78);setTimeout(()=>{noise(.10,.018);tone(520,.055,.014,'triangle',260);},48);break;case'sniperHit':tone(920,.045,.018,'square',620);break;case'sniperLens':tone(760,.035,.020,'square',430);noise(.032,.008);setTimeout(()=>tone(390,.045,.018,'triangle',260),48);break;case'drill':tone(145,.07,.02,'sawtooth',110);break;case'drillBreak':noise(.2,.045);tone(120,.13,.04,'square',55);break;case'ally':tone(520,.08,.025,'triangle',720);setTimeout(()=>tone(720,.1,.025,'triangle',980),70);break;case'radio':tone(880,.05,.018,'square');setTimeout(()=>tone(660,.05,.018,'square'),80);setTimeout(()=>tone(980,.08,.02,'square'),160);break;case'enter':tone(280,.07,.022,'triangle',420);break;case'rain':noise(.35,.012);break;case'enemyCannon':tone(88,.11,.028,'sawtooth',50);noise(.11,.018);break;case'enemyGun':tone(190,.04,.009,'square',130);break;case'lose':tone(180,.18,.035,'sawtooth',75);setTimeout(()=>tone(120,.28,.025,'sawtooth',45),120);break;case'win':tone(440,.12,.03,'triangle',660);setTimeout(()=>tone(660,.16,.03,'triangle',990),120);break;case'crush':tone(120,.055,.022,'square',70);noise(.07,.022);break;case'vehicleHit':tone(210,.05,.018,'square',120);noise(.045,.012);break;case'decoy':tone(760,.06,.018,'square',1020);setTimeout(()=>tone(1020,.05,.014,'square',760),70);break;case'splash':noise(.09,.016);tone(190,.06,.012,'triangle',130);break;case'deathHit':tone(95,.18,.05,'sawtooth',42);noise(.22,.04);break;case'bombdrop':tone(330,.18,.018,'sine',120);setTimeout(()=>noise(.06,.01),100);break;}}
+function legacySfx(n){ensureAudio();if(!audioCtx)return;switch(n){case'gatlingSpin':tone(95,.48,.018,'sawtooth',285);tone(170,.45,.010,'triangle',490);break;case'cannon':tone(105,.14,.065,'sawtooth',45);noise(.18,.045);break;case'mg':tone(250,.045,.018,'square',150);break;case'explosion':tone(80,.22,.055,'sawtooth',32);noise(.28,.055);break;case'airExplosion':tone(80,.22,.033,'sawtooth',32);noise(.28,.033);break;case'pickup':tone(620,.08,.03,'sine',900);setTimeout(()=>tone(900,.09,.025,'sine',1200),65);break;case'skill':tone(420,.1,.025,'triangle',650);break;case'sniper':noise(.055,.070);tone(1180,.032,.045,'square',430);tone(185,.105,.050,'sawtooth',78);setTimeout(()=>{noise(.10,.018);tone(520,.055,.014,'triangle',260);},48);break;case'sniperHit':tone(920,.045,.018,'square',620);break;case'sniperLens':tone(760,.035,.020,'square',430);noise(.032,.008);setTimeout(()=>tone(390,.045,.018,'triangle',260),48);break;case'drill':tone(145,.07,.02,'sawtooth',110);break;case'drillBreak':noise(.2,.045);tone(120,.13,.04,'square',55);break;case'ally':tone(520,.08,.025,'triangle',720);setTimeout(()=>tone(720,.1,.025,'triangle',980),70);break;case'radio':tone(880,.05,.018,'square');setTimeout(()=>tone(660,.05,.018,'square'),80);setTimeout(()=>tone(980,.08,.02,'square'),160);break;case'enter':tone(280,.07,.022,'triangle',420);break;case'rain':noise(.35,.012);break;case'enemyCannon':tone(88,.11,.028,'sawtooth',50);noise(.11,.018);break;case'enemyGun':tone(190,.04,.009,'square',130);break;case'lose':tone(180,.18,.035,'sawtooth',75);setTimeout(()=>tone(120,.28,.025,'sawtooth',45),120);break;case'win':tone(440,.12,.03,'triangle',660);setTimeout(()=>tone(660,.16,.03,'triangle',990),120);break;case'crush':tone(120,.055,.022,'square',70);noise(.07,.022);break;case'vehicleHit':tone(210,.05,.018,'square',120);noise(.045,.012);break;case'decoy':tone(760,.06,.018,'square',1020);setTimeout(()=>tone(1020,.05,.014,'square',760),70);break;case'splash':noise(.09,.016);tone(190,.06,.012,'triangle',130);break;case'deathHit':tone(95,.18,.05,'sawtooth',42);noise(.22,.04);break;case'bombdrop':tone(330,.18,.018,'sine',120);setTimeout(()=>noise(.06,.01),100);break;}}
 function sfx(n,position=null){if(!gameSoundEnabled)return;ensureAudio();const sample=n==='skill'?(typeof state!=='undefined'&&state==='play'?'legacySkill':'uiSelect'):n;try{if(typeof playGameSe==='function'&&playGameSe(sample,position))return;}catch(_){}legacySfx(/^cannon[2-7]$/.test(n)?'cannon':({unlockCard:'skill',fainting:'skill',uiSelect:'skill',uiConfirm:'skill',unavailable:'skill',bombExplosion:'explosion',shellExplosion:'explosion',propExplosion:'explosion',vehicleDestroyed:'explosion',coverBreak:'drillBreak',playerHit:'vehicleHit',soldierHit:'sniperHit',bombPlace:'skill',bombThrow:'skill',hide:'skill',decoyPlace:'skill',reinforcement:'ally',drillStart:'skill',build:'skill',sniperDeploy:'skill',houndCommand:'skill',partnerCommand:'skill',airWarning:'radio',bazooka:'enemyCannon',document:'pickup',allDocuments:'pickup',capture:'pickup'})[n]||n);}
 addEventListener('pointerdown',ensureAudio,{passive:true});addEventListener('keydown',ensureAudio,{passive:true});
 const keys={};let mx=240,my=300,mdown=false,bombReq=false,cannonReq=false,interact=false;
@@ -2147,7 +2147,7 @@ const labels=[];function lab(t,x,y,f,c,ns){labels.push({t,x,y,f,c,ns});}
 function drawLabels(cx,cy){gm.textAlign='center';for(const l of labels){gm.font=l.f;if(!l.ns){gm.lineWidth=3;gm.strokeStyle='rgba(0,0,0,.8)';gm.strokeText(l.t,l.x-cx,l.y-cy);}gm.fillStyle=l.c;gm.fillText(l.t,l.x-cx,l.y-cy);}}
 let chainToast='',chainToastT=0,oneShotToast='',oneShotToastT=0;
 let roadBands=[];
-let state,p,cars,etanks,humans,covers,objects,bullets,parts,base,shake,flash,msg,msgT,bombs,items,waves,water,bridges,mud,fx,bushes,decoy,allies,hound=null,houndTrail=[],radio,airstrike,airbombs,weather,weatherT,weatherNext,rainIntensity=0,baseSpawnT,deathT=0,cam=0,camX=0,blastT,bq,skillReq,lastMouse=0,allySeq=0,builtWalls=[],buildingGroundMarks=[],tankWrecks=[],scoreStats=null,highScoreData=null,resultAnimT=0,vehicleNameT=0,debugMode=0,debugInvincible=false,touchTurretAngle=null;
+let state,p,cars,etanks,humans,covers,objects,bullets,parts,base,shake,flash,msg,msgT,bombs,items,waves,water,bridges,mud,fx,bushes,decoy,allies,hound=null,houndTrail=[],radio,airstrike,airbombs,weather,weatherT,weatherNext,rainIntensity=0,baseSpawnT,deathT=0,cam=0,camX=0,blastT,bq,skillReq,lastMouse=0,allySeq=0,builtWalls=[],buildingGroundMarks=[],tankWrecks=[],scoreStats=null,highScoreData=null,resultAnimT=0,vehicleNameT=0,debugMode=0,debugInvincible=false,touchTurretAngle=null,analogStickX=0,analogStickY=0;
 const DETECT_RANGE_BASE=315,DETECT_CENTER_HALF=7.5*Math.PI/180,DETECT_OUTER_HALF=52.5*Math.PI/180,DETECT_OUTER_SCALE=.7,DETECT_MEMORY=3,TANK_DRAW=30,TANK_HIT=28,TANK_BOMB_HIT=42,LOG_LONG=126,LOG_SHORT=39,CRATE_W=74.8,CRATE_H=74.8,BARREL_SIZE=39.1,CONCRETE_W=264,CONCRETE_H=183.7,WOOD_W=278.3,WOOD_H=223.85,MINI_CONCRETE_W=151.3,MINI_CONCRETE_H=151.3,MINI_WOOD_W=213.6,MINI_WOOD_H=213.6,CONCRETE_MINI_W=151.3,CONCRETE_MINI_H=151.3,WOOD_MINI_W=213.6,WOOD_MINI_H=213.6,TREE_BOX=83,TREE_BOX_MAX=124.5,ROCK_W=58,ROCK_H=40,BARRIER_LONG=208,BARRIER_SHORT=52,FENCE_LONG=188,FENCE_SHORT=81,COMMAND_BASE_W=390,COMMAND_BASE_H=336.7;
 const playerMoving=()=>!!(p&&(keys.ArrowUp||keys.ArrowDown||keys.ArrowLeft||keys.ArrowRight)&&(!p.tank||p.tank.f>0));
 const detectRange=(key='p')=>DETECT_RANGE_BASE*((key==='p'&&p&&p.tank)?2:1)*((key==='p'&&!playerMoving())?.8:1)*(weather==='sandstorm'?.55:weather==='rain'?.75:1),detectOuterRange=(key='p')=>detectRange(key)*DETECT_OUTER_SCALE,detectDropRange=(key='p')=>detectRange(key)*1.5;
@@ -5794,7 +5794,12 @@ function update(dt){
   }
  }
  if(p.dig>0&&inMudAt(p.x,p.y,5)){finishDig('泥では潜伏を継続できない',false);burst(p.x,p.y,14,'#705238',120);}
- if(V?.kind==='tower'){if(ix||iy){p.ang=Math.atan2(iy,ix);V.aim=p.ang;}}
+ if(V?.kind==='tower'){
+  // Use continuous joystick axes rather than the eight keyboard-style sectors.
+  const ax=Math.hypot(analogStickX,analogStickY)>.22?analogStickX:ix;
+  const ay=Math.hypot(analogStickX,analogStickY)>.22?analogStickY:iy;
+  if(ax||ay){p.ang=Math.atan2(ay,ax);V.aim=p.ang;}
+ }
  else if(T&&!isTruck&&!isFighter){if(TOUCH&&Number.isFinite(touchTurretAngle))p.ang=touchTurretAngle;else p.ang=(performance.now()-lastMouse<1500)?Math.atan2(wy-p.y,wx-p.x):p.body;}
  p.cc=Math.max(0,p.cc-dt);p.vc=Math.max(0,p.vc-dt);p.scd=Math.max(0,p.scd-dt);p.digExitAnim=Math.max(0,(p.digExitAnim||0)-dt);p.grappleT=Math.max(0,(p.grappleT||0)-dt);if(p.grappleT<=0)p.grappleTarget=null;if(p.scd<=0)p.scdMax=0;if(decoy){decoy.t-=dt;decoy.sound=(decoy.sound||0)-dt;if(decoy.sound<=0){decoy.sound=.75;sfx('decoy',decoy);burst(decoy.x,decoy.y,3,'#ffd27a',35);}if(decoy.t<=0){burst(decoy.x,decoy.y,12,'#ff6666',75);decoy=null;}}
  if(p.dig>0){p.digElapsed=(p.digElapsed||0)+dt;p.dig-=dt;if(R()<.6){const wet=digUsesWaterFx(p.x,p.y);trimParts(1);parts.push({x:p.x,y:p.y,vx:(R()-.5)*60,vy:(R()-.5)*60,life:.35,col:wet?(R()<.5?'#8ed3ef':'#d4f4ff'):'#7a5a38',sz:wet?2+R()*3:4+R()*3});}if(p.dig<=0)finishDig('潜航解除：地上に出た');}
@@ -5816,7 +5821,12 @@ function update(dt){
  const dAttack=!!(keys.KeyD||mdown||cannonReq);cannonReq=false;
  if(p.tank&&p.tank.kind!=='tower'&&T&&!isTruck&&!isFighter&&!isPartnerDrivenVehicle()){if(dAttack&&T.id!=='armored'&&p.cc<=0&&!(p.tank.c>0))sfx('empty');if((keys.KeyS||(T.id==='armored'&&dAttack))&&p.vc<=0&&!(p.tank.v>0))sfx('empty');}
  if(p.tank&&p.tank.kind==='fighter'){if(!isPartnerDrivenVehicle()&&dAttack&&p.cc<=0)fighterBomb();}
- else if(p.tank&&p.tank.kind==='tower'){if((dAttack||keys.KeyS)&&p.vc<=0){p.vc=p.tank.t.vcd;if(!fireGunTower(p.tank,p.ang,'p'))sfx('empty');}}
+ else if(p.tank&&p.tank.kind==='tower'){
+  const wantsFire=dAttack||keys.KeyS;
+  const ready=updateGunTowerSpin(p.tank,dt,wantsFire&&p.tank.v>0);
+  if(wantsFire&&p.tank.v<=0&&p.vc<=0){p.vc=.3;sfx('empty');}
+  if(ready&&p.vc<=0){p.vc=p.tank.t.vcd;if(!fireGunTower(p.tank,p.ang,'p'))sfx('empty');}
+ }
  else if(p.tank&&p.tank.kind==='tank'){const t=p.tank.t;
   if(!isPartnerDrivenVehicle()&&t.id!=='armored'&&dAttack&&p.cc<=0&&p.tank.c>0){p.cc=t.ccd;if(!areaDebugInfiniteAmmo)p.tank.c--;fire(p.x+Math.cos(p.ang)*44,p.y+Math.sin(p.ang)*44,p.ang,'p','c',t.cspd,t.crng,t.cdmg,t.cannonSe||'cannon');shake=6;burst(p.x+Math.cos(p.ang)*47,p.y+Math.sin(p.ang)*47,8,'#ffd27a',140);}
   if(!playerVehicleGunBlocked()&&(keys.KeyS||(t.id==='armored'&&dAttack))&&p.vc<=0&&p.tank.v>0){p.vc=t.vcd;if(!areaDebugInfiniteAmmo)p.tank.v--;fire(p.x+Math.cos(p.ang)*36,p.y+Math.sin(p.ang)*36,p.ang+(R()-.5)*.1,'p','v',468,306);}}
@@ -8679,7 +8689,7 @@ function refreshStickGeometry(){const r=pad.getBoundingClientRect();stickGeometr
 function mvp(e){
  const began=performance.now();if(!stickGeometry)refreshStickGeometry();const r=stickGeometry;
  let dx=(e.clientX-r.left-r.width/2)/(r.width/2),dy=(e.clientY-r.top-r.height/2)/(r.height/2);const l=Math.hypot(dx,dy);if(l>1){dx/=l;dy/=l;}
- knob.style.transform='translate('+dx*r.travel+'px,'+dy*r.travel+'px)';setDir(dx,dy);
+ knob.style.transform='translate('+dx*r.travel+'px,'+dy*r.travel+'px)';analogStickX=dx;analogStickY=dy;setDir(dx,dy);
  gameFramePerf.inputMax=Math.max(gameFramePerf.inputMax,performance.now()-began);
 }
 addEventListener('resize',()=>{stickGeometry=null;});
@@ -8689,7 +8699,7 @@ const end=e=>{
  if(act===null||(e&&e.pointerId!==act))return;
  if(e&&e.cancelable)e.preventDefault();
  const previous=act;act=null;stickPointerType='';
- knob.style.transform='';setDir(0,0);
+ knob.style.transform='';analogStickX=0;analogStickY=0;setDir(0,0);
  releaseControlCapture(pad,previous);
 };
 const beginStick=e=>{
@@ -8812,7 +8822,7 @@ if(!window.PointerEvent){
  cv.addEventListener('touchstart',e=>{const t=e.changedTouches[0];if(!t)return;e.preventDefault();const r=cv.getBoundingClientRect();mx=(t.clientX-r.left)*W/r.width;my=(t.clientY-r.top)*H/r.height;if(state==='title')handleTitlePointer(mx,my);else if(state==='help')handleHelpPointer(mx,my);else if(state==='skill'){handleSkillMenuPointer(mx,my);}else if(state==='win'||state==='lose'){handleResultPointer(mx,my);}},{passive:false});
 }
 
-const clearInputs=()=>{if(typeof finishPartnerOrder==='function')finishPartnerOrder(false);resetContinuousTouch();cancelButtonHolds();for(const k in keys)keys[k]=false;for(const k in st)st[k]=0;end();stickPointerType='';buttonPointers.clear();actionPointer=null;actionKey=null;actionAimPointer=null;skillAimPointer=null;touchTurretAngle=null;dPressHandled=false;bombReq=false;cannonReq=false;interact=false;skillReq=false;knob.style.transform='';document.querySelectorAll('[data-k]').forEach(el=>el.classList.remove('on'));actionBtn.classList.remove('on');mdown=false;};
+const clearInputs=()=>{if(typeof finishPartnerOrder==='function')finishPartnerOrder(false);resetContinuousTouch();cancelButtonHolds();for(const k in keys)keys[k]=false;for(const k in st)st[k]=0;end();stickPointerType='';buttonPointers.clear();actionPointer=null;actionKey=null;actionAimPointer=null;skillAimPointer=null;touchTurretAngle=null;analogStickX=0;analogStickY=0;dPressHandled=false;bombReq=false;cannonReq=false;interact=false;skillReq=false;knob.style.transform='';document.querySelectorAll('[data-k]').forEach(el=>el.classList.remove('on'));actionBtn.classList.remove('on');mdown=false;};
 window.trainingClearInputs=clearInputs;
 const resetBtn=document.getElementById('resetBtn');
 const backToTitle=e=>{
