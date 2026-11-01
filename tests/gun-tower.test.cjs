@@ -134,14 +134,14 @@ test('partner gatling retains its previous tank behavior and enemy rounds still 
  const h=scene();h.run("enemyTank={x:400,y:400,alive:true,body:0,ang:0};etanks=[enemyTank];for(let i=0;i<30;i++)updateGatlingBullet({x:450,y:400,vx:1000,vy:0,from:'ally',k:'v',gatling:true},350,400,false);etanks=[];p.x=400;p.y=400;updateGatlingBullet({x:450,y:400,vx:1000,vy:0,from:'e',k:'v',gatling:true},350,400,false);");
  assert.equal(h.run('enemyTank.alive'),true);assert.equal(h.run('enemyTank.gatlingHits||0'),0);assert.equal(h.run('p.hp'),2.5);
 });
-test('gatling cover carving increases to 1.5 times the former area without extra calls',()=>{
- const h=scene();h.run("calls=[];carve=(x,y,r,credit,source)=>calls.push({r,credit,source});wall={};for(let i=0;i<7;i++)damageGunTowerCover(wall,100,100,'p');");assert.equal(h.run('calls.length'),0);
- h.run("damageGunTowerCover(wall,100,100,'p')");assert.equal(h.run('calls.length'),1);assert.ok(Math.abs(h.run('calls[0].r**2')-600)<1e-9);assert.equal(h.run('calls[0].credit'),true);
+test('gatling retains original cover area with 1.5 times penetration',()=>{
+ const h=scene();h.run("calls=[];carve=(x,y,r,credit,source)=>calls.push({r,credit,source});wall={};for(let i=0;i<5;i++)damageGunTowerCover(wall,100,100,'p');");assert.equal(h.run('calls.length'),0);
+ h.run("damageGunTowerCover(wall,100,100,'p')");assert.equal(h.run('calls.length'),1);assert.ok(Math.abs(h.run('calls[0].r**2')-400)<1e-9);assert.equal(h.run('calls[0].credit'),true);
  h.run("damageGunTowerCover({frontAntenna:true},100,100,'p')");assert.equal(h.run('calls.length'),1);
 });
-test('frontline cargo cut area increases to 1.5 times while hit frequency remains eight',()=>{
- const h=scene();h.run("damageFrontlineCargo=(c,x,y,r)=>{cargoRadius=r};cargo={frontCargo:true};for(let i=0;i<8;i++)damageGunTowerCover(cargo,100,100,'e');");
- assert.ok(Math.abs(h.run('cargoRadius')-12*Math.sqrt(1.5))<1e-10);
+test('frontline cargo uses original radius and 1.5 times penetration',()=>{
+ const h=scene();h.run("damageFrontlineCargo=(c,x,y,r)=>{cargoRadius=r};cargo={frontCargo:true};for(let i=0;i<6;i++)damageGunTowerCover(cargo,100,100,'e');");
+ assert.equal(h.run('cargoRadius'),12);
 });
 test('unalerted enemy gunners sweep a fixed 180-degree forward arc slowly and reverse at both limits',()=>{
  const h=scene();h.run("cars=[v];enemy={x:v.x,y:v.y,alive:true,elite:false};boardEnemyGunTower(v,enemy);findDetectedTarget=()=>null;v.scanT=0;start=v.aim;for(let i=0;i<1000;i++)updateGunTowerEnemy(enemy,.016);right=v.scanOffset;dir=v.scanDirection;for(let i=0;i<1000;i++)updateGunTowerEnemy(enemy,.016);left=v.scanOffset;");
@@ -190,4 +190,10 @@ test('enemy and partner tower operators warm up before the first bullet',()=>{
   assert.equal(h.run('bullets.length'),0,owner);
   h.run('attack(.25)');assert.equal(h.run('bullets.length'),1,owner);
  }
+});
+
+test('enemy gunner holds target alert for two seconds after sight is lost',()=>{
+ const h=scene();h.run("cars=[v];enemy={x:v.x,y:v.y,alive:true,elite:false};boardEnemyGunTower(v,enemy);p.x=v.x+200;p.y=v.y;updateGunTowerEnemy(enemy,.2);los=()=>false;before=bullets.length;for(let i=0;i<10;i++)updateGunTowerEnemy(enemy,.15);");
+ assert.equal(h.run('enemy.st'),1);assert.equal(h.run('bullets.length'),h.run('before'));
+ h.run("for(let i=0;i<6;i++)updateGunTowerEnemy(enemy,.15);");assert.equal(h.run('enemy.st'),0);
 });

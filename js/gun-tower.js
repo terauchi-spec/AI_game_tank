@@ -1,6 +1,6 @@
 // Gatling hardware is drawn at 80% of its former size; people retain their ordinary size.
 // Stationary single-seat vehicle. Ammunition belongs to the emplacement, not its operator.
-const GUN_TOWER_TYPE=Object.freeze({id:'gunTower',n:'機関銃塔',hp:8,armor:1.5,cmax:0,vmax:500,fmax:0,sp:0,ccd:.065,vcd:.065,range:400,speed:1000,antiTankHits:30,playerTankHits:200,spinUpSeconds:.5,coverRadius:20*Math.sqrt(1.5),drawScale:1.6,seatOffset:35.2,muzzleOffset:59.2,clearance:67.2,boardRadius:96,col:'#66705a'});
+const GUN_TOWER_TYPE=Object.freeze({id:'gunTower',n:'機関銃塔',hp:8,armor:1.5,cmax:0,vmax:500,fmax:0,sp:0,ccd:.065,vcd:.065,range:400,speed:1000,antiTankHits:30,playerTankHits:200,spinUpSeconds:.5,coverRadius:20,drawScale:1.6,seatOffset:35.2,muzzleOffset:59.2,clearance:67.2,boardRadius:96,col:'#66705a'});
 function gunTowerAvailable(v){
  if(v?.kind!=='tower')return true;
  if(v.destroyed)return false;
@@ -10,11 +10,11 @@ function gunTowerAvailable(v){
 function releaseGunTower(v){
  const h=v?.gunner;if(!h)return;
  h.gunTower=null;h.st=0;h.target=null;h.frontMarch=stageMode==='front';h.path=[{x:h.x,y:h.y},{x:h.x+30,y:h.y+30}];h.wi=1;
- v.gunner=null;v.reboardT=10;v.scanTarget=null;v.spinActive=false;v.spinTime=0;
+ v.gunner=null;v.reboardT=10;v.scanTarget=null;v.lostTargetT=0;v.spinActive=false;v.spinTime=0;
 }
 function boardEnemyGunTower(v,h){
  if(!gunTowerAvailable(v)||v.v<=0||!h.alive||h.elite||h.commander==='white'||h.stun>0||h.stunRecover>0||h.blastAirT>0||h.dog||h.houndPinned)return false;
- h.gunTower=v;v.gunner=h;v.scanCenter=v.body??v.aim??0;v.scanOffset=0;v.scanDirection=1;h.face=v.aim=v.scanCenter;h.x=v.x-Math.cos(h.face)*GUN_TOWER_TYPE.seatOffset;h.y=v.y-Math.sin(h.face)*GUN_TOWER_TYPE.seatOffset;h.walking=false;h.frontMarch=false;h.chatT=0;h.chatMate=null;return true;
+ h.gunTower=v;v.gunner=h;v.scanCenter=v.body??v.aim??0;v.scanOffset=0;v.scanDirection=1;v.lostTargetT=0;h.face=v.aim=v.scanCenter;h.x=v.x-Math.cos(h.face)*GUN_TOWER_TYPE.seatOffset;h.y=v.y-Math.sin(h.face)*GUN_TOWER_TYPE.seatOffset;h.walking=false;h.frontMarch=false;h.chatT=0;h.chatMate=null;return true;
 }
 function setupGunTowers(){
  if(areaDebugEnabled||!['base','front'].includes(currentStageId()))return 0;
@@ -137,15 +137,17 @@ function updateGunTowerEnemy(h,dt){
   v.scanT=.15;
   // Use ordinary blue-soldier perception at the current sweeping heading.
   const detected=findDetectedTarget(h,h.face);
-  v.scanTarget=detected?{actor:detected.obj,key:detected.key}:null;
+  if(detected){v.scanTarget={actor:detected.obj,key:detected.key};v.lastSeenX=detected.obj.x;v.lastSeenY=detected.obj.y;v.lostTargetT=0;}
+  else if(v.scanTarget)v.lostTargetT=(v.lostTargetT||0)+.15;
  }
  const target=v.scanTarget,actor=target?.actor;
- if(!actor||target.key==='decoy'&&actor!==decoy||actor.alive===false||actor.down||actor.stun>0||actor===p&&(p.dig>0||debugMode>=2)||D(v,actor)>GUN_TOWER_TYPE.range||!los(v,actor)){
+ const lostSight=!!actor&&(D(v,actor)>GUN_TOWER_TYPE.range||!los(v,actor)||(v.lostTargetT||0)>0);
+ if(!actor||target.key==='decoy'&&actor!==decoy||actor.alive===false||actor.down||actor.stun>0||actor===p&&(p.dig>0||debugMode>=2)||(v.lostTargetT||0)>=2){
   h.st=0;h.target=null;v.scanTarget=null;updateGunTowerSpin(v,dt,false);return true;
  }
- h.st=1;h.target=target.key;h.face=v.aim=Math.atan2(actor.y-v.y,actor.x-v.x);
+ h.st=1;h.target=target.key;h.face=v.aim=Math.atan2((lostSight?v.lastSeenY:actor.y)-v.y,(lostSight?v.lastSeenX:actor.x)-v.x);
  h.x=v.x-Math.cos(h.face)*GUN_TOWER_TYPE.seatOffset;h.y=v.y-Math.sin(h.face)*GUN_TOWER_TYPE.seatOffset;
- const ready=updateGunTowerSpin(v,dt,v.v>0&&!(v.aiRestT>0));
+ const ready=updateGunTowerSpin(v,dt,!lostSight&&v.v>0&&!(v.aiRestT>0));
  if(ready&&v.gunT<=0){v.gunT=GUN_TOWER_TYPE.vcd;fireGunTower(v,h.face,'e',h);}
  return true;
 }
@@ -166,8 +168,8 @@ function gunTowerSegmentT(a,b,o,r){
 }
 function damageGunTowerCover(c,x,y,from){
  if(c.frontAntenna&&!c.frontCargo||c.trainingWall||c.indoorDoor)return;
- c.gatlingHits=(c.gatlingHits||0)+1;if(c.gatlingHits<8)return;c.gatlingHits=0;
- if(c.frontCargo)damageFrontlineCargo(c,x,y,12*Math.sqrt(1.5));else carve(x,y,GUN_TOWER_TYPE.coverRadius,from==='p',null);
+ c.gatlingHits=(c.gatlingHits||0)+1.5;if(c.gatlingHits<8)return;c.gatlingHits-=8;
+ if(c.frontCargo)damageFrontlineCargo(c,x,y,12);else carve(x,y,GUN_TOWER_TYPE.coverRadius,from==='p',null);
 }
 function updateGatlingBullet(b,ox,oy,expired){
  const a={x:ox,y:oy},end={x:b.x,y:b.y},hits=[];
@@ -215,6 +217,9 @@ function updateGatlingBullet(b,ox,oy,expired){
  else if(hit.type==='hound')stunHound(5);
  burst(b.x,b.y,2,'#ffe1a0',60);return true;
 }
+// Source PNG sprites are kept alongside WebP runtime assets.
+const gunTowerSprites={base:null,body:null};
+if(typeof Image!=='undefined')for(const part of ['base','body']){const im=new Image();im.src='assets/vehicles/gatling_'+part+'.webp?v='+GAME_VERSION;gunTowerSprites[part]=im;}
 function drawGunTower(v,x,y,angle){
  const s=GUN_TOWER_TYPE.drawScale;
  // Fixed pedestal with layered steel, braces and riveted retaining ring.
@@ -226,6 +231,7 @@ function drawGunTower(v,x,y,angle){
  g.strokeStyle='#364238';g.lineWidth=6;for(let i=0;i<4;i++){const a=Math.PI*i/2+.35;g.beginPath();g.moveTo(0,-2);g.lineTo(Math.cos(a)*24,Math.sin(a)*24-2);g.stroke();}
  g.fillStyle='#27342d';g.beginPath();g.arc(0,-2,19,0,Math.PI*2);g.fill();
  g.fillStyle='#a9ad9c';for(let i=0;i<8;i++){const a=i*Math.PI/4;g.beginPath();g.arc(Math.cos(a)*28,Math.sin(a)*28-2,1.5,0,Math.PI*2);g.fill();}
+ if(gunTowerSprites.base?.complete&&gunTowerSprites.base.naturalWidth)g.drawImage(gunTowerSprites.base,-36,-36,72,72);
  g.restore();
  const enemy=!!v.gunner,occupied=enemy||p?.tank===v||partner?.vehicle===v;
  const enemyAlpha=enemy?digEnemyAlpha()*(1-sandIntensity):1;
@@ -241,14 +247,14 @@ function drawGunTower(v,x,y,angle){
  g.strokeStyle='#b0b9b1';g.lineWidth=1;g.beginPath();for(let i=-2;i<=2;i++){g.moveTo(9,i*2.8);g.lineTo(39,i*2.8);}g.stroke();
  g.fillStyle='#29332e';g.fillRect(19,-9,5,18);g.fillRect(34,-9,6,18);
  g.fillStyle='#596861';g.fillRect(39,-7,4,14);
- // The cooling-barrel muzzle rotates during warm-up and continuously while firing.
- if(v.spinActive){
-  g.save();g.translate(38,0);g.rotate(v.spinPhase||0);
-  g.fillStyle='#aeb8b0';for(let k=0;k<6;k++){const a=k*Math.PI/3;g.beginPath();g.arc(Math.cos(a)*4.5,Math.sin(a)*4.5,1.5,0,Math.PI*2);g.fill();}
-  g.strokeStyle='#202825';g.lineWidth=1.3;g.beginPath();g.arc(0,0,6.8,0,Math.PI*2);g.stroke();g.restore();
+ // Barrel tubes rotate longitudinally; no independently spinning muzzle-cap illusion.
+ if(v.spinActive){g.save();g.beginPath();g.rect(8,-7,32,14);g.clip();
+  for(let k=0;k<6;k++){const z=Math.sin((v.spinPhase||0)+k*Math.PI/3);g.strokeStyle=z>0?'#c6cec4':'#24352e';g.lineWidth=z>0?2.6:2;g.beginPath();g.moveTo(9,z*5.5);g.lineTo(38,z*5.5);g.stroke();}
+  g.restore();
  }
  g.fillStyle='#828a7c';g.fillRect(-20,-6,8,12);g.fillStyle='#c3a566';for(let i=0;i<4;i++)g.fillRect(-19+i*2,-5,1.4,4);
  g.fillStyle='#87917c';g.beginPath();g.arc(-3,0,5,0,Math.PI*2);g.fill();
+ if(gunTowerSprites.body?.complete&&gunTowerSprites.body.naturalWidth)g.drawImage(gunTowerSprites.body,-24,-24,68,48);
  g.restore();
  if(enemy&&v.gunner.st&&enemyAlpha>.18)lab('!',x,y-68,'bold 17px system-ui','#ff5a5a');
 }
