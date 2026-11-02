@@ -219,7 +219,7 @@ function drawSandstormOverlay(){
  }
  q.restore();
 }
-let selectedAreaDebug=null;
+let selectedAreaDebug=null,areaDebugEnemyBomber=false;
 // Small fixed enemy population uses final-world collision checks and normal AI.
 function spawnAreaDebugEnemies(z){
  const placed=[];
@@ -253,7 +253,14 @@ function setupSelectedAreaDebugStage(){
  weather='clear';weatherT=0;weatherNext=name==='荒野'?10:99999;rainIntensity=0;baseSpawnT=99999;radio=null;airstrike=null;airbombs=[];debugMode=1;debugInvincible=true;
  captureBuildingGroundMarks();rebuildSpatialGrid();spawnAreaDebugEnemies(z);say(name+' テスト：無敵／全' + TYPES.length + '種戦車／弾数・燃料無制限');
 }
-function syncAreaDebugPicker(){document.body.classList.toggle('area-picker-open',state==='areaPick');}
+function syncAreaDebugPicker(){
+ const show=state==='areaPick';document.body.classList.toggle('area-picker-open',show);
+ if(show){document.getElementById('areaDebugEnemyBomber').checked=areaDebugEnemyBomber;document.getElementById('areaDebugEnemyBomberState').textContent=areaDebugEnemyBomber?'ON':'OFF';}
+}
+document.getElementById('areaDebugEnemyBomber').addEventListener('change',event=>{
+ if(state!=='areaPick'||!isDeveloperMode()){event.target.checked=areaDebugEnemyBomber;return;}
+ areaDebugEnemyBomber=event.target.checked;syncAreaDebugPicker();
+});
 const areaList=document.getElementById('areaDebugList');
 for(const name of AREA_DEBUG_ORDER){const b=document.createElement('button');b.type='button';b.textContent=name;b.addEventListener('click',()=>{if(state!=='areaPick'||typeof isDeveloperMode!=='function'||!isDeveloperMode())return;selectedAreaDebug=name;stageMode='base';const i=skillMenuList().findIndex(k=>k.id===selectedSkillId);selectSkillIndex(i,true);});areaList.append(b);}
 document.getElementById('areaDebugBack').addEventListener('click',()=>{if(state==='areaPick'){state='stage';areaDebugEnabled=false;selectedAreaDebug=null;}});

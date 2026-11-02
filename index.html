@@ -453,6 +453,7 @@ body.spec-open #pad,body.spec-open #resetBtn,body.spec-open :is(#debugToggleBtn,
 }
 #areaDebugPicker{display:none;position:fixed;inset:0;z-index:74;overflow:auto;box-sizing:border-box;padding:max(24px,env(safe-area-inset-top)) 20px max(24px,env(safe-area-inset-bottom));background:#17201b;color:#f5efdb;font-family:system-ui;text-align:center}
 body.area-picker-open #areaDebugPicker{display:block}
+.area-debug-bomber-switch{display:flex;align-items:center;gap:12px;margin:20px 0;padding:16px;border:1px solid #9b9874;border-radius:10px;text-align:left;cursor:pointer}.area-debug-bomber-switch input{width:24px;height:24px;accent-color:#b599ed}.area-debug-bomber-switch span{flex:1;font-weight:700}.area-debug-bomber-switch small{display:block;margin-top:5px;font-size:12px;font-weight:400}.area-debug-bomber-switch strong{min-width:36px;color:#d4b6ff}
 body.area-picker-open #pad,body.area-picker-open #resetBtn,body.area-picker-open :is(#debugToggleBtn,#debugRoutesBtn),body.area-picker-open #debugBadge{display:none!important}
 .area-debug-panel{max-width:660px;margin:auto}.area-debug-panel h1{font-size:28px;color:#ffe0a0}.area-debug-panel p{font-size:16px;line-height:1.6}
 #areaDebugList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:24px 0}
@@ -784,7 +785,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 1250ms ease-o
 <ul><li>クリアまたは失敗後の評価画面に、総合スコアと<strong>F〜Sの7段階ランク</strong>を表示します。</li><li>スコアは潜入・戦闘・任務達成・クリア時間などをもとに計算します。前線制圧では自分の撃破を中心に評価し、味方の撃破は上限付きの支援点として加算します。継続増援の大量撃破や安全な移動だけで得点が過度に伸びないよう補正します。到達距離は出撃開始地点からの最大前進距離です。距離表示はすべてm単位です。</li><li>プレイスタイルを<strong>任務遂行／隠密／戦闘／爆破／機動／戦術／連携／生存</strong>の8軸（Lv0〜5）で評価します。Lvは評価点を四捨五入して判定し、Lv5には100点と高い成果が必要です。称号の距離・ポイントの目安は、丸めにより少し手前で到達する場合があります。任務遂行は自分の目標達成への貢献、隠密は未発見での接近・回収、戦闘は撃破数・武器効率・連撃、爆破は目標爆破・爆発撃破、機動は目標への新たな前進、戦術は誘導・防御・組み付き、連携は共同作戦・救助・共同撃破、生存は任務参加と無傷での生還を評価します。待機・同じ場所の往復・支援任せだけでは伸びません。</li><li><strong>マルチキル：</strong>撃破間隔4秒以内で続けて敵を撃破すること。<strong>ワンショットキル：</strong>同一攻撃で複数の敵を撃破すること。無線支援爆撃とその連鎖爆発は、マルチキル・ワンショットキルの対象外です。</li><li>称号の取得対象は公開中の9ステージです。称号は実績16種・複合実績4種・特殊実績4種・伝説級実績9種・神話級実績1種の全34種です。伝説級実績「全戦域の覇者」は公開中の9ステージすべてのクリア、神話級実績「戦場の神話」はほかの33種類すべての獲得が条件です。各軸の実績は、指定されたLv4以上またはLv5と個別の成果が条件です。複合実績は、明記された2軸ともLv5と個別の成果が必要です。8種類の伝説級実績は、対応するLv5の実績を累計3回獲得すると授与します。タイトル画面の「称号・戦績」からコレクションと累計戦績を確認できます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-save"><h2>11. スキル解放・保存・デバッグ</h2>
-<ul><li>破壊・制圧・潜入は、いずれも評価・実績保存の対象です。ステージは01から順番に、ひとつ前をクリアすると解放されます。</li><li>初期解放スキルは<strong>遠投</strong>。デバッグ使用の有無にかかわらず、クリアするたびに、新しいスキルが順番に1種類ずつ解放されます。</li><li>獲得した称号の種類数で二等兵から大将まで16段階の階級が上がり、全34種類を集めると大将になります。同じ称号を再獲得しても階級の集計は増えません。称号画面と評価画面で確認できます。</li><li>スキル解放・称号・ハイスコア・戦績などは、このブラウザ内に保存されます。</li><li>称号画面の「戦績」から保存データを初期化できます。初期化は取り消せません。</li><li>各デバッグ機能は開発者モード限定です。開発者モードではPキー（スマホは上部アイコン）で「無敵→無敵＋索敵解除→無敵＋戦闘機（燃料無限）→通常」を切り替え、描画診断ではAI・衝突等の更新を止め、最初の15秒はゲーム画面全体、次の15秒は背景だけを、同じ経路で自動スクロールします。終了後は無敵＋戦闘機に戻ります。Oキーで前方に戦車を出現、Lキーで巡回ルート表示を切り替えられます。スキル選択画面には全スキル表示、ステージ選択画面には全ステージ表示とエリアデバッグがあります。エリアデバッグでは全エリアの遮蔽物・静止した敵のサンプルを確認でき、出発地点付近にガソリンと無線を配置しています。デバッグ用ガソリンは徒歩でも表示され、取得には乗車が必要です。通常ステージではデバッグ中も、ステージ・スキル解放、称号、ハイスコア、戦績が保存されます。</li></ul>
+<ul><li>破壊・制圧・潜入は、いずれも評価・実績保存の対象です。ステージは01から順番に、ひとつ前をクリアすると解放されます。</li><li>初期解放スキルは<strong>遠投</strong>。デバッグ使用の有無にかかわらず、クリアするたびに、新しいスキルが順番に1種類ずつ解放されます。</li><li>獲得した称号の種類数で二等兵から大将まで16段階の階級が上がり、全34種類を集めると大将になります。同じ称号を再獲得しても階級の集計は増えません。称号画面と評価画面で確認できます。</li><li>スキル解放・称号・ハイスコア・戦績などは、このブラウザ内に保存されます。</li><li>称号画面の「戦績」から保存データを初期化できます。初期化は取り消せません。</li><li>各デバッグ機能は開発者モード限定です。開発者モードではPキー（スマホは上部アイコン）で「無敵→無敵＋索敵解除→無敵＋戦闘機（燃料無限）→通常」を切り替え、描画診断ではAI・衝突等の更新を止め、最初の15秒はゲーム画面全体、次の15秒は背景だけを、同じ経路で自動スクロールします。終了後は無敵＋戦闘機に戻ります。Oキーで前方に戦車を出現、Lキーで巡回ルート表示を切り替えられます。スキル選択画面には全スキル表示、ステージ選択画面には全ステージ表示とエリアデバッグがあります。エリアデバッグのエリア選択画面で敵爆撃機をONにすると、60秒ごとに飛来し、50%の確率で味方戦闘機が迎撃します。エリアデバッグでは全エリアの遮蔽物・静止した敵のサンプルを確認でき、出発地点付近にガソリンと無線を配置しています。デバッグ用ガソリンは徒歩でも表示され、取得には乗車が必要です。通常ステージではデバッグ中も、ステージ・スキル解放、称号、ハイスコア、戦績が保存されます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <p class="spec-foot">仕様は Ver.<span id="specVersion"></span> 時点の内容です。ゲームの更新に伴い変更される場合があります。</p>
 </div></div>
@@ -965,7 +966,7 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 #skillScreen .sk-bottom{grid-template-columns:1fr}
 #stageScreen .stage-card.stage-cleared .stage-number{border-color:#b3db9c;color:#c8e9a5}
 </style>
-<section id="areaDebugPicker" aria-labelledby="areaDebugHeading"><div class="area-debug-panel"><h1 id="areaDebugHeading">テストするエリア</h1><p>無敵で地形や遮蔽物を確認できます。<br>開始地点の戦車は弾数・燃料無制限です。</p><div id="areaDebugList"></div><button id="areaDebugBack" type="button">ステージ選択に戻る</button></div></section>
+<section id="areaDebugPicker" aria-labelledby="areaDebugHeading"><div class="area-debug-panel"><h1 id="areaDebugHeading">テストするエリア</h1><p>無敵で地形や遮蔽物を確認できます。<br>開始地点の戦車は弾数・燃料無制限です。</p><label class="area-debug-bomber-switch"><input id="areaDebugEnemyBomber" type="checkbox" role="switch"><span>敵爆撃機（60秒ごと）<small>50%の確率で味方戦闘機が迎撃</small></span><strong id="areaDebugEnemyBomberState">OFF</strong></label><div id="areaDebugList"></div><button id="areaDebugBack" type="button">ステージ選択に戻る</button></div></section>
 <div id="missionBriefing" role="dialog" aria-modal="true" aria-labelledby="missionBriefingTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_hero.webp?v=2026.10.14.1653" alt="円形爆弾を抱えて走る主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionBriefingTitle">ミッション</h1><p id="missionBriefingGoal">敵の拠点にたどりつき、破壊せよ</p><ul class="mission-hud-guide" aria-label="ゲーム画面のアイコン説明"><li><img src="assets/ui/ui_heart_full.png" alt="ハート" decoding="async"><span>残りライフ</span></li><li><img src="assets/ui/ui_bomb_normal.png" alt="爆弾" decoding="async"><span>爆弾の設置状態</span></li><li><svg viewBox="-18 -18 36 36" role="img" aria-label="目に斜線"><path d="M-14 0 C-7-11 7-11 14 0 C7 11-7 11-14 0Z" fill="white" stroke="black" stroke-width="3"/><circle r="5" fill="black"/><path d="M-12 11 12-11" stroke="black" stroke-width="3.5"/><path d="M-12 11 12-11" stroke="#ef3434" stroke-width="2"/></svg><span>敵から隠れている状態</span></li></ul><div id="missionFrontlineRules" hidden><ul class="mission-front-rules" aria-label="最前線の制圧ルール"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V3m0 1c5-4 8 4 14 0v10c-6 4-9-4-14 0"/></svg><span id="missionFrontlineOrder">3拠点を順番に制圧</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 1v4m0 14v4M1 12h4m14 0h4"/></svg><span>円に入り、敵を排除</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><circle cx="4" cy="10" r="2"/><circle cx="20" cy="10" r="2"/><path d="M6 22v-4a6 6 0 0 1 12 0v4M1 21v-5a3 3 0 0 1 4-3m18 8v-5a3 3 0 0 0-4-3"/></svg><span>味方兵と制圧！人数で加速</span></li></ul></div><div id="missionDecisiveRules" hidden><ul class="mission-front-rules" aria-label="決戦の作戦ポイント"><li>1人で開始草原から、ランダムな3エリアを突破</li><li>3エリア目の中継拠点：円内の敵を排除し48秒制圧</li><li>制圧後は味方部隊と砂漠3エリアへ進軍</li><li>巨大移動要塞を主砲・設置爆弾などで破壊</li></ul></div><div id="missionIndoorRules" hidden><ul class="mission-front-rules" aria-label="潜入の作戦ポイント"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2h9l5 5v15H5ZM14 2v6h5M8 12h8M8 16h8"/></svg><span id="missionIndoorDocuments">円に入り、重要資料3か所を回収</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12C7 4 17 4 22 12C17 20 7 20 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><span>赤い目3つで館内アラート発令</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3H3v18h7M7 12h15m-5-5 5 5-5 5"/></svg><span>回収後は施設外のEXITから脱出</span></li></ul></div><button type="button" id="missionBegin">作戦開始</button></div></div></div>
 <div id="stageLoadingScreen" role="status" aria-live="polite"><div class="stage-loading-title">作戦準備中…</div></div>
 <div id="stageScreen" role="region" aria-label="ステージ選択"><div class="stage-shell">
@@ -1000,7 +1001,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.02.2126',FILE_CREATED_AT='2026/11/02 21:26',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.02.2358',FILE_CREATED_AT='2026/11/02 23:58',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -5765,6 +5766,7 @@ function drawSniperScope(){
  }
 
 function update(dt){
+ if(areaDebugEnabled&&typeof updateEnemyBomber==='function'){updateEnemyBomber(dt);if(state!=='play')return null;}
  if(stageMode==='training'&&updateTrainingPresentation(dt))return null;
  if(typeof updateFallenEnemies==='function')updateFallenEnemies(dt);
  patrolSearchBudgetMs=2;
@@ -8315,7 +8317,7 @@ function setupMission(){
  if(stageMode==='training'){mission=null;return;}
  if(stageMode==='decisive'){mission=null;return;}
  if(stageMode==='indoor'){setupInfiltrationMission();return;}
- mission=null;if(areaDebugEnabled||stageMode==='base'||stageMode==='beginner')return;
+ mission=null;if(typeof setupAreaDebugEnemyBomber==='function')setupAreaDebugEnemyBomber();if(areaDebugEnabled||stageMode==='base'||stageMode==='beginner')return;
  mission={index:0,progress:0,alarm:0,waveT:15,reinforceT:20,detected:false,points:[],exit:{x:p.x,y:p.y},alertCount:0};
  if(stageMode==='front'){
   mission.advanceStartY=p.y;mission.advanceReleased=false;
@@ -8509,7 +8511,7 @@ function reportGameError(error){
 <script src="js/leaderboard.js?v=2026.10.28.0713"></script>
 <script src="js/intro.js?v=2026.10.31.0745"></script>
 <script src="js/unlocks.js?v=2026.10.31.2206"></script>
-<script src="js/enemy-bomber.js?v=2026.11.02.2120"></script>
+<script src="js/enemy-bomber.js?v=2026.11.02.2358"></script>
 <script src="js/characters.js?v=2026.10.19.1032"></script>
 <script src="js/fallen-enemies.js?v=2026.11.02.1208"></script>
 <script src="js/enemy-dogs.js?v=2026.10.28.0713"></script>
@@ -8517,7 +8519,7 @@ function reportGameError(error){
 <script src="js/gun-tower.js?v=2026.11.02.2120"></script>
 <script src="js/partner.js?v=2026.11.01.0840"></script>
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
-<script src="js/canyon.js?v=2026.10.28.0713"></script>
+<script src="js/canyon.js?v=2026.11.02.2358"></script>
 <script src="js/vegetation.js?v=2026.10.14.1653"></script>
 <script src="js/laboratory.js?v=2026.10.31.2206"></script>
 <script src="js/infiltration-world.js?v=2026.10.31.2349"></script>

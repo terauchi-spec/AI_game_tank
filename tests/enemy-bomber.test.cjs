@@ -133,3 +133,43 @@ test('real flame ignition burns nearby trees, grass and bridges, preserves other
  h.run("for(let i=0;i<105;i++)updateBurningNature(.05);drawEnemyBomberWrecks(0,0);");assert.equal(h.run('covers.includes(tree)'),false);assert.equal(h.run('bushes.includes(grass)'),false);assert.equal(h.run('bridges.includes(bridge)'),false);assert.equal(h.run('mission.enemyAirRaid.wrecks.length'),1);
  h.run("weather='rain';tree.burnT=undefined;covers=[tree];bushes=[grass];grass.burnT=undefined;bridges=[];rebuildSpatialGrid();crashEnemyBomber(mission.enemyAirRaid,{x:480,y:520});");assert.equal(h.run('tree.burnT'),undefined);assert.equal(h.run('grass.burnT'),undefined);
 });
+
+function debugHarness(roll=.5){
+ const s=harness(),c=s.c;
+ Object.assign(c,{areaDebugEnabled:true,areaDebugEnemyBomber:true,isDeveloperMode:()=>true,stageMode:'base',mission:null,debugInvincible:true,R:()=>roll,nearbyCovers:()=>[],nearbyBushes:()=>[],bridges:[],igniteNature(){},igniteBridge(){}});
+ c.setupAreaDebugEnemyBomber();return s;
+}
+test('area debug raids require both the switch and an authenticated developer and stay separate from missions',()=>{
+ for(const settings of [{areaDebugEnemyBomber:false},{isDeveloperMode:()=>false},{areaDebugEnabled:false}]){
+  const s=debugHarness();Object.assign(s.c,settings);s.c.setupAreaDebugEnemyBomber();assert.equal(s.c.enemyBomberRaid(),s.c.areaDebugEnabled?null:undefined);s.c.updateEnemyBomber(120);assert.equal(s.sounds.length,0);
+ }
+ const s=debugHarness();assert.equal(s.c.mission,null);assert.equal(s.c.enemyBomberRaid().debug,true);
+});
+test('area debug warns at 55 seconds, spawns at 60 and repeats every 60 without a two-pass cap',()=>{
+ const s=debugHarness(),c=s.c,raid=c.enemyBomberRaid();run(s,54.95);assert.equal(raid.phase,'idle');run(s,.05);assert.equal(raid.phase,'warning');c.drawEnemyBomberWarning();assert.ok(s.texts.includes('敵の通信を傍受！'));
+ run(s,4.95);assert.equal(raid.passes,0);run(s,.05);assert.equal(raid.passes,1);assert.equal(raid.plane.intercept,false);
+ run(s,60);assert.equal(raid.passes,2);run(s,60);assert.equal(raid.passes,3);assert.equal(s.sounds.filter(x=>x==='airWarning').length,3);assert.equal(c.mission,null);
+});
+test('each debug pass independently rolls 50% interception and bounds permanent wrecks during long tests',()=>{
+ for(const roll of [.499999,.5]){
+  const s=debugHarness(roll),c=s.c,raid=c.enemyBomberRaid();run(s,60);assert.equal(raid.plane.intercept,roll<.5);
+  run(s,60*8);assert.equal(raid.passes,9);assert.equal(raid.wrecks.length,roll<.5?6:0);assert.ok(raid.bombs.length<=4);
+ }
+});
+test('debug timers pause outside play and resetting or switching off clears raid state',()=>{
+ const s=debugHarness(),c=s.c,raid=c.enemyBomberRaid();run(s,20);c.state='pause';run(s,90);assert.ok(Math.abs(raid.nextPassT-40)<1e-8);c.state='play';c.setupAreaDebugEnemyBomber();assert.equal(c.enemyBomberRaid().nextPassT,60);
+ c.areaDebugEnemyBomber=false;c.setupAreaDebugEnemyBomber();assert.equal(c.enemyBomberRaid(),null);c.drawEnemyBomberAircraft();c.drawEnemyBomberWarning();
+});
+test('area picker switch reflects ON/OFF and accepts changes only from the developer area picker',()=>{
+ const source=fs.readFileSync(path.join(__dirname,'../js/canyon.js'),'utf8'),nodes=new Map();const get=id=>{if(!nodes.has(id))nodes.set(id,{checked:false,textContent:'',addEventListener(_event,fn){this.change=fn;}});return nodes.get(id);};
+ const c={state:'areaPick',areaDebugEnemyBomber:false,isDeveloperMode:()=>true,document:{body:{classList:{toggle(){}}},getElementById:get}};vm.createContext(c);vm.runInContext(source.slice(source.indexOf('function syncAreaDebugPicker()'),source.indexOf('const areaList=')),c);
+ c.syncAreaDebugPicker();assert.equal(get('areaDebugEnemyBomberState').textContent,'OFF');const input=get('areaDebugEnemyBomber');input.checked=true;input.change({target:input});assert.equal(c.areaDebugEnemyBomber,true);assert.equal(get('areaDebugEnemyBomberState').textContent,'ON');
+ c.isDeveloperMode=()=>false;input.checked=false;input.change({target:input});assert.equal(c.areaDebugEnemyBomber,true);assert.equal(input.checked,true);c.isDeveloperMode=()=>true;c.state='play';input.checked=false;input.change({target:input});assert.equal(c.areaDebugEnemyBomber,true);
+ assert.match(html,/id="areaDebugEnemyBomber" type="checkbox" role="switch"/);
+});
+test('real area debug initialization keeps mission null and ticks raids from the ordinary game update',()=>{
+ const {createGameEngine}=require('./helpers/game-engine.cjs');const h=createGameEngine(path.join(__dirname,'..'));
+ h.run("setDeveloperMode(true);areaDebugEnabled=true;selectedAreaDebug='草原';areaDebugEnemyBomber=true;stageMode='base';skill='throw';reset(false);state='play';update(.016);draw(null);drawEnemyBomberWarning();");
+ assert.equal(h.run('mission'),null);assert.ok(Math.abs(h.run('enemyBomberRaid().nextPassT')-59.984)<1e-9);
+ h.run("areaDebugEnabled=false;stageMode='base';setupMission();");assert.equal(h.run('enemyBomberRaid()'),undefined);
+});

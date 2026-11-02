@@ -1,6 +1,14 @@
-// Advanced capture only. One aircraft, <=25 drops per pass and <=2 passes per run.
+// Advanced capture: <=2 passes. Developer area testing: one pass every 60 seconds.
+let areaDebugAirRaid=null;
+function areaDebugBomberEnabled(){
+ return areaDebugEnabled&&typeof areaDebugEnemyBomber!=='undefined'&&areaDebugEnemyBomber&&typeof isDeveloperMode==='function'&&isDeveloperMode();
+}
+function enemyBomberRaid(){return areaDebugEnabled?(areaDebugBomberEnabled()?areaDebugAirRaid:null):mission?.enemyAirRaid;}
+function setupAreaDebugEnemyBomber(){
+ areaDebugAirRaid=areaDebugBomberEnabled()?{debug:true,nextPassT:60,remaining:1,passes:0,phase:'idle',timer:0,route:null,plane:null,bombs:[],gradient:null,gradientHeight:0,fighter:null,wrecks:[]}:null;
+}
 function enemyBomberEnabled(){
- return stageMode==='front'&&!areaDebugEnabled&&!isFrontlineBeginner()&&!isFrontlineOni();
+ return areaDebugBomberEnabled()||stageMode==='front'&&!areaDebugEnabled&&!isFrontlineBeginner()&&!isFrontlineOni();
 }
 // Only the shuffled middle areas qualify; a later grassland is still eligible.
 function enemyBomberInRandomArea(){
@@ -11,19 +19,21 @@ function setupEnemyBomber(){
  mission.enemyAirRaid={remaining:R()<.5?1:2,passes:0,phase:'idle',timer:0,route:null,plane:null,bombs:[],gradient:null,gradientHeight:0,fighter:null,wrecks:[]};
 }
 function updateEnemyBomber(dt){
- if(!enemyBomberEnabled()||state!=='play'||!mission?.enemyAirRaid)return;
- const raid=mission.enemyAirRaid;
+ if(!enemyBomberEnabled()||state!=='play'||!enemyBomberRaid())return;
+ const raid=enemyBomberRaid();
+ if(raid.debug)raid.nextPassT=Math.max(0,raid.nextPassT-dt);
  updateEnemyBomberInterception(raid,dt);
  for(let i=raid.bombs.length-1;i>=0;i--){
   const bomb=raid.bombs[i];bomb.t-=dt;
   if(bomb.t<=0){raid.bombs.splice(i,1);enemyBomberBlast(bomb.x,bomb.y);if(state!=='play')return;}
  }
  if(raid.phase==='idle'){
-  if(!mission.enemyWavesStarted||!raid.remaining||raid.passes>0&&mission.index<1||!enemyBomberInRandomArea())return;
+  if(raid.debug){if(raid.nextPassT>5+1e-9)return;}
+  else if(!mission.enemyWavesStarted||!raid.remaining||raid.passes>0&&mission.index<1||!enemyBomberInRandomArea())return;
   const view=frontlineView();
   // Lock the world-space route when warning starts; camera movement never retargets it.
-  raid.route={x:R()*WW,y:Math.max(ZONES[ZONES.length-2].y1+1,Math.min(ZONES[1].y0-1,view.y-180)),endY:view.y+view.h+180};
-  raid.phase='warning';raid.timer=5;sfx('airWarning');return;
+  raid.route=raid.debug?{x:Math.max(30,Math.min(WW-30,view.x+view.w*(.2+R()*.6))),y:view.y-180,endY:view.y+view.h+180}:{x:R()*WW,y:Math.max(ZONES[ZONES.length-2].y1+1,Math.min(ZONES[1].y0-1,view.y-180)),endY:view.y+view.h+180};
+  raid.phase='warning';raid.timer=raid.debug?raid.nextPassT:5;sfx('airWarning');return;
  }
  if(raid.phase==='cooldown'){
   raid.timer=Math.max(0,raid.timer-dt);if(raid.timer===0)raid.phase='idle';return;
@@ -31,8 +41,8 @@ function updateEnemyBomber(dt){
  if(raid.phase==='warning'){
   raid.timer=Math.max(0,raid.timer-dt);
   if(raid.timer>1e-9)return;
-  raid.plane={...raid.route,drop:.05,drops:0,maxDrops:25,age:0,intercept:typeof isFrontlineAdvanced==='function'&&isFrontlineAdvanced()&&R()<.5};
-  raid.remaining--;raid.passes++;raid.phase='flight';return;
+  raid.plane={...raid.route,drop:.05,drops:0,maxDrops:25,age:0,intercept:(raid.debug||typeof isFrontlineAdvanced==='function'&&isFrontlineAdvanced())&&R()<.5};
+  if(raid.debug)raid.nextPassT=60;else raid.remaining--;raid.passes++;raid.phase='flight';return;
  }
  if(raid.phase!=='flight')return;
  const plane=raid.plane;plane.age+=dt;
@@ -55,7 +65,7 @@ function updateEnemyBomber(dt){
  }
  // Keep the warning until both the complete aircraft and its drop run have passed.
  if(plane.y>plane.endY&&plane.drops===plane.maxDrops){
-  raid.plane=null;raid.phase=raid.remaining?'cooldown':'done';raid.timer=22+R()*16;
+  raid.plane=null;raid.phase=raid.debug?'idle':raid.remaining?'cooldown':'done';raid.timer=22+R()*16;
  }
 }
 // One fighter and at most two permanent ground wrecks; no per-frame projectile allocation.
@@ -78,6 +88,7 @@ function updateEnemyBomberInterception(raid,dt){
 function crashEnemyBomber(raid,plane){
  const x=plane.x,y=plane.y,r=125;
  raid.wrecks.push({x,y,angle:.35});
+ if(raid.debug&&raid.wrecks.length>6)raid.wrecks.shift();
  sfx('airExplosion');fb(x,y,60);burst(x,y,55,'#ff8a3a',300);burst(x,y,24,'#363636',160);
  shake=Math.max(shake,12);flash=Math.max(flash,.35);
  // Use flame-skill ignition so rain, spread, fire damage and bridge collapse stay consistent.
@@ -85,10 +96,10 @@ function crashEnemyBomber(raid,plane){
  for(const o of nearbyCovers(x,y,r+160))if(!o.fr&&o.kd===6&&touches(o))igniteNature(o);
  for(const o of nearbyBushes(x,y,r+160))if(touches(o))igniteNature(o);
  for(const br of bridges)if(touches(br))igniteBridge(br);
- raid.plane=null;raid.phase=raid.remaining?'cooldown':'done';raid.timer=22+R()*16;
+ raid.plane=null;raid.phase=raid.debug?'idle':raid.remaining?'cooldown':'done';raid.timer=22+R()*16;
 }
 function drawEnemyBomberWrecks(cx,cy){
- const raid=mission?.enemyAirRaid;if(!raid)return;
+ const raid=enemyBomberRaid();if(!raid)return;
  for(const w of raid.wrecks){
   if(w.x<cx-180||w.x>cx+W+180||w.y<cy-180||w.y>cy+H+180)continue;
   g.save();g.translate(w.x,w.y);g.rotate(w.angle);
@@ -147,8 +158,8 @@ function enemyBomberBlast(x,y,radius=88){
  else{recordPlayerDamage(Math.min(p.hp,1)/3);p.hp=Math.max(0,p.hp-1);beginBlastFlight(p,x,y,radius,58,8,0);if(p.hp<=0)triggerPlayerDeath();}
 }
 function drawEnemyBomberAircraft(){
- if(!enemyBomberEnabled()||state!=='play'||!mission?.enemyAirRaid)return;
- const raid=mission.enemyAirRaid;
+ if(!enemyBomberEnabled()||state!=='play'||!enemyBomberRaid())return;
+ const raid=enemyBomberRaid();
  g.save();
  for(const bomb of raid.bombs){
   const progress=Math.max(0,Math.min(1,1-bomb.t/.48));
@@ -167,8 +178,8 @@ function drawEnemyBomberAircraft(){
  g.restore();
 }
 function drawEnemyBomberWarning(){
- if(!enemyBomberEnabled()||state!=='play'||!mission?.enemyAirRaid)return;
- const raid=mission.enemyAirRaid;if(raid.phase!=='warning'&&raid.phase!=='flight')return;
+ if(!enemyBomberEnabled()||state!=='play'||!enemyBomberRaid())return;
+ const raid=enemyBomberRaid();if(raid.phase!=='warning'&&raid.phase!=='flight')return;
  const width=WW/3,view=frontlineView(),left=(raid.plane||raid.route).x-view.x-width/2;
  const x=Math.max(0,left),right=Math.min(W,left+width),height=Math.min(150,H*.2);
  gm.save();gm.setTransform(1,0,0,1,0,0);
