@@ -185,3 +185,34 @@ test('indoor fallback snapshots and expiry use the current numbered floor, while
  run("stageMode='indoor';indoorBeginner=true;reset(false);var stunned=humans.find(h=>h.indoorFloor===1&&!h.elite);p.x=stunned.x;p.y=stunned.y;stunned.stun=3;var stunArt=[];og.drawImage=(im,...args)=>{if(im?.src?.includes('/fallen/'))stunArt.push(im.src);};draw(null)");
  assert.equal(run("stunArt.some(s=>s.endsWith('/supine.webp'))"),true);assert.equal(run('fallenEnemies.length'),0);assert.equal(run('stunned.alive'),true);assert.equal(run('scoreStats.humanKills'),0);
 });
+
+test('blue enemies, white enemies, allies and the player burst at a watery landing without ever sitting',()=>{
+ for(const who of ['blue','white','ally','player']){
+  const h=harness(),{c}=h;c.loadFallenEnemyArtwork();const queries=[];c.inWaterAt=(...args)=>{queries.push(args);return args[0]===118&&args[1]===100;};
+  if(who==='player')c.rememberFallenPlayer({x:100,y:100,body:0});else c.rememberFallenEnemy({x:100,y:100,alive:false,face:0},who);
+  c.updateFallenEnemies(.649);c.drawFallenEnemies(0,0);assert.match(h.draws.at(-1)[0].src,/cry-flying/);assert.equal(h.bursts.length,0);
+  c.updateFallenEnemies(.001);h.draws.length=0;c.drawFallenEnemies(0,0);assert.equal(h.draws.length,0);assert.equal(h.get('fallenEnemies.length'),0);assert.deepEqual(h.bursts,[[118,100,18,'#8fd7ff',180]]);assert.deepEqual(queries[0],[118,100,0]);
+  c.updateFallenEnemies(10);assert.equal(h.bursts.length,1);
+ }
+});
+test('water detection uses the final seated point rather than the original defeat point',()=>{
+ for(const landingWet of [true,false]){
+  const h=harness(),{c}=h;c.loadFallenEnemyArtwork();c.inWaterAt=x=>landingWet?x>=110:x<110;c.rememberFallenEnemy({x:100,y:100,alive:false,face:0});c.updateFallenEnemies(.65);c.drawFallenEnemies(0,0);
+  assert.equal(h.get('fallenEnemies.length'),landingWet?0:1);assert.equal(h.bursts.length,landingWet?1:0);if(!landingWet)assert.match(h.draws.at(-1)[0].src,/cry-sitting/);
+ }
+});
+test('real river bridge spans allow sitting and a destroyed span dissolves the body on the next update',()=>{
+ const {createGameEngine}=require('./helpers/game-engine.cjs'),{run}=createGameEngine(root);
+ run("stageMode='base';parts=[];water=[{x:0,y:50,w:110,h:100},{x:130,y:50,w:100,h:100}];bridges=[{x:110,y:50,w:20,h:100}];clearFallenEnemies();rememberFallenEnemy({x:100,y:100,alive:false,face:0});updateFallenEnemies(.65);");
+ assert.equal(run('fallenEnemies.length'),1);assert.equal(run('parts.length'),0);
+ run('bridges=[];water.push({x:110,y:50,w:20,h:100});updateFallenEnemies(.016);');assert.equal(run('fallenEnemies.length'),0);assert.equal(run('parts.length'),18);assert.equal(run("parts.every(q=>q.col==='#8fd7ff')"),true);
+});
+test('outdoor water never dissolves a corpse on an indoor floor and off-floor snapshots emit no splash',()=>{
+ const h=harness(),{c}=h;c.stageMode='indoor';c.indoorWorld={currentFloor:0};c.inWaterAt=()=>true;c.rememberFallenEnemy({x:100,y:100,alive:false,indoorFloor:1});c.rememberFallenEnemy({x:100,y:100,alive:false,indoorFloor:2});c.updateFallenEnemies(.65);
+ assert.equal(h.get('fallenEnemies.length'),2);assert.equal(h.bursts.length,0);c.updateFallenEnemies(10);assert.equal(h.bursts.length,1);
+});
+test('a sniper-scope water landing draws blue breakup instead of the seated sprite without duplicate world bursts',()=>{
+ const h=harness(),{c}=h,fragments=[];c.loadFallenEnemyArtwork();c.inWaterAt=()=>true;c.g.globalAlpha=1;c.g.fillRect=(...args)=>fragments.push(args);
+ const enemy={x:100,y:100,alive:false,sniperFallMax:.72,sniperFallT:.01,sniperFallA:0};
+ assert.equal(c.drawScopedCryingEnemy(enemy,200,200,70),true);assert.equal(h.draws.length,0);assert.equal(fragments.length,12);assert.equal(h.bursts.length,0);assert.equal(h.depth(),0);
+});

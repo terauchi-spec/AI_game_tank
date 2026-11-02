@@ -51,13 +51,19 @@ function rememberFallenEnemy(h,variant=fallenSoldierVariant(h)){
  fallenEnemies.push({variant,x:h.x,y:h.y,dx:Math.cos(angle)*18,dy:Math.sin(angle)*18,flip:Math.cos(angle)<0?-1:1,age:0,floor:stageMode==='indoor'?(h.indoorFloor??((indoorWorld?.currentFloor??0)+1)):null});
  if(fallenEnemies.length>FALLEN_ENEMY_LIMIT)fallenEnemies.shift();
 }
+function fallenLandingInWater(x,y){
+ // Indoor floors and surviving bridges are dry; waterAt already excludes bridge spans.
+ return stageMode!=='indoor'&&Number.isFinite(x)&&Number.isFinite(y)&&typeof inWaterAt==='function'&&inWaterAt(x,y,0);
+}
 function updateFallenEnemies(dt){
  if(!Number.isFinite(dt)||dt<=0)return;
  for(let i=fallenEnemies.length-1;i>=0;i--){
   const body=fallenEnemies[i];body.age+=dt;
-  if(body.age>=ENEMY_CRY_LIFETIME){
-   const sameFloor=body.floor===null?stageMode!=='indoor':stageMode==='indoor'&&body.floor===indoorWorld?.currentFloor+1;
-   if(sameFloor)burst(body.x+body.dx,body.y+body.dy,18,'#8fd7ff',180);
+  if(body.age<ENEMY_CRY_FLIGHT_DURATION)continue;
+  const sameFloor=body.floor===null?stageMode!=='indoor':stageMode==='indoor'&&body.floor===indoorWorld?.currentFloor+1;
+  const x=body.x+body.dx,y=body.y+body.dy;
+  if(body.age>=ENEMY_CRY_LIFETIME||sameFloor&&fallenLandingInWater(x,y)){
+   if(sameFloor)burst(x,y,18,'#8fd7ff',180);
    fallenEnemies.splice(i,1);
   }
  }
@@ -81,7 +87,15 @@ function drawStunnedEnemy(x,y,face,size=FALLEN_ENEMY_SIZE*1.15,variant='blue'){
 
 // The scope has its own projected character layer; keep the same gentle reaction there.
 function drawScopedCryingEnemy(h,x,y,size){
- const t=Math.min(1,Math.max(0,(h.sniperFallMax||.72)-(h.sniperFallT||0))/ENEMY_CRY_FLIGHT_DURATION),flying=t<1;
+ const age=Math.max(0,(h.sniperFallMax||.72)-(h.sniperFallT||0)),t=Math.min(1,age/ENEMY_CRY_FLIGHT_DURATION),flying=t<1;
+ const angle=h.fallImpactAngle??h.sniperFallA??h.face??0;
+ if(!flying&&fallenLandingInWater(h.x+Math.cos(angle)*18,h.y+Math.sin(angle)*18)){
+  // Project the same light-blue breakup into the scope without spawning world particles twice.
+  const phase=Math.min(1,(age-ENEMY_CRY_FLIGHT_DURATION)/.2),radius=size*(.12+phase*.35),dot=Math.max(2,size*.04);
+  g.save();g.globalAlpha*=1-phase;g.fillStyle='#8fd7ff';
+  for(let i=0;i<12;i++){const a=i*Math.PI/6,r=radius*(i%2?.7:1);g.fillRect(x+Math.cos(a)*r-dot/2,y+Math.sin(a)*r*.65-dot/2,dot,dot);}
+  g.restore();return true;
+ }
  const pose=flying?'cry-flying':'cry-sitting',variant=fallenSoldierVariant(h),im=fallenSoldierArt(pose,variant);if(!assetOK(im))return false;
  g.save();g.translate(x,y-(flying?Math.sin(Math.PI*t)*size*.3:0));if(Number.isFinite(h.sniperFallA)&&Math.cos(h.sniperFallA)<0)g.scale(-1,1);g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';drawCryingSoldier(im,pose,variant,size*(flying?ENEMY_CRY_FLY_SCALE:ENEMY_CRY_SIT_SCALE));g.restore();return true;
 }
