@@ -4,7 +4,7 @@ function harness(rolls=[0,.5]){
  const sounds=[],rects=[],texts=[],gradients=[],damage=[],draws=[],terrain=[];let blasts=0,wrecks=0;
  const gm={save(){},restore(){},setTransform(){},beginPath(){},ellipse(){},arc(){},fill(){},stroke(){},fillRect(...args){rects.push(args);},strokeText(){},fillText(...args){texts.push(args[0]);},createLinearGradient(...args){const stops=[];const gradient={args,stops,addColorStop(...s){stops.push(s);}};gradients.push(gradient);return gradient;}};
  const c={ZONES:[{n:'草原',y0:13200,y1:10800},{n:'森林',y0:10800,y1:7000},{n:'草原',y0:7000,y1:2000},{n:'敵司令本部',y0:2000,y1:-400}],stageMode:'front',areaDebugEnabled:false,frontlineBeginner:false,frontlineOni:false,state:'play',WW:960,W:480,H:800,mission:{index:0,enemyWavesStarted:false},view:{x:0,y:8500,w:480,h:800},p:{x:900,y:9000,hp:3,dig:0,tank:null},allies:[],partner:null,hound:null,humans:[],etanks:[],enemyDogs:[],objects:[],debugInvincible:false,shake:0,flash:0,FIGHTER_TYPE:{hp:8},performance:{now:()=>1000},
- R:()=>rolls.length?rolls.shift():.5,isFrontlineBeginner:()=>c.frontlineBeginner,isFrontlineOni:()=>c.frontlineOni,frontlineView:()=>c.view,sfx:s=>sounds.push(s),fb(){blasts++;},burst(){},scatterSpinifexAt(){},cannonCoverDebris(){},damageBridgeByBomb(){},damageObjectsInRadius(){},carve(...args){terrain.push(args);},recordPlayerDamage(...args){damage.push(args);},beginBlastFlight(){},triggerPlayerDeath(){c.state='dying';},wreck(){wrecks++;c.p.tank=null;},stunHound(t){c.hound.stun=t;},partnerVehicleDestroyed(q){q.vehicle=null;q.down=true;},gm,g:gm,drawSupportBomber(...args){draws.push(args);}};
+ R:()=>rolls.length?rolls.shift():.5,isFrontlineAdvanced:()=>!c.frontlineBeginner&&!c.frontlineOni&&c.stageMode==='front'&&c.stageId!=='frontIntermediate',isFrontlineBeginner:()=>c.frontlineBeginner,isFrontlineOni:()=>c.frontlineOni,frontlineView:()=>c.view,sfx:s=>sounds.push(s),fb(){blasts++;},burst(){},scatterSpinifexAt(){},cannonCoverDebris(){},damageBridgeByBomb(){},damageObjectsInRadius(){},carve(...args){terrain.push(args);},recordPlayerDamage(...args){damage.push(args);},beginBlastFlight(){},triggerPlayerDeath(){c.state='dying';},wreck(){wrecks++;c.p.tank=null;},stunHound(t){c.hound.stun=t;},partnerVehicleDestroyed(q){q.vehicle=null;q.down=true;},gm,g:gm,drawSupportBomber(...args){draws.push(args);}};
  vm.createContext(c);vm.runInContext(source,c);return{c,sounds,rects,texts,gradients,damage,draws,terrain,get blasts(){return blasts;},get wrecks(){return wrecks;}};
 }
 function run(s,seconds,step=.05){for(let t=0;t<seconds-1e-9;t+=step)s.c.updateEnemyBomber(Math.min(step,seconds-t));}
@@ -105,4 +105,31 @@ test('aircraft bomb misses leave bridges and river unchanged; direct hits remove
   const blast=(x,y)=>kind==='enemy'?c.enemyBomberBlast(x,y):c.airBombBlast(x,y);
   blast(500,300);assert.equal(c.bridges.length,1);assert.equal(c.water.length,0);blast(150,300);assert.equal(c.bridges.length,0);assert.equal(c.water.length,1);assert.equal(c.water[0].h,60);
  }
+});
+
+test('interception has an exact half-open 50% boundary and is exclusive to advanced capture',()=>{
+ for(const [roll,expected] of [[0,true],[.499999,true],[.5,false],[.999999,false]]){
+  const s=harness([0,.5,roll]),c=s.c;c.setupEnemyBomber();c.mission.enemyWavesStarted=true;c.updateEnemyBomber(.01);c.updateEnemyBomber(5);
+  assert.equal(c.mission.enemyAirRaid.plane.intercept,expected);
+ }
+ const s=harness([0,.5,0]),c=s.c;c.stageId='frontIntermediate';c.setupEnemyBomber();c.mission.enemyWavesStarted=true;c.updateEnemyBomber(.01);c.updateEnemyBomber(5);assert.equal(c.mission.enemyAirRaid.plane.intercept,false);
+});
+test('fighter enters from either side, downs the bomber once and stops further drops while existing bombs land',()=>{
+ for(const routeRoll of [.2,.8]){
+  const s=harness([0,routeRoll,0]),c=s.c;Object.assign(c,{nearbyCovers:()=>[],nearbyBushes:()=>[],bridges:[],igniteNature(){},igniteBridge(){}});
+  c.setupEnemyBomber();c.mission.enemyWavesStarted=true;c.updateEnemyBomber(.01);c.updateEnemyBomber(5);
+  run(s,.6,.02);const raid=c.mission.enemyAirRaid;assert.ok(raid.fighter);assert.equal(raid.fighter.dir,routeRoll===.2?-1:1);
+  assert.ok(raid.fighter.dir===1?raid.fighter.x<c.view.x:raid.fighter.x>c.view.x+c.view.w);
+  run(s,.8,.02);assert.equal(raid.plane.falling,true);const drops=raid.plane.drops;assert.ok(drops<25);
+  run(s,5,.02);assert.equal(raid.plane,null);assert.equal(raid.fighter,null);assert.equal(raid.wrecks.length,1);assert.equal(raid.phase,'done');assert.equal(s.blasts,drops+1);
+  c.drawEnemyBomberWarning();assert.equal(s.texts.length,0);
+  c.setupEnemyBomber();assert.equal(c.mission.enemyAirRaid.wrecks.length,0);
+ }
+});
+test('real flame ignition burns nearby trees, grass and bridges, preserves other cover and resets with mission',()=>{
+ const {createGameEngine}=require('./helpers/game-engine.cjs');const h=createGameEngine(path.join(__dirname,'..'));
+ h.run("stageMode='front';skill='throw';fx=[];parts=[];waves=[];water=[];covers=[];bushes=[];objects=[];humans=[];p={x:900,y:9000,hp:3};scoreStats=newScoreStats();currentStageId=()=> 'front';state='play';weather='sun';mission={};setupEnemyBomber();tree={x:450,y:500,w:60,h:60,kd:6};wall={x:500,y:500,w:60,h:60,kd:1};farTree={x:800,y:500,w:60,h:60,kd:6};grass={x:470,y:550,w:40,h:40};bridge={x:470,y:580,w:100,h:80};covers=[tree,wall,farTree];bushes=[grass];bridges=[bridge];objects=[];rebuildSpatialGrid();crashEnemyBomber(mission.enemyAirRaid,{x:480,y:520});drawEnemyBomberWrecks(0,0);drawInterceptionFighter({x:100,y:520,dir:1},{x:400,y:520});");
+ assert.equal(h.run('tree.burnT'),5);assert.equal(h.run('grass.burnT'),5);assert.equal(h.run('bridge.burnT'),5);assert.equal(h.run('wall.burnT'),undefined);assert.equal(h.run('farTree.burnT'),undefined);
+ h.run("for(let i=0;i<105;i++)updateBurningNature(.05);drawEnemyBomberWrecks(0,0);");assert.equal(h.run('covers.includes(tree)'),false);assert.equal(h.run('bushes.includes(grass)'),false);assert.equal(h.run('bridges.includes(bridge)'),false);assert.equal(h.run('mission.enemyAirRaid.wrecks.length'),1);
+ h.run("weather='rain';tree.burnT=undefined;covers=[tree];bushes=[grass];grass.burnT=undefined;bridges=[];rebuildSpatialGrid();crashEnemyBomber(mission.enemyAirRaid,{x:480,y:520});");assert.equal(h.run('tree.burnT'),undefined);assert.equal(h.run('grass.burnT'),undefined);
 });
