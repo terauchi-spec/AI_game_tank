@@ -121,7 +121,7 @@ test('fighter enters from either side, downs the bomber once and stops further d
   run(s,.6,.02);const raid=c.mission.enemyAirRaid;assert.ok(raid.fighter);assert.equal(raid.fighter.dir,routeRoll===.2?-1:1);
   assert.ok(raid.fighter.dir===1?raid.fighter.x<c.view.x:raid.fighter.x>c.view.x+c.view.w);
   run(s,.8,.02);assert.equal(raid.plane.falling,true);const drops=raid.plane.drops;assert.ok(drops<25);
-  run(s,5,.02);assert.equal(raid.plane,null);assert.equal(raid.fighter,null);assert.equal(raid.wrecks.length,1);assert.equal(raid.phase,'done');assert.equal(s.blasts,drops+1);
+  run(s,5,.02);assert.equal(raid.plane,null);assert.equal(raid.fighter,null);assert.equal(raid.wrecks.length,1);assert.equal(raid.phase,'done');assert.ok(s.blasts>=drops+2&&s.blasts<=drops+6,'falling uses a bounded number of shared explosion effects');
   c.drawEnemyBomberWarning();assert.equal(s.texts.length,0);
   c.setupEnemyBomber();assert.equal(c.mission.enemyAirRaid.wrecks.length,0);
  }
@@ -172,4 +172,39 @@ test('real area debug initialization keeps mission null and ticks raids from the
  h.run("setDeveloperMode(true);areaDebugEnabled=true;selectedAreaDebug='草原';areaDebugEnemyBomber=true;stageMode='base';skill='throw';reset(false);state='play';update(.016);draw(null);drawEnemyBomberWarning();");
  assert.equal(h.run('mission'),null);assert.ok(Math.abs(h.run('enemyBomberRaid().nextPassT')-59.984)<1e-9);
  h.run("areaDebugEnabled=false;stageMode='base';setupMission();");assert.equal(h.run('enemyBomberRaid()'),undefined);
+});
+
+test('crash preserves the actual final bank angle and scale and detaches exactly one wing',()=>{
+ for(const roll of [0,.99]){
+  const s=debugHarness(roll),c=s.c,raid=c.enemyBomberRaid();
+  c.crashEnemyBomber(raid,{x:300,y:400,fallT:.9,fallAngle:1.17,fallScale:.685});
+  const wreck=raid.wrecks[0];assert.equal(wreck.angle,1.17);assert.equal(wreck.scale,.685);assert.equal(wreck.missingWing,roll<.5?-1:1);
+  const wings=[],rotations=[];c.g=new Proxy({}, {get:(_o,k)=>(...a)=>{if(k==='rotate')rotations.push(a[0]);},set:(o,k,v)=>(o[k]=v,true)});
+  vm.runInContext(html.slice(html.indexOf('function drawSupportBomber('),html.indexOf('function armoredShape(')),c);
+  c.drawSupportBomberWing=(...a)=>wings.push(a);c.drawEnemyBomberWrecks(0,0);
+  assert.equal(rotations[0],1.17);assert.equal(wings.filter(a=>a[3]==='whole').length,1);assert.equal(wings.filter(a=>a[3]==='root').length,1);assert.equal(wings.filter(a=>a[3]==='tip').length,1);
+  assert.equal(wings.find(a=>a[3]==='root')[0],wreck.missingWing);assert.equal(wings.find(a=>a[3]==='tip')[0],wreck.missingWing);
+ }
+});
+test('crash ignites trees, grass and bridges through 150px inclusive and leaves more distant scenery alone',()=>{
+ const s=debugHarness(),c=s.c,burned=[];
+ const trees=[149,150,151].map(d=>({x:300+d,y:400,w:10,h:10,kd:6})),grass=[149,150,151].map(d=>({x:300,y:400+d,w:10,h:10})),bridges=[149,150,151].map(d=>({x:300-d-10,y:400,w:10,h:10}));
+ c.nearbyCovers=()=>trees;c.nearbyBushes=()=>grass;c.bridges=bridges;c.igniteNature=o=>burned.push(o);c.igniteBridge=o=>burned.push(o);
+ c.crashEnemyBomber(c.enemyBomberRaid(),{x:300,y:400});
+ for(const group of [trees,grass,bridges]){assert.ok(burned.includes(group[0]));assert.ok(burned.includes(group[1]));assert.ok(!burned.includes(group[2]));}
+});
+test('falling and ground impacts share the bomb explosion artwork without applying bomb damage in midair',()=>{
+ const s=debugHarness(0),c=s.c,raid=c.enemyBomberRaid(),effects=[];run(s,60);
+ const original=c.enemyBomberExplosionFx;c.enemyBomberExplosionFx=(...args)=>{effects.push(args);original(...args);};
+ run(s,3);assert.equal(raid.wrecks.length,1);assert.ok(effects.some(a=>a[2]===.35&&a[3]===false));assert.ok(effects.some(a=>a[2]===1.25));assert.ok(effects.filter(a=>a[2]!==undefined).length<=6);
+ const rotations=[];c.g=new Proxy({}, {get:(_o,k)=>(...a)=>{if(k==='rotate')rotations.push(a[0]);if(k==='ellipse')throw Error('no solid falling flame ellipses');},set:(o,k,v)=>(o[k]=v,true)});c.drawSupportBomber=()=>{};raid.bombs=[];raid.fighter=null;raid.plane={x:300,y:400,falling:true,fallT:.5,fallAngle:.65,fallScale:.825};c.drawEnemyBomberAircraft();assert.ok(rotations.includes(.65));
+});
+
+test('detailed aircraft and left/right wreck artwork is cached once and reused across frames',()=>{
+ const s=debugHarness(),c=s.c;let created=0,painted=0,blits=0;
+ c.g=new Proxy({}, {get:(_o,k)=>k==='drawImage'?()=>blits++:()=>{},set:(o,k,v)=>(o[k]=v,true)});
+ c.document={createElement:()=>{created++;return{getContext:()=>c.g};}};
+ const paint=()=>painted++;
+ for(let frame=0;frame<20;frame++){c.drawCachedEnemyAircraft('wreck:-1',paint,-1);c.drawCachedEnemyAircraft('wreck:1',paint,1);c.drawCachedEnemyAircraft('fighter',paint,0,192,160);}
+ assert.equal(created,3);assert.equal(painted,3);assert.equal(blits,60);
 });
