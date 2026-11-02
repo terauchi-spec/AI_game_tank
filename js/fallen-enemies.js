@@ -33,6 +33,11 @@ function rememberFallenAlly(a,dx,dy){
  if(!a||a.alive)return;
  noteEnemyFallHit(a,dx,dy);rememberFallenEnemy(a,'ally');
 }
+// Players use the same friendly flying/crying artwork and timing as fallen allies.
+function rememberFallenPlayer(player){
+ if(!player||!Number.isFinite(player.x)||!Number.isFinite(player.y))return;
+ rememberFallenEnemy({x:player.x,y:player.y,alive:false,face:player.body,fallImpactAngle:player.body,indoorFloor:stageMode==='indoor'?(indoorWorld?.currentFloor??0)+1:null},'ally');
+}
 function clearFallenEnemies(){fallenEnemies.length=0;}
 function noteEnemyFallHit(h,dx,dy){
  if(!h||h.fallenSpriteRecorded||h.frontRetired||!Number.isFinite(dx)||!Number.isFinite(dy)||Math.hypot(dx,dy)<.001)return;

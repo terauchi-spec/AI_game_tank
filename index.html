@@ -1000,7 +1000,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.02.1154',FILE_CREATED_AT='2026/11/02 11:54',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.02.1208',FILE_CREATED_AT='2026/11/02 12:08',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -4392,7 +4392,9 @@ function triggerPlayerDeath(){
  if(typeof stageMode!=='undefined'&&stageMode==='training'){if(p)p.hp=3;return;}
  if(state!=='play')return;
  if(debugInvincible||areaDebugEnabled){p.hp=Math.max(3,p.hp||0);shake=Math.max(shake,3);flash=Math.max(flash,.12);return;}
- recordPlayerDamage(Math.max(0,p.hp||0)/3);p.hp=0;state='dying';deathT=1.35;p.drill=0;p.dig=0;p.digPrep=0;shake=Math.max(shake,16);flash=.65;sfx('deathHit');burst(p.x,p.y,12,'#c05a3a',160);
+ recordPlayerDamage(Math.max(0,p.hp||0)/3);p.hp=0;state='dying';deathT=2.4;
+ if(typeof rememberFallenPlayer==='function')rememberFallenPlayer(p);
+ p.drill=0;p.dig=0;p.digPrep=0;shake=Math.max(shake,12);flash=.35;sfx('deathHit');burst(p.x,p.y,12,'#c05a3a',160);
 }
 function damagePlayerByOwnBomb(){
  if(stageMode==='training')return false;
@@ -4402,7 +4404,10 @@ function damagePlayerByOwnBomb(){
  if(p.hp<=0){triggerPlayerDeath();return true;}
  shake=Math.max(shake,9);flash=Math.max(flash,.32);sfx('vehicleHit');fb(p.x,p.y,20);burst(p.x,p.y,18,'#ff8a4a',150);say('爆風でハートが1つ減った');return true;
 }
-function dyingUpdate(dt){deathT-=dt;shake=Math.max(0,shake-22*dt);flash=Math.max(0,flash-dt*.8);for(const f of fx)f.l-=dt;fx=fx.filter(f=>f.l>0);updateParts(dt);if(deathT<=0){state='failed';failureFrameDrawn=false;finalizeScore(false);sfx('lose');}}
+function dyingUpdate(dt){deathT-=dt;shake=Math.max(0,shake-22*dt);flash=Math.max(0,flash-dt*.8);
+ if(typeof updateFallenEnemies==='function')updateFallenEnemies(dt);
+ for(const f of fx)f.l-=dt;fx=fx.filter(f=>f.l>0);updateParts(dt);
+ if(deathT<=0){state='failed';failureFrameDrawn=false;finalizeScore(false);sfx('lose');}}
 function damageBridgeByBomb(x,y,r=42){
  const next=[];let damaged=false;
  for(const br of bridges){
@@ -7606,7 +7611,7 @@ function draw(near){
  else if(p.sniperEnterT>0||p.sniperReadyT>0){drawSniperSetupPlayer();}
  else if(p.dig>0){if(digUsesWaterFx(p.x,p.y)){g.save();g.translate(p.x,p.y);g.rotate(p.body+1.5708);g.fillStyle='rgba(38,54,45,.92)';g.beginPath();g.ellipse(0,-2,7,9,0,0,6.28);g.fill();g.fillStyle='#66735f';g.beginPath();g.arc(0,-5,6,Math.PI,0);g.fill();g.strokeStyle='rgba(220,240,245,.65)';g.lineWidth=1.5;g.beginPath();g.moveTo(-10,4);g.quadraticCurveTo(0,8,10,4);g.stroke();g.restore();}else{g.fillStyle='#3a2a18';g.beginPath();g.ellipse(p.x,p.y+2,11,8,0,0,6.28);g.fill();g.fillStyle='#6b4e30';g.beginPath();g.ellipse(p.x,p.y,8,6,0,0,6.28);g.fill();}}
  else if(p.digPrep>0)drawDigPreparation();
- else{drawBlastShadow(p);soldier(p.x,p.y-blastLift(p),p.body,true,false,!!(keys.ArrowUp||keys.ArrowDown||keys.ArrowLeft||keys.ArrowRight)||(stageMode==='indoor'&&state==='indoorEscape'&&mission?.extraction?.phase==='boarding'),false,'',false,true,p);}
+ else if(state!=='dying'){drawBlastShadow(p);soldier(p.x,p.y-blastLift(p),p.body,true,false,!!(keys.ArrowUp||keys.ArrowDown||keys.ArrowLeft||keys.ArrowRight)||(stageMode==='indoor'&&state==='indoorEscape'&&mission?.extraction?.phase==='boarding'),false,'',false,true,p);}
  }
  if(!p.tank&&p.drill>0){const a=p.body,t=performance.now()/90;g.save();g.translate(p.x,p.y);g.rotate(a);g.fillStyle='#30343a';g.beginPath();g.moveTo(10,-10);g.lineTo(48,0);g.lineTo(10,10);g.closePath();g.fill();g.strokeStyle='#d6d9dd';g.lineWidth=2;for(let q=0;q<4;q++){const xx=14+q*8,yy=Math.sin(t+q*1.7)*6;g.beginPath();g.moveTo(xx,-8+yy*.25);g.lineTo(xx+6,8-yy*.25);g.stroke();}g.fillStyle='#ffd27a';g.beginPath();g.arc(49,0,3+Math.sin(t)*1.2,0,6.28);g.fill();g.restore();if(p.drillTarget){g.fillStyle='rgba(0,0,0,.58)';g.fillRect(p.x-22,p.y-31,44,5);g.fillStyle='#ffd27a';g.fillRect(p.x-22,p.y-31,44*Math.min(1,p.drillHit/.5),5);}}
  drawGrassBushChunks(cx,cy);
@@ -7678,7 +7683,7 @@ function draw(near){
   }g.restore();
  }
  if(flash>0){g.fillStyle='rgba(255,240,200,'+flash*.5+')';g.fillRect(0,0,W,H);}
- if(state==='dying'){const k=Math.max(0,deathT/1.35);g.fillStyle='rgba(80,0,0,'+(0.18+(.45*(1-k)))+')';g.fillRect(0,0,W,H);g.textAlign='center';g.font='bold 18px system-ui';g.fillStyle='rgba(255,230,210,'+(1-k*.35)+')';g.fillText('撃破された…',W/2,H*.42);}
+ if(state==='dying'){const k=Math.max(0,Math.min(1,1-deathT/2.4));g.fillStyle='rgba(60,0,0,'+(.05+.15*k)+')';g.fillRect(0,0,W,H);}
  if(state==='title'){
   g.fillStyle='rgba(10,12,8,.84)';g.fillRect(0,0,W,H);g.textAlign='center';
   g.fillStyle='#e6e9d8';g.font='bold 52px system-ui';g.fillText('戦車大戦',W/2,180);
@@ -8505,7 +8510,7 @@ function reportGameError(error){
 <script src="js/unlocks.js?v=2026.10.31.2206"></script>
 <script src="js/enemy-bomber.js?v=2026.11.01.0703"></script>
 <script src="js/characters.js?v=2026.10.19.1032"></script>
-<script src="js/fallen-enemies.js?v=2026.10.30.1058"></script>
+<script src="js/fallen-enemies.js?v=2026.11.02.1208"></script>
 <script src="js/enemy-dogs.js?v=2026.10.28.0713"></script>
 <script src="js/training.js?v=2026.10.31.0728"></script>
 <script src="js/gun-tower.js?v=2026.11.01.0848"></script>
