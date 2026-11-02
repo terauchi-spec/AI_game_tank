@@ -1,12 +1,21 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
 function harness(extra={}){
- const particles=[],sounds=[],damage=[],c={state:'play',debugInvincible:false,areaDebugEnabled:false,p:{hp:0,x:123,y:456,drill:3,dig:2,digPrep:1},shake:0,flash:0,deathT:0,recordPlayerDamage:n=>damage.push(n),sfx:n=>sounds.push(n),burst:(...v)=>particles.push(v),...extra};
+ const particles=[],sounds=[],damage=[],c={ENEMY_CRY_FLIGHT_DURATION:.65,state:'play',debugInvincible:false,areaDebugEnabled:false,p:{hp:0,x:123,y:456,drill:3,dig:2,digPrep:1},shake:0,flash:0,deathT:0,recordPlayerDamage:n=>damage.push(n),sfx:n=>sounds.push(n),burst:(...v)=>particles.push(v),...extra};
  vm.createContext(c);const a=html.indexOf('function triggerPlayerDeath(){');vm.runInContext(html.slice(a,html.indexOf('function damagePlayerByOwnBomb()',a)),c);return{c,particles,sounds,damage};
 }
 test('player defeat uses the normal enemy infantry defeat particles once and retains death transition and sound',()=>{
- const h=harness();h.c.triggerPlayerDeath();assert.deepEqual(h.particles,[[123,456,12,'#c05a3a',160]]);assert.deepEqual(h.sounds,['deathHit']);assert.equal(h.c.state,'dying');assert.equal(h.c.deathT,1.35);for(const v of ['hp','drill','dig','digPrep'])assert.equal(h.c.p[v],0);h.c.triggerPlayerDeath();assert.equal(h.particles.length,1);
+ const h=harness();h.c.triggerPlayerDeath();assert.deepEqual(h.particles,[[123,456,12,'#c05a3a',160]]);assert.deepEqual(h.sounds,['deathHit']);assert.equal(h.c.state,'dying');assert.equal(h.c.deathT,h.c.ENEMY_CRY_FLIGHT_DURATION);for(const v of ['hp','drill','dig','digPrep'])assert.equal(h.c.p[v],0);h.c.triggerPlayerDeath();assert.equal(h.particles.length,1);
 });
 test('invincibility, area debug and non-playing states do not emit defeat particles or enter death',()=>{
  for(const extra of [{debugInvincible:true},{areaDebugEnabled:true},{state:'failed'},{state:'title'}]){const h=harness(extra);h.c.triggerPlayerDeath();assert.equal(h.particles.length,0);assert.equal(h.sounds.length,0);assert.notEqual(h.c.state,'dying');}
+});
+
+test('failure screen opens in the same frame as the player changes from flying to crying sitting',()=>{
+ const {createGameEngine}=require('./helpers/game-engine.cjs'),h=createGameEngine(path.join(__dirname,'..'));
+ h.run("stageMode='beginner';skill='throw';reset(false);failureClasses=new Set();document.body.classList.contains=key=>failureClasses.has(key);document.body.classList.toggle=(key,on)=>{if(on)failureClasses.add(key);else failureClasses.delete(key)};p.hp=0;p.x=480;p.y=12000;clearFallenEnemies();sounds=[];sfx=key=>sounds.push(key);finalizeCalls=0;originalFinalize=finalizeScore;finalizeScore=(...args)=>{finalizeCalls++;return originalFinalize(...args)};triggerPlayerDeath();cryDraws=[];og.drawImage=(im)=>{if(im?.src?.includes('/fallen/'))cryDraws.push(im.src)};dyingUpdate(ENEMY_CRY_FLIGHT_DURATION-.001);draw(null);syncMissionFailure();");
+ assert.equal(h.run('state'),'dying');assert.equal(h.run("document.body.classList.contains('failure-open')"),false);assert.equal(h.run('finalizeCalls'),0);assert.ok(h.run("cryDraws.some(src=>src.includes('cry-flying'))"));
+ h.run('cryDraws=[];dyingUpdate(.001);draw(null);syncMissionFailure();');
+ assert.equal(h.run('state'),'failed');assert.equal(h.run("document.body.classList.contains('failure-open')"),true);assert.equal(h.run('deathT'),0);assert.equal(h.run('finalizeCalls'),1);assert.equal(h.run("sounds.filter(key=>key==='lose').length"),1);assert.ok(h.run("cryDraws.some(src=>src.includes('cry-sitting'))"));assert.ok(!h.run("cryDraws.some(src=>src.includes('cry-flying'))"));
+ h.run('triggerPlayerDeath();syncMissionFailure();');assert.equal(h.run('finalizeCalls'),1);
 });
