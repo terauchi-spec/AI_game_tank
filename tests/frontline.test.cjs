@@ -733,3 +733,13 @@ test('Oni automatic replenishment triggers below eight allies, retaining the usu
   vm.runInContext(html.slice(html.indexOf('function updateMission('),html.indexOf('let missionHudNextAt=')),c);c.updateMission(.1);assert.equal(c.allies.length,alive===7?19:8);assert.equal(c.mission.reinforceT,18);
  }
 });
+
+test('advanced frontline scales enemy/ally counts and live cap without changing lower difficulties',()=>{
+ const c=harness();c.currentStageId=()=> 'front';
+ assert.equal(c.frontlineEnemyMultiplier(),1.3);assert.equal(c.frontlineAllyMultiplier(),1.3);
+ assert.equal(c.frontlineEnemyLimit(),21);assert.equal(c.frontlineEnemyCount(6*c.frontlineEnemyMultiplier()),8);
+ assert.equal(c.frontlineEnemyCount(2*c.frontlineEnemyMultiplier()),3);
+ c.currentStageId=()=> 'frontIntermediate';
+ assert.equal(c.frontlineEnemyLimit(),16);assert.equal(c.frontlineAllyMultiplier(),1);
+ c.currentStageId=()=> 'front';c.frontlineBeginner=true;assert.equal(c.frontlineAllyMultiplier(),1);
+});

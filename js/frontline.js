@@ -2,10 +2,11 @@
 const FRONTLINE_ENEMY_LIMIT=16,FRONTLINE_CAPTURE_SECONDS=48,FRONTLINE_CAPTURE_RADIUS=360;
 function isFrontlineBeginner(){return stageMode==='front'&&typeof frontlineBeginner!=='undefined'&&frontlineBeginner&&!areaDebugEnabled;}
 function isFrontlineOni(){return stageMode==='front'&&typeof frontlineOni!=='undefined'&&frontlineOni&&!areaDebugEnabled;}
-function frontlineEnemyMultiplier(){return isFrontlineOni()?3:1;}
-function frontlineAllyMultiplier(){return isFrontlineOni()?2:1;}
-function frontlineEnemyCount(count){return isFrontlineBeginner()?Math.round(count*.8):count;}
-function frontlineEnemyLimit(){return isFrontlineBeginner()?frontlineEnemyCount(10):FRONTLINE_ENEMY_LIMIT*frontlineEnemyMultiplier();}
+function isFrontlineAdvanced(){return stageMode==='front'&&!areaDebugEnabled&&typeof currentStageId==='function'&&currentStageId()==='front';}
+function frontlineEnemyMultiplier(){return isFrontlineOni()?3:isFrontlineAdvanced()?1.3:1;}
+function frontlineAllyMultiplier(){return isFrontlineOni()?2:isFrontlineAdvanced()?1.3:1;}
+function frontlineEnemyCount(count){return Math.round(isFrontlineBeginner()?count*.8:count);}
+function frontlineEnemyLimit(){return isFrontlineBeginner()?frontlineEnemyCount(10):Math.round(FRONTLINE_ENEMY_LIMIT*frontlineEnemyMultiplier());}
 function frontlineCaptureRadius(point){return point?.captureRadius||FRONTLINE_CAPTURE_RADIUS;}
 function frontlineTankSightScale(unit){return stageMode==='front'&&(etanks||[]).includes(unit)?2:1;}
 // North of the last capture circle is outside this operation. Keep reserve
