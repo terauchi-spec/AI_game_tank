@@ -54,7 +54,7 @@ function updateEnemyBomber(dt){
   return;
  }
  plane.y+=380*dt;plane.drop-=dt;
- if(plane.intercept&&plane.age>=.6&&!raid.fighter){
+ if(plane.intercept&&plane.age>=.9&&!raid.fighter){
   const view=frontlineView(),dir=R()<.5?1:-1;
   const x=dir>0?Math.min(view.x,plane.x)-100:Math.max(view.x+view.w,plane.x)+100;
   raid.fighterUsed=true;
@@ -139,9 +139,10 @@ function drawInterceptionFighter(fighter,plane){
  drawCachedEnemyAircraft('fighter',drawInterceptionFighterShape,0,192,160);
  if(plane&&!plane.falling){
   g.strokeStyle='#ffed96';g.lineWidth=3;g.beginPath();
-  const d=Math.max(70,(plane.x-x)*dir),phase=(performance.now()%75)/75;
-  for(const side of [-1,1])for(let i=0;i<4;i++){const a=65+(d-65)*((phase+i)/4);g.moveTo(a,side*8);g.lineTo(Math.min(d,a+24),side*3);}g.stroke();
-  g.fillStyle='#ffe79a';g.fillRect(54,-11,18,4);g.fillRect(54,7,18,4);
+  // Fixed parallel tracers follow the nose, independent of the bomber's position.
+  const phase=(performance.now()%75)/75;
+  for(const side of [-1,1])for(let i=0;i<4;i++){const a=78+(phase+i)*64;g.moveTo(a,side*8);g.lineTo(a+22,side*8);}g.stroke();
+  g.fillStyle='#ffe79a';g.fillRect(68,-10,14,4);g.fillRect(68,6,14,4);
  }
  g.restore();
 }

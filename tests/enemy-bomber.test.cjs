@@ -118,7 +118,7 @@ test('fighter enters from either side, downs the bomber once and stops further d
  for(const routeRoll of [.2,.8]){
   const s=harness([0,routeRoll,0]),c=s.c;Object.assign(c,{nearbyCovers:()=>[],nearbyBushes:()=>[],bridges:[],igniteNature(){},igniteBridge(){}});
   c.setupEnemyBomber();c.mission.enemyWavesStarted=true;c.updateEnemyBomber(.01);c.updateEnemyBomber(5);c.R=()=>routeRoll;
-  run(s,.6,.02);const raid=c.mission.enemyAirRaid;assert.ok(raid.fighter);assert.equal(raid.fighter.dir,routeRoll===.2?1:-1);
+  run(s,.9,.02);const raid=c.mission.enemyAirRaid;assert.ok(raid.fighter);assert.equal(raid.fighter.dir,routeRoll===.2?1:-1);
   assert.ok(raid.fighter.dir===1?raid.fighter.x<c.view.x:raid.fighter.x>c.view.x+c.view.w);
   run(s,.8,.02);assert.equal(raid.plane.falling,true);const drops=raid.plane.drops;assert.ok(drops<25);
   run(s,5,.02);assert.equal(raid.plane,null);assert.equal(raid.fighter,null);assert.equal(raid.wrecks.length,1);assert.equal(raid.phase,'done');assert.ok(s.blasts>=drops+2&&s.blasts<=drops+6,'falling uses a bounded number of shared explosion effects');
@@ -225,4 +225,18 @@ test('crash clears hard cover within 150px while burning trees and retaining dis
  const {createGameEngine}=require('./helpers/game-engine.cjs'),h=createGameEngine(path.join(__dirname,'..'));
  h.run("stageMode='front';state='play';weather='clear';fx=[];parts=[];waves=[];water=[];objects=[];bushes=[];bridges=[];humans=[];p={x:900,y:9000};scoreStats=newScoreStats();mission={};setupEnemyBomber();tree={x:450,y:500,w:40,h:40,kd:6};wall={x:500,y:500,w:40,h:40,kd:1};farWall={x:900,y:500,w:40,h:40,kd:1};objective={x:480,y:500,w:40,h:40,kd:1,frontAntenna:true};covers=[tree,wall,farWall,objective];rebuildSpatialGrid();crashEnemyBomber(mission.enemyAirRaid,{x:480,y:520});");
  assert.equal(h.run('covers.includes(wall)'),false);assert.equal(h.run('covers.includes(tree)'),true);assert.equal(h.run('tree.burnT'),5);assert.equal(h.run('covers.includes(farWall)'),true);assert.equal(h.run('covers.includes(objective)'),true);assert.equal(h.run('scoreStats.coverDestroyed'),0);
+});
+
+test('interceptor tracers stay straight and parallel to the nose, independently of bomber position, in either heading',()=>{
+ const s=harness(),c=s.c;c.drawCachedEnemyAircraft=()=>{};
+ for(const dir of [-1,1]){
+  let lines=[],scales=[],start; c.g=new Proxy({}, {get:(_o,k)=>(...args)=>{if(k==='moveTo')start=args;if(k==='lineTo')lines.push([start,args]);if(k==='scale')scales.push(args);},set:(o,k,v)=>(o[k]=v,true)});
+  c.drawInterceptionFighter({x:200,y:300,dir},{x:250,y:700});const close=JSON.stringify(lines);assert.equal(lines.length,8);assert.deepEqual(scales,[[dir,1]]);
+  for(const [a,b] of lines){assert.equal(a[1],b[1]);assert.ok(a[0]>=78);assert.ok(b[0]>a[0]);}
+  lines=[];c.drawInterceptionFighter({x:200,y:300,dir},{x:900,y:50});assert.equal(JSON.stringify(lines),close);
+ }
+});
+test('fighter arrival starts 0.9 seconds into the bomber pass, slightly later than the former 0.6 seconds',()=>{
+ const s=debugHarness(0),c=s.c;run(s,30);const raid=c.enemyBomberRaid();assert.equal(raid.plane.intercept,true);
+ run(s,.6,.01);assert.equal(raid.fighter,null);run(s,.29,.01);assert.equal(raid.fighter,null);run(s,.02,.01);assert.ok(raid.fighter);assert.equal(s.sounds.filter(x=>x==='aircraft').length,1);
 });
