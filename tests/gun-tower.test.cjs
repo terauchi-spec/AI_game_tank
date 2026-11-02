@@ -151,9 +151,9 @@ test('unalerted enemy gunners sweep a fixed 180-degree forward arc slowly and re
 });
 test('gunner sweep keeps ordinary vision checks and aims at detected targets',()=>{
  const h=scene();h.run("cars=[v];enemy={x:v.x,y:v.y,alive:true,elite:false};boardEnemyGunTower(v,enemy);target={x:v.x+180,y:v.y+90,alive:true};findDetectedTarget=()=>({obj:target,key:'p'});updateGunTowerEnemy(enemy,.2);");
- assert.equal(h.run('enemy.st'),1);assert.ok(Math.abs(h.run('v.aim-Math.atan2(90,180)'))<1e-9);
+ assert.equal(h.run('enemy.st'),1);assert.ok(Math.abs(h.run('v.aim')-Math.PI/2*.2)<1e-9);
  assert.equal(h.run('bullets.length'),0);
- h.run('updateGunTowerEnemy(enemy,.3)');assert.equal(h.run('bullets.length'),1);
+ h.run('updateGunTowerEnemy(enemy,.5)');assert.equal(h.run('bullets.length'),1);
 });
 
 test('enemy gunner scanning turns at 80 percent of previous speed',()=>{
@@ -214,4 +214,34 @@ test('new Gatling WebP sprites are both exactly 312x312 and have alpha',()=>{
   assert.equal((data[27]|(data[28]<<8)|(data[29]<<16))+1,312);
   assert.ok(data[20]&16,'WebP should declare alpha');
  }
+});
+
+test('enemy burst continues at least one second after sight loss, target death or hiding',()=>{
+ for(const change of ["findDetectedTarget=()=>null;los=()=>false;", "target.alive=false;findDetectedTarget=()=>null;", "p.dig=1;findDetectedTarget=()=>null;"]){
+  const h=scene();h.run("cars=[v];enemy={alive:true,elite:false};boardEnemyGunTower(v,enemy);p.x=v.x+200;p.y=v.y;target=p;findDetectedTarget=()=>({obj:target,key:'p'});step=dt=>{updateGunTowers(dt);updateGunTowerEnemy(enemy,dt)};for(let i=0;i<50&&v.v===500;i++)step(.02);startAmmo=v.v;"+change);
+  assert.equal(h.run('startAmmo'),499);
+  h.run('for(let i=0;i<49;i++)step(.02);');assert.ok(h.run('v.v')<=487);assert.equal(h.run('v.spinActive'),true);
+  h.run('for(let i=0;i<10;i++)step(.02);stoppedAmmo=v.v;for(let i=0;i<10;i++)step(.02);');assert.equal(h.run('v.v'),h.run('stoppedAmmo'));
+ }
+});
+test('enemy aim is rate limited on acquisition, target switches, firing and scan resumption',()=>{
+ const h=scene();h.run("cars=[v];enemy={alive:true,elite:false};boardEnemyGunTower(v,enemy);target={x:v.x,y:v.y+200,alive:true};findDetectedTarget=()=>({obj:target,key:'ally:1'});old=v.aim;updateGunTowerEnemy(enemy,.02);");
+ assert.ok(Math.abs(h.run('v.aim-old'))<=Math.PI/2*.02+1e-10);assert.equal(h.run('bullets.length'),0);
+ h.run("for(let i=0;i<80;i++){updateGunTowers(.02);updateGunTowerEnemy(enemy,.02)};target.x=v.x-200;target.y=v.y;old=v.aim;updateGunTowerEnemy(enemy,.02);");
+ assert.ok(Math.abs(h.run('v.aim-old'))<=Math.PI/2*.02+1e-10);
+ h.run("target.alive=false;findDetectedTarget=()=>null;v.enemyMinBurstT=0;old=v.aim;updateGunTowerEnemy(enemy,.02);");assert.ok(Math.abs(h.run('v.aim-old'))<=.208*.02+1e-10);
+});
+test('enemy rotation follows the shortest arc and is independent of frame rate',()=>{
+ for(const dt of [.01,.02,.1]){
+  const h=scene();h.c.dt=dt;h.run("enemy={face:0};v.aim=Math.PI-.05;old=v.aim;for(let i=0;i<Math.round(.2/dt);i++)turnGunTowerEnemy(v,enemy,-Math.PI+.5,dt);");
+  assert.ok(Math.abs(h.run('v.aim-old')-Math.PI/2*.2)<1e-10);
+ }
+});
+test('removing the enemy operator cancels the minimum burst immediately',()=>{
+ const h=scene();h.run("cars=[v];enemy={alive:true,elite:false};boardEnemyGunTower(v,enemy);v.enemyMinBurstT=.8;v.spinActive=true;enemy.stun=1;updateGunTowerEnemy(enemy,.02);");assert.equal(h.run('v.gunner'),null);assert.equal(h.run('v.enemyMinBurstT'),0);assert.equal(h.run('v.spinActive'),false);
+});
+
+test('an enemy burst restarted after cooldown gets a fresh minimum second',()=>{
+ const h=scene();h.run("cars=[v];enemy={alive:true,elite:false};boardEnemyGunTower(v,enemy);p.x=v.x+200;p.y=v.y;visible=true;findDetectedTarget=()=>visible?({obj:p,key:'p'}):null;los=()=>visible;step=()=>{updateGunTowers(.02);updateGunTowerEnemy(enemy,.02)};for(let i=0;i<25;i++)step();for(let i=0;i<51;i++)step();visible=false;step();visible=true;before=v.v;for(let i=0;i<250&&v.v===before;i++)step();");
+ assert.ok(h.run('v.enemyMinBurstT')>.8, h.run('JSON.stringify({min:v.enemyMinBurstT,rest:v.aiRestT,spin:v.spinTime,burst:v.aiBurstT,ammo:v.v,lost:v.lostTargetT})'));assert.equal(h.run('v.enemyBurstActive'),true);
 });

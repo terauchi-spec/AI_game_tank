@@ -1,6 +1,6 @@
 // Gatling hardware is drawn at 80% of its former size; people retain their ordinary size.
 // Stationary single-seat vehicle. Ammunition belongs to the emplacement, not its operator.
-const GUN_TOWER_TYPE=Object.freeze({id:'gunTower',n:'機関銃塔',hp:8,armor:1.5,cmax:0,vmax:500,fmax:0,sp:0,ccd:.065,vcd:.065,range:400,speed:1000,antiTankHits:30,playerTankHits:200,spinUpSeconds:.5,coverRadius:20,drawScale:1.6,seatOffset:22.4,muzzleOffset:59.2,clearance:67.2,boardRadius:96,col:'#66705a'});
+const GUN_TOWER_TYPE=Object.freeze({id:'gunTower',n:'機関銃塔',hp:8,armor:1.5,cmax:0,vmax:500,fmax:0,sp:0,ccd:.065,vcd:.065,range:400,speed:1000,antiTankHits:30,playerTankHits:200,spinUpSeconds:.5,enemyTurnRate:Math.PI/2,enemyMinBurstSeconds:1,coverRadius:20,drawScale:1.6,seatOffset:22.4,muzzleOffset:59.2,clearance:67.2,boardRadius:96,col:'#66705a'});
 function gunTowerAvailable(v){
  if(v?.kind!=='tower')return true;
  if(v.destroyed)return false;
@@ -10,11 +10,11 @@ function gunTowerAvailable(v){
 function releaseGunTower(v){
  const h=v?.gunner;if(!h)return;
  h.gunTower=null;h.st=0;h.target=null;h.frontMarch=stageMode==='front';h.path=[{x:h.x,y:h.y},{x:h.x+30,y:h.y+30}];h.wi=1;
- v.gunner=null;v.reboardT=10;v.scanTarget=null;v.lostTargetT=0;v.spinActive=false;v.spinTime=0;
+ v.gunner=null;v.reboardT=10;v.scanTarget=null;v.lostTargetT=0;v.spinActive=false;v.spinTime=0;v.enemyMinBurstT=0;v.enemyBurstActive=false;
 }
 function boardEnemyGunTower(v,h){
  if(!gunTowerAvailable(v)||v.v<=0||!h.alive||h.elite||h.commander==='white'||h.stun>0||h.stunRecover>0||h.blastAirT>0||h.dog||h.houndPinned)return false;
- h.gunTower=v;v.gunner=h;v.scanCenter=v.body??v.aim??0;v.scanOffset=0;v.scanDirection=1;v.lostTargetT=0;h.face=v.aim=v.scanCenter;h.x=v.x-Math.cos(h.face)*GUN_TOWER_TYPE.seatOffset;h.y=v.y-Math.sin(h.face)*GUN_TOWER_TYPE.seatOffset;h.walking=false;h.frontMarch=false;h.chatT=0;h.chatMate=null;return true;
+ h.gunTower=v;v.gunner=h;v.scanCenter=v.aim??v.body??0;v.scanOffset=0;v.scanDirection=1;v.lostTargetT=0;h.face=v.aim=v.scanCenter;h.x=v.x-Math.cos(h.face)*GUN_TOWER_TYPE.seatOffset;h.y=v.y-Math.sin(h.face)*GUN_TOWER_TYPE.seatOffset;h.walking=false;h.frontMarch=false;h.chatT=0;h.chatMate=null;return true;
 }
 function setupGunTowers(){
  if(areaDebugEnabled||!['base','front'].includes(currentStageId()))return 0;
@@ -118,19 +118,27 @@ function updateGunTowers(dt){
   }
  }
 }
+// All enemy aim changes take the shortest angular path at a bounded rate.
+function turnGunTowerEnemy(v,h,desired,dt,rate=GUN_TOWER_TYPE.enemyTurnRate){
+ const current=v.aim??h.face??0,diff=Math.atan2(Math.sin(desired-current),Math.cos(desired-current));
+ const step=Math.max(0,dt)*rate;
+ h.face=v.aim=current+Math.max(-step,Math.min(step,diff));
+ h.x=v.x-Math.cos(h.face)*GUN_TOWER_TYPE.seatOffset;h.y=v.y-Math.sin(h.face)*GUN_TOWER_TYPE.seatOffset;
+}
 function updateGunTowerEnemy(h,dt){
  const v=h.gunTower;if(!v)return false;
  if(v.destroyed||!h.alive||h.stun>0||h.blastAirT>0||!cars.includes(v)){updateGunTowerSpin(v,dt,false);releaseGunTower(v);return false;}
+ v.enemyMinBurstT=Math.max(0,(v.enemyMinBurstT||0)-dt);
  h.walking=false;h.sus=Math.max(0,(h.sus||0)-dt);h.burnSuspicionHold=Math.max(0,(h.burnSuspicionHold||0)-dt);v.gunT=Math.max(0,(v.gunT||0)-dt);v.scanT=(v.scanT||0)-dt;
  // Slowly patrol the fixed 180-degree forward arc (+/-90 degrees).
  // Sweep only while idle; avoid adding per-frame allocations or extra sight queries.
- if(!v.scanTarget){
+ if(!v.scanTarget&&!(v.enemyMinBurstT>0)){
   const limit=Math.PI/2,speed=.26*.8;
   let offset=(v.scanOffset||0)+speed*(v.scanDirection||1)*dt;
   if(offset>limit){offset=limit-(offset-limit);v.scanDirection=-1;}
   else if(offset< -limit){offset=-limit+(-limit-offset);v.scanDirection=1;}
   v.scanOffset=Math.max(-limit,Math.min(limit,offset));
-  h.face=v.aim=(v.scanCenter??v.body??0)+v.scanOffset;
+  // Move the scan destination; actual rotation is applied once below.
  }
  h.x=v.x-Math.cos(h.face)*GUN_TOWER_TYPE.seatOffset;h.y=v.y-Math.sin(h.face)*GUN_TOWER_TYPE.seatOffset;
  if(v.scanT<=0){
@@ -142,13 +150,32 @@ function updateGunTowerEnemy(h,dt){
  }
  const target=v.scanTarget,actor=target?.actor;
  const lostSight=!!actor&&(D(v,actor)>GUN_TOWER_TYPE.range||!los(v,actor)||(v.lostTargetT||0)>0);
- if(!actor||target.key==='decoy'&&actor!==decoy||actor.alive===false||actor.down||actor.stun>0||actor===p&&(p.dig>0||debugMode>=2)||(v.lostTargetT||0)>=2){
-  h.st=0;h.target=null;v.scanTarget=null;updateGunTowerSpin(v,dt,false);return true;
+ const invalid=!actor||target.key==='decoy'&&actor!==decoy||actor.alive===false||actor.down||actor.stun>0||actor===p&&(p.dig>0||debugMode>=2)||(v.lostTargetT||0)>=2;
+ const committed=v.enemyMinBurstT>0;
+ let aligned=false;
+ if(invalid){
+  h.st=0;h.target=null;v.scanTarget=null;
+  // Keep the last firing direction until the minimum burst has finished.
+  const desired=committed?v.aim:(v.scanCenter??v.body??0)+(v.scanOffset||0);
+  turnGunTowerEnemy(v,h,desired,dt,committed?GUN_TOWER_TYPE.enemyTurnRate:.26*.8);
+ }else{
+  h.st=1;h.target=target.key;
+  const desired=Math.atan2((lostSight?v.lastSeenY:actor.y)-v.y,(lostSight?v.lastSeenX:actor.x)-v.x);
+  turnGunTowerEnemy(v,h,desired,dt);
+  aligned=Math.abs(Math.atan2(Math.sin(desired-v.aim),Math.cos(desired-v.aim)))<=.12;
  }
- h.st=1;h.target=target.key;h.face=v.aim=Math.atan2((lostSight?v.lastSeenY:actor.y)-v.y,(lostSight?v.lastSeenX:actor.x)-v.x);
- h.x=v.x-Math.cos(h.face)*GUN_TOWER_TYPE.seatOffset;h.y=v.y-Math.sin(h.face)*GUN_TOWER_TYPE.seatOffset;
- const ready=updateGunTowerSpin(v,dt,!lostSight&&v.v>0&&!(v.aiRestT>0));
- if(ready&&v.gunT<=0){v.gunT=GUN_TOWER_TYPE.vcd;fireGunTower(v,h.face,'e',h);}
+ const wantsFire=committed||!invalid&&!lostSight&&aligned;
+ const active=wantsFire&&v.v>0&&!(v.aiRestT>0);
+ if(!active)v.enemyBurstActive=false;
+ const ready=updateGunTowerSpin(v,dt,active);
+ if(ready&&v.gunT<=0){
+  const starting=!v.enemyBurstActive;
+  if(starting)v.aiBurstT=0;
+  if(fireGunTower(v,h.face,'e',h)){
+   v.gunT=GUN_TOWER_TYPE.vcd;
+   if(starting){v.enemyMinBurstT=GUN_TOWER_TYPE.enemyMinBurstSeconds;v.enemyBurstActive=true;}
+  }
+ }
  return true;
 }
 function fireGunTower(v,angle,from,operator=null){
