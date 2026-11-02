@@ -70,3 +70,10 @@ test('renamed achievement categories retain elite conditions and legendary/mythi
  assert.match(c.run('renderAwardChip(TITLE_CATALOG.find(t=>t.legendFrom))'),/res-award-chip legendary/);assert.match(c.run('renderAwardChip(TITLE_MYTHIC)'),/res-award-chip mythic/);
  const order=html.match(/<div class="title-secondaries">([\s\S]*?)<\/div>/)[1];assert.ok(order.indexOf('id="titleAwards"')<order.indexOf('id="titleLeaderboard"'));assert.match(order,/id="titleAwards">称号・戦績<\/button>/);
 });
+
+test('result headline shows a cumulative legend on acquisition only and remains stable when revisiting that result',()=>{
+ const c=harness();c.storage.set(c.run('TITLE_ARCHIVE_KEY'),JSON.stringify({titles:{v3_single_0_elite:{count:2}},runs:2}));
+ const first=c.scoreStats;c.recordRunAchievements(first);c.renderResultScreen();assert.match(c.nodes.get('resTitle').innerHTML,/任務の覇者/);
+ c.scoreStats=Object.assign(c.newScoreStats(),{objectiveDamage:1,final:{cleared:true,total:500,rank:'B'}});c.recordRunAchievements(c.scoreStats);c.renderResultScreen();assert.doesNotMatch(c.nodes.get('resTitle').innerHTML,/任務の覇者/);assert.match(c.nodes.get('resTitle').innerHTML,/完遂の達人|不屈の生還者/);
+ c.scoreStats=first;c.renderResultScreen();assert.match(c.nodes.get('resTitle').innerHTML,/任務の覇者/);assert.ok(c.readTitleArchive().titles.v3_legend_0);
+});

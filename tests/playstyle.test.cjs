@@ -198,3 +198,31 @@ test('persisted new titles announce the highest new career rank once, while repe
 test('unsaved achievements and area debug never announce a career promotion',()=>{
  for(const debug of [false,true]){const c=harness();c.areaDebugEnabled=debug;if(!debug)c.localStorage.setItem=()=>{throw Error('quota')};Object.assign(c.scoreStats,rich,{final:{cleared:true,total:1000}});c.recordRunAchievements(c.scoreStats);assert.equal(c.scoreStats.careerPromotion,undefined);assert.equal(debug?c.scoreStats.awards.disabled:c.scoreStats.awards.saveFailed,true);}
 });
+
+test('all-stage title is primary on first acquisition and remains visible after saving, but never on later runs',()=>{
+ const c=stageHarness(allStages.slice(0,-2));c.stageMode='front';
+ const first=Object.assign(c.scoreStats,{objectiveDamage:1,final:{cleared:true,total:1000}});c.recordRunAchievements(first);
+ assert.equal(first.awards.primary,'v3_all_stages_clear');assert.equal(c.resultStyle(c.metrics(first).map(c.get('resLevel')),first)[2].id,'v3_all_stages_clear');
+ c.unlockStageOnClear(first);
+ const next=Object.assign(c.newScoreStats(),{objectiveDamage:1,final:{cleared:true,total:500}});c.recordRunAchievements(next);
+ assert.notEqual(next.awards.primary,'v3_all_stages_clear');assert.notEqual(c.resultStyle(c.metrics(next).map(c.get('resLevel')),next)[2].id,'v3_all_stages_clear');assert.ok(c.readTitleArchive().titles.v3_all_stages_clear);
+});
+test('cumulative axis legend is primary only on the run that first earns it',()=>{
+ const c=harness();c.saved.set(c.get('TITLE_ARCHIVE_KEY'),JSON.stringify({titles:{v3_single_1_elite:{count:2}},runs:2}));
+ const first=Object.assign(c.newScoreStats(),rich,{final:{cleared:true,total:1000}});c.recordRunAchievements(first);assert.equal(first.awards.primary,'v3_legend_1');assert.equal(c.resultStyle(c.metrics(first).map(c.get('resLevel')),first)[2].id,'v3_legend_1');
+ const next=Object.assign(c.newScoreStats(),rich,{final:{cleared:true,total:1000}});c.recordRunAchievements(next);assert.notEqual(next.awards.primary,'v3_legend_1');assert.ok(next.awards.repeatTitles.includes('v3_legend_1'));
+});
+test('mythic first acquisition stays on its saved result and never overrides later run titles',()=>{
+ const c=harness(),ids=Array.from(c.get('TITLE_COLLECTION_TARGETS')),missing='v3_single_0_elite';
+ c.saved.set(c.get('TITLE_ARCHIVE_KEY'),JSON.stringify({titles:Object.fromEntries(ids.filter(id=>id!==missing).map(id=>[id,{count:3}])),runs:12}));
+ const first=Object.assign(c.newScoreStats(),rich,{final:{cleared:true,total:1000}});c.recordRunAchievements(first);assert.equal(first.awards.primary,'v3_mythic_complete');assert.equal(c.resultStyle(c.metrics(first).map(c.get('resLevel')),first)[2].id,'v3_mythic_complete');
+ const next=Object.assign(c.newScoreStats(),rich,{final:{cleared:true,total:1000}});c.recordRunAchievements(next);assert.notEqual(next.awards.primary,'v3_mythic_complete');assert.ok(!c.get('TITLE_CATALOG').find(t=>t.id===next.awards.primary).legendFrom);assert.ok(c.readTitleArchive().titles.v3_mythic_complete);
+ // Returning to the first result still shows the title that was actually earned then.
+ assert.equal(c.resultStyle(c.metrics(first).map(c.get('resLevel')),first)[2].id,'v3_mythic_complete');
+});
+test('repeatable run titles stay eligible and a cumulative-only repeat falls back to no title',()=>{
+ const c=stageHarness(allStages),archive=c.readTitleArchive(),none=c.evaluateRunTitles(Array(8).fill(0),Array(8).fill(0),c.scoreStats,{cleared:false},archive);
+ assert.equal(none.primary.id,'unranked');
+ const s=Object.assign(c.scoreStats,{final:{cleared:true,total:1000}}),levels=[5,0,0,0,0,0,0,0],metrics=[100,0,0,0,0,0,0,0];
+ archive.titles.v3_single_0_elite={count:1};const result=c.evaluateRunTitles(levels,metrics,s,s.final,archive);assert.equal(result.primary.id,'v3_single_0_elite');
+});
