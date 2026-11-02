@@ -1000,7 +1000,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.02.1208',FILE_CREATED_AT='2026/11/02 12:08',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.02.1254',FILE_CREATED_AT='2026/11/02 12:54',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -7606,7 +7606,7 @@ function draw(near){
  drawHound();drawEnemyDogs();
  for(const ab of airbombs){const mt=ab.maxT||.48,k=Math.max(0,Math.min(1,1-ab.t/mt));g.fillStyle=ab.fighter?'#252b31':'#171717';g.beginPath();g.ellipse(ab.x,ab.y,ab.fighter?7:5,ab.fighter?13:10,0,0,6.28);g.fill();g.strokeStyle=ab.fighter?'rgba(180,220,255,.65)':'rgba(255,190,80,.55)';g.beginPath();g.arc(ab.x,ab.y,(ab.fighter?20:14)*k,0,6.28);g.stroke();}
  if(!p.tank&&p.grappleT>0&&p.grappleTarget&&p.grappleTarget.alive){const h=p.grappleTarget,a=Math.atan2(h.y-p.y,h.x-p.x),k=1-p.grappleT/.3;g.save();g.strokeStyle='rgba(255,230,170,'+(1-k*.25)+')';g.lineWidth=3;g.beginPath();g.moveTo(p.x+Math.cos(a+.55)*8,p.y+Math.sin(a+.55)*8);g.lineTo(h.x-Math.cos(a)*5,h.y-Math.sin(a)*5);g.moveTo(p.x+Math.cos(a-.55)*8,p.y+Math.sin(a-.55)*8);g.lineTo(h.x-Math.cos(a)*5,h.y-Math.sin(a)*5);g.stroke();g.strokeStyle='rgba(255,255,255,'+(0.7-k*.4)+')';g.lineWidth=2;for(let q=0;q<3;q++){const off=(q-1)*7;g.beginPath();g.moveTo(p.x-Math.cos(a)*10+Math.cos(a+1.57)*off,p.y-Math.sin(a)*10+Math.sin(a+1.57)*off);g.lineTo(p.x-Math.cos(a)*20+Math.cos(a+1.57)*off,p.y-Math.sin(a)*20+Math.sin(a+1.57)*off);g.stroke();}g.restore();}
- if(!(stageMode==='indoor'&&mission?.extraction?.boarded)){
+ if(!(stageMode==='indoor'&&mission?.extraction?.boarded)&&!(p.hp<=0&&(state==='dying'||state==='failed'))){
  if(p.tank){if(!(p.tank.kind==='tank'&&inBush(p)))drawVehicle(p.tank,p.x,p.y,p.body,p.ang);if(p.tank.kind!=='tower'&&p.tank.f<=0)markVehicle(p.x,p.y-(p.tank.kind==='fighter'?66:p.tank.kind==='truck'?42:50),'fuel');}
  else if(p.sniperEnterT>0||p.sniperReadyT>0){drawSniperSetupPlayer();}
  else if(p.dig>0){if(digUsesWaterFx(p.x,p.y)){g.save();g.translate(p.x,p.y);g.rotate(p.body+1.5708);g.fillStyle='rgba(38,54,45,.92)';g.beginPath();g.ellipse(0,-2,7,9,0,0,6.28);g.fill();g.fillStyle='#66735f';g.beginPath();g.arc(0,-5,6,Math.PI,0);g.fill();g.strokeStyle='rgba(220,240,245,.65)';g.lineWidth=1.5;g.beginPath();g.moveTo(-10,4);g.quadraticCurveTo(0,8,10,4);g.stroke();g.restore();}else{g.fillStyle='#3a2a18';g.beginPath();g.ellipse(p.x,p.y+2,11,8,0,0,6.28);g.fill();g.fillStyle='#6b4e30';g.beginPath();g.ellipse(p.x,p.y,8,6,0,0,6.28);g.fill();}}
