@@ -1,11 +1,11 @@
-// Advanced capture: <=2 passes. Developer area testing: one pass every 60 seconds.
+// Advanced capture: <=2 passes. Developer area testing: one pass every 30 seconds.
 let areaDebugAirRaid=null;
 function areaDebugBomberEnabled(){
  return areaDebugEnabled&&typeof areaDebugEnemyBomber!=='undefined'&&areaDebugEnemyBomber&&typeof isDeveloperMode==='function'&&isDeveloperMode();
 }
 function enemyBomberRaid(){return areaDebugEnabled?(areaDebugBomberEnabled()?areaDebugAirRaid:null):mission?.enemyAirRaid;}
 function setupAreaDebugEnemyBomber(){
- areaDebugAirRaid=areaDebugBomberEnabled()?{debug:true,nextPassT:60,remaining:1,passes:0,phase:'idle',timer:0,route:null,plane:null,bombs:[],gradient:null,gradientHeight:0,fighter:null,wrecks:[]}:null;
+ areaDebugAirRaid=areaDebugBomberEnabled()?{debug:true,nextPassT:30,remaining:1,passes:0,phase:'idle',timer:0,route:null,plane:null,bombs:[],gradient:null,gradientHeight:0,fighter:null,fighterUsed:false,wrecks:[]}:null;
 }
 function enemyBomberEnabled(){
  return areaDebugBomberEnabled()||stageMode==='front'&&!areaDebugEnabled&&!isFrontlineBeginner()&&!isFrontlineOni();
@@ -16,7 +16,7 @@ function enemyBomberInRandomArea(){
 }
 function setupEnemyBomber(){
  if(!enemyBomberEnabled()||!mission)return;
- mission.enemyAirRaid={remaining:R()<.5?1:2,passes:0,phase:'idle',timer:0,route:null,plane:null,bombs:[],gradient:null,gradientHeight:0,fighter:null,wrecks:[]};
+ mission.enemyAirRaid={remaining:R()<.5?1:2,passes:0,phase:'idle',timer:0,route:null,plane:null,bombs:[],gradient:null,gradientHeight:0,fighter:null,fighterUsed:false,wrecks:[]};
 }
 function updateEnemyBomber(dt){
  if(!enemyBomberEnabled()||state!=='play'||!enemyBomberRaid())return;
@@ -41,8 +41,8 @@ function updateEnemyBomber(dt){
  if(raid.phase==='warning'){
   raid.timer=Math.max(0,raid.timer-dt);
   if(raid.timer>1e-9)return;
-  raid.plane={...raid.route,drop:.05,drops:0,maxDrops:25,age:0,intercept:(raid.debug||typeof isFrontlineAdvanced==='function'&&isFrontlineAdvanced())&&R()<.5};
-  if(raid.debug)raid.nextPassT=60;else raid.remaining--;raid.passes++;raid.phase='flight';return;
+  raid.plane={...raid.route,drop:.05,drops:0,maxDrops:25,age:0,intercept:(raid.debug||!raid.fighterUsed&&typeof isFrontlineAdvanced==='function'&&isFrontlineAdvanced())&&R()<.5};
+  if(raid.debug)raid.nextPassT=30;else raid.remaining--;raid.passes++;raid.phase='flight';return;
  }
  if(raid.phase!=='flight')return;
  const plane=raid.plane;plane.age+=dt;
@@ -55,8 +55,9 @@ function updateEnemyBomber(dt){
  }
  plane.y+=380*dt;plane.drop-=dt;
  if(plane.intercept&&plane.age>=.6&&!raid.fighter){
-  const view=frontlineView(),dir=plane.x<view.x+view.w/2?-1:1;
+  const view=frontlineView(),dir=R()<.5?1:-1;
   const x=dir>0?Math.min(view.x,plane.x)-100:Math.max(view.x+view.w,plane.x)+100;
+  raid.fighterUsed=true;
   raid.fighter={x,y:plane.y,dir,speed:Math.max(1200,Math.abs(plane.x-x)/.65),shot:0,exitT:0};
   sfx('aircraft',{x:plane.x,y:plane.y});
  }
@@ -92,6 +93,9 @@ function crashEnemyBomber(raid,plane){
  raid.wrecks.push({x,y,angle:plane.fallAngle??(plane.fallT||0)*1.3,scale:plane.fallScale??1-(plane.fallT||0)*.35,missingWing:R()<.5?-1:1});
  if(raid.debug&&raid.wrecks.length>6)raid.wrecks.shift();
  enemyBomberExplosionFx(x,y,1.25);
+ // The wreck clears hard cover, while trees and grass retain their flame-skill burning.
+ carve(x,y,r,false,null,true);
+ damageObjectsInRadius(x,y,r,'enemyBomb');
  // Use flame-skill ignition so rain, spread, fire damage and bridge collapse stay consistent.
  const touches=o=>{const w=o.w||100,h=o.h||100;return Math.hypot(Math.max(o.x-x,0,x-o.x-w),Math.max(o.y-y,0,y-o.y-h))<=r;};
  for(const o of nearbyCovers(x,y,r+160))if(!o.fr&&o.kd===6&&touches(o))igniteNature(o);

@@ -117,8 +117,8 @@ test('interception has an exact half-open 50% boundary and is exclusive to advan
 test('fighter enters from either side, downs the bomber once and stops further drops while existing bombs land',()=>{
  for(const routeRoll of [.2,.8]){
   const s=harness([0,routeRoll,0]),c=s.c;Object.assign(c,{nearbyCovers:()=>[],nearbyBushes:()=>[],bridges:[],igniteNature(){},igniteBridge(){}});
-  c.setupEnemyBomber();c.mission.enemyWavesStarted=true;c.updateEnemyBomber(.01);c.updateEnemyBomber(5);
-  run(s,.6,.02);const raid=c.mission.enemyAirRaid;assert.ok(raid.fighter);assert.equal(raid.fighter.dir,routeRoll===.2?-1:1);
+  c.setupEnemyBomber();c.mission.enemyWavesStarted=true;c.updateEnemyBomber(.01);c.updateEnemyBomber(5);c.R=()=>routeRoll;
+  run(s,.6,.02);const raid=c.mission.enemyAirRaid;assert.ok(raid.fighter);assert.equal(raid.fighter.dir,routeRoll===.2?1:-1);
   assert.ok(raid.fighter.dir===1?raid.fighter.x<c.view.x:raid.fighter.x>c.view.x+c.view.w);
   run(s,.8,.02);assert.equal(raid.plane.falling,true);const drops=raid.plane.drops;assert.ok(drops<25);
   run(s,5,.02);assert.equal(raid.plane,null);assert.equal(raid.fighter,null);assert.equal(raid.wrecks.length,1);assert.equal(raid.phase,'done');assert.ok(s.blasts>=drops+2&&s.blasts<=drops+6,'falling uses a bounded number of shared explosion effects');
@@ -145,19 +145,19 @@ test('area debug raids require both the switch and an authenticated developer an
  }
  const s=debugHarness();assert.equal(s.c.mission,null);assert.equal(s.c.enemyBomberRaid().debug,true);
 });
-test('area debug warns at 55 seconds, spawns at 60 and repeats every 60 without a two-pass cap',()=>{
- const s=debugHarness(),c=s.c,raid=c.enemyBomberRaid();run(s,54.95);assert.equal(raid.phase,'idle');run(s,.05);assert.equal(raid.phase,'warning');c.drawEnemyBomberWarning();assert.ok(s.texts.includes('敵の通信を傍受！'));
+test('area debug warns at 25 seconds, spawns at 30 and repeats every 30 without a two-pass cap',()=>{
+ const s=debugHarness(),c=s.c,raid=c.enemyBomberRaid();run(s,24.95);assert.equal(raid.phase,'idle');run(s,.05);assert.equal(raid.phase,'warning');c.drawEnemyBomberWarning();assert.ok(s.texts.includes('敵の通信を傍受！'));
  run(s,4.95);assert.equal(raid.passes,0);run(s,.05);assert.equal(raid.passes,1);assert.equal(raid.plane.intercept,false);
- run(s,60);assert.equal(raid.passes,2);run(s,60);assert.equal(raid.passes,3);assert.equal(s.sounds.filter(x=>x==='airWarning').length,3);assert.equal(c.mission,null);
+ run(s,30);assert.equal(raid.passes,2);run(s,30);assert.equal(raid.passes,3);assert.equal(s.sounds.filter(x=>x==='airWarning').length,3);assert.equal(c.mission,null);
 });
 test('each debug pass independently rolls 50% interception and bounds permanent wrecks during long tests',()=>{
  for(const roll of [.499999,.5]){
-  const s=debugHarness(roll),c=s.c,raid=c.enemyBomberRaid();run(s,60);assert.equal(raid.plane.intercept,roll<.5);
-  run(s,60*8);assert.equal(raid.passes,9);assert.equal(raid.wrecks.length,roll<.5?6:0);assert.ok(raid.bombs.length<=4);
+  const s=debugHarness(roll),c=s.c,raid=c.enemyBomberRaid();run(s,30);assert.equal(raid.plane.intercept,roll<.5);
+  run(s,30*8);assert.equal(raid.passes,9);assert.equal(raid.wrecks.length,roll<.5?6:0);assert.ok(raid.bombs.length<=4);
  }
 });
 test('debug timers pause outside play and resetting or switching off clears raid state',()=>{
- const s=debugHarness(),c=s.c,raid=c.enemyBomberRaid();run(s,20);c.state='pause';run(s,90);assert.ok(Math.abs(raid.nextPassT-40)<1e-8);c.state='play';c.setupAreaDebugEnemyBomber();assert.equal(c.enemyBomberRaid().nextPassT,60);
+ const s=debugHarness(),c=s.c,raid=c.enemyBomberRaid();run(s,20);c.state='pause';run(s,90);assert.ok(Math.abs(raid.nextPassT-10)<1e-8);c.state='play';c.setupAreaDebugEnemyBomber();assert.equal(c.enemyBomberRaid().nextPassT,30);
  c.areaDebugEnemyBomber=false;c.setupAreaDebugEnemyBomber();assert.equal(c.enemyBomberRaid(),null);c.drawEnemyBomberAircraft();c.drawEnemyBomberWarning();
 });
 test('area picker switch reflects ON/OFF and accepts changes only from the developer area picker',()=>{
@@ -170,7 +170,7 @@ test('area picker switch reflects ON/OFF and accepts changes only from the devel
 test('real area debug initialization keeps mission null and ticks raids from the ordinary game update',()=>{
  const {createGameEngine}=require('./helpers/game-engine.cjs');const h=createGameEngine(path.join(__dirname,'..'));
  h.run("setDeveloperMode(true);areaDebugEnabled=true;selectedAreaDebug='草原';areaDebugEnemyBomber=true;stageMode='base';skill='throw';reset(false);state='play';update(.016);draw(null);drawEnemyBomberWarning();");
- assert.equal(h.run('mission'),null);assert.ok(Math.abs(h.run('enemyBomberRaid().nextPassT')-59.984)<1e-9);
+ assert.equal(h.run('mission'),null);assert.ok(Math.abs(h.run('enemyBomberRaid().nextPassT')-29.984)<1e-9);
  h.run("areaDebugEnabled=false;stageMode='base';setupMission();");assert.equal(h.run('enemyBomberRaid()'),undefined);
 });
 
@@ -194,7 +194,7 @@ test('crash ignites trees, grass and bridges through 150px inclusive and leaves 
  for(const group of [trees,grass,bridges]){assert.ok(burned.includes(group[0]));assert.ok(burned.includes(group[1]));assert.ok(!burned.includes(group[2]));}
 });
 test('falling and ground impacts share the bomb explosion artwork without applying bomb damage in midair',()=>{
- const s=debugHarness(0),c=s.c,raid=c.enemyBomberRaid(),effects=[];run(s,60);
+ const s=debugHarness(0),c=s.c,raid=c.enemyBomberRaid(),effects=[];run(s,30);
  const original=c.enemyBomberExplosionFx;c.enemyBomberExplosionFx=(...args)=>{effects.push(args);original(...args);};
  run(s,3);assert.equal(raid.wrecks.length,1);assert.ok(effects.some(a=>a[2]===.35&&a[3]===false));assert.ok(effects.some(a=>a[2]===1.25));assert.ok(effects.filter(a=>a[2]!==undefined).length<=6);
  const rotations=[];c.g=new Proxy({}, {get:(_o,k)=>(...a)=>{if(k==='rotate')rotations.push(a[0]);if(k==='ellipse')throw Error('no solid falling flame ellipses');},set:(o,k,v)=>(o[k]=v,true)});c.drawSupportBomber=()=>{};raid.bombs=[];raid.fighter=null;raid.plane={x:300,y:400,falling:true,fallT:.5,fallAngle:.65,fallScale:.825};c.drawEnemyBomberAircraft();assert.ok(rotations.includes(.65));
@@ -207,4 +207,22 @@ test('detailed aircraft and left/right wreck artwork is cached once and reused a
  const paint=()=>painted++;
  for(let frame=0;frame<20;frame++){c.drawCachedEnemyAircraft('wreck:-1',paint,-1);c.drawCachedEnemyAircraft('wreck:1',paint,1);c.drawCachedEnemyAircraft('fighter',paint,0,192,160);}
  assert.equal(created,3);assert.equal(painted,3);assert.equal(blits,60);
+});
+
+test('advanced capture allows at most one fighter in a run, with a fresh allowance after restart',()=>{
+ const s=harness([.99,.5,0]),c=s.c;Object.assign(c,{nearbyCovers:()=>[],nearbyBushes:()=>[],bridges:[],igniteNature(){},igniteBridge(){}});
+ c.setupEnemyBomber();c.mission.enemyWavesStarted=true;c.mission.index=1;c.updateEnemyBomber(.01);c.updateEnemyBomber(5);c.R=()=>0;run(s,5);
+ const raid=c.mission.enemyAirRaid;assert.equal(raid.fighterUsed,true);assert.equal(raid.wrecks.length,1);
+ run(s,60);assert.equal(raid.passes,2);assert.equal(raid.wrecks.length,1);assert.equal(s.sounds.filter(x=>x==='aircraft').length,1);
+ c.setupEnemyBomber();assert.equal(c.mission.enemyAirRaid.fighterUsed,false);
+});
+test('a failed first interception roll leaves the second bomber eligible for the 50% roll',()=>{
+ const s=harness([.99,.5,.99]),c=s.c;Object.assign(c,{nearbyCovers:()=>[],nearbyBushes:()=>[],bridges:[],igniteNature(){},igniteBridge(){}});
+ c.setupEnemyBomber();c.mission.enemyWavesStarted=true;c.mission.index=1;c.updateEnemyBomber(.01);c.updateEnemyBomber(5);assert.equal(c.mission.enemyAirRaid.plane.intercept,false);
+ run(s,6);c.R=()=>0;run(s,60);assert.equal(c.mission.enemyAirRaid.wrecks.length,1);assert.equal(s.sounds.filter(x=>x==='aircraft').length,1);
+});
+test('crash clears hard cover within 150px while burning trees and retaining distant and objective cover',()=>{
+ const {createGameEngine}=require('./helpers/game-engine.cjs'),h=createGameEngine(path.join(__dirname,'..'));
+ h.run("stageMode='front';state='play';weather='clear';fx=[];parts=[];waves=[];water=[];objects=[];bushes=[];bridges=[];humans=[];p={x:900,y:9000};scoreStats=newScoreStats();mission={};setupEnemyBomber();tree={x:450,y:500,w:40,h:40,kd:6};wall={x:500,y:500,w:40,h:40,kd:1};farWall={x:900,y:500,w:40,h:40,kd:1};objective={x:480,y:500,w:40,h:40,kd:1,frontAntenna:true};covers=[tree,wall,farWall,objective];rebuildSpatialGrid();crashEnemyBomber(mission.enemyAirRaid,{x:480,y:520});");
+ assert.equal(h.run('covers.includes(wall)'),false);assert.equal(h.run('covers.includes(tree)'),true);assert.equal(h.run('tree.burnT'),5);assert.equal(h.run('covers.includes(farWall)'),true);assert.equal(h.run('covers.includes(objective)'),true);assert.equal(h.run('scoreStats.coverDestroyed'),0);
 });
