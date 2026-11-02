@@ -71,15 +71,29 @@ function updateEnemyBomber(dt){
   raid.plane=null;raid.phase=raid.debug?'idle':raid.remaining?'cooldown':'done';raid.timer=22+R()*16;
  }
 }
-// One fighter; at most two mission wrecks or six area-debug wrecks. No per-frame projectile allocation.
+// Twelve reusable paired tracers cover the doubled 556px flight range without per-frame allocation.
+const INTERCEPTOR_TRACER_SPEED=64/.075,INTERCEPTOR_TRACER_RANGE=2*(4*64+22);
+function updateInterceptorTracers(fighter,dt){
+ if(!fighter.tracers)fighter.tracers=Array.from({length:12},()=>({active:false,x:0,y:0,dir:1,speed:0,travel:0}));
+ for(const t of fighter.tracers)if(t.active){
+  t.x+=t.dir*t.speed*dt;t.travel+=INTERCEPTOR_TRACER_SPEED*dt;
+  if(t.travel>=INTERCEPTOR_TRACER_RANGE)t.active=false;
+ }
+}
+// One fighter; at most two mission wrecks or six area-debug wrecks.
 function updateEnemyBomberInterception(raid,dt){
  const fighter=raid.fighter;if(!fighter)return;
+ updateInterceptorTracers(fighter,dt);
  const plane=raid.plane;
  fighter.x+=fighter.dir*fighter.speed*dt;
  if(plane&&!plane.falling){
   fighter.y=plane.y;
   fighter.shot-=dt;
-  if(fighter.shot<=0){fighter.shot=.075;sfx('mg',{x:fighter.x,y:fighter.y});}
+  if(fighter.shot<=0){
+   fighter.shot+=.075;sfx('mg',{x:fighter.x,y:fighter.y});
+   const t=fighter.tracers.find(t=>!t.active);
+   if(t){t.active=true;t.x=fighter.x+fighter.dir*78;t.y=fighter.y;t.dir=fighter.dir;t.speed=fighter.speed+INTERCEPTOR_TRACER_SPEED;t.travel=0;}
+  }
   if((plane.x-fighter.x)*fighter.dir<=100){
    plane.falling=true;plane.fallT=0;plane.fallAngle=0;plane.fallScale=1;plane.fallFxT=.22;fighter.exitT=1.6;
    enemyBomberExplosionFx(plane.x,plane.y,.55);
@@ -138,13 +152,15 @@ function drawInterceptionFighter(fighter,plane){
  g.save();g.translate(x,y);g.scale(dir,1);
  drawCachedEnemyAircraft('fighter',drawInterceptionFighterShape,0,192,160);
  if(plane&&!plane.falling){
-  g.strokeStyle='#ffed96';g.lineWidth=3;g.beginPath();
-  // Fixed parallel tracers follow the nose, independent of the bomber's position.
-  const phase=(performance.now()%75)/75;
-  for(const side of [-1,1])for(let i=0;i<4;i++){const a=78+(phase+i)*64;g.moveTo(a,side*8);g.lineTo(a+22,side*8);}g.stroke();
   g.fillStyle='#ffe79a';g.fillRect(68,-10,14,4);g.fillRect(68,6,14,4);
  }
  g.restore();
+ // Already-fired rounds keep their world-space course after firing stops.
+ g.strokeStyle='#ffed96';g.lineWidth=3;g.beginPath();
+ for(const t of fighter.tracers||[])if(t.active)for(const side of [-1,1]){
+  g.moveTo(t.x,t.y+side*8);g.lineTo(t.x+t.dir*22,t.y+side*8);
+ }
+ g.stroke();
 }
 function drawInterceptionFighterShape(){
  // Olive twin-engine interceptor: swept wings, intakes, canopy and twin fins.

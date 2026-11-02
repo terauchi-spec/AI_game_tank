@@ -227,14 +227,37 @@ test('crash clears hard cover within 150px while burning trees and retaining dis
  assert.equal(h.run('covers.includes(wall)'),false);assert.equal(h.run('covers.includes(tree)'),true);assert.equal(h.run('tree.burnT'),5);assert.equal(h.run('covers.includes(farWall)'),true);assert.equal(h.run('covers.includes(objective)'),true);assert.equal(h.run('scoreStats.coverDestroyed'),0);
 });
 
-test('interceptor tracers stay straight and parallel to the nose, independently of bomber position, in either heading',()=>{
- const s=harness(),c=s.c;c.drawCachedEnemyAircraft=()=>{};
+test('interceptor tracers stay straight in either heading and ignore bomber movement after launch',()=>{
  for(const dir of [-1,1]){
-  let lines=[],scales=[],start; c.g=new Proxy({}, {get:(_o,k)=>(...args)=>{if(k==='moveTo')start=args;if(k==='lineTo')lines.push([start,args]);if(k==='scale')scales.push(args);},set:(o,k,v)=>(o[k]=v,true)});
-  c.drawInterceptionFighter({x:200,y:300,dir},{x:250,y:700});const close=JSON.stringify(lines);assert.equal(lines.length,8);assert.deepEqual(scales,[[dir,1]]);
-  for(const [a,b] of lines){assert.equal(a[1],b[1]);assert.ok(a[0]>=78);assert.ok(b[0]>a[0]);}
-  lines=[];c.drawInterceptionFighter({x:200,y:300,dir},{x:900,y:50});assert.equal(JSON.stringify(lines),close);
+  const s=harness(),c=s.c;c.drawCachedEnemyAircraft=()=>{};
+  const fighter={x:200,y:300,dir,speed:1200,shot:0,exitT:1.6},raid={fighter,plane:{x:200+dir*1000,y:300}};
+  c.updateEnemyBomberInterception(raid,.01);
+  let lines=[],start;c.g=new Proxy({}, {get:(_o,k)=>(...args)=>{if(k==='moveTo')start=args;if(k==='lineTo')lines.push([start,args]);},set:(o,k,v)=>(o[k]=v,true)});
+  c.drawInterceptionFighter(fighter,raid.plane);assert.equal(lines.length,2);
+  for(const [a,b] of lines){assert.equal(a[1],b[1]);assert.equal(b[0]-a[0],dir*22);}
+  const before=JSON.stringify(lines);lines=[];raid.plane={x:900,y:50,falling:true};c.drawInterceptionFighter(fighter,raid.plane);assert.equal(JSON.stringify(lines),before);
+  const t=fighter.tracers.find(t=>t.active),x=t.x,y=t.y;c.updateEnemyBomberInterception(raid,.1);
+  assert.equal(t.y,y);assert.ok((t.x-x)*dir>0);
  }
+});
+test('tracer range doubles and rounds expire in firing order after the bomber starts falling',()=>{
+ const s=harness(),c=s.c,fighter={x:0,y:300,dir:1,speed:1200,shot:0,exitT:1.6},raid={fighter,plane:{x:5000,y:300}};
+ c.updateEnemyBomberInterception(raid,.01);const pool=fighter.tracers,first=pool.find(t=>t.active);
+ c.updateEnemyBomberInterception(raid,.075);const second=pool.find(t=>t.active&&t!==first);assert.ok(second);
+ raid.plane.falling=true;fighter.exitT=1.6;
+ const range=2*(4*64+22),speed=64/.075;
+ c.updateEnemyBomberInterception(raid,(range-1)/speed-.075);
+ assert.equal(first.active,true);assert.equal(second.active,true);assert.ok(Math.abs(first.travel-(range-1))<1e-8);
+ c.updateEnemyBomberInterception(raid,2/speed);assert.equal(first.active,false);assert.equal(second.active,true);
+ c.updateEnemyBomberInterception(raid,.075);assert.equal(second.active,false);assert.equal(fighter.tracers,pool);
+ assert.equal(s.sounds.filter(x=>x==='mg').length,2);assert.equal(pool.length,12);
+});
+test('tracer pool stays bounded during continuous fire and drains even without a bomber',()=>{
+ const s=harness(),c=s.c,fighter={x:0,y:300,dir:1,speed:1200,shot:0,exitT:1.6},raid={fighter,plane:{x:100000,y:300}};
+ c.updateEnemyBomberInterception(raid,.01);const pool=fighter.tracers;
+ for(let i=0;i<1000;i++)c.updateEnemyBomberInterception(raid,.01);
+ assert.equal(fighter.tracers,pool);assert.ok(pool.some(t=>t.active));assert.ok(pool.filter(t=>t.active).length<=10);
+ raid.plane=null;c.updateEnemyBomberInterception(raid,.7);assert.ok(pool.every(t=>!t.active));assert.ok(raid.fighter);
 });
 test('fighter arrival starts 0.6 seconds into the bomber pass',()=>{
  const s=debugHarness(0),c=s.c;run(s,30);const raid=c.enemyBomberRaid();assert.equal(raid.plane.intercept,true);
