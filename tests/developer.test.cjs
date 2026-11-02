@@ -5,12 +5,22 @@ function harness(){
  const c={state:'title',skillDebugAll:true,stageDebugAll:true,areaDebugEnabled:true,selectedAreaDebug:'草原',debugMode:3,debugInvincible:true,patrolRoutesVisible:true,debugRenderDiagnostic:{},skillMenuDirty:false,selectedStageId:'areaDebug',leaderboardPending:{beginner:{}},leaderboardRequest:0,saveLeaderboardPending(){c.saved=true;},updateDebugBadge(){},resetMazeComparison(){},confirm:()=>true,sfx(){},AbortController,setTimeout:()=>1,clearTimeout(){},addEventListener(){},document:{body:{classList:{add:k=>classes.add(k),remove:k=>classes.delete(k)}},getElementById:get},fetch:async(url,options)=>{requests.push({url,options});return{ok:true,json:async()=>({active:true,ok:true})};}};
  vm.createContext(c);vm.runInContext(source,c);return{c,get,classes,requests};
 }
-test('three title-credit taps open a four-digit login, wrong format stays closed, server success enables the purple developer entry',async()=>{
- const h=harness();assert.equal(h.c.isDeveloperMode(),false);await h.c.developerCreditTap();await h.c.developerCreditTap();assert.equal(h.c.state,'title');await h.c.developerCreditTap();assert.equal(h.c.state,'developerPass');assert.equal(h.get('developerLogin').hidden,false);assert.equal(h.get('developerPin').focused,true);
- const submit=()=>h.get('developerLoginForm').events.submit({preventDefault(){}});h.get('developerPin').value='123';await submit();assert.equal(h.requests.length,0);assert.equal(h.c.isDeveloperMode(),false);h.get('developerPin').value='5555';await submit();assert.equal(h.requests.length,1);assert.equal(JSON.parse(h.requests[0].options.body).pin,'5555');assert.equal(h.c.state,'title');assert.equal(h.c.isDeveloperMode(),true);assert.ok(h.classes.has('developer-mode'));assert.equal(h.get('titleDeveloper').hidden,false);
+test('three title-credit taps immediately enable developer mode without a password or network request',async()=>{
+ const h=harness();assert.equal(h.c.isDeveloperMode(),false);await h.c.developerCreditTap();await h.c.developerCreditTap();assert.equal(h.c.isDeveloperMode(),false);await h.c.developerCreditTap();
+ assert.equal(h.c.state,'title');assert.equal(h.c.isDeveloperMode(),true);assert.ok(h.classes.has('developer-mode'));assert.equal(h.get('titleDeveloper').hidden,false);assert.equal(h.get('developerLogin').hidden,true);assert.equal(h.requests.length,0);
 });
-test('failed server authentication never enables developer controls',async()=>{
- const h=harness();h.c.fetch=async()=>({ok:false,status:401,json:async()=>({error:'incorrect_pin'})});for(let i=0;i<3;i++)await h.c.developerCreditTap();h.get('developerPin').value='1111';await h.get('developerLoginForm').events.submit({preventDefault(){}});assert.equal(h.c.isDeveloperMode(),false);assert.equal(h.c.state,'developerPass');assert.match(h.get('developerLoginStatus').textContent,/違います/);
+test('credit taps outside the title do not count toward developer entry',async()=>{
+ const h=harness();h.c.state='play';for(let i=0;i<3;i++)await h.c.developerCreditTap();assert.equal(h.c.isDeveloperMode(),false);h.c.state='title';await h.c.developerCreditTap();assert.equal(h.c.isDeveloperMode(),false);
+});
+test('scoreboard authentication still checks the PIN and returns to developer controls after success',async()=>{
+ const h=harness();h.c.setDeveloperMode(true);h.c.state='developer';h.c.openDeveloperLogin();
+ const submit=()=>h.get('developerLoginForm').events.submit({preventDefault(){}});h.get('developerPin').value='123';await submit();assert.equal(h.requests.length,0);h.get('developerPin').value='5555';await submit();assert.equal(h.requests.length,1);assert.equal(JSON.parse(h.requests[0].options.body).pin,'5555');assert.equal(h.c.state,'developer');assert.equal(h.get('developerScreen').hidden,false);assert.equal(h.get('developerLogin').hidden,true);
+});
+test('failed scoreboard authentication retains the login form without disabling game debugging',async()=>{
+ const h=harness();h.c.setDeveloperMode(true);h.c.state='developer';h.c.openDeveloperLogin();h.c.fetch=async()=>({ok:false,status:401,json:async()=>({error:'incorrect_pin'})});h.get('developerPin').value='1111';await h.get('developerLoginForm').events.submit({preventDefault(){}});assert.equal(h.c.isDeveloperMode(),true);assert.equal(h.c.state,'developerPass');assert.match(h.get('developerLoginStatus').textContent,/違います/);h.c.closeDeveloperLogin();assert.equal(h.c.state,'developer');
+});
+test('an unauthorized scoreboard reset opens authentication and never clears scores locally',async()=>{
+ const h=harness();h.c.setDeveloperMode(true);h.get('titleDeveloper').events.click();h.c.fetch=async()=>({ok:false,status:401,json:async()=>({error:'unauthorized'})});await h.get('developerResetScores').events.click();assert.equal(h.c.state,'developerPass');assert.equal(h.get('developerScreen').hidden,true);assert.equal(h.get('developerLogin').hidden,false);assert.equal(h.c.saved,undefined);assert.equal(h.c.isDeveloperMode(),true);
 });
 test('three more title-credit taps revoke developer mode and clear all debug overrides',async()=>{
  const h=harness();h.c.setDeveloperMode(true);for(let i=0;i<3;i++)await h.c.developerCreditTap();assert.equal(h.c.isDeveloperMode(),false);assert.equal(h.get('titleDeveloper').hidden,true);for(const key of ['skillDebugAll','stageDebugAll','areaDebugEnabled','debugInvincible','patrolRoutesVisible'])assert.equal(h.c[key],false,key);assert.equal(h.c.debugMode,0);assert.equal(h.c.selectedStageId,null);assert.equal(h.requests[0].url,'/api/developer/logout');

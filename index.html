@@ -908,7 +908,7 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
  #stageScreen .stage-copy strong,#stageScreen .stage-target{font-size:15px}
 }
 </style>
-<section id="developerLogin" role="dialog" aria-modal="true" aria-labelledby="developerLoginHeading" hidden><div class="dev-panel"><h1 id="developerLoginHeading">開発者モード</h1><form id="developerLoginForm" novalidate><label for="developerPin">数字4桁のパスワード</label><input id="developerPin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off"><p id="developerLoginStatus" role="status"></p><div class="dev-actions"><button id="developerCancel" type="button">キャンセル</button><button id="developerSubmit" type="submit">開始</button></div></form></div></section>
+<section id="developerLogin" role="dialog" aria-modal="true" aria-labelledby="developerLoginHeading" hidden><div class="dev-panel"><h1 id="developerLoginHeading">スコアボードのリセット認証</h1><form id="developerLoginForm" novalidate><label for="developerPin">数字4桁のパスワード</label><input id="developerPin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off"><p id="developerLoginStatus" role="status"></p><div class="dev-actions"><button id="developerCancel" type="button">キャンセル</button><button id="developerSubmit" type="submit">認証</button></div></form></div></section>
 <section id="developerScreen" aria-labelledby="developerHeading" hidden><div class="dev-panel"><h1 id="developerHeading">開発者</h1><button id="developerHome" type="button">タイトル</button><button id="developerLeaderboard" type="button">開発者用スコアボード</button><button id="developerResetScores" type="button">スコアボードをリセット</button><p id="developerStatus" role="status"></p></div></section>
 <section id="leaderboardScreen" aria-labelledby="leaderboardHeading" hidden>
  <div class="lb-shell">
@@ -1001,7 +1001,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.02.2358',FILE_CREATED_AT='2026/11/02 23:58',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.03.0002',FILE_CREATED_AT='2026/11/03 00:02',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -8507,7 +8507,7 @@ function reportGameError(error){
 <script src="js/decisive.js?v=2026.10.28.0713"></script>
 <script src="js/frontline.js?v=2026.11.01.0730"></script>
 <script src="js/award-icons.js?v=2026.10.31.0807"></script>
-<script src="js/developer.js?v=2026.10.31.2335"></script>
+<script src="js/developer.js?v=2026.11.03.0002"></script>
 <script src="js/leaderboard.js?v=2026.10.28.0713"></script>
 <script src="js/intro.js?v=2026.10.31.0745"></script>
 <script src="js/unlocks.js?v=2026.10.31.2206"></script>

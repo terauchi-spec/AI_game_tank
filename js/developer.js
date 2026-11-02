@@ -1,5 +1,5 @@
 // The server session authorizes destructive actions; no password is stored in the browser.
-let developerModeEnabled=false,developerTapCount=0,developerBusy=false;
+let developerModeEnabled=false,developerTapCount=0,developerBusy=false,developerLoginReturn='title';
 function isDeveloperMode(){return developerModeEnabled;}
 function setDeveloperMode(active){
  developerModeEnabled=!!active;
@@ -21,9 +21,20 @@ async function developerApi(path,body){
   const data=await response.json();if(!response.ok){const error=Error(data.error||'request_failed');error.status=response.status;throw error;}return data;
  }finally{clearTimeout(timer);}
 }
+function openDeveloperLogin(){
+ developerLoginReturn=state==='developer'?'developer':'title';
+ document.getElementById('developerScreen').hidden=true;
+ state='developerPass';document.getElementById('developerLogin').hidden=false;
+ document.getElementById('developerPin').value='';document.getElementById('developerLoginStatus').textContent='';
+ document.getElementById('developerPin').focus({preventScroll:true});
+}
+function returnFromDeveloperLogin(){
+ document.getElementById('developerLogin').hidden=true;state=developerLoginReturn;
+ document.getElementById('developerScreen').hidden=state!=='developer';
+}
 function closeDeveloperLogin(){
  if(developerBusy)return;
- document.getElementById('developerLogin').hidden=true;state='title';developerTapCount=0;
+ returnFromDeveloperLogin();developerTapCount=0;
 }
 async function developerCreditTap(){
  if(state!=='title'||developerBusy)return;
@@ -33,9 +44,7 @@ async function developerCreditTap(){
   try{await developerApi('logout',{});}catch(_){/* Mode stays disabled in this page if offline. */}finally{developerBusy=false;}
   return;
  }
- state='developerPass';document.getElementById('developerLogin').hidden=false;
- document.getElementById('developerPin').value='';document.getElementById('developerLoginStatus').textContent='';
- document.getElementById('developerPin').focus({preventScroll:true});
+ setDeveloperMode(true);sfx('uiConfirm');
 }
 document.getElementById('developerTrigger').addEventListener('click',developerCreditTap);
 document.getElementById('developerCancel').addEventListener('click',closeDeveloperLogin);
@@ -44,7 +53,7 @@ document.getElementById('developerLoginForm').addEventListener('submit',async ev
  const pin=document.getElementById('developerPin').value,status=document.getElementById('developerLoginStatus');
  if(!/^\d{4}$/.test(pin)){status.textContent='数字4桁で入力してください。';return;}
  developerBusy=true;document.getElementById('developerSubmit').disabled=true;document.getElementById('developerCancel').disabled=true;status.textContent='確認中…';
- try{await developerApi('login',{pin});setDeveloperMode(true);document.getElementById('developerPin').blur();document.getElementById('developerLogin').hidden=true;state='title';sfx('uiConfirm');}
+ try{await developerApi('login',{pin});setDeveloperMode(true);document.getElementById('developerPin').blur();returnFromDeveloperLogin();if(state==='developer')document.getElementById('developerStatus').textContent='認証しました。リセットする場合はもう一度リセットボタンを押してください。';sfx('uiConfirm');}
  catch(error){status.textContent=error.status===401?'パスワードが違います。':error.status===429?'しばらく待ってから再入力してください。':'認証できませんでした。通信をご確認ください。';}
  finally{developerBusy=false;document.getElementById('developerSubmit').disabled=false;document.getElementById('developerCancel').disabled=false;}
 });
@@ -69,7 +78,7 @@ document.getElementById('developerResetScores').addEventListener('click',async()
   await developerApi('reset-scoreboard',{});
   leaderboardPending={};saveLeaderboardPending();leaderboardRequest++;
   status.textContent='スコアボードをリセットしました。';
- }catch(error){if(error.status===401)setDeveloperMode(false);status.textContent=error.status===401?'認証が切れました。タイトルから再認証してください。':'リセットできませんでした。通信をご確認ください。';}
+ }catch(error){if(error.status===401){openDeveloperLogin();document.getElementById('developerLoginStatus').textContent='スコアボードのリセットには認証が必要です。';}else status.textContent='リセットできませんでした。通信をご確認ください。';}
  finally{developerBusy=false;button.disabled=false;}
 });
 addEventListener('keydown',event=>{
