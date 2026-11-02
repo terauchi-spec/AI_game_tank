@@ -48,3 +48,26 @@ test('bomb and burn bridge destruction launch capped rotating wooden fragments w
  for(const mode of ['bomb','burn']){c.parts=[];c.bridges=[{x:100,y:200,w:100,h:60,burnT:.01}];if(mode==='bomb')c.damageBridgeByBomb(150,230);else c.burnBridges(.1);assert.equal(c.parts.length,8);assert.ok(c.parts.every(p=>p.arcFrag&&p.vz>0&&p.g>0&&p.col==='#7a4a25'));assert.equal(c.bridges.length,0);}
  for(let i=0;i<10;i++)c.cannonCoverDebris(0,0,'#7a4a25',8);assert.equal(c.parts.length,24);
 });
+
+test('placing a bomb directly on an unconscious or recovering enemy does not detonate it',()=>{
+ for(const status of [{stun:60},{stun:.01},{stun:0,stunRecover:1}])for(const armed of [false,true]){
+  const {c}=bombContext();let blasts=0;c.bombBlast=()=>blasts++;
+  c.p.x=0;c.p.y=0;c.bombs=[{x:0,y:0,own:'p',armed}];c.humans=[{x:0,y:0,alive:true,...status}];
+  // A newly placed bomb is unarmed, while an older armed one still retains player contact.
+  if(armed)c.p.x=500;
+  c.updateBombs(.016);assert.equal(c.bombs.length,1);assert.equal(blasts,0);assert.equal(c.humans[0].alive,true);
+ }
+});
+test('awake enemy contact still detonates a bomb and contact resumes after stun recovery',()=>{
+ for(const status of [{},{stun:0},{stun:0,stunRecover:0}]){
+  const {c}=bombContext();let blasts=0;c.bombBlast=()=>blasts++;
+  c.bombs=[{x:0,y:0,own:'p',armed:false}];c.humans=[{x:0,y:0,alive:true,stun:10}];
+  c.updateBombs(.016);assert.equal(c.bombs.length,1);
+  c.humans[0]={x:0,y:0,alive:true,...status};c.updateBombs(.016);
+  assert.equal(c.bombs.length,0);assert.equal(blasts,1);
+ }
+});
+test('an unconscious enemy is still hit by a detonated bomb blast wave',()=>{
+ const {c,kills}=bombContext();c.humans=[{x:10,y:0,alive:true,stun:60}];c.waves=[{x:0,y:0,r:0,max:95,actionId:7}];
+ c.updateWaves(.05);assert.equal(c.humans[0].alive,false);assert.equal(kills.length,1);
+});
