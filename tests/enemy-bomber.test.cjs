@@ -118,7 +118,7 @@ test('fighter enters from either side, downs the bomber once and stops further d
  for(const routeRoll of [.2,.8]){
   const s=harness([0,routeRoll,0]),c=s.c;Object.assign(c,{nearbyCovers:()=>[],nearbyBushes:()=>[],bridges:[],igniteNature(){},igniteBridge(){}});
   c.setupEnemyBomber();c.mission.enemyWavesStarted=true;c.updateEnemyBomber(.01);c.updateEnemyBomber(5);c.R=()=>routeRoll;
-  run(s,.9,.02);const raid=c.mission.enemyAirRaid;assert.ok(raid.fighter);assert.equal(raid.fighter.dir,routeRoll===.2?1:-1);
+  run(s,.6,.02);const raid=c.mission.enemyAirRaid;assert.ok(raid.fighter);assert.equal(raid.fighter.dir,routeRoll===.2?1:-1);
   assert.ok(raid.fighter.dir===1?raid.fighter.x<c.view.x:raid.fighter.x>c.view.x+c.view.w);
   run(s,.8,.02);assert.equal(raid.plane.falling,true);const drops=raid.plane.drops;assert.ok(drops<25);
   run(s,5,.02);assert.equal(raid.plane,null);assert.equal(raid.fighter,null);assert.equal(raid.wrecks.length,1);assert.equal(raid.phase,'done');assert.ok(s.blasts>=drops+2&&s.blasts<=drops+6,'falling uses a bounded number of shared explosion effects');
@@ -236,7 +236,7 @@ test('interceptor tracers stay straight and parallel to the nose, independently 
   lines=[];c.drawInterceptionFighter({x:200,y:300,dir},{x:900,y:50});assert.equal(JSON.stringify(lines),close);
  }
 });
-test('fighter arrival starts 0.9 seconds into the bomber pass, slightly later than the former 0.6 seconds',()=>{
+test('fighter arrival starts 0.6 seconds into the bomber pass',()=>{
  const s=debugHarness(0),c=s.c;run(s,30);const raid=c.enemyBomberRaid();assert.equal(raid.plane.intercept,true);
- run(s,.6,.01);assert.equal(raid.fighter,null);run(s,.29,.01);assert.equal(raid.fighter,null);run(s,.02,.01);assert.ok(raid.fighter);assert.equal(s.sounds.filter(x=>x==='aircraft').length,1);
+ run(s,.59,.01);assert.equal(raid.fighter,null);run(s,.02,.01);assert.ok(raid.fighter);assert.equal(s.sounds.filter(x=>x==='aircraft').length,1);
 });

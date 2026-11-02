@@ -54,7 +54,7 @@ function updateEnemyBomber(dt){
   return;
  }
  plane.y+=380*dt;plane.drop-=dt;
- if(plane.intercept&&plane.age>=.9&&!raid.fighter){
+ if(plane.intercept&&plane.age>=.6&&!raid.fighter){
   const view=frontlineView(),dir=R()<.5?1:-1;
   const x=dir>0?Math.min(view.x,plane.x)-100:Math.max(view.x+view.w,plane.x)+100;
   raid.fighterUsed=true;
