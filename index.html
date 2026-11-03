@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.03.1759</title>
+<title>こっそり戦車大作戦 2026.11.03.1811</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -1001,7 +1001,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.03.1759',FILE_CREATED_AT='2026/11/03 17:59',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.03.1811',FILE_CREATED_AT='2026/11/03 18:11',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -8308,9 +8308,9 @@ function syncMissionBriefing(){
    screen.classList.toggle('front-briefing',front);
    screen.classList.toggle('indoor-briefing',stageMode==='indoor');
    document.getElementById('missionFrontlineOrder').textContent=(isFrontlineBeginner()?2:3)+'拠点を順番に制圧';
-   const imageSrc=isTraining?'assets/characters/battlefield-assistant.webp':decisive?'assets/ui/stages/decisive.webp':stageMode==='indoor'?(typeof isLaboratoryStage==='function'&&isLaboratoryStage()?'assets/ui/stages/laboratory_scene_white.webp':'assets/ui/mission_infiltration.webp?v=2026.10.21'):front?'assets/ui/mission_frontline.webp?v=2026.10.17':'assets/ui/mission_hero.webp?v=2026.10.14.1653';
+   const imageSrc=isTraining?'assets/characters/battlefield-assistant.webp':decisive?'assets/ui/stages/decisive.webp':stageMode==='indoor'?'assets/ui/mission_infiltration.webp?v=2026.10.21':front?'assets/ui/mission_frontline.webp?v=2026.10.17':'assets/ui/mission_hero.webp?v=2026.10.14.1653';
    if(image.getAttribute('src')!==imageSrc)image.src=imageSrc;
-   image.alt=isTraining?'戦場アシスタントのアイラ':decisive?'砂漠の巨大移動要塞':stageMode==='indoor'?(typeof isLaboratoryStage==='function'&&isLaboratoryStage()?'白とガラスの先端科学研究所':'鋼鉄のドアに身を隠し、設置爆弾を手に様子をうかがう主人公'):front?'主人公と2人の味方兵が一緒に進軍する姿':'円形爆弾を抱えて走る主人公';
+   image.alt=isTraining?'戦場アシスタントのアイラ':decisive?'砂漠の巨大移動要塞':stageMode==='indoor'?'鋼鉄のドアに身を隠し、設置爆弾を手に様子をうかがう主人公':front?'主人公と2人の味方兵が一緒に進軍する姿':'円形爆弾を抱えて走る主人公';
    screen.querySelector('.mission-hud-guide').hidden=isTraining||front||decisive||stageMode==='indoor';
    document.getElementById('missionDecisiveRules').hidden=!decisive;
    document.getElementById('missionFrontlineRules').hidden=!front;
@@ -8542,7 +8542,7 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/stage-progress.js?v=2026.11.03.1759"></script>
+<script src="js/stage-progress.js?v=2026.11.03.1811"></script>
 <script src="js/decisive.js?v=2026.10.28.0713"></script>
 <script src="js/frontline.js?v=2026.11.03.0906"></script>
 <script src="js/award-icons.js?v=2026.10.31.0807"></script>
