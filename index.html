@@ -1001,7 +1001,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.03.1457',FILE_CREATED_AT='2026/11/03 14:57',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.03.1519',FILE_CREATED_AT='2026/11/03 15:19',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -2157,6 +2157,7 @@ let chainToast='',chainToastT=0,oneShotToast='',oneShotToastT=0;
 let roadBands=[];
 let state,p,cars,etanks,humans,covers,objects,bullets,parts,base,shake,flash,msg,msgT,bombs,items,waves,water,bridges,mud,fx,bushes,decoy,allies,hound=null,houndTrail=[],radio,airstrike,airbombs,weather,weatherT,weatherNext,rainIntensity=0,baseSpawnT,deathT=0,cam=0,camX=0,blastT,bq,skillReq,lastMouse=0,allySeq=0,builtWalls=[],buildingGroundMarks=[],tankWrecks=[],scoreStats=null,highScoreData=null,resultAnimT=0,vehicleNameT=0,debugMode=0,debugInvincible=false,touchTurretAngle=null,analogStickX=0,analogStickY=0;
 const DETECT_RANGE_BASE=315,DETECT_CENTER_HALF=7.5*Math.PI/180,DETECT_OUTER_HALF=52.5*Math.PI/180,DETECT_OUTER_SCALE=.7,DETECT_MEMORY=3,TANK_DRAW=30,TANK_HIT=28,TANK_BOMB_HIT=42,LOG_LONG=126,LOG_SHORT=39,CRATE_W=74.8,CRATE_H=74.8,BARREL_SIZE=39.1,CONCRETE_W=264,CONCRETE_H=183.7,WOOD_W=278.3,WOOD_H=223.85,MINI_CONCRETE_W=151.3,MINI_CONCRETE_H=151.3,MINI_WOOD_W=213.6,MINI_WOOD_H=213.6,CONCRETE_MINI_W=151.3,CONCRETE_MINI_H=151.3,WOOD_MINI_W=213.6,WOOD_MINI_H=213.6,TREE_BOX=83,TREE_BOX_MAX=124.5,ROCK_W=58,ROCK_H=40,BARRIER_LONG=208,BARRIER_SHORT=52,FENCE_LONG=188,FENCE_SHORT=81,COMMAND_BASE_W=390,COMMAND_BASE_H=336.7;
+const FACTORY_SCALE=1.3,FACTORY_W=CONCRETE_W*FACTORY_SCALE,FACTORY_H=CONCRETE_H*FACTORY_SCALE;
 const playerMoving=()=>!!(p&&(keys.ArrowUp||keys.ArrowDown||keys.ArrowLeft||keys.ArrowRight)&&(!p.tank||p.tank.f>0));
 const detectRange=(key='p')=>DETECT_RANGE_BASE*((key==='p'&&p&&p.tank)?2:1)*((key==='p'&&!playerMoving())?.8:1)*(weather==='sandstorm'?.55:weather==='rain'?.75:1),detectOuterRange=(key='p')=>detectRange(key)*DETECT_OUTER_SCALE,detectDropRange=(key='p')=>detectRange(key)*1.5;
 const D=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),R=Math.random;
@@ -2170,17 +2171,17 @@ function genCovers(edgeCoverReservations=[]){covers=[];
   if(kd===0){const vertical=h>w;fixBox(vertical?LOG_SHORT:LOG_LONG,vertical?LOG_LONG:LOG_SHORT);}
   else if(kd===1){const vertical=h>w;fixBox(vertical?BLOCK_WALL_SHORT:BLOCK_WALL_LONG,vertical?BLOCK_WALL_LONG:BLOCK_WALL_SHORT);}
   else if(kd===2)fixBox(CRATE_W,CRATE_H);
-  else if(kd===3||kd===4||kd===9||kd===10){
-   // 建物は種類ごとの固定サイズ。従来の配置中心は維持する。
+  else if(kd===3||kd===4||kd===9||kd===10||kd===11){
+   // 通常建物のサイズは維持。工場だけ幅・高さをともに1.3倍にする。
    const rw=w,rh=h,cx=x+rw*.5,cy=y*MAP_SCALE-rh;
-   const nw=kd===3?CONCRETE_W:kd===4?WOOD_W:kd===9?CONCRETE_MINI_W:WOOD_MINI_W;
-   const nh=kd===3?CONCRETE_H:kd===4?WOOD_H:kd===9?CONCRETE_MINI_H:WOOD_MINI_H;
+   const nw=kd===3?CONCRETE_W:kd===4?WOOD_W:kd===9?CONCRETE_MINI_W:kd===10?WOOD_MINI_W:FACTORY_W;
+   const nh=kd===3?CONCRETE_H:kd===4?WOOD_H:kd===9?CONCRETE_MINI_H:kd===10?WOOD_MINI_H:FACTORY_H;
    x=cx-nw*.5;y=(cy-nh*.5)/MAP_SCALE;w=nw;h=nh;
   }
   else if(kd===5)fixBox(FENCE_LONG,FENCE_SHORT); // 木柵は横向き固定
   else if(kd===6){const treeSide=Math.max(TREE_BOX,Math.min(TREE_BOX_MAX,Math.max(w,h)));fixBox(treeSide,treeSide);}
   else if(kd===7){const vertical=h>w,nw=vertical?BARRIER_SHORT:BARRIER_LONG,nh=vertical?BARRIER_LONG:BARRIER_SHORT;x-=nw*.5;y-=nh*.5/MAP_SCALE;w=nw;h=nh;}
-  const c={kd,x,y,w,h};if(frontlineMazeLaneBlocked({x,y:y*MAP_SCALE,w,h}))return false;if(x<0||x+w>WW||y<0||y>WH/MAP_SCALE||covers.some(o=>ovF(o,c,m))||water.some(o=>ovF(o,c,8))||(mud||[]).some(o=>ovF(o,c,5))||bushes.some(o=>ovF(o,c,5))||nearBridge(c,70)||ovF(c,base,30)||ovF({x:350,y:2990,w:260,h:170},c,0))return false;covers.push(c);return true;
+  const c={kd,x,y,w,h};if(frontlineMazeLaneBlocked({x,y:y*MAP_SCALE,w,h}))return false;if(x<0||x+w>WW||y<0||y>WH/MAP_SCALE||covers.some(o=>ovF(o,c,o.kd===11?Math.max(m,16):m))||water.some(o=>ovF(o,c,8))||(mud||[]).some(o=>ovF(o,c,5))||bushes.some(o=>ovF(o,c,5))||nearBridge(c,70)||ovF(c,base,30)||ovF({x:350,y:2990,w:260,h:170},c,0))return false;covers.push(c);return true;
  };
  const tryAdd=(kd,x,y,w,h,m=10,tries=10)=>{for(let i=0;i<tries;i++){if(add(kd,x+(R()-.5)*28,y+(R()-.5)*24,w,h,m))return true;}return false;};
  const fen=(x,y,l,v,gap)=>{
@@ -2232,7 +2233,20 @@ function genCovers(edgeCoverReservations=[]){covers=[];
    for(let k=0;k<12;k++)fen(42+R()*820,ry(),42+R()*50,R()<.5,R()<.38);
   }else if(z.n==='街'){
    // 建物数を大幅増加。大きな建物は維持しつつ、規則的な縦横路地を残す。
-   const cityStart=covers.length;
+   // Place 2-3 full-size factories first, distributed vertically across the city.
+   // Later buildings use the same collision check and leave space around the factories.
+   const factoryTarget=2+(R()<.65?1:0);
+   for(let i=0;i<factoryTarget;i++){
+    const bandTop=top+(i+.5)*span/factoryTarget;
+    for(let attempt=0;attempt<80;attempt++){
+     const x=50+R()*Math.max(1,WW-FACTORY_W-100);
+     const candidateTop=Math.max(top+12,Math.min(bottom-FACTORY_H/MAP_SCALE-12,
+      bandTop+(R()-.5)*span/(factoryTarget*3)));
+     // add() uses a bottom-anchored source box for building placement.
+     if(add(11,x,candidateTop+FACTORY_H*.375,FACTORY_W,FACTORY_H,16))break;
+    }
+   }
+   // Existing houses keep their normal sizes and fill only available grid cells.
    const bw=112+R()*10,bh=80+R()*9,gx=76,gy=12,startX=18+R()*8,startY=top+5+R()*4;
    let row=0;for(let y=startY;y<bottom-30;y+=26,row++){
     const shift=(row%2)*(gx*.45);let col=0;
@@ -2242,10 +2256,6 @@ function genCovers(edgeCoverReservations=[]){covers=[];
      tryAdd(rr<.68?3:rr<.80?4:rr<.90?9:10,x,y,bw+R()*14,bh+R()*14,5,8);
     }
    }
-   // 既存の建物配置を維持し、街のコンクリート建物1棟だけを小型工場に置き換える。
-   // 配置数・路地・当たり判定の元寸法を変えず、建物スプライトだけを更新する。
-   const cityBuildings=covers.slice(cityStart).filter(c=>c.kd===3||c.kd===4||c.kd===9||c.kd===10);
-   if(cityBuildings.length)cityBuildings[(R()*cityBuildings.length)|0].kd=11;
    for(let k=0;k<20;k++)tryAdd(7,28+R()*860,ry(),46+R()*18,22+R()*10,5,18);
   }else if(z.n==='敵前線基地'){
    // 軍事施設、コンクリート障害物、柵が多い。
@@ -2436,9 +2446,10 @@ function setupAreaDebugStage(){
    placeRow(z,[{kd:1,w:BLOCK_WALL_LONG,h:BLOCK_WALL_SHORT,label:'ブロック塀：固定128×32px'}],500);
    addObjectSample('crate',WW/2-150,z.y1+780,CRATE_W,CRATE_H,'オブジェクト：木箱');addObjectSample('barrel',WW/2+100,z.y1+795,BARREL_SIZE,BARREL_SIZE,'オブジェクト：ドラム缶');
   }else if(z.n==='街'){
-   placeRow(z,[{kd:3,w:CONCRETE_W,h:CONCRETE_H,label:'コンクリート建物'},{kd:4,w:WOOD_W,h:WOOD_H,label:'木造建物'},{kd:11,w:CONCRETE_W,h:CONCRETE_W*5/6,label:'小型工場'}],160);
-   placeRow(z,[{kd:9,w:MINI_CONCRETE_W,h:MINI_CONCRETE_H,label:'小さなコンクリート建物'},{kd:10,w:MINI_WOOD_W,h:MINI_WOOD_H,label:'小さな木造建物'},{kd:7,w:BARRIER_LONG,h:BARRIER_SHORT,label:'防護壁'}],620);
-   addObjectSample('barrel',WW/2-150,z.y1+1000,BARREL_SIZE,BARREL_SIZE,'オブジェクト：ドラム缶');addObjectSample('crate',WW/2+70,z.y1+980,CRATE_W,CRATE_H,'オブジェクト：木箱');
+   placeRow(z,[{kd:11,w:FACTORY_W,h:FACTORY_H,label:'小型工場（1.3倍）'}],160);
+   placeRow(z,[{kd:3,w:CONCRETE_W,h:CONCRETE_H,label:'コンクリート建物'},{kd:4,w:WOOD_W,h:WOOD_H,label:'木造建物'}],540);
+   placeRow(z,[{kd:9,w:MINI_CONCRETE_W,h:MINI_CONCRETE_H,label:'小さなコンクリート建物'},{kd:10,w:MINI_WOOD_W,h:MINI_WOOD_H,label:'小さな木造建物'},{kd:7,w:BARRIER_LONG,h:BARRIER_SHORT,label:'防護壁'}],850);
+   addObjectSample('barrel',WW/2-150,z.y1+1130,BARREL_SIZE,BARREL_SIZE,'オブジェクト：ドラム缶');addObjectSample('crate',WW/2+70,z.y1+1110,CRATE_W,CRATE_H,'オブジェクト：木箱');
   }else if(z.n==='敵迷路基地'){
    // 迷路基地では建物を使用しない。迷路壁と防護壁のみ確認できる構成にする。
    placeRow(z,[{kd:7,w:BARRIER_LONG,h:BARRIER_SHORT,label:'防護壁'}],260);
