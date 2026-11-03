@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.03.1811</title>
+<title>こっそり戦車大作戦 2026.11.03.1818</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -699,7 +699,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 1250ms ease-o
 <p><strong>初級：</strong>開始草原→候補5エリアからランダムに3エリア→最後は草原（電波施設）の全5エリア。通常の青兵と青兵指揮官4体が必ず登場し、白兵・白兵指揮官・犬兵は出現しません。敵戦車は最大2台です。<strong>上級：</strong>従来の全7エリア、敵AI、敵配置、敵司令本部破壊のルールを維持します。</p>
 <p>歩兵の潜入に加え、戦車などの乗り物を利用した戦闘や、出撃前に選ぶスキルによる攻略ができます。</p><a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-map"><h2>2. ステージ構成とランダム生成</h2>
-<p><strong>初級：</strong>全5エリア。開始草原→草原・森林・丘陵・村・湿地から重複なしでランダムに3エリア→電波施設のある草原。<strong>上級：</strong>全7エリア。最初は草原、最後は敵司令本部で、その間の5エリアは従来の候補から重複なしでランダムに選ばれます。</p>
+<p><strong>初級：</strong>全5エリア。開始草原→草原・森林・丘陵・村・湿地から重複なしでランダムに3エリア→電波施設のある草原。<strong>上級：</strong>全7エリア。最初は草原、最後は戦略ミサイル基地のある森林で、その間の5エリアは森林以外の候補から重複なしでランダムに選ばれます。</p>
 <p><strong>最前線初級：</strong>開始草原の後、草原・森林・村・丘陵・湿地から重複なしで3エリアを選ぶ全4エリアです。南部・北部の2拠点を順番に制圧します。南部には小型コンテナ1つ、北部には大型コンテナ2つを横並びに配置します。コンテナは攻撃で最大6か所の小さな欠けができますが、消失せず通行・射線を遮ります。クリア時は大型コンテナ2つがキラキラと輝いてから成功画面へ進みます。敵戦車は最大2台、敵歩兵は同時最大10人、通常増援の青兵指揮官は8人に1人です。白兵指揮官・犬兵は出現しません。初回進入時の反撃は青兵指揮官1人を含む4人です。制圧・味方兵・車両・画面表示の基本ルールは上級と共通です。</p>
 <p><strong>最前線上級：</strong>既存の戦場を舞台に、味方部隊と3つの戦線を押し上げる制圧作戦です。開始地点の味方兵の後方にはトラック2台・装甲車2台を追加配置し、最初から搭乗できます。敵兵は原則6秒ごとに2人、周辺の敵が少ないと約3秒間隔で補充します。同時出現の上限16人を維持し、離れた画面外の敵は戦果に数えず整理します。最前線のみ敵戦車の視野角・索敵距離・追跡距離は通常の2倍です。味方の補充があり、各戦線の制圧時にライフが回復し、味方の増援が到着します。搭乗車両の弾薬・燃料は補充されません。南部の制圧地点は橋や水際を避けて前後・左右に変化します。南部・中央の制圧目標は小型アンテナ、北部は大型アンテナです。制圧範囲の半径は南部・中央360px、北部540pxです。いずれも破壊できず、足元の台座だけが移動・射線を遮ります。マストの裏側は通行できます。目的地の矢印は右上のエリア名の下に表示し、制圧中は水色の円周ゲージと残り秒数で進み具合がわかります。制圧を始めた拠点の円内に敵が入ると、円とゲージがオレンジに変わり、敵を排除すると水色に戻ります。3拠点を制圧すると戦闘が止まり、大型アンテナから電波を発した後、「作戦成功」画面の「作戦評価」ボタンから評価画面に進みます。開始直後は味方部隊が待機し、プレイヤーが開始地点から北へ240px（24m）前進すると一斉に進軍します。味方部隊と増援は個体ごとに左右の進路・制圧範囲内の到着位置・前進限界付近の待機位置が異なります。移動速度は従来の50〜100%の範囲で、3〜8秒ごとに緩やかに変化します。通常の進軍中は4〜10秒ごとに0.3〜0.9秒立ち止まり、前進限界では2〜4.5秒以上待機します。敵の発見時は短い立ち止まりを中断して戦闘を優先します。最前線の迷路は広い南北の通路を3本残し、その間に壁を配置します。最前線の味方兵は前方120度・300px（雨天75%、砂嵐55%）の視界で、遮蔽物の向こうや背後の敵には反応しません。敵を発見すると水色の「!」を表示し、通常の1.5倍の速さで接近します。発見済みの敵は420pxまで追跡し、見失うと最後に見た地点を最大2秒探してから通常の前進に戻ります。射撃前は0.5秒静止して狙いを定めます。最前線で気絶した味方兵は10秒経過するか、徒歩のプレイヤーが触れると復帰します。制圧エリア内では敵味方とも発見モードとなり、同じ円内の相手を向きや遮蔽物に関係なく警戒します。射撃には視線が通る必要があります。各制圧エリアにプレイヤーが初めて入ると、青兵指揮官2人を含む敵6人が画面上部から反撃に向かいます。敵兵の同時上限に達した場合は、空きができ次第出現します。通常増援にも約4人に1人の割合で青兵指揮官が含まれます。最前線の敵味方の歩兵は建物の間で進めない状態が続くと、迂回経路を探し、必要なら後退して回り込みます。味方は画面上端の80px先で最低2秒待機し、プレイヤーが近づくと前進を再開します。味方兵は初期部隊・補充兵・増援スキルを通じて5人に1人が無線機とバズーカを持つ指揮官です。敵を発見すると2.5秒停止して水色の電波を発し、1秒後に半径2000px以内の活動中の味方へ敵の最終確認位置を共有します。共有を受けた味方は6秒間発見モードとなり、射線の通る敵には交戦し、見えない敵には確認位置へ接近します。指揮官は敵戦車を優先し、0.5秒狙って4秒間隔でバズーカを発射します。敵戦車は1発で撃破可能です。味方のバズーカは味方部隊やプレイヤーを傷つけません。開始時の敵歩兵はプレイヤーが80m前進するまで待機し、その後は画面上側の外から出現し、非交戦時は下へ進軍します。迷路エリアは壁を大幅に減らし、木箱や防護壁を置かない幅154pxの南北通路を3本確保します。同時に活動する敵兵は最大16人で、画面下へ通過した兵士は撃破扱いにせず退場します。</p>
 <p>上級の中間エリア候補：草原／森林／村／丘陵／敵前線基地／街／敵迷路基地／湿地／荒野。</p>
@@ -1001,7 +1001,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.03.1811',FILE_CREATED_AT='2026/11/03 18:11',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.03.1818',FILE_CREATED_AT='2026/11/03 18:18',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -1954,14 +1954,17 @@ let ZONES=[];
 function setupZones(){
  if(stageMode==='decisive'&&!areaDebugEnabled){setupDecisiveZones();return;}
  // 初級は開始草原→3エリア→電波施設のある草原、上級は従来の全7エリア。
- const beginner=stageMode==='beginner'&&!areaDebugEnabled,frontEasy=isFrontlineBeginner();
+ const beginner=stageMode==='beginner'&&!areaDebugEnabled,frontEasy=isFrontlineBeginner(),missileFacility=stageMode==='base'&&!areaDebugEnabled&&currentStageId()==='base';
  const pool=beginner||frontEasy?['草原','森林','丘陵','村','湿地']:['草原','森林','村','丘陵','敵前線基地','街','敵迷路基地','湿地'];
  if(!beginner&&stageMode==='base')pool.push('荒野');
+ // The missile objective occupies the final forest; keep zone names unique.
+ if(missileFacility)pool.splice(pool.indexOf('森林'),1);
  for(let i=pool.length-1;i>0;i--){const j=R()*(i+1)|0;[pool[i],pool[j]]=[pool[j],pool[i]];}
  const mid=pool.slice(0,beginner||frontEasy?3:5);
- const names=frontEasy?['草原',...mid]:beginner?['草原',...mid,'草原']:['草原',...mid,'敵司令本部'];
+ const names=frontEasy?['草原',...mid]:beginner?['草原',...mid,'草原']:['草原',...mid,missileFacility?'森林':'敵司令本部'];
  const edges=frontEasy?[13200,10800,7200,3600,-400]:beginner?[13200,10800,8100,5400,2700,-400]:[13200,10800,9040,7280,5520,3760,2000,-400];
  ZONES=names.map((n,i)=>({n,y0:edges[i],y1:edges[i+1],g:ZONE_STYLE[n].g,p:ZONE_STYLE[n].p.slice()}));
+ if(missileFacility)ZONES[ZONES.length-1].missileFacility=true;
  // Every run rerolls flank risk for each stage, rather than binding it to zone type.
  // Discourage the same dominant side across three consecutive areas.
  let prev=null,streak=0;
@@ -2164,6 +2167,12 @@ const D=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),R=Math.random;
 const angD=(a,b)=>((a-b+9.42477)%6.28318)-3.14159;
 const nearBridge=(c,m=60)=>bridges&&bridges.some(b=>ov2({x:b.x-m,y:b.y-m,w:(b.w||100)+m*2,h:(b.h||100)+m*2},c,0));
 const BLOCK_WALL_LONG=128,BLOCK_WALL_SHORT=32;
+// Generation uses compressed Y coordinates, but object heights are already world-sized.
+// Keep a short clear approach aligned with the missile sprite's central doorway.
+function missileBaseApproachOverlaps(o){
+ if(!base?.missileFacility)return false;
+ return ov2({...o,y:o.y*MAP_SCALE},{x:base.x+base.w/2-150,y:base.y*MAP_SCALE+base.h-12,w:300,h:240},12);
+}
 function genCovers(edgeCoverReservations=[]){covers=[];
  const ovF=(a,b,m=0)=>a.x<b.x+b.w+m&&a.x+a.w+m>b.x&&(a.y*MAP_SCALE)<(b.y*MAP_SCALE+b.h+m)&&(a.y*MAP_SCALE+a.h+m)>(b.y*MAP_SCALE);
  const add=(kd,x,y,w,h,m=10)=>{
@@ -2181,7 +2190,7 @@ function genCovers(edgeCoverReservations=[]){covers=[];
   else if(kd===5)fixBox(FENCE_LONG,FENCE_SHORT); // 木柵は横向き固定
   else if(kd===6){const treeSide=Math.max(TREE_BOX,Math.min(TREE_BOX_MAX,Math.max(w,h)));fixBox(treeSide,treeSide);}
   else if(kd===7){const vertical=h>w,nw=vertical?BARRIER_SHORT:BARRIER_LONG,nh=vertical?BARRIER_LONG:BARRIER_SHORT;x-=nw*.5;y-=nh*.5/MAP_SCALE;w=nw;h=nh;}
-  const c={kd,x,y,w,h};if(frontlineMazeLaneBlocked({x,y:y*MAP_SCALE,w,h}))return false;if(x<0||x+w>WW||y<0||y>WH/MAP_SCALE||covers.some(o=>ovF(o,c,o.kd===11?Math.max(m,16):m))||water.some(o=>ovF(o,c,8))||(mud||[]).some(o=>ovF(o,c,5))||bushes.some(o=>ovF(o,c,5))||nearBridge(c,70)||ovF(c,base,30)||ovF({x:350,y:2990,w:260,h:170},c,0))return false;covers.push(c);return true;
+  const c={kd,x,y,w,h};if(frontlineMazeLaneBlocked({x,y:y*MAP_SCALE,w,h}))return false;if(x<0||x+w>WW||y<0||y>WH/MAP_SCALE||covers.some(o=>ovF(o,c,o.kd===11?Math.max(m,16):m))||water.some(o=>ovF(o,c,8))||(mud||[]).some(o=>ovF(o,c,5))||bushes.some(o=>ovF(o,c,5))||nearBridge(c,70)||ovF(c,base,30)||missileBaseApproachOverlaps(c)||ovF({x:350,y:2990,w:260,h:170},c,0))return false;covers.push(c);return true;
  };
  const tryAdd=(kd,x,y,w,h,m=10,tries=10)=>{for(let i=0;i<tries;i++){if(add(kd,x+(R()-.5)*28,y+(R()-.5)*24,w,h,m))return true;}return false;};
  const fen=(x,y,l,v,gap)=>{
@@ -2359,7 +2368,7 @@ function genObjects(){
   const x1=Math.min(actual.x,rc.x),y1=Math.min(actual.y,rc.y),x2=Math.max(actual.x+actual.w,rc.x+rc.w),y2=Math.max(actual.y+actual.h,rc.y+rc.h);
   return{x:x1,y:y1/MAP_SCALE,w:x2-x1,h:y2-y1};
  };
- const addObject=(kind,x,y,w,h,m=8)=>{const o={kind,x,y,w,h},or=objectPlaceRect(o);if(frontlineMazeLaneBlocked({...or,y:or.y*MAP_SCALE}))return false;if(or.x<0||or.x+or.w>WW||or.y<0||or.y>WH/MAP_SCALE||objects.some(q=>overlap(objectPlaceRect(q),or,m))||covers.some(c=>overlap(coverPlaceRect(c),or,m))||water.some(q=>overlap(q,or,8))||(mud||[]).some(q=>overlap(q,or,5))||bushes.some(q=>overlap(q,or,5))||nearBridge(or,65)||overlap(or,base,28)||overlap({x:350,y:2990,w:260,h:170},or,0))return false;objects.push(o);return true;};
+ const addObject=(kind,x,y,w,h,m=8)=>{const o={kind,x,y,w,h},or=objectPlaceRect(o);if(frontlineMazeLaneBlocked({...or,y:or.y*MAP_SCALE}))return false;if(or.x<0||or.x+or.w>WW||or.y<0||or.y>WH/MAP_SCALE||objects.some(q=>overlap(objectPlaceRect(q),or,m))||covers.some(c=>overlap(coverPlaceRect(c),or,m))||water.some(q=>overlap(q,or,8))||(mud||[]).some(q=>overlap(q,or,5))||bushes.some(q=>overlap(q,or,5))||nearBridge(or,65)||overlap(or,base,28)||missileBaseApproachOverlaps(or)||overlap({x:350,y:2990,w:260,h:170},or,0))return false;objects.push(o);return true;};
  const tryObject=(kind,x,y,w,h,m=8,tries=18)=>{for(let i=0;i<tries;i++)if(addObject(kind,x+(R()-.5)*30,y+(R()-.5)*24,w,h,m))return true;return false;};
  const bands=ZONES.map(z=>({n:z.n,y0:z.y0/MAP_SCALE,y1:Math.max(0,z.y1/MAP_SCALE)}));
  for(const z of bands){const top=z.y1+24,bottom=z.y0-24,span=Math.max(90,bottom-top),ry=()=>top+R()*span;
@@ -3107,7 +3116,7 @@ function reset(rerollSkills=true){
  // 草原のみ草むら同士の重なりを許可。ただし候補が既存2個以上と重なる場合は却下し、3重以上の重なりを防ぐ。
  const addBush=(b,margin=8,allowBushOverlap=false)=>{
   const overlapCount=allowBushOverlap?bushes.reduce((n,o)=>n+(bushOvF(o,b,0)?1:0),0):0;
-  if(b.x<8||b.x+b.w>WW-8||edgeCoverReservations.some(q=>bushOvF(q,b,7))||(allowBushOverlap?overlapCount>=2:bushes.some(o=>bushOvF(o,b,margin)))||b.y>WH/MAP_SCALE-8||bushOvF(b,{x:350,y:2990,w:260,h:170},0)||water.some(c=>bushOvF(c,b,8))||nearBridge(b,60)||bushOvF(b,base,24))return false;
+  if(b.x<8||b.x+b.w>WW-8||edgeCoverReservations.some(q=>bushOvF(q,b,7))||(allowBushOverlap?overlapCount>=2:bushes.some(o=>bushOvF(o,b,margin)))||b.y>WH/MAP_SCALE-8||bushOvF(b,{x:350,y:2990,w:260,h:170},0)||water.some(c=>bushOvF(c,b,8))||nearBridge(b,60)||bushOvF(b,base,24)||missileBaseApproachOverlaps(b))return false;
   bushes.push(b);return true;
  };
  for(const z of ZONES){const y0=z.y0/MAP_SCALE,y1=Math.max(0,z.y1/MAP_SCALE),n=bushCount[z.n]||0;for(let k=0,m=0;k<30000&&m<n;k++){
@@ -3163,7 +3172,7 @@ function reset(rerollSkills=true){
  // 通常配置：森林・村・丘陵・街は10人、湿地は8人。指定外のエリアは従来どおり6人。
  // 数にはエリート兵も含む。開始草原・前線基地・迷路基地などの特別配置は別途維持する。
  const zoneHumanCounts={'森林':10,'村':10,'丘陵':10,'街':10,'湿地':8,'荒野':8};
- for(const z of ZONES.slice(1))addZoneHumans(z,zoneHumanCounts[z.n]??6,'base:'+z.n);
+ for(const z of ZONES.slice(1))addZoneHumans(z,z.missileFacility?6:(zoneHumanCounts[z.n]??6),'base:'+z.n);
  // 開始草原は敵歩兵4人。開始地点直近の安全圏だけは避けて配置する。
  addZoneHumans(ZONES[0],4,'startGrass');
  // 高密度エリアの追加兵も同じ最低間隔・分散配置ルールを使う。
@@ -3182,10 +3191,10 @@ function reset(rerollSkills=true){
  for(const h of humans){
   if(h.zoneHeavy==='startGrass'){h.elite=false;continue;}
   const zn=zoneAt(h.y*MAP_SCALE).n;
-  if(zn==='敵司令本部')h.elite=R()<1/3;
+  if(zn==='敵司令本部'||zoneAt(h.y*MAP_SCALE).missileFacility)h.elite=R()<1/3;
   else if(eliteZones.has(zn)&&R()<.2)h.elite=true;
  }
- for(const z of ZONES.filter(z=>['森林','村','丘陵','街'].includes(z.n))){
+ for(const z of ZONES.filter(z=>!z.missileFacility&&['森林','村','丘陵','街'].includes(z.n))){
   const group=humans.filter(h=>zoneAt(h.y*MAP_SCALE).n===z.n);
   for(let i=group.length-1;i>0;i--){const j=R()*(i+1)|0;[group[i],group[j]]=[group[j],group[i]];}
   for(let i=0;i<Math.min(3,group.length);i++)group[i].elite=true;
@@ -4968,16 +4977,24 @@ function updateWeather(dt){
  rainIntensity=ramp*ramp*(3-2*ramp);
 }
 function spawnHQEnemy(){
- if(!base||base.hp<=0)return;const sy=base.y+base.h+55;let sp=null;
- for(let k=0;k<160;k++){const q=freeSpot(base.x+base.w/2+(R()-.5)*230,sy+(R()-.5)*90,8,20);if((humans||[]).some(h=>h.alive&&D(h,q)<80))continue;if((etanks||[]).some(e=>e.alive&&D(e,q)<TANK_HIT+35))continue;sp=q;break;}
- if(!sp)return;const x2=Math.max(18,Math.min(WW-18,sp.x+(R()<.5?-1:1)*(80+R()*120)));
- const h={x:sp.x,y:sp.y,path:[{x:sp.x,y:sp.y},{x:x2,y:sp.y}],loop:false,wi:1,dir:1,stk:0,alive:true,st:0,sus:0,lost:0,cd:.7,face:Math.atan2(0,x2-sp.x),target:null,foundPause:0,patrolMode:'axis',hq:true,elite:false};
+ if(!base||base.hp<=0)return;const sy=base.y+base.h+55;let sp=null,path;
+ if(base.missileFacility){
+  // Spawn at the foot of the drawn doorway; never relocate reinforcements around the facade.
+  const q={x:base.x+base.w/2,y:base.y+base.h+10},exit={x:base.x+base.w/2,y:base.y+base.h+100};
+  if(hitsM(q.x,q.y,8)||!patrolLineClear(q,exit,8)||(humans||[]).some(h=>h.alive&&D(h,q)<80)||(etanks||[]).some(e=>e.alive&&D(e,q)<TANK_HIT+35)||(cars||[]).some(c=>c.kind!=='fighter'&&D(c,q)<TANK_HIT+35))return;
+  sp=q;const side=R()<.5?-1:1,patrol={x:exit.x+side*(80+R()*40),y:exit.y};
+  path=[q,exit];if(patrolLineClear(exit,patrol,8))path.push(patrol);
+ }else{
+  for(let k=0;k<160;k++){const q=freeSpot(base.x+base.w/2+(R()-.5)*230,sy+(R()-.5)*90,8,20);if((humans||[]).some(h=>h.alive&&D(h,q)<80))continue;if((etanks||[]).some(e=>e.alive&&D(e,q)<TANK_HIT+35))continue;sp=q;break;}
+  if(!sp)return;const x2=Math.max(18,Math.min(WW-18,sp.x+(R()<.5?-1:1)*(80+R()*120)));path=[sp,{x:x2,y:sp.y}];
+ }
+ const h={x:sp.x,y:sp.y,path,loop:false,wi:1,dir:1,stk:0,alive:true,st:0,sus:0,lost:0,cd:.7,face:Math.atan2(path[1].y-sp.y,path[1].x-sp.x),target:null,foundPause:0,patrolMode:'axis',hq:true,elite:false};
  if(R()<.1){h.commander='blue';h.commanderCooldown=2;h.commanderTactics=0;h.commanderCharge=0;h.whistleCooldown=0;h.whistleT=0;}else h.elite=R()<1/3;
  humans.push(h);
 }
 function updateHQSpawn(dt){if(stageMode!=='base'||areaDebugEnabled){baseSpawnT=99999;return;}
  const scale=currentStageId()==='base'?1.3:1,interval=5/scale;
- if(!base||base.hp<=0||zoneAt(p.y).n!=='敵司令本部'){baseSpawnT=interval;return;}
+ if(!base||base.hp<=0||(base.missileFacility?zoneAt(p.y)!==ZONES[ZONES.length-1]:zoneAt(p.y).n!=='敵司令本部')){baseSpawnT=interval;return;}
  baseSpawnT-=dt;if(baseSpawnT<=0){baseSpawnT+=interval;const activeHQ=(humans||[]).filter(h=>h.alive&&h.hq).length;if(activeHQ<Math.round(8*scale))spawnHQEnemy();}}
 function enemyPlayerBulletImpact(b,ox,oy){
  if(b.from!=='e'||b.commanderRocket||p.dig>0)return null;
@@ -8542,7 +8559,7 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/stage-progress.js?v=2026.11.03.1811"></script>
+<script src="js/stage-progress.js?v=2026.11.03.1818"></script>
 <script src="js/decisive.js?v=2026.10.28.0713"></script>
 <script src="js/frontline.js?v=2026.11.03.0906"></script>
 <script src="js/award-icons.js?v=2026.10.31.0807"></script>
