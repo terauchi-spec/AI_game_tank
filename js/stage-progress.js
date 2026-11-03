@@ -1,6 +1,6 @@
 // Stage progress is independent of skill unlocks and persists even when debug controls are used.
 let selectedStageId=null,expandedStageId=null,stageDebugAll=false,intermediateStageId=null;
-const LABORATORY_STAGE={id:'indoorLab',target:'先進科学研究所',name:'潜入（上級）',image:'laboratory/lab-building'};
+const LABORATORY_STAGE={id:'indoorLab',target:'先端科学研究所',name:'潜入（上級）',image:'laboratory_scene'};
 const TRAINING_STAGE={id:'training',target:'訓練場',name:'準備',image:'training'};
 const STAGE_PROGRESS_KEY='tankGameStageProgressV1';
 const LEGACY_STAGE_ORDER=['beginner','indoorBeginner','frontBeginner','base','indoor','front','decisive'];
