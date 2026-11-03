@@ -734,11 +734,12 @@ test('Oni automatic replenishment triggers below eight allies, retaining the usu
  }
 });
 
-test('advanced frontline scales enemy/ally counts and live cap without changing lower difficulties',()=>{
+test('advanced frontline restores baseline enemy/ally counts and live caps without changing lower difficulties',()=>{
  const c=harness();c.currentStageId=()=> 'front';
- assert.equal(c.frontlineEnemyMultiplier(),1.3);assert.equal(c.frontlineAllyMultiplier(),1.3);
- assert.equal(c.frontlineEnemyLimit(),21);assert.equal(c.frontlineEnemyCount(6*c.frontlineEnemyMultiplier()),8);
- assert.equal(c.frontlineEnemyCount(2*c.frontlineEnemyMultiplier()),3);
+ assert.equal(c.frontlineEnemyMultiplier(),1);assert.equal(c.frontlineAllyMultiplier(),1);
+ assert.equal(c.frontlineEnemyLimit(),16);assert.equal(c.frontlineEnemyCount(6*c.frontlineEnemyMultiplier()),6);
+ assert.equal(c.frontlineEnemyCount(2*c.frontlineEnemyMultiplier()),2);
+ c.missionAllies(9000);assert.equal(c.allies.length,6);c.missionAllies(8500);assert.equal(c.allies.length,10);
  c.currentStageId=()=> 'frontIntermediate';
  assert.equal(c.frontlineEnemyLimit(),16);assert.equal(c.frontlineAllyMultiplier(),1);
  c.currentStageId=()=> 'front';c.frontlineBeginner=true;assert.equal(c.frontlineAllyMultiplier(),1);
