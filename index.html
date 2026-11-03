@@ -1001,7 +1001,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.03.1050',FILE_CREATED_AT='2026/11/03 10:50',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.03.1115',FILE_CREATED_AT='2026/11/03 11:15',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -3036,7 +3036,7 @@ function reset(rerollSkills=true){
  if(stageMode==='indoor'){setupInfiltrationWorld();if(skill==='hound')spawnHound();setupMission();return;}
  const beginner=stageMode==='beginner'&&!areaDebugEnabled;
  const missileFacility=stageMode==='base'&&!areaDebugEnabled&&currentStageId()==='base';
- const baseW=beginner?360:COMMAND_BASE_W,baseH=beginner?355:missileFacility?MISSILE_BASE_H:COMMAND_BASE_H;
+ const baseW=beginner?360:missileFacility?COMMAND_BASE_W*MISSILE_BASE_SCALE:COMMAND_BASE_W,baseH=beginner?355:missileFacility?MISSILE_BASE_H*MISSILE_BASE_SCALE:COMMAND_BASE_H;
  base={x:WW/2-baseW/2,y:60,w:baseW,h:baseH,hp:30,maxHp:30,deadAt:0,missileFacility};bullets=[];parts=[];bombs=[];waves=[];fx=[];items=[];bushes=[];
  roadBands=[];water=[];bridges=[];mud=[];
  for(const ry of [2675,1325]){
@@ -3270,7 +3270,7 @@ function reset(rerollSkills=true){
 // Radio facility alpha silhouette, baked from the 256x253 sprite (alpha >=160).
 // Four source-pixel strips avoid runtime image readbacks; transparent gaps stay open.
 // Baked alpha strips keep missile gaps passable without per-frame pixel reads.
-const MISSILE_SPRITE_H=512,MISSILE_BASE_H=COMMAND_BASE_W*512/768;
+const MISSILE_BASE_SCALE=1.5,MISSILE_SPRITE_H=512,MISSILE_BASE_H=COMMAND_BASE_W*512/768;
 const MISSILE_BASE_ROWS=[[],[210,218,380,389,551,560],[206,222,377,392,548,563],[204,224,374,395,545,566],[48,56,201,227,372,398,543,568],[47,57,186,242,357,413,527,584,701,720],[35,89,115,144,182,247,284,312,352,418,456,484,523,589,624,653,680,736],[34,736],[34,737],[22,748],[21,749],[21,749],[21,749],[21,749],[16,754],[15,755],[15,755],[15,755],[15,755],[14,755],[14,755],[16,753],[18,752],[17,752],[16,753],[16,753],[12,758],[12,758],[12,758],[12,758],[12,758],[16,753],[16,753],[14,755],[11,758],[11,758],[11,758],[11,758],[11,758],[11,758],[13,756],[14,756],[14,756],[14,756],[14,756],[14,756],[15,755],[17,753],[17,753],[15,755],[13,756],[13,756],[13,756],[13,756],[13,756],[13,756],[14,756],[19,752],[19,752],[19,752],[19,752],[22,748],[25,51,264,504,720,746],[]];
 const RADIO_FACILITY_ROWS=[[106,135],[100,144],[95,152],[92,158],[89,163],[87,167],[86,171],[84,175],[83,179],[82,182],[81,185],[81,188],[81,191],[81,194],[47,54,81,196],[47,54,81,204],[48,53,81,207],[34,207,230,242],[29,247],[27,250],[26,250],[26,250],[26,250],[26,250],[25,251],[23,254],[23,254],[23,254],[23,254],[23,254],[23,254],[23,254],[27,250],[27,250],[27,250],[27,250],[27,250],[23,254],[23,254],[23,254],[23,254],[22,254],[22,254],[23,253],[26,250],[26,250],[26,250],[23,254],[23,254],[23,254],[23,254],[22,254],[23,254],[26,250],[27,250],[26,250],[26,250],[26,250],[27,250],[27,250],[27,250],[27,250],[37,49,96,180,228,240],[]];
 function radioFacilityHits(x,y,r=0){return facilitySpriteHits(x,y,r,RADIO_FACILITY_ROWS,256,253,4);}
