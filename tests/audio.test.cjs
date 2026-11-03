@@ -116,15 +116,36 @@ test('tank machine guns keep the same armor-hit SE; misses and on-foot hits reta
  const armored=incomingBulletHarness({id:'armored'});assert.deepEqual(armored.sounds,['vehicleHit']);assert.ok(armored.c.p.tank.ch>0);
 });
 
- test('footsteps select dirt or grass and stay silent when stopped, aboard, hiding, indoors or in water',async()=>{
+ test('footsteps select dirt or grass and stay silent when stopped, aboard, hiding or in water',async()=>{
  const h=harness(),{c}=h;await c.loadGameSe('dirtStep');await c.loadGameSe('grassStep');
  c.updateGameAudio();c.now+=120;c.p.x+=10;c.updateGameAudio();assert.equal(c.get('[...gameSe.voices].at(-1).name'),'dirtStep');
  c.get('gameSe.grassAt=0');c.inBush=()=>true;c.now+=120;c.p.x+=10;c.updateGameAudio();assert.equal(c.get('[...gameSe.voices].at(-1).name'),'grassStep');
- for(const mode of ['stop','tank','hide','prep','indoor','water']){
- c.p.tank=mode==='tank'?{kind:'tank'}:null;c.p.dig=mode==='hide'?1:0;c.p.digPrep=mode==='prep'?1:0;c.stageMode=mode==='indoor'?'indoor':'base';c.inWaterAt=()=>mode==='water';
+ for(const mode of ['stop','tank','hide','prep','water']){
+ c.p.tank=mode==='tank'?{kind:'tank'}:null;c.p.dig=mode==='hide'?1:0;c.p.digPrep=mode==='prep'?1:0;c.stageMode='base';c.inWaterAt=()=>mode==='water';
  c.get('gameSe.grassAt=0');const count=h.sources.length;c.now+=120;if(mode!=='stop')c.p.x+=10;c.updateGameAudio();assert.equal(h.sources.slice(count).filter(x=>!x.loop).length,0,mode);
  }
  });
+test('infiltration stages reuse dirt footsteps for actual walking and silence them when stopped or hidden',async()=>{
+ const h=harness(),{c}=h;c.stageMode='indoor';c.indoorWorld={currentFloor:0};
+ await c.loadGameSe('dirtStep');c.updateGameAudio();
+ c.now+=120;c.p.x+=10;c.updateGameAudio();
+ const first=c.get('gameSe.footstep');assert.ok(first);assert.equal(first.name,'dirtStep');
+ assert.equal(c.get('gameSe.loops.has("bush")'),false);
+ c.now+=16;c.updateGameAudio();assert.equal(first.source.stopped,true);assert.equal(c.get('gameSe.footstep'),null);
+ c.now+=16;c.p.y+=5;c.updateGameAudio();assert.equal(c.get('gameSe.footstep.name'),'dirtStep');
+ c.p.dig=1;c.now+=16;c.p.x+=5;c.updateGameAudio();assert.equal(c.get('gameSe.footstep'),null);
+ c.p.dig=0;c.now+=16;c.p.x+=5;c.updateGameAudio();assert.equal(c.get('gameSe.footstep.name'),'dirtStep');
+ c.state='paused';c.now+=16;c.updateGameAudio();assert.equal(c.get('gameSe.footstep'),null);
+});
+test('all infiltration variants share footstep playback and large stair teleports do not emit steps',async()=>{
+ for(const floor of [0,1,2]){
+  const h=harness(),{c}=h;c.stageMode='indoor';c.indoorWorld={currentFloor:floor};
+  await c.loadGameSe('dirtStep');c.updateGameAudio();
+  c.now+=120;c.p.x+=10;c.updateGameAudio();assert.equal(c.get('gameSe.footstep.name'),'dirtStep');
+  c.now+=16;c.updateGameAudio();assert.equal(c.get('gameSe.footstep'),null);
+  const count=h.sources.length;c.now+=16;c.p.y+=600;c.updateGameAudio();assert.equal(h.sources.length,count);
+ }
+});
  test('new one-shot effects download once and respect the shared voice cap',async()=>{
  const h=harness(),{c}=h;for(const n of ['firework','objectiveDestroyed','sniperLens']){await c.loadGameSe(n);c.playGameSe(n);c.now+=100;c.playGameSe(n);}
  assert.equal(h.requests.length,3);assert.equal(c.get('gameSe.voices.size'),3);
@@ -185,10 +206,10 @@ test('dirt and grass footsteps stop on the first stationary frame, preserve guns
 test('footstep transitions keep one voice and delayed old completion cannot clear the new step',async()=>{
  const h=harness(),{c}=h;await c.loadGameSe('dirtStep');await c.loadGameSe('grassStep');c.updateGameAudio();c.now+=120;c.p.x+=10;c.updateGameAudio();const old=c.get('gameSe.footstep');c.inBush=()=>true;for(let i=0;i<3;i++){c.now+=120;c.p.x+=10;c.updateGameAudio();}const current=c.get('gameSe.footstep');assert.equal(current.name,'grassStep');assert.equal(old.source.stopped,true);assert.equal(c.get('[...gameSe.voices].filter(v=>v.name==="dirtStep"||v.name==="grassStep").length'),1);old.source.onended();assert.equal(c.get('gameSe.footstep'),current);
 });
-test('boarding, hiding, water, indoors and leaving play stop already-playing footsteps',async()=>{
- for(const mode of ['tank','dig','prep','water','indoor','pause','result','missingPlayer']){
+test('boarding, hiding, water and leaving play stop already-playing footsteps',async()=>{
+ for(const mode of ['tank','dig','prep','water','pause','result','missingPlayer']){
   const h=harness(),{c}=h;await c.loadGameSe('dirtStep');c.updateGameAudio();c.now+=120;c.p.x+=10;c.updateGameAudio();const foot=c.get('gameSe.footstep');assert.ok(foot);c.now+=16;c.p.x+=5;
-  if(mode==='tank')c.p.tank={kind:'truck',t:{id:'truck'}};if(mode==='dig')c.p.dig=1;if(mode==='prep')c.p.digPrep=1;if(mode==='water')c.inWaterAt=()=>true;if(mode==='indoor')c.stageMode='indoor';if(mode==='pause')c.state='paused';if(mode==='result')c.state='win';if(mode==='missingPlayer')c.p=null;
+  if(mode==='tank')c.p.tank={kind:'truck',t:{id:'truck'}};if(mode==='dig')c.p.dig=1;if(mode==='prep')c.p.digPrep=1;if(mode==='water')c.inWaterAt=()=>true;if(mode==='pause')c.state='paused';if(mode==='result')c.state='win';if(mode==='missingPlayer')c.p=null;
   c.updateGameAudio();assert.equal(foot.source.stopped,true,mode);assert.equal(c.get('gameSe.footstep'),null,mode);
  }
 });

@@ -151,7 +151,8 @@ function updateGameAudio(){
  if((gameSe.loops.get('bush')?.name||null)!==bushSound)setGameSeLoop('bush',bushSound,.18);
  const leftBush=prior?.bush&&!bush;
  if(leftBush)stopGameFootsteps();
- const walking=moving&&!p.tank&&!(p.dig>0)&&!(p.digPrep>0)&&stageMode!=='indoor'&&!(typeof inWaterAt==='function'&&inWaterAt(p.x,p.y,7));
+ // Indoor stages use the existing dirt footsteps; bush/grass ambience remains outdoor-only.
+ const walking=moving&&!p.tank&&!(p.dig>0)&&!(p.digPrep>0)&&!(typeof inWaterAt==='function'&&inWaterAt(p.x,p.y,7));
  // 10Hzの環境音更新を待たず、静止を検出したフレームで再生中の足音も止める。
  if(!walking)stopGameFootsteps();
  else if(leftBush||now-gameSe.grassAt>350){gameSe.grassAt=now;playGameSe(bush?'grassStep':'dirtStep');}
