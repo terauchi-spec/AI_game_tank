@@ -1001,7 +1001,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.03.1115',FILE_CREATED_AT='2026/11/03 11:15',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.03.1121',FILE_CREATED_AT='2026/11/03 11:21',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -3037,7 +3037,7 @@ function reset(rerollSkills=true){
  const beginner=stageMode==='beginner'&&!areaDebugEnabled;
  const missileFacility=stageMode==='base'&&!areaDebugEnabled&&currentStageId()==='base';
  const baseW=beginner?360:missileFacility?COMMAND_BASE_W*MISSILE_BASE_SCALE:COMMAND_BASE_W,baseH=beginner?355:missileFacility?MISSILE_BASE_H*MISSILE_BASE_SCALE:COMMAND_BASE_H;
- base={x:WW/2-baseW/2,y:60,w:baseW,h:baseH,hp:30,maxHp:30,deadAt:0,missileFacility};bullets=[];parts=[];bombs=[];waves=[];fx=[];items=[];bushes=[];
+ base={x:WW/2-baseW/2,y:60,w:baseW,h:baseH,hp:missileFacility?60:30,maxHp:missileFacility?60:30,deadAt:0,missileFacility};bullets=[];parts=[];bombs=[];waves=[];fx=[];items=[];bushes=[];
  roadBands=[];water=[];bridges=[];mud=[];
  for(const ry of [2675,1325]){
   if(['荒野','砂漠'].includes(zoneAt(ry*MAP_SCALE).n))continue;
