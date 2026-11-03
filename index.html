@@ -1001,7 +1001,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.03.1121',FILE_CREATED_AT='2026/11/03 11:21',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.03.1457',FILE_CREATED_AT='2026/11/03 14:57',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -1151,6 +1151,7 @@ const COVER_ASSET_SRC={
  "crate":ASSET_DIR+'cover/crate.webp',
  "concrete_building":ASSET_DIR+'cover/concrete_building.webp',
  "wood_house":ASSET_DIR+'cover/wood_house.webp',
+ "factory_small":ASSET_DIR+'cover/factory_small.webp',
  "concrete_building_mini":ASSET_DIR+'cover/concrete_building_mini.webp',
  "wood_house_mini":ASSET_DIR+'cover/wood_house_mini.webp',
  "fence":ASSET_DIR+'cover/fence.webp',
@@ -1402,9 +1403,9 @@ function coverVisualRect(c){
  }
  if(c.playerBuilt||c.decisiveKind)return{x:c.x,y:c.y,w:c.w,h:c.h};
  const cx=c.x+c.w/2,cy=c.y+c.h/2,hor=c.w>=c.h;
- if(c.kd===3||c.kd===4||c.kd===9||c.kd===10){
-  const concrete=c.kd===3||c.kd===9;
-  const im=c.kd===3?COVER_IMG.concrete_building:c.kd===4?COVER_IMG.wood_house:c.kd===9?COVER_IMG.concrete_building_mini:COVER_IMG.wood_house_mini;
+ if(c.kd===3||c.kd===4||c.kd===9||c.kd===10||c.kd===11){
+  const concrete=c.kd===3||c.kd===9||c.kd===11;
+  const im=c.kd===3?COVER_IMG.concrete_building:c.kd===4?COVER_IMG.wood_house:c.kd===9?COVER_IMG.concrete_building_mini:c.kd===10?COVER_IMG.wood_house_mini:COVER_IMG.factory_small;
   if(assetOK(im)){
    const fitW=concrete?c.w*1.02:c.w*1.00,fitH=concrete?c.h*1.02:c.h*1.00;
    const [dw,dh]=fitAspect(im,fitW,fitH);
@@ -1456,6 +1457,7 @@ function coverSpriteRect(c){
  if(c.kd===4){const im=COVER_IMG.wood_house,[w,h]=fitAspect(im,c.w*.98,c.h*.98);return centerRect(cx,cy,w,h);}
  if(c.kd===9){const im=COVER_IMG.concrete_building_mini,[w,h]=fitAspect(im,c.w*.98,c.h*.98);return centerRect(cx,cy,w,h);}
  if(c.kd===10){const im=COVER_IMG.wood_house_mini,[w,h]=fitAspect(im,c.w*.98,c.h*.98);return centerRect(cx,cy,w,h);}
+ if(c.kd===11){const im=COVER_IMG.factory_small,[w,h]=fitAspect(im,c.w*.98,c.h*.98);return centerRect(cx,cy,w,h);}
  if(c.kd===5){const im=COVER_IMG.fence,[w,h]=hor?fitAspect(im,c.w,c.h):fitAspect(im,c.h,c.w);return hor?centerRect(cx,cy,w,h):centerRect(cx,cy,h,w);}
  if(c.kd===6){const size=Math.max(c.w,c.h);return centerRect(cx,cy,size,size);}
  if(c.kd===7){const long=hor?c.w:c.h,thick=Math.max(hor?c.h:c.w,long*.28),len=long*1.02;return hor?centerRect(cx,cy,len,thick):centerRect(cx,cy,thick,len);}
@@ -1762,6 +1764,10 @@ function drawCoverAsset(c){
   const im=COVER_IMG.wood_house_mini,[w,h]=fitAspect(im,c.w*.98,c.h*.98);
   return drawAssetSprite(im,cx,cy,w,h,0,1);
  }
+ if(c.kd===11){
+  const im=COVER_IMG.factory_small,[w,h]=fitAspect(im,c.w*.98,c.h*.98);
+  return drawAssetSprite(im,cx,cy,w,h,0,1);
+ }
  if(c.kd===5){
   const im=COVER_IMG.fence,ang=hor?0:Math.PI/2;
   const [w,h]=hor?fitAspect(im,c.w,c.h):fitAspect(im,c.h,c.w);
@@ -1787,7 +1793,7 @@ function drawCoverAsset(c){
 
 // 建物の足元に残す「焼け跡／影」は、種類ごとに小さなCanvasを一度だけ生成して再利用する。
 // 毎フレームのblur/filterは使わず、画面内の建物跡ごとにdrawImage 1回だけ。
-const BUILDING_SHADOW_KDS=new Set([3,4,8,9,10]),buildingShadowCache={};
+const BUILDING_SHADOW_KDS=new Set([3,4,8,9,10,11]),buildingShadowCache={};
 function buildingShadowKind(kd){return kd===8?'rock':(kd===4||kd===10)?'wood':'concrete';}
 function buildingShadowSprite(kind){
  if(buildingShadowCache[kind])return buildingShadowCache[kind];
@@ -2226,6 +2232,7 @@ function genCovers(edgeCoverReservations=[]){covers=[];
    for(let k=0;k<12;k++)fen(42+R()*820,ry(),42+R()*50,R()<.5,R()<.38);
   }else if(z.n==='街'){
    // 建物数を大幅増加。大きな建物は維持しつつ、規則的な縦横路地を残す。
+   const cityStart=covers.length;
    const bw=112+R()*10,bh=80+R()*9,gx=76,gy=12,startX=18+R()*8,startY=top+5+R()*4;
    let row=0;for(let y=startY;y<bottom-30;y+=26,row++){
     const shift=(row%2)*(gx*.45);let col=0;
@@ -2235,6 +2242,10 @@ function genCovers(edgeCoverReservations=[]){covers=[];
      tryAdd(rr<.68?3:rr<.80?4:rr<.90?9:10,x,y,bw+R()*14,bh+R()*14,5,8);
     }
    }
+   // 既存の建物配置を維持し、街のコンクリート建物1棟だけを小型工場に置き換える。
+   // 配置数・路地・当たり判定の元寸法を変えず、建物スプライトだけを更新する。
+   const cityBuildings=covers.slice(cityStart).filter(c=>c.kd===3||c.kd===4||c.kd===9||c.kd===10);
+   if(cityBuildings.length)cityBuildings[(R()*cityBuildings.length)|0].kd=11;
    for(let k=0;k<20;k++)tryAdd(7,28+R()*860,ry(),46+R()*18,22+R()*10,5,18);
   }else if(z.n==='敵前線基地'){
    // 軍事施設、コンクリート障害物、柵が多い。
@@ -2360,7 +2371,7 @@ function genObjects(){
 }
 
 const AREA_DEBUG_ORDER=['草原','森林','村','丘陵','敵前線基地','街','敵迷路基地','湿地','荒野','敵司令本部'];
-const COVER_DEBUG_NAMES={1:'壁',2:'木箱',3:'コンクリート建物',4:'木造建物',5:'木の柵',6:'木',7:'防護壁',8:'岩',9:'小さなコンクリートの建物',10:'小さな木造の建物'};
+const COVER_DEBUG_NAMES={1:'壁',2:'木箱',3:'コンクリート建物',4:'木造建物',5:'木の柵',6:'木',7:'防護壁',8:'岩',9:'小さなコンクリートの建物',10:'小さな木造の建物',11:'小型工場'};
 function spawnAreaDebugPlayerTanks(){
  for(let i=0;i<TYPES.length;i++){
   const t=TYPES[i],x=WW/2+(i%4-1.5)*120,y=p.y-100-Math.floor(i/4)*120;
@@ -2425,8 +2436,9 @@ function setupAreaDebugStage(){
    placeRow(z,[{kd:1,w:BLOCK_WALL_LONG,h:BLOCK_WALL_SHORT,label:'ブロック塀：固定128×32px'}],500);
    addObjectSample('crate',WW/2-150,z.y1+780,CRATE_W,CRATE_H,'オブジェクト：木箱');addObjectSample('barrel',WW/2+100,z.y1+795,BARREL_SIZE,BARREL_SIZE,'オブジェクト：ドラム缶');
   }else if(z.n==='街'){
-   placeRow(z,[{kd:3,w:CONCRETE_W,h:CONCRETE_H,label:'コンクリート建物'},{kd:4,w:WOOD_W,h:WOOD_H,label:'木造建物'},{kd:9,w:MINI_CONCRETE_W,h:MINI_CONCRETE_H,label:'小さなコンクリート建物'},{kd:10,w:MINI_WOOD_W,h:MINI_WOOD_H,label:'小さな木造建物'}],180);
-   placeRow(z,[{kd:7,w:BARRIER_LONG,h:BARRIER_SHORT,label:'防護壁'}],560);addObjectSample('barrel',WW/2-150,z.y1+820,BARREL_SIZE,BARREL_SIZE,'オブジェクト：ドラム缶');addObjectSample('crate',WW/2+70,z.y1+800,CRATE_W,CRATE_H,'オブジェクト：木箱');
+   placeRow(z,[{kd:3,w:CONCRETE_W,h:CONCRETE_H,label:'コンクリート建物'},{kd:4,w:WOOD_W,h:WOOD_H,label:'木造建物'},{kd:11,w:CONCRETE_W,h:CONCRETE_W*5/6,label:'小型工場'}],160);
+   placeRow(z,[{kd:9,w:MINI_CONCRETE_W,h:MINI_CONCRETE_H,label:'小さなコンクリート建物'},{kd:10,w:MINI_WOOD_W,h:MINI_WOOD_H,label:'小さな木造建物'},{kd:7,w:BARRIER_LONG,h:BARRIER_SHORT,label:'防護壁'}],620);
+   addObjectSample('barrel',WW/2-150,z.y1+1000,BARREL_SIZE,BARREL_SIZE,'オブジェクト：ドラム缶');addObjectSample('crate',WW/2+70,z.y1+980,CRATE_W,CRATE_H,'オブジェクト：木箱');
   }else if(z.n==='敵迷路基地'){
    // 迷路基地では建物を使用しない。迷路壁と防護壁のみ確認できる構成にする。
    placeRow(z,[{kd:7,w:BARRIER_LONG,h:BARRIER_SHORT,label:'防護壁'}],260);
@@ -2617,7 +2629,7 @@ function route(y,x0,x1,r,big,mode='mixed'){
  return null;
 }
 // Post-expansion patrol builder: true dimensions for buildings and collision.
-const PATROL_BUILDING_TYPES=new Set([3,4,9,10]);
+const PATROL_BUILDING_TYPES=new Set([3,4,9,10,11]);
 const PATROL_BUILDING_ZONES=new Set(['村','街','敵前線基地']);
 function buildBuildingPatrol(c,r=8){
  if(!c||c.fr||!PATROL_BUILDING_TYPES.has(c.kd))return null;
@@ -5442,7 +5454,7 @@ function sniperProjection(x,y){
 }
 function sniperPanelColor(kind,kd=0){
  if(kind==='human')return'#397cbd';if(kind==='elite')return'#ecf0f2';if(kind==='tank')return'#4b5f9e';if(kind==='vehicle')return'#65705a';if(kind==='base')return'#7e807d';if(kind==='object')return'#8a704b';
- if(kd===4||kd===10)return'#876748';if(kd===6)return'#386b39';if(kd===8)return'#77736b';if(kd===3||kd===9)return'#8b8d89';return'#7d745f';
+ if(kd===4||kd===10)return'#876748';if(kd===6)return'#386b39';if(kd===8)return'#77736b';if(kd===3||kd===9||kd===11)return'#8b8d89';return'#7d745f';
 }
 function drawSniperStatusIcon(x,y,o){
  if(!o)return;
@@ -5484,7 +5496,7 @@ function drawSniperSilhouette(it,sw,sh,top,near){
    // 岩：低い多角形。
    g.beginPath();g.moveTo(-w*.48,h*.84);g.lineTo(-w*.37,h*.39);g.lineTo(-w*.10,h*.17);g.lineTo(w*.30,h*.25);g.lineTo(w*.49,h*.60);g.lineTo(w*.40,h*.88);g.closePath();g.fill();g.stroke();
    g.fillStyle=hi;g.beginPath();g.moveTo(-w*.30,h*.43);g.lineTo(-w*.08,h*.25);g.lineTo(w*.13,h*.31);g.lineTo(-w*.06,h*.48);g.closePath();g.fill();
-  }else if(kd===3||kd===9||kd===4||kd===10){
+  }else if(kd===3||kd===9||kd===4||kd===10||kd===11){
    // 建物：木造は屋根を強調、コンクリートは箱型＋窓。
    const wood=kd===4||kd===10;
    if(wood){g.fillRect(-w*.46,h*.35,w*.92,h*.62);g.fillStyle='#48523f';g.beginPath();g.moveTo(-w*.54,h*.36);g.lineTo(0,h*.06);g.lineTo(w*.54,h*.36);g.closePath();g.fill();g.stroke();}
@@ -5665,7 +5677,7 @@ function drawSniperScope(){
  // 木造・コンクリートとも元の建物単位でまとめ、一つの低い瓦礫として描く。
  const scopeRubble=new Map();
  for(const c of coversInBox(minX,minY,maxX,maxY)){
-  if(c.fr&&(c.kd===3||c.kd===4||c.kd===9||c.kd===10)){
+  if(c.fr&&(c.kd===3||c.kd===4||c.kd===9||c.kd===10||c.kd===11)){
    const key=[c.kd,c.ox0,c.oy0,c.ow0,c.oh0].join(':');
    let pile=scopeRubble.get(key);
    if(!pile){pile={kd:c.kd,x0:Infinity,y0:Infinity,x1:-Infinity,y1:-Infinity,n:0,origW:c.ow0||c.w,origH:c.oh0||c.h};scopeRubble.set(key,pile);}
@@ -7487,7 +7499,7 @@ function drawVehicleBottomHud(){
  if(infinite){g.font='bold 13px system-ui';g.fillStyle='#e6e9d8';g.fillText('∞',x+w-21,fuelY+15);}
  g.restore();
 }
-const STATIC_COVER_DRAW_COLORS=[['#8a7a55','#6a5d40'],['#8c8c86','#6a6a66'],['#7a5f3a','#4e3c24'],['#55504a','#35322e'],['#b9ab8a','#8f8263'],['#7a5f3a','#4e3c24'],['#2f6b34','#1d4a22'],['#4a5a4a','#33403a'],['#7a7468','#57534a'],['#666865','#4e514e'],['#b9ab8a','#8f8263']];
+const STATIC_COVER_DRAW_COLORS=[['#8a7a55','#6a5d40'],['#8c8c86','#6a6a66'],['#7a5f3a','#4e3c24'],['#55504a','#35322e'],['#b9ab8a','#8f8263'],['#7a5f3a','#4e3c24'],['#2f6b34','#1d4a22'],['#4a5a4a','#33403a'],['#7a7468','#57534a'],['#666865','#4e514e'],['#b9ab8a','#8f8263'],['#666865','#4e514e']];
 function draw(near){
  if(drawMenuOnlyState())return;
  // タッチ端末は表示Canvasへ直接描画し、動的な画面外Canvasの毎フレーム転写を避ける。
