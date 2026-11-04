@@ -209,6 +209,7 @@ function updateGatlingBullet(b,ox,oy,expired){
   for(let i=0;i<9;i++){const mid=(lo+hi)/2;if(test(a,{x:ox+(end.x-ox)*mid,y:oy+(end.y-oy)*mid},o,0))hi=mid;else lo=mid;}
   hits.push({t:hi,o,type});
  }
+ if(b.from==='p'||b.from==='ally')for(const t of roadTruckEvents)if(roadTruckActive(t)){const at=roadTruckSegmentT(a,end,t);if(at!=null)hits.push({t:at,o:t,type:'roadTruck'});}
  for(const h of humans||[])if(h.alive&&h!==b.operator)add(h,12,'human');
  if(b.from!=='e'){for(const e of etanks||[])if(e.alive)add(e,TANK_HIT,'tank');}
  else{
@@ -222,7 +223,8 @@ function updateGatlingBullet(b,ox,oy,expired){
  if(hit.type==='human'){
   if(typeof noteEnemyFallHit==='function')noteEnemyFallHit(o,b.vx,b.vy);o.alive=false;if(o.gunTower)releaseGunTower(o.gunTower);
   if(b.from==='p')recordPlayerKill(0,'mg',o);else if(b.from==='ally')recordSupportResult('kill','partner',o);burst(o.x,o.y,7,'#c05a3a',100);
- }else if(hit.type==='cover')damageGunTowerCover(o,b.x,b.y,b.from);
+ }else if(hit.type==='roadTruck')damageRoadTruck(o,1,b.x,b.y);
+ else if(hit.type==='cover')damageGunTowerCover(o,b.x,b.y,b.from);
  else if(hit.type==='object')damageObject(o,'mg');
  else if(hit.type==='base'){if(b.from!=='e')damageBase(.035,b.x,b.y,5,1,b.from==='p'?'player':'support');}
  else if(hit.type==='tank'){

@@ -54,3 +54,40 @@ test('pause freezes trucks and reinitializing a sortie replaces old events',()=>
  const h=scene();h.run('updateRoadTrucks(.1);const beforeX=roadTruckEvents[0].x;state=\'paused\';updateRoadTrucks(10);');assert.equal(h.run('roadTruckEvents[0].x===beforeX'),true);
  h.run('setupRoadTruckEvents();');assert.equal(h.run('roadTruckEvents.length'),1);assert.equal(h.run('roadTruckEvents[0].state'),'waiting');
 });
+function targetTruck(){
+ const h=scene();h.run("parts=[];fx=[];waves=[];tankWrecks=[];bullets=[];bombs=[];items=[];allies=[];enemyDogs=[];scoreStats=newScoreStats();shake=0;flash=0;roadTruckEvents[0].x=480;roadTruckEvents[0].state='unloading';p.y=5300;");return h;
+}
+test('five gun hits destroy the truck once, leave a wreck and cancel pending dropoffs',()=>{
+ const h=targetTruck();h.run('for(let i=0;i<4;i++)damageRoadTruck(roadTruckEvents[0],1);');assert.equal(h.run('roadTruckEvents[0].hp'),1);assert.equal(h.run('tankWrecks.length'),0);
+ h.run('damageRoadTruck(roadTruckEvents[0],1);damageRoadTruck(roadTruckEvents[0],5);for(let i=0;i<100;i++)updateRoadTrucks(.1);');
+ assert.equal(h.run('roadTruckEvents[0].state'),'destroyed');assert.equal(h.run('tankWrecks.length'),1);assert.equal(h.run('tankWrecks[0].id'),'truck');assert.equal(h.run('humans.length'),0);
+ assert.equal(h.run('roadTruckDropSoldier(roadTruckEvents[0])'),false);
+});
+test('swept gunfire hits a moving truck even when its endpoint is past the vehicle',()=>{
+ const h=targetTruck();h.run("b={x:650,y:5000,k:'v',from:'p'};roadTruckEvents[0].state='entering';");
+ assert.equal(h.run('hitRoadTruckBullet(b,300,5000)'),true);assert.equal(h.run('roadTruckEvents[0].hp'),4);assert.equal(h.run('b.x'),447);
+});
+test('a nearer wall blocks truck damage while a wall beyond the truck does not',()=>{
+ const h=targetTruck();h.run("covers=[{kd:1,x:360,y:4950,w:24,h:100}];rebuildSpatialGrid();b={x:700,y:5000,k:'v',from:'p'};");
+ assert.equal(h.run('hitRoadTruckBullet(b,300,5000)'),false);assert.equal(h.run('roadTruckEvents[0].hp'),5);
+ h.run("covers=[{kd:1,x:600,y:4950,w:24,h:100}];rebuildSpatialGrid();b.x=700;");assert.equal(h.run('hitRoadTruckBullet(b,300,5000)'),true);
+});
+test('cannon and explosion destruction stop remaining passengers without harming previously unloaded soldiers directly',()=>{
+ const h=targetTruck();h.run('roadTruckDropSoldier(roadTruckEvents[0]);damageRoadTrucksInRadius(480,5000,95);for(let i=0;i<100;i++)updateRoadTrucks(.1);');
+ assert.equal(h.run('humans.length'),1);assert.equal(h.run('humans[0].alive'),true);assert.equal(h.run('roadTruckEvents[0].hp'),0);
+ const cannon=targetTruck();cannon.run("b={x:650,y:5000,k:'c',from:'p',actionId:0};hitRoadTruckBullet(b,300,5000);");assert.equal(cannon.run('roadTruckEvents[0].hp'),0);assert.equal(cannon.run('tankWrecks.length'),1);
+ const bomb=targetTruck();bomb.run('bombBlast(480,5000);');assert.equal(bomb.run('roadTruckEvents[0].hp'),0);
+});
+test('sniper bullets damage the truck and stop instead of penetrating the vehicle',()=>{
+ const h=targetTruck();h.run("for(let i=0;i<3;i++){b={x:650,y:5000,k:'s',from:'p'};if(!updateSniperPiercingBullet(b,300,5000))throw Error('sniper passed truck');}");
+ assert.equal(h.run('roadTruckEvents[0].hp'),0);assert.equal(h.run('tankWrecks.length'),1);
+});
+test('gatling rounds select the truck as their nearest hit, while a nearer soldier still takes the bullet',()=>{
+ const h=targetTruck();h.run("b={x:650,y:5000,vx:1000,vy:0,k:'v',from:'p',gatling:true};updateGatlingBullet(b,300,5000,false);");assert.equal(h.run('roadTruckEvents[0].hp'),4);
+ h.run("humans=[{x:380,y:5000,alive:true}];b={x:650,y:5000,vx:1000,vy:0,k:'v',from:'p',gatling:true};updateGatlingBullet(b,300,5000,false);");assert.equal(h.run('humans[0].alive'),false);assert.equal(h.run('roadTruckEvents[0].hp'),4);
+});
+test('offscreen waiting and finished trucks cannot be hit, and explosions beyond the body do not damage it',()=>{
+ const h=targetTruck();h.run("roadTruckEvents[0].state='waiting';damageRoadTrucksInRadius(480,5000,95);");assert.equal(h.run('roadTruckEvents[0].hp'),5);
+ h.run("roadTruckEvents[0].state='done';damageRoadTruck(roadTruckEvents[0],5);");assert.equal(h.run('roadTruckEvents[0].hp'),5);
+ h.run("roadTruckEvents[0].state='leaving';damageRoadTrucksInRadius(700,5000,95);");assert.equal(h.run('roadTruckEvents[0].hp'),5);
+});

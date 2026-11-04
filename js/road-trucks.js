@@ -6,10 +6,12 @@ function setupRoadTruckEvents(){
  for(const road of roadBands){
   const dir=R()<.5?1:-1,unload=R()<.5;
   roadTruckEvents.push({road,dir,unload,passengers:unload?1+(R()*3|0):0,dropped:0,state:'waiting',
-   x:0,y:road.y+road.h/2+(road.lanes>1?dir*road.h/4:0),body:dir>0?0:Math.PI,speed:190,t:0});
+   x:0,y:road.y+road.h/2+(road.lanes>1?dir*road.h/4:0),body:dir>0?0:Math.PI,speed:190,t:0,
+   kind:'truck',hp:5,maxHp:5});
  }
 }
 function roadTruckDropSoldier(truck){
+ if(!roadTruckActive(truck))return false;
  const r=truck.road,back=truck.x-truck.dir*54;
  // Search only the open road around the tailgate; never use freeSpot's distant fallback.
  for(const dx of [0,-24,24,-48,48,-72,72])for(const side of [-1,1]){
@@ -34,7 +36,7 @@ function updateRoadTrucks(dt){
  if(state!=='play'||stageMode!=='base'||areaDebugEnabled)return;
  const cy=Math.max(0,Math.min(WH-H,p.y-H*.6)),cx=Math.max(0,Math.min(WW-W,p.x-W/2));
  for(const truck of roadTruckEvents){
-  if(truck.state==='done')continue;
+  if(truck.state==='done'||truck.state==='destroyed')continue;
   if(truck.state==='waiting'){
    if(truck.y<cy||truck.y>cy+H)continue;
    truck.x=truck.dir>0?Math.max(-80,cx-80):Math.min(WW+80,cx+W+80);
@@ -59,7 +61,51 @@ function updateRoadTrucks(dt){
  }
 }
 function drawRoadTrucks(cx,cy){
- for(const truck of roadTruckEvents)if(truck.state!=='waiting'&&truck.state!=='done'&&drawPointInView(truck.x,truck.y,cx,cy,90)){
+ for(const truck of roadTruckEvents)if(roadTruckActive(truck)&&drawPointInView(truck.x,truck.y,cx,cy,90)){
   truckShape(truck.x,truck.y,truck.body,28,true);
+  if(truck.hp<truck.maxHp){g.fillStyle='#341c1c';g.fillRect(truck.x-22,truck.y-30,44,4);g.fillStyle='#f09372';g.fillRect(truck.x-22,truck.y-30,44*truck.hp/truck.maxHp,4);}
  }
+}
+function roadTruckActive(t){return t.hp>0&&t.state!=='waiting'&&t.state!=='done'&&t.state!=='destroyed';}
+// Road trucks face east/west. Use a small slab test, not sprite pixels or a world scan.
+function roadTruckSegmentT(a,b,t,pad=0){
+ let lo=0,hi=1;
+ for(const [start,delta,min,max] of [[a.x,b.x-a.x,t.x-33-pad,t.x+33+pad],[a.y,b.y-a.y,t.y-22-pad,t.y+22+pad]]){
+  if(Math.abs(delta)<1e-9){if(start<min||start>max)return null;continue;}
+  let p=(min-start)/delta,q=(max-start)/delta;if(p>q)[p,q]=[q,p];lo=Math.max(lo,p);hi=Math.min(hi,q);if(lo>hi)return null;
+ }
+ return lo;
+}
+function damageRoadTruck(t,damage,x=t.x,y=t.y){
+ if(!roadTruckActive(t)||!(damage>0))return false;
+ t.hp=Math.max(0,t.hp-damage);sfx('vehicleHit',t);burst(x,y,4,'#ffe1a0',90);
+ if(t.hp>0)return true;
+ t.state='destroyed';t.speed=0;
+ spawnVehicleWreck({kind:'truck',t:TRUCK_TYPE},t.x,t.y,t.body,t.body,x,y);
+ sfx('vehicleDestroyed',t);fb(t.x,t.y,42);burst(t.x,t.y,40,'#ff8a3a',290);shake=Math.max(shake,9);
+ return true;
+}
+function damageRoadTrucksInRadius(x,y,rad){
+ for(const t of roadTruckEvents)if(roadTruckActive(t)){
+  const nx=Math.max(t.x-33,Math.min(t.x+33,x)),ny=Math.max(t.y-22,Math.min(t.y+22,y));
+  if(Math.hypot(nx-x,ny-y)<rad)damageRoadTruck(t,5,nx,ny);
+ }
+}
+function hitRoadTruckBullet(b,ox,oy){
+ if(b.from!=='p'&&b.from!=='ally')return false;
+ const a={x:ox,y:oy},end={x:b.x,y:b.y};let target=null,first=Infinity;
+ for(const t of roadTruckEvents)if(roadTruckActive(t)){const at=roadTruckSegmentT(a,end,t,b.k==='c'?2:0);if(at!=null&&at<first){target=t;first=at;}}
+ if(!target)return false;
+ const hit={x:ox+(end.x-ox)*first,y:oy+(end.y-oy)*first};
+ // Earlier scenery must still stop the projectile before it can damage a truck.
+ if(segmentBaseImpact(a,hit,1)||objectsInBox(Math.min(ox,hit.x),Math.min(oy,hit.y),Math.max(ox,hit.x),Math.max(oy,hit.y)).some(o=>segmentHitsObject(a,hit,o,0))||
+  coversInBox(Math.min(ox,hit.x),Math.min(oy,hit.y),Math.max(ox,hit.x),Math.max(oy,hit.y)).some(c=>segmentHitsCover(a,hit,c,0)))return false;
+ // Keep a nearer infantry/tank impact in the ordinary projectile handler.
+ let nearer=first;
+ for(const h of humans)if(h.alive){const at=gunTowerSegmentT(a,end,h,b.k==='v'&&b.from==='p'?18:10);if(at!=null&&at<nearer)nearer=at;}
+ for(const e of etanks)if(e.alive){const at=gunTowerSegmentT(a,end,e,TANK_HIT);if(at!=null&&at<nearer)nearer=at;}
+ if(nearer<first){const at=Math.min(first,nearer+.001);b.x=ox+(end.x-ox)*at;b.y=oy+(end.y-oy)*at;return false;}
+ b.x=hit.x;b.y=hit.y;damageRoadTruck(target,b.k==='c'?5:b.k==='s'?2:1,hit.x,hit.y);
+ if(b.k==='c'){cannonImpact(hit.x,hit.y,b.from);explode(hit.x,hit.y,28,false,b.from,b.actionId||0);}
+ return true;
 }
