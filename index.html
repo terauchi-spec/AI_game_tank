@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.03.1818</title>
+<title>こっそり戦車大作戦 2026.11.04.2255</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -1001,7 +1001,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.03.1818',FILE_CREATED_AT='2026/11/03 18:18',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.04.2255',FILE_CREATED_AT='2026/11/04 22:55',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -3059,7 +3059,7 @@ function reset(rerollSkills=true){
  clearStaticRasterCache();clearFragmentRenderCache();clearMazeWallChunks();clearCanyonTiles();clearSpinifexScatters();
  radioStrikeKillContext=0;burningNatureSet.clear();lastEnemySeparationAt=-1e9;patrolChatScanT=0;allyTargetRefreshAt=0;
  resetMazeComparison();partnerOrder.pressed=false;partnerOrder.drawing=false;partnerOrder.path=[];partnerOrder.cursor=null;partnerOrder.signalT=0;partnerOrder.signalKind='point';
- enemyDogs=[];state='play';shake=0;flash=0;msg='';msgT=0;chainToastT=0;oneShotToastT=0;chainToast='';oneShotToast='';interact=false;bombReq=false;skillReq=false;decoy=null;allies=[];partner=null;hound=null;houndTrail=[];allySeq=0;builtWalls=[];tankWrecks=[];radio=null;airstrike=null;airbombs=[];weather='clear';weatherT=0;rainIntensity=0;weatherNext=15+R()*35;baseSpawnT=5;deathT=0;cam=0;camX=0;scoreStats=newScoreStats();
+ roadTruckEvents=[];enemyDogs=[];state='play';shake=0;flash=0;msg='';msgT=0;chainToastT=0;oneShotToastT=0;chainToast='';oneShotToast='';interact=false;bombReq=false;skillReq=false;decoy=null;allies=[];partner=null;hound=null;houndTrail=[];allySeq=0;builtWalls=[];tankWrecks=[];radio=null;airstrike=null;airbombs=[];weather='clear';weatherT=0;rainIntensity=0;weatherNext=15+R()*35;baseSpawnT=5;deathT=0;cam=0;camX=0;scoreStats=newScoreStats();
  setupZones();if(rerollSkills)rollSkillChoices();
  waterRipples=[];
  p={x:WW/2,y:3100,hp:3,tank:null,cc:0,vc:0,ang:-1.57,body:-1.57,dig:0,digPrep:0,digElapsed:0,digExitAnim:0,digExitX:0,digExitY:0,scd:0,scdMax:0,drill:0,drillHit:0,drillTarget:null,drillSfx:0,bushHide:0,grappleT:0,grappleTarget:null,flameFuel:3,flameActive:false,flameLockA:null,flamePath:[],flameSfx:0,flameReach:0,fireExposure:0,sniperMode:false,sniperLockA:null,sniperAimN:0,sniperZoom:1.5,sniperLensChangeT:0,sniperEnterT:0,sniperReadyT:0,sniperExitT:0,sniperFlash:0,sniperHitT:0,sniperHitX:0,sniperHitY:0,sniperFireCd:0,sniperNoiseEvents:[]};touchTurretAngle=null;
@@ -3295,7 +3295,7 @@ function reset(rerollSkills=true){
  if(!radio)console.warn('Radio spawn skipped: no safe separated location');
  if(stageMode==='front'&&!areaDebugEnabled){setupFrontlineArmy();setupFrontlineVehicles();}
  if(stageMode==='decisive'&&!areaDebugEnabled)setupDecisiveWorld();
- setupGunTowers();
+ setupGunTowers();setupRoadTruckEvents();
 }
 // 敵司令本部のコリジョンは command_building_1.webp の実描画領域に合わせる。
 // 元画像256x221のうち、主要な不透明領域はおよそ x=4..248 / y=6..213。
@@ -5822,7 +5822,7 @@ function update(dt){
  for(const o of humans){o.modeStartX=o.x;o.modeStartY=o.y;o.modeFrozen=false;}
   for(const o of etanks){o.modeStartX=o.x;o.modeStartY=o.y;o.modeFrozen=false;}
  for(const h of humans){h.walkStartX=h.x;h.walkStartY=h.y;}
- updateWeather(dt);updateHQSpawn(dt);updateDrill(dt);updatePartnerOrder(dt);
+ updateWeather(dt);updateHQSpawn(dt);updateRoadTrucks(dt);updateDrill(dt);updatePartnerOrder(dt);
  const sniperLocked=updateSniperState(dt);
  const playerAir=updateBlastFlight(p,dt);
  if(interact&&p.sniperMode){interact=false;beginSniperExit();}else if(interact&&(p.sniperEnterT>0||p.sniperReadyT>0)){interact=false;}
@@ -6644,7 +6644,7 @@ function drawOriginalTankShape(x,y,body,ang,tank,sz,layer,context,animatedTracks
  g.restore();
  }
 }
-function truckShape(x,y,body,sz=28){
+function truckShape(x,y,body,sz=28,enemy=false){
  g.save();g.translate(x,y);g.rotate(body+1.5708);
 
  // shadow
@@ -6666,24 +6666,24 @@ function truckShape(x,y,body,sz=28){
  g.fillStyle='#30362f';g.fillRect(-sz*.55,sz*.99,sz*1.10,sz*.09);
 
  // cargo bed outer box
- g.fillStyle='#333d31';g.beginPath();g.roundRect(-sz*.56,sz*.10,sz*1.12,sz*.86,sz*.06);g.fill();
- g.strokeStyle='#8f9b85';g.lineWidth=1.5;g.strokeRect(-sz*.51,sz*.16,sz*1.02,sz*.72);
+ g.fillStyle=enemy?'#293958':'#333d31';g.beginPath();g.roundRect(-sz*.56,sz*.10,sz*1.12,sz*.86,sz*.06);g.fill();
+ g.strokeStyle=enemy?'#8ca9d1':'#8f9b85';g.lineWidth=1.5;g.strokeRect(-sz*.51,sz*.16,sz*1.02,sz*.72);
 
  // canvas cargo cover with ribs
- g.fillStyle='#596650';g.beginPath();g.roundRect(-sz*.49,sz*.17,sz*.98,sz*.68,sz*.09);g.fill();
- g.fillStyle='#697760';g.fillRect(-sz*.43,sz*.20,sz*.86,sz*.12);
+ g.fillStyle=enemy?'#425e96':'#596650';g.beginPath();g.roundRect(-sz*.49,sz*.17,sz*.98,sz*.68,sz*.09);g.fill();
+ g.fillStyle=enemy?'#6581b8':'#697760';g.fillRect(-sz*.43,sz*.20,sz*.86,sz*.12);
  g.strokeStyle='rgba(220,230,205,.28)';g.lineWidth=1;
  for(let i=0;i<4;i++){const yy=sz*(.29+i*.13);g.beginPath();g.moveTo(-sz*.46,yy);g.lineTo(sz*.46,yy);g.stroke();}
  g.strokeStyle='#323b31';g.beginPath();g.moveTo(0,sz*.18);g.lineTo(0,sz*.84);g.stroke();
 
  // cab body
- g.fillStyle='#465443';g.beginPath();
+ g.fillStyle=enemy?'#354f85':'#465443';g.beginPath();
  g.moveTo(-sz*.54,-sz*.82);g.lineTo(sz*.54,-sz*.82);g.lineTo(sz*.50,sz*.08);g.lineTo(-sz*.50,sz*.08);g.closePath();g.fill();
- g.fillStyle='#64725d';g.fillRect(-sz*.46,-sz*.76,sz*.92,sz*.26);
+ g.fillStyle=enemy?'#6280b6':'#64725d';g.fillRect(-sz*.46,-sz*.76,sz*.92,sz*.26);
 
  // hood / engine compartment
- g.fillStyle='#56654f';g.beginPath();g.roundRect(-sz*.42,-sz*1.04,sz*.84,sz*.35,sz*.06);g.fill();
- g.strokeStyle='#8d9985';g.lineWidth=1;g.strokeRect(-sz*.34,-sz*.98,sz*.68,sz*.20);
+ g.fillStyle=enemy?'#49689d':'#56654f';g.beginPath();g.roundRect(-sz*.42,-sz*1.04,sz*.84,sz*.35,sz*.06);g.fill();
+ g.strokeStyle=enemy?'#8ca9d1':'#8d9985';g.lineWidth=1;g.strokeRect(-sz*.34,-sz*.98,sz*.68,sz*.20);
  for(let i=-2;i<=2;i++){g.strokeStyle='#30382f';g.beginPath();g.moveTo(i*sz*.10,-sz*.95);g.lineTo(i*sz*.10,-sz*.82);g.stroke();}
 
  // windshield split in two panes
@@ -7639,6 +7639,7 @@ function draw(near){
  for(const c of cars){if(!drawPointInView(c.x,c.y,cx,cy,160))continue;const foregroundVehicle=c.kind==='truck'||(c.kind==='tank'&&inBush(c));if(!foregroundVehicle)drawVehicle(c,c.x,c.y,c.body??-1.57,c.body??-1.57);const iy=c.y-(c.kind==='fighter'?66:c.kind==='tower'?96:c.kind==='truck'?42:50);if(c.kind!=='tower'||gunTowerAvailable(c))markVehicle(c.x,iy,c.kind!=='tower'&&c.f<=0?'fuel':'ride');if(near===c)lab(c.t.n,c.x,iy-24,c.kind==='tank'?'bold 17px system-ui':'bold 14px system-ui','#fff');}
  if(stageMode==='front')for(const ally of allies||[])if(ally.alive&&enemyInView(ally,cx,cy,430))drawFrontlineAllyVision(ally);
  const enemyAlpha=digEnemyAlpha()*(1-sandIntensity);if(enemyAlpha>.001)for(const e of etanks){if(!enemyInView(e,cx,cy,stageMode==='front'?detectRange('p')*2:140))continue;g.save();g.globalAlpha*=enemyAlpha;if(e.alive){if(!e.st){const sightScale=frontlineTankSightScale(e);g.fillStyle='rgba(255,80,80,.035)';g.beginPath();g.moveTo(e.x,e.y);g.arc(e.x,e.y,detectOuterRange('p')*sightScale,e.ang-DETECT_OUTER_HALF*sightScale,e.ang+DETECT_OUTER_HALF*sightScale);g.closePath();g.fill();g.fillStyle='rgba(255,80,80,.055)';g.beginPath();g.moveTo(e.x,e.y);g.arc(e.x,e.y,detectRange('p')*sightScale,e.ang-DETECT_CENTER_HALF*sightScale,e.ang+DETECT_CENTER_HALF*sightScale);g.closePath();g.fill();}if(!inBush(e))tankShape(e.x,e.y,e.body,e.ang,{id:'enemy',col:'#4b5f9e'},TANK_DRAW);}else if(!e.wreckSpawned){g.fillStyle='#1c1a18';g.beginPath();g.arc(e.x,e.y,14,0,6.28);g.fill();}g.restore();if(e.alive&&enemyAlpha>.18){if(e.st)lab('!',e.x,e.y-38,'bold 18px system-ui','#ff5a5a');else if(e.sus>0)lab('?',e.x,e.y-38,'bold 18px system-ui','#ffd27a');}}
+ drawRoadTrucks(cx,cy);
  drawEnemyDogLeashes();
  if(enemyAlpha>.001)for(const h of humans){const sniperFalling=!h.alive&&h.sniperFallT>0;if(h.gunTower||h.fallenSpriteRecorded||(!h.alive&&!sniperFalling)||!enemyInView(h,cx,cy,100))continue;const lift=sniperFalling?0:blastLift(h);if(!sniperFalling)drawBlastShadow(h);g.save();g.translate(0,-lift);g.globalAlpha*=enemyAlpha;if(sniperFalling){const fk=Math.max(0,Math.min(1,1-h.sniperFallT/Math.max(.01,h.sniperFallMax||.72))),side=(h.sniperFallA&&Math.sin(h.sniperFallA)<0?-1:1);g.translate(h.x,h.y);g.rotate(side*fk*1.18);g.translate(-h.x,-h.y);g.globalAlpha*=Math.max(.35,1-fk*.38);}soldier(h.x,h.y,h.face,false,sniperFalling?false:h.st,!sniperFalling&&!!h.walking,!!h.elite,h.commander||'',!sniperFalling&&!(h.commander==='blue'&&h.whistleT>0)&&(h.commander==='white'?h.commanderCharge>0||h.commanderShotT>0:!!h.st),false,h);drawCommanderOverlay(h);
  if(!sniperFalling&&h.humanBurnT>0){const tt=performance.now()*.018;g.save();g.globalCompositeOperation='lighter';flameBlob(h.x-4+Math.sin(tt)*2,h.y+2,7+Math.sin(tt*1.3)*1.5,tt,.42);flameBlob(h.x+4+Math.cos(tt*.8)*2,h.y-5,9+Math.sin(tt*.9+1)*2,tt+1.7,.7);flameBlob(h.x+Math.sin(tt*.65)*3,h.y-12,6+Math.sin(tt*1.6+2)*1.5,tt+3.1,.9);g.restore();}
@@ -8559,7 +8560,8 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/stage-progress.js?v=2026.11.03.1818"></script>
+<script src="js/road-trucks.js?v=2026.11.04.2255"></script>
+<script src="js/stage-progress.js?v=2026.11.04.2255"></script>
 <script src="js/decisive.js?v=2026.10.28.0713"></script>
 <script src="js/frontline.js?v=2026.11.03.0906"></script>
 <script src="js/award-icons.js?v=2026.10.31.0807"></script>
