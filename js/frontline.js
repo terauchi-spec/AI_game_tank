@@ -279,6 +279,46 @@ function setupFrontlineAntennas(){
  if(rockets)captureBuildingGroundMarks();
  rebuildSpatialGrid();
 }
+// The supplied upper sprite has two enclosed background islands. Clear only
+// these source-pixel spans once so the transport frame retains its dark edges.
+const FRONTLINE_UPPER_ROCKET_GAPS=[
+ {top:46,rows:[
+  [64,3],[63,4],[63,5],[61,7],[59,8],[59,8],[59,8],[58,8],[58,7],
+  [57,8],[56,8],[56,8],[56,8],[55,8],[55,8],[54,8],[53,9],[53,8],
+  [52,9],[51,9],[51,9],[51,8],[50,9],[50,8],[50,8],[50,8],[49,9],
+  [48,9],[48,8],[47,9],[47,9],[46,9],[47,8],[47,8],[46,9],[47,7],
+  [47,7],[47,6],[47,6],[47,6],[47,5],[47,5],[47,5],[47,5],[47,4],
+  [47,3],[47,3],[47,3],[47,3],[47,3],[47,3],[47,2],[47,2],[47,2],
+  [47,2],[47,1]
+ ]},
+ {top:44,rows:[
+  [135,2],[135,3],[136,5],[137,5],[138,5],[138,6],[138,7],[138,8],[138,9],
+  [139,8],[140,7],[140,8],[140,8],[141,8],[142,7],[142,8],[142,8],[143,8],
+  [143,8],[144,8],[144,8],[144,9],[145,8],[146,8],[146,8],[146,9],[147,8],
+  [147,9],[147,10],[148,9],[148,10],[149,9],[150,8],[150,8],[150,9],[150,9],
+  [150,9],[151,8],[151,8],[151,7],[152,6],[152,6],[152,7],[152,7],[153,5],
+  [154,5],[155,3],[155,3],[155,4],[155,4],[155,4],[155,3],[156,3],[156,3],
+  [156,2],[157,1],[157,1],[157,1],[157,1]
+ ]}
+];
+let frontlineUpperRocketRaster=null;
+let frontlineUpperRocketSource=null;
+function frontlineUpperRocketSprite(image){
+ if(image.naturalWidth!==205||image.naturalHeight!==512)return image;
+ if(frontlineUpperRocketSource===image)return frontlineUpperRocketRaster;
+ const canvas=document.createElement('canvas');
+ canvas.width=image.naturalWidth;
+ canvas.height=image.naturalHeight;
+ const ctx=gameCanvasContext(canvas);
+ if(!ctx)return image;
+ ctx.drawImage(image,0,0);
+ for(const {top,rows} of FRONTLINE_UPPER_ROCKET_GAPS){
+  rows.forEach(([left,width],row)=>ctx.clearRect(left,top+row,width,1));
+ }
+ frontlineUpperRocketSource=image;
+ frontlineUpperRocketRaster=canvas;
+ return canvas;
+}
 function drawFrontlineAntennas(cx,cy,upper=false){
  if(stageMode!=='front'||!mission)return;
  for(const point of mission.points){
@@ -291,7 +331,10 @@ function drawFrontlineAntennas(cx,cy,upper=false){
   if(upper&&!a.rocket){
    const fraction=Math.max(0,Math.min(1,(a.cutY-a.y)/a.height));
    g.drawImage(im,0,0,im.naturalWidth,im.naturalHeight*fraction,a.x,a.y,a.width,a.height*fraction);
-  }else g.drawImage(im,a.x,a.y,a.width,a.height);
+  }else{
+   const sprite=a.rocket&&a.asset==='frontline_rocket_upper'&&im===COVER_IMG[a.asset]?frontlineUpperRocketSprite(im):im;
+   g.drawImage(sprite,a.x,a.y,a.width,a.height);
+  }
  }
 }
 function setupFrontlineVehicles(){
