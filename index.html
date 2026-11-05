@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.05.2323</title>
+<title>こっそり戦車大作戦 2026.11.06.0006</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -1001,7 +1001,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.05.2323',FILE_CREATED_AT='2026/11/05 23:23',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.06.0006',FILE_CREATED_AT='2026/11/06 00:06',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -7681,7 +7681,7 @@ function draw(near){
  drawGrassBushChunks(cx,cy);
  for(const b of nearbyBushes(cx+W/2,cy+H/2,Math.max(W,H)*.8+100)){if(b.spinifex||isGrassBush(b)||b.x+b.w<cx-40||b.x>cx+W+40||b.y+b.h<cy-40||b.y>cy+H+40)continue;drawBushCached(b);}
  drawSpinifexTopLayer(cx,cy);
- // アンテナ上部はすべての草むらより前面に重ね、台座と人物の前後関係は維持する。
+ // アンテナ上部・ロケット全体をすべての草むらより前面に重ねる。
  drawFrontlineAntennas(cx,cy,true);
  // 草むらに隠れた歩兵（プレイヤー・味方・敵兵）の輪郭強調は行わない。
  // 草むら自体は前面レイヤーに残し、遮蔽・索敵の判定にも変更を加えない。
@@ -8570,7 +8570,7 @@ function reportGameError(error){
 <script src="js/road-trucks.js?v=2026.11.05.1912"></script>
 <script src="js/stage-progress.js?v=2026.11.05.1912"></script>
 <script src="js/decisive.js?v=2026.10.28.0713"></script>
-<script src="js/frontline.js?v=2026.11.05.2323"></script>
+<script src="js/frontline.js?v=2026.11.06.0006"></script>
 <script src="js/award-icons.js?v=2026.10.31.0807"></script>
 <script src="js/developer.js?v=2026.11.03.0002"></script>
 <script src="js/leaderboard.js?v=2026.10.28.0713"></script>

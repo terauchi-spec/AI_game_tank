@@ -126,9 +126,44 @@ function frontlineAntennaGeometry(point,index){
 const FRONTLINE_ROCKET_ASSETS=['frontline_rocket_upper','frontline_rocket_middle','frontline_rocket_lower'];
 function frontlineRocketGeometry(point,index){
  const width=216,height=540,x=point.x-width/2,y=point.y-height*.54;
+ // Match the full carrier, including its wheels. The nose narrows above the frame.
+ const bands=index===0?[[.44,.002,.12,.04],[.13,.042,.74,.075],[.08,.117,.84,.85],[.13,.967,.74,.03]]:[[.065,.004,.87,.99]];
+ const hitRects=bands.map(([rx,ry,rw,rh])=>({x:x+width*rx,y:y+height*ry,w:width*rw,h:height*rh}));
  return{large:true,rocket:true,width,height,x,y,cutY:point.y-25,
-  base:{x:x+width*.18,y:y+height*.2,w:width*.64,h:height*.6},
+  base:{x:x+width*.065,y:y+height*.002,w:width*.87,h:height*.995},hitRects,
   asset:FRONTLINE_ROCKET_ASSETS[index]};
+}
+function frontlineRocketOverlap(a,b,pad=24){return a.x<b.x+b.w+pad&&a.x+a.w>b.x-pad&&a.y<b.y+b.h+pad&&a.y+a.h>b.y-pad;}
+function frontlineRocketObjectRect(o){
+ if(o.kind==='barrel')return barrelVisualRect(o);
+ const w=o.kind==='civilCar'?(o.h>o.w?44:82):o.w*1.12,h=o.kind==='civilCar'?(o.h>o.w?82:44):o.h*1.12;
+ return{x:o.x+(o.w-w)/2,y:o.y+(o.h-h)/2,w,h};
+}
+function placeFrontlineRocket(point,index){
+ // Startup only: reserve the entire visible sprite, not a few sample points.
+ const origin={x:point.x,y:point.y},zone=zoneAt(origin.y);let best=null;
+ const consider=spot=>{
+  const a=frontlineRocketGeometry(spot,index),box={x:a.x,y:a.y,w:a.width,h:a.height};
+  if(box.x<18||box.x+box.w>WW-18||box.y<24||box.y+box.h>WH-24||spot.y<zone.y1+300||spot.y>zone.y0-300)return;
+  if(water.some(b=>frontlineRocketOverlap(box,b,20))||bridges.some(b=>frontlineRocketOverlap(box,b,32))||base&&frontlineRocketOverlap(box,base,32))return;
+  if(cars.some(v=>frontlineRocketOverlap(box,{x:v.x-60,y:v.y-70,w:120,h:140},24))||etanks.some(v=>v.alive&&frontlineRocketOverlap(box,{x:v.x-55,y:v.y-65,w:110,h:130},24)))return;
+  const blocked=covers.filter(c=>frontlineRocketOverlap(box,coverSpriteRect(c)||c)),props=objects.filter(o=>frontlineRocketOverlap(box,frontlineRocketObjectRect(o)));
+  // Keep other objectives. Prefer open ground, then small scenery; only clear a
+  // building if the dense village leaves no open footprint in the bounded search.
+  if(blocked.some(c=>c.frontAntenna))return;
+  const buildingCount=blocked.filter(c=>[3,4,9,10,11].includes(c.kd)).length;
+  const score=buildingCount*10000000+(blocked.length+props.length)*100000+Math.hypot(spot.x-origin.x,spot.y-origin.y);
+  if(!best||score<best.score)best={spot,blocked,props,score};
+ };
+ consider(origin);
+ for(let ring=1;ring<=14&&(!best||best.blocked.length||best.props.length);ring++)for(let n=0;n<16;n++){
+  const angle=n*Math.PI/8;consider({x:Math.max(128,Math.min(WW-128,origin.x+Math.cos(angle)*ring*56)),y:origin.y+Math.sin(angle)*ring*56});
+ }
+ if(!best)return false;
+ point.x=best.spot.x;point.y=best.spot.y;
+ if(best.blocked.length){const remove=new Set(best.blocked);covers=covers.filter(c=>!remove.has(c));}
+ if(best.props.length){const remove=new Set(best.props);objects=objects.filter(o=>!remove.has(o));}
+ return true;
 }
 function frontlineCargoLayout(point,index){
  // The large asset contains a connected pair: three pairs make six containers.
@@ -223,19 +258,13 @@ function setupFrontlineAntennas(){
  const rockets=isFrontlineAdvanced();
  for(let i=0;i<mission.points.length;i++){
   const point=mission.points[i];if(point.antenna)continue;
-  const radius=rockets?92:(i===2||point.largeAntenna?75:35);
+  if(rockets)placeFrontlineRocket(point,i);
+  const radius=i===2||point.largeAntenna?75:35;
   const clear=spot=>{
    if(cars.some(v=>D(v,spot)<radius+50)||etanks.some(e=>e.alive&&D(e,spot)<radius+45))return false;
-   if(!rockets)return true;
-   const rocket=frontlineRocketGeometry(spot,i);
-   if(rocket.x<14||rocket.x+rocket.width>WW-14||rocket.y<20||rocket.y+rocket.height>WH-20)return false;
-   for(const fx of [.25,.5,.75])for(const fy of [.2,.5,.8]){
-    const x=rocket.x+rocket.width*fx,y=rocket.y+rocket.height*fy;
-    if(hitsM(x,y,16)||inWaterAt(x,y,16)||inBase(x,y))return false;
-   }
    return true;
   };
-  if(!clear(point)){
+  if(!rockets&&!clear(point)){
    let free=null;
    for(let ring=1;ring<=8&&!free;ring++)for(let n=0;n<12;n++){
     const angle=n*Math.PI/6,spot=missionSpot(point.x+Math.cos(angle)*ring*60,point.y+Math.sin(angle)*ring*60,radius);
@@ -244,9 +273,10 @@ function setupFrontlineAntennas(){
    if(free){point.x=free.x;point.y=free.y;}
   }
   const shape=rockets?frontlineRocketGeometry(point,i):frontlineAntennaGeometry(point,i);
-  const collider={...shape.base,kd:1,frontAntenna:true};
-  point.antenna={...shape,collider,asset:rockets?shape.asset:shape.large?'frontline_antenna_large':'frontline_antenna_small'};covers.push(collider);
+  const colliders=(shape.hitRects||[shape.base]).map(rect=>({...rect,kd:1,frontAntenna:true})),collider=colliders[0];
+  point.antenna={...shape,collider,colliders,asset:rockets?shape.asset:shape.large?'frontline_antenna_large':'frontline_antenna_small'};covers.push(...colliders);
  }
+ if(rockets)captureBuildingGroundMarks();
  rebuildSpatialGrid();
 }
 function drawFrontlineAntennas(cx,cy,upper=false){
@@ -254,9 +284,11 @@ function drawFrontlineAntennas(cx,cy,upper=false){
  for(const point of mission.points){
   if(point.cargo){if(upper&&(typeof MOBILE_VIEW==='undefined'||MOBILE_VIEW))for(const cargo of point.cargo)if(cargo.x+cargo.width>=cx&&cargo.x<=cx+W&&cargo.y+cargo.height>=cy&&cargo.y<=cy+H)drawFrontlineCargo(cargo);continue;}
   const a=point.antenna;if(!a||a.x+a.width<cx||a.x>cx+W||a.y+a.height<cy||a.y>cy+H)continue;
+  // Rockets are ground-level carriers: draw the complete sprite once, above all grass.
+  if(a.rocket&&!upper)continue;
   let im=COVER_IMG[a.asset];if(!assetOK(im)&&a.rocket)im=COVER_IMG.frontline_antenna_large;
   if(!assetOK(im))continue;
-  if(upper){
+  if(upper&&!a.rocket){
    const fraction=Math.max(0,Math.min(1,(a.cutY-a.y)/a.height));
    g.drawImage(im,0,0,im.naturalWidth,im.naturalHeight*fraction,a.x,a.y,a.width,a.height*fraction);
   }else g.drawImage(im,a.x,a.y,a.width,a.height);
@@ -719,3 +751,4 @@ function allyWeaponVisible(a){
  return !(a.stun>0||a.stunRecover>0||a.whistleT>0)&&
   (stageMode==='front'?a.frontMode==='found':!!a._combatTarget||a.frontRadioT>0);
 }
+
