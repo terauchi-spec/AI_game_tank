@@ -123,15 +123,16 @@ function frontlineAntennaGeometry(point,index){
   base:{x:point.x-(large?52:17),y:point.y-(large?22:10),w:large?104:34,h:large?44:20}};
 }
 // The three rocket carriers belong exclusively to advanced frontline.
-const FRONTLINE_ROCKET_ASSETS=['frontline_rocket_upper','frontline_rocket_middle','frontline_rocket_lower'];
+const FRONTLINE_ROCKET_ASSETS=['frontline_rocket_lower','frontline_rocket_middle','frontline_rocket_upper'];
 function frontlineRocketGeometry(point,index){
  const width=216,height=540,x=point.x-width/2,y=point.y-height*.54;
  // Match the full carrier, including its wheels. The nose narrows above the frame.
- const bands=index===0?[[.44,.002,.12,.04],[.13,.042,.74,.075],[.08,.117,.84,.85],[.13,.967,.74,.03]]:[[.065,.004,.87,.99]];
+ const asset=FRONTLINE_ROCKET_ASSETS[index];
+ const bands=asset==='frontline_rocket_upper'?[[.44,.002,.12,.04],[.13,.042,.74,.075],[.08,.117,.84,.85],[.13,.967,.74,.03]]:[[.065,.004,.87,.99]];
  const hitRects=bands.map(([rx,ry,rw,rh])=>({x:x+width*rx,y:y+height*ry,w:width*rw,h:height*rh}));
  return{large:true,rocket:true,width,height,x,y,cutY:point.y-25,
   base:{x:x+width*.065,y:y+height*.002,w:width*.87,h:height*.995},hitRects,
-  asset:FRONTLINE_ROCKET_ASSETS[index]};
+  asset};
 }
 function frontlineRocketOverlap(a,b,pad=24){return a.x<b.x+b.w+pad&&a.x+a.w>b.x-pad&&a.y<b.y+b.h+pad&&a.y+a.h>b.y-pad;}
 function frontlineRocketObjectRect(o){
@@ -242,12 +243,12 @@ function drawFrontlineCargoNative(cx,cy){
  }
  gm.restore();g=previous;
 }
-function drawFrontlineCargoVictory(v){
+function drawFrontlineVictorySparkles(v,objects){
  const cx=Math.round(camX/2)*2,cy=Math.round(cam/2)*2,t=v.elapsed-.5;
  gm.save();gm.setTransform(1,0,0,1,0,0);
- for(const cargo of v.point.cargo)for(let i=0;i<12;i++){
+ for(const object of objects)for(let i=0;i<12;i++){
   const phase=t*2.8+i*.83,alpha=Math.pow(Math.max(0,Math.sin(phase)),3);if(alpha<.04)continue;
-  const x=cargo.x+cargo.width*(.16+((i*.618)%1)*.68)-cx,y=cargo.y+cargo.height*(.12+((i*.382)%1)*.72)-cy,r=3+alpha*7;
+  const x=object.x+object.width*(.16+((i*.618)%1)*.68)-cx,y=object.y+object.height*(.12+((i*.382)%1)*.72)-cy,r=3+alpha*7;
   gm.globalAlpha=alpha;gm.fillStyle=i%2?'#fff9d6':'#ffe08b';gm.beginPath();gm.moveTo(x,y-r);gm.lineTo(x+r*.23,y-r*.23);gm.lineTo(x+r,y);gm.lineTo(x+r*.23,y+r*.23);gm.lineTo(x,y+r);gm.lineTo(x-r*.23,y+r*.23);gm.lineTo(x-r,y);gm.lineTo(x-r*.23,y-r*.23);gm.closePath();gm.fill();
  }
  gm.restore();
@@ -407,12 +408,18 @@ function frontlineVictoryCamera(){
  const v=stageMode==='front'&&mission?.victory;
  if(!v||!['frontVictory','succeeded','win'].includes(state))return null;
  const a=v.point.cargo?{height:180}:v.point.antenna||frontlineAntennaGeometry(v.point,2),t=Math.min(1,v.elapsed/.7),ease=t*t*(3-2*t);
- const x=Math.max(0,Math.min(WW-W,v.point.x-W/2)),y=Math.max(frontlineNorthEdge(),Math.min(WH-H,v.point.y-a.height*.43-H/2));
+ const centerY=a.rocket?a.y+a.height/2:v.point.y-a.height*.43;
+ const x=Math.max(0,Math.min(WW-W,v.point.x-W/2)),y=Math.max(frontlineNorthEdge(),Math.min(WH-H,centerY-H/2));
  return{x:v.fromX+(x-v.fromX)*ease,y:v.fromY+(y-v.fromY)*ease};
 }
 function drawFrontlineVictorySignal(){
- const v=state==='frontVictory'&&stageMode==='front'&&mission?.victory;if(!v||v.elapsed<.5)return;
- if(v.point.cargo){drawFrontlineCargoVictory(v);return;}
+ const v=stageMode==='front'&&mission?.victory;
+ if(!v||v.elapsed<.5)return;
+ const rocket=v.point.antenna?.rocket?v.point.antenna:null;
+ // Keep a final sparkle frame under the success overlay without redrawing it.
+ if(rocket&&(state==='frontVictory'||state==='succeeded')){drawFrontlineVictorySparkles(v,[rocket]);return;}
+ if(state!=='frontVictory')return;
+ if(v.point.cargo){drawFrontlineVictorySparkles(v,v.point.cargo);return;}
  const a=v.point.antenna||frontlineAntennaGeometry(v.point,2),x=v.point.x-Math.round(camX/2)*2,y=a.y+12-Math.round(cam/2)*2;
  gm.save();gm.setTransform(1,0,0,1,0,0);gm.strokeStyle='#a2eaff';gm.lineWidth=4;
  // Three simple rings; no extra images, particles or ongoing work after the transition.
