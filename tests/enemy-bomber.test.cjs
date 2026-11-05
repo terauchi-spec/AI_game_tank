@@ -261,5 +261,8 @@ test('tracer pool stays bounded during continuous fire and drains even without a
 });
 test('fighter arrival starts 0.6 seconds into the bomber pass',()=>{
  const s=debugHarness(0),c=s.c;run(s,30);const raid=c.enemyBomberRaid();assert.equal(raid.plane.intercept,true);
- run(s,.59,.01);assert.equal(raid.fighter,null);assert.equal(s.sounds.includes('jetFlying'),false);run(s,.02,.01);assert.ok(raid.fighter);assert.equal(s.sounds.filter(x=>x==='jetFlying').length,1);
+ run(s,.59,.01);assert.equal(raid.fighter,null);assert.equal(s.sounds.includes('jetFlying'),false);run(s,.02,.01);assert.ok(raid.fighter);assert.equal(s.sounds.includes('jetFlying'),false);
+ const delay=raid.fighter.jetSeDelay;run(s,delay-.01,.005);assert.equal(s.sounds.includes('jetFlying'),false);
+ c.state='paused';run(s,1);assert.equal(s.sounds.includes('jetFlying'),false);c.state='play';run(s,.011,.001);assert.equal(s.sounds.filter(x=>x==='jetFlying').length,1);
+ run(s,2,.01);assert.equal(s.sounds.filter(x=>x==='jetFlying').length,1);
 });

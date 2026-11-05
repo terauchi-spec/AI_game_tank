@@ -58,8 +58,7 @@ function updateEnemyBomber(dt){
   const view=frontlineView(),dir=R()<.5?1:-1;
   const x=dir>0?Math.min(view.x,plane.x)-100:Math.max(view.x+view.w,plane.x)+100;
   raid.fighterUsed=true;
-  raid.fighter={x,y:plane.y,dir,speed:Math.max(1200,Math.abs(plane.x-x)/.65),shot:0,exitT:0};
-  sfx('jetFlying');
+  raid.fighter={x,y:plane.y,dir,speed:Math.max(1200,Math.abs(plane.x-x)/.65),shot:0,exitT:0,jetSeDelay:.5};
  }
  if(plane.drop<=0&&plane.drops<plane.maxDrops){
   const column=plane.drops%3-1;
@@ -83,6 +82,7 @@ function updateInterceptorTracers(fighter,dt){
 // One fighter; at most two mission wrecks or six area-debug wrecks.
 function updateEnemyBomberInterception(raid,dt){
  const fighter=raid.fighter;if(!fighter)return;
+ if(fighter.jetSeDelay>0){fighter.jetSeDelay=Math.max(0,fighter.jetSeDelay-dt);if(fighter.jetSeDelay<1e-9){fighter.jetSeDelay=0;sfx('jetFlying');}}
  updateInterceptorTracers(fighter,dt);
  const plane=raid.plane;
  fighter.x+=fighter.dir*fighter.speed*dt;
