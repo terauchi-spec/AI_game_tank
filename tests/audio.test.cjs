@@ -53,9 +53,9 @@ test('enemy tanks share one loop, use movement rather than turret rotation, and 
  c.state='results';c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),false);c.state='play';c.now+=120;for(const t of c.etanks)t.x+=5;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),false);
  c.now+=120;for(const t of c.etanks)t.x+=5;c.updateGameAudio();await settle();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),true);c.stopGameAudio();c.now+=120;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),false);
 });
-test('all 61 active manifest MP3s match the explicitly uploaded files, without requesting unprovided effects',()=>{
+test('all 62 active manifest MP3s match the explicitly uploaded files, without requesting unprovided effects',()=>{
  const {c}=harness(),defs=c.get('GAME_SE_FILES'),manifest=JSON.parse(fs.readFileSync(path.join(__dirname,'../docs/se-installed.json')));
- assert.equal(Object.keys(defs).length,61);assert.deepEqual(Object.values(defs).map(n=>'assets/audio/se/'+n+'.mp3').sort(),manifest.files.sort());for(const file of manifest.files)assert.ok(fs.statSync(path.join(__dirname,'..',file)).size>0);
+ assert.equal(Object.keys(defs).length,62);assert.deepEqual(Object.values(defs).map(n=>'assets/audio/se/'+n+'.mp3').sort(),manifest.files.sort());for(const file of manifest.files)assert.ok(fs.statSync(path.join(__dirname,'..',file)).size>0);
  assert.equal(c.gameSeName('sniperLens'),'sniperLens');assert.equal(c.playGameSe('pickup'),false);
 });
 test('MP3s decode once and cached effects play immediately; loading never replays a late shot',async()=>{
@@ -113,7 +113,7 @@ test('all ten skill activation aliases reuse se_skills with one download, decode
 });
 
 test('each active MP3 request includes its verified content revision',async()=>{
- const h=harness(),{c}=h;await c.loadGameSe('cannon');const versions=JSON.parse(fs.readFileSync(path.join(__dirname,'../docs/se-revisions.json')));assert.equal(h.requests[0],'assets/audio/se/se_025_tank_cannon_fire.mp3?v='+versions.se_025_tank_cannon_fire);assert.equal(Object.keys(versions).length,61);
+ const h=harness(),{c}=h;await c.loadGameSe('cannon');const versions=JSON.parse(fs.readFileSync(path.join(__dirname,'../docs/se-revisions.json')));assert.equal(h.requests[0],'assets/audio/se/se_025_tank_cannon_fire.mp3?v='+versions.se_025_tank_cannon_fire);assert.equal(Object.keys(versions).length,62);
 });
 test('drill contact loops only during actual contact and stops on release, expiry or menus',async()=>{
  const h=harness(),{c}=h;await c.loadGameSe('drillContact');c.p.drill=5;c.p.drillContact=false;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("drillContact")'),false);
@@ -319,4 +319,15 @@ test('stopping inside the bush during decoding cannot start a late rustle',async
 });
 test('training preloads the existing capture-complete sound for lesson clears',()=>{
  const h=harness(),{c}=h;c.state='preparing';c.stageMode='training';c.preloadGameSe();assert.ok(c.get('gameSe.queue.some(v=>v.name==="capture")||gameSe.pending.has("capture")||gameSe.cache.has("capture")'));
+});
+
+test('interceptor jet sound preloads for capture, reuses its buffer and obeys mute and pause',async()=>{
+ const h=harness(),{c}=h;c.state='preparing';c.stageMode='front';c.preloadGameSe();await settle();
+ const data=fs.readFileSync(path.join(__dirname,'../assets/audio/se/se_jet flying.mp3'));
+ const rev=require('node:crypto').createHash('sha1').update(Buffer.from('blob '+data.length+'\0')).update(data).digest('hex').slice(0,12);
+ assert.ok(h.requests.includes('assets/audio/se/se_jet flying.mp3?v='+rev));
+ c.state='play';c.playGameSe('jetFlying');const voice=c.get('[...gameSe.voices].find(v=>v.name==="jetFlying")');assert.ok(voice.source.started);assert.equal(voice.source.loop,false);
+ c.state='paused';c.stopGameAudio();assert.equal(voice.source.stopped,true);
+ c.gameSoundEnabled=false;c.now+=1000;const count=h.sources.length;c.playGameSe('jetFlying');assert.equal(h.sources.length,count);
+ assert.equal(h.requests.filter(u=>u.includes('se_jet flying.mp3')).length,1);
 });

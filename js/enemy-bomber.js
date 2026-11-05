@@ -59,7 +59,7 @@ function updateEnemyBomber(dt){
   const x=dir>0?Math.min(view.x,plane.x)-100:Math.max(view.x+view.w,plane.x)+100;
   raid.fighterUsed=true;
   raid.fighter={x,y:plane.y,dir,speed:Math.max(1200,Math.abs(plane.x-x)/.65),shot:0,exitT:0};
-  sfx('aircraft',{x:plane.x,y:plane.y});
+  sfx('jetFlying');
  }
  if(plane.drop<=0&&plane.drops<plane.maxDrops){
   const column=plane.drops%3-1;

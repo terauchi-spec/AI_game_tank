@@ -213,13 +213,13 @@ test('advanced capture allows at most one fighter in a run, with a fresh allowan
  const s=harness([.99,.5,0]),c=s.c;Object.assign(c,{nearbyCovers:()=>[],nearbyBushes:()=>[],bridges:[],igniteNature(){},igniteBridge(){}});
  c.setupEnemyBomber();c.mission.enemyWavesStarted=true;c.mission.index=1;c.updateEnemyBomber(.01);c.updateEnemyBomber(5);c.R=()=>0;run(s,5);
  const raid=c.mission.enemyAirRaid;assert.equal(raid.fighterUsed,true);assert.equal(raid.wrecks.length,1);
- run(s,60);assert.equal(raid.passes,2);assert.equal(raid.wrecks.length,1);assert.equal(s.sounds.filter(x=>x==='aircraft').length,1);
+ run(s,60);assert.equal(raid.passes,2);assert.equal(raid.wrecks.length,1);assert.equal(s.sounds.filter(x=>x==='jetFlying').length,1);
  c.setupEnemyBomber();assert.equal(c.mission.enemyAirRaid.fighterUsed,false);
 });
 test('a failed first interception roll leaves the second bomber eligible for the 50% roll',()=>{
  const s=harness([.99,.5,.99]),c=s.c;Object.assign(c,{nearbyCovers:()=>[],nearbyBushes:()=>[],bridges:[],igniteNature(){},igniteBridge(){}});
  c.setupEnemyBomber();c.mission.enemyWavesStarted=true;c.mission.index=1;c.updateEnemyBomber(.01);c.updateEnemyBomber(5);assert.equal(c.mission.enemyAirRaid.plane.intercept,false);
- run(s,6);c.R=()=>0;run(s,60);assert.equal(c.mission.enemyAirRaid.wrecks.length,1);assert.equal(s.sounds.filter(x=>x==='aircraft').length,1);
+ run(s,6);c.R=()=>0;run(s,60);assert.equal(c.mission.enemyAirRaid.wrecks.length,1);assert.equal(s.sounds.filter(x=>x==='jetFlying').length,1);
 });
 test('crash clears hard cover within 150px while burning trees and retaining distant and objective cover',()=>{
  const {createGameEngine}=require('./helpers/game-engine.cjs'),h=createGameEngine(path.join(__dirname,'..'));
@@ -261,5 +261,5 @@ test('tracer pool stays bounded during continuous fire and drains even without a
 });
 test('fighter arrival starts 0.6 seconds into the bomber pass',()=>{
  const s=debugHarness(0),c=s.c;run(s,30);const raid=c.enemyBomberRaid();assert.equal(raid.plane.intercept,true);
- run(s,.59,.01);assert.equal(raid.fighter,null);run(s,.02,.01);assert.ok(raid.fighter);assert.equal(s.sounds.filter(x=>x==='aircraft').length,1);
+ run(s,.59,.01);assert.equal(raid.fighter,null);assert.equal(s.sounds.includes('jetFlying'),false);run(s,.02,.01);assert.ok(raid.fighter);assert.equal(s.sounds.filter(x=>x==='jetFlying').length,1);
 });
