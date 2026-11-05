@@ -122,6 +122,14 @@ function frontlineAntennaGeometry(point,index){
  return{large,width,height,x:point.x-width/2,y:point.y-height*(large?.92:.89),cutY:point.y-(large?30:20),
   base:{x:point.x-(large?52:17),y:point.y-(large?22:10),w:large?104:34,h:large?44:20}};
 }
+// The three rocket carriers belong exclusively to advanced frontline.
+const FRONTLINE_ROCKET_ASSETS=['frontline_rocket_upper','frontline_rocket_middle','frontline_rocket_lower'];
+function frontlineRocketGeometry(point,index){
+ const width=216,height=540,x=point.x-width/2,y=point.y-height*.54;
+ return{large:true,rocket:true,width,height,x,y,cutY:point.y-25,
+  base:{x:x+width*.18,y:y+height*.2,w:width*.64,h:height*.6},
+  asset:FRONTLINE_ROCKET_ASSETS[index]};
+}
 function frontlineCargoLayout(point,index){
  // The large asset contains a connected pair: three pairs make six containers.
  const large=index===1,width=280,height=large?188:140,offsets=large?[-300,0,300]:[0];
@@ -212,9 +220,21 @@ function drawFrontlineCargoVictory(v){
 function setupFrontlineAntennas(){
  if(stageMode!=='front'||!mission||areaDebugEnabled)return;
  if(isFrontlineBeginner()){setupFrontlineCargo();return;}
+ const rockets=isFrontlineAdvanced();
  for(let i=0;i<mission.points.length;i++){
   const point=mission.points[i];if(point.antenna)continue;
-  const radius=i===2||point.largeAntenna?75:35,clear=spot=>!cars.some(v=>D(v,spot)<radius+50)&&!etanks.some(e=>e.alive&&D(e,spot)<radius+45);
+  const radius=rockets?92:(i===2||point.largeAntenna?75:35);
+  const clear=spot=>{
+   if(cars.some(v=>D(v,spot)<radius+50)||etanks.some(e=>e.alive&&D(e,spot)<radius+45))return false;
+   if(!rockets)return true;
+   const rocket=frontlineRocketGeometry(spot,i);
+   if(rocket.x<14||rocket.x+rocket.width>WW-14||rocket.y<20||rocket.y+rocket.height>WH-20)return false;
+   for(const fx of [.25,.5,.75])for(const fy of [.2,.5,.8]){
+    const x=rocket.x+rocket.width*fx,y=rocket.y+rocket.height*fy;
+    if(hitsM(x,y,16)||inWaterAt(x,y,16)||inBase(x,y))return false;
+   }
+   return true;
+  };
   if(!clear(point)){
    let free=null;
    for(let ring=1;ring<=8&&!free;ring++)for(let n=0;n<12;n++){
@@ -223,9 +243,9 @@ function setupFrontlineAntennas(){
    }
    if(free){point.x=free.x;point.y=free.y;}
   }
-  const shape=frontlineAntennaGeometry(point,i);
+  const shape=rockets?frontlineRocketGeometry(point,i):frontlineAntennaGeometry(point,i);
   const collider={...shape.base,kd:1,frontAntenna:true};
-  point.antenna={...shape,collider,asset:shape.large?'frontline_antenna_large':'frontline_antenna_small'};covers.push(collider);
+  point.antenna={...shape,collider,asset:rockets?shape.asset:shape.large?'frontline_antenna_large':'frontline_antenna_small'};covers.push(collider);
  }
  rebuildSpatialGrid();
 }
@@ -234,7 +254,8 @@ function drawFrontlineAntennas(cx,cy,upper=false){
  for(const point of mission.points){
   if(point.cargo){if(upper&&(typeof MOBILE_VIEW==='undefined'||MOBILE_VIEW))for(const cargo of point.cargo)if(cargo.x+cargo.width>=cx&&cargo.x<=cx+W&&cargo.y+cargo.height>=cy&&cargo.y<=cy+H)drawFrontlineCargo(cargo);continue;}
   const a=point.antenna;if(!a||a.x+a.width<cx||a.x>cx+W||a.y+a.height<cy||a.y>cy+H)continue;
-  const im=COVER_IMG[a.asset];if(!assetOK(im))continue;
+  let im=COVER_IMG[a.asset];if(!assetOK(im)&&a.rocket)im=COVER_IMG.frontline_antenna_large;
+  if(!assetOK(im))continue;
   if(upper){
    const fraction=Math.max(0,Math.min(1,(a.cutY-a.y)/a.height));
    g.drawImage(im,0,0,im.naturalWidth,im.naturalHeight*fraction,a.x,a.y,a.width,a.height*fraction);
