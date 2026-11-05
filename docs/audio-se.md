@@ -21,7 +21,7 @@ Validation: the original 56 supplied files matched GitHub blob hashes and decode
 
 Every active MP3 URL carries the corresponding Git blob revision from `se-revisions.json`, so replaced audio assets bypass old browser/CDN cache entries without changing filenames.
 
-Rain loop gain is 0.20 times rain intensity (doubled from 0.10). The refreshed drill-contact clip is used, and the updated root-level tank movement upload is copied into the playback asset directory. Revision URLs match the refreshed playback files.
+Rain loop gain is 0.60 times rain intensity (doubled from the previous 0.30 on 2026-11-05). The refreshed drill-contact clip is used, and the updated root-level tank movement upload is copied into the playback asset directory. Revision URLs match the refreshed playback files.
 
 Enemy tanks use the supplied `se_00_enemy_tank_movement_loop.mp3` (3.024 seconds). Actual position changes are sampled at 10 Hz; stationary and destroyed tanks are silent. Distance attenuation fades the loudest moving enemy into one shared loop, culling at 1200 px and avoiding stacked loops in crowds. Menus, reset, tab hiding and blur stop playback and clear movement samples. The player vehicle keeps its separate existing sound.
 
@@ -30,3 +30,5 @@ Player and partner-operated tank cannons use seven distinct clips: T-34 = `se_02
 Dirt and grass footsteps share one tracked voice. Stopping, boarding, hiding, entering water/indoor areas or leaving play fades and stops that voice immediately, before the 10 Hz environmental scan. Other sound effects continue, and a loaded footstep is never replayed late. The refreshed wheeled vehicle clip uses its new Git content revision.
 
 Player ground vehicle loops (all seven tanks, armored cars and trucks) now stop on the first stationary/dismount frame before the environmental scan. Starting or changing loop type is immediate; continuing loop gain/rate updates remain capped at the existing 10 Hz. Cancelled pending loads cannot restart a stopped vehicle.
+
+Enemy road trucks reuse the player truck `wheelMove` / `se_043_wheeled_vehicle_loop` clip, base gain 0.11, and the same speed-to-playback-rate scaling. One shared distance-attenuated loop represents the loudest nearby moving road truck. Starting, stopping for unloading, destruction and exit update immediately; continuing gain/rate changes stay at 10 Hz. Menus, pause, mute, tab hiding and blur stop playback through the existing audio lifecycle. No additional audio files, per-truck voices or position histories are created. The existing destruction-stage preparation preloads the shared wheeled-vehicle clip.

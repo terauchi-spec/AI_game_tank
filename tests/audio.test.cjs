@@ -8,6 +8,37 @@ function harness({defer=false,fail=false}={}){
  vm.createContext(c);vm.runInContext(source,c);c.get=s=>vm.runInContext(s,c);return{c,context,events,requests,waiting,sources};
 }
 const settle=()=>new Promise(r=>setImmediate(r));
+test('enemy road trucks share player wheel audio and stop/resume immediately around unloading',async()=>{
+ const h=harness(),{c}=h;c.stageMode='base';const truck={x:0,y:0,hp:5,speed:190,state:'entering'};c.roadTruckEvents=[truck];await c.loadGameSe('wheelMove');
+ c.updateGameAudio();await settle();const first=c.get('gameSe.loops.get("enemyTrucks").voice');assert.ok(first);assert.equal(first.name,'wheelMove');assert.equal(first.gain.gain.value,.11);assert.equal(first.source.playbackRate.value,190/160);
+ assert.ok(h.requests.some(u=>u.includes('se_043_wheeled_vehicle_loop.mp3')));
+ let gains=0,rates=0;first.gain.gain.setTargetAtTime=()=>gains++;first.source.playbackRate.setTargetAtTime=()=>rates++;
+ for(let i=0;i<3;i++){c.now+=16;truck.x+=3;c.updateGameAudio();}assert.equal(c.get('gameSe.loops.get("enemyTrucks").voice'),first);assert.equal(gains,0);assert.equal(rates,0);
+ truck.state='unloading';c.now+=16;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("enemyTrucks")'),false);assert.equal(first.source.stopped,true);
+ truck.state='leaving';c.now+=16;c.updateGameAudio();await settle();const resumed=c.get('gameSe.loops.get("enemyTrucks").voice');assert.ok(resumed);assert.notEqual(resumed,first);
+ truck.hp=0;truck.state='destroyed';c.now+=16;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("enemyTrucks")'),false);assert.equal(resumed.source.stopped,true);
+});
+test('enemy road truck audio attenuates, bounds voices, and stops on exit, pause, mute and hidden tabs',async()=>{
+ const h=harness(),{c}=h;c.stageMode='base';c.roadTruckEvents=[{x:100,y:0,hp:5,speed:190,state:'leaving'},{x:200,y:0,hp:5,speed:190,state:'entering'}];await c.loadGameSe('wheelMove');c.updateGameAudio();await settle();const voice=c.get('gameSe.loops.get("enemyTrucks").voice'),near=voice.gain.gain.value;
+ assert.equal(c.get('[...gameSe.voices].filter(v=>v.name==="wheelMove").length'),1);
+ c.p.x=-400;c.now+=120;c.updateGameAudio();assert.ok(voice.gain.gain.value<near);
+ c.roadTruckEvents[0].state='unloading';c.now+=16;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("enemyTrucks")'),true);
+ c.roadTruckEvents[1].state='done';c.now+=16;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("enemyTrucks")'),false);
+ for(const mode of ['paused','muted','hidden']){
+  c.p.x=0;c.state='play';c.gameSoundEnabled=true;c.document.visibilityState='visible';c.roadTruckEvents[0].state='entering';c.now+=120;c.updateGameAudio();await settle();assert.equal(c.get('gameSe.loops.has("enemyTrucks")'),true);
+  if(mode==='paused')c.state='paused';if(mode==='muted')c.gameSoundEnabled=false;if(mode==='hidden')c.document.visibilityState='hidden';c.now+=16;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("enemyTrucks")'),false,mode);
+ }
+});
+test('pending road truck audio cannot start after a stop and waiting/distant trucks stay silent',async()=>{
+ const h=harness({defer:true}),{c}=h;c.stageMode='base';c.roadTruckEvents=[{x:0,y:0,hp:5,speed:190,state:'waiting'}];c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("enemyTrucks")'),false);
+ c.roadTruckEvents[0].x=2000;c.roadTruckEvents[0].state='entering';c.now+=120;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("enemyTrucks")'),false);
+ c.roadTruckEvents[0].x=0;c.now+=16;c.updateGameAudio();c.roadTruckEvents[0].state='unloading';c.now+=16;c.updateGameAudio();for(let i=0;i<6;i++){for(const complete of h.waiting.splice(0))complete();await settle();}assert.equal(c.get('gameSe.loops.has("enemyTrucks")'),false);assert.equal(h.sources.filter(s=>s.loop&&!s.stopped).length,0);
+});
+test('rain loop gain is twice the former level across intensities and remains silent indoors',async()=>{
+ const h=harness(),{c}=h;await c.loadGameSe('rainLoop');c.weather='rain';
+ for(const intensity of [1,.5,.2]){c.rainIntensity=intensity;c.now+=120;c.updateGameAudio();await settle();assert.equal(c.get('gameSe.loops.get("rain").voice.gain.gain.value'),.30*intensity*2);}
+ c.stageMode='indoor';c.now+=120;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("rain")'),false);
+});
 test('enemy tank movement uses supplied audio, attenuates by distance, and stops when stationary, destroyed or distant',async()=>{
  const h=harness(),{c}=h,tank={alive:true,x:100,y:0};c.etanks=[tank];await c.loadGameSe('enemyTankMove');c.updateGameAudio();await settle();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),false);
  c.now+=120;tank.x+=5;c.updateGameAudio();await settle();const voice=c.get('gameSe.loops.get("enemyTanks").voice');assert.ok(voice);assert.ok(h.requests.some(u=>u.includes('se_00_enemy_tank_movement_loop.mp3?v=')));const near=voice.gain.gain.value;
@@ -100,7 +131,7 @@ test('actual drill collision logic reports contact for cover, objects, targets a
 
 function incomingBulletHarness({kind='r',vehicle='tank',id='t34',hit=true}={}){
  const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),section=(a,b)=>html.slice(html.indexOf(a),html.indexOf(b,html.indexOf(a))),sounds=[];
- const c={p:{x:0,y:0,hp:3,tank:vehicle?{kind:vehicle,t:{id,armor:2},ch:0,hp:8}:null},scoreStats:{damageHits:0},bullets:[{x:-40,y:hit?0:100,vx:1000,vy:0,life:1,from:'e',k:kind}],humans:[],etanks:[],allies:[],partner:null,hound:null,decoy:null,TANK_HIT:28,FIGHTER_TYPE:{hp:8},stageMode:'base',shake:0,sfx:n=>sounds.push(n),burst(){},cannonImpact(){},segmentBaseImpact:()=>null,objectsInBox:()=>[],coversInBox:()=>[],wreck(){c.wrecked=true;},triggerPlayerDeath(){c.died=true;},D:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y)};
+ const c={p:{x:0,y:0,hp:3,tank:vehicle?{kind:vehicle,t:{id,armor:2},ch:0,hp:8}:null},scoreStats:{damageHits:0},bullets:[{x:-40,y:hit?0:100,vx:1000,vy:0,life:1,from:'e',k:kind}],humans:[],etanks:[],allies:[],partner:null,hound:null,decoy:null,TANK_HIT:28,FIGHTER_TYPE:{hp:8},stageMode:'base',shake:0,sfx:n=>sounds.push(n),burst(){},cannonImpact(){},hitRoadTruckBullet:()=>false,segmentBaseImpact:()=>null,objectsInBox:()=>[],coversInBox:()=>[],wreck(){c.wrecked=true;},triggerPlayerDeath(){c.died=true;},D:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y)};
  vm.createContext(c);vm.runInContext(section('function recordPlayerDamage(','function trackObjectiveMovement('),c);vm.runInContext(section('function enemyPlayerBulletImpact(','function pointSegDist('),c);
  vm.runInContext('function incoming(dt){'+section(' for(let i=bullets.length-1;i>=0;i--){const b=bullets[i],ox=b.x',' for(const w of waves){w.r+=260*dt')+'}',c);c.incoming(.05);return{c,sounds};
 }

@@ -114,6 +114,7 @@ function preloadGameSe(){
   const list=['bushEnter','unlockCard','fainting','firework','dirtStep','grassStep','objectiveDestroyed','enemyTankMove','win','lose','results','playerHit','deathHit','mg','enemyGun','cannon','enemyCannon','bazooka','sniper','soldierHit','vehicleHit','empty','bombPlace','bombExplosion','shellExplosion','propExplosion','vehicleDestroyed','coverBreak','enter','suspicion','detected','whistle'];
   if(stageMode==='indoor')list.push('indoorTick','indoorAlarm','door','document','allDocuments');
   if(stageMode==='front')list.push('airWarning','capture','aircraft','airExplosion');
+  if(stageMode==='base')list.push('wheelMove');
   if(stageMode==='decisive'||stageMode==='training')list.push('capture');
   const skillSounds={throw:['bombThrow'],dig:['hide','splash'],decoy:['decoyPlace','decoy'],buddy:['reinforcement'],drill:['drillStart','drillContact'],build:['build'],flame:['flameStart','flameLoop'],sniper:['sniperDeploy','sniperLens'],hound:['houndCommand','dogBark'],partner:['partnerCommand']};
   list.push(...(skillSounds[typeof skill!=='undefined'?skill:'']||[]));for(const name of list)loadGameSe(name);
@@ -134,12 +135,24 @@ function updateEnemyTankAudio(now){
  }
  setGameSeLoop('enemyTanks',loudest>0?'enemyTankMove':null,loudest);
 }
+// Road trucks reuse the player wheeled-vehicle sound and one shared loop.
+// State changes stop/start immediately; parameter changes remain throttled to 10Hz.
+function updateEnemyRoadTruckAudio(now){
+ let loudest=0,rate=1;
+ if(stageMode==='base'&&!(typeof areaDebugEnabled!=='undefined'&&areaDebugEnabled))for(const truck of (typeof roadTruckEvents!=='undefined'?roadTruckEvents:[])||[]){
+  if(!(truck.hp>0)||!(truck.speed>0)||(truck.state!=='entering'&&truck.state!=='leaving'))continue;
+  const volume=.11*gameSeDistance(truck);
+  if(volume>loudest){loudest=volume;rate=Math.min(1.3,Math.max(.8,truck.speed/160));}
+ }
+ const name=loudest>=.01?'wheelMove':null;
+ if(!name||now>=gameSe.scanAt||gameSe.loops.get('enemyTrucks')?.name!==name)setGameSeLoop('enemyTrucks',name,loudest,rate);
+}
 function updateGameAudio(){
  if(!gameSeContext())return;
  preloadGameSe();
  const active=typeof state!=='undefined'&&state==='play'&&gameSeVisible();
  if(!active){stopGameFootsteps();for(const key of [...gameSe.loops.keys()])setGameSeLoop(key,null,0);gameSe.previous=null;gameSe.enemyPositions=new WeakMap();return;}
- if(typeof p==='undefined'||!p){stopGameFootsteps();setGameSeLoop('vehicle',null,0);setGameSeLoop('bush',null,0);return;}
+ if(typeof p==='undefined'||!p){stopGameFootsteps();setGameSeLoop('vehicle',null,0);setGameSeLoop('bush',null,0);setGameSeLoop('enemyTrucks',null,0);return;}
  const now=performance.now(),prior=gameSe.previous,moved=prior?Math.hypot(p.x-prior.x,p.y-prior.y):0,dt=prior?Math.max(.001,(now-prior.at)/1000):1;
  // Reuse the last bush result while stationary and share the lookup with footsteps.
  const bush=stageMode!=='indoor'&&(prior&&moved===0?prior.bush:typeof inBush==='function'&&inBush(p));
@@ -161,6 +174,7 @@ function updateGameAudio(){
  // 足音と同様、静止・降車は検出したフレームで停止。発進・車両切替も待たずに反映する。
  // 走行中の音量・速度調整は従来の10Hzを維持し、毎フレームのAudioParam更新は増やさない。
  if(!vehicleSound||now>=gameSe.scanAt||gameSe.loops.get('vehicle')?.name!==vehicleSound)setGameSeLoop('vehicle',vehicleSound,.11,Math.min(1.3,Math.max(.8,speed/160)));
+ updateEnemyRoadTruckAudio(now);
  if(now<gameSe.scanAt)return;gameSe.scanAt=now+100;
  updateEnemyTankAudio(now);
  // 乗車した車種の主砲音だけ先読みし、6本の追加SEを一括デコードしない。
@@ -168,7 +182,7 @@ function updateGameAudio(){
  if(gameSe.vehicleCannon!==cannon){gameSe.vehicleCannon=cannon;if(cannon)loadGameSe(cannon,true);}
  setGameSeLoop('drillContact',p.drill>0&&p.drillContact?'drillContact':null,.15);
  setGameSeLoop('flame',p.flameActive?'flameLoop':null,.13);
- setGameSeLoop('rain',typeof weather!=='undefined'&&weather==='rain'&&stageMode!=='indoor'?'rainLoop':null,.30*(typeof rainIntensity==='number'?rainIntensity:1));
+ setGameSeLoop('rain',typeof weather!=='undefined'&&weather==='rain'&&stageMode!=='indoor'?'rainLoop':null,.60*(typeof rainIntensity==='number'?rainIntensity:1));
  setGameSeLoop('alarm',typeof indoorWorld!=='undefined'&&stageMode==='indoor'&&indoorWorld?.alarm?.active?'indoorAlarm':null,.09);
  const plane=typeof airstrike!=='undefined'&&airstrike?airstrike:typeof mission!=='undefined'&&mission?.enemyAirRaid?.phase==='flight'?mission.enemyAirRaid.plane:null;
  setGameSeLoop('aircraft',plane?'aircraft':null,.14*gameSeDistance(plane));
