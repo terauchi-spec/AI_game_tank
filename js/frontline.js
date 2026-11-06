@@ -605,7 +605,11 @@ function finishAllyStunRecovery(a,contact=false){
  if(contact)spawnRescueCross(a);
 }
 function rescueAlly(a){
- if(!a.alive||!(a.stun>0)||p.tank||p.dig>0||D(a,p)>=22||!los(p,a))return false;
+ if(!a.alive||!(a.stun>0))return false;
+ const q=typeof partner!=='undefined'?partner:null;
+ const playerContact=!p.tank&&!(p.dig>0)&&D(a,p)<22&&los(p,a);
+ const partnerContact=!playerContact&&q&&!q.down&&!(q.stunT>0)&&!(q.blastAirT>0)&&!q.vehicle&&!q.passengerVehicle&&D(a,q)<22&&los(q,a);
+ if(!playerContact&&!partnerContact)return false;
  a.stun=0;a.stunRecover=0;a.frontAimT=0;a.frontAimTarget=null;a._combatTarget=null;
  a.burstLeft=3;a.shotCd=.2;a.dogWall=null;a.dogEscape=null;
  finishAllyStunRecovery(a,true);sfx('ally');say('味方兵を救助！');return true;

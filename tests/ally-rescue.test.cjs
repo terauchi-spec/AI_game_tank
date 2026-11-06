@@ -39,6 +39,13 @@ test('reinforcement rescue still requires on-foot contact and unobstructed sight
   assert.ok(h.run('a.stun')>0);assert.equal(h.run('parts.filter(q=>q.rescueCross).length'),0);
  }
 });
+test('an on-foot companion rescues a nearby soldier only while able to reach them',()=>{
+ for(const block of ['', 'partner.down=true', 'partner.stunT=1', 'partner.vehicle={}', 'partner.passengerVehicle={}', 'los=()=>false']){
+  const h=setup();h.run("stageMode='base';p.x=900;partner={x:400,y:420};a={x:400,y:410,alive:true,stun:5};allies=[a];"+block+";updateAlly(.016)");
+  assert.equal(h.run('a.stun===0'),block==='',block);
+  assert.equal(h.run('parts.filter(q=>q.rescueCross).length'),block===''?1:0);
+ }
+});
 test('hound contact rescue emits exactly one cross; automatic recovery emits none',()=>{
  for(const contact of [true,false]){
   const h=setup();h.c.contact=contact;

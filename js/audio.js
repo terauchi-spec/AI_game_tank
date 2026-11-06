@@ -206,7 +206,7 @@ function updateGameAudio(){
  setGameSeLoop('flame',p.flameActive?'flameLoop':null,.13);
  setGameSeLoop('rain',typeof weather!=='undefined'&&weather==='rain'&&stageMode!=='indoor'?'rainLoop':null,.60*(typeof rainIntensity==='number'?rainIntensity:1));
  setGameSeLoop('alarm',typeof indoorWorld!=='undefined'&&stageMode==='indoor'&&indoorWorld?.alarm?.active?'indoorAlarm':null,.09);
- const plane=typeof airstrike!=='undefined'&&airstrike?airstrike:typeof mission!=='undefined'&&mission?.enemyAirRaid?.phase==='flight'?mission.enemyAirRaid.plane:null;
+ const plane=typeof airstrike!=='undefined'&&airstrike?airstrike:typeof reinforcementPass!=='undefined'&&reinforcementPass?reinforcementPass:typeof mission!=='undefined'&&mission?.enemyAirRaid?.phase==='flight'?mission.enemyAirRaid.plane:null;
  setGameSeLoop('aircraft',plane?'aircraft':null,.14*gameSeDistance(plane));
  const hot=typeof burningAt==='function'&&burningAt(p.x,p.y,160);setGameSeLoop('fire',hot?'fireLoop':null,.06);
 }
