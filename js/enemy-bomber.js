@@ -30,9 +30,11 @@ function updateEnemyBomber(dt){
  if(raid.phase==='idle'){
   if(raid.debug){if(raid.nextPassT>5+1e-9)return;}
   else if(!mission.enemyWavesStarted||!raid.remaining||raid.passes>0&&mission.index<1||!enemyBomberInRandomArea())return;
-  const view=frontlineView();
-  // Lock the world-space route when warning starts; camera movement never retargets it.
-  raid.route=raid.debug?{x:Math.max(30,Math.min(WW-30,view.x+view.w*(.2+R()*.6))),y:view.y-180,endY:view.y+view.h+180}:{x:R()*WW,y:Math.max(ZONES[ZONES.length-2].y1+1,Math.min(ZONES[1].y0-1,view.y-180)),endY:view.y+view.h+180};
+  // Keep the warning aligned with the announced horizontal flight lane.
+  if(raid.debug){
+   const view=frontlineView();
+   raid.route={x:Math.max(30,Math.min(WW-30,view.x+view.w*(.2+R()*.6)))};
+  }else raid.route={x:R()*WW};
   raid.phase='warning';raid.timer=raid.debug?raid.nextPassT:5;sfx('airWarning');return;
  }
  if(raid.phase==='cooldown'){
@@ -41,7 +43,10 @@ function updateEnemyBomber(dt){
  if(raid.phase==='warning'){
   raid.timer=Math.max(0,raid.timer-dt);
   if(raid.timer>1e-9)return;
-  raid.plane={...raid.route,drop:.05,drops:0,maxDrops:25,age:0,intercept:(raid.debug||!raid.fighterUsed&&typeof isFrontlineAdvanced==='function'&&isFrontlineAdvanced())&&R()<.5};
+  // Use the current camera, including any movement during the warning.
+  // The margin keeps the entire aircraft above the first visible frame.
+  const view=frontlineView(),entryMargin=180;
+  raid.plane={x:raid.route.x,y:view.y-entryMargin,endY:view.y+view.h+entryMargin,drop:.05,drops:0,maxDrops:25,age:0,intercept:(raid.debug||!raid.fighterUsed&&typeof isFrontlineAdvanced==='function'&&isFrontlineAdvanced())&&R()<.5};
   if(raid.debug)raid.nextPassT=30;else raid.remaining--;raid.passes++;raid.phase='flight';return;
  }
  if(raid.phase!=='flight')return;

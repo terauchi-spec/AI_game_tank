@@ -20,10 +20,10 @@ test('only shuffled areas trigger warnings, including shuffled grassland but exc
   assert.equal(c.mission.enemyAirRaid.phase,expected,`player y=${y}`);
  }
 });
-test('a warning commits the pass and its world route even after retreating to the starting grassland',()=>{
+test('a warning commits the pass and horizontal lane even after retreating to the starting grassland',()=>{
  const s=harness(),c=s.c;c.setupEnemyBomber();c.mission.enemyWavesStarted=true;c.updateEnemyBomber(.1);c.updateEnemyBomber(4.9);
  const raid=c.mission.enemyAirRaid,route=JSON.parse(JSON.stringify(raid.route));c.p.y=12000;c.view={x:480,y:11500,w:480,h:800};c.updateEnemyBomber(.1);
- assert.equal(raid.phase,'flight');assert.equal(raid.remaining,0);assert.equal(raid.passes,1);assert.equal(raid.plane.x,route.x);assert.equal(raid.plane.y,route.y);assert.equal(raid.plane.endY,route.endY);
+ assert.equal(raid.phase,'flight');assert.equal(raid.remaining,0);assert.equal(raid.passes,1);assert.equal(raid.plane.x,route.x);assert.equal(raid.plane.y,11320);assert.equal(raid.plane.endY,12480);
  c.view.y=20000;run(s,20);assert.equal(raid.phase,'done');assert.equal(s.blasts,25);assert.equal(s.sounds.filter(s=>s==='airWarning').length,1);
 });
 test('horizontal flight positions span the entire area independently of camera position and viewport width',()=>{
@@ -32,10 +32,15 @@ test('horizontal flight positions span the entire area independently of camera p
   c.view.x=240;c.view.w=300;c.updateEnemyBomber(5);assert.equal(c.mission.enemyAirRaid.plane.x,roll*960);
  }
 });
-test('aircraft spawn stays inside the random area band even at its edge or after a camera retreat',()=>{
- for(const [playerY,viewY] of [[2001,1400],[10799,11000]]){
-  const s=harness(),c=s.c;c.p.y=playerY;c.view.y=viewY;c.setupEnemyBomber();c.mission.enemyWavesStarted=true;c.updateEnemyBomber(.1);c.updateEnemyBomber(5);
-  assert.ok(c.mission.enemyAirRaid.plane.y>2000);assert.ok(c.mission.enemyAirRaid.plane.y<10800);
+test('an advancing camera and the northern area edge both get a fully offscreen bomber at spawn',()=>{
+ for(const viewY of [7200,1400]){
+  const s=harness([0,.25,.5]),c=s.c;c.setupEnemyBomber();c.mission.enemyWavesStarted=true;c.updateEnemyBomber(.1);
+  const raid=c.mission.enemyAirRaid;
+  c.view.y=viewY;c.updateEnemyBomber(4.99);assert.equal(raid.plane,null);
+  c.updateEnemyBomber(.01);assert.equal(raid.phase,'flight');
+  assert.equal(raid.plane.x,240);assert.equal(raid.plane.y,viewY-180);assert.equal(raid.plane.endY,viewY+c.view.h+180);
+  assert.ok(raid.plane.y+115<c.view.y);
+  c.updateEnemyBomber(.05);assert.equal(raid.plane.y,viewY-161);
  }
 });
 test('the exact warning messages precede aircraft appearance by five seconds',()=>{
