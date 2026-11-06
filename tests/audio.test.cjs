@@ -10,7 +10,7 @@ function harness({defer=false,fail=false}={}){
 const settle=()=>new Promise(r=>setImmediate(r));
 test('infiltration doors load the supplied autodoor clip',async()=>{
  const h=harness();await h.c.loadGameSe('door');
- assert.equal(h.requests[0],'assets/audio/se/se_autodoor.mp3?v=3c90a3b88564');
+ assert.equal(h.requests[0],'assets/audio/se/se_autodoor.mp3?v=241d275be23c');
 });
 test('interceptor jet takes priority in a full mix and restores the effects after playback',async()=>{
  const h=harness(),{c}=h;await c.loadGameSe('jetFlying');
