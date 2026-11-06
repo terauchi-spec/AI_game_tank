@@ -8,6 +8,18 @@ test('emplacements spawn only in the two advanced stages and start with zero fue
   assert.equal(h.run("cars.every(v=>v.v===500&&v.f===0&&v.t.sp===0)"),true,id);
  }
 });
+test('advanced capture towers vary by sortie, spread across the route and stay outside capture circles on open maps',()=>{
+ const locations=[];
+ for(const offset of [0,5]){
+  const h=scene();h.c.offset=offset;
+  h.run("currentStageId=()=> 'front';stageMode='front';mission={northEdge:2400,points:[{x:240,y:9000},{x:720,y:6000},{x:240,y:3000}]};for(let i=0;i<offset;i++)R();setupGunTowers();");
+  assert.equal(h.run('cars.length'),3);
+  assert.ok(h.run('cars.every(v=>mission.points.every(q=>D(v,q)>=frontlineCaptureRadius(q)+GUN_TOWER_TYPE.clearance))'));
+  assert.equal(h.run('new Set(cars.map(v=>Math.floor((v.y-2496)/((10850-2496)/3)))).size'),3);
+  locations.push(h.run('JSON.stringify(cars.map(v=>[v.x,v.y]))'));
+ }
+ assert.notEqual(locations[0],locations[1]);
+});
 test('each tower uses a 50% initial blue-gunner draw without replenishing ammunition on capture',()=>{
  for(const roll of [.49,.5]){
   const h=scene();h.c.roll=roll;h.run('(function(R){return '+h.run('setupGunTowers.toString()')+'})(()=>roll)();');assert.equal(h.run('cars.filter(v=>v.gunner).length'),roll<.5?6:0);

@@ -8,6 +8,27 @@ function harness({defer=false,fail=false}={}){
  vm.createContext(c);vm.runInContext(source,c);c.get=s=>vm.runInContext(s,c);return{c,context,events,requests,waiting,sources};
 }
 const settle=()=>new Promise(r=>setImmediate(r));
+test('infiltration doors load the supplied autodoor clip',async()=>{
+ const h=harness();await h.c.loadGameSe('door');
+ assert.equal(h.requests[0],'assets/audio/se/se_autodoor.mp3?v=3c90a3b88564');
+});
+test('interceptor jet takes priority in a full mix and restores the effects after playback',async()=>{
+ const h=harness(),{c}=h;await c.loadGameSe('jetFlying');
+ c.get("for(let i=0;i<16;i++)startGameSeVoice('loop'+i,{},.2,true)");
+ c.playGameSe('jetFlying');
+ const jet=c.get('gameSe.priorityVoice');assert.equal(jet.name,'jetFlying');assert.ok(jet.source.started);
+ assert.equal(c.get('gameSe.voices.size'),16);assert.equal(c.get('gameSe.master.gain.value'),.23);
+ c.get("startGameSeVoice('win',{},.4)");assert.equal(c.get('gameSe.priorityVoice'),jet);
+ jet.source.onended();assert.equal(c.get('gameSe.priorityVoice'),null);assert.equal(c.get('gameSe.master.gain.value'),.65);
+});
+test('interceptor jet can finish loading after the trigger but stops pending playback when the game stops',async()=>{
+ for(const stopped of [false,true]){
+  const h=harness({defer:true}),{c}=h;
+  c.playGameSe('jetFlying');if(stopped)c.stopGameAudio();
+  h.waiting.shift()();await settle();
+  assert.equal(h.sources.filter(s=>s.started).length,stopped?0:1);
+ }
+});
 test('enemy road trucks share player wheel audio and stop/resume immediately around unloading',async()=>{
  const h=harness(),{c}=h;c.stageMode='base';const truck={x:0,y:0,hp:5,speed:190,state:'entering'};c.roadTruckEvents=[truck];await c.loadGameSe('wheelMove');
  c.updateGameAudio();await settle();const first=c.get('gameSe.loops.get("enemyTrucks").voice');assert.ok(first);assert.equal(first.name,'wheelMove');assert.equal(first.gain.gain.value,.11);assert.equal(first.source.playbackRate.value,190/160);

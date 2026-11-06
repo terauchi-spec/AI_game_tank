@@ -16,23 +16,47 @@ function boardEnemyGunTower(v,h){
  if(!gunTowerAvailable(v)||v.v<=0||!h.alive||h.elite||h.commander==='white'||h.stun>0||h.stunRecover>0||h.blastAirT>0||h.dog||h.houndPinned)return false;
  h.gunTower=v;v.gunner=h;v.scanCenter=v.aim??v.body??0;v.scanOffset=0;v.scanDirection=1;v.lostTargetT=0;h.face=v.aim=v.scanCenter;h.x=v.x-Math.cos(h.face)*GUN_TOWER_TYPE.seatOffset;h.y=v.y-Math.sin(h.face)*GUN_TOWER_TYPE.seatOffset;h.walking=false;h.frontMarch=false;h.chatT=0;h.chatMate=null;return true;
 }
+function findFrontlineGunTowerSpot(index,clear){
+ const minY=Math.max(100,frontlineNorthEdge()+96),maxY=Math.min(WH-100,p.y-650);
+ if(maxY<=minY)return null;
+ // One emplacement per third of the approach. Prefer ground outside capture circles.
+ const bandHeight=(maxY-minY)/3;
+ const top=maxY-(index+1)*bandHeight,bottom=top+bandHeight;
+ const outsideCapture=(x,y)=>!mission.points.some(q=>D(q,{x,y})<frontlineCaptureRadius(q)+GUN_TOWER_TYPE.clearance);
+ for(let attempt=0;attempt<64;attempt++){
+  const x=96+R()*(WW-192),y=top+R()*bandHeight;
+  if(outsideCapture(x,y)&&clear(x,y))return{x,y};
+ }
+ // Dense scenery can exhaust random candidates. Search locally before relaxing the capture buffer.
+ for(const avoidCapture of [true,false]){
+  for(let y=top;y<=bottom;y+=64)for(let x=96;x<=WW-96;x+=64){
+   if((!avoidCapture||outsideCapture(x,y))&&clear(x,y))return{x,y};
+  }
+ }
+ return null;
+}
 function setupGunTowers(){
  if(areaDebugEnabled||!['base','front'].includes(currentStageId()))return 0;
- const anchors=stageMode==='front'?mission.points.map(q=>({x:q.x+(q.x<WW/2?160:-160),y:q.y-150})):[{x:220,y:9000},{x:740,y:6100},{x:230,y:2600},{x:735,y:10200},{x:225,y:4600},{x:735,y:1350}];
+ const advancedFront=stageMode==='front';
+ const anchors=[{x:220,y:9000},{x:740,y:6100},{x:230,y:2600},{x:735,y:10200},{x:225,y:4600},{x:735,y:1350}];
  let count=0;
  const clear=(x,y)=>x>=96&&x<=WW-96&&y>=100&&y<=WH-100&&(stageMode!=='front'||y>=frontlineNorthEdge()+96)&&D({x,y},p)>=650&&!hitsC(x,y,GUN_TOWER_TYPE.clearance)&&!inWaterAt(x,y,GUN_TOWER_TYPE.clearance)&&!(cars||[]).some(v=>D(v,{x,y})<164)&&!(etanks||[]).some(e=>e.alive&&D(e,{x,y})<132);
- for(const anchor of anchors){
+ for(let index=0;index<(advancedFront?3:anchors.length);index++){
   let spot=null;
-  for(let k=0;k<320&&!spot;k++){
-   const a=k*2.4,rad=k?32+Math.floor(k/12)*24:0,x=anchor.x+Math.cos(a)*rad,y=anchor.y+Math.sin(a)*rad;
-   if(!clear(x,y))continue;
-   spot={x,y};
-  }
-  // A broad platform may not fit the original zone (for example a wide river).
-  // Startup-only fallback finds open ground inside the playable area.
-  for(let dy=0;dy<=2400&&!spot;dy+=64)for(const sign of (dy?[1,-1]:[1])){
-   if(spot)break;const y=anchor.y+dy*sign;
-   for(let x=96;x<=WW-96;x+=64)if(clear(x,y)){spot={x,y};break;}
+  if(advancedFront)spot=findFrontlineGunTowerSpot(index,clear);
+  else{
+   const anchor=anchors[index];
+   for(let k=0;k<320&&!spot;k++){
+    const a=k*2.4,rad=k?32+Math.floor(k/12)*24:0,x=anchor.x+Math.cos(a)*rad,y=anchor.y+Math.sin(a)*rad;
+    if(!clear(x,y))continue;
+    spot={x,y};
+   }
+   // A broad platform may not fit the original zone (for example a wide river).
+   // Startup-only fallback finds open ground inside the playable area.
+   for(let dy=0;dy<=2400&&!spot;dy+=64)for(const sign of (dy?[1,-1]:[1])){
+    if(spot)break;const y=anchor.y+dy*sign;
+    for(let x=96;x<=WW-96;x+=64)if(clear(x,y)){spot={x,y};break;}
+   }
   }
   if(!spot)continue;
   const v={...spot,t:GUN_TOWER_TYPE,kind:'tower',hp:8,c:0,v:500,f:0,ch:0,mgHits:0,body:Math.PI/2,aim:Math.PI/2,reboardT:2,gunT:0,scanT:0};cars.push(v);count++;
