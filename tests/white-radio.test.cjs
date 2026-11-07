@@ -39,3 +39,14 @@ test('parachute soldiers move to open ground when the touchdown spot becomes blo
  assert.equal(h.run('hitsM(allies[0].x,allies[0].y,12)'),false);
  assert.equal(h.run('allies[0].frontCommander'),true);
 });
+
+
+test('white radio waits until the bomber is ahead and lands all three soldiers in front of the player',()=>{
+ const h=createGameEngine(root);
+ h.run("stageMode='base';state='play';p={x:480,y:6000,body:0};allies=[];allySeq=0;missionSpot=(x,y)=>({x,y});startReinforcementPass();");
+ h.run("while(reinforcementPass.y>p.y)updateReinforcementPass(.02)");
+ assert.equal(h.run('allies.length'),0,'the bomber must pass the player before releasing troops');
+ h.run("for(let i=0;i<300;i++)updateReinforcementPass(.02)");
+ assert.equal(h.run('allies.length'),3);
+ assert.equal(h.run('allies.every(a=>a.startY<p.y&&a.landY<=p.y-100)'),true,'all troops land visibly ahead');
+});
