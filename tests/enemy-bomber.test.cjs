@@ -176,6 +176,11 @@ test('real area debug initialization keeps mission null and ticks raids from the
  const {createGameEngine}=require('./helpers/game-engine.cjs');const h=createGameEngine(path.join(__dirname,'..'));
  h.run("setDeveloperMode(true);areaDebugEnabled=true;selectedAreaDebug='草原';areaDebugEnemyBomber=true;stageMode='base';skill='throw';reset(false);state='play';update(.016);draw(null);drawEnemyBomberWarning();");
  assert.equal(h.run('mission'),null);assert.ok(Math.abs(h.run('enemyBomberRaid().nextPassT')-29.984)<1e-9);
+ assert.equal(h.run('!!radio&&!radio.got&&!!whiteRadio&&!whiteRadio.got&&D(radio,whiteRadio)>60'),true);
+ assert.equal(h.run('hitsM(radio.x,radio.y,12)||hitsM(whiteRadio.x,whiteRadio.y,12)'),false);
+ h.run('enemyBomberBlast(p.x,p.y);');assert.equal(h.run('p.hp'),2);
+ h.run('enemyBomberBlast(p.x,p.y);');assert.equal(h.run('p.hp'),1);
+ h.run('enemyBomberBlast(p.x,p.y);');assert.equal(h.run('state'), 'play');
  h.run("areaDebugEnabled=false;stageMode='base';setupMission();");assert.equal(h.run('enemyBomberRaid()'),undefined);
 });
 

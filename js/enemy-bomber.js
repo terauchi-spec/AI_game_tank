@@ -229,7 +229,9 @@ function enemyBomberBlast(x,y,radius=88){
   if(partner.vehicle)enemyBomberVehicleDamage(partner.vehicle,false,()=>partnerVehicleDestroyed(partner));
   else{partner.hp=Math.max(0,partner.hp-1);partner.down=partner.hp<=0;partner.stunT=partner.down||partner.stunImmuneT>0?0:2;partner.stunContactDelay=.3;}
  }
- if(!hit(p)||p.dig>0||debugInvincible)return;
+ if(!hit(p)||p.dig>0)return;
+ // The opt-in raid can demonstrate heart loss even in a nonlethal area test.
+ if(debugInvincible&&(!areaDebugBomberEnabled()||playerVehicle))return;
  if(playerVehicle)enemyBomberVehicleDamage(playerVehicle,true,()=>wreck());
  else{recordPlayerDamage(Math.min(p.hp,1)/3);p.hp=Math.max(0,p.hp-1);beginBlastFlight(p,x,y,radius,58,8,0);if(p.hp<=0)triggerPlayerDeath();}
 }

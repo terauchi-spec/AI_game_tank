@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.07.1117</title>
+<title>こっそり戦車大作戦 2026.11.07.1124</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -1001,7 +1001,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.07.1117',FILE_CREATED_AT='2026/11/07 11:17',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.07.1124',FILE_CREATED_AT='2026/11/07 11:24',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -2400,6 +2400,15 @@ function spawnAreaDebugPlayerTanks(){
   cars.push({x,y,t,kind:'tank',hp:t.hp,c:t.cmax,v:t.vmax,f:t.fmax,ch:0,mgHits:0,body:-Math.PI/2,areaDebug:1,debugInfinite:1});
  }
 }
+function placeAreaDebugRadios(){
+ const y=p.y+76;
+ radio={x:p.x+92,y,got:false,areaDebug:1};
+ whiteRadio={x:p.x,y,got:false,areaDebug:1};
+ areaDebugLabels.push(
+  {t:'無線（爆撃支援）',x:radio.x,y:y+32,c:'#9fd6ff',f:'bold 11px system-ui'},
+  {t:'白い無線（増援）',x:whiteRadio.x,y:y+32,c:'#fff4d7',f:'bold 11px system-ui'}
+ );
+}
 function setupAreaDebugStage(){
  const areaH=1350,bottom=WH-100;
  ZONES=AREA_DEBUG_ORDER.map((n,i)=>{const y0=bottom-i*areaH,y1=y0-areaH;return{n,y0,y1,g:ZONE_STYLE[n].g,p:ZONE_STYLE[n].p.slice(),pat:null,areaDebug:1};});
@@ -2411,9 +2420,8 @@ function setupAreaDebugStage(){
  const addLabel=(t,x,y,c='#e6e9d8',f='bold 13px system-ui')=>areaDebugLabels.push({t,x,y,c,f});
  // 出発地点の手前に、取得して効果も確認できるアイテムを配置。
  items.push({x:WW/2-92,y:p.y+76,got:false,areaDebug:1});
- radio={x:WW/2+92,y:p.y+76,got:false,areaDebug:1};
+ placeAreaDebugRadios();
  addLabel('ガソリン（乗車して取得）',WW/2-92,p.y+108,'#ffd27a','bold 11px system-ui');
- addLabel('無線（爆撃支援）',WW/2+92,p.y+108,'#9fd6ff','bold 11px system-ui');
  const addCover=(kd,x,y,w,h,label,extra={})=>{
   const c=Object.assign({kd,x,y,w,h,areaDebug:1},extra);
   if(label!==null)c.debugName=label||COVER_DEBUG_NAMES[kd];
@@ -4713,12 +4721,39 @@ function drawStunStars(x,y){
 function drawAllyStun(ally){
  if(ally.stun>0)drawStunStars(ally.x,ally.y-blastLift(ally));
 }
+function parachuteLandingSpot(ally){
+ const minY=stageMode==='front'?Math.max(16,frontlineNorthEdge()+16):16;
+ const clear=(x,y)=>x>=16&&x<=WW-16&&y>=minY&&y<=WH-16&&!hitsM(x,y,12);
+ if(clear(ally.x,ally.landY))return{x:ally.x,y:ally.landY};
+ // Search outward only at touchdown, and use the player's area if the entire drop zone is blocked.
+ for(const origin of [{x:ally.x,y:ally.landY},p]){
+  for(let radius=0;radius<=320;radius+=20)for(let step=0;step<(radius?12:1);step++){
+   const angle=step*Math.PI/6;
+   const x=Math.max(16,Math.min(WW-16,origin.x+Math.cos(angle)*radius));
+   const y=Math.max(minY,Math.min(WH-16,origin.y+Math.sin(angle)*radius));
+   if(clear(x,y))return{x,y};
+  }
+ }
+ return null;
+}
 function updateAlly(dt){
  updateFrontlineAdvance();
  const active=(allies||[]).filter(a=>a.alive),ready=[];
  for(const ally of active){
   ally.stunImmuneT=Math.max(0,(ally.stunImmuneT||0)-dt);
-  if(ally.chute>0){ally.chute=Math.max(0,ally.chute-dt);const total=ally.chuteTotal||3,t=1-ally.chute/total,e=t*t*(3-2*t);ally.y=(ally.startY??ally.y)+(ally.landY-(ally.startY??ally.y))*e;if(ally.chute<=0){ally.y=ally.landY;ally.chute=0;sfx('ally');say('増援が到着!');}continue;}
+  if(ally.chute>0){
+   if(ally.landingRetry>0){ally.landingRetry-=dt;if(ally.landingRetry>0)continue;}
+   ally.chute=Math.max(0,ally.chute-dt);
+   const total=ally.chuteTotal||3,t=1-ally.chute/total,e=t*t*(3-2*t);
+   ally.y=(ally.startY??ally.y)+(ally.landY-(ally.startY??ally.y))*e;
+   if(ally.chute<=0){
+    const landing=parachuteLandingSpot(ally);
+    if(!landing){ally.chute=.001;ally.landingRetry=.25;continue;}
+    ally.x=landing.x;ally.y=ally.landY=landing.y;ally.landingRetry=0;
+    sfx('ally');say('増援が到着!');
+   }
+   continue;
+  }
   if(updateBlastFlight(ally,dt)){ally.frontAimT=0;ally.frontAimTarget=null;continue;}
   if((ally.stun||0)>0){if(stageMode==='front')updateFrontlineAllyStun(ally,dt);else if(!rescueAlly(ally)){ally.stun=Math.max(0,ally.stun-dt);if(ally.stun<=0)finishAllyStunRecovery(ally);}ally._combatTarget=null;ally.frontMode='patrol';ally.frontLostT=0;ally.frontLastSeen=null;ally.frontTrackedEnemy=null;ally.frontMoving=false;ally.frontAimT=0;ally.frontAimTarget=null;ally.burstLeft=3;continue;}
   if((ally.stunRecover||0)>0){ally.stunRecover=Math.max(0,ally.stunRecover-dt);continue;}
@@ -7680,7 +7715,7 @@ function draw(near){
  for(const w of waves){const k=1-w.r/w.max;g.strokeStyle='rgba(255,170,60,'+k+')';g.lineWidth=6;g.beginPath();g.arc(w.x,w.y,w.r,0,6.28);g.stroke();g.fillStyle='rgba(255,200,100,'+.35*k+')';g.fill();}
  for(const c of cars){if(!drawPointInView(c.x,c.y,cx,cy,160))continue;const foregroundVehicle=c.kind==='truck'||(c.kind==='tank'&&inBush(c));if(!foregroundVehicle)drawVehicle(c,c.x,c.y,c.body??-1.57,c.body??-1.57);const iy=c.y-(c.kind==='fighter'?66:c.kind==='tower'?96:c.kind==='truck'?42:50);if(c.kind!=='tower'||gunTowerAvailable(c))markVehicle(c.x,iy,c.kind!=='tower'&&c.f<=0?'fuel':'ride');if(near===c)lab(c.t.n,c.x,iy-24,c.kind==='tank'?'bold 17px system-ui':'bold 14px system-ui','#fff');}
  if(stageMode==='front')for(const ally of allies||[])if(ally.alive&&enemyInView(ally,cx,cy,430))drawFrontlineAllyVision(ally);
- const enemyAlpha=digEnemyAlpha()*(1-sandIntensity);if(enemyAlpha>.001)for(const e of etanks){if(!enemyInView(e,cx,cy,stageMode==='front'?detectRange('p')*2:140))continue;g.save();g.globalAlpha*=enemyAlpha;if(e.alive){if(!e.st){const sightScale=frontlineTankSightScale(e);g.fillStyle='rgba(255,80,80,.035)';g.beginPath();g.moveTo(e.x,e.y);g.arc(e.x,e.y,detectOuterRange('p')*sightScale,e.ang-DETECT_OUTER_HALF*sightScale,e.ang+DETECT_OUTER_HALF*sightScale);g.closePath();g.fill();g.fillStyle='rgba(255,80,80,.055)';g.beginPath();g.moveTo(e.x,e.y);g.arc(e.x,e.y,detectRange('p')*sightScale,e.ang-DETECT_CENTER_HALF*sightScale,e.ang+DETECT_CENTER_HALF*sightScale);g.closePath();g.fill();}if(!inBush(e))tankShape(e.x,e.y,e.body,e.ang,{id:'enemy',col:'#4b5f9e'},TANK_DRAW);}else if(!e.wreckSpawned){g.fillStyle='#1c1a18';g.beginPath();g.arc(e.x,e.y,14,0,6.28);g.fill();}g.restore();if(e.alive&&enemyAlpha>.18){if(e.st)lab('!',e.x,e.y-38,'bold 18px system-ui','#ff5a5a');else if(e.sus>0)lab('?',e.x,e.y-38,'bold 18px system-ui','#ffd27a');}}
+ const enemyAlpha=digEnemyAlpha()*(1-sandIntensity);if(enemyAlpha>.001)for(const e of etanks){if(!enemyInView(e,cx,cy,140))continue;g.save();g.globalAlpha*=enemyAlpha;if(e.alive){if(!inBush(e))tankShape(e.x,e.y,e.body,e.ang,{id:'enemy',col:'#4b5f9e'},TANK_DRAW);}else if(!e.wreckSpawned){g.fillStyle='#1c1a18';g.beginPath();g.arc(e.x,e.y,14,0,6.28);g.fill();}g.restore();if(e.alive&&enemyAlpha>.18){if(e.st)lab('!',e.x,e.y-38,'bold 18px system-ui','#ff5a5a');else if(e.sus>0)lab('?',e.x,e.y-38,'bold 18px system-ui','#ffd27a');}}
  drawRoadTrucks(cx,cy);
  drawEnemyDogLeashes();
  if(enemyAlpha>.001)for(const h of humans){const sniperFalling=!h.alive&&h.sniperFallT>0;if(h.gunTower||h.fallenSpriteRecorded||(!h.alive&&!sniperFalling)||!enemyInView(h,cx,cy,100))continue;const lift=sniperFalling?0:blastLift(h);if(!sniperFalling)drawBlastShadow(h);g.save();g.translate(0,-lift);g.globalAlpha*=enemyAlpha;if(sniperFalling){const fk=Math.max(0,Math.min(1,1-h.sniperFallT/Math.max(.01,h.sniperFallMax||.72))),side=(h.sniperFallA&&Math.sin(h.sniperFallA)<0?-1:1);g.translate(h.x,h.y);g.rotate(side*fk*1.18);g.translate(-h.x,-h.y);g.globalAlpha*=Math.max(.35,1-fk*.38);}soldier(h.x,h.y,h.face,false,sniperFalling?false:h.st,!sniperFalling&&!!h.walking,!!h.elite,h.commander||'',!sniperFalling&&!(h.commander==='blue'&&h.whistleT>0)&&(h.commander==='white'?h.commanderCharge>0||h.commanderShotT>0:!!h.st),false,h);drawCommanderOverlay(h);
@@ -8612,7 +8647,7 @@ function reportGameError(error){
 <script src="js/leaderboard.js?v=2026.10.28.0713"></script>
 <script src="js/intro.js?v=2026.10.31.0745"></script>
 <script src="js/unlocks.js?v=2026.10.31.2206"></script>
-<script src="js/enemy-bomber.js?v=2026.11.06.1718"></script>
+<script src="js/enemy-bomber.js?v=2026.11.07.1124"></script>
 <script src="js/characters.js?v=2026.10.19.1032"></script>
 <script src="js/fallen-enemies.js?v=2026.11.03.0131"></script>
 <script src="js/enemy-dogs.js?v=2026.10.28.0713"></script>
@@ -8620,7 +8655,7 @@ function reportGameError(error){
 <script src="js/gun-tower.js?v=2026.11.06.1639"></script>
 <script src="js/partner.js?v=2026.11.06.2245"></script>
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
-<script src="js/canyon.js?v=2026.11.02.2358"></script>
+<script src="js/canyon.js?v=2026.11.07.1124"></script>
 <script src="js/vegetation.js?v=2026.10.14.1653"></script>
 <script src="js/laboratory.js?v=2026.10.31.2206"></script>
 <script src="js/infiltration-world.js?v=2026.10.31.2349"></script>

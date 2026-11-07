@@ -28,3 +28,14 @@ test('support pass drops one commander and two ordinary parachutists alongside e
   assert.equal(h.run('p.scd'),0);
  }
 });
+
+test('parachute soldiers move to open ground when the touchdown spot becomes blocked',()=>{
+ const h=createGameEngine(root);
+ h.run("stageMode='base';p={x:480,y:6300,body:0};allies=[];humans=[];etanks=[];objects=[];water=[];bridges=[];covers=[];base={x:0,y:-1000,w:20,h:20,hp:30};rebuildSpatialGrid();spawnParachuteAlly(480,5680,6000,0,true);");
+ h.run("covers=[{kd:1,x:420,y:5960,w:120,h:80}];rebuildSpatialGrid();updateAlly(3);");
+ assert.equal(h.run('allies[0].chute'),0);
+ assert.ok(h.run('Math.hypot(allies[0].x-480,allies[0].y-6000)>0'));
+ assert.ok(h.run('Math.hypot(allies[0].x-480,allies[0].y-6000)<200'));
+ assert.equal(h.run('hitsM(allies[0].x,allies[0].y,12)'),false);
+ assert.equal(h.run('allies[0].frontCommander'),true);
+});
