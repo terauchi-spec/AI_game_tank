@@ -21,7 +21,7 @@ function buildCanyonZones(){
   const top=Math.max(0,z.y1),bottom=Math.min(WH,z.y0),span=bottom-top;z.oasis=null;
   if(R()<.55){
    // Scale both dimensions together so the original shape stays intact.
-   const sizeScale=.5+R(),baseW=600+R()*220,baseH=Math.min(440+R()*240,span*.42);
+   const sizeScale=.2+R()*1.3,baseW=600+R()*220,baseH=Math.min(440+R()*240,span*.42);
    const w=baseW*sizeScale,h=baseH*sizeScale;
    // Keep large ponds visible, including at the edges of the wilderness zone.
    const rawX=R()*WW,rawY=top+span*(.3+R()*.35);
