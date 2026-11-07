@@ -29,6 +29,17 @@ test('traffic waits for its road to be visible and enters from outside the horiz
   assert.equal(h.run('roadTruckEvents[0].dir>0?roadTruckEvents[0].x<0:roadTruckEvents[0].x>W'),true);
  }
 });
+test('a delayed truck waits for two visible seconds, then enters from the current screen edge',()=>{
+ const h=scene('base',[.1,.8,.1,0]);
+ h.run('updateRoadTrucks(1);p.y=11000;updateRoadTrucks(10);');
+ assert.equal(h.run('roadTruckEvents[0].state'),'waiting');
+ assert.equal(h.run('roadTruckEvents[0].arrivalDelay'),1);
+ h.run("p.y=5000;p.x=WW;state='paused';updateRoadTrucks(10);state='play';updateRoadTrucks(.99);");
+ assert.equal(h.run('roadTruckEvents[0].state'),'waiting');
+ h.run('updateRoadTrucks(.01);');
+ assert.equal(h.run('roadTruckEvents[0].state'),'entering');
+ assert.ok(h.run('roadTruckEvents[0].x<WW-W'));
+});
 test('passing trucks cross the road without stopping or spawning soldiers, then finish permanently',()=>{
  for(const dir of [.1,.8]){
   const h=scene('base',[dir,.9]);h.run("seenStop=false;for(let i=0;i<140;i++){updateRoadTrucks(.1);if(roadTruckEvents[0].state==='unloading')seenStop=true;}");
@@ -81,6 +92,25 @@ test('cannon and explosion destruction stop remaining passengers without harming
 test('sniper bullets damage the truck and stop instead of penetrating the vehicle',()=>{
  const h=targetTruck();h.run("for(let i=0;i<3;i++){b={x:650,y:5000,k:'s',from:'p'};if(!updateSniperPiercingBullet(b,300,5000))throw Error('sniper passed truck');}");
  assert.equal(h.run('roadTruckEvents[0].hp'),0);assert.equal(h.run('tankWrecks.length'),1);
+});
+test('a moving truck triggers a planted bomb during normal play and leaves a single wreck',()=>{
+ const h=createGameEngine(root);
+ h.run("stageMode='base';reset(false);p.x=480;p.y=5300;humans=[];etanks=[];cars=[];water=[];bridges=[];roadTruckEvents=[{x:440,y:5000,dir:1,speed:190,state:'leaving',hp:5,maxHp:5,body:0,kind:'truck'}];bombs=[{x:480,y:5024,armed:true,own:'p'}];update(.05);");
+ assert.equal(h.run('bombs.length'),1);
+ assert.equal(h.run('roadTruckEvents[0].hp'),5);
+ h.run('bombs[0].y=5000;update(.05);');
+ assert.equal(h.run('bombs.length'),0);
+ assert.equal(h.run('roadTruckEvents[0].state'),'destroyed');
+ assert.equal(h.run('tankWrecks.length'),1);
+ assert.equal(h.run('tankWrecks[0].id'),'truck');
+ h.run('update(.05);');
+ assert.equal(h.run('tankWrecks.length'),1);
+});
+test('swept chassis contact detects a mine even after the truck has passed it',()=>{
+ const h=targetTruck();
+ h.run("roadTruckEvents[0].previousX=350;roadTruckEvents[0].x=620;");
+ assert.equal(h.run('roadTruckOnBomb({x:480,y:5000})===roadTruckEvents[0]'),true);
+ assert.equal(h.run('roadTruckOnBomb({x:480,y:5023})'),null);
 });
 test('gatling rounds select the truck as their nearest hit, while a nearer soldier still takes the bullet',()=>{
  const h=targetTruck();h.run("b={x:650,y:5000,vx:1000,vy:0,k:'v',from:'p',gatling:true};updateGatlingBullet(b,300,5000,false);");assert.equal(h.run('roadTruckEvents[0].hp'),4);

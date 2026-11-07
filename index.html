@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.06.2245</title>
+<title>こっそり戦車大作戦 2026.11.07.1117</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -1001,7 +1001,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.06.2245',FILE_CREATED_AT='2026/11/06 22:45',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.07.1117',FILE_CREATED_AT='2026/11/07 11:17',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -6059,8 +6059,10 @@ function update(dt){
    continue;}
   if(!b.armed&&D(b,p)>36)b.armed=true;
   const stepped=b.armed&&!(p.dig>0)&&(!p.tank||p.tank.kind!=='fighter')&&D(b,p)<(p.tank?TANK_HIT:14),tk=etanks.some(e=>e.alive&&Math.hypot(e.x-b.x,e.y-b.y)<TANK_BOMB_HIT),hm=humans.some(h=>h.alive&&!(h.stun>0)&&!(h.stunRecover>0)&&Math.hypot(h.x-b.x,h.y-b.y)<14);
-  if(stepped||tk||hm){bombs.splice(i,1);
+  const truck=roadTruckOnBomb(b);
+  if(stepped||tk||hm||truck){bombs.splice(i,1);
    const actionId=newCombatAction('bomb');
+   if(truck)damageRoadTruck(truck,truck.hp,b.x,b.y);
    for(const e of etanks)if(e.alive&&Math.hypot(e.x-b.x,e.y-b.y)<TANK_BOMB_HIT){destroyEnemyTank(e,b.x,b.y);recordPlayerKill(actionId,'',e);burst(e.x,e.y,40,'#ff6a2a',350);}
    bombBlast(b.x,b.y,actionId,stepped&&!p.tank);if(stepped){if(p.tank)wreck();else damagePlayerByOwnBomb();}}}
  // 弾
@@ -8601,7 +8603,7 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/road-trucks.js?v=2026.11.05.1912"></script>
+<script src="js/road-trucks.js?v=2026.11.07.1117"></script>
 <script src="js/stage-progress.js?v=2026.11.05.1912"></script>
 <script src="js/decisive.js?v=2026.10.28.0713"></script>
 <script src="js/frontline.js?v=2026.11.06.2245"></script>

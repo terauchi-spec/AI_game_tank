@@ -1,11 +1,14 @@
 // One bounded traffic event per generated road; inactive roads do no spatial searches.
 let roadTruckEvents=[];
+const ROAD_TRUCK_HALF_LENGTH=33,ROAD_TRUCK_HALF_WIDTH=22;
 function setupRoadTruckEvents(){
  roadTruckEvents=[];
  if(areaDebugEnabled||stageMode!=='base'||!['baseIntermediate','base'].includes(currentStageId()))return;
  for(const road of roadBands){
   const dir=R()<.5?1:-1,unload=R()<.5;
-  roadTruckEvents.push({road,dir,unload,passengers:unload?1+(R()*3|0):0,dropped:0,state:'waiting',
+  const passengers=unload?1+(R()*3|0):0;
+  const arrivalDelay=R()<.5?2+R()*3:0;
+  roadTruckEvents.push({road,dir,unload,passengers,arrivalDelay,dropped:0,state:'waiting',
    x:0,y:road.y+road.h/2+(road.lanes>1?dir*road.h/4:0),body:dir>0?0:Math.PI,speed:190,t:0,
    kind:'truck',hp:5,maxHp:5});
  }
@@ -39,10 +42,13 @@ function updateRoadTrucks(dt){
   if(truck.state==='done'||truck.state==='destroyed')continue;
   if(truck.state==='waiting'){
    if(truck.y<cy||truck.y>cy+H)continue;
+   truck.arrivalDelay=Math.max(0,truck.arrivalDelay-dt);
+   if(truck.arrivalDelay>1e-9)continue;
    truck.x=truck.dir>0?Math.max(-80,cx-80):Math.min(WW+80,cx+W+80);
    truck.stopX=Math.max(100,Math.min(WW-100,cx+W*(.35+R()*.30)));
    truck.state='entering';
   }
+  truck.previousX=truck.x;
   if(truck.state==='unloading'){
    truck.t-=dt;
    if(truck.t<=0){
@@ -67,10 +73,19 @@ function drawRoadTrucks(cx,cy){
  }
 }
 function roadTruckActive(t){return t.hp>0&&t.state!=='waiting'&&t.state!=='done'&&t.state!=='destroyed';}
+// Include the distance driven this update so a fast-moving truck cannot skip a bomb.
+function roadTruckOnBomb(bomb){
+ for(const truck of roadTruckEvents){
+  if(!roadTruckActive(truck)||Math.abs(bomb.y-truck.y)>ROAD_TRUCK_HALF_WIDTH)continue;
+  const from=truck.previousX??truck.x;
+  if(bomb.x>=Math.min(from,truck.x)-ROAD_TRUCK_HALF_LENGTH&&bomb.x<=Math.max(from,truck.x)+ROAD_TRUCK_HALF_LENGTH)return truck;
+ }
+ return null;
+}
 // Road trucks face east/west. Use a small slab test, not sprite pixels or a world scan.
 function roadTruckSegmentT(a,b,t,pad=0){
  let lo=0,hi=1;
- for(const [start,delta,min,max] of [[a.x,b.x-a.x,t.x-33-pad,t.x+33+pad],[a.y,b.y-a.y,t.y-22-pad,t.y+22+pad]]){
+ for(const [start,delta,min,max] of [[a.x,b.x-a.x,t.x-ROAD_TRUCK_HALF_LENGTH-pad,t.x+ROAD_TRUCK_HALF_LENGTH+pad],[a.y,b.y-a.y,t.y-ROAD_TRUCK_HALF_WIDTH-pad,t.y+ROAD_TRUCK_HALF_WIDTH+pad]]){
   if(Math.abs(delta)<1e-9){if(start<min||start>max)return null;continue;}
   let p=(min-start)/delta,q=(max-start)/delta;if(p>q)[p,q]=[q,p];lo=Math.max(lo,p);hi=Math.min(hi,q);if(lo>hi)return null;
  }
@@ -87,7 +102,7 @@ function damageRoadTruck(t,damage,x=t.x,y=t.y){
 }
 function damageRoadTrucksInRadius(x,y,rad){
  for(const t of roadTruckEvents)if(roadTruckActive(t)){
-  const nx=Math.max(t.x-33,Math.min(t.x+33,x)),ny=Math.max(t.y-22,Math.min(t.y+22,y));
+  const nx=Math.max(t.x-ROAD_TRUCK_HALF_LENGTH,Math.min(t.x+ROAD_TRUCK_HALF_LENGTH,x)),ny=Math.max(t.y-ROAD_TRUCK_HALF_WIDTH,Math.min(t.y+ROAD_TRUCK_HALF_WIDTH,y));
   if(Math.hypot(nx-x,ny-y)<rad)damageRoadTruck(t,5,nx,ny);
  }
 }
