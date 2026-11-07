@@ -206,6 +206,20 @@ function sandCloudSprite(){
  if(sandCloudCache)return sandCloudCache;const c=document.createElement('canvas');c.width=256;c.height=96;const q=gameCanvasContext(c);
  for(let i=0;i<3;i++){q.save();q.translate(60+i*68,48);q.scale(1,.38);const gr=q.createRadialGradient(0,0,4,0,0,90);gr.addColorStop(0,'rgba(226,190,128,.48)');gr.addColorStop(.55,'rgba(205,162,97,.26)');gr.addColorStop(1,'rgba(205,162,97,0)');q.fillStyle=gr;q.fillRect(-100,-100,200,200);q.restore();}sandCloudCache=c;return c;
 }
+// The scope already clips its scenery; keep dust behind the reticle and lens UI.
+// Fixed screen-space streaks reuse the simulation wind, without particles or textures.
+function drawSniperSandstorm(q,cx,cy,r){
+ if(stageMode==='indoor'||sandIntensity<=0)return;
+ const s=sandIntensity,t=sandTravel,span=r*2+80,wrap=v=>(v%span+span)%span;
+ q.save();q.fillStyle='rgba(196,153,91,'+(.20*s)+')';q.fillRect(cx-r,cy-r,r*2,r*2);
+ q.lineWidth=1.3;
+ for(let i=0;i<18;i++){
+  const speed=.55+(i%4)*.15,x=cx-r-40+wrap(i*137+t*SAND_WIND_X*speed),y=cy-r-40+wrap(i*173+t*SAND_WIND_Y*speed),len=12+(i%4)*7;
+  q.strokeStyle='rgba(245,211,157,'+((.15+(i%3)*.07)*s)+')';
+  q.beginPath();q.moveTo(x-SAND_WIND_X*len,y-SAND_WIND_Y*len);q.lineTo(x,y);q.stroke();
+ }
+ q.restore();
+}
 function drawSandstormOverlay(){
  if(sandIntensity<=0)return;const q=gm,s=sandIntensity,t=sandTravel;
  q.save();q.fillStyle='rgba(164,116,62,'+(.58*s)+')';q.fillRect(0,0,W,H);q.lineCap='round';
