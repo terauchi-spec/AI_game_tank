@@ -2844,8 +2844,6 @@ function drawInfiltrationStairArrow(floor,stair,height){
   g.beginPath();const pts=[[-9,0],[0,-11],[9,0],[4,0],[4,10],[-4,10],[-4,0]];
   for(let i=0;i<pts.length;i++){const [dx,dy]=pts[i];if(i)g.lineTo(x+dx,y+dy*direction);else g.moveTo(x+dx,y+dy*direction);}
   g.closePath();g.fillStyle=direction>0?'#fff0a8':'#a5e8ff';g.strokeStyle='#15232b';g.lineWidth=1.5;g.fill();g.stroke();
-  const destination=Number.isInteger(stair.destination)?stair.destination:floor.number===1?1:0;
-  g.font='bold 12px system-ui';g.textAlign='center';g.fillStyle='#ffe1a0';g.fillText((destination+1)+'Fへ',stair.x,stair.y-height/2-12);
   g.restore();
 }
 function drawInfiltrationFloors(cx,cy){
