@@ -256,8 +256,9 @@ function setupSelectedAreaDebugStage(){
  p.x=WW/2;p.y=z.y0-170;p.hp=3;p.tank=null;p.body=p.ang=-Math.PI/2;scoreStats.startY=p.y;scoreStats.debugUsed=true;
  base.y/=MAP_SCALE;genCovers();genObjects();base.y*=MAP_SCALE;covers.forEach(c=>c.y*=MAP_SCALE);objects.forEach(o=>o.y*=MAP_SCALE);rebuildSpatialGrid();
  if(name==='湿地')for(let i=0;i<12;i++)mud.push({x:90+R()*650,y:z.y1+160+R()*1700,w:100+R()*120,h:55+R()*40});
- const bushN=name==='草原'?50:name==='湿地'?30:name==='森林'?12:name==='村'?8:name==='荒野'?0:5;
+ const bushN=name==='密林'?0:name==='草原'?50:name==='湿地'?30:name==='森林'?12:name==='村'?8:name==='荒野'?0:5;
  for(let i=0,made=0;i<bushN*40&&made<bushN;i++){const x=40+R()*(WW-150),y=z.y1+140+R()*1900;if(!hitsM(x+40,y+25,45)&&!bushes.some(b=>circleHitsRect(x+40,y+25,50,b))){bushes.push({x,y,w:85,h:55});made++;}}
+ if(name==='密林')setupJungleScenery(z);
  if(name==='荒野')buildCanyonZones();if(name==='草原')setupGrassVegetation();
  // Reserve the full two-row lineup and a walking lane around every tank.
  const clearStart=o=>!circleHitsRect(WW/2,p.y-150,310,o);
@@ -276,5 +277,5 @@ document.getElementById('areaDebugEnemyBomber').addEventListener('change',event=
  areaDebugEnemyBomber=event.target.checked;syncAreaDebugPicker();
 });
 const areaList=document.getElementById('areaDebugList');
-for(const name of AREA_DEBUG_ORDER){const b=document.createElement('button');b.type='button';b.textContent=name;b.addEventListener('click',()=>{if(state!=='areaPick'||typeof isDeveloperMode!=='function'||!isDeveloperMode())return;selectedAreaDebug=name;stageMode='base';const i=skillMenuList().findIndex(k=>k.id===selectedSkillId);selectSkillIndex(i,true);});areaList.append(b);}
+for(const name of AREA_DEBUG_ORDER){const b=document.createElement('button');b.type='button';b.textContent=name;b.addEventListener('click',()=>{if(state!=='areaPick'||typeof isDeveloperMode!=='function'||!isDeveloperMode())return;selectedAreaDebug=name;if(name==='密林')loadJungleAssets();stageMode='base';const i=skillMenuList().findIndex(k=>k.id===selectedSkillId);selectSkillIndex(i,true);});areaList.append(b);}
 document.getElementById('areaDebugBack').addEventListener('click',()=>{if(state==='areaPick'){state='stage';areaDebugEnabled=false;selectedAreaDebug=null;}});

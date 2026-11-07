@@ -1,0 +1,32 @@
+{
+  "wood_hut_large": {
+    "width": 512,
+    "height": 371,
+    "bytes": 66694
+  },
+  "concrete_hut": {
+    "width": 512,
+    "height": 428,
+    "bytes": 62210
+  },
+  "palm": {
+    "width": 506,
+    "height": 512,
+    "bytes": 99776
+  },
+  "watchtower": {
+    "width": 377,
+    "height": 512,
+    "bytes": 45854
+  },
+  "fallen_log": {
+    "width": 512,
+    "height": 167,
+    "bytes": 30330
+  },
+  "wood_hut_small": {
+    "width": 512,
+    "height": 424,
+    "bytes": 68478
+  }
+}

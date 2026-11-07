@@ -13,3 +13,8 @@
 /wrangler.json
 # Preserve PNG masters in GitHub; deploy only the optimized WebP assets.
 /assets/indoor/laboratory/*.png
+
+# Jungle source masters are retained in Git, never served to the game.
+/assets/jungle/*.png
+/assets/jungle/*.jpeg
+/assets/jungle/assets.json
