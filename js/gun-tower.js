@@ -223,17 +223,21 @@ function damageGunTowerCover(c,x,y,from){
  if(c.frontCargo)damageFrontlineCargo(c,x,y,12);else carve(x,y,GUN_TOWER_TYPE.coverRadius,from==='p',null);
 }
 function updateGatlingBullet(b,ox,oy,expired){
- const a={x:ox,y:oy},end={x:b.x,y:b.y},hits=[];
- const add=(o,r,type)=>{if(o.x<Math.min(ox,b.x)-r||o.x>Math.max(ox,b.x)+r||o.y<Math.min(oy,b.y)-r||o.y>Math.max(oy,b.y)+r)return;const t=gunTowerSegmentT(a,end,o,r);if(t!=null)hits.push({t,o,type});};
- const bp=segmentBaseImpact(a,end,1);if(bp)hits.push({t:Math.min(1,Math.hypot(bp.x-ox,bp.y-oy)/(Math.hypot(end.x-ox,end.y-oy)||1)),o:bp,type:'base'});
- const box=[Math.min(ox,b.x)-2,Math.min(oy,b.y)-2,Math.max(ox,b.x)+2,Math.max(oy,b.y)+2];
+ const a={x:ox,y:oy},end={x:b.x,y:b.y};
+ const minX=Math.min(ox,b.x),maxX=Math.max(ox,b.x),minY=Math.min(oy,b.y),maxY=Math.max(oy,b.y);
+ let hit=null;
+ // Strictly closer replaces the winner; equal-distance hits keep the original scan priority.
+ const consider=(t,o,type)=>{if(!hit||t<hit.t)hit={t,o,type};};
+ const add=(o,r,type)=>{if(o.x<minX-r||o.x>maxX+r||o.y<minY-r||o.y>maxY+r)return;const t=gunTowerSegmentT(a,end,o,r);if(t!=null)consider(t,o,type);};
+ const bp=segmentBaseImpact(a,end,1);if(bp)consider(Math.min(1,Math.hypot(bp.x-ox,bp.y-oy)/(Math.hypot(end.x-ox,end.y-oy)||1)),bp,'base');
+ const box=[minX-2,minY-2,maxX+2,maxY+2];
  // Geometry uses the same segment helpers as other weapons; find the first impact by bisection.
  for(const [list,test,type] of [[objectsInBox(...box),segmentHitsObject,'object'],[coversInBox(...box),segmentHitsCover,'cover']])for(const o of list){
   if(!test(a,end,o,0))continue;let lo=0,hi=1;
   for(let i=0;i<9;i++){const mid=(lo+hi)/2;if(test(a,{x:ox+(end.x-ox)*mid,y:oy+(end.y-oy)*mid},o,0))hi=mid;else lo=mid;}
-  hits.push({t:hi,o,type});
+  consider(hi,o,type);
  }
- if(b.from==='p'||b.from==='ally')for(const t of roadTruckEvents)if(roadTruckActive(t)){const at=roadTruckSegmentT(a,end,t);if(at!=null)hits.push({t:at,o:t,type:'roadTruck'});}
+ if(b.from==='p'||b.from==='ally')for(const t of roadTruckEvents)if(roadTruckActive(t)){const at=roadTruckSegmentT(a,end,t);if(at!=null)consider(at,t,'roadTruck');}
  for(const h of humans||[])if(h.alive&&h!==b.operator)add(h,12,'human');
  if(b.from!=='e'){for(const e of etanks||[])if(e.alive)add(e,TANK_HIT,'tank');}
  else{
@@ -242,8 +246,8 @@ function updateGatlingBullet(b,ox,oy,expired){
   for(const q of allies||[])if(q.alive&&!(q.chute>0))add(q,10,'ally');
   if(hound)add(hound,9,'hound');if(decoy)add(decoy,10,'decoy');
  }
- if(!hits.length)return expired;
- hits.sort((x,y)=>x.t-y.t);const hit=hits[0],o=hit.o;b.x=ox+(end.x-ox)*hit.t;b.y=oy+(end.y-oy)*hit.t;
+ if(!hit)return expired;
+ const o=hit.o;b.x=ox+(end.x-ox)*hit.t;b.y=oy+(end.y-oy)*hit.t;
  if(hit.type==='human'){
   if(typeof noteEnemyFallHit==='function')noteEnemyFallHit(o,b.vx,b.vy);o.alive=false;if(o.gunTower)releaseGunTower(o.gunTower);
   if(b.from==='p')recordPlayerKill(0,'mg',o);else if(b.from==='ally')recordSupportResult('kill','partner',o);burst(o.x,o.y,7,'#c05a3a',100);

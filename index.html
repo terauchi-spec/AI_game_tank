@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.07.1957</title>
+<title>こっそり戦車大作戦 2026.11.07.2250</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -1001,7 +1001,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.07.1957',FILE_CREATED_AT='2026/11/07 19:57',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.07.2250',FILE_CREATED_AT='2026/11/07 22:50',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -3518,17 +3518,38 @@ let lastEnemySeparationAt=-1e9;
 function separateEnemyUnits(force=false){
  const now=performance.now();if(!force&&now-lastEnemySeparationAt<100)return;lastEnemySeparationAt=now;
  const u=[];for(const h of humans||[])if(h.alive)u.push({o:h,r:8,static:!!(h.gunTower||h.areaDebugStatic||h.modeFrozen||mazeComparisonEnemyFrozen(h))});for(const e of etanks||[])if(e.alive)u.push({o:e,r:TANK_HIT,static:!!(e.static||e.areaDebugStatic||e.modeFrozen||mazeComparisonEnemyFrozen(e))});
- for(let pass=0;pass<3;pass++)for(let i=0;i<u.length;i++)for(let j=i+1;j<u.length;j++){
+ // Keep the original i/j order, including contacts created by an earlier push.
+ // Small squads use the cheaper direct loop; larger groups query nearby cells.
+ let grid=u.length>=64?new Map():null;const cell=96,maxRadius=Math.max(8,TANK_HIT);
+ const key=q=>Math.floor(q.o.x/cell)+Math.floor(q.o.y/cell)*Math.ceil(WW/cell);
+ const index=q=>{const k=key(q);if(q.cell===k)return;if(q.cell!==undefined)grid.get(q.cell).delete(q.i);let bucket=grid.get(k);if(!bucket)grid.set(k,bucket=new Set());bucket.add(q.i);q.cell=k;};
+ if(grid){
+  for(let i=0;i<u.length;i++){u[i].i=i;index(u[i]);}
+  // Dense crowds have few pairs to skip, so retain the direct loop there too.
+  if(grid.size*4<u.length)grid=null;
+ }
+ const candidates=(a,after)=>{
+  const r=a.r+maxRadius+12,out=[],stride=Math.ceil(WW/cell);
+  for(let y=Math.floor((a.o.y-r)/cell);y<=Math.floor((a.o.y+r)/cell);y++)for(let x=Math.floor((a.o.x-r)/cell);x<=Math.floor((a.o.x+r)/cell);x++){
+   const bucket=grid.get(x+y*stride);if(bucket)for(const j of bucket)if(j>after)out.push(j);
+  }
+  return out.sort((a,b)=>a-b);
+ };
+ for(let pass=0;pass<3;pass++)for(let i=0;i<u.length;i++){
+ let nearby=grid?candidates(u[i],i):null,next=0;
+ for(let j=grid?(nearby[next++]??u.length):i+1;j<u.length;j=grid?(nearby[next++]??u.length):j+1){
   const a=u[i],b=u[j],dx=b.o.x-a.o.x,dy=b.o.y-a.o.y,bothHuman=a.r===8&&b.r===8,min=a.r+b.r+(bothHuman?12:8);
    if(Math.abs(dx)>=min||Math.abs(dy)>=min)continue;
    const d=Math.hypot(dx,dy);if(d>=min)continue;
   const ang=d>.001?Math.atan2(dy,dx):((i*2.17+j*1.31)%6.28318),ux=Math.cos(ang),uy=Math.sin(ang),need=min-Math.max(.001,d)+.2;
   let ma=a.static?0:(b.static?need:need*.5),mb=b.static?0:(a.static?need:need*.5);
-  const trySet=(q,nx,ny)=>{if(nx<=q.r||nx>=WW-q.r||ny<=q.r||ny>=WH-q.r||hitsC(nx,ny,q.r))return false;q.o.x=nx;q.o.y=ny;return true;};
+  const trySet=(q,nx,ny)=>{if(nx<=q.r||nx>=WW-q.r||ny<=q.r||ny>=WH-q.r||hitsC(nx,ny,q.r))return false;q.o.x=nx;q.o.y=ny;if(grid)index(q);return true;};
   let am=ma?trySet(a,a.o.x-ux*ma,a.o.y-uy*ma):false,bm=mb?trySet(b,b.o.x+ux*mb,b.o.y+uy*mb):false;
   if(!am&&!a.static&&bm&&ma)trySet(a,a.o.x-ux*need,a.o.y-uy*need);
   if(!bm&&!b.static&&am&&mb)trySet(b,b.o.x+ux*need,b.o.y+uy*need);
   if(!am&&!bm&&!a.static&&!b.static){for(const da of [1.5708,-1.5708,3.14159]){const vx=Math.cos(ang+da),vy=Math.sin(ang+da);if(trySet(a,a.o.x-vx*need*.55,a.o.y-vy*need*.55)){trySet(b,b.o.x+vx*need*.55,b.o.y+vy*need*.55);break;}}}
+  if(grid){nearby=candidates(a,j);next=0;}
+ }
  }
 }
 function separateFootPlayerEnemyTanks(){
@@ -8658,7 +8679,7 @@ function reportGameError(error){
 <script src="js/fallen-enemies.js?v=2026.11.03.0131"></script>
 <script src="js/enemy-dogs.js?v=2026.10.28.0713"></script>
 <script src="js/training.js?v=2026.10.31.0728"></script>
-<script src="js/gun-tower.js?v=2026.11.06.1639"></script>
+<script src="js/gun-tower.js?v=2026.11.07.2250"></script>
 <script src="js/partner.js?v=2026.11.06.2245"></script>
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/canyon.js?v=2026.11.07.1957"></script>
