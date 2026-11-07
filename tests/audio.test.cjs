@@ -74,9 +74,9 @@ test('enemy tanks share one loop, use movement rather than turret rotation, and 
  c.state='results';c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),false);c.state='play';c.now+=120;for(const t of c.etanks)t.x+=5;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),false);
  c.now+=120;for(const t of c.etanks)t.x+=5;c.updateGameAudio();await settle();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),true);c.stopGameAudio();c.now+=120;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),false);
 });
-test('all 62 active manifest MP3s match the explicitly uploaded files, without requesting unprovided effects',()=>{
+test('all 65 active manifest MP3s match the explicitly uploaded files, without requesting unprovided effects',()=>{
  const {c}=harness(),defs=c.get('GAME_SE_FILES'),manifest=JSON.parse(fs.readFileSync(path.join(__dirname,'../docs/se-installed.json')));
- assert.equal(Object.keys(defs).length,62);assert.deepEqual(Object.values(defs).map(n=>'assets/audio/se/'+n+'.mp3').sort(),manifest.files.sort());for(const file of manifest.files)assert.ok(fs.statSync(path.join(__dirname,'..',file)).size>0);
+ assert.equal(Object.keys(defs).length,65);assert.deepEqual(Object.values(defs).map(n=>'assets/audio/se/'+n+'.mp3').sort(),manifest.files.sort());for(const file of manifest.files)assert.ok(fs.statSync(path.join(__dirname,'..',file)).size>0);
  assert.equal(c.gameSeName('sniperLens'),'sniperLens');assert.equal(c.playGameSe('pickup'),false);
 });
 test('MP3s decode once and cached effects play immediately; loading never replays a late shot',async()=>{
@@ -124,8 +124,8 @@ test('the legacy wrapper keeps unavailable effects and gameplay skill tones, whi
  const c={state:'play',gameSoundEnabled:true,ensureAudio(){},playGameSe(n){played.push(n);return false;},legacySfx:n=>fallback.push(n)};vm.createContext(c);vm.runInContext(line,c);c.sfx('skill');assert.equal(played.pop(),'legacySkill');assert.equal(fallback.pop(),'skill');c.state='stage';c.sfx('skill');assert.equal(played.pop(),'uiSelect');c.sfx('bombExplosion');assert.equal(fallback.pop(),'explosion');c.playGameSe=()=>{throw Error('audio failure');};c.sfx('mg');assert.equal(fallback.pop(),'mg');
 });
 
-test('all ten skill activation aliases reuse se_skills with one download, decode and cache entry',async()=>{
- const h=harness(),{c}=h,names=['bombThrow','hide','decoyPlace','reinforcement','drillStart','build','flameStart','sniperDeploy','houndCommand','partnerCommand'];
+test('all nine shared skill activation aliases reuse se_skills with one download, decode and cache entry',async()=>{
+ const h=harness(),{c}=h,names=['bombThrow','hide','decoyPlace','reinforcement','drillStart','build','flameStart','sniperDeploy','partnerCommand'];
  await Promise.all(names.map(n=>c.loadGameSe(n)));assert.equal(h.requests.length,1);assert.ok(h.requests[0].includes('/se_skills.mp3?v='));assert.equal(c.get('gameSe.cache.size'),1);
  for(const n of names){c.now+=100;assert.equal(c.playGameSe(n),true);assert.equal(c.get('Array.from(gameSe.voices)[0].name'),'skillActivate');}
  assert.equal(h.requests.length,1);assert.equal(c.get('gameSe.voices.size'),1);
@@ -134,7 +134,7 @@ test('all ten skill activation aliases reuse se_skills with one download, decode
 });
 
 test('each active MP3 request includes its verified content revision',async()=>{
- const h=harness(),{c}=h;await c.loadGameSe('cannon');const versions=JSON.parse(fs.readFileSync(path.join(__dirname,'../docs/se-revisions.json')));assert.equal(h.requests[0],'assets/audio/se/se_025_tank_cannon_fire.mp3?v='+versions.se_025_tank_cannon_fire);assert.equal(Object.keys(versions).length,62);
+ const h=harness(),{c}=h;await c.loadGameSe('cannon');const versions=JSON.parse(fs.readFileSync(path.join(__dirname,'../docs/se-revisions.json')));assert.equal(h.requests[0],'assets/audio/se/se_025_tank_cannon_fire.mp3?v='+versions.se_025_tank_cannon_fire);assert.equal(Object.keys(versions).length,65);
 });
 test('drill contact loops only during actual contact and stops on release, expiry or menus',async()=>{
  const h=harness(),{c}=h;await c.loadGameSe('drillContact');c.p.drill=5;c.p.drillContact=false;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("drillContact")'),false);
@@ -351,4 +351,49 @@ test('interceptor jet sound preloads for capture, reuses its buffer and obeys mu
  c.state='paused';c.stopGameAudio();assert.equal(voice.source.stopped,true);
  c.gameSoundEnabled=false;c.now+=1000;const count=h.sources.length;c.playGameSe('jetFlying');assert.equal(h.sources.length,count);
  assert.equal(h.requests.filter(u=>u.includes('se_jet flying.mp3')).length,1);
+});
+
+test('hound dash command uses the uploaded clip immediately and suppresses late commands after returning',async()=>{
+ const h=harness(),{c}=h;c.hound={state:'dashOut'};await c.loadGameSe('houndCommand');
+ c.playGameSe('houndCommand');
+ assert.ok(h.requests[0].includes('se_dog_letsgo.mp3?v=acb624acf68f'));
+ assert.equal(h.sources.length,1);assert.ok(h.sources[0].started);assert.equal(h.sources[0].loop,false);
+ for(const cancelled of [false,true]){
+  const pending=harness({defer:true});pending.c.hound={state:'dashOut'};pending.c.playGameSe('houndCommand');
+  if(cancelled)pending.c.hound.state='return';
+  pending.waiting.shift()();await settle();assert.equal(pending.sources.filter(s=>s.started).length,cancelled?0:1);
+ }
+});
+test('hound growls only during live bites and stops immediately on target loss, stun and menus',async()=>{
+ const h=harness(),{c}=h;c.skill='hound';c.hound={x:0,y:0,state:'chase',stun:0,target:{alive:true}};await c.loadGameSe('dogGrowl');
+ c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("houndBite")'),false);
+ for(const reason of ['return','target','stun','pause','mute','hidden']){
+  c.state='play';c.gameSoundEnabled=true;c.document.visibilityState='visible';Object.assign(c.hound,{state:'bite',stun:0,target:{alive:true}});
+  c.now+=16;c.updateGameAudio();await settle();const voice=c.get('gameSe.loops.get("houndBite").voice');assert.ok(voice.source.loop);
+  if(reason==='return')c.hound.state='return';if(reason==='target')c.hound.target.alive=false;if(reason==='stun')c.hound.stun=5;
+  if(reason==='pause')c.state='paused';if(reason==='mute')c.gameSoundEnabled=false;if(reason==='hidden')c.document.visibilityState='hidden';
+  c.now+=16;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("houndBite")'),false,reason);assert.ok(voice.source.stopped);
+ }
+});
+test('sandstorm uses one loop and stops on clearing, indoor entry and pause',async()=>{
+ const h=harness(),{c}=h;await c.loadGameSe('sandstormLoop');c.weather='sandstorm';c.updateGameAudio();await settle();
+ const voice=c.get('gameSe.loops.get("sandstorm").voice');assert.ok(voice.source.loop);assert.ok(h.requests.some(u=>u.includes('se_sandstorm1.mp3?v=0a6b5986c7ad')));
+ for(let i=0;i<20;i++){c.now+=16;c.updateGameAudio();}assert.equal(c.get('gameSe.loops.get("sandstorm").voice'),voice);
+ for(const reason of ['clear','indoor','pause']){
+  c.stageMode='base';c.state='play';c.weather='sandstorm';c.now+=16;c.updateGameAudio();await settle();
+  if(reason==='clear')c.weather='clear';if(reason==='indoor')c.stageMode='indoor';if(reason==='pause')c.state='paused';
+  c.now+=16;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("sandstorm")'),false,reason);
+ }
+});
+test('cancelled pending bite and sandstorm loads never start after their event ends',async()=>{
+ for(const event of ['bite','storm']){
+  const h=harness({defer:true}),{c}=h;c.get('gameSe.preloaded=true');
+  c.skill='hound';c.hound={x:0,y:0,state:event==='bite'?'bite':'follow',target:{alive:true}};c.weather=event==='storm'?'sandstorm':'clear';
+  c.updateGameAudio();c.hound.state='return';c.weather='clear';c.now+=16;c.updateGameAudio();
+  for(let i=0;i<4;i++){for(const done of h.waiting.splice(0))done();await settle();}
+  assert.equal(h.sources.filter(s=>s.loop&&!s.stopped).length,0);
+ }
+});
+test('automatic door gain increases to 1.5 times the previous level',async()=>{
+ const h=harness();await h.c.loadGameSe('door');h.c.playGameSe('door');assert.equal(h.c.get('[...gameSe.voices][0].gain.gain.value'),.32*1.5);
 });

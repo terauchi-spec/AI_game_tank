@@ -1,6 +1,6 @@
 # MP3 SE integration
 
-The green B-column cells in `こっそり戦車大作戦_ゲーム_SE.xlsx` identify the 56 supplied event mappings. The ten skill-activation events now alias the single `se_skills.mp3` asset, giving 47 active MP3 files before subsequent additions; the current bank has 58 files. `se-installed.json` records the active file paths and shared-skill aliases. Playback assets are stored under `assets/audio/se/`.
+The green B-column cells in `こっそり戦車大作戦_ゲーム_SE.xlsx` identify the 56 supplied event mappings. The ten skill-activation events now alias the single `se_skills.mp3` asset, giving 47 active MP3 files before subsequent additions; the current bank has 65 files. `se-installed.json` records the active file paths and shared-skill aliases. Playback assets are stored under `assets/audio/se/`.
 
 `js/audio.js` shares the existing AudioContext and replaces matching synthesized effects. Unprovided effects retain their existing synthesis. Before a requested MP3 has finished loading, gameplay uses its existing fallback instead of blocking or replaying the event late.
 
@@ -34,3 +34,6 @@ Player ground vehicle loops (all seven tanks, armored cars and trucks) now stop 
 Enemy road trucks reuse the player truck `wheelMove` / `se_043_wheeled_vehicle_loop` clip, base gain 0.11, and the same speed-to-playback-rate scaling. One shared distance-attenuated loop represents the loudest nearby moving road truck. Starting, stopping for unloading, destruction and exit update immediately; continuing gain/rate changes stay at 10 Hz. Menus, pause, mute, tab hiding and blur stop playback through the existing audio lifecycle. No additional audio files, per-truck voices or position histories are created. The existing destruction-stage preparation preloads the shared wheeled-vehicle clip.
 
 Friendly interception fighters play `se_jet flying.mp3` once 0.5 seconds after arrival (the fighter itself arrives 0.6 seconds into an intercepted enemy bomber pass). The delay uses the simulation clock, so pausing freezes it and resetting the mission discards it. This replaces their previous generic flyby event; other aircraft keep their existing sound. The clip is preloaded during capture-stage preparation, reuses the shared cache and voice limits, and follows mute/pause/reset handling.
+
+
+Hound commands use se_dog_letsgo immediately on dashOut (preloaded for the selected skill). A pending command may play within 1.5 seconds only while the hound is still dashing/chasing; pause/reset cancels it. se_dog_growling_loop runs only while the player's hound is biting a living enemy and is distance attenuated. se_sandstorm1 loops during outdoor sandstorms. State transitions stop loops before the 10Hz scan; continuing growl gain changes use that existing scan. Both loops obey the shared pause/mute/visibility/reset lifecycle. Automatic door gain is 0.48, 1.5 times the previous 0.32.
