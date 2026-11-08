@@ -42,8 +42,31 @@ function rotateJungleLog(c,angle){
  }
  c.jungleHitMask=rows;
 }
+// Allocate before area generation so the five-area stage cannot exceed five buildings.
+// Keep source assets (including the retired concrete tower) for existing art/physics data.
+const JUNGLE_BUILDING_KEYS=['wood_hut_small','wood_hut_large','concrete_hut','wood_watchtower'];
+function planJungleBuildings(zones){
+ const shuffled=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+ let remaining=5;
+ for(const z of shuffled(zones)){
+  const count=Math.min(Math.floor(R()*3),remaining);remaining-=count;
+  z.jungleBuildingKeys=shuffled(JUNGLE_BUILDING_KEYS).slice(0,count);
+ }
+}
+function setupJungleMud(zones){
+ const target=Math.floor(R()*6);
+ for(let tries=0;tries<400&&mud.length<target;tries++){
+  const z=zones[Math.floor(R()*zones.length)],w=105+R()*155,h=48+R()*58;
+  const m={x:18+R()*(WW-w-36),y:z.y1+220+R()*(z.y0-z.y1-h-570),w,h};
+  if(circleHitsRect(WW/2,p.y-150,310,m)||z.escapeExit&&circleHitsRect(z.escapeExit.x,z.escapeExit.y,125,m))continue;
+  if(water.some(o=>ov2(m,o,50))||bridges.some(o=>ov2(m,o,50))||mud.some(o=>ov2(m,o,10)))continue;
+  if(covers.some(c=>ov2(m,coverSpriteRect(c)||c,5))||objects.some(o=>ov2(m,objectAABB(o),5)))continue;
+  mud.push(m);
+ }
+}
 function setupJungleScenery(z){
  loadJungleAssets();
+ if(!Array.isArray(z.jungleBuildingKeys))planJungleBuildings([z]);
  // A compact seed preserves baseline assets/counts; final placement below replaces
  // its rectangular spacing with visible masks and fills the former center/edge strips.
  const free=r=>r.x>=12&&r.x+r.w<=WW-12&&r.y>=z.y1+40&&r.y+r.h<=z.y0-420&&
@@ -60,9 +83,8 @@ function setupJungleScenery(z){
   }
   return false;
  };
- add('wood_hut_small',90,z.y1+320);add('wood_hut_large',WW-300,z.y1+760);
- add('concrete_hut',85,z.y1+1230);add('watchtower',WW-245,z.y1+1480);
- add('wood_watchtower',WW-245,z.y1+390);
+ const buildingSeeds={wood_hut_small:[90,320],wood_hut_large:[WW-300,760],concrete_hut:[85,1230],wood_watchtower:[WW-245,390]};
+ for(const key of z.jungleBuildingKeys){const [x,y]=buildingSeeds[key];add(key,x,z.y1+y);}
  for(const [x,y] of [[20,640],[WW-352,1810]])add('fern_tree',x,z.y1+y);
  for(const [x,y] of [[210,560],[WW-380,1160],[220,1800]])add('fallen_log',x,z.y1+y);
  for(const [x,y] of [[32,980],[WW-210,270],[40,1560],[200,120],[WW-210,1000]])add('broadleaf_tree',x,z.y1+y);

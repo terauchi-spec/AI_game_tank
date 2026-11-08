@@ -1,13 +1,14 @@
 const test=require('node:test'),assert=require('node:assert/strict'),path=require('node:path'),fs=require('node:fs');
 const {createGameEngine}=require('./helpers/game-engine.cjs'),root=path.join(__dirname,'..');
-test('jungle debug stage is isolated, traversable and contains all nine supplied assets',()=>{
+test('jungle debug stage is isolated, traversable and preserves foliage while limiting buildings and omitting the concrete tower',()=>{
  for(const seed of [1,7,91]){
   const h=createGameEngine(root,{seed});
   h.run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='密林';reset(false)");
   assert.deepEqual(Array.from(h.run('ZONES.map(z=>z.n)')),['密林']);
   assert.equal(h.run("TERRAIN_ASSET_SRC['密林']===TERRAIN_ASSET_SRC['湿地']"),true);
   assert.equal(h.run('debugInvincible'),true);
-  assert.equal(h.run("Object.keys(JUNGLE_ASSETS).every(k=>covers.some(c=>c.jungleAsset===k))"),true);
+  assert.equal(h.run("covers.filter(c=>JUNGLE_BUILDING_KEYS.includes(c.jungleAsset)).length<=2&&!covers.some(c=>c.jungleAsset==='watchtower')&&mud.length<=5"),true);
+  assert.equal(h.run("Object.keys(JUNGLE_ASSETS).filter(k=>!JUNGLE_BUILDING_KEYS.includes(k)&&k!=='watchtower').every(k=>covers.some(c=>c.jungleAsset===k))"),true);
   assert.equal(h.run("(()=>{for(let y=ZONES[0].y1+32;y<p.y;y+=16)if(hitsM(jungleRouteX(ZONES[0],y),y,28))return false;return true;})()"),true);
   assert.equal(h.run('cars.length'),h.run('TYPES.length'));
   assert.ok(h.run('humans.length')>0);assert.ok(h.run('etanks.length')>0);
@@ -83,12 +84,12 @@ test('jungle plant images retain masters and use small lazy WebP assets',()=>{
 });
 
 test('expanded jungle props and denser vegetation stay separated and within bounded counts',()=>{
- const dimensions={fallen_log:[190,62,1.3],wood_hut_small:[160,135,1.1*1.1],wood_hut_large:[220,158,1.1*1.1],concrete_hut:[185,156,1.1*1.1],watchtower:[150,205,1.1],wood_watchtower:[150,150*320/295,1.1*2]};
+ const dimensions={fallen_log:[190,62,1.3],wood_hut_small:[160,135,1.1*1.1],wood_hut_large:[220,158,1.1*1.1],concrete_hut:[185,156,1.1*1.1],wood_watchtower:[150,150*320/295,1.1*2]};
  for(let seed=1;seed<=40;seed++){
   const h=createGameEngine(root,{seed,touch:seed%2===0,width:seed%2===0?390:840});
   h.run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='密林';reset(false)");
   for(const [key,[w,hh,scale]] of Object.entries(dimensions)){
-   assert.ok(h.run(`covers.some(c=>c.jungleAsset==='${key}')`),key);
+   if(!h.run(`JUNGLE_BUILDING_KEYS.includes('${key}')`))assert.ok(h.run(`covers.some(c=>c.jungleAsset==='${key}')`),key);
    h.c.key=key;h.c.expectedW=w*scale;h.c.expectedH=hh*scale;
    if(key==='fallen_log'){assert.equal(h.run('covers.filter(c=>c.jungleAsset===key).every(c=>Math.abs(c.jungleSpriteW-expectedW)<1e-8&&Math.abs(c.jungleSpriteH-expectedH)<1e-8&&Math.abs(c.jungleAngle)<=Math.PI/12)'),true);continue;}
    assert.equal(h.run('covers.filter(c=>c.jungleAsset===key).every(c=>Math.abs(c.w-expectedW)<1e-8&&Math.abs(c.h-expectedH)<1e-8)'),true,key);

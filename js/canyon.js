@@ -264,7 +264,7 @@ function setupSelectedAreaDebugStage(){
  if(name==='湿地')for(let i=0;i<12;i++)mud.push({x:90+R()*650,y:z.y1+160+R()*1700,w:100+R()*120,h:55+R()*40});
  const bushN=name==='密林'?0:name==='草原'?50:name==='湿地'?30:name==='森林'?12:name==='村'?8:name==='荒野'?0:5;
  for(let i=0,made=0;i<bushN*40&&made<bushN;i++){const x=40+R()*(WW-150),y=z.y1+140+R()*1900;if(!hitsM(x+40,y+25,45)&&!bushes.some(b=>circleHitsRect(x+40,y+25,50,b))){bushes.push({x,y,w:85,h:55});made++;}}
- if(name==='密林')setupJungleScenery(z);
+ if(name==='密林'){setupJungleScenery(z);setupJungleMud([z]);}
  if(name==='荒野')buildCanyonZones();if(name==='草原')setupGrassVegetation();
  // Reserve the full two-row lineup and a walking lane around every tank.
  const clearStart=o=>!circleHitsRect(WW/2,p.y-150,310,o);
