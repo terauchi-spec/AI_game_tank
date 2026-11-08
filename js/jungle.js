@@ -166,7 +166,7 @@ function buildJungleWalkRoute(z,props){
   }
   points.push(next);if(y===end)break;
  }
- points.push({x:WW/2,y:p.y});return points;
+ points.push({x:WW/2,y:z.escapeArea===undefined?p.y:Math.min(p.y,z.y0)});return points;
 }
 function jungleRouteX(z,y){
  const points=z.jungleWalkRoute;if(!points)return WW/2;
@@ -202,6 +202,7 @@ function createJunglePlacement(z,protectRoute=true){
  };
  const mark=(q,value)=>{for(let i=0;i<q.stamp.runs.length;i+=3){const y=q.y+q.stamp.runs[i];if(y<0||y>=height)continue;const left=Math.max(0,q.x+q.stamp.runs[i+1]),right=Math.min(width,q.x+q.stamp.runs[i+2]);if(right>left)grid.fill(value,y*width+left,y*width+right);}};
  const fits=(q,x,y)=>{
+  if(z.escapeArea!==undefined&&((z.escapeArea<4&&y<0)||(z.escapeArea>0&&y+q.stamp.h>height)))return false;
   if(x+q.stamp.w/2<0||x+q.stamp.w/2>width||y+q.stamp.h/2<0||y+q.stamp.h/2>height||(x<WW/2+310&&x+q.stamp.w>WW/2-310&&y<cy+310&&y+q.stamp.h>cy-310))return false;
   for(let i=0;i<q.stamp.runs.length;i+=3){
    const yy=y+q.stamp.runs[i];if(yy<0||yy>=height)continue;

@@ -2911,13 +2911,7 @@ function drawInfiltrationFloors(cx,cy){
   }
 }
 
-function drawInfiltrationExitsForFloor(f,cx,cy){
-    // 前線制圧のような円形の脱出範囲。描画と待機判定は同じ半径を使う。
-    for(const q of [f.entrance||f.entrances?.[0],f.emergency].filter(Boolean)){
-      const radius=INDOOR_EXIT_RADIUS;
-      if(q.x+radius<cx||q.x-radius>cx+W||q.y+radius<cy||q.y-radius>cy+H)continue;
-      const active=typeof mission!=='undefined'&&mission?.escapeExit===q;
-      const progress=active?(mission.escapeProgress||0)/INDOOR_EXIT_SECONDS:0;
+function drawExitCircle(q,radius,progress,active){
       g.save();g.lineWidth=3;g.strokeStyle='#9de7ae';g.fillStyle='rgba(75,170,100,.15)';
       g.beginPath();g.arc(q.x,q.y,radius,0,Math.PI*2);g.fill();g.stroke();
       if(progress>0){
@@ -2927,6 +2921,15 @@ function drawInfiltrationExitsForFloor(f,cx,cy){
       g.font='bold 22px system-ui';g.fillStyle='#e9ffec';g.textAlign='center';g.fillText('EXIT',q.x,q.y+7);
       if(active){g.font='bold 15px system-ui';g.fillText(Math.max(0,INDOOR_EXIT_SECONDS-(mission.escapeProgress||0)).toFixed(1)+'s',q.x,q.y+32);}
       g.restore();
+}
+function drawInfiltrationExitsForFloor(f,cx,cy){
+    // 前線制圧のような円形の脱出範囲。描画と待機判定は同じ半径を使う。
+    for(const q of [f.entrance||f.entrances?.[0],f.emergency].filter(Boolean)){
+      const radius=INDOOR_EXIT_RADIUS;
+      if(q.x+radius<cx||q.x-radius>cx+W||q.y+radius<cy||q.y-radius>cy+H)continue;
+      const active=typeof mission!=='undefined'&&mission?.escapeExit===q;
+      const progress=active?(mission.escapeProgress||0)/INDOOR_EXIT_SECONDS:0;
+      drawExitCircle(q,radius,progress,active);
     }
 }
 

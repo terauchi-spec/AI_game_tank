@@ -1,6 +1,7 @@
 // Stage progress is independent of skill unlocks and persists even when debug controls are used.
 let selectedStageId=null,expandedStageId=null,stageDebugAll=false,intermediateStageId=null;
 const LABORATORY_STAGE={id:'indoorLab',target:'先端科学研究所',name:'潜入（上級）',image:'laboratory_scene_white'};
+const ESCAPE_TEST_STAGE={id:'escapeTest',target:'密林5エリア',name:'脱出（テスト）',image:'palm'};
 const TRAINING_STAGE={id:'training',target:'訓練場',name:'準備',image:'training'};
 const STAGE_PROGRESS_KEY='tankGameStageProgressV1';
 const LEGACY_STAGE_ORDER=['beginner','indoorBeginner','frontBeginner','base','indoor','front','decisive'];
@@ -53,6 +54,7 @@ function unlockStageOnClear(s){
 function stageAvailableForSelection(id,progress=readStageProgress()){
  if(id==='training')return true;
  const developer=typeof isDeveloperMode==='function'&&isDeveloperMode();
+ if(id==='escapeTest')return developer;
  if(id==='decisive'&&!developer)return false;
  return (id==='areaDebug'&&developer)||(STAGE_ORDER.some(stage=>stage.id===id)&&((developer&&stageDebugAll)||stageSelectable(id,progress)));
 }
@@ -106,7 +108,7 @@ function setSelectedStage(id,toggle=true){
  if(toggle)expandedStageId=expandedStageId===id?null:id;else if(selectedStageId!==id)expandedStageId=null;
  selectedStageId=id;
  document.querySelectorAll('[data-stage]').forEach(card=>{const chosen=card.dataset.stage===id;card.classList.toggle('selected',chosen);card.setAttribute('aria-pressed',String(chosen));});
- const stage=id==='training'?TRAINING_STAGE:id==='indoorLab'?LABORATORY_STAGE:STAGE_ORDER.find(stage=>stage.id===id),button=document.getElementById('stageDeploy');
+ const stage=id==='escapeTest'?ESCAPE_TEST_STAGE:id==='training'?TRAINING_STAGE:id==='indoorLab'?LABORATORY_STAGE:STAGE_ORDER.find(stage=>stage.id===id),button=document.getElementById('stageDeploy');
  button.disabled=typeof gameBuildQueued!=='undefined'&&gameBuildQueued;
  button.textContent=id==='areaDebug'?'エリアデバッグへ':stage.name+'で出撃';
  renderStageRecords();
@@ -118,6 +120,7 @@ function deploySelectedStage(){
  indoorLaboratory=id==='indoorLab';if(indoorLaboratory&&typeof prepareLaboratoryAssets==='function')prepareLaboratoryAssets();
  areaDebugEnabled=id==='areaDebug';frontlineOni=false;frontlineBeginner=id==='frontBeginner';indoorBeginner=id==='indoorBeginner';
  stageMode=areaDebugEnabled||id==='baseIntermediate'?'base':frontlineBeginner||frontlineOni||id==='frontIntermediate'?'front':indoorBeginner||indoorLaboratory?'indoor':id;
+ if(id==='escapeTest')loadJungleAssets();
  if(areaDebugEnabled){state='areaPick';sfx('skill');return true;}
  return selectSkillIndex(skillMenuList().findIndex(skill=>skill.id===selectedSkillId),true);
 }
@@ -126,6 +129,7 @@ function renderStageLocks(){
  document.querySelectorAll('[data-stage]').forEach(button=>{
   const id=button.dataset.stage,index=STAGE_ORDER.findIndex(stage=>stage.id===id),stage=STAGE_ORDER[index];
   if(id==='training'){button.disabled=false;button.classList.toggle('locked',false);button.classList.toggle('stage-concealed',false);button.querySelector('.stage-target').textContent='訓練場';button.querySelector('.stage-number').textContent='00';button.setAttribute('aria-label','00 準備 訓練場');return;}
+  if(id==='escapeTest'){const developer=typeof isDeveloperMode==='function'&&isDeveloperMode();button.hidden=!developer;button.disabled=!developer;button.classList.toggle('locked',false);button.classList.toggle('stage-concealed',false);button.setAttribute('aria-label','脱出（テスト） 密林5エリア');return;}
   if(id==='areaDebug'){
    button.disabled=!(typeof isDeveloperMode==='function'&&isDeveloperMode());button.classList.toggle('locked',false);button.setAttribute('aria-label','エリアデバッグ');return;
   }
