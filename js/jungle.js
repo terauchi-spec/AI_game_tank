@@ -124,7 +124,7 @@ function setupJungleScenery(z){
   if(c.jungleAsset==='fallen_log')rotateJungleLog(c,(R()-.5)*Math.PI/6);
   if(c.kd===6&&!c.jungleAsset)c.jungleTreeArt=stableRand(c,61)<.5?'tree_v2':'tree';
  }
- if(packJunglePopulation(denseCovers,denseBushes,z)){covers=denseCovers;bushes=denseBushes;z.jungleWalkRoute=buildJungleWalkRoute(z,covers);targets.grass=randomizeJungleVegetation(z,targets.trees);}
+ if(packJunglePopulation(denseCovers,denseBushes,z)){covers=denseCovers;bushes=denseBushes;if(!arrangeJungleCore(z))z.jungleWalkRoute=buildJungleWalkRoute(z,covers);targets.grass=randomizeJungleVegetation(z,targets.trees);}
  for(const c of covers)if(c.kd===6||c.jungleAsset==='fallen_log')c.jungleHitScale=.95;
  z.jungleDensity={targets,trees:covers.filter(c=>c.kd===6).length,grass:bushes.filter(b=>!b.junglePlant).length,plants:bushes.filter(b=>b.junglePlant).length};
 }
@@ -159,6 +159,47 @@ function packJunglePopulation(denseCovers,denseBushes,z){
   if(placements.length===items.length){for(const {item,r} of placements){item.o.x=r.x+item.dx;item.o.y=r.y+item.dy;}z.jungleLaneHalf=laneHalf;return true;}
  }
  return false;
+}
+
+// Anchor large obstacles across the center before filling the surrounding forest.
+// The route holds to alternating sides until each obstacle is fully passed.
+function arrangeJungleCore(z){
+ const building=covers.find(c=>JUNGLE_BUILDING_KEYS.includes(c.jungleAsset));
+ const logs=covers.filter(c=>c.jungleAsset==='fallen_log'),fern=covers.find(c=>c.jungleAsset==='fern_tree');
+ const core=[building||logs[1],fern,logs[0]].filter(Boolean);
+ if(core.length!==3)return false;
+ const original=covers.map(c=>[c,c.x,c.y]),oldRoute=z.jungleWalkRoute;
+ const points=[{x:WW/2,y:z.y1}],side=R()<.5?-1:1;
+ for(let i=0;i<core.length;i++){
+  const c=core[i],r=coverSpriteRect(c)||c,cy=z.y1+360+i*570;
+  c.x=WW/2-r.w/2+(R()-.5)*40+(c.x-r.x);c.y=cy-r.h/2+(c.y-r.y);c.jungleCore=true;
+  const x=WW/2+side*(i%2?-1:1)*260;
+  points.push({x:x+(R()-.5)*16,y:cy-r.h/2-64},{x:x+(R()-.5)*16,y:cy+r.h/2+64});
+ }
+ points.push({x:WW/2,y:z.y0-420},{x:WW/2,y:z.escapeArea===undefined?p.y:Math.min(p.y,z.y0)});
+ z.jungleWalkRoute=points;z.jungleCoreLayout=true;
+ const placement=createJunglePlacement(z),ordered=[...core,...covers.filter(c=>!core.includes(c)).sort((a,b)=>b.w*b.h-a.w*a.h)];
+ for(const o of objects)placement.mark(placement.make(o,objectAABB(o)),1);
+ for(const c of ordered){
+  const q=placement.make(c,coverSpriteRect(c)||c);let found=false;
+  for(let i=0;i<(c.jungleCore?1:240);i++){
+   const x=c.jungleCore?q.x:Math.round(R()*WW-q.stamp.w/2),y=c.jungleCore?q.y:Math.round(1+R()*(z.y0-z.y1-2)-q.stamp.h/2);
+   if(!placement.fits(q,x,y))continue;q.x=x;q.y=y;placement.commit(q);found=true;break;
+  }
+  if(!found){for(const [o,x,y] of original){o.x=x;o.y=y;delete o.jungleCore;}z.jungleWalkRoute=oldRoute;z.jungleCoreLayout=false;return false;}
+ }
+ return true;
+}
+function setupJungleTrails(zones){
+ for(const z of zones){
+  if(R()>=.75)continue;
+  for(let tries=0;tries<32;tries++){
+   const r={x:0,y:z.y1+240+R()*(z.y0-z.y1-850),w:WW,h:96,kind:'dirt',lanes:1};
+   if(water.some(w=>ov2(r,w,60))||bridges.some(b=>ov2(r,b,60))||mud.some(m=>ov2(r,m,24)))continue;
+   // Canopies and fallen logs may cross a forest trail; do not clear a new straight lane.
+   roadBands.push(r);break;
+  }
+ }
 }
 
 // Decode visual alpha once on demand, independently of the 95% collision outline.
@@ -198,7 +239,14 @@ function jungleRouteX(z,y){
 // One-world-pixel occupancy exists only during generation, never during gameplay.
 function createJunglePlacement(z,protectRoute=true){
  const width=WW,height=Math.ceil(z.y0-z.y1),grid=new Uint8Array(width*height),cache=new Map(),leftRoute=new Int16Array(height),rightRoute=new Int16Array(height);
- for(let y=0;y<height;y++){const x=jungleRouteX(z,z.y1+y);leftRoute[y]=Math.floor(x-56);rightRoute[y]=Math.ceil(x+56);}
+ for(let y=0;y<height;y++){
+  const yy=z.y1+y,x=jungleRouteX(z,yy);let lo=x,hi=x;
+  if(z.jungleCoreLayout){
+   const a=jungleRouteX(z,yy-56),b=jungleRouteX(z,yy+56);lo=Math.min(lo,a,b);hi=Math.max(hi,a,b);
+   for(const q of z.jungleWalkRoute)if(Math.abs(q.y-yy)<=56){lo=Math.min(lo,q.x);hi=Math.max(hi,q.x);}
+  }
+  leftRoute[y]=Math.floor(lo-56);rightRoute[y]=Math.ceil(hi+56);
+ }
  const cy=p.y-150-z.y1;
  for(let y=Math.max(0,Math.floor(cy-310));y<Math.min(height,Math.ceil(cy+310));y++)grid.fill(1,y*width+Math.max(0,WW/2-310),y*width+Math.min(width,WW/2+310));
  const make=(o,r)=>{
@@ -245,7 +293,7 @@ function randomizeJungleVegetation(z,treeTarget){
  const trees=all.filter(q=>q.o.kd===6),added=[];
  for(const q of all)if('kd' in q.o)placement.commit(q);
  // Place large crowns before grass, so small foliage does not scatter across every tree gap.
- for(let pass=0;pass<2;pass++)for(const {q} of trees.map(q=>({q,order:R()})).sort((a,b)=>a.order-b.order)){
+ for(let pass=0;pass<2;pass++)for(const {q} of trees.filter(q=>!q.o.jungleCore).map(q=>({q,order:R()})).sort((a,b)=>a.order-b.order)){
   const oldX=q.x,oldY=q.y;placement.mark(q,0);
   for(let i=0;i<32;i++){
    const x=Math.round(i<16?R()*WW-q.stamp.w/2:oldX+(R()-.5)*96),y=Math.round(i<16?1+R()*(z.y0-z.y1-2)-q.stamp.h/2:oldY+(R()-.5)*112);

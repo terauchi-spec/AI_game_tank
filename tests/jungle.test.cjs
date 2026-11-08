@@ -210,3 +210,14 @@ test('placement clips off-map foliage without wrapping occupancy into adjacent r
  h.run('globalThis.top={x:20,y:ZONES[0].y1-5,w:10,h:10};check.commit(check.make(top,top))');
  assert.equal(h.run('check.grid[20]'),1);assert.equal(h.run('check.grid[check.grid.length-1]'),0);
 });
+
+test('central logs, giant ferns and optional buildings force alternating detours with a continuous vehicle route',()=>{
+ for(const seed of [1,7,31,91]){
+  const h=createGameEngine(root,{seed});h.run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='密林';reset(false)");
+  assert.equal(h.run('ZONES[0].jungleCoreLayout'),true);
+  assert.equal(h.run("covers.filter(c=>c.jungleCore).length===3&&covers.some(c=>c.jungleCore&&c.jungleAsset==='fern_tree')&&covers.some(c=>c.jungleCore&&c.jungleAsset==='fallen_log')"),true);
+  assert.equal(h.run('covers.filter(c=>c.jungleCore).every(c=>circleHitsCover(WW/2,c.y+c.h/2,8,c))'),true,'center is blocked seed '+seed);
+  assert.equal(h.run('(()=>{const qs=ZONES[0].jungleWalkRoute;return qs.some(q=>q.x<250)&&qs.some(q=>q.x>WW-250);})()'),true);
+  assert.equal(h.run('(()=>{const qs=ZONES[0].jungleWalkRoute;for(let i=1;i<qs.length;i++){const a=qs[i-1],b=qs[i],n=Math.ceil(D(a,b)/8);for(let j=0;j<=n;j++){const t=j/n;if(hitsC(a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t,28))return false;}}return true;})()'),true,'vehicle detours seed '+seed);
+ }
+});

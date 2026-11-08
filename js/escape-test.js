@@ -28,7 +28,7 @@ function setupEscapeTestWorld(){
  const last=ZONES[ZONES.length-1],exit={x:WW/2,y:last.y1+110};
  covers=covers.filter(c=>!circleHitsRect(exit.x,exit.y,125,coverSpriteRect(c)||c));
  objects=objects.filter(o=>!circleHitsRect(exit.x,exit.y,125,objectAABB(o)));bushes=bushes.filter(b=>!circleHitsRect(exit.x,exit.y,110,b));
- last.escapeExit=exit;setupJungleMud(ZONES);
+ last.escapeExit=exit;setupJungleMud(ZONES);setupJungleTrails(ZONES);
  for(const z of ZONES){
   const inside=o=>o.y+o.h/2>z.y1&&o.y+o.h/2<=z.y0;
   z.jungleDensity.trees=covers.filter(c=>c.kd===6&&inside(c)).length;z.jungleDensity.grass=bushes.filter(b=>!b.spinifex&&inside(b)).length;z.jungleDensity.plants=bushes.filter(b=>b.spinifex&&inside(b)).length;
