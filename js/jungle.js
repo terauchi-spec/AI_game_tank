@@ -1,6 +1,6 @@
 // Test-only scenery: reuse the existing cover physics and spatially culled renderer.
 // Images load only after selecting the jungle, leaving normal stage startup unchanged.
-const JUNGLE_ASSETS={palm:[6,136,136],fallen_log:[0,190*1.3,62*1.3],wood_hut_small:[4,160*1.1,135*1.1],wood_hut_large:[4,220*1.1,158*1.1],concrete_hut:[3,185*1.1,156*1.1],watchtower:[3,150*1.1,205*1.1],wood_watchtower:[4,150*1.1,255*1.1],broadleaf_tree:[6,166,166],fern_tree:[6,332,332]};
+const JUNGLE_ASSETS={palm:[6,136,136],fallen_log:[0,190*1.3,62*1.3],wood_hut_small:[4,160*1.1,135*1.1],wood_hut_large:[4,220*1.1,158*1.1],concrete_hut:[3,185*1.1,156*1.1],watchtower:[3,150*1.1,205*1.1],wood_watchtower:[4,150*1.1,150*1.1*320/295],broadleaf_tree:[6,166,166],fern_tree:[6,332,332]};
 const JUNGLE_PLANTS=['round_leaf','flower_leaf'];
 function loadJungleAssets(){
  for(const key of [...Object.keys(JUNGLE_ASSETS),...JUNGLE_PLANTS])if(!COVER_IMG['jungle_'+key])COVER_IMG['jungle_'+key]=makeAssetImage(ASSET_DIR+'jungle/'+key+'.webp?v='+GAME_VERSION);

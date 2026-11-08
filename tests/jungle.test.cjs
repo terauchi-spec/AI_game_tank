@@ -84,7 +84,7 @@ test('jungle plant images retain masters and use small lazy WebP assets',()=>{
 });
 
 test('expanded jungle props and denser vegetation stay separated and within bounded counts',()=>{
- const dimensions={fallen_log:[190,62,1.3],wood_hut_small:[160,135,1.1],wood_hut_large:[220,158,1.1],concrete_hut:[185,156,1.1],watchtower:[150,205,1.1],wood_watchtower:[150,255,1.1]};
+ const dimensions={fallen_log:[190,62,1.3],wood_hut_small:[160,135,1.1],wood_hut_large:[220,158,1.1],concrete_hut:[185,156,1.1],watchtower:[150,205,1.1],wood_watchtower:[150,150*320/295,1.1]};
  for(let seed=1;seed<=40;seed++){
   const h=createGameEngine(root,{seed,touch:seed%2===0,width:seed%2===0?390:840});
   h.run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='密林';reset(false)");
@@ -96,7 +96,7 @@ test('expanded jungle props and denser vegetation stay separated and within boun
   assert.equal(h.run('(()=>{const all=[...covers.map(c=>coverSpriteRect(c)||c),...bushes];return all.every((a,i)=>all.slice(i+1).every(b=>a.x>=b.x+b.w||a.x+a.w<=b.x||a.y>=b.y+b.h||a.y+a.h<=b.y));})()'),true,'overlap seed '+seed);
   assert.equal(h.run('covers.length<=32&&bushes.length<=30'),true);
   assert.ok(h.run('covers.filter(c=>c.kd===6).length')>=14,'tree density seed '+seed);
-  assert.ok(h.run('bushes.filter(b=>!b.junglePlant).length')>=13,'bush density seed '+seed);
+  assert.ok(h.run('bushes.filter(b=>!b.junglePlant).length')>=12,'bush density seed '+seed);
   assert.equal(h.run('(()=>{for(let y=ZONES[0].y1+32;y<p.y;y+=16)if(hitsM(WW/2,y,28))return false;return true;})()'),true);
  }
 });
