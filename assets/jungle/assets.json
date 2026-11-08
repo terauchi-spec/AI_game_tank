@@ -1,4 +1,9 @@
 {
+  "broadleaf_tree": {
+    "width": 320,
+    "height": 309,
+    "bytes": 37868
+  },
   "concrete_hut": {
     "width": 512,
     "height": 428,
@@ -8,6 +13,11 @@
     "width": 512,
     "height": 171,
     "bytes": 27478
+  },
+  "fern_tree": {
+    "width": 320,
+    "height": 320,
+    "bytes": 51334
   },
   "palm": {
     "width": 512,
@@ -28,5 +38,10 @@
     "width": 512,
     "height": 424,
     "bytes": 52660
+  },
+  "wood_watchtower": {
+    "width": 295,
+    "height": 320,
+    "bytes": 19342
   }
 }

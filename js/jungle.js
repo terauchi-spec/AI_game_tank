@@ -1,6 +1,6 @@
 // Test-only scenery: reuse the existing cover physics and spatially culled renderer.
 // Images load only after selecting the jungle, leaving normal stage startup unchanged.
-const JUNGLE_ASSETS={palm:[6,136,136],fallen_log:[0,190,62],wood_hut_small:[4,160,135],wood_hut_large:[4,220,158],concrete_hut:[3,185,156],watchtower:[3,150,205],wood_watchtower:[4,150,255],broadleaf_tree:[6,166,166]};
+const JUNGLE_ASSETS={palm:[6,136,136],fallen_log:[0,190,62],wood_hut_small:[4,160,135],wood_hut_large:[4,220,158],concrete_hut:[3,185,156],watchtower:[3,150,205],wood_watchtower:[4,150,255],broadleaf_tree:[6,166,166],fern_tree:[6,332,332]};
 function loadJungleAssets(){
  for(const key of Object.keys(JUNGLE_ASSETS))if(!COVER_IMG['jungle_'+key])COVER_IMG['jungle_'+key]=makeAssetImage(ASSET_DIR+'jungle/'+key+'.webp?v='+GAME_VERSION);
 }
@@ -31,11 +31,12 @@ function jungleSegmentHit(c,a,b,pad=0){
 function setupJungleScenery(z){
  loadJungleAssets();
  const add=(key,x,y)=>{const [kd,w,h]=JUNGLE_ASSETS[key];covers.push({kd,x,y,w,h,jungleAsset:key,areaDebug:1});};
- // Broad central lane connects the entire map; alternating clearings expose all six assets.
+ // Broad central lane connects the entire map; alternating clearings expose the supplied assets.
  add('wood_hut_small',90,z.y1+320);add('wood_hut_large',WW-300,z.y1+760);
  add('concrete_hut',85,z.y1+1230);add('watchtower',WW-245,z.y1+1480);
  add('wood_watchtower',WW-245,z.y1+390);
  for(const [x,y] of [[32,980],[WW-210,270],[40,1560]])add('broadleaf_tree',x,z.y1+y);
+ for(const [x,y] of [[20,640],[WW-352,1810]])add('fern_tree',x,z.y1+y);
  for(let row=0;row<9;row++)for(const side of [0,1]){
   const x=side?WW-174:32,y=z.y1+90+row*205;
   if(!covers.some(c=>circleHitsRect(x+68,y+68,85,c)))add('palm',x,y);

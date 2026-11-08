@@ -1,6 +1,6 @@
 const test=require('node:test'),assert=require('node:assert/strict'),path=require('node:path'),fs=require('node:fs');
 const {createGameEngine}=require('./helpers/game-engine.cjs'),root=path.join(__dirname,'..');
-test('jungle debug stage is isolated, traversable and contains all eight supplied assets',()=>{
+test('jungle debug stage is isolated, traversable and contains all nine supplied assets',()=>{
  for(const seed of [1,7,91]){
   const h=createGameEngine(root,{seed});
   h.run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='密林';reset(false)");
@@ -25,7 +25,7 @@ test('jungle images are lazy loaded and optimized with preserved masters',()=>{
   const base=path.join(root,'assets/jungle',key),webp=fs.readFileSync(base+'.webp');total+=webp.length;
   assert.equal(webp.toString('ascii',8,12),'WEBP');assert.ok(fs.existsSync(base+'.png'));assert.ok(fs.existsSync(base+'.jpeg'));
  }
- assert.ok(total<400000);
+ assert.ok(total<450000);
 });
 test('jungle transparent corners and gaps do not block movement or shots',()=>{
  const h=createGameEngine(root);
