@@ -27,3 +27,29 @@ test('jungle images are lazy loaded and optimized with preserved masters',()=>{
  }
  assert.ok(total<400000);
 });
+test('jungle transparent corners and gaps do not block movement or shots',()=>{
+ const h=createGameEngine(root);
+ h.run("loadJungleAssets();globalThis.palmCover={kd:6,jungleAsset:'palm',x:100,y:100,w:320,h:320};globalThis.towerCover={kd:3,jungleAsset:'watchtower',x:100,y:100,w:320,h:320}");
+ assert.equal(h.run('circleHitsCover(105,105,2,palmCover)'),false);
+ assert.equal(h.run('pointHitsCover(260,260,palmCover)'),true);
+ assert.equal(h.run('segmentHitsCover({x:100,y:100},{x:115,y:100},palmCover)'),false);
+ assert.equal(h.run('segmentHitsCover({x:100,y:260},{x:420,y:260},palmCover)'),true);
+ assert.equal(h.run('circleHitsCover(165,405,2,towerCover)'),false);
+ assert.equal(h.run('circleHitsCover(260,405,2,towerCover)'),true);
+});
+test('partial destruction retains every jungle sprite and clips its original collider',()=>{
+ const h=createGameEngine(root);
+ h.run('loadJungleAssets()');
+ for(const key of h.run('Object.keys(JUNGLE_ASSETS)')){
+  h.run(`covers=[{kd:JUNGLE_ASSETS['${key}'][0],jungleAsset:'${key}',x:100,y:100,w:320,h:320}];objects=[];globalThis.originalCover=covers[0];carve(260,260,32,false,null)`);
+  assert.ok(h.run('covers.length')>0);
+  assert.equal(h.run(`covers.every(c=>c.fr&&c.jungleAsset==='${key}')`),true);
+  assert.equal(h.run('covers.some(c=>circleHitsCover(260,260,0,c))'),false);
+  assert.equal(h.run('(()=>{for(const c of covers)for(const [x,y] of [[c.x+.2,c.y+.2],[c.x+c.w/2,c.y+c.h/2]])if(pointHitsCover(x,y,c)&&!pointHitsCover(x,y,originalCover))return false;return true;})()'),true);
+  const drawn=[];h.run('g').drawImage=(im)=>drawn.push(im._src);
+  h.run('covers.forEach(drawCoverFragment)');
+  assert.ok(drawn.length>0);
+  assert.ok(drawn.every(src=>src.includes('/jungle/'+key+'.webp')));
+  h.run('carve(260,260,1000,false,null)');assert.equal(h.run('covers.length'),0);
+ }
+});

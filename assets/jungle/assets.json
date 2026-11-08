@@ -1,32 +1,32 @@
 {
-  "wood_hut_large": {
-    "width": 512,
-    "height": 371,
-    "bytes": 66694
-  },
   "concrete_hut": {
     "width": 512,
     "height": 428,
-    "bytes": 62210
+    "bytes": 48926
+  },
+  "fallen_log": {
+    "width": 512,
+    "height": 171,
+    "bytes": 27478
   },
   "palm": {
-    "width": 506,
+    "width": 512,
     "height": 512,
-    "bytes": 99776
+    "bytes": 100206
   },
   "watchtower": {
     "width": 377,
     "height": 512,
-    "bytes": 45854
+    "bytes": 37918
   },
-  "fallen_log": {
+  "wood_hut_large": {
     "width": 512,
-    "height": 167,
-    "bytes": 30330
+    "height": 371,
+    "bytes": 57856
   },
   "wood_hut_small": {
     "width": 512,
     "height": 424,
-    "bytes": 68478
+    "bytes": 52660
   }
 }

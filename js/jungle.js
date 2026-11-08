@@ -2,7 +2,31 @@
 // Images load only after selecting the jungle, leaving normal stage startup unchanged.
 const JUNGLE_ASSETS={palm:[6,136,136],fallen_log:[0,190,62],wood_hut_small:[4,160,135],wood_hut_large:[4,220,158],concrete_hut:[3,185,156],watchtower:[3,150,205]};
 function loadJungleAssets(){
- for(const key of Object.keys(JUNGLE_ASSETS))if(!COVER_IMG['jungle_'+key])COVER_IMG['jungle_'+key]=makeAssetImage(ASSET_DIR+'jungle/'+key+'.webp');
+ for(const key of Object.keys(JUNGLE_ASSETS))if(!COVER_IMG['jungle_'+key])COVER_IMG['jungle_'+key]=makeAssetImage(ASSET_DIR+'jungle/'+key+'.webp?v='+GAME_VERSION);
+}
+// Alpha silhouettes are compiled at build time; collision never reads canvas pixels.
+// Each of the 32 rows is a bitset. Query only cells near the actor/projectile.
+function jungleMaskIntersects(c,x0,y0,x1,y1,test){
+ const rows=JUNGLE_HIT_MASKS[c.jungleAsset];if(!rows)return false;
+ const sx=c.ox0??c.x,sy=c.oy0??c.y,sw=c.ow0??c.w,sh=c.oh0??c.h,dx=sw/32,dy=sh/32;
+ const left=Math.max(x0,c.x,sx),top=Math.max(y0,c.y,sy),right=Math.min(x1,c.x+c.w,sx+sw),bottom=Math.min(y1,c.y+c.h,sy+sh);
+ if(right<left||bottom<top)return false;
+ const col0=Math.max(0,Math.floor((left-sx)/dx)),col1=Math.min(31,Math.floor((right-sx)/dx));
+ const row0=Math.max(0,Math.floor((top-sy)/dy)),row1=Math.min(31,Math.floor((bottom-sy)/dy));
+ for(let row=row0;row<=row1;row++)for(let col=col0;col<=col1;col++)if(rows[row]&(1<<col)){
+  const x=Math.max(c.x,sx+col*dx),y=Math.max(c.y,sy+row*dy),w=Math.min(c.x+c.w,sx+(col+1)*dx)-x,h=Math.min(c.y+c.h,sy+(row+1)*dy)-y;
+  if(w>0&&h>0&&test(x,y,w,h))return true;
+ }
+ return false;
+}
+function jungleCircleHit(c,x,y,r=0){
+ return jungleMaskIntersects(c,x-r,y-r,x+r,y+r,(a,b,w,h)=>{
+  const dx=Math.max(a-x,0,x-a-w),dy=Math.max(b-y,0,y-b-h);return dx*dx+dy*dy<=r*r;
+ });
+}
+function jungleSegmentHit(c,a,b,pad=0){
+ return jungleMaskIntersects(c,Math.min(a.x,b.x)-pad,Math.min(a.y,b.y)-pad,Math.max(a.x,b.x)+pad,Math.max(a.y,b.y)+pad,
+  (x,y,w,h)=>segmentHitsRect(a,b,{x:x-pad,y:y-pad,w:w+pad*2,h:h+pad*2}));
 }
 function setupJungleScenery(z){
  loadJungleAssets();
