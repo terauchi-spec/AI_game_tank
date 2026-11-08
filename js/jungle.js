@@ -1,8 +1,9 @@
 // Test-only scenery: reuse the existing cover physics and spatially culled renderer.
 // Images load only after selecting the jungle, leaving normal stage startup unchanged.
 const JUNGLE_ASSETS={palm:[6,136,136],fallen_log:[0,190,62],wood_hut_small:[4,160,135],wood_hut_large:[4,220,158],concrete_hut:[3,185,156],watchtower:[3,150,205],wood_watchtower:[4,150,255],broadleaf_tree:[6,166,166],fern_tree:[6,332,332]};
+const JUNGLE_PLANTS=['round_leaf','flower_leaf'];
 function loadJungleAssets(){
- for(const key of Object.keys(JUNGLE_ASSETS))if(!COVER_IMG['jungle_'+key])COVER_IMG['jungle_'+key]=makeAssetImage(ASSET_DIR+'jungle/'+key+'.webp?v='+GAME_VERSION);
+ for(const key of [...Object.keys(JUNGLE_ASSETS),...JUNGLE_PLANTS])if(!COVER_IMG['jungle_'+key])COVER_IMG['jungle_'+key]=makeAssetImage(ASSET_DIR+'jungle/'+key+'.webp?v='+GAME_VERSION);
 }
 // Alpha silhouettes are compiled at build time; collision never reads canvas pixels.
 // Each of the 32 rows is a bitset. Query only cells near the actor/projectile.
@@ -46,5 +47,16 @@ function setupJungleScenery(z){
  for(const [x,y] of [[230,900],[WW-285,1450],[60,1900]])covers.push({kd:8,x,y:z.y1+y,w:90,h:74,areaDebug:1});
  for(let i=0;i<16;i++){const x=i%2?WW-330:230,y=z.y1+150+i*112;
   if(!covers.some(c=>circleHitsRect(x+35,y+22,42,c)))bushes.push({x,y,w:70,h:45});
+ }
+ // Use the wilderness spinifex size and behavior, with jungle-only lazy-loaded art.
+ // Three plants total; alternate both supplied variants and keep the central lane open.
+ for(let i=0,made=0;i<80&&made<3;i++){
+  const size=spinifexPlacementSize(65+R()*30,R()),side=made%2;
+  const x=side?WW/2+90+R()*Math.max(1,WW/2-size-110):20+R()*Math.max(1,WW/2-size-110);
+  const y=z.y1+80+R()*Math.max(1,z.y0-z.y1-size-650);
+  if(circleHitsRect(WW/2,p.y-150,310,{x,y,w:size,h:size}))continue;
+  if(covers.some(c=>circleHitsRect(x+size/2,y+size/2,size/2+8,c))||objects.some(o=>circleHitsRect(x+size/2,y+size/2,size/2+8,objectAABB(o))))continue;
+  if(bushes.some(b=>circleHitsRect(x+size/2,y+size/2,size/2+8,b)))continue;
+  bushes.push({x,y,w:size,h:size,spinifex:true,junglePlant:JUNGLE_PLANTS[made%JUNGLE_PLANTS.length]});made++;
  }
 }

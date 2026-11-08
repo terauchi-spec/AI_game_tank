@@ -53,3 +53,32 @@ test('partial destruction retains every jungle sprite and clips its original col
   h.run('carve(260,260,1000,false,null)');assert.equal(h.run('covers.length'),0);
  }
 });
+test('jungle plants share spinifex stealth, burning and scatter behavior',()=>{
+ for(let seed=1;seed<=20;seed++){
+  const h=createGameEngine(root,{seed});h.run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='密林';reset(false);globalThis.plants=bushes.filter(b=>b.junglePlant)");
+  assert.ok(h.run('plants.length')>=2&&h.run('plants.length')<=3);
+  assert.equal(h.run('new Set(plants.map(b=>b.junglePlant)).size'),2);
+  assert.equal(h.run('plants.every(b=>b.spinifex&&b.w===b.h&&b.w>=59.15&&b.w<=129.675)'),true);
+  assert.equal(h.run('plants.every(b=>b.x+b.w<WW/2-60||b.x>WW/2+60)'),true);
+  assert.equal(h.run('plants.every(b=>!covers.some(c=>circleHitsRect(b.x+b.w/2,b.y+b.h/2,b.w/2+8,c)))'),true);
+  h.run('globalThis.plant=plants[0];p.x=plant.x+plant.w/2;p.y=plant.y+plant.h/2;p.tank=null');
+  assert.equal(h.run('inBush(p)'),true);
+  assert.equal(h.run("canDetect({x:p.x,y:p.y+30,st:1,target:'p'},p,-Math.PI/2,'p')"),false);
+  assert.equal(h.run("spinifexSprite(plant)===COVER_IMG['jungle_'+plant.junglePlant]"),true);
+  assert.equal(h.run('igniteNature(plant)'),true);
+  h.run('scatterSpinifexAt(p.x,p.y,5)');
+  assert.equal(h.run('bushes.includes(plant)'),false);
+  assert.equal(h.run('burningNatureSet.has(plant)'),false);
+  assert.equal(h.run('spinifexScatters.some(f=>f.b.junglePlant===plant.junglePlant)'),true);
+ }
+});
+test('jungle plant images retain masters and use small lazy WebP assets',()=>{
+ const h=createGameEngine(root);h.run('startAssetLoading()');
+ assert.equal(h.run("JUNGLE_PLANTS.some(k=>COVER_IMG['jungle_'+k])"),false);
+ h.run('loadJungleAssets()');const count=h.run('assetLoadTotal');h.run('loadJungleAssets()');assert.equal(h.run('assetLoadTotal'),count);
+ for(const key of h.run('JUNGLE_PLANTS')){
+  const base=path.join(root,'assets/jungle',key),webp=fs.readFileSync(base+'.webp');
+  assert.equal(webp.toString('ascii',8,12),'WEBP');assert.ok(webp.length<40000);
+  for(const suffix of ['.png','_source.png','.jpeg'])assert.ok(fs.existsSync(base+suffix));
+ }
+});

@@ -18,6 +18,7 @@ function invalidateSpinifexVegetation(){
  for(const chunks of grassBushChunkCache.values())for(const ch of chunks)ch.dirty=true;
 }
 function spinifexSprite(b){
+ if(b.junglePlant)return COVER_IMG['jungle_'+b.junglePlant];
  if(!b.spinifexGreen)return COVER_IMG.spinifex;const im=COVER_IMG.spinifex_green;if(!assetOK(im))return im;
  if(matchedGreenSpinifex&&matchedGreenSource===im)return matchedGreenSpinifex;
  const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;const q=gameCanvasContext(c);q.drawImage(im,0,0);
