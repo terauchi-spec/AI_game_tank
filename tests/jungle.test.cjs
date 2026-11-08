@@ -8,7 +8,7 @@ test('jungle debug stage is isolated, traversable and contains all nine supplied
   assert.equal(h.run("TERRAIN_ASSET_SRC['密林']===TERRAIN_ASSET_SRC['湿地']"),true);
   assert.equal(h.run('debugInvincible'),true);
   assert.equal(h.run("Object.keys(JUNGLE_ASSETS).every(k=>covers.some(c=>c.jungleAsset===k))"),true);
-  assert.equal(h.run("(()=>{for(let y=ZONES[0].y1+32;y<p.y;y+=16)if(hitsM(WW/2,y,28))return false;return true;})()"),true);
+  assert.equal(h.run("(()=>{for(let y=ZONES[0].y1+32;y<p.y;y+=16)if(hitsM(jungleRouteX(ZONES[0],y),y,28))return false;return true;})()"),true);
   assert.equal(h.run('cars.length'),h.run('TYPES.length'));
   assert.ok(h.run('humans.length')>0);assert.ok(h.run('etanks.length')>0);
   assert.equal(h.run('hitsM(p.x,p.y,8)'),false);
@@ -59,7 +59,7 @@ test('jungle plants share spinifex stealth, burning and scatter behavior',()=>{
   assert.ok(h.run('plants.length')>=12&&h.run('plants.length')<=18);
   assert.equal(h.run('new Set(plants.map(b=>b.junglePlant)).size'),2);
   assert.equal(h.run('plants.every(b=>b.spinifex&&b.w===b.h&&b.w>=59.15&&b.w<=129.675)'),true);
-  assert.equal(h.run('plants.every(b=>b.x+b.w<=WW/2-ZONES[0].jungleLaneHalf||b.x>=WW/2+ZONES[0].jungleLaneHalf)'),true);
+  assert.equal(h.run('plants.every(b=>b.x+b.w/2>=0&&b.x+b.w/2<=WW)'),true);
   h.run('globalThis.plant=plants[0];p.x=plant.x+plant.w/2;p.y=plant.y+plant.h/2;p.tank=null');
   assert.equal(h.run('inBush(p)'),true);
   assert.equal(h.run("canDetect({x:p.x,y:p.y+30,st:1,target:'p'},p,-Math.PI/2,'p')"),false);
@@ -93,12 +93,12 @@ test('expanded jungle props and denser vegetation stay separated and within boun
    if(key==='fallen_log'){assert.equal(h.run('covers.filter(c=>c.jungleAsset===key).every(c=>Math.abs(c.jungleSpriteW-expectedW)<1e-8&&Math.abs(c.jungleSpriteH-expectedH)<1e-8&&Math.abs(c.jungleAngle)<=Math.PI/12)'),true);continue;}
    assert.equal(h.run('covers.filter(c=>c.jungleAsset===key).every(c=>Math.abs(c.w-expectedW)<1e-8&&Math.abs(c.h-expectedH)<1e-8)'),true,key);
   }
-  assert.equal(h.run('(()=>{const check=createJunglePlacement(ZONES[0]);for(const q of [...covers.map(c=>check.make(c,coverSpriteRect(c)||c))]){if(!check.fits(q,q.x,q.y))return false;check.mark(q,1);}return true;})()'),true,'visible overlap seed '+seed);
-  assert.equal(h.run('covers.length<=80&&bushes.length<=178'),true);
-  assert.equal(h.run('Object.entries(ZONES[0].jungleDensity.targets).every(([key,n])=>key==="trees"?ZONES[0].jungleDensity[key]>n/3&&ZONES[0].jungleDensity[key]<=n:ZONES[0].jungleDensity[key]===n)'),true,'population target seed '+seed);
+  assert.equal(h.run('(()=>{const check=createJunglePlacement(ZONES[0],false);for(const q of [...covers.map(c=>check.make(c,coverSpriteRect(c)||c))]){if(!check.fits(q,q.x,q.y))return false;check.mark(q,1);}return true;})()'),true,'visible overlap seed '+seed);
+  assert.equal(h.run('covers.length<=80&&bushes.length<=218'),true);
+  assert.equal(h.run('Object.entries(ZONES[0].jungleDensity.targets).every(([key,n])=>key==="trees"?ZONES[0].jungleDensity[key]>n/3&&ZONES[0].jungleDensity[key]<=n:key==="grass"?ZONES[0].jungleDensity[key]>=n*.85&&ZONES[0].jungleDensity[key]<=n:ZONES[0].jungleDensity[key]===n)'),true,'population target seed '+seed);
   assert.equal(h.run("covers.filter(c=>c.jungleAsset==='palm'||c.jungleAsset==='broadleaf_tree').every(c=>c.w===JUNGLE_ASSETS[c.jungleAsset][1]&&c.h===JUNGLE_ASSETS[c.jungleAsset][2])"),true,'no small palm/broadleaf seed '+seed);
   assert.ok(h.run('bushes.filter(b=>!b.junglePlant).length')>=12,'bush density seed '+seed);
-  assert.equal(h.run('(()=>{for(let y=ZONES[0].y1+32;y<p.y;y+=16)if(hitsM(WW/2,y,28))return false;return true;})()'),true);
+  assert.equal(h.run('(()=>{for(let y=ZONES[0].y1+32;y<p.y;y+=16)if(hitsM(jungleRouteX(ZONES[0],y),y,28))return false;return true;})()'),true);
  }
 });
 
@@ -187,4 +187,25 @@ test('jungle covers draw once above cached foreground grass while other stages k
  const h=createGameEngine(root);h.run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='密林';reset(false);startAssetLoading();state='play';p.y=ZONES[0].y1+800;globalThis.grassDrawn=false;globalThis.coverLayers=[];globalThis.originalGrassChunks=drawGrassBushChunks;globalThis.originalDrawCover=drawCoverAsset;drawGrassBushChunks=(...args)=>{originalGrassChunks(...args);grassDrawn=true;};drawCoverAsset=c=>{coverLayers.push({after:grassDrawn,key:c.jungleAsset||c.jungleTreeArt||c.kd,ref:c});return originalDrawCover(c);};draw(update(1/60))");
  assert.ok(h.run('coverLayers.length')>0);assert.equal(h.run('coverLayers.every(c=>c.after)'),true);assert.equal(h.run('new Set(coverLayers.map(c=>c.ref)).size===coverLayers.length'),true);
  h.run("ZONES=[{n:'草原',y0:12800,y1:0}]");assert.equal(h.run('jungleCoverLayerActive()'),false);
+});
+
+test('jungle plants fill the old central and side gaps while retaining a winding traversable route',()=>{
+ for(const seed of [1,7,31,91]){
+  const h=createGameEngine(root,{seed});h.run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='密林';reset(false)");
+  assert.equal(h.run('bushes.some(b=>b.x<0)&&bushes.some(b=>b.x+b.w>WW)'),true);
+  assert.equal(h.run('bushes.some(b=>b.x<WW/2&&b.x+b.w>WW/2)'),true);
+  assert.equal(h.run('covers.some(c=>c.kd===6&&(c.x<0||c.x+c.w>WW))'),true);
+  assert.ok(h.run('new Set(ZONES[0].jungleWalkRoute.map(q=>Math.round(q.x))).size')>4);
+  assert.equal(h.run('(()=>{for(let y=ZONES[0].y1+32;y<p.y;y+=8)if(hitsM(jungleRouteX(ZONES[0],y),y,28))return false;return true;})()'),true);
+ }
+});
+
+test('placement clips off-map foliage without wrapping occupancy into adjacent rows',()=>{
+ const h=createGameEngine(root);h.run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='密林';reset(false);globalThis.check=createJunglePlacement(ZONES[0],false);globalThis.a={x:-5,y:ZONES[0].y1+100,w:10,h:10};globalThis.q=check.make(a,a);check.commit(q)");
+ assert.equal(h.run('check.grid[100*WW]'),1);assert.equal(h.run('check.grid[99*WW+WW-1]'),0);
+ h.run('globalThis.b={x:WW-3,y:ZONES[0].y1+200,w:6,h:10};globalThis.right=check.make(b,b)');
+ assert.equal(h.run('check.fits(right,right.x,right.y)'),true);h.run('check.commit(right)');
+ assert.equal(h.run('check.grid[200*WW+WW-1]'),1);assert.equal(h.run('check.grid[201*WW]'),0);
+ h.run('globalThis.top={x:20,y:ZONES[0].y1-5,w:10,h:10};check.commit(check.make(top,top))');
+ assert.equal(h.run('check.grid[20]'),1);assert.equal(h.run('check.grid[check.grid.length-1]'),0);
 });

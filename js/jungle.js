@@ -44,8 +44,8 @@ function rotateJungleLog(c,angle){
 }
 function setupJungleScenery(z){
  loadJungleAssets();
- // Placement-only rectangle checks reserve the full sprite, including transparent edges.
- // Leave a 128px central lane and the tank lineup clear; no new per-frame work.
+ // A compact seed preserves baseline assets/counts; final placement below replaces
+ // its rectangular spacing with visible masks and fills the former center/edge strips.
  const free=r=>r.x>=12&&r.x+r.w<=WW-12&&r.y>=z.y1+40&&r.y+r.h<=z.y0-420&&
   (r.x+r.w<=WW/2-64||r.x>=WW/2+64)&&!circleHitsRect(WW/2,p.y-150,310,r)&&
   !covers.some(c=>overlap(r,coverSpriteRect(c)||c))&&!bushes.some(b=>overlap(r,b))&&!objects.some(o=>overlap(r,objectAABB(o)));
@@ -102,7 +102,7 @@ function setupJungleScenery(z){
   if(c.jungleAsset==='fallen_log')rotateJungleLog(c,(R()-.5)*Math.PI/6);
   if(c.kd===6&&!c.jungleAsset)c.jungleTreeArt=stableRand(c,61)<.5?'tree_v2':'tree';
  }
- if(packJunglePopulation(denseCovers,denseBushes,z)){covers=denseCovers;bushes=denseBushes;targets.grass=randomizeJungleVegetation(z,targets.trees);}
+ if(packJunglePopulation(denseCovers,denseBushes,z)){covers=denseCovers;bushes=denseBushes;z.jungleWalkRoute=buildJungleWalkRoute(z,covers);targets.grass=randomizeJungleVegetation(z,targets.trees);}
  for(const c of covers)if(c.kd===6||c.jungleAsset==='fallen_log')c.jungleHitScale=.95;
  z.jungleDensity={targets,trees:covers.filter(c=>c.kd===6).length,grass:bushes.filter(b=>!b.junglePlant).length,plants:bushes.filter(b=>b.junglePlant).length};
 }
@@ -147,10 +147,36 @@ function junglePlacementBits(key){
  const data=new Uint8Array(hex.length/2);for(let i=0;i<data.length;i++)data[i]=parseInt(hex.slice(i*2,i*2+2),16);
  junglePlacementMaskCache.set(key,data);return data;
 }
+// A winding walkable route is protected for hard cover only; grass can cover it.
+function buildJungleWalkRoute(z,props){
+ const points=[{x:WW/2,y:z.y1}],end=z.y0-420;
+ const clear=(a,b)=>{
+  const steps=Math.ceil(Math.hypot(b.x-a.x,b.y-a.y)/12);
+  for(let i=0;i<=steps;i++){
+   const t=steps?i/steps:0,x=a.x+(b.x-a.x)*t,y=a.y+(b.y-a.y)*t;
+   for(const c of props){const r=coverSpriteRect(c)||c;if(x+44<r.x||x-44>r.x+r.w||y+44<r.y||y-44>r.y+r.h)continue;if(circleHitsCover(x,y,44,c))return false;}
+  }
+  return true;
+ };
+ for(let y=z.y1+128;y<end+128;y+=128){
+  y=Math.min(y,end);const previous=points[points.length-1];let next={x:WW/2,y};
+  for(let attempt=0;attempt<12;attempt++){
+   const x=Math.max(260,Math.min(WW-260,previous.x+(R()-.5)*128)),candidate={x,y},fallback={x:WW/2,y:Math.min(end,y+128)};
+   if(clear(previous,candidate)&&clear(candidate,fallback)){next=candidate;break;}
+  }
+  points.push(next);if(y===end)break;
+ }
+ points.push({x:WW/2,y:p.y});return points;
+}
+function jungleRouteX(z,y){
+ const points=z.jungleWalkRoute;if(!points)return WW/2;
+ for(let i=0;i<points.length-1;i++)if(y<=points[i+1].y){const a=points[i],b=points[i+1],t=Math.max(0,Math.min(1,(y-a.y)/Math.max(1,b.y-a.y)));return a.x+(b.x-a.x)*t;}
+ return points[points.length-1].x;
+}
 // One-world-pixel occupancy exists only during generation, never during gameplay.
-function createJunglePlacement(z){
- const width=WW,height=Math.ceil(z.y0-z.y1),grid=new Uint8Array(width*height),cache=new Map(),lane=z.jungleLaneHalf||48;
- for(let y=0;y<height;y++)grid.fill(1,y*width+Math.floor(WW/2-lane),y*width+Math.ceil(WW/2+lane));
+function createJunglePlacement(z,protectRoute=true){
+ const width=WW,height=Math.ceil(z.y0-z.y1),grid=new Uint8Array(width*height),cache=new Map(),leftRoute=new Int16Array(height),rightRoute=new Int16Array(height);
+ for(let y=0;y<height;y++){const x=jungleRouteX(z,z.y1+y);leftRoute[y]=Math.floor(x-56);rightRoute[y]=Math.ceil(x+56);}
  const cy=p.y-150-z.y1;
  for(let y=Math.max(0,Math.floor(cy-310));y<Math.min(height,Math.ceil(cy+310));y++)grid.fill(1,y*width+Math.max(0,WW/2-310),y*width+Math.min(width,WW/2+310));
  const make=(o,r)=>{
@@ -174,10 +200,15 @@ function createJunglePlacement(z){
   }
   return{o,r,stamp,x:Math.round(r.x),y:Math.round(r.y-z.y1),dx:o.x-r.x,dy:o.y-r.y};
  };
- const mark=(q,value)=>{for(let i=0;i<q.stamp.runs.length;i+=3){const base=(q.y+q.stamp.runs[i])*width+q.x;grid.fill(value,base+q.stamp.runs[i+1],base+q.stamp.runs[i+2]);}};
+ const mark=(q,value)=>{for(let i=0;i<q.stamp.runs.length;i+=3){const y=q.y+q.stamp.runs[i];if(y<0||y>=height)continue;const left=Math.max(0,q.x+q.stamp.runs[i+1]),right=Math.min(width,q.x+q.stamp.runs[i+2]);if(right>left)grid.fill(value,y*width+left,y*width+right);}};
  const fits=(q,x,y)=>{
-  if(x<12||x+q.stamp.w>width-12||y<40||y+q.stamp.h>height-420||(x<WW/2+310&&x+q.stamp.w>WW/2-310&&y<cy+310&&y+q.stamp.h>cy-310))return false;
-  for(let i=0;i<q.stamp.runs.length;i+=3){const base=(y+q.stamp.runs[i])*width+x;for(let j=q.stamp.runs[i+1];j<q.stamp.runs[i+2];j++)if(grid[base+j])return false;}
+  if(x+q.stamp.w/2<0||x+q.stamp.w/2>width||y+q.stamp.h/2<0||y+q.stamp.h/2>height||(x<WW/2+310&&x+q.stamp.w>WW/2-310&&y<cy+310&&y+q.stamp.h>cy-310))return false;
+  for(let i=0;i<q.stamp.runs.length;i+=3){
+   const yy=y+q.stamp.runs[i];if(yy<0||yy>=height)continue;
+   const left=Math.max(0,x+q.stamp.runs[i+1]),right=Math.min(width,x+q.stamp.runs[i+2]);if(right<=left)continue;
+   if(protectRoute&&left<rightRoute[yy]&&right>leftRoute[yy])return false;
+   const base=yy*width;for(let j=left;j<right;j++)if(grid[base+j])return false;
+  }
   return true;
  };
  const commit=q=>{q.o.x=q.x+q.dx;q.o.y=z.y1+q.y+q.dy;mark(q,1);};
@@ -194,14 +225,14 @@ function randomizeJungleVegetation(z,treeTarget){
  for(let pass=0;pass<2;pass++)for(const {q} of trees.map(q=>({q,order:R()})).sort((a,b)=>a.order-b.order)){
   const oldX=q.x,oldY=q.y;placement.mark(q,0);
   for(let i=0;i<32;i++){
-   const x=Math.round(i<16?12+R()*(WW-24-q.stamp.w):oldX+(R()-.5)*96),y=Math.round(i<16?40+R()*(z.y0-z.y1-460-q.stamp.h):oldY+(R()-.5)*112);
+   const x=Math.round(i<16?R()*WW-q.stamp.w/2:oldX+(R()-.5)*96),y=Math.round(i<16?1+R()*(z.y0-z.y1-2)-q.stamp.h/2:oldY+(R()-.5)*112);
    if(placement.fits(q,x,y)){q.x=x;q.y=y;break;}
   }
   placement.commit(q);
  }
- for(let attempt=0;attempt<1500&&trees.length+added.length<treeTarget;attempt++){
+ for(let attempt=0;attempt<1800&&trees.length+added.length<treeTarget;attempt++){
   const key=attempt%3===0?'broadleaf_tree':'palm',[kd,w,h]=JUNGLE_ASSETS[key],c={kd,x:0,y:0,w,h,jungleAsset:key,areaDebug:1},q=placement.make(c,c);
-  const x=Math.round(12+R()*(WW-24-q.stamp.w)),y=Math.round(40+R()*(z.y0-z.y1-460-q.stamp.h));
+  const x=Math.round(attempt%6===0?-q.stamp.w/2+R()*q.stamp.w*.35:attempt%6===1?WW-q.stamp.w/2-R()*q.stamp.w*.35:R()*WW-q.stamp.w/2),y=Math.round(1+R()*(z.y0-z.y1-2)-q.stamp.h/2);
   if(!placement.fits(q,x,y))continue;q.x=x;q.y=y;placement.commit(q);added.push(q);
  }
  // Grass is not an obstacle for tree placement and never causes trees to be removed.
@@ -209,16 +240,16 @@ function randomizeJungleVegetation(z,treeTarget){
  return setupOverlappingJungleGrass(z);
 }
 function setupOverlappingJungleGrass(z){
- const normal=bushes.filter(b=>!b.spinifex),plants=bushes.filter(b=>b.spinifex),target=Math.min(160,Math.ceil(normal.length*1.75)),grown=[],anchors=[],lane=z.jungleLaneHalf||48;
+ const normal=bushes.filter(b=>!b.spinifex),plants=bushes.filter(b=>b.spinifex),target=Math.min(200,Math.ceil(normal.length*2.5)),grown=[],anchors=[];
  const overlap=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
- const allowed=b=>b.x>=12&&b.x+b.w<=WW-12&&b.y>=z.y1+40&&b.y+b.h<=z.y0-420&&(b.x+b.w<=WW/2-lane||b.x>=WW/2+lane)&&!circleHitsRect(WW/2,p.y-150,310,b);
+ const allowed=b=>b.x+b.w/2>=0&&b.x+b.w/2<=WW&&b.y+b.h/2>z.y1&&b.y+b.h/2<=z.y0&&!circleHitsRect(WW/2,p.y-150,310,b);
  for(let i=0;i<target;i++){
   // Match grassland's varied dimensions; share its cached grass sprites.
   const scale=2.2+R()*.3,w=(30+R()*30)*scale,h=(22+R()*22)*scale,b={...(normal[i%normal.length]||{}),w,h};
-  for(let tries=0;tries<120;tries++){
-   const anchor=i%4!==0&&tries<20?anchors[anchors.length-1]:null;
-   b.x=anchor?anchor.x+(R()-.5)*(anchor.w+w)*.9-w/2:12+R()*(WW-w-24);
-   b.y=anchor?anchor.y+(R()-.5)*(anchor.h+h)*.9-h/2:z.y1+40+R()*(z.y0-z.y1-h-460);
+  for(let tries=0;tries<180;tries++){
+   const anchor=i%4!==0&&i%8!==2&&i%8!==6&&tries<20?anchors[anchors.length-1]:null;
+   b.x=anchor?anchor.x+(R()-.5)*(anchor.w+w)*.9-w/2:i%8===0?-w/2+R()*w*.35:i%8===4?WW-w/2-R()*w*.35:i%8===2||i%8===6?WW/2-w/2+(R()-.5)*w*.8:R()*WW-w/2;
+   b.y=anchor?anchor.y+(R()-.5)*(anchor.h+h)*.9-h/2:z.y1+1+R()*(z.y0-z.y1-2)-h/2;
    if(!allowed(b)||grown.reduce((n,o)=>n+(overlap(b,o)?1:0),0)>=3)continue;
    grown.push(b);if(i%4===0)anchors.push({x:b.x+w/2,y:b.y+h/2,w,h});break;
   }
@@ -227,8 +258,8 @@ function setupOverlappingJungleGrass(z){
   const oldX=b.x,oldY=b.y;
   for(let tries=0;tries<80;tries++){
    const patch=grown.length?grown[Math.floor(R()*grown.length)]:null;
-   b.x=patch&&tries<40?patch.x+(R()-.5)*patch.w:12+R()*(WW-b.w-24);
-   b.y=patch&&tries<40?patch.y+(R()-.5)*patch.h:z.y1+40+R()*(z.y0-z.y1-b.h-460);
+   b.x=patch&&tries<40?patch.x+(R()-.5)*patch.w:R()*WW-b.w/2;
+   b.y=patch&&tries<40?patch.y+(R()-.5)*patch.h:z.y1+1+R()*(z.y0-z.y1-2)-b.h/2;
    if(allowed(b))break;
   }
   if(!allowed(b)){b.x=oldX;b.y=oldY;}
