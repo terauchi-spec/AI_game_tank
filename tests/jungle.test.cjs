@@ -59,7 +59,7 @@ test('jungle plants share spinifex stealth, burning and scatter behavior',()=>{
   assert.ok(h.run('plants.length')>=12&&h.run('plants.length')<=18);
   assert.equal(h.run('new Set(plants.map(b=>b.junglePlant)).size'),2);
   assert.equal(h.run('plants.every(b=>b.spinifex&&b.w===b.h&&b.w>=59.15&&b.w<=129.675)'),true);
-  assert.equal(h.run('plants.every(b=>b.x+b.w<WW/2-60||b.x>WW/2+60)'),true);
+  assert.equal(h.run('plants.every(b=>b.x+b.w<=WW/2-ZONES[0].jungleLaneHalf||b.x>=WW/2+ZONES[0].jungleLaneHalf)'),true);
   assert.equal(h.run('plants.every(b=>!covers.some(c=>circleHitsRect(b.x+b.w/2,b.y+b.h/2,b.w/2,c)))'),true);
   h.run('globalThis.plant=plants[0];p.x=plant.x+plant.w/2;p.y=plant.y+plant.h/2;p.tank=null');
   assert.equal(h.run('inBush(p)'),true);
@@ -84,13 +84,14 @@ test('jungle plant images retain masters and use small lazy WebP assets',()=>{
 });
 
 test('expanded jungle props and denser vegetation stay separated and within bounded counts',()=>{
- const dimensions={fallen_log:[190,62,1.3],wood_hut_small:[160,135,1.1*1.1],wood_hut_large:[220,158,1.1*1.1],concrete_hut:[185,156,1.1*1.1],watchtower:[150,205,1.1],wood_watchtower:[150,150*320/295,1.1]};
+ const dimensions={fallen_log:[190,62,1.3],wood_hut_small:[160,135,1.1*1.1],wood_hut_large:[220,158,1.1*1.1],concrete_hut:[185,156,1.1*1.1],watchtower:[150,205,1.1],wood_watchtower:[150,150*320/295,1.1*2]};
  for(let seed=1;seed<=40;seed++){
   const h=createGameEngine(root,{seed,touch:seed%2===0,width:seed%2===0?390:840});
   h.run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='密林';reset(false)");
   for(const [key,[w,hh,scale]] of Object.entries(dimensions)){
    assert.ok(h.run(`covers.some(c=>c.jungleAsset==='${key}')`),key);
    h.c.key=key;h.c.expectedW=w*scale;h.c.expectedH=hh*scale;
+   if(key==='fallen_log'){assert.equal(h.run('covers.filter(c=>c.jungleAsset===key).every(c=>Math.abs(c.jungleSpriteW-expectedW)<1e-8&&Math.abs(c.jungleSpriteH-expectedH)<1e-8&&Math.abs(c.jungleAngle)<=Math.PI/12)'),true);continue;}
    assert.equal(h.run('covers.filter(c=>c.jungleAsset===key).every(c=>Math.abs(c.w-expectedW)<1e-8&&Math.abs(c.h-expectedH)<1e-8)'),true,key);
   }
   assert.equal(h.run('(()=>{const all=[...covers.map(c=>coverSpriteRect(c)||c),...bushes];return all.every((a,i)=>all.slice(i+1).every(b=>a.x>=b.x+b.w||a.x+a.w<=b.x||a.y>=b.y+b.h||a.y+a.h<=b.y));})()'),true,'overlap seed '+seed);
@@ -111,4 +112,25 @@ test('jungle edge rubble is cached and rebuilt only when destruction changes',()
  assert.equal(h.run('jungleFragmentEdgeCanvas'),scratch);
  h.run('carve(242,180,24,false,null);fragmentDrawFrame++;covers.forEach(drawCoverFragmentGroup)');assert.ok(h.run('edgeDraws')>first);
  assert.equal(h.run('jungleFragmentEdgeCanvas'),scratch);
+});
+
+test('rotated jungle logs preserve transformed colliders and partial destruction',()=>{
+ for(const angle of [-Math.PI/12,0,Math.PI/12]){
+  const h=createGameEngine(root);h.c.angle=angle;
+  h.run("loadJungleAssets();globalThis.log={kd:0,jungleAsset:'fallen_log',x:100,y:100};rotateJungleLog(log,angle);covers=[log];objects=[];globalThis.cx=log.x+log.w/2;globalThis.cy=log.y+log.h/2;");
+  assert.equal(h.run('jungleCircleHit(log,cx,cy,1)'),true);
+  assert.equal(h.run('jungleCircleHit(log,log.x,log.y,0)'),false);
+  assert.equal(h.run('jungleSegmentHit(log,{x:cx-200,y:cy},{x:cx+200,y:cy})'),true);
+  h.run('carve(cx,cy,20,false,null)');
+  assert.ok(h.run('covers.length')>0);
+  assert.equal(h.run('covers.every(c=>c.jungleAngle===angle&&c.jungleHitMask===log.jungleHitMask&&c.jungleSpriteW===log.jungleSpriteW&&c.jungleSpriteH===log.jungleSpriteH)'),true);
+  assert.equal(h.run('covers.some(c=>jungleCircleHit(c,cx,cy,0))'),false);
+  assert.equal(h.run('covers.every(c=>!jungleMaskIntersects(c,c.x,c.y,c.x+c.w,c.y+c.h,(x,y,w,h)=>!jungleCircleHit(log,x+w/2,y+h/2,0)))'),true);
+ }
+});
+test('jungle randomness is seeded, spreads vegetation and stays within log angle limits',()=>{
+ const layout=seed=>{const h=createGameEngine(root,{seed});h.run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='密林';reset(false)");return {h,text:h.run('JSON.stringify([covers,bushes],(key,value)=>key.startsWith("_")?undefined:value)')};};
+ const a=layout(7),b=layout(7),c=layout(91);assert.equal(a.text,b.text);assert.notEqual(a.text,c.text);
+ assert.equal(a.h.run("covers.filter(c=>c.jungleAsset==='fallen_log').every(c=>Math.abs(c.jungleAngle)<=Math.PI/12)"),true);
+ assert.ok(a.h.run('new Set([...covers.filter(c=>c.kd===6),...bushes].map(c=>c.y.toFixed(2))).size')>80);
 });
