@@ -8,9 +8,10 @@ function loadJungleAssets(){
 }
 // Alpha silhouettes are compiled at build time; collision never reads canvas pixels.
 // Each of the 32 rows is a bitset. Query only cells near the actor/projectile.
-function jungleMaskIntersects(c,x0,y0,x1,y1,test){
+function jungleMaskIntersects(c,x0,y0,x1,y1,test,hitScale=1){
  const rows=c.jungleHitMask||JUNGLE_HIT_MASKS[c.jungleAsset];if(!rows)return false;
- const sx=c.ox0??c.x,sy=c.oy0??c.y,sw=c.ow0??c.w,sh=c.oh0??c.h,dx=sw/32,dy=sh/32;
+ const originalW=c.ow0??c.w,originalH=c.oh0??c.h,sw=originalW*hitScale,sh=originalH*hitScale;
+ const sx=(c.ox0??c.x)+(originalW-sw)/2,sy=(c.oy0??c.y)+(originalH-sh)/2,dx=sw/32,dy=sh/32;
  const left=Math.max(x0,c.x,sx),top=Math.max(y0,c.y,sy),right=Math.min(x1,c.x+c.w,sx+sw),bottom=Math.min(y1,c.y+c.h,sy+sh);
  if(right<left||bottom<top)return false;
  const col0=Math.max(0,Math.floor((left-sx)/dx)),col1=Math.min(31,Math.floor((right-sx)/dx));
@@ -24,11 +25,11 @@ function jungleMaskIntersects(c,x0,y0,x1,y1,test){
 function jungleCircleHit(c,x,y,r=0){
  return jungleMaskIntersects(c,x-r,y-r,x+r,y+r,(a,b,w,h)=>{
   const dx=Math.max(a-x,0,x-a-w),dy=Math.max(b-y,0,y-b-h);return dx*dx+dy*dy<=r*r;
- });
+ },c.jungleHitScale??1);
 }
 function jungleSegmentHit(c,a,b,pad=0){
  return jungleMaskIntersects(c,Math.min(a.x,b.x)-pad,Math.min(a.y,b.y)-pad,Math.max(a.x,b.x)+pad,Math.max(a.y,b.y)+pad,
-  (x,y,w,h)=>segmentHitsRect(a,b,{x:x-pad,y:y-pad,w:w+pad*2,h:h+pad*2}));
+  (x,y,w,h)=>segmentHitsRect(a,b,{x:x-pad,y:y-pad,w:w+pad*2,h:h+pad*2}),c.jungleHitScale??1);
 }
 // Build a rotated collision mask once per log; rendering and fragments share this transform.
 function rotateJungleLog(c,angle){
@@ -92,14 +93,14 @@ function setupJungleScenery(z){
  // Match the existing final start-area cleanup before counting the baseline.
  const outsideStart=o=>!circleHitsRect(WW/2,p.y-150,310,o);
  covers=covers.filter(c=>outsideStart(coverSpriteRect(c)||c));bushes=bushes.filter(outsideStart);
- // Repack once at stage creation so triple populations fit without sprite overlap.
+ // Keep normal-sized trees; retain the increased grass population without small tree variants.
  const trees=covers.filter(c=>c.kd===6).length,grass=bushes.filter(b=>!b.junglePlant).length,plants=bushes.filter(b=>b.junglePlant).length;
- const targets={trees:trees*3,grass:grass*3,plants:plants*3},denseCovers=covers.map(c=>JUNGLE_BUILDING_BASE[c.jungleAsset]?{...c,w:JUNGLE_ASSETS[c.jungleAsset][1],h:JUNGLE_ASSETS[c.jungleAsset][2]}:{...c}),denseBushes=bushes.map(b=>({...b}));
- for(let i=0;i<trees*2;i++)denseCovers.push({kd:6,x:0,y:0,w:64,h:64,jungleAsset:i%3===0?'broadleaf_tree':'palm',areaDebug:1});
+ const targets={trees,grass:grass*3,plants:plants*3},denseCovers=covers.map(c=>JUNGLE_BUILDING_BASE[c.jungleAsset]?{...c,w:JUNGLE_ASSETS[c.jungleAsset][1],h:JUNGLE_ASSETS[c.jungleAsset][2]}:{...c}),denseBushes=bushes.map(b=>({...b}));
  for(let i=0;i<plants*2;i++)denseBushes.push({x:0,y:0,w:60,h:60,spinifex:true,junglePlant:JUNGLE_PLANTS[i%JUNGLE_PLANTS.length]});
  for(let i=0;i<grass*2;i++)denseBushes.push({x:0,y:0,w:56,h:36});
  for(const c of denseCovers)if(c.jungleAsset==='fallen_log')rotateJungleLog(c,(R()-.5)*Math.PI/6);
  if(packJunglePopulation(denseCovers,denseBushes,z)){covers=denseCovers;bushes=denseBushes;randomizeJungleVegetation(z);}
+ for(const c of covers)if(c.kd===6||c.jungleAsset==='fallen_log')c.jungleHitScale=.95;
  z.jungleDensity={targets,trees:covers.filter(c=>c.kd===6).length,grass:bushes.filter(b=>!b.junglePlant).length,plants:bushes.filter(b=>b.junglePlant).length};
 }
 // Bounded random corner/order attempts followed by compact fallbacks; stage setup only.

@@ -97,8 +97,8 @@ test('expanded jungle props and denser vegetation stay separated and within boun
   assert.equal(h.run('(()=>{const all=[...covers.map(c=>coverSpriteRect(c)||c),...bushes];return all.every((a,i)=>all.slice(i+1).every(b=>a.x>=b.x+b.w||a.x+a.w<=b.x||a.y>=b.y+b.h||a.y+a.h<=b.y));})()'),true,'overlap seed '+seed);
   assert.equal(h.run('covers.length<=80&&bushes.length<=90'),true);
   assert.equal(h.run('covers.every(c=>!circleHitsRect(WW/2,p.y-150,310,coverSpriteRect(c)||c))&&bushes.every(b=>!circleHitsRect(WW/2,p.y-150,310,b))'),true);
-  assert.equal(h.run('Object.entries(ZONES[0].jungleDensity.targets).every(([key,n])=>ZONES[0].jungleDensity[key]===n)'),true,'triple population seed '+seed);
-  assert.ok(h.run('covers.filter(c=>c.kd===6).length')>=14,'tree density seed '+seed);
+  assert.equal(h.run('Object.entries(ZONES[0].jungleDensity.targets).every(([key,n])=>ZONES[0].jungleDensity[key]===n)'),true,'population target seed '+seed);
+  assert.equal(h.run("covers.filter(c=>c.jungleAsset==='palm'||c.jungleAsset==='broadleaf_tree').every(c=>c.w===JUNGLE_ASSETS[c.jungleAsset][1]&&c.h===JUNGLE_ASSETS[c.jungleAsset][2])"),true,'no small palm/broadleaf seed '+seed);
   assert.ok(h.run('bushes.filter(b=>!b.junglePlant).length')>=12,'bush density seed '+seed);
   assert.equal(h.run('(()=>{for(let y=ZONES[0].y1+32;y<p.y;y+=16)if(hitsM(WW/2,y,28))return false;return true;})()'),true);
  }
@@ -132,5 +132,23 @@ test('jungle randomness is seeded, spreads vegetation and stays within log angle
  const layout=seed=>{const h=createGameEngine(root,{seed});h.run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='密林';reset(false)");return {h,text:h.run('JSON.stringify([covers,bushes],(key,value)=>key.startsWith("_")?undefined:value)')};};
  const a=layout(7),b=layout(7),c=layout(91);assert.equal(a.text,b.text);assert.notEqual(a.text,c.text);
  assert.equal(a.h.run("covers.filter(c=>c.jungleAsset==='fallen_log').every(c=>Math.abs(c.jungleAngle)<=Math.PI/12)"),true);
- assert.ok(a.h.run('new Set([...covers.filter(c=>c.kd===6),...bushes].map(c=>c.y.toFixed(2))).size')>80);
+ assert.ok(a.h.run('new Set([...covers.filter(c=>c.kd===6),...bushes].map(c=>c.y.toFixed(2))).size')>60);
+});
+
+test('jungle tree and log collision shrinks around its center without changing art or rubble bounds',()=>{
+ const h=createGameEngine(root);h.run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='密林';reset(false)");
+ assert.equal(h.run("covers.filter(c=>c.kd===6||c.jungleAsset==='fallen_log').every(c=>c.jungleHitScale===.95)"),true);
+ assert.equal(h.run("covers.filter(c=>c.kd!==6&&c.jungleAsset!=='fallen_log').every(c=>c.jungleHitScale===undefined)"),true);
+ const trees=Array.from(h.run("covers.filter(c=>c.jungleAsset&&(c.kd===6||c.jungleAsset==='fallen_log'))"));
+ for(const tree of trees){
+  h.c.shrunk=tree;h.c.original={...tree,jungleHitScale:1};
+  assert.equal(h.run('(()=>{const cx=shrunk.x+shrunk.w/2,cy=shrunk.y+shrunk.h/2;for(let iy=0;iy<=12;iy++)for(let ix=0;ix<=12;ix++){const x=shrunk.x+shrunk.w*ix/12,y=shrunk.y+shrunk.h*iy/12;if(jungleCircleHit(shrunk,x,y,2)!==jungleCircleHit(original,cx+(x-cx)/.95,cy+(y-cy)/.95,2/.95))return false;}return true;})()'),true,tree.jungleAsset);
+  assert.equal(h.run('(()=>{const cx=shrunk.x+shrunk.w/2,cy=shrunk.y+shrunk.h/2,unscale=q=>({x:cx+(q.x-cx)/.95,y:cy+(q.y-cy)/.95});for(let i=0;i<=20;i++){const a={x:shrunk.x-5,y:shrunk.y+shrunk.h*i/20},b={x:shrunk.x+shrunk.w+5,y:a.y+3};if(jungleSegmentHit(shrunk,a,b,1)!==jungleSegmentHit(original,unscale(a),unscale(b),1/.95))return false;}return true;})()'),true,tree.jungleAsset+' segment');
+ }
+ h.run("globalThis.generic=covers.find(c=>c.kd===6&&!c.jungleAsset)");
+ assert.equal(h.run('coverHitCircle(generic).r'),h.run('Math.max(generic.w,generic.h)*.37*.95'));
+ h.run("covers=[{kd:6,x:100,y:100,w:83,h:83}]");assert.equal(h.run('coverHitCircle(covers[0]).r'),83*.37);
+ h.run("globalThis.log={kd:0,jungleAsset:'fallen_log',x:100,y:100,jungleHitScale:.95};rotateJungleLog(log,Math.PI/12);covers=[log];objects=[];carve(log.x+log.w/2,log.y+log.h/2,20,false,null)");
+ assert.equal(h.run('covers.every(c=>c.jungleHitScale===.95&&c.jungleHitMask===log.jungleHitMask)'),true);
+ assert.equal(h.run('covers.every(c=>!jungleMaskIntersects(c,c.x,c.y,c.x+c.w,c.y+c.h,(x,y,w,h)=>!jungleCircleHit(log,x+w/2,y+h/2,0),.95))'),true);
 });
