@@ -13,8 +13,8 @@ test('one stalled jungle image releases the gameplay loading gate after 15 secon
  images.slice(1).forEach(im=>im.onload());assert.equal(h.run('assetsLoading()'),true);
  h.advance(14999);assert.equal(h.run('assetsLoading()'),true);
  h.advance(1);assert.equal(h.run('assetsLoading()'),false);
- assert.equal(h.run('assetLoadDone'),6);assert.equal(h.run('assetLoadFailed'),1);assert.equal(h.timers.size,0);
- images[0].onload();images[0].onerror();assert.equal(h.run('assetLoadDone'),6);assert.equal(h.run('assetLoadFailed'),1);
+ assert.equal(h.run('assetLoadDone'),images.length);assert.equal(h.run('assetLoadFailed'),1);assert.equal(h.timers.size,0);
+ images[0].onload();images[0].onerror();assert.equal(h.run('assetLoadDone'),images.length);assert.equal(h.run('assetLoadFailed'),1);
 });
 test('successful and failed requests settle once and cancel their timeout',()=>{
  const h=harness();h.c.calls=0;h.run('globalThis.good=makeAssetImage("good",()=>calls++);globalThis.bad=makeAssetImage("bad")');

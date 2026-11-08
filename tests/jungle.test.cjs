@@ -1,6 +1,6 @@
 const test=require('node:test'),assert=require('node:assert/strict'),path=require('node:path'),fs=require('node:fs');
 const {createGameEngine}=require('./helpers/game-engine.cjs'),root=path.join(__dirname,'..');
-test('jungle debug stage is isolated, traversable and contains all six supplied assets',()=>{
+test('jungle debug stage is isolated, traversable and contains all eight supplied assets',()=>{
  for(const seed of [1,7,91]){
   const h=createGameEngine(root,{seed});
   h.run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='密林';reset(false)");
