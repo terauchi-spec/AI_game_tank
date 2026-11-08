@@ -56,7 +56,7 @@ test('partial destruction retains every jungle sprite and clips its original col
 test('jungle plants share spinifex stealth, burning and scatter behavior',()=>{
  for(let seed=1;seed<=20;seed++){
   const h=createGameEngine(root,{seed});h.run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='密林';reset(false);globalThis.plants=bushes.filter(b=>b.junglePlant)");
-  assert.ok(h.run('plants.length')>=2&&h.run('plants.length')<=3);
+  assert.ok(h.run('plants.length')>=4&&h.run('plants.length')<=6);
   assert.equal(h.run('new Set(plants.map(b=>b.junglePlant)).size'),2);
   assert.equal(h.run('plants.every(b=>b.spinifex&&b.w===b.h&&b.w>=59.15&&b.w<=129.675)'),true);
   assert.equal(h.run('plants.every(b=>b.x+b.w<WW/2-60||b.x>WW/2+60)'),true);
@@ -80,5 +80,23 @@ test('jungle plant images retain masters and use small lazy WebP assets',()=>{
   const base=path.join(root,'assets/jungle',key),webp=fs.readFileSync(base+'.webp');
   assert.equal(webp.toString('ascii',8,12),'WEBP');assert.ok(webp.length<40000);
   for(const suffix of ['.png','_source.png','.jpeg'])assert.ok(fs.existsSync(base+suffix));
+ }
+});
+
+test('expanded jungle props and denser vegetation stay separated and within bounded counts',()=>{
+ const dimensions={fallen_log:[190,62,1.3],wood_hut_small:[160,135,1.1],wood_hut_large:[220,158,1.1],concrete_hut:[185,156,1.1],watchtower:[150,205,1.1],wood_watchtower:[150,255,1.1]};
+ for(let seed=1;seed<=40;seed++){
+  const h=createGameEngine(root,{seed,touch:seed%2===0,width:seed%2===0?390:840});
+  h.run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='密林';reset(false)");
+  for(const [key,[w,hh,scale]] of Object.entries(dimensions)){
+   assert.ok(h.run(`covers.some(c=>c.jungleAsset==='${key}')`),key);
+   h.c.key=key;h.c.expectedW=w*scale;h.c.expectedH=hh*scale;
+   assert.equal(h.run('covers.filter(c=>c.jungleAsset===key).every(c=>Math.abs(c.w-expectedW)<1e-8&&Math.abs(c.h-expectedH)<1e-8)'),true,key);
+  }
+  assert.equal(h.run('(()=>{const all=[...covers.map(c=>coverSpriteRect(c)||c),...bushes];return all.every((a,i)=>all.slice(i+1).every(b=>a.x>=b.x+b.w||a.x+a.w<=b.x||a.y>=b.y+b.h||a.y+a.h<=b.y));})()'),true,'overlap seed '+seed);
+  assert.equal(h.run('covers.length<=32&&bushes.length<=30'),true);
+  assert.ok(h.run('covers.filter(c=>c.kd===6).length')>=14,'tree density seed '+seed);
+  assert.ok(h.run('bushes.filter(b=>!b.junglePlant).length')>=13,'bush density seed '+seed);
+  assert.equal(h.run('(()=>{for(let y=ZONES[0].y1+32;y<p.y;y+=16)if(hitsM(WW/2,y,28))return false;return true;})()'),true);
  }
 });
