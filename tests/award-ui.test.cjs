@@ -6,8 +6,12 @@ function harness(){
  function node(){const classes=new Set();return {children:[],style:{},classList:{add:k=>classes.add(k),remove:k=>classes.delete(k),contains:k=>classes.has(k),toggle(k,on){on?classes.add(k):classes.delete(k);}},append(...v){this.children.push(...v)},replaceChildren(...v){this.children=v},getAttribute(k){return this[k]},removeAttribute(k){delete this[k]},addEventListener(k,fn){this[k]=fn}};}
  for(const m of html.matchAll(/\bid="([^"]+)"/g))nodes.set(m[1],node());
  const storage=new Map();
- const c={document:{body:node(),getElementById:id=>{assert.ok(nodes.has(id),'removed/missing element '+id);return nodes.get(id)},createElement:node},localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)},areaDebugEnabled:false,skillDebugAll:false,debugMode:0,p:{y:1000},ZONES:[],stageMode:'base',STAGE_NAMES:{base:'破壊'},SK:[],highScoreData:{score:100},renderStageUnlock(){},distanceMeters:v=>Math.round(v/10),formatRunTime:v=>String(v),readSkillProgress:()=>({unlocked:[]}),loadHighScore:()=>({score:100,rank:'F'}),performance:{now:()=>0},requestAnimationFrame(){},matchMedia:()=>({matches:true}),sfx(){},rollSkillChoices(){},bombReq:false,cannonReq:false,interact:false,skillReq:false,trophyReturnToResult:false};
- vm.createContext(c);vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/award-icons.js'),'utf8'),c);
+ const c={document:{body:node(),getElementById:id=>{assert.ok(nodes.has(id),'removed/missing element '+id);return nodes.get(id)},createElement:node},localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)},areaDebugEnabled:false,skillDebugAll:false,debugMode:0,p:{y:1000},ZONES:[],stageMode:'base',intermediateStageId:null,STAGE_NAMES:{base:'破壊'},SK:[],highScoreData:{score:100},renderStageUnlock(){},distanceMeters:v=>Math.round(v/10),formatRunTime:v=>String(v),readSkillProgress:()=>({unlocked:[]}),loadHighScore:()=>({score:100,rank:'F'}),performance:{now:()=>0},requestAnimationFrame(){},matchMedia:()=>({matches:true}),sfx(){},rollSkillChoices(){},bombReq:false,cannonReq:false,interact:false,skillReq:false,trophyReturnToResult:false};
+ vm.createContext(c);
+ // Use the production stage resolver so result artwork follows the selected difficulty.
+ const stageProgress=fs.readFileSync(path.join(__dirname,'../js/stage-progress.js'),'utf8');
+ vm.runInContext(stageProgress.slice(stageProgress.indexOf('function currentStageId()'),stageProgress.indexOf('function readStageProgress()')),c);
+ vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/award-icons.js'),'utf8'),c);
  vm.runInContext(html.slice(html.indexOf('function newScoreStats()'),html.indexOf('function humanMemory(')),c);
  vm.runInContext(html.slice(html.indexOf('const RES_AXES='),html.indexOf("document.getElementById('resRetry')")),c);
  for(const id of ['resHome','trophyBack','trophyTabTitles','trophyTabStats']){const line=html.split('\n').find(l=>l.startsWith("document.getElementById('"+id+"').addEventListener"));vm.runInContext(line,c);}
@@ -76,4 +80,11 @@ test('result headline shows a cumulative legend on acquisition only and remains 
  const first=c.scoreStats;c.recordRunAchievements(first);c.renderResultScreen();assert.match(c.nodes.get('resTitle').innerHTML,/任務の覇者/);
  c.scoreStats=Object.assign(c.newScoreStats(),{objectiveDamage:1,final:{cleared:true,total:500,rank:'B'}});c.recordRunAchievements(c.scoreStats);c.renderResultScreen();assert.doesNotMatch(c.nodes.get('resTitle').innerHTML,/任務の覇者/);assert.match(c.nodes.get('resTitle').innerHTML,/完遂の達人|不屈の生還者/);
  c.scoreStats=first;c.renderResultScreen();assert.match(c.nodes.get('resTitle').innerHTML,/任務の覇者/);assert.ok(c.readTitleArchive().titles.v3_legend_0);
+});
+
+test('result artwork follows the production resolver for advanced and intermediate destruction',()=>{
+ const c=harness();
+ c.renderResultScreen();assert.equal(c.nodes.get('resStageImage').src,'assets/ui/stages/missile_base_scene.webp');
+ c.intermediateStageId='baseIntermediate';c.renderResultScreen();
+ assert.equal(c.nodes.get('resStageImage').src,'assets/ui/stages/headquarters.webp');
 });
