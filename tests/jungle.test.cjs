@@ -46,7 +46,7 @@ test('partial destruction retains every jungle sprite and clips its original col
   assert.equal(h.run(`covers.every(c=>c.fr&&c.jungleAsset==='${key}')`),true);
   assert.equal(h.run('covers.some(c=>circleHitsCover(260,260,0,c))'),false);
   assert.equal(h.run('(()=>{for(const c of covers)for(const [x,y] of [[c.x+.2,c.y+.2],[c.x+c.w/2,c.y+c.h/2]])if(pointHitsCover(x,y,c)&&!pointHitsCover(x,y,originalCover))return false;return true;})()'),true);
-  const drawn=[];h.run('g').drawImage=(im)=>drawn.push(im._src);
+  const drawn=[];h.run('g').drawImage=(im)=>{if(im._src)drawn.push(im._src);};
   h.run('covers.forEach(drawCoverFragment)');
   assert.ok(drawn.length>0);
   assert.ok(drawn.every(src=>src.includes('/jungle/'+key+'.webp')));
@@ -99,4 +99,14 @@ test('expanded jungle props and denser vegetation stay separated and within boun
   assert.ok(h.run('bushes.filter(b=>!b.junglePlant).length')>=12,'bush density seed '+seed);
   assert.equal(h.run('(()=>{for(let y=ZONES[0].y1+32;y<p.y;y+=16)if(hitsM(WW/2,y,28))return false;return true;})()'),true);
  }
+});
+
+test('jungle edge rubble is cached and rebuilt only when destruction changes',()=>{
+ const h=createGameEngine(root);
+ h.run("loadJungleAssets();covers=[{kd:4,jungleAsset:'wood_hut_large',x:100,y:100,w:220,h:158}];objects=[];carve(210,180,32,false,null);globalThis.edgeDraws=0;globalThis.originalEdgeRubble=drawFragmentEdgeRubble;drawFragmentEdgeRubble=c=>{edgeDraws++;originalEdgeRubble(c);};fragmentDrawFrame++;covers.forEach(drawCoverFragmentGroup)");
+ const first=h.run('edgeDraws'),scratch=h.run('jungleFragmentEdgeCanvas');assert.ok(first>0);
+ h.run('fragmentDrawFrame++;covers.forEach(drawCoverFragmentGroup)');assert.equal(h.run('edgeDraws'),first);
+ assert.equal(h.run('jungleFragmentEdgeCanvas'),scratch);
+ h.run('carve(242,180,24,false,null);fragmentDrawFrame++;covers.forEach(drawCoverFragmentGroup)');assert.ok(h.run('edgeDraws')>first);
+ assert.equal(h.run('jungleFragmentEdgeCanvas'),scratch);
 });
