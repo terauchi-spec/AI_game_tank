@@ -271,7 +271,7 @@ function setupSelectedAreaDebugStage(){
  covers=covers.filter(c=>clearStart(coverSpriteRect(c)||c));
  objects=objects.filter(clearStart);bushes=bushes.filter(clearStart);mud=mud.filter(clearStart);
  spawnAreaDebugPlayerTanks();
- weather='clear';weatherT=0;weatherNext=name==='荒野'?10:99999;rainIntensity=0;baseSpawnT=99999;placeAreaDebugRadios();airstrike=null;reinforcementPass=null;airbombs=[];debugMode=1;debugInvincible=true;
+ weather='clear';weatherT=0;weatherNext=name==='荒野'?10:name==='密林'?5+R()*10:99999;rainIntensity=0;baseSpawnT=99999;placeAreaDebugRadios();airstrike=null;reinforcementPass=null;airbombs=[];debugMode=1;debugInvincible=true;
  captureBuildingGroundMarks();rebuildSpatialGrid();spawnAreaDebugEnemies(z);say(name+' テスト：無敵／全' + TYPES.length + '種戦車／弾数・燃料無制限');
 }
 function syncAreaDebugPicker(){

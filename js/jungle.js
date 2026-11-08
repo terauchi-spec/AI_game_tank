@@ -64,7 +64,7 @@ function setupJungleMud(zones){
   mud.push(m);
  }
 }
-function setupJungleScenery(z){
+function setupJungleScenery(z, giantBlocked=()=>false){
  loadJungleAssets();
  if(!Array.isArray(z.jungleBuildingKeys))planJungleBuildings([z]);
  // A compact seed preserves baseline assets/counts; final placement below replaces
@@ -124,7 +124,7 @@ function setupJungleScenery(z){
   if(c.jungleAsset==='fallen_log')rotateJungleLog(c,(R()-.5)*Math.PI/6);
   if(c.kd===6&&!c.jungleAsset)c.jungleTreeArt=stableRand(c,61)<.5?'tree_v2':'tree';
  }
- if(packJunglePopulation(denseCovers,denseBushes,z)){covers=denseCovers;bushes=denseBushes;if(!arrangeJungleCore(z))z.jungleWalkRoute=buildJungleWalkRoute(z,covers);targets.grass=randomizeJungleVegetation(z,targets.trees);}
+ if(packJunglePopulation(denseCovers,denseBushes,z)){covers=denseCovers;bushes=denseBushes;if(!arrangeJungleCore(z))z.jungleWalkRoute=buildJungleWalkRoute(z,covers);targets.grass=randomizeJungleVegetation(z,targets.trees,giantBlocked);}
  for(const c of covers)if(c.kd===6||c.jungleAsset==='fallen_log')c.jungleHitScale=.95;
  z.jungleDensity={targets,trees:covers.filter(c=>c.kd===6).length,grass:bushes.filter(b=>!b.junglePlant).length,plants:bushes.filter(b=>b.junglePlant).length};
 }
@@ -286,22 +286,40 @@ function createJunglePlacement(z,protectRoute=true){
  return{make,mark,fits,commit,grid};
 }
 // Placement uses unshrunk visible alpha, including internal holes, with no rectangular buffer.
-function randomizeJungleVegetation(z,treeTarget){
+function randomizeJungleVegetation(z,treeTarget,giantBlocked){
  const placement=createJunglePlacement(z),all=covers.map(c=>placement.make(c,coverSpriteRect(c)||c));
  for(const q of all){q.startX=q.x;q.startY=q.y;}
  for(const o of objects)placement.mark(placement.make(o,objectAABB(o)),1);
  const trees=all.filter(q=>q.o.kd===6),added=[];
- for(const q of all)if('kd' in q.o)placement.commit(q);
- // Place large crowns before grass, so small foliage does not scatter across every tree gap.
- for(let pass=0;pass<2;pass++)for(const {q} of trees.filter(q=>!q.o.jungleCore).map(q=>({q,order:R()})).sort((a,b)=>a.order-b.order)){
-  const oldX=q.x,oldY=q.y;placement.mark(q,0);
-  for(let i=0;i<32;i++){
-   const x=Math.round(i<16?R()*WW-q.stamp.w/2:oldX+(R()-.5)*96),y=Math.round(i<16?1+R()*(z.y0-z.y1-2)-q.stamp.h/2:oldY+(R()-.5)*112);
-   if(placement.fits(q,x,y)){q.x=x;q.y=y;break;}
-  }
-  placement.commit(q);
+ const movable=trees.filter(q=>!q.o.jungleCore&&q.o.jungleAsset!=='fern_tree');
+ for(const q of all)if(!movable.includes(q))placement.commit(q);
+ // Give giant crowns first choice of dry gaps before adding the smaller trees.
+ const giantTarget=3+Math.floor(R()*2);
+ let giants=covers.filter(c=>c.jungleAsset==='fern_tree'&&!giantBlocked(c)).length;
+ const [kd,w,h]=JUNGLE_ASSETS.fern_tree;
+ const giant={kd,w,h,x:0,y:z.y1,jungleAsset:'fern_tree',areaDebug:1};
+ const stamp=placement.make(giant,giant);
+ for(let attempt=0;attempt<320&&giants<giantTarget;attempt++){
+  const x=Math.round(80+R()*(WW-160)-w/2),y=Math.round(R()*(z.y0-z.y1-h));
+  if(giantBlocked({x,y:z.y1+y,w,h})||!placement.fits(stamp,x,y))continue;
+  stamp.x=x;stamp.y=y;
+  placement.commit(stamp);
+  added.push({o:{...giant}});
+  giants++;
  }
- for(let attempt=0;attempt<1800&&trees.length+added.length<treeTarget;attempt++){
+ // Replant displaced smaller trees around the giant crowns.
+ let planted=trees.length-movable.length;
+ for(const {q} of movable.map(q=>({q,order:R()})).sort((a,b)=>a.order-b.order)){
+  let placed=false;
+  for(let i=0;i<80;i++){
+   const x=i===79?q.startX:Math.round(R()*WW-q.stamp.w/2);
+   const y=i===79?q.startY:Math.round(1+R()*(z.y0-z.y1-2)-q.stamp.h/2);
+   if(!placement.fits(q,x,y))continue;
+   q.x=x;q.y=y;placement.commit(q);placed=true;planted++;break;
+  }
+  if(!placed)covers.splice(covers.indexOf(q.o),1);
+ }
+ for(let attempt=0;attempt<1800&&planted+added.length<treeTarget;attempt++){
   const key=attempt%3===0?'broadleaf_tree':'palm',[kd,w,h]=JUNGLE_ASSETS[key],c={kd,x:0,y:0,w,h,jungleAsset:key,areaDebug:1},q=placement.make(c,c);
   const x=Math.round(attempt%6===0?-q.stamp.w/2+R()*q.stamp.w*.35:attempt%6===1?WW-q.stamp.w/2-R()*q.stamp.w*.35:R()*WW-q.stamp.w/2),y=Math.round(1+R()*(z.y0-z.y1-2)-q.stamp.h/2);
   if(!placement.fits(q,x,y))continue;q.x=x;q.y=y;placement.commit(q);added.push(q);

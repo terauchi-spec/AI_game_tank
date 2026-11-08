@@ -10,32 +10,34 @@ function setupEscapeTestWorld(){
  base={x:WW/2,y:-60000,w:COMMAND_BASE_W,h:COMMAND_BASE_H,hp:30,maxHp:30,deadAt:0};
  covers=[];objects=[];bushes=[];water=[];bridges=[];mud=[];cars=[];humans=[];etanks=[];items=[];bullets=[];parts=[];waves=[];fx=[];bombs=[];roadBands=[];areaDebugLabels=[];
  planJungleBuildings(ZONES);
- const totals={covers:[],objects:[],bushes:[]};
- for(const z of ZONES){
-  covers=[];objects=[];bushes=[];
-  // The ordinary jungle seed includes five shared small native trees, not small jungle variants.
-  for(let i=0;i<5;i++)covers.push({kd:6,x:i%2?WW-210+R()*120:26+R()*120,y:z.y1+120+(i+.2+R()*.5)/5*1700,w:TREE_BOX,h:TREE_BOX});
-  setupJungleScenery(z);totals.covers.push(...covers);totals.objects.push(...objects);totals.bushes.push(...bushes);
- }
- covers=totals.covers;objects=totals.objects;bushes=totals.bushes;
  for(const z of ZONES){
   z.escapeRiver=rollRiverCrossing(z.y1+(z.y0-z.y1)*(.45+R()*.1),{jungle:true});
   z.oasis=rollWildernessLake(z);if(z.oasis){separateJungleLake(z,z.escapeRiver,z.oasis);water.push(z.oasis);}
  }
  // Remove scenery from water and bridge approaches, using the same pond shape as wilderness.
  const wet=r=>ZONES.some(z=>z.escapeRiver&&ov2(r,z.escapeRiver,40)||z.oasis&&oasisContains(z.oasis,r.x+r.w/2,r.y+r.h/2,Math.max(r.w,r.h)/2+8));
- covers=covers.filter(c=>!wet(coverSpriteRect(c)||c));objects=objects.filter(o=>!wet(objectAABB(o)));bushes=bushes.filter(b=>!wet(b));
  const last=ZONES[ZONES.length-1],exit={x:WW/2,y:last.y1+110};
+ const giantBlocked=r=>wet(r)||circleHitsRect(exit.x,exit.y,125,r);
+ const totals={covers:[],objects:[],bushes:[]};
+ for(const z of ZONES){
+  covers=[];objects=[];bushes=[];
+  // The ordinary jungle seed includes five shared small native trees, not small jungle variants.
+  for(let i=0;i<5;i++)covers.push({kd:6,x:i%2?WW-210+R()*120:26+R()*120,y:z.y1+120+(i+.2+R()*.5)/5*1700,w:TREE_BOX,h:TREE_BOX});
+  setupJungleScenery(z,giantBlocked);totals.covers.push(...covers);totals.objects.push(...objects);totals.bushes.push(...bushes);
+ }
+ covers=totals.covers;objects=totals.objects;bushes=totals.bushes;
+ covers=covers.filter(c=>!wet(coverSpriteRect(c)||c));objects=objects.filter(o=>!wet(objectAABB(o)));bushes=bushes.filter(b=>!wet(b));
  covers=covers.filter(c=>!circleHitsRect(exit.x,exit.y,125,coverSpriteRect(c)||c));
  objects=objects.filter(o=>!circleHitsRect(exit.x,exit.y,125,objectAABB(o)));bushes=bushes.filter(b=>!circleHitsRect(exit.x,exit.y,110,b));
- last.escapeExit=exit;setupJungleMud(ZONES);setupJungleTrails(ZONES);
+ last.escapeExit=exit;
+ setupJungleMud(ZONES);setupJungleTrails(ZONES);
  for(const z of ZONES){
   const inside=o=>o.y+o.h/2>z.y1&&o.y+o.h/2<=z.y0;
   z.jungleDensity.trees=covers.filter(c=>c.kd===6&&inside(c)).length;z.jungleDensity.grass=bushes.filter(b=>!b.spinifex&&inside(b)).length;z.jungleDensity.plants=bushes.filter(b=>b.spinifex&&inside(b)).length;
  }
  // One ordinary starting vehicle; test selection does not force invincibility or infinite ammo.
  const t=TYPES[0];cars.push({x:WW/2+130,y:p.y-100,t,kind:'tank',hp:t.hp,c:t.cmax,v:t.vmax,f:t.fmax,ch:0,mgHits:0,body:-Math.PI/2});
- debugMode=0;debugInvincible=false;baseSpawnT=99999;weather='clear';weatherNext=99999;weatherT=0;rainIntensity=0;
+ debugMode=0;debugInvincible=false;baseSpawnT=99999;weather='clear';weatherNext=5+R()*10;weatherT=0;rainIntensity=0;
  captureBuildingGroundMarks();rebuildSpatialGrid();for(const z of ZONES)spawnAreaDebugEnemies(z);
  say('脱出：密林5エリアを突破し、最後のEXITで5秒待機せよ');
 }

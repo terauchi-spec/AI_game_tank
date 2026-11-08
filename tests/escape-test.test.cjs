@@ -22,6 +22,7 @@ test('five contiguous jungle areas reuse normal combat and terrain, with safe st
   assert.equal(h.run('ZONES.every(z=>z.jungleDensity.trees>5&&z.jungleDensity.grass>20)'),true);
   assert.equal(h.run('ZONES.every(z=>!z.escapeRiver||z.escapeRiver.h>=150&&z.escapeRiver.h<=250&&(!z.escapeRiver.bridge||z.escapeRiver.bridge.h===z.escapeRiver.h))'),true);
   assert.equal(h.run('ZONES.every(z=>!z.oasis||z.oasis.sizeScale>=.2&&z.oasis.sizeScale<=1.5&&water.includes(z.oasis))'),true);
+  assert.equal(h.run("ZONES.every(z=>covers.filter(c=>c.jungleAsset==='fern_tree'&&zoneAt(c.y+c.h/2)===z).length>=2)"),true);
   variants.add(h.run('ZONES.map(z=>Number(!!z.escapeRiver)+2*Number(!!z.oasis)).join()'));
   assert.equal(h.run('ZONES.every(z=>z.jungleCoreLayout)&&covers.filter(c=>c.jungleCore).length>=3'),true);
   assert.equal(h.run('ZONES.every(z=>{for(let y=z.y1+32;y<Math.min(p.y,z.y0)-40;y+=8)if(hitsC(jungleRouteX(z,y),y,28))return false;return true;})'),true);
@@ -102,4 +103,21 @@ test('jungle river widths use the original distribution in 150-250px, with indep
    const seq=[0,n,.1,.5,omit,.5,.5];let i=0;c.R=()=>seq[i++];c.water=[];c.bridges=[];const r=c.rollRiverCrossing(5000,{jungle:true});assert.equal(r.h,150+Math.pow(n,.72)*100);assert.equal(!r.bridge,omit<2/3);
   }
  }
+});
+
+
+test('both jungle modes start rain sooner and retain the destruction-stage rain duration',()=>{
+ const h=createGameEngine(root);
+ for(const setup of ["stageMode='escapeTest';areaDebugEnabled=false","stageMode='base';areaDebugEnabled=true;selectedAreaDebug='密林'"]){
+  h.run(setup+';reset(false)');
+  assert.equal(h.run('weatherNext>=5&&weatherNext<=15'),true);
+  h.run('updateWeather(weatherNext);updateWeather(5);drawWeatherOverlay()');
+  assert.equal(h.run("weather==='rain'&&weatherT===25&&rainIntensity===1"),true);
+  h.run('updateWeather(25)');
+  assert.equal(h.run("weather==='clear'&&rainIntensity===0&&weatherNext>=10&&weatherNext<=20"),true);
+ }
+ h.run("stageMode='beginner';areaDebugEnabled=false;reset(false)");
+ assert.equal(h.run('weatherNext>=15&&weatherNext<=50'),true);
+ h.run('updateWeather(weatherNext);updateWeather(30)');
+ assert.equal(h.run('weatherNext>=22&&weatherNext<=60'),true);
 });
