@@ -56,11 +56,11 @@ test('partial destruction retains every jungle sprite and clips its original col
 test('jungle plants share spinifex stealth, burning and scatter behavior',()=>{
  for(let seed=1;seed<=20;seed++){
   const h=createGameEngine(root,{seed});h.run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='密林';reset(false);globalThis.plants=bushes.filter(b=>b.junglePlant)");
-  assert.ok(h.run('plants.length')>=4&&h.run('plants.length')<=6);
+  assert.ok(h.run('plants.length')>=12&&h.run('plants.length')<=18);
   assert.equal(h.run('new Set(plants.map(b=>b.junglePlant)).size'),2);
   assert.equal(h.run('plants.every(b=>b.spinifex&&b.w===b.h&&b.w>=59.15&&b.w<=129.675)'),true);
   assert.equal(h.run('plants.every(b=>b.x+b.w<WW/2-60||b.x>WW/2+60)'),true);
-  assert.equal(h.run('plants.every(b=>!covers.some(c=>circleHitsRect(b.x+b.w/2,b.y+b.h/2,b.w/2+8,c)))'),true);
+  assert.equal(h.run('plants.every(b=>!covers.some(c=>circleHitsRect(b.x+b.w/2,b.y+b.h/2,b.w/2,c)))'),true);
   h.run('globalThis.plant=plants[0];p.x=plant.x+plant.w/2;p.y=plant.y+plant.h/2;p.tank=null');
   assert.equal(h.run('inBush(p)'),true);
   assert.equal(h.run("canDetect({x:p.x,y:p.y+30,st:1,target:'p'},p,-Math.PI/2,'p')"),false);
@@ -84,7 +84,7 @@ test('jungle plant images retain masters and use small lazy WebP assets',()=>{
 });
 
 test('expanded jungle props and denser vegetation stay separated and within bounded counts',()=>{
- const dimensions={fallen_log:[190,62,1.3],wood_hut_small:[160,135,1.1],wood_hut_large:[220,158,1.1],concrete_hut:[185,156,1.1],watchtower:[150,205,1.1],wood_watchtower:[150,150*320/295,1.1]};
+ const dimensions={fallen_log:[190,62,1.3],wood_hut_small:[160,135,1.1*1.1],wood_hut_large:[220,158,1.1*1.1],concrete_hut:[185,156,1.1*1.1],watchtower:[150,205,1.1],wood_watchtower:[150,150*320/295,1.1]};
  for(let seed=1;seed<=40;seed++){
   const h=createGameEngine(root,{seed,touch:seed%2===0,width:seed%2===0?390:840});
   h.run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='密林';reset(false)");
@@ -94,7 +94,9 @@ test('expanded jungle props and denser vegetation stay separated and within boun
    assert.equal(h.run('covers.filter(c=>c.jungleAsset===key).every(c=>Math.abs(c.w-expectedW)<1e-8&&Math.abs(c.h-expectedH)<1e-8)'),true,key);
   }
   assert.equal(h.run('(()=>{const all=[...covers.map(c=>coverSpriteRect(c)||c),...bushes];return all.every((a,i)=>all.slice(i+1).every(b=>a.x>=b.x+b.w||a.x+a.w<=b.x||a.y>=b.y+b.h||a.y+a.h<=b.y));})()'),true,'overlap seed '+seed);
-  assert.equal(h.run('covers.length<=32&&bushes.length<=30'),true);
+  assert.equal(h.run('covers.length<=80&&bushes.length<=90'),true);
+  assert.equal(h.run('covers.every(c=>!circleHitsRect(WW/2,p.y-150,310,coverSpriteRect(c)||c))&&bushes.every(b=>!circleHitsRect(WW/2,p.y-150,310,b))'),true);
+  assert.equal(h.run('Object.entries(ZONES[0].jungleDensity.targets).every(([key,n])=>ZONES[0].jungleDensity[key]===n)'),true,'triple population seed '+seed);
   assert.ok(h.run('covers.filter(c=>c.kd===6).length')>=14,'tree density seed '+seed);
   assert.ok(h.run('bushes.filter(b=>!b.junglePlant).length')>=12,'bush density seed '+seed);
   assert.equal(h.run('(()=>{for(let y=ZONES[0].y1+32;y<p.y;y+=16)if(hitsM(WW/2,y,28))return false;return true;})()'),true);

@@ -1,7 +1,8 @@
 // Test-only scenery: reuse the existing cover physics and spatially culled renderer.
 // Images load only after selecting the jungle, leaving normal stage startup unchanged.
-const JUNGLE_ASSETS={palm:[6,136,136],fallen_log:[0,190*1.3,62*1.3],wood_hut_small:[4,160*1.1,135*1.1],wood_hut_large:[4,220*1.1,158*1.1],concrete_hut:[3,185*1.1,156*1.1],watchtower:[3,150*1.1,205*1.1],wood_watchtower:[4,150*1.1,150*1.1*320/295],broadleaf_tree:[6,166,166],fern_tree:[6,332,332]};
+const JUNGLE_ASSETS={palm:[6,136,136],fallen_log:[0,190*1.3,62*1.3],wood_hut_small:[4,160*1.1*1.1,135*1.1*1.1],wood_hut_large:[4,220*1.1*1.1,158*1.1*1.1],concrete_hut:[3,185*1.1*1.1,156*1.1*1.1],watchtower:[3,150*1.1,205*1.1],wood_watchtower:[4,150*1.1,150*1.1*320/295],broadleaf_tree:[6,166,166],fern_tree:[6,332,332]};
 const JUNGLE_PLANTS=['round_leaf','flower_leaf'];
+const JUNGLE_BUILDING_BASE={wood_hut_small:[160*1.1,135*1.1],wood_hut_large:[220*1.1,158*1.1],concrete_hut:[185*1.1,156*1.1]};
 function loadJungleAssets(){
  for(const key of [...Object.keys(JUNGLE_ASSETS),...JUNGLE_PLANTS])if(!COVER_IMG['jungle_'+key])COVER_IMG['jungle_'+key]=makeAssetImage(ASSET_DIR+'jungle/'+key+'.webp?v='+GAME_VERSION);
 }
@@ -38,7 +39,7 @@ function setupJungleScenery(z){
   !covers.some(c=>overlap(r,coverSpriteRect(c)||c))&&!bushes.some(b=>overlap(r,b))&&!objects.some(o=>overlap(r,objectAABB(o)));
  const overlap=(a,b)=>a.x<b.x+b.w+8&&a.x+a.w+8>b.x&&a.y<b.y+b.h+8&&a.y+a.h+8>b.y;
  const add=(key,x,y)=>{
-  const [kd,w,h]=JUNGLE_ASSETS[key],side=x+w/2>WW/2;
+  const [kd,assetW,assetH]=JUNGLE_ASSETS[key],[w,h]=JUNGLE_BUILDING_BASE[key]||[assetW,assetH],side=x+w/2>WW/2;
   x=side?Math.max(WW/2+64,Math.min(WW-w-12,x)):Math.max(12,Math.min(WW/2-64-w,x));
   // Bounded search relocates a conflicting prop instead of overlapping or dropping it.
   for(let i=0;i<121;i++)for(let col=0;col<3;col++){
@@ -76,4 +77,47 @@ function setupJungleScenery(z){
   if(free(r)){bushes.push(r);made++;}
  }
 
+
+ // Match the existing final start-area cleanup before counting the baseline.
+ const outsideStart=o=>!circleHitsRect(WW/2,p.y-150,310,o);
+ covers=covers.filter(c=>outsideStart(coverSpriteRect(c)||c));bushes=bushes.filter(outsideStart);
+ // Repack once at stage creation so triple populations fit without sprite overlap.
+ const trees=covers.filter(c=>c.kd===6).length,grass=bushes.filter(b=>!b.junglePlant).length,plants=bushes.filter(b=>b.junglePlant).length;
+ const targets={trees:trees*3,grass:grass*3,plants:plants*3},denseCovers=covers.map(c=>JUNGLE_BUILDING_BASE[c.jungleAsset]?{...c,w:JUNGLE_ASSETS[c.jungleAsset][1],h:JUNGLE_ASSETS[c.jungleAsset][2]}:{...c}),denseBushes=bushes.map(b=>({...b}));
+ for(let i=0;i<trees*2;i++)denseCovers.push({kd:6,x:0,y:0,w:64,h:64,jungleAsset:i%3===0?'broadleaf_tree':'palm',areaDebug:1});
+ for(let i=0;i<plants*2;i++)denseBushes.push({x:0,y:0,w:60,h:60,spinifex:true,junglePlant:JUNGLE_PLANTS[i%JUNGLE_PLANTS.length]});
+ for(let i=0;i<grass*2;i++)denseBushes.push({x:0,y:0,w:56,h:36});
+ if(packJunglePopulation(denseCovers,denseBushes,z)){covers=denseCovers;bushes=denseBushes;}
+ z.jungleDensity={targets,trees:covers.filter(c=>c.kd===6).length,grass:bushes.filter(b=>!b.junglePlant).length,plants:bushes.filter(b=>b.junglePlant).length};
+}
+// Best-short-side rectangle packing; bounded to four orderings and stage setup only.
+function packJunglePopulation(denseCovers,denseBushes,z){
+ const items=[...denseCovers.map(c=>{const r=coverSpriteRect(c)||c;return{o:c,w:r.w+8,h:r.h+8,dx:c.x-r.x,dy:c.y-r.y};}),...denseBushes.map(b=>({o:b,w:b.w+8,h:b.h+8,dx:0,dy:0}))];
+ const intersects=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
+ const contains=(a,b)=>a.x<=b.x&&a.y<=b.y&&a.x+a.w>=b.x+b.w&&a.y+a.h>=b.y+b.h;
+ const split=(free,r)=>{
+  const out=[];
+  for(const f of free){
+   if(!intersects(f,r)){out.push(f);continue;}
+   if(r.x>f.x)out.push({x:f.x,y:f.y,w:r.x-f.x,h:f.h});
+   if(r.x+r.w<f.x+f.w)out.push({x:r.x+r.w,y:f.y,w:f.x+f.w-r.x-r.w,h:f.h});
+   if(r.y>f.y)out.push({x:f.x,y:f.y,w:f.w,h:r.y-f.y});
+   if(r.y+r.h<f.y+f.h)out.push({x:f.x,y:r.y+r.h,w:f.w,h:f.y+f.h-r.y-r.h});
+  }
+  return out.filter((f,i)=>!out.some((q,j)=>i!==j&&contains(q,f)&&(j<i||!contains(f,q))));
+ };
+ const rank=[a=>a.w*a.h,a=>Math.max(a.w,a.h),a=>a.h,a=>a.w];
+ for(const score of rank){
+  let free=[{x:12,y:z.y1+40,w:WW/2-76,h:z.y0-z.y1-680},{x:WW/2+64,y:z.y1+40,w:WW/2-76,h:z.y0-z.y1-680},{x:12,y:z.y0-640,w:150,h:220},{x:WW-162,y:z.y0-640,w:150,h:220}];
+  for(const o of objects)free=split(free,objectAABB(o));
+  const placements=[];
+  for(const item of items.slice().sort((a,b)=>score(b)-score(a)||b.w*b.h-a.w*a.h)){
+   let best=null,bestShort=Infinity,bestLong=Infinity;
+   for(const f of free)if(item.w<=f.w&&item.h<=f.h){const short=Math.min(f.w-item.w,f.h-item.h),long=Math.max(f.w-item.w,f.h-item.h);if(short<bestShort||short===bestShort&&long<bestLong){best=f;bestShort=short;bestLong=long;}}
+   if(!best)break;
+   const r={x:best.x,y:best.y,w:item.w,h:item.h};placements.push({item,r});free=split(free,r);
+  }
+  if(placements.length===items.length){for(const {item,r} of placements){item.o.x=r.x+item.dx;item.o.y=r.y+item.dy;}return true;}
+ }
+ return false;
 }
