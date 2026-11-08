@@ -95,11 +95,14 @@ function setupJungleScenery(z){
  covers=covers.filter(c=>outsideStart(coverSpriteRect(c)||c));bushes=bushes.filter(outsideStart);
  // Keep normal-sized trees; retain the increased grass population without small tree variants.
  const trees=covers.filter(c=>c.kd===6).length,grass=bushes.filter(b=>!b.junglePlant).length,plants=bushes.filter(b=>b.junglePlant).length;
- const targets={trees,grass:grass*3,plants:plants*3},denseCovers=covers.map(c=>JUNGLE_BUILDING_BASE[c.jungleAsset]?{...c,w:JUNGLE_ASSETS[c.jungleAsset][1],h:JUNGLE_ASSETS[c.jungleAsset][2]}:{...c}),denseBushes=bushes.map(b=>({...b}));
+ const targets={trees:trees*3,grass:grass*3,plants:plants*3},denseCovers=covers.map(c=>JUNGLE_BUILDING_BASE[c.jungleAsset]?{...c,w:JUNGLE_ASSETS[c.jungleAsset][1],h:JUNGLE_ASSETS[c.jungleAsset][2]}:{...c}),denseBushes=bushes.map(b=>({...b}));
  for(let i=0;i<plants*2;i++)denseBushes.push({x:0,y:0,w:60,h:60,spinifex:true,junglePlant:JUNGLE_PLANTS[i%JUNGLE_PLANTS.length]});
  for(let i=0;i<grass*2;i++)denseBushes.push({x:0,y:0,w:56,h:36});
- for(const c of denseCovers)if(c.jungleAsset==='fallen_log')rotateJungleLog(c,(R()-.5)*Math.PI/6);
- if(packJunglePopulation(denseCovers,denseBushes,z)){covers=denseCovers;bushes=denseBushes;randomizeJungleVegetation(z);}
+ for(const c of denseCovers){
+  if(c.jungleAsset==='fallen_log')rotateJungleLog(c,(R()-.5)*Math.PI/6);
+  if(c.kd===6&&!c.jungleAsset)c.jungleTreeArt=stableRand(c,61)<.5?'tree_v2':'tree';
+ }
+ if(packJunglePopulation(denseCovers,denseBushes,z)){covers=denseCovers;bushes=denseBushes;randomizeJungleVegetation(z,targets.trees);}
  for(const c of covers)if(c.kd===6||c.jungleAsset==='fallen_log')c.jungleHitScale=.95;
  z.jungleDensity={targets,trees:covers.filter(c=>c.kd===6).length,grass:bushes.filter(b=>!b.junglePlant).length,plants:bushes.filter(b=>b.junglePlant).length};
 }
@@ -136,19 +139,86 @@ function packJunglePopulation(denseCovers,denseBushes,z){
  return false;
 }
 
-// Relocate vegetation into free gaps, including local jitter, without changing its count/size.
-function randomizeJungleVegetation(z){
- const laneHalf=z.jungleLaneHalf||48;
- const all=[...covers.map(c=>({o:c,r:coverSpriteRect(c)||c})),...bushes.map(b=>({o:b,r:b}))];
- const overlap=(a,b)=>a.x<b.x+b.w+8&&a.x+a.w+8>b.x&&a.y<b.y+b.h+8&&a.y+a.h+8>b.y;
- const vegetation=all.filter(q=>q.o.kd===6||!('kd' in q.o)).map(q=>({q,order:R()})).sort((a,b)=>a.order-b.order);
- for(let pass=0;pass<2;pass++)for(const {q} of vegetation){
-  const old=q.r,dx=q.o.x-old.x,dy=q.o.y-old.y;
-  for(let i=0;i<32;i++){
-   const r={x:i<12?12+R()*(WW-24-old.w):old.x+(R()-.5)*64,y:i<12?z.y1+40+R()*(z.y0-z.y1-460-old.h):old.y+(R()-.5)*80,w:old.w,h:old.h};
-   if(r.x<12||r.x+r.w>WW-12||r.y<z.y1+40||r.y+r.h>z.y0-420||(r.x+r.w>WW/2-laneHalf&&r.x<WW/2+laneHalf)||circleHitsRect(WW/2,p.y-150,310,r))continue;
-   if(all.some(other=>other!==q&&overlap(r,other.r))||objects.some(o=>overlap(r,objectAABB(o))))continue;
-   q.o.x=r.x+dx;q.o.y=r.y+dy;q.r=r;break;
+// Decode visual alpha once on demand, independently of the 95% collision outline.
+const junglePlacementMaskCache=new Map();
+function junglePlacementBits(key){
+ if(junglePlacementMaskCache.has(key))return junglePlacementMaskCache.get(key);
+ const hex=JUNGLE_PLACEMENT_MASKS[key];if(!hex)return null;
+ const data=new Uint8Array(hex.length/2);for(let i=0;i<data.length;i++)data[i]=parseInt(hex.slice(i*2,i*2+2),16);
+ junglePlacementMaskCache.set(key,data);return data;
+}
+// One-world-pixel occupancy exists only during generation, never during gameplay.
+function createJunglePlacement(z){
+ const width=WW,height=Math.ceil(z.y0-z.y1),grid=new Uint8Array(width*height),cache=new Map(),lane=z.jungleLaneHalf||48;
+ for(let y=0;y<height;y++)grid.fill(1,y*width+Math.floor(WW/2-lane),y*width+Math.ceil(WW/2+lane));
+ const cy=p.y-150-z.y1;
+ for(let y=Math.max(0,Math.floor(cy-310));y<Math.min(height,Math.ceil(cy+310));y++)grid.fill(1,y*width+Math.max(0,WW/2-310),y*width+Math.min(width,WW/2+310));
+ const make=(o,r)=>{
+  const key=o.jungleAsset||o.junglePlant||o.jungleTreeArt,angle=o.jungleAngle||0,id=[key||'rect',r.w,r.h,angle].join('|');
+  let stamp=cache.get(id);
+  if(!stamp){
+   const w=Math.ceil(r.w),h=Math.ceil(r.h),pixels=new Uint8Array(w*h),bits=junglePlacementBits(key),co=Math.cos(angle),si=Math.sin(angle);
+   const fill=(x0,y0,x1,y1)=>{const left=Math.max(0,Math.floor(x0)),right=Math.min(w,Math.ceil(x1));for(let y=Math.max(0,Math.floor(y0));y<Math.min(h,Math.ceil(y1));y++)pixels.fill(1,y*w+left,y*w+right);};
+   if(!bits)fill(0,0,w,h);
+   else for(let y=0;y<128;y++){
+    if(!angle){
+     for(let x=0;x<128;){if(!(bits[y*16+(x>>3)]&(1<<(x&7)))){x++;continue;}const start=x++;while(x<128&&(bits[y*16+(x>>3)]&(1<<(x&7))))x++;fill(start*r.w/128,y*r.h/128,x*r.w/128,(y+1)*r.h/128);}
+    }else for(let x=0;x<128;x++)if(bits[y*16+(x>>3)]&(1<<(x&7))){
+     const sw=o.jungleSpriteW,sh=o.jungleSpriteH,a=(x+.5)*sw/128-sw/2,b=(y+.5)*sh/128-sh/2;
+     const px=co*a-si*b+r.w/2,py=si*a+co*b+r.h/2,ex=(Math.abs(co)*sw+Math.abs(si)*sh)/256,ey=(Math.abs(si)*sw+Math.abs(co)*sh)/256;
+     fill(px-ex,py-ey,px+ex,py+ey);
+    }
+   }
+   const runs=[];for(let y=0;y<h;y++)for(let x=0;x<w;){if(!pixels[y*w+x]){x++;continue;}const start=x++;while(x<w&&pixels[y*w+x])x++;runs.push(y,start,x);}
+   stamp={w,h,runs};cache.set(id,stamp);
   }
+  return{o,r,stamp,x:Math.round(r.x),y:Math.round(r.y-z.y1),dx:o.x-r.x,dy:o.y-r.y};
+ };
+ const mark=(q,value)=>{for(let i=0;i<q.stamp.runs.length;i+=3){const base=(q.y+q.stamp.runs[i])*width+q.x;grid.fill(value,base+q.stamp.runs[i+1],base+q.stamp.runs[i+2]);}};
+ const fits=(q,x,y)=>{
+  if(x<12||x+q.stamp.w>width-12||y<40||y+q.stamp.h>height-420||(x<WW/2+310&&x+q.stamp.w>WW/2-310&&y<cy+310&&y+q.stamp.h>cy-310))return false;
+  for(let i=0;i<q.stamp.runs.length;i+=3){const base=(y+q.stamp.runs[i])*width+x;for(let j=q.stamp.runs[i+1];j<q.stamp.runs[i+2];j++)if(grid[base+j])return false;}
+  return true;
+ };
+ const commit=q=>{q.o.x=q.x+q.dx;q.o.y=z.y1+q.y+q.dy;mark(q,1);};
+ return{make,mark,fits,commit,grid};
+}
+// Placement uses unshrunk visible alpha, including internal holes, with no rectangular buffer.
+function randomizeJungleVegetation(z,treeTarget){
+ const placement=createJunglePlacement(z),all=[...covers.map(c=>placement.make(c,coverSpriteRect(c)||c)),...bushes.map(b=>placement.make(b,b))];
+ for(const q of all){q.startX=q.x;q.startY=q.y;}
+ for(const o of objects)placement.mark(placement.make(o,objectAABB(o)),1);
+ const trees=all.filter(q=>q.o.kd===6),grass=all.filter(q=>!('kd' in q.o)),added=[];
+ for(const q of all)if('kd' in q.o)placement.commit(q);
+ // Place large crowns before grass, so small foliage does not scatter across every tree gap.
+ for(let pass=0;pass<2;pass++)for(const {q} of trees.map(q=>({q,order:R()})).sort((a,b)=>a.order-b.order)){
+  const oldX=q.x,oldY=q.y;placement.mark(q,0);
+  for(let i=0;i<32;i++){
+   const x=Math.round(i<16?12+R()*(WW-24-q.stamp.w):oldX+(R()-.5)*96),y=Math.round(i<16?40+R()*(z.y0-z.y1-460-q.stamp.h):oldY+(R()-.5)*112);
+   if(placement.fits(q,x,y)){q.x=x;q.y=y;break;}
+  }
+  placement.commit(q);
  }
+ for(let attempt=0;attempt<900&&trees.length+added.length<treeTarget;attempt++){
+  const key=attempt%3===0?'broadleaf_tree':'palm',[kd,w,h]=JUNGLE_ASSETS[key],c={kd,x:0,y:0,w,h,jungleAsset:key,areaDebug:1},q=placement.make(c,c);
+  const x=Math.round(12+R()*(WW-24-q.stamp.w)),y=Math.round(40+R()*(z.y0-z.y1-460-q.stamp.h));
+  if(!placement.fits(q,x,y))continue;q.x=x;q.y=y;placement.commit(q);added.push(q);
+ }
+ // Keep every existing grass object. If necessary give back a few added trees, never overlap.
+ for(let round=0;round<8;round++){
+  const placed=[],ordered=grass.map(q=>({q,tie:R()})).sort((a,b)=>b.q.stamp.w*b.q.stamp.h-a.q.stamp.w*a.q.stamp.h||a.tie-b.tie);
+  for(const {q} of ordered){
+   let found=false;
+   for(let i=0;i<280;i++){
+    const x=Math.round(12+R()*(WW-24-q.stamp.w)),y=Math.round(40+R()*(z.y0-z.y1-460-q.stamp.h));
+    if(!placement.fits(q,x,y))continue;q.x=x;q.y=y;placement.commit(q);placed.push(q);found=true;break;
+   }
+   if(!found)break;
+  }
+  if(placed.length===grass.length){for(const q of added)covers.push(q.o);return;}
+  for(const q of placed)placement.mark(q,0);
+  for(let i=0;i<3&&added.length;i++)placement.mark(added.pop(),0);
+ }
+ // The original rectangle seed is always safe if the bounded denser search cannot fit grass.
+ for(const q of all){q.o.x=q.startX+q.dx;q.o.y=z.y1+q.startY+q.dy;}
 }
