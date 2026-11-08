@@ -93,8 +93,8 @@ test('expanded jungle props and denser vegetation stay separated and within boun
    if(key==='fallen_log'){assert.equal(h.run('covers.filter(c=>c.jungleAsset===key).every(c=>Math.abs(c.jungleSpriteW-expectedW)<1e-8&&Math.abs(c.jungleSpriteH-expectedH)<1e-8&&Math.abs(c.jungleAngle)<=Math.PI/12)'),true);continue;}
    assert.equal(h.run('covers.filter(c=>c.jungleAsset===key).every(c=>Math.abs(c.w-expectedW)<1e-8&&Math.abs(c.h-expectedH)<1e-8)'),true,key);
   }
-  assert.equal(h.run('(()=>{const check=createJunglePlacement(ZONES[0]);for(const q of [...covers.map(c=>check.make(c,coverSpriteRect(c)||c)),...bushes.map(b=>check.make(b,b))]){if(!check.fits(q,q.x,q.y))return false;check.mark(q,1);}return true;})()'),true,'visible overlap seed '+seed);
-  assert.equal(h.run('covers.length<=80&&bushes.length<=90'),true);
+  assert.equal(h.run('(()=>{const check=createJunglePlacement(ZONES[0]);for(const q of [...covers.map(c=>check.make(c,coverSpriteRect(c)||c))]){if(!check.fits(q,q.x,q.y))return false;check.mark(q,1);}return true;})()'),true,'visible overlap seed '+seed);
+  assert.equal(h.run('covers.length<=80&&bushes.length<=178'),true);
   assert.equal(h.run('Object.entries(ZONES[0].jungleDensity.targets).every(([key,n])=>key==="trees"?ZONES[0].jungleDensity[key]>n/3&&ZONES[0].jungleDensity[key]<=n:ZONES[0].jungleDensity[key]===n)'),true,'population target seed '+seed);
   assert.equal(h.run("covers.filter(c=>c.jungleAsset==='palm'||c.jungleAsset==='broadleaf_tree').every(c=>c.w===JUNGLE_ASSETS[c.jungleAsset][1]&&c.h===JUNGLE_ASSETS[c.jungleAsset][2])"),true,'no small palm/broadleaf seed '+seed);
   assert.ok(h.run('bushes.filter(b=>!b.junglePlant).length')>=12,'bush density seed '+seed);
@@ -168,4 +168,23 @@ test('visual masks decode only for jungle placement and preserve generic tree ar
  h.run('covers=[tree];objects=[];carve(tree.x+tree.w/2,tree.y+tree.h/2,14,false,null)');
  assert.equal(h.run('covers.every(c=>c.jungleTreeArt===tree.jungleTreeArt)'),true);
  assert.ok(h.run('junglePlacementMaskCache.size')>0);
+});
+
+test('jungle grass varies in size, overlaps grass and cover, and uses cached chunks',()=>{
+ const h=createGameEngine(root);h.run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='密林';reset(false);globalThis.normalGrass=bushes.filter(b=>!b.spinifex)");
+ assert.ok(h.run('normalGrass.length')>72);
+ assert.ok(h.run('new Set(normalGrass.map(b=>Math.round(b.w))).size')>20);
+ assert.equal(h.run('normalGrass.every(b=>b.w>=66&&b.w<=150&&b.h>=48.4&&b.h<=110)'),true);
+ assert.equal(h.run('normalGrass.some((a,i)=>normalGrass.slice(i+1).some(b=>ov2(a,b,0)))'),true);
+ assert.equal(h.run('normalGrass.some(b=>covers.some(c=>ov2(b,coverSpriteRect(c)||c,0)))'),true);
+ const before=h.run('normalGrass.length');h.run('reconcileBushBuildingPlacement()');assert.equal(h.run('bushes.filter(b=>!b.spinifex).length'),before);
+ h.run('ensureGrassBushChunkCache()');assert.equal(h.run('grassBushChunkCache.has(ZONES[0])'),true);
+ assert.equal(h.run('normalGrass.every(isGrassBush)'),true);
+ h.run('drawGrassBushChunks(0,ZONES[0].y1);globalThis.chunks=grassBushChunkCache.get(ZONES[0]);markGrassBushChunkDirty(normalGrass[0])');
+ assert.equal(h.run('chunks.some(ch=>ch.dirty)'),true);
+});
+test('jungle covers draw once above cached foreground grass while other stages keep their layer',()=>{
+ const h=createGameEngine(root);h.run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='密林';reset(false);startAssetLoading();state='play';p.y=ZONES[0].y1+800;globalThis.grassDrawn=false;globalThis.coverLayers=[];globalThis.originalGrassChunks=drawGrassBushChunks;globalThis.originalDrawCover=drawCoverAsset;drawGrassBushChunks=(...args)=>{originalGrassChunks(...args);grassDrawn=true;};drawCoverAsset=c=>{coverLayers.push({after:grassDrawn,key:c.jungleAsset||c.jungleTreeArt||c.kd,ref:c});return originalDrawCover(c);};draw(update(1/60))");
+ assert.ok(h.run('coverLayers.length')>0);assert.equal(h.run('coverLayers.every(c=>c.after)'),true);assert.equal(h.run('new Set(coverLayers.map(c=>c.ref)).size===coverLayers.length'),true);
+ h.run("ZONES=[{n:'草原',y0:12800,y1:0}]");assert.equal(h.run('jungleCoverLayerActive()'),false);
 });

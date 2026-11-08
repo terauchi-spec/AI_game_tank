@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.08.2145</title>
+<title>こっそり戦車大作戦 2026.11.08.2215</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -1001,7 +1001,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.08.2145',FILE_CREATED_AT='2026/11/08 21:45',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.08.2215',FILE_CREATED_AT='2026/11/08 22:15',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -2842,6 +2842,7 @@ function reconcileBushBuildingPlacement(){
  // 元の草むらを無闇に動かさず、建物と重なるものだけ同じエリア内に植え直す。
  const kept=[];
  for(const b of bushes){
+  if(zoneAt(b.y+b.h*.5).n==='密林'){kept.push(b);continue;}
   if(!hitsBuilding(b)){kept.push(b);continue;}
   const z=zoneAt(b.y+b.h*.5),top=z.y1+18,bottom=z.y0-b.h-18;
   let moved=false;
@@ -6512,7 +6513,7 @@ function drawBushCached(b){
  drawStaticRaster(bushSpriteFor(b),b.x,b.y,b.w,b.h);
 }
 
-// 草原は草むら数が多いため、512px高のチャンクへ事前合成して描画回数を減らす。
+// 草原・密林の草むらは512px高のチャンクへ事前合成して描画回数を減らす。
 // 画面内のチャンクだけを描く。草むら配列が入れ替わる／増減した時だけ自動で再生成する。
 const GRASS_BUSH_CHUNK_H=512,GRASS_BUSH_CACHE_SCALE=.5;
 let grassBushChunkCache=new Map(),grassBushCacheRef=null;
@@ -6530,7 +6531,7 @@ function redrawGrassBushChunk(z,ch){
 function rebuildGrassBushChunkCache(){
  for(const chunks of grassBushChunkCache.values())for(const ch of chunks)invalidateStaticRaster(ch.c);
  grassBushChunkCache.clear();
- const grassZones=ZONES.filter(z=>z.n==='草原');
+ const grassZones=ZONES.filter(z=>z.n==='草原'||z.n==='密林');
  for(const z of grassZones){
   const chunks=[];
   for(let yy=z.y1;yy<z.y0;yy+=GRASS_BUSH_CHUNK_H){
@@ -6543,17 +6544,17 @@ function rebuildGrassBushChunkCache(){
  grassBushCacheRef=bushes;
 }
 function markGrassBushChunkDirty(b){
- if(!b||grassBushCacheRef!==bushes)return;const z=zoneAt(b.y+b.h*.5);if(!z||z.n!=='草原')return;
+ if(!b||grassBushCacheRef!==bushes)return;const z=zoneAt(b.y+b.h*.5);if(!z||(z.n!=='草原'&&z.n!=='密林'))return;
  const chunks=grassBushChunkCache.get(z);if(!chunks)return;for(const ch of chunks)if(!(b.y+b.h<ch.y||b.y>ch.y+ch.h))ch.dirty=true;
 }
 function ensureGrassBushChunkCache(){if(grassBushCacheRef!==bushes)rebuildGrassBushChunkCache();}
 function drawGrassBushChunks(cx,cy){
  ensureGrassBushChunkCache();const top=cy-50,bottom=cy+H+50;
- for(const z of ZONES){if(z.n!=='草原'||z.y1>bottom||z.y0<top)continue;const chunks=grassBushChunkCache.get(z)||[];
+ for(const z of ZONES){if((z.n!=='草原'&&z.n!=='密林')||z.y1>bottom||z.y0<top)continue;const chunks=grassBushChunkCache.get(z)||[];
   for(const ch of chunks){if(ch.y>bottom||ch.y+ch.h<top)continue;if(ch.dirty)redrawGrassBushChunk(z,ch);drawStaticRaster(ch.c,0,ch.y,WW,ch.h);}
  }
 }
-function isGrassBush(b){return zoneAt(b.y+b.h*.5).n==='草原';}
+function isGrassBush(b){const n=zoneAt(b.y+b.h*.5).n;return n==='草原'||n==='密林';}
 function tankShape(x,y,body,ang,tank,sz,layer='both',trackPhase=null){
  if(tank&&typeof tank==='object'&&typeof PLAYER_TANK_ART!=='undefined'&&PLAYER_TANK_ART[tank.id]){drawPlayerTankArt(x,y,body,ang,tank.id,sz,layer,trackPhase);return;}
  drawOriginalTankShape(x,y,body,ang,tank,sz,layer,g);
@@ -7723,7 +7724,9 @@ function draw(near){
  const mazeWallsCached=drawMazeWallChunks(cx,cy);
  const indoorWallDrawAt=stageMode==='indoor'&&debugMode>0?performance.now():0;
  const indoorWallsCached=stageMode==='indoor'&&typeof drawInfiltrationWallChunks==='function'&&drawInfiltrationWallChunks(cx,cy);
- for(const c of coversInBox(cx-100,cy-100,cx+W+100,cy+H+100)){
+ const visibleCovers=coversInBox(cx-100,cy-100,cx+W+100,cy+H+100),jungleCoversOnTop=typeof jungleCoverLayerActive==='function'&&jungleCoverLayerActive();
+ for(const c of visibleCovers){
+  if(jungleCoversOnTop&&jungleCoverHasArt(c))continue;
   if(c.trainingWall&&stageMode==='training'){drawTrainingWall(c,cy);continue;}
   if(c.buildGroup?.blinkHidden)continue;
   if(c.mazeWall&&mazeWallsCached)continue;
@@ -7824,6 +7827,7 @@ function draw(near){
  drawGrassBushChunks(cx,cy);
  for(const b of nearbyBushes(cx+W/2,cy+H/2,Math.max(W,H)*.8+100)){if(b.spinifex||isGrassBush(b)||b.x+b.w<cx-40||b.x>cx+W+40||b.y+b.h<cy-40||b.y>cy+H+40)continue;drawBushCached(b);}
  drawSpinifexTopLayer(cx,cy);
+ if(jungleCoversOnTop)drawJungleCoversAboveGrass(visibleCovers,cx,cy);
  // アンテナ上部・ロケット全体をすべての草むらより前面に重ねる。
  drawFrontlineAntennas(cx,cy,true);
  // 草むらに隠れた歩兵（プレイヤー・味方・敵兵）の輪郭強調は行わない。
@@ -8730,7 +8734,7 @@ function reportGameError(error){
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/jungle-hit-masks.js?v=2026.11.08.1710"></script>
 <script src="js/jungle-placement-masks.js?v=2026.11.08.2145"></script>
-<script src="js/jungle.js?v=2026.11.08.2145"></script>
+<script src="js/jungle.js?v=2026.11.08.2215"></script>
 <script src="js/canyon.js?v=2026.11.08.0208"></script>
 <script src="js/vegetation.js?v=2026.11.08.1806"></script>
 <script src="js/laboratory.js?v=2026.10.31.2206"></script>

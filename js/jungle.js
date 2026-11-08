@@ -102,7 +102,7 @@ function setupJungleScenery(z){
   if(c.jungleAsset==='fallen_log')rotateJungleLog(c,(R()-.5)*Math.PI/6);
   if(c.kd===6&&!c.jungleAsset)c.jungleTreeArt=stableRand(c,61)<.5?'tree_v2':'tree';
  }
- if(packJunglePopulation(denseCovers,denseBushes,z)){covers=denseCovers;bushes=denseBushes;randomizeJungleVegetation(z,targets.trees);}
+ if(packJunglePopulation(denseCovers,denseBushes,z)){covers=denseCovers;bushes=denseBushes;targets.grass=randomizeJungleVegetation(z,targets.trees);}
  for(const c of covers)if(c.kd===6||c.jungleAsset==='fallen_log')c.jungleHitScale=.95;
  z.jungleDensity={targets,trees:covers.filter(c=>c.kd===6).length,grass:bushes.filter(b=>!b.junglePlant).length,plants:bushes.filter(b=>b.junglePlant).length};
 }
@@ -185,10 +185,10 @@ function createJunglePlacement(z){
 }
 // Placement uses unshrunk visible alpha, including internal holes, with no rectangular buffer.
 function randomizeJungleVegetation(z,treeTarget){
- const placement=createJunglePlacement(z),all=[...covers.map(c=>placement.make(c,coverSpriteRect(c)||c)),...bushes.map(b=>placement.make(b,b))];
+ const placement=createJunglePlacement(z),all=covers.map(c=>placement.make(c,coverSpriteRect(c)||c));
  for(const q of all){q.startX=q.x;q.startY=q.y;}
  for(const o of objects)placement.mark(placement.make(o,objectAABB(o)),1);
- const trees=all.filter(q=>q.o.kd===6),grass=all.filter(q=>!('kd' in q.o)),added=[];
+ const trees=all.filter(q=>q.o.kd===6),added=[];
  for(const q of all)if('kd' in q.o)placement.commit(q);
  // Place large crowns before grass, so small foliage does not scatter across every tree gap.
  for(let pass=0;pass<2;pass++)for(const {q} of trees.map(q=>({q,order:R()})).sort((a,b)=>a.order-b.order)){
@@ -199,26 +199,54 @@ function randomizeJungleVegetation(z,treeTarget){
   }
   placement.commit(q);
  }
- for(let attempt=0;attempt<900&&trees.length+added.length<treeTarget;attempt++){
+ for(let attempt=0;attempt<1500&&trees.length+added.length<treeTarget;attempt++){
   const key=attempt%3===0?'broadleaf_tree':'palm',[kd,w,h]=JUNGLE_ASSETS[key],c={kd,x:0,y:0,w,h,jungleAsset:key,areaDebug:1},q=placement.make(c,c);
   const x=Math.round(12+R()*(WW-24-q.stamp.w)),y=Math.round(40+R()*(z.y0-z.y1-460-q.stamp.h));
   if(!placement.fits(q,x,y))continue;q.x=x;q.y=y;placement.commit(q);added.push(q);
  }
- // Keep every existing grass object. If necessary give back a few added trees, never overlap.
- for(let round=0;round<8;round++){
-  const placed=[],ordered=grass.map(q=>({q,tie:R()})).sort((a,b)=>b.q.stamp.w*b.q.stamp.h-a.q.stamp.w*a.q.stamp.h||a.tie-b.tie);
-  for(const {q} of ordered){
-   let found=false;
-   for(let i=0;i<280;i++){
-    const x=Math.round(12+R()*(WW-24-q.stamp.w)),y=Math.round(40+R()*(z.y0-z.y1-460-q.stamp.h));
-    if(!placement.fits(q,x,y))continue;q.x=x;q.y=y;placement.commit(q);placed.push(q);found=true;break;
-   }
-   if(!found)break;
+ // Grass is not an obstacle for tree placement and never causes trees to be removed.
+ for(const q of added)covers.push(q.o);
+ return setupOverlappingJungleGrass(z);
+}
+function setupOverlappingJungleGrass(z){
+ const normal=bushes.filter(b=>!b.spinifex),plants=bushes.filter(b=>b.spinifex),target=Math.min(160,Math.ceil(normal.length*1.75)),grown=[],anchors=[],lane=z.jungleLaneHalf||48;
+ const overlap=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
+ const allowed=b=>b.x>=12&&b.x+b.w<=WW-12&&b.y>=z.y1+40&&b.y+b.h<=z.y0-420&&(b.x+b.w<=WW/2-lane||b.x>=WW/2+lane)&&!circleHitsRect(WW/2,p.y-150,310,b);
+ for(let i=0;i<target;i++){
+  // Match grassland's varied dimensions; share its cached grass sprites.
+  const scale=2.2+R()*.3,w=(30+R()*30)*scale,h=(22+R()*22)*scale,b={...(normal[i%normal.length]||{}),w,h};
+  for(let tries=0;tries<120;tries++){
+   const anchor=i%4!==0&&tries<20?anchors[anchors.length-1]:null;
+   b.x=anchor?anchor.x+(R()-.5)*(anchor.w+w)*.9-w/2:12+R()*(WW-w-24);
+   b.y=anchor?anchor.y+(R()-.5)*(anchor.h+h)*.9-h/2:z.y1+40+R()*(z.y0-z.y1-h-460);
+   if(!allowed(b)||grown.reduce((n,o)=>n+(overlap(b,o)?1:0),0)>=3)continue;
+   grown.push(b);if(i%4===0)anchors.push({x:b.x+w/2,y:b.y+h/2,w,h});break;
   }
-  if(placed.length===grass.length){for(const q of added)covers.push(q.o);return;}
-  for(const q of placed)placement.mark(q,0);
-  for(let i=0;i<3&&added.length;i++)placement.mark(added.pop(),0);
  }
- // The original rectangle seed is always safe if the bounded denser search cannot fit grass.
- for(const q of all){q.o.x=q.startX+q.dx;q.o.y=z.y1+q.startY+q.dy;}
+ for(const b of plants){
+  const oldX=b.x,oldY=b.y;
+  for(let tries=0;tries<80;tries++){
+   const patch=grown.length?grown[Math.floor(R()*grown.length)]:null;
+   b.x=patch&&tries<40?patch.x+(R()-.5)*patch.w:12+R()*(WW-b.w-24);
+   b.y=patch&&tries<40?patch.y+(R()-.5)*patch.h:z.y1+40+R()*(z.y0-z.y1-b.h-460);
+   if(allowed(b))break;
+  }
+  if(!allowed(b)){b.x=oldX;b.y=oldY;}
+ }
+ bushes=grown.concat(plants);return target;
+}
+// Grass stays in front of soldiers; jungle cover is drawn once above it.
+function jungleCoverLayerActive(){return ZONES.some(z=>z.n==='密林');}
+function jungleCoverHasArt(c){
+ if(zoneAt(c.y+c.h/2).n!=='密林')return false;
+ if(c.fr||c.jungleAsset||c.playerBuilt)return true;
+ if(c.kd===6)return assetOK(naturalCoverImage(c,'tree'));
+ if(c.kd===8)return assetOK(naturalCoverImage(c,'rock'));
+ return false;
+}
+function drawJungleCoversAboveGrass(list,cx,cy){
+ for(const c of list){
+  if(c.buildGroup?.blinkHidden||c.x+c.w<cx-90||c.x>cx+W+90||c.y+c.h<cy-90||c.y>cy+H+90||!jungleCoverHasArt(c))continue;
+  if(c.fr)drawCoverFragmentGroup(c);else drawCoverAsset(c);
+ }
 }
