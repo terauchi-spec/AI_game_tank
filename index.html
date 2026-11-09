@@ -1002,7 +1002,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.09.1105',FILE_CREATED_AT='2026/11/09 11:05',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.09.2145',FILE_CREATED_AT='2026/11/09 21:45',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -5955,7 +5955,8 @@ function drawSniperScope(){
  if(weather==='rain'||weather==='squall'){
   // スコープを覗いている間も雨を表示。遠景は薄い雨霞でコントラストを落とす。
   const rt=performance.now();g.fillStyle='rgba(75,98,112,.13)';g.fillRect(cx-R,cy-R,R*2,R*2);
-  g.save();g.translate(-28,0);g.rotate(-.14);for(let i=0;i<(weather==='squall'?114:38);i++){const rx=cx-R+((i*67+19)%(R*2+90)),ry=cy-R+(((i*101+rt*(.48+(i%4)*.035))%(R*2+150))-75),len=24+(i%4)*9;g.fillStyle='rgba(210,232,244,'+(.20+(i%3)*.07)+')';g.fillRect(rx,ry,1.5+(i%2)*.7,len);}g.restore();
+  if(weather==='squall')drawSquallStreaks(g,cx-R,cy-R,R*2,R*2,rt,rainIntensity,true);
+  else{g.save();g.translate(-28,0);g.rotate(-.14);for(let i=0;i<38;i++){const rx=cx-R+((i*67+19)%(R*2+90)),ry=cy-R+(((i*101+rt*(.48+(i%4)*.035))%(R*2+150))-75),len=24+(i%4)*9;g.fillStyle='rgba(210,232,244,'+(.20+(i%3)*.07)+')';g.fillRect(rx,ry,1.5+(i%2)*.7,len);}g.restore();}
   g.fillStyle='rgba(205,224,232,.045)';for(let i=0;i<3;i++){const yy=cy-R*.55+i*R*.52+Math.sin(rt*.0015+i)*12;g.fillRect(cx-R,yy,R*2,R*.14);}
  }
  drawSniperSandstorm(g,cx,cy,R);
@@ -7394,12 +7395,28 @@ function drawBase(){
  }
  g.restore();
 }
+function drawSquallStreaks(ctx,left,top,width,height,time,intensity,scope=false){
+ if(intensity<=0)return;
+ const baseSpeed=scope?.48:.52,speedVariants=scope?4:5;
+ ctx.save();
+ ctx.globalAlpha*=intensity;
+ ctx.fillStyle='rgba(205,230,245,.30)';
+ for(let i=0;i<48;i++){
+  const x=left+(i*71+i*37%53)%width;
+  const speed=2*(baseSpeed+(i%speedVariants)*.035);
+  const y=top+(i*113+time*speed)%(height+160)-160;
+  const length=68+(i%4)*20;
+  ctx.fillRect(x,y,2+i%2,length);
+ }
+ ctx.restore();
+}
 function drawWeatherOverlay(){
  if(sandIntensity>0){drawSandstormOverlay();return;}
  if(rainIntensity<=0)return;const t=performance.now(),rain=rainIntensity;gm.save();
  gm.fillStyle='rgba(5,11,18,'+(.34*rain)+')';gm.fillRect(0,0,W,H);
  for(let i=0;i<4;i++){const yy=((t*.055+i*190)%(H+240))-120,gr=gm.createLinearGradient(0,yy-70,0,yy+90);gr.addColorStop(0,'rgba(120,155,178,0)');gr.addColorStop(.5,'rgba(120,155,178,'+(.075*rain)+')');gr.addColorStop(1,'rgba(120,155,178,0)');gm.fillStyle=gr;gm.fillRect(0,yy-70,W,160);}
- gm.save();gm.translate(-45,0);gm.rotate(-.16);for(let i=0;i<(weather==='squall'?144:48);i++){const x=(i*71+((i*37)%53))%(W+150),y=((i*113+t*(.52+(i%5)*.035))%(H+190))-95,len=(34+(i%4)*10)*(.35+.65*rain),visible=Math.max(0,Math.min(1,(rain-(i*17%48)/48)*12));if(visible<=0)continue;gm.fillStyle='rgba(205,230,245,'+((.22+(i%3)*.08)*visible)+')';gm.fillRect(x,y,2+(i%2),len);}gm.restore();
+ if(weather==='squall')drawSquallStreaks(gm,0,0,W,H,t,rain);
+ else{gm.save();gm.translate(-45,0);gm.rotate(-.16);for(let i=0;i<48;i++){const x=(i*71+((i*37)%53))%(W+150),y=((i*113+t*(.52+(i%5)*.035))%(H+190))-95,len=(34+(i%4)*10)*(.35+.65*rain),visible=Math.max(0,Math.min(1,(rain-(i*17%48)/48)*12));if(visible<=0)continue;gm.fillStyle='rgba(205,230,245,'+((.22+(i%3)*.08)*visible)+')';gm.fillRect(x,y,2+(i%2),len);}gm.restore();}
  gm.lineWidth=1.4;for(let i=0;i<9;i++){const x=(i*97+43)%W,y=70+((i*149+t*.018)%(H-140)),r=4+(i%4)*2;gm.strokeStyle='rgba(220,240,250,'+(.18*rain*rain)+')';gm.beginPath();gm.arc(x,y,r,0,Math.PI*1.55);gm.stroke();}
  for(let i=0;i<14;i++){const x=(i*41+t*.11)%W,y=H-18-(i%3)*16,r=5+(i%3)*3;gm.strokeStyle='rgba(200,230,245,'+(.28*rain*rain)+')';gm.beginPath();gm.ellipse(x,y,r,r*.28,0,0,6.28);gm.stroke();}
  gm.restore();
