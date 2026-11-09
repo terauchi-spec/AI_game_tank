@@ -1002,7 +1002,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.09.2145',FILE_CREATED_AT='2026/11/09 21:45',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.09.2235',FILE_CREATED_AT='2026/11/09 22:35',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -3113,7 +3113,7 @@ function rollRiverCrossing(ry,{jungle=false}={}){
   // 各候補地点で75%の確率で川を生成。通常35〜600px、密林150〜250px。
   if(R()>=.75)return null;
   const riverH=(jungle?150:35)+Math.pow(R(),.72)*(jungle?100:565),flowDir=R()<.5?-1:1,flowSpeed=6+R()*24;
-  if(jungle&&R()<2/3){water.push({x:0,y:ry-riverH/2,w:WW,h:riverH,flowDir,flowSpeed});return {x:0,y:ry-riverH/2,w:WW,h:riverH,bridge:null};}
+  if(jungle){water.push({x:0,y:ry-riverH/2,w:WW,h:riverH,flowDir,flowSpeed});return {x:0,y:ry-riverH/2,w:WW,h:riverH,bridge:null};}
   // 橋は1つの川につき最大1本。同じ川の左右と橋は流向を共有する。
   const bw=64+R()*192,bx=24+R()*Math.max(1,WW-bw-48);
   if(bx>0)water.push({x:0,y:ry-riverH/2,w:bx,h:riverH,flowDir,flowSpeed});
@@ -8831,8 +8831,8 @@ function reportGameError(error){
 <script src="js/jungle-hit-masks.js?v=2026.11.08.1710"></script>
 <script src="js/jungle-placement-masks.js?v=2026.11.08.2145"></script>
 <script src="js/jungle.js?v=2026.11.09.0927"></script>
-<script src="js/escape-test.js?v=2026.11.09.0927"></script>
-<script src="js/canyon.js?v=2026.11.09.0927"></script>
+<script src="js/escape-test.js?v=2026.11.09.2235"></script>
+<script src="js/canyon.js?v=2026.11.09.2235"></script>
 <script src="js/vegetation.js?v=2026.11.08.1806"></script>
 <script src="js/laboratory.js?v=2026.10.31.2206"></script>
 <script src="js/infiltration-world.js?v=2026.11.08.2309"></script>

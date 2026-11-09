@@ -18,14 +18,15 @@ test('five contiguous jungle areas reuse normal combat and terrain, with safe st
   assert.equal(h.run('zoneAt(p.y)===ZONES[0]'),true);assert.equal(h.run('zoneAt(mission.exit.y)===ZONES[4]'),true);
   assert.equal(h.run('inWaterAt(mission.exit.x,mission.exit.y)||hitsC(mission.exit.x,mission.exit.y,90)||hitsM(p.x,p.y,8)'),false);
   assert.equal(h.run('areaDebugEnabled||debugInvincible||cars.some(v=>v.debugInfinite)'),false);
-  assert.equal(h.run('cars.length'),1);assert.equal(h.run('humans.length'),40);assert.equal(h.run('etanks.length'),10);
+  assert.equal(h.run('cars.length'),1);assert.equal(h.run('humans.length'),45);assert.equal(h.run('etanks.length'),10);
   assert.equal(h.run('ZONES.every(z=>z.jungleDensity.trees>5&&z.jungleDensity.grass>20)'),true);
-  assert.equal(h.run('ZONES.every(z=>!z.escapeRiver||z.escapeRiver.h>=150&&z.escapeRiver.h<=250&&(!z.escapeRiver.bridge||z.escapeRiver.bridge.h===z.escapeRiver.h))'),true);
+  assert.equal(h.run('ZONES.every(z=>!z.escapeRiver||z.escapeRiver.h>=150&&z.escapeRiver.h<=250&&z.escapeRiver.bridge===null)'),true);
   assert.equal(h.run('ZONES.every(z=>!z.oasis||z.oasis.sizeScale>=.2&&z.oasis.sizeScale<=1.5&&water.includes(z.oasis))'),true);
   assert.equal(h.run("ZONES.every(z=>covers.filter(c=>c.jungleAsset==='fern_tree'&&zoneAt(c.y+c.h/2)===z).length>=2)"),true);
   assert.equal(h.run("covers.some(c=>c.kd===6&&water.some(w=>!w.oasis&&circleHitsRect(c.x+c.w/2,c.y+c.h/2,0,w)))"),true);
   assert.equal(h.run("bushes.some(b=>water.some(w=>!w.oasis&&circleHitsRect(b.x+b.w/2,b.y+b.h/2,0,w)))"),true);
-  assert.equal(h.run('bridges.every(b=>!covers.some(c=>c.kd===6&&ov2(c,b,40))&&!bushes.some(o=>ov2(o,b,40)))'),true);
+  assert.equal(h.run('bridges.length'),0);
+  assert.equal(h.run("ZONES.every(z=>humans.filter(h=>h.commander==='blue'&&zoneAt(h.y)===z).length===1)"),true);
   variants.add(h.run('ZONES.map(z=>Number(!!z.escapeRiver)+2*Number(!!z.oasis)).join()'));
   assert.equal(h.run('ZONES.every(z=>z.jungleCoreLayout)&&covers.filter(c=>c.jungleCore).length>=3'),true);
   assert.equal(h.run('ZONES.every(z=>{for(let y=z.y1+32;y<Math.min(p.y,z.y0)-40;y+=8)if(hitsC(jungleRouteX(z,y),y,28))return false;return true;})'),true);
@@ -65,6 +66,7 @@ test('jungle buildings, separate water banks and capped marshes remain safe acro
  for(let seed=1;seed<=30;seed++){
   const h=start(seed);
   assert.equal(h.run("covers.some(c=>c.jungleAsset==='watchtower')"),false);
+  assert.equal(h.run("ZONES.every(z=>humans.filter(h=>h.commander==='blue'&&zoneAt(h.y)===z).length===1)"),true,'commander seed '+seed);
   assert.equal(h.run('covers.filter(c=>JUNGLE_BUILDING_KEYS.includes(c.jungleAsset)).length<=5'),true);
   assert.equal(h.run('ZONES.every(z=>covers.filter(c=>JUNGLE_BUILDING_KEYS.includes(c.jungleAsset)&&zoneAt(c.y+c.h/2)===z).length<=2)'),true);
   for(const n of h.run('ZONES.map(z=>z.jungleBuildingKeys.length)'))planned.add(n);
@@ -93,22 +95,18 @@ test('large overlapping lake is relocated without changing dimensions or bridge/
  assert.equal(h.run('pond.y+pond.h+80<=river.y+1e-7||pond.y>=river.y+river.h+80-1e-7'),true);
  assert.equal(h.run('water.every(w=>w.y===river.y&&w.h===250&&w.flowDir===-1&&w.flowSpeed===12)&&bridges[0].y===river.y&&bridges[0].h===250'),true);
 });
-test('jungle river widths use the original distribution in 150-250px, with independent two-thirds bridge omission',()=>{
+test('jungle rivers retain their 150–250px width distribution and never generate bridges',()=>{
  const html=fs.readFileSync(path.join(root,'index.html'),'utf8'),source=html.slice(html.indexOf('function rollRiverCrossing('),html.indexOf('function reset(',html.indexOf('function rollRiverCrossing(')));
  let seed=7;const c={WW:960,Math,water:[],bridges:[],R:()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/2**32)};vm.createContext(c);vm.runInContext(source,c);
- let total=0,noBridge=0,narrow=0,narrowNoBridge=0,wide=0,wideNoBridge=0;
+ let total=0,narrow=0;
  for(let i=0;i<3000;i++){
-  c.water=[];c.bridges=[];const r=c.rollRiverCrossing(5000,{jungle:true});if(!r)continue;total++;assert.ok(r.h>=150&&r.h<=250);
-  if(r.h<200){narrow++;if(!r.bridge)narrowNoBridge++;}else{wide++;if(!r.bridge)wideNoBridge++;}
-  if(!r.bridge){noBridge++;assert.equal(c.bridges.length,0);assert.equal(c.water.length,1);assert.equal(c.water[0].w,960);}else{assert.equal(c.bridges.length,1);assert.equal(r.bridge.h,r.h);}
+  c.water=[];c.bridges=[];const r=c.rollRiverCrossing(5000,{jungle:true});if(!r)continue;
+  total++;if(r.h<200)narrow++;
+  assert.ok(r.h>=150&&r.h<=250);assert.equal(r.bridge,null);assert.equal(c.bridges.length,0);
+  assert.equal(c.water.length,1);assert.equal(c.water[0].w,960);
  }
- assert.ok(total/3000>.71&&total/3000<.79);assert.ok(noBridge/total>.62&&noBridge/total<.71);
- assert.ok(narrow/total>.33&&narrow/total<.42);assert.ok(narrowNoBridge/narrow>.60&&narrowNoBridge/narrow<.73);assert.ok(wideNoBridge/wide>.60&&wideNoBridge/wide<.73);
- for(const n of [0,.5,.999999]){
-  for(const omit of [.1,.9]){
-   const seq=[0,n,.1,.5,omit,.5,.5];let i=0;c.R=()=>seq[i++];c.water=[];c.bridges=[];const r=c.rollRiverCrossing(5000,{jungle:true});assert.equal(r.h,150+Math.pow(n,.72)*100);assert.equal(!r.bridge,omit<2/3);
-  }
- }
+ assert.ok(total/3000>.71&&total/3000<.79);
+ assert.ok(narrow/total>.33&&narrow/total<.42);
 });
 
 

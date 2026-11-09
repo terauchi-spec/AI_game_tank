@@ -14,12 +14,11 @@ function setupEscapeTestWorld(){
   z.escapeRiver=rollRiverCrossing(z.y1+(z.y0-z.y1)*(.45+R()*.1),{jungle:true});
   z.oasis=rollWildernessLake(z);if(z.oasis){separateJungleLake(z,z.escapeRiver,z.oasis);water.push(z.oasis);}
  }
- // Remove scenery from water and bridge approaches, using the same pond shape as wilderness.
+ // Keep non-vegetation scenery out of the river and lake.
  const wet=r=>ZONES.some(z=>z.escapeRiver&&ov2(r,z.escapeRiver,40)||z.oasis&&oasisContains(z.oasis,r.x+r.w/2,r.y+r.h/2,Math.max(r.w,r.h)/2+8));
  const last=ZONES[ZONES.length-1],exit={x:WW/2,y:last.y1+110};
- // Both water surfaces can carry vegetation. Keep bridge approaches and the EXIT clear.
- const foliageBlocked=r=>bridges.some(b=>ov2(r,b,40));
- const giantBlocked=r=>foliageBlocked(r)||circleHitsRect(exit.x,exit.y,125,r);
+ // Both water surfaces can carry vegetation. Keep the EXIT clear.
+ const giantBlocked=r=>circleHitsRect(exit.x,exit.y,125,r);
  const totals={covers:[],objects:[],bushes:[]};
  for(const z of ZONES){
   covers=[];objects=[];bushes=[];
@@ -28,8 +27,8 @@ function setupEscapeTestWorld(){
   setupJungleScenery(z,giantBlocked);totals.covers.push(...covers);totals.objects.push(...objects);totals.bushes.push(...bushes);
  }
  covers=totals.covers;objects=totals.objects;bushes=totals.bushes;
- covers=covers.filter(c=>!(c.kd===6?foliageBlocked:wet)(coverSpriteRect(c)||c));
- objects=objects.filter(o=>!wet(objectAABB(o)));bushes=bushes.filter(b=>!foliageBlocked(b));
+ covers=covers.filter(c=>c.kd===6||!wet(coverSpriteRect(c)||c));
+ objects=objects.filter(o=>!wet(objectAABB(o)));
  covers=covers.filter(c=>!circleHitsRect(exit.x,exit.y,125,coverSpriteRect(c)||c));
  objects=objects.filter(o=>!circleHitsRect(exit.x,exit.y,125,objectAABB(o)));bushes=bushes.filter(b=>!circleHitsRect(exit.x,exit.y,110,b));
  last.escapeExit=exit;
@@ -41,7 +40,9 @@ function setupEscapeTestWorld(){
  // One ordinary starting vehicle; test selection does not force invincibility or infinite ammo.
  const t=TYPES[0];cars.push({x:WW/2+130,y:p.y-100,t,kind:'tank',hp:t.hp,c:t.cmax,v:t.vmax,f:t.fmax,ch:0,mgHits:0,body:-Math.PI/2});
  debugMode=0;debugInvincible=false;baseSpawnT=99999;weather='clear';weatherNext=5+R()*10;weatherT=0;rainIntensity=0;
- captureBuildingGroundMarks();rebuildSpatialGrid();for(const z of ZONES)spawnAreaDebugEnemies(z);
+ commanderPrevX=p.x;commanderPrevY=p.y;commanderVelocity={x:0,y:0};commanderRallying=false;commanderSignals=[];
+ captureBuildingGroundMarks();rebuildSpatialGrid();
+ for(const z of ZONES)spawnAreaDebugEnemies(z,{blueCommander:true});
  setupRoadTruckEvents();
  say('脱出：密林5エリアを突破し、最後のEXITで5秒待機せよ');
 }

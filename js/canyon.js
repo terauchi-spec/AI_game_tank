@@ -241,17 +241,25 @@ function drawSandstormOverlay(){
 }
 let selectedAreaDebug=null,areaDebugEnemyBomber=false;
 // Small fixed enemy population uses final-world collision checks and normal AI.
-function spawnAreaDebugEnemies(z){
+function spawnAreaDebugEnemies(z,{blueCommander=false}={}){
  const placed=[];
- const add=(tank,count)=>{for(let i=0;i<count;i++)for(let tries=0;tries<100;tries++){
+ const add=(tank,count,commander=false)=>{for(let i=0;i<count;i++)for(let tries=0;tries<(commander?300:100);tries++){
   const r=tank?TANK_HIT:8,x=55+R()*(WW-110),y=z.y1+130+R()*(z.y0-z.y1-650),a=R()<.5?0:Math.PI/2,len=40+R()*70;
   const path=[{x,y},{x:x+Math.cos(a)*len,y:y+Math.sin(a)*len}];
   if(path.some(q=>q.x<r+20||q.x>WW-r-20||q.y<z.y1+60||q.y>z.y0-350||hitsM(q.x,q.y,r+2))||!pOK(path,r,false)||Math.hypot(x-p.x,y-p.y)<400||placed.some(q=>Math.hypot(x-q.x,y-q.y)<100))continue;
   const o={x,y,path,loop:false,wi:1,dir:1,stk:0,alive:true,st:0,sus:0,lost:0,target:null,areaDebug:1};
   if(tank)etanks.push({...o,cc:R()*1.5,vc:0,ang:a,body:a,scanTurret:true,scanPhase:R()*Math.PI*2,scanRate:.5});
-  else humans.push({...o,cd:R()*1.2,burstLeft:0,face:a,patrolMode:'axis',elite:false});
+  else{
+   const soldier={...o,cd:R()*1.2,burstLeft:0,face:a,patrolMode:'axis',elite:false};
+   if(commander)Object.assign(soldier,{
+    commander:'blue',commanderMode:'intercept',commanderScan:0,commanderTactics:0,
+    commanderCharge:0,commanderCooldown:2,whistleT:0,whistleCooldown:0
+   });
+   humans.push(soldier);
+  }
   placed.push(o);break;
  }};
+ if(blueCommander)add(false,1,true);
  add(false,8);add(true,2);
 }
 function setupSelectedAreaDebugStage(){
