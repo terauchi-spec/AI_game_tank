@@ -23,6 +23,9 @@ test('five contiguous jungle areas reuse normal combat and terrain, with safe st
   assert.equal(h.run('ZONES.every(z=>!z.escapeRiver||z.escapeRiver.h>=150&&z.escapeRiver.h<=250&&(!z.escapeRiver.bridge||z.escapeRiver.bridge.h===z.escapeRiver.h))'),true);
   assert.equal(h.run('ZONES.every(z=>!z.oasis||z.oasis.sizeScale>=.2&&z.oasis.sizeScale<=1.5&&water.includes(z.oasis))'),true);
   assert.equal(h.run("ZONES.every(z=>covers.filter(c=>c.jungleAsset==='fern_tree'&&zoneAt(c.y+c.h/2)===z).length>=2)"),true);
+  assert.equal(h.run("covers.some(c=>c.kd===6&&water.some(w=>!w.oasis&&circleHitsRect(c.x+c.w/2,c.y+c.h/2,0,w)))"),true);
+  assert.equal(h.run("bushes.some(b=>water.some(w=>!w.oasis&&circleHitsRect(b.x+b.w/2,b.y+b.h/2,0,w)))"),true);
+  assert.equal(h.run('bridges.every(b=>!covers.some(c=>c.kd===6&&ov2(c,b,40))&&!bushes.some(o=>ov2(o,b,40)))'),true);
   variants.add(h.run('ZONES.map(z=>Number(!!z.escapeRiver)+2*Number(!!z.oasis)).join()'));
   assert.equal(h.run('ZONES.every(z=>z.jungleCoreLayout)&&covers.filter(c=>c.jungleCore).length>=3'),true);
   assert.equal(h.run('ZONES.every(z=>{for(let y=z.y1+32;y<Math.min(p.y,z.y0)-40;y+=8)if(hitsC(jungleRouteX(z,y),y,28))return false;return true;})'),true);
@@ -106,15 +109,23 @@ test('jungle river widths use the original distribution in 150-250px, with indep
 });
 
 
-test('both jungle modes start rain sooner and retain the destruction-stage rain duration',()=>{
+test('both jungle modes alternate rain and squalls with stronger enemy sight loss',()=>{
  const h=createGameEngine(root);
  for(const setup of ["stageMode='escapeTest';areaDebugEnabled=false","stageMode='base';areaDebugEnabled=true;selectedAreaDebug='密林'"]){
   h.run(setup+';reset(false)');
   assert.equal(h.run('weatherNext>=5&&weatherNext<=15'),true);
-  h.run('updateWeather(weatherNext);updateWeather(5);drawWeatherOverlay()');
-  assert.equal(h.run("weather==='rain'&&weatherT===25&&rainIntensity===1"),true);
-  h.run('updateWeather(25)');
-  assert.equal(h.run("weather==='clear'&&rainIntensity===0&&weatherNext>=10&&weatherNext<=20"),true);
+  const seen=new Set();
+  for(let i=0;i<12;i++){
+   h.run('updateWeather(weatherNext)');
+   const type=h.run('weather');
+   assert.ok(type==='rain'||type==='squall');
+   seen.add(type);
+   assert.equal(h.run('weatherT'),type==='squall'?15:30);
+   assert.ok(Math.abs(h.run("detectRange('enemy')/DETECT_RANGE_BASE")-(type==='squall'?.45:.75))<1e-10);
+   h.run('updateWeather(5);drawWeatherOverlay();updateWeather(weatherT)');
+   assert.equal(h.run("weather==='clear'&&rainIntensity===0&&weatherNext>=10&&weatherNext<=20"),true);
+  }
+  assert.equal(seen.size,2);
  }
  h.run("stageMode='beginner';areaDebugEnabled=false;reset(false)");
  assert.equal(h.run('weatherNext>=15&&weatherNext<=50'),true);

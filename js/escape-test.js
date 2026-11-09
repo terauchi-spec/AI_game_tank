@@ -17,6 +17,9 @@ function setupEscapeTestWorld(){
  // Remove scenery from water and bridge approaches, using the same pond shape as wilderness.
  const wet=r=>ZONES.some(z=>z.escapeRiver&&ov2(r,z.escapeRiver,40)||z.oasis&&oasisContains(z.oasis,r.x+r.w/2,r.y+r.h/2,Math.max(r.w,r.h)/2+8));
  const last=ZONES[ZONES.length-1],exit={x:WW/2,y:last.y1+110};
+ // Keep vegetation in the river while leaving bridge approaches and lake surfaces clear.
+ const foliageBlocked=r=>bridges.some(b=>ov2(r,b,40))||
+  ZONES.some(z=>z.oasis&&oasisContains(z.oasis,r.x+r.w/2,r.y+r.h/2,Math.max(r.w,r.h)/2+8));
  const giantBlocked=r=>wet(r)||circleHitsRect(exit.x,exit.y,125,r);
  const totals={covers:[],objects:[],bushes:[]};
  for(const z of ZONES){
@@ -26,7 +29,8 @@ function setupEscapeTestWorld(){
   setupJungleScenery(z,giantBlocked);totals.covers.push(...covers);totals.objects.push(...objects);totals.bushes.push(...bushes);
  }
  covers=totals.covers;objects=totals.objects;bushes=totals.bushes;
- covers=covers.filter(c=>!wet(coverSpriteRect(c)||c));objects=objects.filter(o=>!wet(objectAABB(o)));bushes=bushes.filter(b=>!wet(b));
+ covers=covers.filter(c=>!(c.kd===6?foliageBlocked:wet)(coverSpriteRect(c)||c));
+ objects=objects.filter(o=>!wet(objectAABB(o)));bushes=bushes.filter(b=>!foliageBlocked(b));
  covers=covers.filter(c=>!circleHitsRect(exit.x,exit.y,125,coverSpriteRect(c)||c));
  objects=objects.filter(o=>!circleHitsRect(exit.x,exit.y,125,objectAABB(o)));bushes=bushes.filter(b=>!circleHitsRect(exit.x,exit.y,110,b));
  last.escapeExit=exit;
