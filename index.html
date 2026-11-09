@@ -989,7 +989,7 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 <div id="missionHud" role="status"></div>
 
 <script src="js/player-tank-art.js?v=2026.10.28.2114"></script>
-<script src="js/audio.js?v=2026.11.09.0917"></script>
+<script src="js/audio.js?v=2026.11.09.0927"></script>
 <script src="js/bgm.js?v=2026.10.29.1936"></script>
 <script src="js/audio-recovery.js?v=2026.10.28.1725"></script>
 <script>
@@ -1002,7 +1002,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.09.0917',FILE_CREATED_AT='2026/11/09 09:17',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.09.0927',FILE_CREATED_AT='2026/11/09 09:27',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -8744,7 +8744,7 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/road-trucks.js?v=2026.11.07.1117"></script>
+<script src="js/road-trucks.js?v=2026.11.09.0927"></script>
 <script src="js/stage-progress.js?v=2026.11.08.2309"></script>
 <script src="js/decisive.js?v=2026.10.28.0713"></script>
 <script src="js/frontline.js?v=2026.11.06.2245"></script>
@@ -8763,9 +8763,9 @@ function reportGameError(error){
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/jungle-hit-masks.js?v=2026.11.08.1710"></script>
 <script src="js/jungle-placement-masks.js?v=2026.11.08.2145"></script>
-<script src="js/jungle.js?v=2026.11.09.0839"></script>
-<script src="js/escape-test.js?v=2026.11.09.0917"></script>
-<script src="js/canyon.js?v=2026.11.09.0839"></script>
+<script src="js/jungle.js?v=2026.11.09.0927"></script>
+<script src="js/escape-test.js?v=2026.11.09.0927"></script>
+<script src="js/canyon.js?v=2026.11.09.0927"></script>
 <script src="js/vegetation.js?v=2026.11.08.1806"></script>
 <script src="js/laboratory.js?v=2026.10.31.2206"></script>
 <script src="js/infiltration-world.js?v=2026.11.08.2309"></script>

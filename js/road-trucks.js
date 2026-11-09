@@ -1,9 +1,12 @@
 // One bounded traffic event per generated road; inactive roads do no spatial searches.
 let roadTruckEvents=[];
 const ROAD_TRUCK_HALF_LENGTH=33,ROAD_TRUCK_HALF_WIDTH=22;
+function jungleRoadTruckMode(){
+ return stageMode==='escapeTest'||(areaDebugEnabled&&selectedAreaDebug==='密林');
+}
 function setupRoadTruckEvents(){
  roadTruckEvents=[];
- if(areaDebugEnabled||stageMode!=='base'||!['baseIntermediate','base'].includes(currentStageId()))return;
+ if(!jungleRoadTruckMode()&&(areaDebugEnabled||stageMode!=='base'||!['baseIntermediate','base'].includes(currentStageId())))return;
  for(const road of roadBands){
   const dir=R()<.5?1:-1,unload=R()<.5;
   const passengers=unload?1+(R()*3|0):0;
@@ -36,7 +39,7 @@ function roadTruckDropSoldier(truck){
  return false;
 }
 function updateRoadTrucks(dt){
- if(state!=='play'||stageMode!=='base'||areaDebugEnabled)return;
+ if(state!=='play'||(!jungleRoadTruckMode()&&(stageMode!=='base'||areaDebugEnabled)))return;
  const cy=Math.max(0,Math.min(WH-H,p.y-H*.6)),cx=Math.max(0,Math.min(WW-W,p.x-W/2));
  for(const truck of roadTruckEvents){
   if(truck.state==='done'||truck.state==='destroyed')continue;

@@ -193,11 +193,23 @@ function arrangeJungleCore(z){
 function setupJungleTrails(zones){
  for(const z of zones){
   if(R()>=.75)continue;
+  let best=null;
   for(let tries=0;tries<32;tries++){
-   const r={x:0,y:z.y1+240+R()*(z.y0-z.y1-850),w:WW,h:96,kind:'dirt',lanes:1};
-   if(water.some(w=>ov2(r,w,60))||bridges.some(b=>ov2(r,b,60))||mud.some(m=>ov2(r,m,24)))continue;
-   // Canopies and fallen logs may cross a forest trail; do not clear a new straight lane.
-   roadBands.push(r);break;
+   const road={x:0,y:z.y1+240+R()*(z.y0-z.y1-850),w:WW,h:96,kind:'dirt',lanes:1};
+   if(water.some(w=>ov2(road,w,60))||bridges.some(b=>ov2(road,b,60))||mud.some(m=>ov2(road,m,24)))continue;
+   const y=road.y+road.h/2,a={x:0,y},b={x:WW,y};
+   const blocking=covers.filter(c=>segmentHitsCover(a,b,c,ROAD_TRUCK_HALF_WIDTH));
+   const lane={x:0,y:y-ROAD_TRUCK_HALF_WIDTH,w:WW,h:2*ROAD_TRUCK_HALF_WIDTH};
+   const cargo=objects.filter(o=>ov2(lane,objectAABB(o),0));
+   // Favor routes that preserve giant trees and the obstacles along the winding path.
+   const cost=blocking.reduce((n,c)=>n+(c.jungleCore||c.jungleAsset==='fern_tree'?100:1),cargo.length);
+   if(!best||cost<best.cost)best={road,blocking,cargo,cost};
+   if(cost===0)break;
+  }
+  if(best){
+   roadBands.push(best.road);
+   covers=covers.filter(c=>!best.blocking.includes(c));
+   objects=objects.filter(o=>!best.cargo.includes(o));
   }
  }
 }

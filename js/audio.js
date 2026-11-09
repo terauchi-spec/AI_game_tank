@@ -163,7 +163,7 @@ function updateEnemyTankAudio(now){
 // State changes stop/start immediately; parameter changes remain throttled to 10Hz.
 function updateEnemyRoadTruckAudio(now){
  let loudest=0,rate=1;
- if(stageMode==='base'&&!(typeof areaDebugEnabled!=='undefined'&&areaDebugEnabled))for(const truck of (typeof roadTruckEvents!=='undefined'?roadTruckEvents:[])||[]){
+ for(const truck of (typeof roadTruckEvents!=='undefined'?roadTruckEvents:[])||[]){
   if(!(truck.hp>0)||!(truck.speed>0)||(truck.state!=='entering'&&truck.state!=='leaving'))continue;
   const volume=.11*gameSeDistance(truck);
   if(volume>loudest){loudest=volume;rate=Math.min(1.3,Math.max(.8,truck.speed/160));}

@@ -17,10 +17,9 @@ function setupEscapeTestWorld(){
  // Remove scenery from water and bridge approaches, using the same pond shape as wilderness.
  const wet=r=>ZONES.some(z=>z.escapeRiver&&ov2(r,z.escapeRiver,40)||z.oasis&&oasisContains(z.oasis,r.x+r.w/2,r.y+r.h/2,Math.max(r.w,r.h)/2+8));
  const last=ZONES[ZONES.length-1],exit={x:WW/2,y:last.y1+110};
- // Keep vegetation in the river while leaving bridge approaches and lake surfaces clear.
- const foliageBlocked=r=>bridges.some(b=>ov2(r,b,40))||
-  ZONES.some(z=>z.oasis&&oasisContains(z.oasis,r.x+r.w/2,r.y+r.h/2,Math.max(r.w,r.h)/2+8));
- const giantBlocked=r=>wet(r)||circleHitsRect(exit.x,exit.y,125,r);
+ // Both water surfaces can carry vegetation. Keep bridge approaches and the EXIT clear.
+ const foliageBlocked=r=>bridges.some(b=>ov2(r,b,40));
+ const giantBlocked=r=>foliageBlocked(r)||circleHitsRect(exit.x,exit.y,125,r);
  const totals={covers:[],objects:[],bushes:[]};
  for(const z of ZONES){
   covers=[];objects=[];bushes=[];
@@ -43,6 +42,7 @@ function setupEscapeTestWorld(){
  const t=TYPES[0];cars.push({x:WW/2+130,y:p.y-100,t,kind:'tank',hp:t.hp,c:t.cmax,v:t.vmax,f:t.fmax,ch:0,mgHits:0,body:-Math.PI/2});
  debugMode=0;debugInvincible=false;baseSpawnT=99999;weather='clear';weatherNext=5+R()*10;weatherT=0;rainIntensity=0;
  captureBuildingGroundMarks();rebuildSpatialGrid();for(const z of ZONES)spawnAreaDebugEnemies(z);
+ setupRoadTruckEvents();
  say('脱出：密林5エリアを突破し、最後のEXITで5秒待機せよ');
 }
 // Keep both independent rolls and original lake size. Reserve both feathered banks,

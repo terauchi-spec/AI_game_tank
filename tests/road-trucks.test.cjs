@@ -18,6 +18,16 @@ test('every generated road gets one event in both destruction difficulties, inde
  const h=scene();h.run('areaDebugEnabled=true;setupRoadTruckEvents();');assert.equal(h.run('roadTruckEvents.length'),0);
  h.run('areaDebugEnabled=false;roadBands=[];setupRoadTruckEvents();');assert.equal(h.run('roadTruckEvents.length'),0);
 });
+test('jungle escape and jungle debug traffic enter and unload using the shared event',()=>{
+ for(const setup of ["stageMode='escapeTest'", "stageMode='base';areaDebugEnabled=true;selectedAreaDebug='密林'"]){
+  const h=scene();
+  h.run(setup+';setupRoadTruckEvents()');
+  assert.equal(h.run('roadTruckEvents.length'),1);
+  h.run('const t=roadTruckEvents[0];t.arrivalDelay=0;t.unload=true;t.passengers=1;for(let i=0;i<180;i++)updateRoadTrucks(.1)');
+  assert.equal(h.run('t.state'), 'done');
+  assert.equal(h.run('humans.filter(o=>o.roadReinforcement).length'),1);
+ }
+});
 test('the half-probability boundary chooses unloading versus passing, and both entrance sides',()=>{
  const unload=scene('base',[.49999,.49999,0]);assert.equal(unload.run('roadTruckEvents[0].unload'),true);assert.equal(unload.run('roadTruckEvents[0].dir'),1);assert.equal(unload.run('roadTruckEvents[0].passengers'),1);
  const pass=scene('base',[.5,.5]);assert.equal(pass.run('roadTruckEvents[0].unload'),false);assert.equal(pass.run('roadTruckEvents[0].dir'),-1);assert.equal(pass.run('roadTruckEvents[0].passengers'),0);

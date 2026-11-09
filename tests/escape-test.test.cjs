@@ -61,7 +61,7 @@ test('shared river and lake generators retain legacy probability boundaries, siz
 });
 
 test('jungle buildings, separate water banks and capped marshes remain safe across random worlds',()=>{
- const planned=new Set(),buildingTypes=new Set();let lakesWithRivers=0,ponds=0,trails=0;
+ const planned=new Set(),buildingTypes=new Set();let lakesWithRivers=0,ponds=0,trails=0,lakeTrees=0,lakeGrass=0;
  for(let seed=1;seed<=30;seed++){
   const h=start(seed);
   assert.equal(h.run("covers.some(c=>c.jungleAsset==='watchtower')"),false);
@@ -75,14 +75,17 @@ test('jungle buildings, separate water banks and capped marshes remain safe acro
   lakesWithRivers+=h.run('ZONES.filter(z=>z.escapeRiver&&z.oasis).length');ponds+=h.run('mud.length');
   trails+=h.run('roadBands.length');assert.equal(h.run("roadBands.length<=5&&roadBands.every(r=>r.kind==='dirt'&&r.lanes===1&&r.h===96&&!water.some(w=>ov2(r,w,60))&&!mud.some(m=>ov2(r,m,24)))"),true);
   h.run('for(const r of roadBands){const cache=roadVisualCache(r);if(!cache||cache!==roadVisualCache(r))throw Error("trail cache not reused");}');
-  assert.equal(h.run('roadTruckEvents.length'),0);
+  assert.equal(h.run('roadTruckEvents.length===roadBands.length&&roadTruckEvents.every(t=>roadBands.includes(t.road)&&t.state==="waiting")'),true);
+  assert.equal(h.run('roadTruckEvents.every(t=>!covers.some(c=>segmentHitsCover({x:0,y:t.y},{x:WW,y:t.y},c,ROAD_TRUCK_HALF_WIDTH)))'),true);
+  lakeTrees+=h.run("covers.filter(c=>c.kd===6&&water.some(w=>w.oasis&&oasisContains(w,c.x+c.w/2,c.y+c.h/2))).length");
+  lakeGrass+=h.run("bushes.filter(b=>water.some(w=>w.oasis&&oasisContains(w,b.x+b.w/2,b.y+b.h/2))).length");
   if(seed<=3)h.run('for(const w of water){cam=Math.max(0,w.y-100);draw()}for(const m of mud){cam=m.y-100;draw()}');
   if(h.run('mud.length>0')){
    h.run('globalThis.m=mud[0];p.x=m.x+m.w/2;p.y=m.y+m.h/2;p.tank=null');
    assert.equal(h.run('terrainMoveScale(p,1,0,8)'),.3);h.run('p.tank=cars[0]');assert.equal(h.run('terrainMoveScale(p,1,0,8)'),.6);
   }
  }
- assert.deepEqual([...planned].sort(),[0,1,2]);assert.equal(buildingTypes.size,4);assert.ok(lakesWithRivers>20&&ponds>10&&trails>50);
+ assert.deepEqual([...planned].sort(),[0,1,2]);assert.equal(buildingTypes.size,4);assert.ok(lakesWithRivers>20&&ponds>10&&trails>50&&lakeTrees>0&&lakeGrass>0);
 });
 test('large overlapping lake is relocated without changing dimensions or bridge/current geometry',()=>{
  const h=start();h.run("water=[{x:0,y:2075,w:300,h:250,flowDir:-1,flowSpeed:12},{x:500,y:2075,w:460,h:250,flowDir:-1,flowSpeed:12}];bridges=[{x:300,y:2075,w:200,h:250}];globalThis.river={x:0,y:2075,w:960,h:250,bridge:bridges[0]};globalThis.pond={x:-120,y:1650,w:1200,h:1020,sizeScale:1.5};separateJungleLake({y1:1000,y0:3400},river,pond)");
