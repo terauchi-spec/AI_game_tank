@@ -90,17 +90,17 @@ function updateEscapeEnemyDrop(m,dt){
    if(!point){event.retry=1;return;}
    targets.push(point);
   }
-  plane=event.plane={x,y:view.y-180,endY:view.y+view.h+180,dropY,targets,drops:0};
+  plane=event.plane={x,y:view.y-180,endY:view.y+view.h+180,dropY:dropY-120,targets,drops:0};
   event.next++;
   sfx('airWarning');say('敵爆撃機が接近！');
  }
  if(plane){
   plane.y+=380*dt;
-  while(plane.drops<3&&plane.y>=plane.dropY+plane.drops*90){
+  while(plane.drops<3&&plane.y>=plane.dropY+plane.drops*60){
    const target=plane.targets[plane.drops++];
    const startY=Math.min(target.y,plane.y-25);
    event.parachutes.push({x:target.x,y:startY,startY,landY:target.y,
-    alive:true,chute:3,face:Math.PI/2,retry:0});
+    alive:true,chute:3,face:Math.PI/2,retry:0,elite:true});
   }
   if(plane.y>=plane.endY&&plane.drops===3)event.plane=null;
  }
@@ -121,7 +121,7 @@ function updateEscapeEnemyDrop(m,dt){
   }
   humans.push({...q,path,loop:false,wi:path.length-1,dir:1,stk:0,alive:true,st:0,
    sus:0,lost:0,target:null,cd:.7,burstLeft:0,face:Math.atan2(p.y-q.y,p.x-q.x),
-   patrolMode:'axis',elite:false,escapeParatrooper:true});
+   patrolMode:'axis',elite:unit.elite,escapeParatrooper:true});
   event.parachutes.splice(i,1);
  }
 }

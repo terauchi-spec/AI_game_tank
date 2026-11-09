@@ -1002,7 +1002,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.09.2358',FILE_CREATED_AT='2026/11/09 23:58',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.10.0010',FILE_CREATED_AT='2026/11/10 00:10',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -7338,7 +7338,7 @@ function drawAllyParachute(ally,enemy=false){
  g.strokeStyle='#758a82';g.lineWidth=1.25;g.beginPath();g.moveTo(-10,-10);g.lineTo(10,-10);g.stroke();
  g.fillStyle='#263b38';g.fillRect(-9,-12,18,6);g.fillStyle='#bacbc4';g.fillRect(-7,-10,14,2);
  g.restore();
- g.save();g.globalAlpha*=alpha;soldier(ally.x,ally.y,ally.face,!enemy,false,false,false,'',false,false,ally);g.restore();
+ g.save();g.globalAlpha*=alpha;soldier(ally.x,ally.y,ally.face,!enemy,false,false,enemy&&ally.elite,'',false,false,ally);g.restore();
 }
 
 function baseSpriteKey(){return base?.decisiveFortress?'decisive_fortress':base?.missileFacility?'missile_base':stageMode==='beginner'&&!areaDebugEnabled?'radio_facility':'command_building_1';}
@@ -8832,7 +8832,7 @@ function reportGameError(error){
 <script src="js/jungle-hit-masks.js?v=2026.11.08.1710"></script>
 <script src="js/jungle-placement-masks.js?v=2026.11.08.2145"></script>
 <script src="js/jungle.js?v=2026.11.09.0927"></script>
-<script src="js/escape-test.js?v=2026.11.09.2358"></script>
+<script src="js/escape-test.js?v=2026.11.10.0010"></script>
 <script src="js/canyon.js?v=2026.11.09.2235"></script>
 <script src="js/vegetation.js?v=2026.11.08.1806"></script>
 <script src="js/laboratory.js?v=2026.10.31.2206"></script>
