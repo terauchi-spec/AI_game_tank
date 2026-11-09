@@ -1002,7 +1002,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.09.0927',FILE_CREATED_AT='2026/11/09 09:27',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.09.1105',FILE_CREATED_AT='2026/11/09 11:05',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -3543,7 +3543,50 @@ function tankBlocked(self,x,y,r){
  else if((etanks||[]).includes(self)&&p&&p.tank&&p.tank.kind==='tank'&&p.tank.t.id!=='armored'&&Math.hypot(p.x-x,p.y-y)<r+TANK_HIT+5)return true;
  return false;
 }
+// During the dense jungle patrol pass, index enemies by 128px bands along the map.
+const ENEMY_MOVE_BAND_HEIGHT=128;
+let enemyMoveIndex=null;
+function beginEnemyMoveIndex(){
+ if(stageMode!=='escapeTest'||humans.length+etanks.length<24)return;
+ const bands=new Map(),entries=new Map();
+ for(const [units,tank] of [[humans,false],[etanks,true]])for(const unit of units){
+  if(!unit.alive)continue;
+  const band=Math.floor(unit.y/ENEMY_MOVE_BAND_HEIGHT);
+  const entry={unit,tank,band};
+  let bucket=bands.get(band);
+  if(!bucket)bands.set(band,bucket=new Set());
+  bucket.add(entry);
+  entries.set(unit,entry);
+ }
+ enemyMoveIndex={bands,entries};
+}
+function syncEnemyMoveBand(unit){
+ const entry=enemyMoveIndex?.entries.get(unit);
+ if(!entry)return;
+ const band=Math.floor(unit.y/ENEMY_MOVE_BAND_HEIGHT);
+ if(band===entry.band)return;
+ const bands=enemyMoveIndex.bands;
+ bands.get(entry.band).delete(entry);
+ let bucket=bands.get(band);
+ if(!bucket)bands.set(band,bucket=new Set());
+ bucket.add(entry);
+ entry.band=band;
+}
 function enemyUnitBlocked(self,x,y,r){
+ if(enemyMoveIndex?.entries.has(self)){
+  const hm=r+(self.frontMarch?20.5:18),tm=r+TANK_HIT+8,reach=Math.max(hm,tm);
+  const first=Math.floor((y-reach)/ENEMY_MOVE_BAND_HEIGHT),last=Math.floor((y+reach)/ENEMY_MOVE_BAND_HEIGHT);
+  for(let band=first;band<=last;band++){
+   const bucket=enemyMoveIndex.bands.get(band);
+   if(!bucket)continue;
+   for(const {unit,tank} of bucket){
+    if(unit===self||!unit.alive)continue;
+    const limit=tank?tm:hm,dx=unit.x-x,dy=unit.y-y;
+    if(Math.abs(dx)<limit&&Math.abs(dy)<limit&&dx*dx+dy*dy<limit*limit)return true;
+   }
+  }
+  return false;
+ }
  const hs=humans||[],ts=etanks||[],isEnemy=hs.includes(self)||ts.includes(self);if(!isEnemy)return false;
  // まず矩形で絞り込み、近距離の個体だけ平方距離を計算する。
  const hm=r+(self.frontMarch?20.5:18),tm=r+TANK_HIT+8;
@@ -6066,8 +6109,11 @@ function update(dt){
  const stealthCover=tumbleCover||(!p.tank&&inBush(p))||((weather==='rain'||weather==='squall')&&inWaterAt(p.x,p.y,0))||(p.dig>0);
  if(stealthCover){const wasFound=humans.some(h=>h.alive&&h.st&&h.target==='p')||etanks.some(e=>e.alive&&e.st&&e.target==='p');p.bushHide=(p.bushHide||0)+dt;if(!wasFound||p.bushHide>=1){for(const h of humans)if(h.alive&&h.target==='p'&&!(stageMode==='indoor'&&h.indoorGuard)&&!(h.sniperForcedFoundT>0)){h.st=0;h.target=null;h.lost=0;h.foundPause=0;pauseAfterEnemyDetection(h);}for(const e of etanks)if(e.alive&&e.target==='p'&&!(e.sniperForcedFoundT>0)){e.st=0;e.target=null;e.lost=0;e.foundPause=0;pauseAfterEnemyDetection(e);}}}else p.bushHide=0;
  updateCommanderSignals(dt);updateCommanderMotion(dt);
+ beginEnemyMoveIndex();
+ try{
  // 敵人間：プレイヤー・相棒・偽装を個別に索敵。遮蔽物があれば発見しない。
  for(const h of humans){if(!h.alive)continue;
+  try{
   if(h.gunTower&&updateGunTowerEnemy(h,dt))continue;
   if(stageMode==='training'&&h.trainingGuard)continue;
   h.frontAreaAlert=!(h.stun>0)&&!(h.stunRecover>0)&&!(h.blastAirT>0)&&!h.houndPinned&&!!frontlineCombatPoint(h);
@@ -6131,10 +6177,12 @@ function update(dt){
     if(!movePause&&d<150&&h.cd<=0&&vis){if(h.elite){h.characterShotAt=performance.now();fire(h.x,h.y,toT+(R()-.5)*.08,'e','r',330,150);h.cd=1.35;}else{if(!(h.burstLeft>0))h.burstLeft=3;h.characterShotAt=performance.now();fire(h.x,h.y,toT+(R()-.5)*.15,'e','r',330,150);h.burstLeft--;h.cd=h.burstLeft>0?.14:2;}}}
   }
   if(!h.st){h.wallFollow=null;if(!enemyModePaused(h)&&!(h.chatResumeT>0))h.face=patrol(h,dt,30*(h.elite?1.2:1),8);}
+  }finally{syncEnemyMoveBand(h);}
  }
  for(const h of humans)h.walking=enemyIsWalking(h);
  // 敵戦車も歩兵と同じ索敵ルール。相棒も標的になる。
  for(const e of etanks){if(!e.alive)continue;
+  try{
   if(e.areaDebugStatic){e.st=0;e.target=null;e.lost=0;e.sus=0;e.cc=99;e.vc=99;continue;}
   if(enemyModePaused(e,dt))continue;
   const silentDrill=!!(p.drill>0&&p.drillSilentTank===e&&p.drillTankTarget===e&&!e.st&&!e.static);
@@ -6168,7 +6216,9 @@ function update(dt){
     e.ang+=turn;
    }else turnEnemyTankTurret(e,e.body,dt);
   }
+  }finally{syncEnemyMoveBand(e);}
  }
+ }finally{enemyMoveIndex=null;}
  // 敵同士は歩兵・戦車を問わず重ならないよう、移動後にも位置を分離する。
  separateEnemyUnits();
  separatePlayerEnemyTanks();

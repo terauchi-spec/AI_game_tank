@@ -43,3 +43,34 @@ test('gatling preserves swept impacts, hit priority and combat results against t
   assert.equal(current.run(snapshot),original.run(snapshot),'seed '+seed);
  }
 });
+
+test('jungle movement index preserves collision decisions while enemies cross bands and land from blasts',()=>{
+ const h=createGameEngine(root,{seed:7});
+ h.run("stageMode='escapeTest';reset(false);covers=[];objects=[];water=[];mud=[];rebuildSpatialGrid()");
+ h.run(`{globalThis.comparisons=0;globalThis.indexedComparisons=0;
+  const originalBlocked=(self,x,y,r)=>{
+   if(!humans.includes(self)&&!etanks.includes(self))return false;
+   for(const [units,limit] of [[humans,r+(self.frontMarch?20.5:18)],[etanks,r+TANK_HIT+8]]){
+    for(const unit of units){
+     const dx=unit.x-x,dy=unit.y-y;
+     if(unit!==self&&unit.alive&&Math.abs(dx)<limit&&Math.abs(dy)<limit&&dx*dx+dy*dy<limit*limit)return true;
+    }
+   }
+   return false;
+  };
+  const indexedBlocked=enemyUnitBlocked;
+  enemyUnitBlocked=(...args)=>{
+   comparisons++;
+   if(enemyMoveIndex?.entries.has(args[0]))indexedComparisons++;
+   const actual=indexedBlocked(...args),expected=originalBlocked(...args);
+   if(actual!==expected)throw Error('Collision result changed');
+   return actual;
+  };
+  const soldier=humans[0],tank=etanks[0];
+  Object.assign(soldier,{x:480,y:5119,blastAirT:.4,blastAirDur:.4,blastDY:100});
+  Object.assign(tank,{x:506,y:5150,body:Math.PI,ang:Math.PI,path:[{x:506,y:5150},{x:465,y:5150}],wi:1});
+  for(let i=0;i<90;i++)update(1/60);}`);
+ assert.ok(h.run('indexedComparisons')>1000);
+ assert.ok(h.run('comparisons')>=h.run('indexedComparisons'));
+ assert.equal(h.run('enemyMoveIndex'),null);
+});
