@@ -62,11 +62,82 @@ function separateJungleLake(z,river,pond){
  const [lo,hi]=choices[Math.floor(R()*choices.length)];pond.y=lo+R()*(hi-lo);
 }
 function setupEscapeTestMission(){
- mission={escapeTest:true,exit:ZONES[ZONES.length-1].escapeExit,escapeProgress:0,escapeExit:null,escapeComplete:false,points:[],index:0};missionHudNextAt=0;
+ mission={escapeTest:true,exit:ZONES[ZONES.length-1].escapeExit,escapeProgress:0,escapeExit:null,escapeComplete:false,points:[],index:0,enemyDrop:{next:0,plane:null,parachutes:[],retry:0}};missionHudNextAt=0;
+}
+// The two passes are keyed to progress, so backtracking cannot repeat them.
+const ESCAPE_ENEMY_DROP_AREAS=[1,3];
+function escapeEnemyLanding(target,reserved=[]){
+ return parachuteLandingSpot({x:target.x,landY:target.y},(x,y)=>{
+  const point={x,y};
+  return D(point,p)>=80&&D(point,mission.exit)>=120&&
+   !reserved.some(other=>D(point,other)<60)&&
+   !humans.some(h=>h.alive&&D(point,h)<28)&&
+   !etanks.some(e=>e.alive&&D(point,e)<TANK_HIT+14)&&
+   !cars.some(c=>c.kind!=='fighter'&&D(point,c)<38);
+ });
+}
+function updateEscapeEnemyDrop(m,dt){
+ const event=m.enemyDrop;
+ let plane=event.plane;
+ if(!plane&&!event.parachutes.length&&m.index>=ESCAPE_ENEMY_DROP_AREAS[event.next]){
+  event.retry=Math.max(0,event.retry-dt);
+  if(event.retry>0)return;
+  const view=frontlineView(),x=Math.max(view.x+70,Math.min(view.x+view.w-70,p.x));
+  const dropY=Math.max(view.y+70,p.y-220);
+  const targets=[];
+  for(let i=0;i<3;i++){
+   const point=escapeEnemyLanding({x:x+(i-1)*82,y:dropY+90+i*60},targets);
+   if(!point){event.retry=1;return;}
+   targets.push(point);
+  }
+  plane=event.plane={x,y:view.y-180,endY:view.y+view.h+180,dropY,targets,drops:0};
+  event.next++;
+  sfx('airWarning');say('敵爆撃機が接近！');
+ }
+ if(plane){
+  plane.y+=380*dt;
+  while(plane.drops<3&&plane.y>=plane.dropY+plane.drops*90){
+   const target=plane.targets[plane.drops++];
+   const startY=Math.min(target.y,plane.y-25);
+   event.parachutes.push({x:target.x,y:startY,startY,landY:target.y,
+    alive:true,chute:3,face:Math.PI/2,retry:0});
+  }
+  if(plane.y>=plane.endY&&plane.drops===3)event.plane=null;
+ }
+ for(let i=event.parachutes.length-1;i>=0;i--){
+  const unit=event.parachutes[i];
+  unit.chute=Math.max(.001,unit.chute-dt);
+  const t=1-unit.chute/3;
+  unit.y=unit.startY+(unit.landY-unit.startY)*t*t*(3-2*t);
+  if(unit.chute>.001)continue;
+  unit.retry=Math.max(0,unit.retry-dt);
+  if(unit.retry>0)continue;
+  const q=escapeEnemyLanding({x:unit.x,y:unit.landY});
+  if(!q){unit.retry=.25;continue;}
+  const path=[q];
+  for(const [dx,dy] of [[70,0],[-70,0],[0,70],[0,-70]]){
+   const end={x:q.x+dx,y:q.y+dy};
+   if(patrolLineClear(q,end,8)&&pOK([q,end],8,false)){path.push(end);break;}
+  }
+  humans.push({...q,path,loop:false,wi:path.length-1,dir:1,stk:0,alive:true,st:0,
+   sus:0,lost:0,target:null,cd:.7,burstLeft:0,face:Math.atan2(p.y-q.y,p.x-q.x),
+   patrolMode:'axis',elite:false,escapeParatrooper:true});
+  event.parachutes.splice(i,1);
+ }
+}
+function drawEscapeEnemyDrop(cx,cy){
+ const event=mission?.enemyDrop;
+ if(!event||state!=='play')return;
+ for(const unit of event.parachutes){
+  if(drawPointInView(unit.x,unit.y,cx,cy,100))drawAllyParachute(unit,true);
+ }
+ const plane=event.plane;
+ if(plane&&drawPointInView(plane.x,plane.y,cx,cy,180))drawSupportBomber(plane.x,plane.y,true);
 }
 function updateEscapeTestMission(dt){
  if(state!=='play'||!mission?.escapeTest||mission.escapeComplete)return;
  const m=mission;m.index=Math.max(0,ZONES.indexOf(zoneAt(p.y)));
+ updateEscapeEnemyDrop(m,dt);
  const inside=p.hp>0&&!p.tank&&D(p,m.exit)<INDOOR_EXIT_RADIUS;
  m.escapeExit=inside?m.exit:null;m.escapeProgress=inside?Math.min(INDOOR_EXIT_SECONDS,m.escapeProgress+dt):0;
  scoreStats.objectiveProgress=(m.index+Math.min(1,m.escapeProgress/INDOOR_EXIT_SECONDS))/ESCAPE_TEST_AREAS;

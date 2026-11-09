@@ -133,3 +133,26 @@ test('both jungle modes alternate rain and squalls with stronger enemy sight los
  h.run('updateWeather(weatherNext);updateWeather(30)');
  assert.equal(h.run('weatherNext>=22&&weatherNext<=60'),true);
 });
+
+test('escape areas two and four each drop three enemies without bombing or repeating',()=>{
+ const h=start(7);
+ h.run('updateEscapeTestMission(1)');
+ assert.equal(h.run('mission.enemyDrop.next'),0);
+ for(const [area,total] of [[1,3],[3,6]]){
+  h.run(`p.y=ZONES[${area}].y0-160;updateEscapeTestMission(1/60)`);
+  assert.equal(h.run('mission.enemyDrop.next'),total/3);
+  assert.ok(h.run('mission.enemyDrop.plane'));
+  h.run('for(let i=0;i<120;i++){updateEscapeTestMission(1/60);if(mission.enemyDrop.parachutes.length)break;}');
+  assert.ok(h.run('mission.enemyDrop.parachutes.length>0'));
+  assert.equal(h.run("humans.filter(h=>h.escapeParatrooper).length"),total-3);
+  h.run('drawEscapeEnemyDrop(0,Math.max(0,p.y-H*.6));');
+  h.run('for(let i=0;i<400;i++)updateEscapeTestMission(1/60)');
+  assert.equal(h.run('humans.filter(h=>h.escapeParatrooper).length'),total);
+  assert.ok(h.run('humans.filter(h=>h.escapeParatrooper).every(h=>!hitsM(h.x,h.y,12))'));
+  assert.ok(h.run('!mission.enemyDrop.plane&&!mission.enemyDrop.parachutes.length'));
+  assert.equal(h.run('bombs.length+airbombs.length'),0);
+ }
+ h.run('p.y=ZONES[1].y0-160;updateEscapeTestMission(1);p.y=ZONES[3].y0-160;updateEscapeTestMission(1)');
+ assert.equal(h.run('humans.filter(h=>h.escapeParatrooper).length'),6);
+ assert.equal(h.run('mission.enemyDrop.plane'),null);
+});

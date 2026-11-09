@@ -136,6 +136,7 @@ function preloadGameSe(){
   if(typeof skill!=='undefined'&&skill==='hound'){loadGameSe('houndCommand',true);loadGameSe('dogGrowl',true);}
   const list=['bushEnter','unlockCard','fainting','firework','dirtStep','grassStep','objectiveDestroyed','enemyTankMove','win','lose','results','playerHit','deathHit','mg','enemyGun','cannon','enemyCannon','bazooka','sniper','soldierHit','vehicleHit','empty','bombPlace','bombExplosion','shellExplosion','propExplosion','vehicleDestroyed','coverBreak','enter','suspicion','detected','whistle'];
   if(stageMode==='indoor')list.push('indoorTick','indoorAlarm','door','document','allDocuments');
+  if(stageMode==='escapeTest')list.push('airWarning','aircraft');
   if(stageMode==='front'){loadGameSe('jetFlying',true);list.push('airWarning','capture','aircraft','airExplosion');}
   if(stageMode!=='indoor')list.push('sandstormLoop');
   if(stageMode==='base')list.push('wheelMove');
@@ -214,7 +215,7 @@ function updateGameAudio(){
  setGameSeLoop('flame',p.flameActive?'flameLoop':null,.13);
  setGameSeLoop('rain',typeof weather!=='undefined'&&(weather==='rain'||weather==='squall')&&stageMode!=='indoor'?'rainLoop':null,.60*(typeof rainIntensity==='number'?rainIntensity:1));
  setGameSeLoop('alarm',typeof indoorWorld!=='undefined'&&stageMode==='indoor'&&indoorWorld?.alarm?.active?'indoorAlarm':null,.09);
- const plane=typeof airstrike!=='undefined'&&airstrike?airstrike:typeof reinforcementPass!=='undefined'&&reinforcementPass?reinforcementPass:typeof mission!=='undefined'&&mission?.enemyAirRaid?.phase==='flight'?mission.enemyAirRaid.plane:null;
+ const plane=typeof airstrike!=='undefined'&&airstrike?airstrike:typeof reinforcementPass!=='undefined'&&reinforcementPass?reinforcementPass:typeof mission!=='undefined'&&mission?.enemyAirRaid?.phase==='flight'?mission.enemyAirRaid.plane:typeof mission!=='undefined'?mission?.enemyDrop?.plane:null;
  setGameSeLoop('aircraft',plane?'aircraft':null,.14*gameSeDistance(plane));
  const hot=typeof burningAt==='function'&&burningAt(p.x,p.y,160);setGameSeLoop('fire',hot?'fireLoop':null,.06);
 }
