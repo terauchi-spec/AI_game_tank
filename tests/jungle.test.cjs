@@ -5,7 +5,8 @@ test('jungle debug stage is isolated, traversable and preserves foliage while li
   const h=createGameEngine(root,{seed});
   h.run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='密林';reset(false)");
   assert.deepEqual(Array.from(h.run('ZONES.map(z=>z.n)')),['密林']);
-  assert.equal(h.run("TERRAIN_ASSET_SRC['密林']===TERRAIN_ASSET_SRC['湿地']"),true);
+  assert.equal(h.run("TERRAIN_ASSET_SRC['密林']"),"assets/terrain/rainforest-ground.webp");
+  assert.equal(h.run("TERRAIN_ASSET_SRC['湿地']"),"assets/terrain/wetland.webp");
   assert.equal(h.run('debugInvincible'),true);
   assert.equal(h.run("covers.filter(c=>JUNGLE_BUILDING_KEYS.includes(c.jungleAsset)).length<=2&&!covers.some(c=>c.jungleAsset==='watchtower')&&mud.length<=5"),true);
   assert.equal(h.run("Object.keys(JUNGLE_ASSETS).filter(k=>!JUNGLE_BUILDING_KEYS.includes(k)&&k!=='watchtower').every(k=>covers.some(c=>c.jungleAsset===k))"),true);
