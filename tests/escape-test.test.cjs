@@ -78,6 +78,16 @@ test('VIP follows unarmed, rejoins from below without healing, and takes enemy f
  assert.equal(h.run('scoreStats.final.cleared'),false);
  assert.equal(h.run("targetObj('escapeVip')"),null);
 });
+test('VIP hearts are drawn in the top right even when the EXIT is off-screen',()=>{
+ const h=start();
+ const hearts=h.run(`mission.vip.hp=2;cam=WH-H;missionHudNextAt=0;
+  globalThis.heartDraws=[];globalThis.realDrawHudHeart=drawHudHeart;
+  drawHudHeart=(x,y,fill)=>heartDraws.push([x,y,fill]);
+  try{drawEscapeTestMission();}finally{drawHudHeart=realDrawHudHeart;}
+  JSON.stringify(heartDraws.map(([x,y,fill])=>[W-x,y,fill]))`);
+ assert.deepEqual(JSON.parse(hearts),[[83,61,1],[55,61,1],[27,61,0]]);
+ assert.doesNotMatch(h.nodes.get('missionHud').textContent,/[♥♡]/);
+});
 test('VIP settles behind a stationary player and still enters EXIT at the edge of the circle',()=>{
  const h=start();
  for(const angle of [0,Math.PI/2,Math.PI,-Math.PI/2]){
@@ -90,7 +100,7 @@ test('VIP settles behind a stationary player and still enters EXIT at the edge o
   Object.assign(mission.vip,{x:p.x+40,y:p.y});
   for(let i=0;i<120;i++){updateEscapeVip(1/60);updateMission(1/60);}drawEscapeTestMission()`);
  assert.ok(h.run('mission.escapeProgress>0'));
- assert.match(h.nodes.get('missionHud').textContent,/／ ♥♥♥\n/);
+ assert.match(h.nodes.get('missionHud').textContent,/EXIT：あと/);
  assert.doesNotMatch(h.nodes.get('missionHud').textContent,/要人 ♥/);
 });
 test('test failure cannot save records and returning to a normal stage clears the escape mission',()=>{

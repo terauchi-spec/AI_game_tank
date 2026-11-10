@@ -223,10 +223,16 @@ function drawEscapeTestMission(){
  if(performance.now()>=missionHudNextAt){
   missionHudNextAt=performance.now()+100;
   const zone=ZONES[m.index],area=zone.escapeArea===undefined?(m.index===0?'開始草原':'脱出地点の草原'):'密林 '+(zone.escapeArea+1)+'/'+ESCAPE_TEST_AREAS;
-  const text='脱出（テスト）　'+area+' ／ '+('♥'.repeat(m.vip.hp))+'♡'.repeat(3-m.vip.hp)+'\n'+(m.escapeExit?'EXIT：あと '+Math.max(0,INDOOR_EXIT_SECONDS-m.escapeProgress).toFixed(1)+'秒':'EXITまで '+distanceMeters(D(p,m.exit))+'m ／ 要人と円内で5秒待機');
+  const text='脱出（テスト）　'+area+'\n'+(m.escapeExit?'EXIT：あと '+Math.max(0,INDOOR_EXIT_SECONDS-m.escapeProgress).toFixed(1)+'秒':'EXITまで '+distanceMeters(D(p,m.exit))+'m ／ 要人と円内で5秒待機');
   if(hud.textContent!==text)hud.textContent=text;
  }
- const q=m.exit;if(q.x+INDOOR_EXIT_RADIUS<camX||q.x-INDOOR_EXIT_RADIUS>camX+W||q.y+INDOOR_EXIT_RADIUS<cam||q.y-INDOOR_EXIT_RADIUS>cam+H)return;
- const previous=g;gm.save();gm.setTransform(1,0,0,1,0,0);gm.translate(-camX,-cam);g=gm;
- try{drawExitCircle(q,INDOOR_EXIT_RADIUS,m.escapeProgress/INDOOR_EXIT_SECONDS,!!m.escapeExit);}finally{g=previous;gm.restore();}
+ const previous=g;gm.save();g=gm;
+ try{
+  gm.setTransform(1,0,0,1,0,0);
+  for(let i=0;i<3;i++)drawHudHeart(W-83+i*28,61,m.vip.hp>i?1:0);
+  const q=m.exit;
+  if(q.x+INDOOR_EXIT_RADIUS<camX||q.x-INDOOR_EXIT_RADIUS>camX+W||q.y+INDOOR_EXIT_RADIUS<cam||q.y-INDOOR_EXIT_RADIUS>cam+H)return;
+  gm.translate(-camX,-cam);
+  drawExitCircle(q,INDOOR_EXIT_RADIUS,m.escapeProgress/INDOOR_EXIT_SECONDS,!!m.escapeExit);
+ }finally{g=previous;gm.restore();}
 }
