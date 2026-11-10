@@ -49,12 +49,34 @@ function setupEscapeTestWorld(){
  const t=TYPES[0];cars.push({x:WW/2+130,y:p.y-100,t,kind:'tank',hp:t.hp,c:t.cmax,v:t.vmax,f:t.fmax,ch:0,mgHits:0,body:-Math.PI/2});
  debugMode=0;debugInvincible=false;baseSpawnT=99999;weather='clear';weatherNext=5+R()*10;weatherT=0;rainIntensity=0;
  commanderPrevX=p.x;commanderPrevY=p.y;commanderVelocity={x:0,y:0};commanderRallying=false;commanderSignals=[];
+ placeEscapeBuildingSupplies(jungles);
  captureBuildingGroundMarks();rebuildSpatialGrid();
  for(const z of jungles)spawnAreaDebugEnemies(z,{blueCommander:true});
  setupRoadTruckEvents();
  placeEscapeTestRadios(jungles);
  roadBands.push({x:0,y:last.escapeExit.y-160,w:WW,h:320,kind:'asphalt',lanes:4});
  say('脱出：要人女性を護衛し、最後の草原のEXITへ');
+}
+// Reuse the ordinary crate and drum objects around existing jungle buildings.
+function placeEscapeBuildingSupplies(jungles){
+ const buildings=covers.filter(c=>JUNGLE_BUILDING_KEYS.includes(c.jungleAsset));
+ for(const b of buildings){
+  const choices=[['crate',CRATE_W,CRATE_H],['barrel',BARREL_SIZE,BARREL_SIZE]];
+  for(const [kind,w,h] of choices){
+   let placed=false;
+   for(let k=0;k<48&&!placed;k++){
+    const side=k%4,offset=18+R()*50;
+    const x=side===0?b.x-w-offset:side===1?b.x+b.w+offset: b.x+R()*Math.max(1,b.w-w);
+    const y=side===2?b.y-h-offset:side===3?b.y+b.h+offset:b.y+R()*Math.max(1,b.h-h);
+    const q={x,y,w,h},cx=x+w/2,cy=y+h/2;
+    if(x<15||x+w>WW-15||!jungles.some(z=>cy>z.y1+30&&cy<z.y0-30))continue;
+    if(inWaterAt(cx,cy,Math.max(w,h)/2+5)||hitsM(cx,cy,Math.max(w,h)/2+5))continue;
+    if(covers.some(c=>c!==b&&ov2(q,coverSpriteRect(c)||c,8)))continue;
+    if(objects.some(o=>ov2(q,objectAABB(o),12)))continue;
+    objects.push({kind,x,y,w,h});placed=true;
+   }
+  }
+ }
 }
 // Place one of each existing support radio in the five jungle areas, once per run.
 function placeEscapeTestRadios(jungles){
