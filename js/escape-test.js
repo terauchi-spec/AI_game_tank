@@ -200,6 +200,13 @@ function damageEscapeVip(vip){
  vip.moving=false;state='failed';failureFrameDrawn=false;
  finalizeScore(false);sfx('lose');
 }
+function stunEscapeVipAtBlast(x,y,radius){
+ const vip=stageMode==='escapeTest'?mission?.vip:null;
+ if(!vip||vip.hp<=0||state!=='play'||vip.stunT>0||vip.stunImmuneT>0||Math.hypot(vip.x-x,vip.y-y)>radius)return;
+ vip.stunT=5;vip.stunContactDelay=.3;vip.moving=false;
+ vip.wallFollow=null;vip.sideStep=null;vip.followWait=ESCAPE_VIP_FOLLOW_DELAY;
+ say('要人女性が爆風で気絶！触れるか5秒で復帰');
+}
 function recallEscapeVip(vip){
  const view=frontlineView();
  if(vip.x>=view.x-12&&vip.x<=view.x+view.w+12&&vip.y>=view.y-12&&vip.y<=view.y+view.h+12)return;
@@ -216,6 +223,16 @@ function recallEscapeVip(vip){
 }
 function updateEscapeVip(dt){
  const vip=escapeVipTarget();if(!vip)return;
+ vip.stunImmuneT=Math.max(0,(vip.stunImmuneT||0)-dt);
+ if(vip.stunT>0){
+  vip.stunT=Math.max(0,vip.stunT-dt);
+  vip.stunContactDelay=Math.max(0,(vip.stunContactDelay||0)-dt);
+  vip.moving=false;
+  if(vip.stunT>0&&vip.stunContactDelay<=0&&!p.tank&&D(vip,p)<25)vip.stunT=0;
+  if(vip.stunT>0)return;
+  vip.stunImmuneT=15;vip.followWait=ESCAPE_VIP_FOLLOW_DELAY;
+  say('要人女性が復帰！');
+ }
  const leaderMoving=Math.abs(p.x-vip.leaderX)+Math.abs(p.y-vip.leaderY)>1e-6;
  if(leaderMoving&&!vip.leaderMoving)vip.followWait=ESCAPE_VIP_FOLLOW_DELAY;
  vip.leaderMoving=leaderMoving;vip.leaderX=p.x;vip.leaderY=p.y;
@@ -264,6 +281,7 @@ function drawEscapeVip(cx,cy){
  const vip=mission?.vip;
  if(!vip||mission.extraction?.vip?.boarded||!drawPointInView(vip.x,vip.y,cx,cy,45))return;
  drawEscapeVipSprite(g,vip.x,vip.y,vip.face,vip.moving,vip);
+ if(vip.stunT>0)drawStunStars(vip.x,vip.y);
 }
 function updateEscapeVipBoarding(v,t){
  const ride=v.vip,vip=ride.actor;
@@ -277,7 +295,7 @@ function updateEscapeTestMission(dt){
  const m=mission;m.index=Math.max(0,ZONES.indexOf(zoneAt(p.y)));
  updateEscapeEnemyDrop(m,dt);
  const playerInside=p.hp>0&&!p.tank&&D(p,m.exit)<INDOOR_EXIT_RADIUS;
- const inside=playerInside&&m.vip.hp>0&&D(m.vip,m.exit)<INDOOR_EXIT_RADIUS;
+ const inside=playerInside&&m.vip.hp>0&&!(m.vip.stunT>0)&&D(m.vip,m.exit)<INDOOR_EXIT_RADIUS;
  m.escapeExit=inside?m.exit:null;m.escapeProgress=inside?Math.min(INDOOR_EXIT_SECONDS,m.escapeProgress+dt):0;
  scoreStats.objectiveProgress=(m.index+Math.min(1,m.escapeProgress/INDOOR_EXIT_SECONDS))/ZONES.length;
  if(m.escapeProgress>=INDOOR_EXIT_SECONDS-1e-9){m.escapeComplete=true;scoreStats.objectiveProgress=1;completeMission();
