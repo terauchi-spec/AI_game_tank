@@ -73,7 +73,7 @@ function placeEscapeBuildingSupplies(jungles){
     if(inWaterAt(cx,cy,Math.max(w,h)/2+5)||hitsM(cx,cy,Math.max(w,h)/2+5))continue;
     if(covers.some(c=>c!==b&&ov2(q,coverSpriteRect(c)||c,8)))continue;
     if(objects.some(o=>ov2(q,objectAABB(o),12)))continue;
-    objects.push({kind,x,y,w,h});placed=true;
+    objects.push({kind,x,y,w,h,escapeBuildingSupply:true});placed=true;
    }
   }
  }
