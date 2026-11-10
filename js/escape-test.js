@@ -192,9 +192,9 @@ function escapeVipTarget(){
  const vip=mission?.vip;
  return vip?.hp>0?vip:null;
 }
-function damageEscapeVip(vip){
+function damageEscapeVip(vip,damage=1){
  if(!vip||vip.hp<=0||state!=='play')return;
- vip.hp--;
+ vip.hp=Math.max(0,vip.hp-damage);
  burst(vip.x,vip.y,7,'#f28b9f',75);
  if(vip.hp>0){say('要人女性が被弾！ 残りライフ '+vip.hp);return;}
  vip.moving=false;state='failed';failureFrameDrawn=false;
