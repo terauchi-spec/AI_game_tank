@@ -172,12 +172,13 @@ function updateEscapeVip(dt){
  const vip=escapeVipTarget();if(!vip)return;
  recallEscapeVip(vip);
  const exit=mission.exit,waiting=!p.tank&&D(p,exit)<INDOOR_EXIT_RADIUS;
- const goal=waiting?exit:p,distance=D(vip,goal);
- vip.moving=false;
- if(distance>(waiting?INDOOR_EXIT_RADIUS-12:42)){
-  const x=vip.x,y=vip.y;
-  moveAllySmart(vip,goal,Math.min(212,Math.max(0,distance-24)/dt),dt);
-  vip.moving=Math.hypot(vip.x-x,vip.y-y)>.1;
+ const behind=partnerFollowGoal(36);
+ const blocked=behind.x<12||behind.x>WW-12||behind.y<12||behind.y>WH-12||hitsC(behind.x,behind.y,8);
+ const goal=waiting&&(blocked||D(behind,exit)>INDOOR_EXIT_RADIUS-6)?exit:blocked?p:behind;
+ const distance=D(vip,goal),arrival=goal===p?36:2;
+ if(distance>arrival)movePartnerFollower(vip,goal,Math.min(212,(distance-arrival)/dt),dt);
+ else{
+  vip.moving=false;vip.wallFollow=null;vip.sideStep=null;vip.face=p.body;
  }
 }
 function drawEscapeVipSprite(ctx,x,y,face,moving){
@@ -195,10 +196,6 @@ function drawEscapeVip(cx,cy){
  const vip=mission?.vip;
  if(!vip||mission.extraction?.vip?.boarded||!drawPointInView(vip.x,vip.y,cx,cy,45))return;
  drawEscapeVipSprite(g,vip.x,vip.y,vip.face,vip.moving);
- g.save();g.textAlign='center';g.font='bold 12px sans-serif';
- const label='要人 '+('♥'.repeat(vip.hp))+'♡'.repeat(3-vip.hp);
- g.strokeStyle='#241525';g.lineWidth=3;g.strokeText(label,vip.x,vip.y-18);
- g.fillStyle='#ffd0df';g.fillText(label,vip.x,vip.y-18);g.restore();
 }
 function updateEscapeVipBoarding(v,t){
  const ride=v.vip,vip=ride.actor;
@@ -226,7 +223,7 @@ function drawEscapeTestMission(){
  if(performance.now()>=missionHudNextAt){
   missionHudNextAt=performance.now()+100;
   const zone=ZONES[m.index],area=zone.escapeArea===undefined?(m.index===0?'開始草原':'脱出地点の草原'):'密林 '+(zone.escapeArea+1)+'/'+ESCAPE_TEST_AREAS;
-  const text='脱出（テスト）　'+area+' ／ 要人 '+('♥'.repeat(m.vip.hp))+'♡'.repeat(3-m.vip.hp)+'\n'+(m.escapeExit?'EXIT：あと '+Math.max(0,INDOOR_EXIT_SECONDS-m.escapeProgress).toFixed(1)+'秒':'EXITまで '+distanceMeters(D(p,m.exit))+'m ／ 要人と円内で5秒待機');
+  const text='脱出（テスト）　'+area+' ／ '+('♥'.repeat(m.vip.hp))+'♡'.repeat(3-m.vip.hp)+'\n'+(m.escapeExit?'EXIT：あと '+Math.max(0,INDOOR_EXIT_SECONDS-m.escapeProgress).toFixed(1)+'秒':'EXITまで '+distanceMeters(D(p,m.exit))+'m ／ 要人と円内で5秒待機');
   if(hud.textContent!==text)hud.textContent=text;
  }
  const q=m.exit;if(q.x+INDOOR_EXIT_RADIUS<camX||q.x-INDOOR_EXIT_RADIUS>camX+W||q.y+INDOOR_EXIT_RADIUS<cam||q.y-INDOOR_EXIT_RADIUS>cam+H)return;

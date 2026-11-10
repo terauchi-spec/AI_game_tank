@@ -154,6 +154,15 @@ function partnerCompanionMove(q,goal,speed,dt){
  else moveAllySmart(q,goal,speed,dt);
  partnerWaterMovement(q,ox,oy);
 }
+function partnerFollowGoal(distance){
+ return {x:p.x-Math.cos(p.body)*distance,y:p.y-Math.sin(p.body)*distance};
+}
+function movePartnerFollower(q,goal,speed,dt){
+ const x=q.x,y=q.y;
+ partnerCompanionMove(q,goal,speed,dt);
+ q.moving=Math.hypot(q.x-x,q.y-y)>.1;
+ if(q.moving)q.face=Math.atan2(q.y-y,q.x-x);
+}
 function partnerVehicleAttack(q,dt){
  const v=q.vehicle;if(!v||q.down||q.stunT>0)return;
  if(v.kind==='tower'){partnerGunTowerAttack(q,dt);return;}
@@ -392,11 +401,8 @@ function updatePartner(dt){
  }
  if(isPartnerDrivenVehicle()){q.moving=false;return;}
  if(q.backup){
-  const oldX=q.x,oldY=q.y,d=D(q,p);
-  if(d<49){q.backup=false;q.planT=0;q.moving=false;}
-  else partnerCompanionMove(q,{x:p.x+Math.cos(p.body+Math.PI)*23,y:p.y+Math.sin(p.body+Math.PI)*23},195,dt);
-  q.moving=Math.hypot(q.x-oldX,q.y-oldY)>.1;
-  if(q.moving)q.face=Math.atan2(q.y-oldY,q.x-oldX);
+  if(D(q,p)<49){q.backup=false;q.planT=0;q.moving=false;}
+  else movePartnerFollower(q,partnerFollowGoal(23),195,dt);
   return;
  }
  if(stageMode==='indoor'&&indoorPartnerDocumentTarget()){q.moving=false;return;}

@@ -78,6 +78,21 @@ test('VIP follows unarmed, rejoins from below without healing, and takes enemy f
  assert.equal(h.run('scoreStats.final.cleared'),false);
  assert.equal(h.run("targetObj('escapeVip')"),null);
 });
+test('VIP settles behind a stationary player and still enters EXIT at the edge of the circle',()=>{
+ const h=start();
+ for(const angle of [0,Math.PI/2,Math.PI,-Math.PI/2]){
+  h.run(`p.body=${angle};Object.assign(mission.vip,{x:p.x+30,y:p.y-30});
+   for(let i=0;i<120;i++)updateEscapeVip(1/60)`);
+  assert.ok(h.run('D(mission.vip,{x:p.x-Math.cos(p.body)*36,y:p.y-Math.sin(p.body)*36})<=2.01'));
+  assert.equal(h.run('mission.vip.moving'),false);
+ }
+ h.run(`p.x=mission.exit.x+INDOOR_EXIT_RADIUS-2;p.y=mission.exit.y;p.body=Math.PI;
+  Object.assign(mission.vip,{x:p.x+40,y:p.y});
+  for(let i=0;i<120;i++){updateEscapeVip(1/60);updateMission(1/60);}drawEscapeTestMission()`);
+ assert.ok(h.run('mission.escapeProgress>0'));
+ assert.match(h.nodes.get('missionHud').textContent,/／ ♥♥♥\n/);
+ assert.doesNotMatch(h.nodes.get('missionHud').textContent,/要人 ♥/);
+});
 test('test failure cannot save records and returning to a normal stage clears the escape mission',()=>{
  const h=start(),before=Array.from(h.storage.entries());h.run("p.hp=0;updateMission(5);finalizeScore(false)");assert.equal(h.run('scoreStats.final.cleared'),false);assert.deepEqual(Array.from(h.storage.entries()),before);
  h.run("stageMode='beginner';reset(false);draw();update(1/60)");assert.equal(h.run('!!mission?.escapeTest'),false);assert.equal(h.run("ZONES.some(z=>z.escapeArea!==undefined)"),false);assert.equal(h.run('!!scoreStats.escapeTest'),false);
