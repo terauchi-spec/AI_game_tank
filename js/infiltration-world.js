@@ -2684,9 +2684,11 @@ function infiltrationCamera(){
   return{x:Math.max(0,Math.min(WW-W,p.x-W/2)),
     y:Math.max(bounds.top,Math.min(Math.max(bounds.top,bounds.bottom-H),p.y-H*.6))};
 }
-function beginInfiltrationExtraction(exit){
-  if(stageMode!=='indoor'||!mission||mission.extraction)return;
-  const view=infiltrationCamera();
+function supportsMissionExtraction(){
+  return stageMode==='indoor'||(stageMode==='escapeTest'&&mission?.escapeTest);
+}
+function beginInfiltrationExtraction(exit,view=infiltrationCamera()){
+  if(!supportsMissionExtraction()||!view||!mission||mission.extraction)return;
   mission.extraction={elapsed:0,duration:2.8,departureElapsed:0,departureDuration:1.8,camX:view.x,camY:view.y,
     startX:view.x-100,stopX:exit.x,endX:view.x+W+100,y:exit.y+(p.y>=exit.y?-68:68),
     carX:view.x-100,fromX:p.x,fromY:p.y,boarded:false,phase:'approach'};
@@ -2712,10 +2714,10 @@ function beginInfiltrationExtraction(exit){
   p.sniperMode=false;p.sniperEnterT=0;p.sniperReadyT=0;
 }
 function infiltrationExtractionDeparting(){
-  return stageMode==='indoor'&&state==='succeeded'&&!!mission?.extraction?.boarded&&mission.extraction.phase!=='departed';
+  return supportsMissionExtraction()&&state==='succeeded'&&!!mission?.extraction?.boarded&&mission.extraction.phase!=='departed';
 }
 function updateInfiltrationExtraction(dt){
-  const v=stageMode==='indoor'&&mission?.extraction;
+  const v=supportsMissionExtraction()&&mission?.extraction;
   if(!v||(state!=='indoorEscape'&&!infiltrationExtractionDeparting()))return;
   if(state==='succeeded'){
     v.departureElapsed=Math.min(v.departureDuration,v.departureElapsed+Math.max(0,dt));
@@ -2782,7 +2784,7 @@ function infiltrationJeepSprite(){
   indoorJeepCanvas=canvas;return canvas;
 }
 function drawInfiltrationExtraction(cx,cy){
-  const v=stageMode==='indoor'&&(state==='indoorEscape'||state==='succeeded')&&mission?.extraction;if(!v)return;
+  const v=supportsMissionExtraction()&&(state==='indoorEscape'||state==='succeeded')&&mission?.extraction;if(!v)return;
   gm.save();gm.translate(v.carX-cx,v.y-cy);gm.imageSmoothingEnabled=true;
   gm.drawImage(infiltrationJeepSprite(),-64,-38,128,76);
   if(v.boarded){

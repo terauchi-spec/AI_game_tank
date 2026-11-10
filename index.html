@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.10.0033</title>
+<title>こっそり戦車大作戦 2026.11.10.2005</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -709,7 +709,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 1250ms ease-o
 <li><strong>09 制圧（上級）：</strong>運搬用ロケットパーツのある3拠点を順に制圧します。</li>
 <li><strong>10 決戦（開発者モード）：</strong>中継拠点を制圧し、砂漠の移動要塞を破壊します。</li>
 </ol>
-<p><strong>脱出（テスト／開発者モード）：</strong>密林5エリアを突破し、最後のEXIT円内で徒歩のまま5秒間待機するとクリアです。戦績・称号・ランキング・スキル解放は保存されません。</p>
+<p><strong>脱出（テスト／開発者モード）：</strong>草原から密林5エリアを抜け、最後の草原の舗装道路にあるEXIT円内で徒歩のまま5秒待つと、迎えの車が到着します。戦績・称号・ランキング・スキル解放は保存されません。</p>
 <p><strong>潜入の共通ルール：</strong>資料の円内で回収を進めます。1人での回収は1か所につき8秒です。全資料を回収後、EXIT円内で5秒間待機すると脱出できます。</p>
 <p><strong>制圧の共通ルール：</strong>プレイヤーが地上で一度進入した拠点は、円内に行動可能な味方兵が1人以上いて、近くに敵がいなければ制圧が進みます。プレイヤー単独では進みません。参加者が1人なら48秒、2人なら24秒、3人なら16秒が目安です。気絶中・降下中の兵士は人数に含まれません。敵が円内に入るとゲージが水色からオレンジに変わります。敵が近くにいる間は制圧ゲージが徐々に戻ります。</p>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
@@ -986,7 +986,7 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 #stageScreen .stage-card.stage-cleared .stage-number{border-color:#b3db9c;color:#c8e9a5}
 </style>
 <section id="areaDebugPicker" aria-labelledby="areaDebugHeading"><div class="area-debug-panel"><h1 id="areaDebugHeading">テストするエリア</h1><p>無敵で地形や遮蔽物を確認できます。<br>開始地点の戦車は弾数・燃料無制限です。</p><label class="area-debug-bomber-switch"><input id="areaDebugEnemyBomber" type="checkbox" role="switch"><span>敵爆撃機（30秒ごと）<small>50%の確率で味方戦闘機が迎撃</small></span><strong id="areaDebugEnemyBomberState">OFF</strong></label><div id="areaDebugList"></div><button id="areaDebugBack" type="button">ステージ選択に戻る</button></div></section>
-<div id="missionBriefing" role="dialog" aria-modal="true" aria-labelledby="missionBriefingTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_hero.webp?v=2026.10.14.1653" alt="円形爆弾を抱えて走る主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionBriefingTitle">ミッション</h1><p id="missionBriefingGoal">敵の拠点にたどりつき、破壊せよ</p><ul class="mission-hud-guide" aria-label="ゲーム画面のアイコン説明"><li><img src="assets/ui/ui_heart_full.png" alt="ハート" decoding="async"><span>残りライフ</span></li><li><img src="assets/ui/ui_bomb_normal.png" alt="爆弾" decoding="async"><span>爆弾の設置状態</span></li><li><svg viewBox="-18 -18 36 36" role="img" aria-label="目に斜線"><path d="M-14 0 C-7-11 7-11 14 0 C7 11-7 11-14 0Z" fill="white" stroke="black" stroke-width="3"/><circle r="5" fill="black"/><path d="M-12 11 12-11" stroke="black" stroke-width="3.5"/><path d="M-12 11 12-11" stroke="#ef3434" stroke-width="2"/></svg><span>敵から隠れている状態</span></li></ul><div id="missionFrontlineRules" hidden><ul class="mission-front-rules" aria-label="最前線の制圧ルール"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V3m0 1c5-4 8 4 14 0v10c-6 4-9-4-14 0"/></svg><span id="missionFrontlineOrder">3拠点を順番に制圧</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 1v4m0 14v4M1 12h4m14 0h4"/></svg><span>円に入り、敵を排除</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><circle cx="4" cy="10" r="2"/><circle cx="20" cy="10" r="2"/><path d="M6 22v-4a6 6 0 0 1 12 0v4M1 21v-5a3 3 0 0 1 4-3m18 8v-5a3 3 0 0 0-4-3"/></svg><span>味方兵と制圧！人数で加速</span></li></ul></div><div id="missionEscapeRules" hidden><ul class="mission-front-rules"><li>密林5エリアを突破</li><li>各エリアに川・湖がランダム出現</li><li>最後のEXITに徒歩で入り、5秒待機</li></ul></div><div id="missionDecisiveRules" hidden><ul class="mission-front-rules" aria-label="決戦の作戦ポイント"><li>1人で開始草原から、ランダムな3エリアを突破</li><li>3エリア目の中継拠点：円内の敵を排除し48秒制圧</li><li>制圧後は味方部隊と砂漠3エリアへ進軍</li><li>巨大移動要塞を主砲・設置爆弾などで破壊</li></ul></div><div id="missionIndoorRules" hidden><ul class="mission-front-rules" aria-label="潜入の作戦ポイント"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2h9l5 5v15H5ZM14 2v6h5M8 12h8M8 16h8"/></svg><span id="missionIndoorDocuments">円に入り、重要資料3か所を回収</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12C7 4 17 4 22 12C17 20 7 20 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><span>赤い目3つで館内アラート発令</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3H3v18h7M7 12h15m-5-5 5 5-5 5"/></svg><span>回収後は施設外のEXITから脱出</span></li></ul></div><button type="button" id="missionBegin">作戦開始</button></div></div></div>
+<div id="missionBriefing" role="dialog" aria-modal="true" aria-labelledby="missionBriefingTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_hero.webp?v=2026.10.14.1653" alt="円形爆弾を抱えて走る主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionBriefingTitle">ミッション</h1><p id="missionBriefingGoal">敵の拠点にたどりつき、破壊せよ</p><ul class="mission-hud-guide" aria-label="ゲーム画面のアイコン説明"><li><img src="assets/ui/ui_heart_full.png" alt="ハート" decoding="async"><span>残りライフ</span></li><li><img src="assets/ui/ui_bomb_normal.png" alt="爆弾" decoding="async"><span>爆弾の設置状態</span></li><li><svg viewBox="-18 -18 36 36" role="img" aria-label="目に斜線"><path d="M-14 0 C-7-11 7-11 14 0 C7 11-7 11-14 0Z" fill="white" stroke="black" stroke-width="3"/><circle r="5" fill="black"/><path d="M-12 11 12-11" stroke="black" stroke-width="3.5"/><path d="M-12 11 12-11" stroke="#ef3434" stroke-width="2"/></svg><span>敵から隠れている状態</span></li></ul><div id="missionFrontlineRules" hidden><ul class="mission-front-rules" aria-label="最前線の制圧ルール"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V3m0 1c5-4 8 4 14 0v10c-6 4-9-4-14 0"/></svg><span id="missionFrontlineOrder">3拠点を順番に制圧</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 1v4m0 14v4M1 12h4m14 0h4"/></svg><span>円に入り、敵を排除</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><circle cx="4" cy="10" r="2"/><circle cx="20" cy="10" r="2"/><path d="M6 22v-4a6 6 0 0 1 12 0v4M1 21v-5a3 3 0 0 1 4-3m18 8v-5a3 3 0 0 0-4-3"/></svg><span>味方兵と制圧！人数で加速</span></li></ul></div><div id="missionEscapeRules" hidden><ul class="mission-front-rules"><li>密林5エリアを突破</li><li>各エリアに川・湖がランダム出現</li><li>最後の草原の道路にあるEXITで徒歩のまま5秒待ち、迎えの車に乗る</li></ul></div><div id="missionDecisiveRules" hidden><ul class="mission-front-rules" aria-label="決戦の作戦ポイント"><li>1人で開始草原から、ランダムな3エリアを突破</li><li>3エリア目の中継拠点：円内の敵を排除し48秒制圧</li><li>制圧後は味方部隊と砂漠3エリアへ進軍</li><li>巨大移動要塞を主砲・設置爆弾などで破壊</li></ul></div><div id="missionIndoorRules" hidden><ul class="mission-front-rules" aria-label="潜入の作戦ポイント"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2h9l5 5v15H5ZM14 2v6h5M8 12h8M8 16h8"/></svg><span id="missionIndoorDocuments">円に入り、重要資料3か所を回収</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12C7 4 17 4 22 12C17 20 7 20 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><span>赤い目3つで館内アラート発令</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3H3v18h7M7 12h15m-5-5 5 5-5 5"/></svg><span>回収後は施設外のEXITから脱出</span></li></ul></div><button type="button" id="missionBegin">作戦開始</button></div></div></div>
 <div id="stageLoadingScreen" role="status" aria-live="polite"><div class="stage-loading-title">作戦準備中…</div></div>
 <div id="stageScreen" role="region" aria-label="ステージ選択"><div class="stage-shell">
 <header class="stage-header"><div><div class="stage-kicker">CHOOSE YOUR MISSION</div><h1>ステージ選択</h1></div><button type="button" class="sk-home" id="stageBack">スキル選択</button></header><p id="stageSkill"></p>
@@ -1021,7 +1021,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.10.0033',FILE_CREATED_AT='2026/11/10 00:33',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.10.2005',FILE_CREATED_AT='2026/11/10 20:05',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -5056,7 +5056,7 @@ function updateHound(dt){
 function drawHound(dog=hound){
  const hound=dog;
  if(!hound||(!hound.enemyDog&&skill!=='hound'))return;
- const ride=!hound.enemyDog&&stageMode==='indoor'&&mission?.extraction?.hound;
+ const ride=!hound.enemyDog&&supportsMissionExtraction()&&mission?.extraction?.hound;
  if(ride&&ride.actor===hound&&ride.boarded)return;
  const a=hound.face||0,stunned=hound.stun>0,bite=hound.state==='bite';
  const dashState=!stunned&&!bite&&(hound.state==='dashOut'||hound.state==='chase'||hound.state==='returnDash');
@@ -7793,7 +7793,7 @@ function draw(near){
  fragmentDrawFrame++;fragmentAssetSignature=Object.values(COVER_IMG).reduce((n,im)=>n+(assetOK(im)?1:0),0);
  if(typeof isLaboratoryStage==='function'&&isLaboratoryStage())fragmentAssetSignature+='|'+laboratoryAssetStamp();
  const bl=state==='blast'||((state==='win'||state==='succeeded')&&(stageMode==='base'||stageMode==='beginner'||base?.decisiveFortress));
- const victoryCamera=stageMode==='training'?trainingCamera():stageMode==='indoor'?infiltrationCamera():frontlineVictoryCamera();
+ const victoryCamera=stageMode==='training'?trainingCamera():stageMode==='indoor'?infiltrationCamera():mission?.extraction?{x:mission.extraction.camX,y:mission.extraction.camY}:frontlineVictoryCamera();
  if(victoryCamera){cam=victoryCamera.y;camX=victoryCamera.x;}else if(bl){cam+=((base?.decisiveFortress?Math.max(0,base.y+base.h/2-H/2):0)-cam)*.07;camX+=(Math.max(0,Math.min(WW-W,base.x+base.w/2-W/2))-camX)*.07;}else{cam=Math.max(frontlineNorthEdge(),Math.min(WH-H,p.y-H*.6));camX=Math.max(0,Math.min(WW-W,p.x-W/2));}
  const cy=Math.round(cam/2)*2,cx=Math.round(camX/2)*2;
  g.save();if(shake>0)g.translate((R()-.5)*shake,(R()-.5)*shake);
@@ -7921,18 +7921,18 @@ function draw(near){
   g.restore();}
  if(decoy){g.globalAlpha=.7;soldier(decoy.x,decoy.y,decoy.face,true,false,false);g.globalAlpha=1;drawDecoySignalPulse(decoy.x,decoy.y,(5-decoy.t));}
  if(allyAlpha>.001){g.save();g.globalAlpha*=allyAlpha;
- drawPartner();
+ if(!mission?.extraction?.partner?.boarded)drawPartner();
  for(const ally of (allies||[]))if(ally.alive&&!(ally.chute>0)){drawBlastShadow(ally);soldier(ally.x,ally.y-blastLift(ally),ally.face,true,false,stageMode==='front'&&!!ally.frontMoving,false,ally.frontCommander?'blue':'',allyWeaponVisible(ally),false,ally);drawAllyStun(ally);}
  g.restore();}
  drawHound();drawEnemyDogs();
  for(const ab of airbombs){const mt=ab.maxT||.48,k=Math.max(0,Math.min(1,1-ab.t/mt));g.fillStyle=ab.fighter?'#252b31':'#171717';g.beginPath();g.ellipse(ab.x,ab.y,ab.fighter?7:5,ab.fighter?13:10,0,0,6.28);g.fill();g.strokeStyle=ab.fighter?'rgba(180,220,255,.65)':'rgba(255,190,80,.55)';g.beginPath();g.arc(ab.x,ab.y,(ab.fighter?20:14)*k,0,6.28);g.stroke();}
  if(!p.tank&&p.grappleT>0&&p.grappleTarget&&p.grappleTarget.alive){const h=p.grappleTarget,a=Math.atan2(h.y-p.y,h.x-p.x),k=1-p.grappleT/.3;g.save();g.strokeStyle='rgba(255,230,170,'+(1-k*.25)+')';g.lineWidth=3;g.beginPath();g.moveTo(p.x+Math.cos(a+.55)*8,p.y+Math.sin(a+.55)*8);g.lineTo(h.x-Math.cos(a)*5,h.y-Math.sin(a)*5);g.moveTo(p.x+Math.cos(a-.55)*8,p.y+Math.sin(a-.55)*8);g.lineTo(h.x-Math.cos(a)*5,h.y-Math.sin(a)*5);g.stroke();g.strokeStyle='rgba(255,255,255,'+(0.7-k*.4)+')';g.lineWidth=2;for(let q=0;q<3;q++){const off=(q-1)*7;g.beginPath();g.moveTo(p.x-Math.cos(a)*10+Math.cos(a+1.57)*off,p.y-Math.sin(a)*10+Math.sin(a+1.57)*off);g.lineTo(p.x-Math.cos(a)*20+Math.cos(a+1.57)*off,p.y-Math.sin(a)*20+Math.sin(a+1.57)*off);g.stroke();}g.restore();}
- if(!(stageMode==='indoor'&&mission?.extraction?.boarded)&&!(p.hp<=0&&(state==='dying'||state==='failed'))){
+ if(!mission?.extraction?.boarded&&!(p.hp<=0&&(state==='dying'||state==='failed'))){
  if(p.tank){if(!(p.tank.kind==='tank'&&inBush(p)))drawVehicle(p.tank,p.x,p.y,p.body,p.ang);if(p.tank.kind!=='tower'&&p.tank.f<=0)markVehicle(p.x,p.y-(p.tank.kind==='fighter'?66:p.tank.kind==='truck'?42:50),'fuel');}
  else if(p.sniperEnterT>0||p.sniperReadyT>0){drawSniperSetupPlayer();}
  else if(p.dig>0){if(digUsesWaterFx(p.x,p.y)){g.save();g.translate(p.x,p.y);g.rotate(p.body+1.5708);g.fillStyle='rgba(38,54,45,.92)';g.beginPath();g.ellipse(0,-2,7,9,0,0,6.28);g.fill();g.fillStyle='#66735f';g.beginPath();g.arc(0,-5,6,Math.PI,0);g.fill();g.strokeStyle='rgba(220,240,245,.65)';g.lineWidth=1.5;g.beginPath();g.moveTo(-10,4);g.quadraticCurveTo(0,8,10,4);g.stroke();g.restore();}else{g.fillStyle='#3a2a18';g.beginPath();g.ellipse(p.x,p.y+2,11,8,0,0,6.28);g.fill();g.fillStyle='#6b4e30';g.beginPath();g.ellipse(p.x,p.y,8,6,0,0,6.28);g.fill();}}
  else if(p.digPrep>0)drawDigPreparation();
- else if(state!=='dying'){drawBlastShadow(p);soldier(p.x,p.y-blastLift(p),p.body,true,false,!!(keys.ArrowUp||keys.ArrowDown||keys.ArrowLeft||keys.ArrowRight)||(stageMode==='indoor'&&state==='indoorEscape'&&mission?.extraction?.phase==='boarding'),false,'',false,true,p);}
+ else if(state!=='dying'){drawBlastShadow(p);soldier(p.x,p.y-blastLift(p),p.body,true,false,!!(keys.ArrowUp||keys.ArrowDown||keys.ArrowLeft||keys.ArrowRight)||(state==='indoorEscape'&&mission?.extraction?.phase==='boarding'),false,'',false,true,p);}
  }
  if(!p.tank&&p.drill>0){const a=p.body,t=performance.now()/90;g.save();g.translate(p.x,p.y);g.rotate(a);g.fillStyle='#30343a';g.beginPath();g.moveTo(10,-10);g.lineTo(48,0);g.lineTo(10,10);g.closePath();g.fill();g.strokeStyle='#d6d9dd';g.lineWidth=2;for(let q=0;q<4;q++){const xx=14+q*8,yy=Math.sin(t+q*1.7)*6;g.beginPath();g.moveTo(xx,-8+yy*.25);g.lineTo(xx+6,8-yy*.25);g.stroke();}g.fillStyle='#ffd27a';g.beginPath();g.arc(49,0,3+Math.sin(t)*1.2,0,6.28);g.fill();g.restore();if(p.drillTarget){g.fillStyle='rgba(0,0,0,.58)';g.fillRect(p.x-22,p.y-31,44,5);g.fillStyle='#ffd27a';g.fillRect(p.x-22,p.y-31,44*Math.min(1,p.drillHit/.5),5);}}
  drawGrassBushChunks(cx,cy);
@@ -7967,7 +7967,8 @@ function draw(near){
  drawSpinifexScatters(cx,cy);drawPartnerOrderSignal();
  g.restore();
  g=gm;gm.imageSmoothingEnabled=false;if(!MOBILE_VIEW)gm.drawImage(oc,0,0,W,H);drawFrontlineCargoNative(cx,cy);drawWeatherOverlay();
-  if(stageMode==='indoor'){drawInfiltrationLighting(cx,cy);drawInfiltrationExtraction(cx,cy);}
+ if(stageMode==='indoor')drawInfiltrationLighting(cx,cy);
+ if(mission?.extraction)drawInfiltrationExtraction(cx,cy);
  // 潜伏中：画面全体を徐々に暗くする。HUDはこの後に描画して可読性を維持。
  if(p.dig>0){
   const t=Math.max(0,Math.min(1,p.digElapsed||0)),swim=digUsesWaterFx(p.x,p.y);
@@ -8603,7 +8604,7 @@ function syncMissionBriefing(){
    document.getElementById('missionIndoorRules').hidden=stageMode!=='indoor';
    document.getElementById('missionIndoorDocuments').textContent='円に入り、重要資料'+(indoorBeginner?2:3)+'か所を回収';
    document.getElementById('missionBriefingTitle').textContent=escape?'脱出（テスト）':STAGE_ORDER.find(q=>q.id===currentStageId())?.name||(isTraining?'訓練開始':decisive?'決戦':stageMode==='indoor'?(typeof isLaboratoryStage==='function'&&isLaboratoryStage()?'潜入（中級）':indoorBeginner?'潜入（初級）':'潜入（上級）'):front?(isFrontlineBeginner()?'制圧（初級）':'制圧（上級）'):stageMode==='beginner'?'破壊（初級）':'破壊（上級）');
-   document.getElementById('missionBriefingGoal').textContent=escape?'密林5エリアを突破し、最後のEXITで5秒待機せよ':isTraining?'アイラと基本的な戦い方を学ぼう':decisive?'中継拠点を制圧し、砂漠の移動要塞を破壊せよ':stageMode==='indoor'?'重要資料を回収し、敵施設から脱出せよ':front?(isFrontlineBeginner()?'軍需物資':'戦術アンテナ')+'の'+(isFrontlineBeginner()?2:3)+'拠点を制圧せよ':stageMode==='beginner'?'軍事衛星施設を破壊せよ':currentStageId()==='base'?'戦略ミサイル基地を破壊せよ':'軍司令施設を破壊せよ';
+   document.getElementById('missionBriefingGoal').textContent=escape?'密林を抜け、最後の草原の道路で迎えを待て':isTraining?'アイラと基本的な戦い方を学ぼう':decisive?'中継拠点を制圧し、砂漠の移動要塞を破壊せよ':stageMode==='indoor'?'重要資料を回収し、敵施設から脱出せよ':front?(isFrontlineBeginner()?'軍需物資':'戦術アンテナ')+'の'+(isFrontlineBeginner()?2:3)+'拠点を制圧せよ':stageMode==='beginner'?'軍事衛星施設を破壊せよ':currentStageId()==='base'?'戦略ミサイル基地を破壊せよ':'軍司令施設を破壊せよ';
    document.getElementById('missionBegin').textContent=isTraining?'訓練開始':'作戦開始';
    document.getElementById('missionBegin').focus({preventScroll:true});
   }}
@@ -8793,7 +8794,7 @@ let firstMenuFrame=true,last=performance.now(),prevState=state;
 // 実機でrAFだけが約330ms途切れるため、タッチ端末のプレイ中はタイマーで駆動する。
 // 処理時間を差し引いて約60Hzを目標にし、次回予約は必ず1件だけ行う。
 function queueNextGameFrame(started){
- if(MOBILE_VIEW&&(state==='play'||(stageMode==='indoor'&&state==='indoorEscape'))&&document.visibilityState!=='hidden'){
+ if(MOBILE_VIEW&&(state==='play'||state==='indoorEscape')&&document.visibilityState!=='hidden'){
   setTimeout(()=>loop(performance.now()),Math.max(4,1000/60-(performance.now()-started)));
  }else requestAnimationFrame(loop);
 }
@@ -8851,11 +8852,11 @@ function reportGameError(error){
 <script src="js/jungle-hit-masks.js?v=2026.11.08.1710"></script>
 <script src="js/jungle-placement-masks.js?v=2026.11.08.2145"></script>
 <script src="js/jungle.js?v=2026.11.09.0927"></script>
-<script src="js/escape-test.js?v=2026.11.10.0010"></script>
+<script src="js/escape-test.js?v=2026.11.10.2005"></script>
 <script src="js/canyon.js?v=2026.11.09.2235"></script>
 <script src="js/vegetation.js?v=2026.11.08.1806"></script>
 <script src="js/laboratory.js?v=2026.10.31.2206"></script>
-<script src="js/infiltration-world.js?v=2026.11.08.2309"></script>
+<script src="js/infiltration-world.js?v=2026.11.10.2005"></script>
 <script src="js/infiltration-render.js?v=2026.10.31.2206"></script>
 <script src="js/input-diagnostics.js?v=2026.10.28.0713"></script>
 <script>

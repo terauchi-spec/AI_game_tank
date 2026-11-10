@@ -1,7 +1,13 @@
 // Developer-only escape mission. Terrain, foliage, combat and EXIT art reuse existing systems.
 const ESCAPE_TEST_AREAS=5,ESCAPE_TEST_AREA_HEIGHT=2400;
 function setupEscapeTestZones(){
- ZONES=Array.from({length:ESCAPE_TEST_AREAS},(_,i)=>({n:'密林',y0:WH-40-i*ESCAPE_TEST_AREA_HEIGHT,y1:WH-40-(i+1)*ESCAPE_TEST_AREA_HEIGHT,g:ZONE_STYLE['密林'].g,p:ZONE_STYLE['密林'].p.slice(),escapeArea:i}));
+ const makeZone=(n,y0,y1)=>({n,y0,y1,g:ZONE_STYLE[n].g,p:ZONE_STYLE[n].p.slice()});
+ const jungleStart=ESCAPE_TEST_AREAS*ESCAPE_TEST_AREA_HEIGHT+400;
+ ZONES=[makeZone('草原',WH,jungleStart),
+  ...Array.from({length:ESCAPE_TEST_AREAS},(_,i)=>{
+   const y0=jungleStart-i*ESCAPE_TEST_AREA_HEIGHT;
+   return {...makeZone('密林',y0,y0-ESCAPE_TEST_AREA_HEIGHT),escapeArea:i};
+  }),makeZone('草原',400,0)];
 }
 function setupEscapeTestWorld(){
  loadJungleAssets();document.body.classList.remove('front-battle');
@@ -9,31 +15,32 @@ function setupEscapeTestWorld(){
  scoreStats.startY=p.y;scoreStats.escapeTest=true;scoreStats.debugUsed=true;
  base={x:WW/2,y:-60000,w:COMMAND_BASE_W,h:COMMAND_BASE_H,hp:30,maxHp:30,deadAt:0};
  covers=[];objects=[];bushes=[];water=[];bridges=[];mud=[];cars=[];humans=[];etanks=[];items=[];bullets=[];parts=[];waves=[];fx=[];bombs=[];roadBands=[];areaDebugLabels=[];
- planJungleBuildings(ZONES);
- for(const z of ZONES){
+ const jungles=ZONES.slice(1,-1);
+ planJungleBuildings(jungles);
+ for(const z of jungles){
   z.escapeRiver=rollRiverCrossing(z.y1+(z.y0-z.y1)*(.45+R()*.1),{jungle:true});
   z.oasis=rollWildernessLake(z);if(z.oasis){separateJungleLake(z,z.escapeRiver,z.oasis);water.push(z.oasis);}
  }
  // Keep non-vegetation scenery out of the river and lake.
- const wet=r=>ZONES.some(z=>z.escapeRiver&&ov2(r,z.escapeRiver,40)||z.oasis&&oasisContains(z.oasis,r.x+r.w/2,r.y+r.h/2,Math.max(r.w,r.h)/2+8));
- const last=ZONES[ZONES.length-1],exit={x:WW/2,y:last.y1+110};
- // Both water surfaces can carry vegetation. Keep the EXIT clear.
- const giantBlocked=r=>circleHitsRect(exit.x,exit.y,125,r);
+ const wet=r=>jungles.some(z=>z.escapeRiver&&ov2(r,z.escapeRiver,40)||z.oasis&&oasisContains(z.oasis,r.x+r.w/2,r.y+r.h/2,Math.max(r.w,r.h)/2+8));
  const totals={covers:[],objects:[],bushes:[]};
- for(const z of ZONES){
+ for(const z of jungles){
   covers=[];objects=[];bushes=[];
   // The ordinary jungle seed includes five shared small native trees, not small jungle variants.
   for(let i=0;i<5;i++)covers.push({kd:6,x:i%2?WW-210+R()*120:26+R()*120,y:z.y1+120+(i+.2+R()*.5)/5*1700,w:TREE_BOX,h:TREE_BOX});
-  setupJungleScenery(z,giantBlocked);totals.covers.push(...covers);totals.objects.push(...objects);totals.bushes.push(...bushes);
+  setupJungleScenery(z);totals.covers.push(...covers);totals.objects.push(...objects);totals.bushes.push(...bushes);
  }
  covers=totals.covers;objects=totals.objects;bushes=totals.bushes;
  covers=covers.filter(c=>c.kd===6||!wet(coverSpriteRect(c)||c));
  objects=objects.filter(o=>!wet(objectAABB(o)));
- covers=covers.filter(c=>!circleHitsRect(exit.x,exit.y,125,coverSpriteRect(c)||c));
- objects=objects.filter(o=>!circleHitsRect(exit.x,exit.y,125,objectAABB(o)));bushes=bushes.filter(b=>!circleHitsRect(exit.x,exit.y,110,b));
- last.escapeExit=exit;
- setupJungleMud(ZONES);setupJungleTrails(ZONES);
- for(const z of ZONES){
+ const start=ZONES[0],last=ZONES[ZONES.length-1];
+ const [kd,w,h]=JUNGLE_ASSETS.palm;
+ for(const [x,dy] of [[54,44],[WW-190,64],[202,208],[WW-335,226]]){
+  covers.push({kd,x,y:start.y1+dy,w,h,jungleAsset:'palm',areaDebug:1});
+ }
+ last.escapeExit={x:WW/2,y:200};
+ setupJungleMud(jungles);setupJungleTrails(jungles);
+ for(const z of jungles){
   const inside=o=>o.y+o.h/2>z.y1&&o.y+o.h/2<=z.y0;
   z.jungleDensity.trees=covers.filter(c=>c.kd===6&&inside(c)).length;z.jungleDensity.grass=bushes.filter(b=>!b.spinifex&&inside(b)).length;z.jungleDensity.plants=bushes.filter(b=>b.spinifex&&inside(b)).length;
  }
@@ -42,9 +49,10 @@ function setupEscapeTestWorld(){
  debugMode=0;debugInvincible=false;baseSpawnT=99999;weather='clear';weatherNext=5+R()*10;weatherT=0;rainIntensity=0;
  commanderPrevX=p.x;commanderPrevY=p.y;commanderVelocity={x:0,y:0};commanderRallying=false;commanderSignals=[];
  captureBuildingGroundMarks();rebuildSpatialGrid();
- for(const z of ZONES)spawnAreaDebugEnemies(z,{blueCommander:true});
+ for(const z of jungles)spawnAreaDebugEnemies(z,{blueCommander:true});
  setupRoadTruckEvents();
- say('脱出：密林5エリアを突破し、最後のEXITで5秒待機せよ');
+ roadBands.push({x:0,y:last.escapeExit.y-160,w:WW,h:320,kind:'asphalt',lanes:4});
+ say('脱出：密林を抜け、最後の草原の道路で迎えを待て');
 }
 // Keep both independent rolls and original lake size. Reserve both feathered banks,
 // relocate the lake first, and move the river only if neither side has enough space.
@@ -79,7 +87,7 @@ function escapeEnemyLanding(target,reserved=[]){
 function updateEscapeEnemyDrop(m,dt){
  const event=m.enemyDrop;
  let plane=event.plane;
- if(!plane&&!event.parachutes.length&&m.index>=ESCAPE_ENEMY_DROP_AREAS[event.next]){
+ if(!plane&&!event.parachutes.length&&zoneAt(p.y).escapeArea>=ESCAPE_ENEMY_DROP_AREAS[event.next]){
   event.retry=Math.max(0,event.retry-dt);
   if(event.retry>0)return;
   const view=frontlineView(),x=Math.max(view.x+70,Math.min(view.x+view.w-70,p.x));
@@ -140,8 +148,9 @@ function updateEscapeTestMission(dt){
  updateEscapeEnemyDrop(m,dt);
  const inside=p.hp>0&&!p.tank&&D(p,m.exit)<INDOOR_EXIT_RADIUS;
  m.escapeExit=inside?m.exit:null;m.escapeProgress=inside?Math.min(INDOOR_EXIT_SECONDS,m.escapeProgress+dt):0;
- scoreStats.objectiveProgress=(m.index+Math.min(1,m.escapeProgress/INDOOR_EXIT_SECONDS))/ESCAPE_TEST_AREAS;
- if(m.escapeProgress>=INDOOR_EXIT_SECONDS-1e-9){m.escapeComplete=true;scoreStats.objectiveProgress=1;completeMission();}
+ scoreStats.objectiveProgress=(m.index+Math.min(1,m.escapeProgress/INDOOR_EXIT_SECONDS))/ZONES.length;
+ if(m.escapeProgress>=INDOOR_EXIT_SECONDS-1e-9){m.escapeComplete=true;scoreStats.objectiveProgress=1;completeMission();
+  beginInfiltrationExtraction(m.exit,{x:Math.max(0,Math.min(WW-W,p.x-W/2)),y:0});}
 }
 function drawEscapeTestMission(){
  const hud=document.getElementById('missionHud'),active=state==='play'&&mission?.escapeTest;
@@ -149,7 +158,8 @@ function drawEscapeTestMission(){
  const m=mission;
  if(performance.now()>=missionHudNextAt){
   missionHudNextAt=performance.now()+100;
-  const text='脱出（テスト）　密林 '+(m.index+1)+'/5\n'+(m.escapeExit?'EXIT：あと '+Math.max(0,INDOOR_EXIT_SECONDS-m.escapeProgress).toFixed(1)+'秒':'EXITまで '+distanceMeters(D(p,m.exit))+'m ／ 円内で5秒待機');
+  const zone=ZONES[m.index],area=zone.escapeArea===undefined?(m.index===0?'開始草原':'脱出地点の草原'):'密林 '+(zone.escapeArea+1)+'/'+ESCAPE_TEST_AREAS;
+  const text='脱出（テスト）　'+area+'\n'+(m.escapeExit?'EXIT：あと '+Math.max(0,INDOOR_EXIT_SECONDS-m.escapeProgress).toFixed(1)+'秒':'EXITまで '+distanceMeters(D(p,m.exit))+'m ／ 円内で5秒待機');
   if(hud.textContent!==text)hud.textContent=text;
  }
  const q=m.exit;if(q.x+INDOOR_EXIT_RADIUS<camX||q.x-INDOOR_EXIT_RADIUS>camX+W||q.y+INDOOR_EXIT_RADIUS<cam||q.y-INDOOR_EXIT_RADIUS>cam+H)return;

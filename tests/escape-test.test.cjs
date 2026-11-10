@@ -13,23 +13,26 @@ test('escape test selection is developer-only and does not change the ten offici
 test('five contiguous jungle areas reuse normal combat and terrain, with safe start and EXIT',()=>{
  const variants=new Set();
  for(const seed of [1,7,13,31,91]){
-  const h=start(seed);assert.equal(h.run('ZONES.length'),5);
-  assert.equal(h.run("ZONES.every((z,i)=>z.n==='密林'&&z.y0-z.y1===2400&&(i===0||ZONES[i-1].y1===z.y0))"),true);
-  assert.equal(h.run('zoneAt(p.y)===ZONES[0]'),true);assert.equal(h.run('zoneAt(mission.exit.y)===ZONES[4]'),true);
+  const h=start(seed);assert.equal(h.run('ZONES.length'),7);
+  assert.equal(h.run("ZONES[0].n==='草原'&&ZONES[6].n==='草原'&&ZONES.every((z,i)=>i===0||ZONES[i-1].y1===z.y0)"),true);
+  assert.equal(h.run("covers.filter(c=>c.jungleAsset==='palm'&&zoneAt(c.y+c.h/2)===ZONES[0]).length"),4);
+  assert.equal(h.run("roadBands.some(r=>r.kind==='asphalt'&&r.lanes===4&&r.h===320&&r.y+r.h/2===mission.exit.y)"),true);
+  assert.equal(h.run("ZONES.slice(1,-1).every(z=>z.n==='密林'&&z.y0-z.y1===2400)"),true);
+  assert.equal(h.run('zoneAt(p.y)===ZONES[0]'),true);assert.equal(h.run('zoneAt(mission.exit.y)===ZONES[6]'),true);
   assert.equal(h.run('inWaterAt(mission.exit.x,mission.exit.y)||hitsC(mission.exit.x,mission.exit.y,90)||hitsM(p.x,p.y,8)'),false);
   assert.equal(h.run('areaDebugEnabled||debugInvincible||cars.some(v=>v.debugInfinite)'),false);
   assert.equal(h.run('cars.length'),1);assert.equal(h.run('humans.length'),45);assert.equal(h.run('etanks.length'),10);
-  assert.equal(h.run('ZONES.every(z=>z.jungleDensity.trees>5&&z.jungleDensity.grass>20)'),true);
+  assert.equal(h.run('ZONES.slice(1,-1).every(z=>z.jungleDensity.trees>5&&z.jungleDensity.grass>20)'),true);
   assert.equal(h.run('ZONES.every(z=>!z.escapeRiver||z.escapeRiver.h>=150&&z.escapeRiver.h<=250&&z.escapeRiver.bridge===null)'),true);
   assert.equal(h.run('ZONES.every(z=>!z.oasis||z.oasis.sizeScale>=.2&&z.oasis.sizeScale<=1.5&&water.includes(z.oasis))'),true);
-  assert.equal(h.run("ZONES.every(z=>covers.filter(c=>c.jungleAsset==='fern_tree'&&zoneAt(c.y+c.h/2)===z).length>=2)"),true);
+  assert.equal(h.run("ZONES.slice(1,-1).every(z=>covers.filter(c=>c.jungleAsset==='fern_tree'&&zoneAt(c.y+c.h/2)===z).length>=2)"),true);
   assert.equal(h.run("covers.some(c=>c.kd===6&&water.some(w=>!w.oasis&&circleHitsRect(c.x+c.w/2,c.y+c.h/2,0,w)))"),true);
   assert.equal(h.run("bushes.some(b=>water.some(w=>!w.oasis&&circleHitsRect(b.x+b.w/2,b.y+b.h/2,0,w)))"),true);
   assert.equal(h.run('bridges.length'),0);
-  assert.equal(h.run("ZONES.every(z=>humans.filter(h=>h.commander==='blue'&&zoneAt(h.y)===z).length===1)"),true);
+  assert.equal(h.run("ZONES.slice(1,-1).every(z=>humans.filter(h=>h.commander==='blue'&&zoneAt(h.y)===z).length===1)"),true);
   variants.add(h.run('ZONES.map(z=>Number(!!z.escapeRiver)+2*Number(!!z.oasis)).join()'));
-  assert.equal(h.run('ZONES.every(z=>z.jungleCoreLayout)&&covers.filter(c=>c.jungleCore).length>=3'),true);
-  assert.equal(h.run('ZONES.every(z=>{for(let y=z.y1+32;y<Math.min(p.y,z.y0)-40;y+=8)if(hitsC(jungleRouteX(z,y),y,28))return false;return true;})'),true);
+  assert.equal(h.run('ZONES.slice(1,-1).every(z=>z.jungleCoreLayout)&&covers.filter(c=>c.jungleCore).length>=3'),true);
+  assert.equal(h.run('ZONES.slice(1,-1).every(z=>{for(let y=z.y1+32;y<Math.min(p.y,z.y0)-40;y+=8)if(hitsC(jungleRouteX(z,y),y,28))return false;return true;})'),true);
   h.run('draw();for(let i=0;i<120;i++)update(1/60);p.x=mission.exit.x;p.y=mission.exit.y;cam=p.y-300;draw()');
   assert.equal(h.run('state'),'play');
  }
@@ -41,7 +44,10 @@ test('EXIT requires five uninterrupted seconds on foot, resets outside, and fina
  h.run('p.x+=INDOOR_EXIT_RADIUS+1;updateMission(.2)');assert.equal(h.run('mission.escapeProgress'),0);
  h.run('p.x=mission.exit.x;p.tank=cars[0];updateMission(5)');assert.equal(h.run('mission.escapeProgress'),0);
  h.run("p.tank=null;state='briefing';updateMission(5)");assert.equal(h.run('mission.escapeProgress'),0);
- h.run("p.y=0;state='play';updateMission(.1)");assert.equal(h.run('mission.index'),4);h.run('p.y=mission.exit.y;updateMission(5)');assert.equal(h.run('state'),'succeeded');assert.equal(h.run('scoreStats.final.cleared'),true);
+ h.run("p.y=0;state='play';updateMission(.1)");assert.equal(h.run('mission.index'),6);h.run('p.y=mission.exit.y;updateMission(5);draw()');
+ assert.equal(h.run('state'),'indoorEscape');assert.equal(h.run('mission.extraction.carX<mission.extraction.stopX'),true);
+ h.run('updateInfiltrationExtraction(2.8);draw()');assert.equal(h.run('state'),'succeeded');
+ h.run('updateInfiltrationExtraction(1.8)');assert.equal(h.run('mission.extraction.phase'),'departed');assert.equal(h.run('scoreStats.final.cleared'),true);
  assert.equal(h.run('scoreStats.awards.disabled&&scoreStats.debugUsed'),true);assert.equal(h.run('scoreStats.objectiveProgress'),1);
  const final=h.run('scoreStats.final');h.run('updateMission(5);finalizeScore(true);draw()');assert.equal(h.run('scoreStats.final'),final);
  assert.deepEqual(Array.from(h.storage.entries()),before);
@@ -66,18 +72,18 @@ test('jungle buildings, separate water banks and capped marshes remain safe acro
  for(let seed=1;seed<=30;seed++){
   const h=start(seed);
   assert.equal(h.run("covers.some(c=>c.jungleAsset==='watchtower')"),false);
-  assert.equal(h.run("ZONES.every(z=>humans.filter(h=>h.commander==='blue'&&zoneAt(h.y)===z).length===1)"),true,'commander seed '+seed);
+  assert.equal(h.run("ZONES.slice(1,-1).every(z=>humans.filter(h=>h.commander==='blue'&&zoneAt(h.y)===z).length===1)"),true,'commander seed '+seed);
   assert.equal(h.run('covers.filter(c=>JUNGLE_BUILDING_KEYS.includes(c.jungleAsset)).length<=5'),true);
-  assert.equal(h.run('ZONES.every(z=>covers.filter(c=>JUNGLE_BUILDING_KEYS.includes(c.jungleAsset)&&zoneAt(c.y+c.h/2)===z).length<=2)'),true);
-  for(const n of h.run('ZONES.map(z=>z.jungleBuildingKeys.length)'))planned.add(n);
+  assert.equal(h.run('ZONES.slice(1,-1).every(z=>covers.filter(c=>JUNGLE_BUILDING_KEYS.includes(c.jungleAsset)&&zoneAt(c.y+c.h/2)===z).length<=2)'),true);
+  for(const n of h.run('ZONES.slice(1,-1).map(z=>z.jungleBuildingKeys.length)'))planned.add(n);
   for(const key of h.run('covers.filter(c=>JUNGLE_BUILDING_KEYS.includes(c.jungleAsset)).map(c=>c.jungleAsset)'))buildingTypes.add(key);
   assert.equal(h.run('ZONES.every(z=>!z.escapeRiver||!z.oasis||z.oasis.y+z.oasis.h+80<=z.escapeRiver.y+1e-7||z.oasis.y>=z.escapeRiver.y+z.escapeRiver.h+80-1e-7)'),true,'banks seed '+seed);
   assert.equal(h.run('mud.length<=5&&mud.every(m=>m.w>=105&&m.w<=260&&m.h>=48&&m.h<=106&&!water.some(w=>ov2(m,w,50))&&!bridges.some(w=>ov2(m,w,50))&&!covers.some(c=>ov2(m,coverSpriteRect(c)||c,5)))'),true,'mud seed '+seed);
   assert.equal(h.run('inWaterAt(mission.exit.x,mission.exit.y,90)||inMudAt(mission.exit.x,mission.exit.y,90)||hitsC(mission.exit.x,mission.exit.y,90)||inSlowTerrainAt(p.x,p.y,8)||hitsM(p.x,p.y,8)'),false,'start/exit seed '+seed);
   lakesWithRivers+=h.run('ZONES.filter(z=>z.escapeRiver&&z.oasis).length');ponds+=h.run('mud.length');
-  trails+=h.run('roadBands.length');assert.equal(h.run("roadBands.length<=5&&roadBands.every(r=>r.kind==='dirt'&&r.lanes===1&&r.h===96&&!water.some(w=>ov2(r,w,60))&&!mud.some(m=>ov2(r,m,24)))"),true);
+  trails+=h.run('roadBands.length-1');assert.equal(h.run("roadBands.length<=6&&roadBands.slice(0,-1).every(r=>r.kind==='dirt'&&r.lanes===1&&r.h===96&&!water.some(w=>ov2(r,w,60))&&!mud.some(m=>ov2(r,m,24)))"),true);
   h.run('for(const r of roadBands){const cache=roadVisualCache(r);if(!cache||cache!==roadVisualCache(r))throw Error("trail cache not reused");}');
-  assert.equal(h.run('roadTruckEvents.length===roadBands.length&&roadTruckEvents.every(t=>roadBands.includes(t.road)&&t.state==="waiting")'),true);
+  assert.equal(h.run('roadTruckEvents.length===roadBands.length-1&&roadTruckEvents.every(t=>roadBands.includes(t.road)&&t.state==="waiting")'),true);
   assert.equal(h.run('roadTruckEvents.every(t=>!covers.some(c=>segmentHitsCover({x:0,y:t.y},{x:WW,y:t.y},c,ROAD_TRUCK_HALF_WIDTH)))'),true);
   lakeTrees+=h.run("covers.filter(c=>c.kd===6&&water.some(w=>w.oasis&&oasisContains(w,c.x+c.w/2,c.y+c.h/2))).length");
   lakeGrass+=h.run("bushes.filter(b=>water.some(w=>w.oasis&&oasisContains(w,b.x+b.w/2,b.y+b.h/2))).length");
@@ -139,7 +145,7 @@ test('escape areas two and four each drop three white soldiers early without bom
  h.run('updateEscapeTestMission(1)');
  assert.equal(h.run('mission.enemyDrop.next'),0);
  for(const [area,total] of [[1,3],[3,6]]){
-  h.run(`p.y=ZONES[${area}].y0-160;updateEscapeTestMission(1/60)`);
+  h.run(`p.y=ZONES[${area+1}].y0-160;updateEscapeTestMission(1/60)`);
   assert.equal(h.run('mission.enemyDrop.next'),total/3);
   assert.equal(h.run('mission.enemyDrop.plane.dropY'),h.run('Math.max(frontlineView().y+70,p.y-220)-120'));
   h.run('while(mission.enemyDrop.plane.y<mission.enemyDrop.plane.dropY+120)updateEscapeTestMission(1/60);');
@@ -153,7 +159,7 @@ test('escape areas two and four each drop three white soldiers early without bom
   assert.ok(h.run('!mission.enemyDrop.plane&&!mission.enemyDrop.parachutes.length'));
   assert.equal(h.run('bombs.length+airbombs.length'),0);
  }
- h.run('p.y=ZONES[1].y0-160;updateEscapeTestMission(1);p.y=ZONES[3].y0-160;updateEscapeTestMission(1)');
+ h.run('p.y=ZONES[2].y0-160;updateEscapeTestMission(1);p.y=ZONES[4].y0-160;updateEscapeTestMission(1)');
  assert.equal(h.run('humans.filter(h=>h.escapeParatrooper).length'),6);
  assert.equal(h.run('mission.enemyDrop.plane'),null);
 });
