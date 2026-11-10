@@ -3147,11 +3147,34 @@ function drawInfiltrationAlarmEyes(){
  }
  gm.restore();
 }
+function drawRescueAdvancedHud(el){
+ const r=indoorWorld.rescue;if(!r)return;
+ const floor=indoorWorld.currentFloor,labels=['1F','B1F','B2F','B3F'];
+ const rescued=r.vip.freed,hasKey=r.key.done,unlocked=r.door.rescueUnlocked;
+ const task=!hasKey?'鍵を探して円内で8秒待機':!unlocked?'B3Fの赤い扉を解錠':!rescued?'B3Fの要人に接触': '要人と一緒に1F屋外のEXITへ';
+ el.innerHTML='<b>救出（上級） '+labels[floor]+'</b><small>'+task+'</small>';
+ gm.save();gm.setTransform(1,0,0,1,0,0);
+ gm.textAlign='right';gm.font='bold 14px system-ui';gm.fillStyle='#e6e9d8';
+ gm.fillText('エリア:'+labels[floor],W-12,34);
+ if(hasKey){gm.fillStyle='#ffdb68';gm.font='bold 23px system-ui';gm.fillText('⚿',W-18,65);}
+ if(!rescued&&floor!==3){gm.fillStyle='#ffe1a0';gm.font='bold 26px system-ui';gm.fillText('→B3F',W-12,99);}
+ else if(!rescued){const a=Math.atan2(r.vip.y-p.y,r.vip.x-p.x);gm.save();gm.translate(W-35,94);gm.rotate(a);gm.fillStyle='#ffe1a0';gm.beginPath();gm.moveTo(18,0);gm.lineTo(-10,-11);gm.lineTo(-4,0);gm.lineTo(-10,11);gm.closePath();gm.fill();gm.restore();}
+ else {gm.fillStyle='#a9f3c0';gm.font='bold 21px system-ui';gm.fillText('→EXIT',W-12,99);}
+ if(!hasKey&&floor+1===r.key.floor){
+  const q=r.key,x=q.x-camX,y=q.y-cam,rad=INDOOR_ACQUIRE_RADIUS;
+  gm.fillStyle='rgba(255,214,92,.16)';gm.strokeStyle='#ffdb68';gm.lineWidth=3;
+  gm.beginPath();gm.arc(x,y,rad,0,Math.PI*2);gm.fill();gm.stroke();
+  gm.lineWidth=7;gm.beginPath();gm.arc(x,y,rad,-Math.PI/2,-Math.PI/2+Math.PI*2*q.progress/INDOOR_ACQUIRE_SECONDS);gm.stroke();
+  gm.font='bold 22px system-ui';gm.textAlign='center';gm.fillStyle='#ffe69c';gm.fillText('⚿',x,y+7);
+ }
+ gm.restore();
+}
 function drawInfiltrationMission(){
   const el=document.getElementById('missionHud');
   const visible=stageMode==='indoor'&&state==='play'&&mission&&indoorWorld;
   if(!visible){if(el.style.display!=='none')el.style.display='none';return;}
   if(el.style.display!=='block')el.style.display='block';
+  if(rescueAdvancedTest){drawRescueAdvancedHud(el);return;}
   const now=performance.now();
   if(now>=indoorHudRefresh){
     indoorHudRefresh=now+120;
