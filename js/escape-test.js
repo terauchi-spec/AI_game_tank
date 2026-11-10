@@ -1,5 +1,6 @@
 // Developer-only escape mission. Terrain, foliage, combat and EXIT art reuse existing systems.
 const ESCAPE_TEST_AREAS=5,ESCAPE_TEST_AREA_HEIGHT=2400;
+const ESCAPE_VIP_FOLLOW_DELAY=.3,ESCAPE_VIP_FOLLOW_SPEED=212*.7;
 function setupEscapeTestZones(){
  const makeZone=(n,y0,y1)=>({n,y0,y1,g:ZONE_STYLE[n].g,p:ZONE_STYLE[n].p.slice()});
  const jungleStart=ESCAPE_TEST_AREAS*ESCAPE_TEST_AREA_HEIGHT+400;
@@ -16,10 +17,10 @@ function setupEscapeTestWorld(){
  base={x:WW/2,y:-60000,w:COMMAND_BASE_W,h:COMMAND_BASE_H,hp:30,maxHp:30,deadAt:0};
  covers=[];objects=[];bushes=[];water=[];bridges=[];mud=[];cars=[];humans=[];etanks=[];items=[];bullets=[];parts=[];waves=[];fx=[];bombs=[];roadBands=[];areaDebugLabels=[];
  const jungles=ZONES.slice(1,-1);
- planJungleBuildings(jungles);
+ planJungleBuildings(jungles,2);
  for(const z of jungles){
-  z.escapeRiver=rollRiverCrossing(z.y1+(z.y0-z.y1)*(.45+R()*.1),{jungle:true});
-  z.oasis=rollWildernessLake(z);if(z.oasis){separateJungleLake(z,z.escapeRiver,z.oasis);water.push(z.oasis);}
+  z.escapeRiver=rollRiverCrossing(z.y1+(z.y0-z.y1)*(.45+R()*.1),{jungle:true,chance:.6,maxWidth:300});
+  z.oasis=rollWildernessLake(z,.4);if(z.oasis){separateJungleLake(z,z.escapeRiver,z.oasis);water.push(z.oasis);}
  }
  // Keep non-vegetation scenery out of the river and lake.
  const wet=r=>jungles.some(z=>z.escapeRiver&&ov2(r,z.escapeRiver,40)||z.oasis&&oasisContains(z.oasis,r.x+r.w/2,r.y+r.h/2,Math.max(r.w,r.h)/2+8));
@@ -163,7 +164,7 @@ function recallEscapeVip(vip){
   for(const dx of [0,-36,36,-76,76,-120,120,-175,175]){
    const x=Math.max(view.x+12,Math.min(view.x+view.w-12,p.x+dx));
    if(hitsC(x,y,10)||Math.hypot(x-p.x,y-p.y)<24)continue;
-   Object.assign(vip,{x,y,wallFollow:null,sideStep:null,moving:false});
+   Object.assign(vip,{x,y,wallFollow:null,sideStep:null,moving:false,followWait:ESCAPE_VIP_FOLLOW_DELAY});
    return;
   }
  }
@@ -176,10 +177,15 @@ function updateEscapeVip(dt){
  const blocked=behind.x<12||behind.x>WW-12||behind.y<12||behind.y>WH-12||hitsC(behind.x,behind.y,8);
  const goal=waiting&&(blocked||D(behind,exit)>INDOOR_EXIT_RADIUS-6)?exit:blocked?p:behind;
  const distance=D(vip,goal),arrival=goal===p?36:2;
- if(distance>arrival)movePartnerFollower(vip,goal,Math.min(212,(distance-arrival)/dt),dt);
- else{
+ if(distance<=arrival){
   vip.moving=false;vip.wallFollow=null;vip.sideStep=null;vip.face=p.body;
+  vip.followWait=ESCAPE_VIP_FOLLOW_DELAY;
+  return;
  }
+ const wait=vip.followWait??ESCAPE_VIP_FOLLOW_DELAY,moveDt=dt-wait;
+ vip.followWait=Math.max(0,-moveDt);
+ if(moveDt>1e-9)movePartnerFollower(vip,goal,Math.min(ESCAPE_VIP_FOLLOW_SPEED,(distance-arrival)/moveDt),moveDt);
+ else vip.moving=false;
 }
 function drawEscapeVipSprite(ctx,x,y,face,moving){
  const stride=moving?Math.sin(performance.now()*.018)*3:0;

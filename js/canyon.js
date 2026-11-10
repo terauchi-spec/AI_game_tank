@@ -16,9 +16,9 @@ function wildernessRockSprite(c){
  for(let i=0;i<d.length;i+=4){if(!d[i+3])continue;const light=.2126*d[i]+.7152*d[i+1]+.0722*d[i+2],v=Math.max(12,Math.min(225,(light-96)*1.45+112));d[i]=Math.min(255,v*1.15);d[i+1]=v*.72;d[i+2]=v*.40;}q.putImageData(pixels,0,0);
  canvas.complete=true;canvas.naturalWidth=canvas.width;canvas.naturalHeight=canvas.height;wildernessRockCache.set(im,canvas);return canvas;
 }
-function rollWildernessLake(z){
+function rollWildernessLake(z,chance=.55){
  const top=Math.max(0,z.y1),bottom=Math.min(WH,z.y0),span=bottom-top;
- if(R()>=.55)return null;
+ if(R()>=chance)return null;
    // Scale both dimensions together so the original shape stays intact.
    const sizeScale=.2+R()*1.3,baseW=600+R()*220,baseH=Math.min(440+R()*240,span*.42);
    const w=baseW*sizeScale,h=baseH*sizeScale;

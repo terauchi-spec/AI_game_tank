@@ -42,15 +42,15 @@ function rotateJungleLog(c,angle){
  }
  c.jungleHitMask=rows;
 }
-// Allocate before area generation so the five-area stage cannot exceed five buildings.
+// Roll the base allocation before scaling the building budget for a stage.
 // Keep source assets (including the retired concrete tower) for existing art/physics data.
 const JUNGLE_BUILDING_KEYS=['wood_hut_small','wood_hut_large','concrete_hut','wood_watchtower'];
-function planJungleBuildings(zones){
+function planJungleBuildings(zones,multiplier=1){
  const shuffled=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
  let remaining=5;
  for(const z of shuffled(zones)){
   const count=Math.min(Math.floor(R()*3),remaining);remaining-=count;
-  z.jungleBuildingKeys=shuffled(JUNGLE_BUILDING_KEYS).slice(0,count);
+  z.jungleBuildingKeys=shuffled(JUNGLE_BUILDING_KEYS).slice(0,count*multiplier);
  }
 }
 function setupJungleMud(zones){

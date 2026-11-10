@@ -23,7 +23,7 @@ test('five contiguous jungle areas reuse normal combat and terrain, with safe st
   assert.equal(h.run('areaDebugEnabled||debugInvincible||cars.some(v=>v.debugInfinite)'),false);
   assert.equal(h.run('cars.length'),1);assert.equal(h.run('humans.length'),45);assert.equal(h.run('etanks.length'),10);
   assert.equal(h.run('ZONES.slice(1,-1).every(z=>z.jungleDensity.trees>5&&z.jungleDensity.grass>20)'),true);
-  assert.equal(h.run('ZONES.every(z=>!z.escapeRiver||z.escapeRiver.h>=150&&z.escapeRiver.h<=250&&z.escapeRiver.bridge===null)'),true);
+  assert.equal(h.run('ZONES.every(z=>!z.escapeRiver||z.escapeRiver.h>=150&&z.escapeRiver.h<=300&&z.escapeRiver.bridge===null)'),true);
   assert.equal(h.run('ZONES.every(z=>!z.oasis||z.oasis.sizeScale>=.2&&z.oasis.sizeScale<=1.5&&water.includes(z.oasis))'),true);
   assert.equal(h.run("ZONES.slice(1,-1).every(z=>covers.filter(c=>c.jungleAsset==='fern_tree'&&zoneAt(c.y+c.h/2)===z).length>=2)"),true);
   assert.equal(h.run("covers.some(c=>c.kd===6&&water.some(w=>!w.oasis&&circleHitsRect(c.x+c.w/2,c.y+c.h/2,0,w)))"),true);
@@ -60,7 +60,7 @@ test('EXIT requires five uninterrupted seconds on foot, resets outside, and fina
 test('VIP follows unarmed, rejoins from below without healing, and takes enemy fire',()=>{
  const h=start();
  assert.equal(h.run('mission.vip.hp'),3);
- h.run('p.y-=100;globalThis.before=D(p,mission.vip);for(let i=0;i<15;i++)updateEscapeVip(1/60)');
+ h.run('p.y-=100;globalThis.before=D(p,mission.vip);for(let i=0;i<40;i++)updateEscapeVip(1/60)');
  assert.ok(h.run('D(p,mission.vip)<before'));
  assert.equal(h.run('bullets.length'),0);
  h.run("mission.vip.hp=2;mission.vip.y=0;recallEscapeVip(mission.vip)");
@@ -77,6 +77,17 @@ test('VIP follows unarmed, rejoins from below without healing, and takes enemy f
  assert.equal(h.run('state'),'failed');
  assert.equal(h.run('scoreStats.final.cleared'),false);
  assert.equal(h.run("targetObj('escapeVip')"),null);
+});
+test('VIP waits 0.3 seconds before following at 70 percent speed',()=>{
+ const h=start();
+ h.run('p.y-=100;globalThis.from={x:mission.vip.x,y:mission.vip.y};for(let i=0;i<18;i++)updateEscapeVip(1/60)');
+ assert.equal(h.run('D(from,mission.vip)'),0);
+ h.run('updateEscapeVip(.1)');
+ assert.ok(h.run('Math.abs(D(from,mission.vip)-212*.7*.1)<1e-7'));
+ h.run('Object.assign(mission.vip,partnerFollowGoal(36));updateEscapeVip(.1);p.y-=50;Object.assign(from,mission.vip);updateEscapeVip(.29)');
+ assert.equal(h.run('D(from,mission.vip)'),0);
+ h.run('updateEscapeVip(.02)');
+ assert.ok(h.run('Math.abs(D(from,mission.vip)-212*.7*.01)<1e-7'));
 });
 test('VIP hearts are drawn in the top right even when the EXIT is off-screen',()=>{
  const h=start();
@@ -112,6 +123,9 @@ test('shared river and lake generators retain legacy probability boundaries, siz
  const canyon=fs.readFileSync(path.join(root,'js/canyon.js'),'utf8'),lake=canyon.slice(canyon.indexOf('function rollWildernessLake('),canyon.indexOf('function buildCanyonZones('));
  function run(code,seq){let draws=0;const c={WW:960,WH:12800,Math,R:()=>{if(draws>=seq.length)throw Error('unexpected random draw');return seq[draws++];},water:[],bridges:[]};vm.createContext(c);const value=vm.runInContext(code,c);return {value:JSON.parse(JSON.stringify(value)),draws,c};}
  assert.equal(run(river+'rollRiverCrossing(5000)',[.75]).value,null);assert.equal(run(lake+'rollWildernessLake({y1:1000,y0:3400})',[.55]).value,null);
+ assert.equal(run(river+'rollRiverCrossing(5000,{jungle:true,chance:.6,maxWidth:300})',[.6]).value,null);
+ assert.equal(run(lake+'rollWildernessLake({y1:1000,y0:3400},.4)',[.4]).value,null);
+ assert.equal(run(lake+'rollWildernessLake({y1:1000,y0:3400},.4)',[.399999,.5,.5,.5,.5,.5]).value.sizeScale,.2+.5*1.3);
  for(const n of [0,.5,.999999]){
   const r=run(river+'rollRiverCrossing(5000)',[.749999,n,.25,.5,.5,.5]);assert.equal(r.draws,6);assert.equal(r.value.h,35+Math.pow(n,.72)*565);assert.equal(r.c.water.length,2);assert.equal(r.c.bridges.length,1);assert.equal(r.value.bridge.w,160);
   const l=run(lake+'rollWildernessLake({y1:1000,y0:3400})',[.549999,n,.5,.5,.5,.5]);assert.equal(l.draws,6);assert.equal(l.value.sizeScale,.2+n*1.3);assert.equal(l.value.w,710*l.value.sizeScale);assert.equal(l.value.h,560*l.value.sizeScale);assert.equal(l.value.flowSpeed,0);
@@ -124,8 +138,8 @@ test('jungle buildings, separate water banks and capped marshes remain safe acro
   const h=start(seed);
   assert.equal(h.run("covers.some(c=>c.jungleAsset==='watchtower')"),false);
   assert.equal(h.run("ZONES.slice(1,-1).every(z=>humans.filter(h=>h.commander==='blue'&&zoneAt(h.y)===z).length===1)"),true,'commander seed '+seed);
-  assert.equal(h.run('covers.filter(c=>JUNGLE_BUILDING_KEYS.includes(c.jungleAsset)).length<=5'),true);
-  assert.equal(h.run('ZONES.slice(1,-1).every(z=>covers.filter(c=>JUNGLE_BUILDING_KEYS.includes(c.jungleAsset)&&zoneAt(c.y+c.h/2)===z).length<=2)'),true);
+  assert.equal(h.run('covers.filter(c=>JUNGLE_BUILDING_KEYS.includes(c.jungleAsset)).length<=10'),true);
+  assert.equal(h.run('ZONES.slice(1,-1).every(z=>covers.filter(c=>JUNGLE_BUILDING_KEYS.includes(c.jungleAsset)&&zoneAt(c.y+c.h/2)===z).length<=4)'),true);
   for(const n of h.run('ZONES.slice(1,-1).map(z=>z.jungleBuildingKeys.length)'))planned.add(n);
   for(const key of h.run('covers.filter(c=>JUNGLE_BUILDING_KEYS.includes(c.jungleAsset)).map(c=>c.jungleAsset)'))buildingTypes.add(key);
   assert.equal(h.run('ZONES.every(z=>!z.escapeRiver||!z.oasis||z.oasis.y+z.oasis.h+80<=z.escapeRiver.y+1e-7||z.oasis.y>=z.escapeRiver.y+z.escapeRiver.h+80-1e-7)'),true,'banks seed '+seed);
@@ -144,7 +158,7 @@ test('jungle buildings, separate water banks and capped marshes remain safe acro
    assert.equal(h.run('terrainMoveScale(p,1,0,8)'),.3);h.run('p.tank=cars[0]');assert.equal(h.run('terrainMoveScale(p,1,0,8)'),.6);
   }
  }
- assert.deepEqual([...planned].sort(),[0,1,2]);assert.equal(buildingTypes.size,4);assert.ok(lakesWithRivers>20&&ponds>10&&trails>50&&lakeTrees>0&&lakeGrass>0);
+ assert.deepEqual([...planned].sort(),[0,2,4]);assert.equal(buildingTypes.size,4);assert.ok(lakesWithRivers>20&&ponds>10&&trails>50&&lakeTrees>0&&lakeGrass>0);
 });
 test('large overlapping lake is relocated without changing dimensions or bridge/current geometry',()=>{
  const h=start();h.run("water=[{x:0,y:2075,w:300,h:250,flowDir:-1,flowSpeed:12},{x:500,y:2075,w:460,h:250,flowDir:-1,flowSpeed:12}];bridges=[{x:300,y:2075,w:200,h:250}];globalThis.river={x:0,y:2075,w:960,h:250,bridge:bridges[0]};globalThis.pond={x:-120,y:1650,w:1200,h:1020,sizeScale:1.5};separateJungleLake({y1:1000,y0:3400},river,pond)");
@@ -152,17 +166,17 @@ test('large overlapping lake is relocated without changing dimensions or bridge/
  assert.equal(h.run('pond.y+pond.h+80<=river.y+1e-7||pond.y>=river.y+river.h+80-1e-7'),true);
  assert.equal(h.run('water.every(w=>w.y===river.y&&w.h===250&&w.flowDir===-1&&w.flowSpeed===12)&&bridges[0].y===river.y&&bridges[0].h===250'),true);
 });
-test('jungle rivers retain their 150–250px width distribution and never generate bridges',()=>{
+test('escape rivers are 150–300px wide, roll at 60 percent, and never generate bridges',()=>{
  const html=fs.readFileSync(path.join(root,'index.html'),'utf8'),source=html.slice(html.indexOf('function rollRiverCrossing('),html.indexOf('function reset(',html.indexOf('function rollRiverCrossing(')));
  let seed=7;const c={WW:960,Math,water:[],bridges:[],R:()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/2**32)};vm.createContext(c);vm.runInContext(source,c);
  let total=0,narrow=0;
  for(let i=0;i<3000;i++){
-  c.water=[];c.bridges=[];const r=c.rollRiverCrossing(5000,{jungle:true});if(!r)continue;
-  total++;if(r.h<200)narrow++;
-  assert.ok(r.h>=150&&r.h<=250);assert.equal(r.bridge,null);assert.equal(c.bridges.length,0);
+  c.water=[];c.bridges=[];const r=c.rollRiverCrossing(5000,{jungle:true,chance:.6,maxWidth:300});if(!r)continue;
+  total++;if(r.h<225)narrow++;
+  assert.ok(r.h>=150&&r.h<=300);assert.equal(r.bridge,null);assert.equal(c.bridges.length,0);
   assert.equal(c.water.length,1);assert.equal(c.water[0].w,960);
  }
- assert.ok(total/3000>.71&&total/3000<.79);
+ assert.ok(total/3000>.56&&total/3000<.64);
  assert.ok(narrow/total>.33&&narrow/total<.42);
 });
 

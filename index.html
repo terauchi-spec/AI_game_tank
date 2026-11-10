@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.10.2201</title>
+<title>こっそり戦車大作戦 2026.11.10.2210</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -720,7 +720,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 1250ms ease-o
 <li><strong>制圧（初級）：</strong>開始草原と抽選された3エリア。南部に小型コンテナ1つ、北部に大型コンテナ6つを配置します。同時に活動する敵歩兵は最大8人です。</li>
 <li><strong>制圧（中級・上級）：</strong>南部・中央・北部の3拠点。中級は小型アンテナ2基と大型アンテナ1基、上級はロケットの下部・中央部・上部が目標です。南部・中央の制圧半径は36m、北部は54mです。同時に活動する敵歩兵は最大16人です。拠点を制圧するとライフが回復し、次の拠点へ進む際は味方の増援が到着します。</li>
 <li><strong>制圧の味方部隊：</strong>プレイヤーが開始地点から北へ24m前進すると進軍します。5人に1人が無線機とバズーカを持つ指揮官です。気絶した味方兵は10秒経過するか、徒歩のプレイヤーが触れると復帰します。</li>
-<li><strong>密林：</strong>草木や倒木が通路を遮り、橋のない川、湖、沼、獣道が出現することがあります。脱出ステージの建物は1エリアにつき最大2棟、全体で最大5棟です。</li>
+<li><strong>密林：</strong>草木や倒木が通路を遮り、橋のない川、湖、沼、獣道が出現することがあります。脱出ステージでは川の出現率は60%（幅150〜300px）、湖は40%です。建物は1エリアにつき最大4棟、全体で最大10棟です。</li>
 </ul>
 <ul><li>エリアごとに地形や建物、木、岩、草むら、障害物などの配置が異なります。作戦1回の通常車両は合計2〜5台で、トラック・装甲車・戦車からランダムに選ばれ、戦車が最低1台出現します。戦闘機は通常配置の対象外です。橋幅は64〜256px、川ごとの流速は6〜30px/秒です。</li><li>左右端の危険度は<strong>左重点・右重点・両側重点</strong>から毎回抽選され、巡回兵の配置や遮蔽物が変化します。</li><li>荒野は赤茶色の砂地・ひび割れた粘土質の地面・風化した岩山・残丘で構成されます。時折砂嵐が起き、視界と索敵距離が低下します。オアシスは毎回出現するとは限らず、出現時は基準サイズの20〜150%の大きさにランダム変化し、中央や画面端に生成され、池へ入ると川と同様に減速します。草むらは少なめですが、オアシス周辺に多く、まれに赤や白の小花が混じります。地面と池の描画はキャッシュします。迷路基地には広い会議室と幅の広い廊下、空きスペースの木箱があります。青の通常兵はつながった通路を広く探索します。迷路壁は256px高の区画単位で描画をキャッシュし、破壊された区画だけ再描画します。描画キャッシュは最大8区画です。迷路壁はプレイヤー戦車の接触で破壊できます。接触による破壊範囲は少し抑えており、押し込み続けると広がります。トラック・装甲車の接触では破壊できません。木箱等の爆風では破壊できます。敵司令本部にも固有の構造があります。</li><li>道路は川と同様に2か所の候補それぞれで独立して75%の出現抽選を行います。アスファルト舗装・乾いた締め固め土を各50%、土の道路は1車線（96px）・対面2車線（176px）を各50%、舗装道路は対面2車線（176px）・対面4車線（320px）を各50%で選択します。川・橋と司令本部を避けて配置し、土の道路は迷路基地も避けます。舗装道路は迷路基地にも出現し、道幅の壁を除去します。場所が確保できない場合は出現しません。対面車線の中央は白い実線です。路面には汚れ・補修跡・ひび、白線には濃い汚れと不規則な塗装欠けを表現します。敵の障害物迂回探索は複数フレームへ分割し、全敵合計で約2msを目安に処理します。道路の描画は初回にキャッシュし、画面内だけ表示します。土の道路は横筋を抑えた専用タイルを使用し、不規則な路肩が周囲の地面になじみます。中央付近には、太めで濃い雑草を不規則に配置しています。道路上には建物・木・岩・塀・草むら・泥を配置しません。舗装道路と重なる木箱・ドラム缶は路肩の安全な空き場所へ移動し、空き場所がなければ除去します。土の道路は明るさと彩度を抑えて周囲になじませます。道路自体による速度変更はありません。マップ・敵・障害物の配置は出撃ごとに再生成されます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
@@ -1021,7 +1021,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.10.2201',FILE_CREATED_AT='2026/11/10 22:01',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.10.2210',FILE_CREATED_AT='2026/11/10 22:10',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -3128,10 +3128,10 @@ function distributeFlankPatrols(){
 }
 
 // Shared occurrence and width curve, with jungle-specific width and bridge odds.
-function rollRiverCrossing(ry,{jungle=false}={}){
-  // 各候補地点で75%の確率で川を生成。通常35〜600px、密林150〜250px。
-  if(R()>=.75)return null;
-  const riverH=(jungle?150:35)+Math.pow(R(),.72)*(jungle?100:565),flowDir=R()<.5?-1:1,flowSpeed=6+R()*24;
+function rollRiverCrossing(ry,{jungle=false,chance=.75,maxWidth=jungle?250:600}={}){
+  if(R()>=chance)return null;
+  const minWidth=jungle?150:35;
+  const riverH=minWidth+Math.pow(R(),.72)*(maxWidth-minWidth),flowDir=R()<.5?-1:1,flowSpeed=6+R()*24;
   if(jungle){water.push({x:0,y:ry-riverH/2,w:WW,h:riverH,flowDir,flowSpeed});return {x:0,y:ry-riverH/2,w:WW,h:riverH,bridge:null};}
   // 橋は1つの川につき最大1本。同じ川の左右と橋は流向を共有する。
   const bw=64+R()*192,bx=24+R()*Math.max(1,WW-bw-48);
@@ -8865,9 +8865,9 @@ function reportGameError(error){
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/jungle-hit-masks.js?v=2026.11.08.1710"></script>
 <script src="js/jungle-placement-masks.js?v=2026.11.08.2145"></script>
-<script src="js/jungle.js?v=2026.11.09.0927"></script>
-<script src="js/escape-test.js?v=2026.11.10.2201"></script>
-<script src="js/canyon.js?v=2026.11.09.2235"></script>
+<script src="js/jungle.js?v=2026.11.10.2210"></script>
+<script src="js/escape-test.js?v=2026.11.10.2210"></script>
+<script src="js/canyon.js?v=2026.11.10.2210"></script>
 <script src="js/vegetation.js?v=2026.11.08.1806"></script>
 <script src="js/laboratory.js?v=2026.10.31.2206"></script>
 <script src="js/infiltration-world.js?v=2026.11.10.2038"></script>
