@@ -1253,8 +1253,7 @@ function setupInfiltrationWorld(){
   covers.push(...indoorWorld.exterior);
   patrolRoutesVisible=false;
   rebuildSpatialGrid();
-  if(rescueAdvancedTest)setupRescueAdvancedMission();
-  else say('拠点潜入：廊下の物資に身を隠し、重要資料'+INDOOR_FILES_TOTAL+'箇所を回収せよ');
+  if(!rescueAdvancedTest)say('拠点潜入：廊下の物資に身を隠し、重要資料'+INDOOR_FILES_TOTAL+'箇所を回収せよ');
 }
 // One pair on 1F in advanced sorties; laboratories reuse one patrol per floor.
 // Setup-only grid sampling; no extra roster slot or recurring dog reinforcement.
@@ -1485,6 +1484,7 @@ function drawRescueAdvancedMission(){
 }
 
 function setupInfiltrationMission(){
+  if(rescueAdvancedTest){setupRescueAdvancedMission();return;}
   mission={index:0,progress:0,points:indoorWorld.intel,exit:indoorWorld.exit,detected:false,
     current:null,alarm:0,escapeProgress:0,escapeExit:null,escapeComplete:false};
 }
