@@ -2757,6 +2757,7 @@ function updateInfiltrationExtraction(dt){
     if(ride.boarded){q.x=v.carX-25;q.y=v.y-10;q.face=0;q.moving=false;}
     else{q.moving=!(q.stun>0)&&Math.hypot(q.x-oldX,q.y-oldY)>.01;if(q.moving)q.face=Math.atan2(q.y-oldY,q.x-oldX);}
   }
+  if(v.vip)updateEscapeVipBoarding(v,t);
   if(v.boarded&&state==='indoorEscape'){state='succeeded';successFrameDrawn=false;resultAnimT=0;}
 }
 let indoorJeepCanvas=null;
@@ -2792,6 +2793,7 @@ function drawInfiltrationExtraction(cx,cy){
     gm.fillStyle='#67734d';gm.beginPath();gm.arc(-9,9,6,0,Math.PI*2);gm.fill();
     gm.fillStyle='#b5372e';gm.fillRect(-10,3,3,12);
   }
+  if(v.vip?.boarded)drawEscapeVipSprite(gm,-30,10,0,false);
   if(v.partner?.boarded){
     gm.fillStyle='#d0b58a';gm.beginPath();gm.arc(-24,-9,6,0,Math.PI*2);gm.fill();
     gm.fillStyle='#4e6855';gm.beginPath();gm.arc(-25,-10,6,0,Math.PI*2);gm.fill();

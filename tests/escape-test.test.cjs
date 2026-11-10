@@ -39,18 +39,44 @@ test('five contiguous jungle areas reuse normal combat and terrain, with safe st
  assert.ok(variants.size>1);
 });
 test('EXIT requires five uninterrupted seconds on foot, resets outside, and finalizes exactly once without saving',()=>{
- const h=start(),before=Array.from(h.storage.entries());h.run('recordStageSortie(scoreStats);p.x=mission.exit.x;p.y=mission.exit.y;updateMission(4.9)');
- assert.equal(h.run('state'),'play');assert.equal(h.run('mission.escapeProgress'),4.9);
+ const h=start(),before=Array.from(h.storage.entries());h.run('recordStageSortie(scoreStats);p.x=mission.exit.x;p.y=mission.exit.y;updateMission(5)');
+ assert.equal(h.run('state'),'play');assert.equal(h.run('mission.escapeProgress'),0);
+ h.run('Object.assign(mission.vip,mission.exit);updateMission(4.9)');
+ assert.equal(h.run('mission.escapeProgress'),4.9);
+ h.run('mission.vip.x+=INDOOR_EXIT_RADIUS+1;updateMission(.2)');
+ assert.equal(h.run('mission.escapeProgress'),0);
+ h.run('Object.assign(mission.vip,mission.exit);updateMission(4.9)');
  h.run('p.x+=INDOOR_EXIT_RADIUS+1;updateMission(.2)');assert.equal(h.run('mission.escapeProgress'),0);
  h.run('p.x=mission.exit.x;p.tank=cars[0];updateMission(5)');assert.equal(h.run('mission.escapeProgress'),0);
  h.run("p.tank=null;state='briefing';updateMission(5)");assert.equal(h.run('mission.escapeProgress'),0);
  h.run("p.y=0;state='play';updateMission(.1)");assert.equal(h.run('mission.index'),6);h.run('p.y=mission.exit.y;updateMission(5);draw()');
  assert.equal(h.run('state'),'indoorEscape');assert.equal(h.run('mission.extraction.carX<mission.extraction.stopX'),true);
- h.run('updateInfiltrationExtraction(2.8);draw()');assert.equal(h.run('state'),'succeeded');
+ h.run('updateInfiltrationExtraction(2.8);draw()');assert.equal(h.run('state'),'succeeded');assert.equal(h.run('mission.extraction.vip.boarded'),true);
  h.run('updateInfiltrationExtraction(1.8)');assert.equal(h.run('mission.extraction.phase'),'departed');assert.equal(h.run('scoreStats.final.cleared'),true);
  assert.equal(h.run('scoreStats.awards.disabled&&scoreStats.debugUsed'),true);assert.equal(h.run('scoreStats.objectiveProgress'),1);
  const final=h.run('scoreStats.final');h.run('updateMission(5);finalizeScore(true);draw()');assert.equal(h.run('scoreStats.final'),final);
  assert.deepEqual(Array.from(h.storage.entries()),before);
+});
+test('VIP follows unarmed, rejoins from below without healing, and takes enemy fire',()=>{
+ const h=start();
+ assert.equal(h.run('mission.vip.hp'),3);
+ h.run('p.y-=100;globalThis.before=D(p,mission.vip);for(let i=0;i<15;i++)updateEscapeVip(1/60)');
+ assert.ok(h.run('D(p,mission.vip)<before'));
+ assert.equal(h.run('bullets.length'),0);
+ h.run("mission.vip.hp=2;mission.vip.y=0;recallEscapeVip(mission.vip)");
+ assert.equal(h.run('mission.vip.hp'),2);
+ assert.ok(h.run('mission.vip.y>=frontlineView().y+H-48'));
+ h.run("p.x=400;p.y=12600;Object.assign(mission.vip,{x:520,y:12600,hp:3});p.dig=2;globalThis.enemy={x:545,y:12600};humans=[enemy];etanks=[];covers=[];objects=[];rebuildSpatialGrid()");
+ assert.equal(h.run("findDetectedTarget(enemy,Math.PI).key"),'escapeVip');
+ assert.equal(h.run("targetObj('escapeVip')===mission.vip"),true);
+ h.run('humans=[]');
+ for(let remaining=2;remaining>=0;remaining--){
+  h.run("fire(mission.vip.x+16,mission.vip.y,Math.PI,'e','r',600,240);update(.033)");
+  assert.equal(h.run('mission.vip.hp'),remaining);
+ }
+ assert.equal(h.run('state'),'failed');
+ assert.equal(h.run('scoreStats.final.cleared'),false);
+ assert.equal(h.run("targetObj('escapeVip')"),null);
 });
 test('test failure cannot save records and returning to a normal stage clears the escape mission',()=>{
  const h=start(),before=Array.from(h.storage.entries());h.run("p.hp=0;updateMission(5);finalizeScore(false)");assert.equal(h.run('scoreStats.final.cleared'),false);assert.deepEqual(Array.from(h.storage.entries()),before);

@@ -52,7 +52,7 @@ function setupEscapeTestWorld(){
  for(const z of jungles)spawnAreaDebugEnemies(z,{blueCommander:true});
  setupRoadTruckEvents();
  roadBands.push({x:0,y:last.escapeExit.y-160,w:WW,h:320,kind:'asphalt',lanes:4});
- say('脱出：密林を抜け、最後の草原の道路で迎えを待て');
+ say('脱出：要人女性を護衛し、最後の草原のEXITへ');
 }
 // Keep both independent rolls and original lake size. Reserve both feathered banks,
 // relocate the lake first, and move the river only if neither side has enough space.
@@ -70,7 +70,7 @@ function separateJungleLake(z,river,pond){
  const [lo,hi]=choices[Math.floor(R()*choices.length)];pond.y=lo+R()*(hi-lo);
 }
 function setupEscapeTestMission(){
- mission={escapeTest:true,exit:ZONES[ZONES.length-1].escapeExit,escapeProgress:0,escapeExit:null,escapeComplete:false,points:[],index:0,enemyDrop:{next:0,plane:null,parachutes:[],retry:0}};missionHudNextAt=0;
+ mission={escapeTest:true,vip:{x:p.x-30,y:p.y+40,face:p.body,hp:3,moving:false},exit:ZONES[ZONES.length-1].escapeExit,escapeProgress:0,escapeExit:null,escapeComplete:false,points:[],index:0,enemyDrop:{next:0,plane:null,parachutes:[],retry:0}};missionHudNextAt=0;
 }
 // The two passes are keyed to progress, so backtracking cannot repeat them.
 const ESCAPE_ENEMY_DROP_AREAS=[1,3];
@@ -142,15 +142,82 @@ function drawEscapeEnemyDrop(cx,cy){
  const plane=event.plane;
  if(plane&&drawPointInView(plane.x,plane.y,cx,cy,180))drawSupportBomber(plane.x,plane.y,true);
 }
+function escapeVipTarget(){
+ const vip=mission?.vip;
+ return vip?.hp>0?vip:null;
+}
+function damageEscapeVip(vip){
+ if(!vip||vip.hp<=0||state!=='play')return;
+ vip.hp--;
+ burst(vip.x,vip.y,7,'#f28b9f',75);
+ if(vip.hp>0){say('要人女性が被弾！ 残りライフ '+vip.hp);return;}
+ vip.moving=false;state='failed';failureFrameDrawn=false;
+ finalizeScore(false);sfx('lose');
+}
+function recallEscapeVip(vip){
+ const view=frontlineView();
+ if(vip.x>=view.x-12&&vip.x<=view.x+view.w+12&&vip.y>=view.y-12&&vip.y<=view.y+view.h+12)return;
+ const bottom=Math.min(WH-12,view.y+view.h-12);
+ for(let row=0;row<8;row++){
+  const y=bottom-row*18;
+  for(const dx of [0,-36,36,-76,76,-120,120,-175,175]){
+   const x=Math.max(view.x+12,Math.min(view.x+view.w-12,p.x+dx));
+   if(hitsC(x,y,10)||Math.hypot(x-p.x,y-p.y)<24)continue;
+   Object.assign(vip,{x,y,wallFollow:null,sideStep:null,moving:false});
+   return;
+  }
+ }
+}
+function updateEscapeVip(dt){
+ const vip=escapeVipTarget();if(!vip)return;
+ recallEscapeVip(vip);
+ const exit=mission.exit,waiting=!p.tank&&D(p,exit)<INDOOR_EXIT_RADIUS;
+ const goal=waiting?exit:p,distance=D(vip,goal);
+ vip.moving=false;
+ if(distance>(waiting?INDOOR_EXIT_RADIUS-12:42)){
+  const x=vip.x,y=vip.y;
+  moveAllySmart(vip,goal,Math.min(212,Math.max(0,distance-24)/dt),dt);
+  vip.moving=Math.hypot(vip.x-x,vip.y-y)>.1;
+ }
+}
+function drawEscapeVipSprite(ctx,x,y,face,moving){
+ const stride=moving?Math.sin(performance.now()*.018)*3:0;
+ ctx.save();ctx.translate(x,y);ctx.rotate(face);
+ ctx.fillStyle='rgba(0,0,0,.28)';ctx.beginPath();ctx.ellipse(-1,2,10,11,0,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#37303f';ctx.fillRect(-10+stride,-6,9,4);ctx.fillRect(-10-stride,2,9,4);
+ ctx.fillStyle='#a73d6b';ctx.beginPath();ctx.ellipse(-1,0,7,10,0,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#44302d';ctx.beginPath();ctx.ellipse(2,0,8,6.7,0,0,Math.PI*2);ctx.fill();
+ ctx.fillRect(-9,-2.5,10,5);
+ ctx.fillStyle='#e9b58f';ctx.beginPath();ctx.ellipse(6,0,4.6,4.8,0,0,Math.PI*2);ctx.fill();
+ ctx.restore();
+}
+function drawEscapeVip(cx,cy){
+ const vip=mission?.vip;
+ if(!vip||mission.extraction?.vip?.boarded||!drawPointInView(vip.x,vip.y,cx,cy,45))return;
+ drawEscapeVipSprite(g,vip.x,vip.y,vip.face,vip.moving);
+ g.save();g.textAlign='center';g.font='bold 12px sans-serif';
+ const label='要人 '+('♥'.repeat(vip.hp))+'♡'.repeat(3-vip.hp);
+ g.strokeStyle='#241525';g.lineWidth=3;g.strokeText(label,vip.x,vip.y-18);
+ g.fillStyle='#ffd0df';g.fillText(label,vip.x,vip.y-18);g.restore();
+}
+function updateEscapeVipBoarding(v,t){
+ const ride=v.vip,vip=ride.actor;
+ const u=Math.max(0,Math.min(1,(t-2.05)/.75)),x=v.stopX-30,y=v.y+10;
+ if(u>=1){ride.boarded=true;vip.moving=false;return;}
+ vip.x=ride.x+(x-ride.x)*u;vip.y=ride.y+(y-ride.y)*u;
+ vip.face=Math.atan2(y-ride.y,x-ride.x);vip.moving=u>0;
+}
 function updateEscapeTestMission(dt){
  if(state!=='play'||!mission?.escapeTest||mission.escapeComplete)return;
  const m=mission;m.index=Math.max(0,ZONES.indexOf(zoneAt(p.y)));
  updateEscapeEnemyDrop(m,dt);
- const inside=p.hp>0&&!p.tank&&D(p,m.exit)<INDOOR_EXIT_RADIUS;
+ const playerInside=p.hp>0&&!p.tank&&D(p,m.exit)<INDOOR_EXIT_RADIUS;
+ const inside=playerInside&&m.vip.hp>0&&D(m.vip,m.exit)<INDOOR_EXIT_RADIUS;
  m.escapeExit=inside?m.exit:null;m.escapeProgress=inside?Math.min(INDOOR_EXIT_SECONDS,m.escapeProgress+dt):0;
  scoreStats.objectiveProgress=(m.index+Math.min(1,m.escapeProgress/INDOOR_EXIT_SECONDS))/ZONES.length;
  if(m.escapeProgress>=INDOOR_EXIT_SECONDS-1e-9){m.escapeComplete=true;scoreStats.objectiveProgress=1;completeMission();
-  beginInfiltrationExtraction(m.exit,{x:Math.max(0,Math.min(WW-W,p.x-W/2)),y:0});}
+  beginInfiltrationExtraction(m.exit,{x:Math.max(0,Math.min(WW-W,p.x-W/2)),y:0});
+  m.extraction.vip={actor:m.vip,x:m.vip.x,y:m.vip.y,boarded:false};}
 }
 function drawEscapeTestMission(){
  const hud=document.getElementById('missionHud'),active=state==='play'&&mission?.escapeTest;
@@ -159,7 +226,7 @@ function drawEscapeTestMission(){
  if(performance.now()>=missionHudNextAt){
   missionHudNextAt=performance.now()+100;
   const zone=ZONES[m.index],area=zone.escapeArea===undefined?(m.index===0?'開始草原':'脱出地点の草原'):'密林 '+(zone.escapeArea+1)+'/'+ESCAPE_TEST_AREAS;
-  const text='脱出（テスト）　'+area+'\n'+(m.escapeExit?'EXIT：あと '+Math.max(0,INDOOR_EXIT_SECONDS-m.escapeProgress).toFixed(1)+'秒':'EXITまで '+distanceMeters(D(p,m.exit))+'m ／ 円内で5秒待機');
+  const text='脱出（テスト）　'+area+' ／ 要人 '+('♥'.repeat(m.vip.hp))+'♡'.repeat(3-m.vip.hp)+'\n'+(m.escapeExit?'EXIT：あと '+Math.max(0,INDOOR_EXIT_SECONDS-m.escapeProgress).toFixed(1)+'秒':'EXITまで '+distanceMeters(D(p,m.exit))+'m ／ 要人と円内で5秒待機');
   if(hud.textContent!==text)hud.textContent=text;
  }
  const q=m.exit;if(q.x+INDOOR_EXIT_RADIUS<camX||q.x-INDOOR_EXIT_RADIUS>camX+W||q.y+INDOOR_EXIT_RADIUS<cam||q.y-INDOOR_EXIT_RADIUS>cam+H)return;
