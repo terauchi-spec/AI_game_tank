@@ -21,7 +21,7 @@ const STAGE_ORDER=[
 const STAGE_DISPLAY_ORDER=STAGE_ORDER.map(stage=>stage.id);
 function stageDisplayNumber(id){if(id==='training')return '00';return String(STAGE_DISPLAY_ORDER.indexOf(id)+1).padStart(2,'0');}
 function stageSelectionName(name){return name.replace('拠点破壊','破壊').replace('前線制圧','制圧');}
-function currentStageId(){if(rescueAdvancedTest)return 'rescueAdvancedTest';if((stageMode==='base'&&intermediateStageId==='baseIntermediate')||(stageMode==='front'&&!frontlineBeginner&&!(typeof frontlineOni!=='undefined'&&frontlineOni)&&intermediateStageId==='frontIntermediate'))return intermediateStageId;if(typeof isLaboratoryStage==='function'&&isLaboratoryStage())return 'indoorLab';if(typeof isDecisiveStage==='function'&&isDecisiveStage())return 'decisive';return stageMode==='front'&&typeof frontlineOni!=='undefined'&&frontlineOni?'frontOni':stageMode==='front'&&frontlineBeginner?'frontBeginner':stageMode==='indoor'&&typeof indoorBeginner!=='undefined'&&indoorBeginner?'indoorBeginner':stageMode;}
+function currentStageId(){if((stageMode==='base'&&intermediateStageId==='baseIntermediate')||(stageMode==='front'&&!frontlineBeginner&&!(typeof frontlineOni!=='undefined'&&frontlineOni)&&intermediateStageId==='frontIntermediate'))return intermediateStageId;if(typeof isLaboratoryStage==='function'&&isLaboratoryStage())return 'indoorLab';if(typeof isDecisiveStage==='function'&&isDecisiveStage())return 'decisive';return stageMode==='front'&&typeof frontlineOni!=='undefined'&&frontlineOni?'frontOni':stageMode==='front'&&frontlineBeginner?'frontBeginner':stageMode==='indoor'&&typeof indoorBeginner!=='undefined'&&indoorBeginner?'indoorBeginner':stageMode;}
 function readStageProgress(){
  let saved;try{saved=JSON.parse(localStorage.getItem(STAGE_PROGRESS_KEY)||'null');}catch(_){}
  const earned=new Set();
@@ -72,13 +72,13 @@ function readStageRecords(){
  return{version:1,stages};
 }
 function recordStageSortie(s){
- if(!s||s.stageSortieRecorded||areaDebugEnabled)return;
+ if(!s||s.stageSortieRecorded||areaDebugEnabled||rescueAdvancedTest)return;
  const id=currentStageId();if(!STAGE_ORDER.some(stage=>stage.id===id))return;
  const data=readStageRecords();data.stages[id].sorties++;
  try{localStorage.setItem(STAGE_RECORDS_KEY,JSON.stringify(data));s.stageSortieRecorded=true;s.stageRecordId=id;}catch(_){s.stageRecordSaveFailed=true;}
 }
 function recordStageResult(s){
- if(!s?.final||s.stageResultRecorded||areaDebugEnabled)return;
+ if(!s?.final||s.stageResultRecorded||areaDebugEnabled||rescueAdvancedTest)return;
  recordStageSortie(s);
  const id=s.stageRecordId;if(!STAGE_ORDER.some(stage=>stage.id===id))return;
  const data=readStageRecords(),v=data.stages[id],score=s.final.total,rank=s.final.rank;
