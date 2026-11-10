@@ -875,7 +875,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null,second
 // A stage map adapter; uses the main game's player, enemies, all skills,
 // collisions, rendering and scoring loops without duplicating their behavior.
 // 屋内専用の縦長座標変換。幅は画面内に収め、奥行きを広げて総床面積を約2倍にする。
-const INDOOR_FLOOR_OFFSETS=[13100,9300,5500,1700],INDOOR_FORECOURT_DEPTH=900;
+const INDOOR_FLOOR_OFFSETS=[9300,5500,1700],INDOOR_FORECOURT_DEPTH=900;
 let INDOOR_SCALE_X=1,INDOOR_SCALE_Y=1.75,INDOOR_OFFSET_X=-40;
 let indoorWorld=null,indoorHudSnapshot='',indoorHudRefresh=0,indoorAlarmGradient=null;
 
@@ -1087,7 +1087,7 @@ function setupInfiltrationWorld(){
   const fileDistribution=R(),groundFiles=beginner?1:fileDistribution<.5?1:2;
   const shuffled=floorNumbers;
   for(const n of shuffled){
-    const raw=rawFloors[n-1],off=INDOOR_FLOOR_OFFSETS[n-1];
+    const raw=rawFloors[n-1],off=rescueAdvancedTest?[13100,9300,5500,1700][n-1]:INDOOR_FLOOR_OFFSETS[n-1];
     const to=pt=>indoorAt(pt.x,pt.y,off);
     const rooms=raw.rooms.map(r=>{const rect=indoorRect(r,off);
       return{...rect,id:r.id,name:r.name,purpose:r.purpose,size:r.size,isGuardPost:!!r.isGuardPost,...(r.laboratoryRole?{laboratoryRole:r.laboratoryRole}:{}),tiles:r.tiles.map(tile=>indoorRect(tile,off))};
