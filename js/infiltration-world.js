@@ -1480,6 +1480,17 @@ function updateRescueAdvancedMission(dt){
 function drawRescueAdvancedMission(){
  const r=indoorWorld?.rescue;if(!r)return;
  const vip=r.vip;
+ if(indoorWorld.currentFloor===3){
+  const room=r.room;g.save();g.strokeStyle='#89949c';g.lineWidth=3;
+  // Cell bars are visual overlays on the existing solid room walls.
+  for(let x=room.x+12;x<room.x+room.w-8;x+=20){
+   for(const y of [room.y+6,room.y+room.h-6]){
+    if(Math.hypot(x-r.door.x,y-r.door.y)<38)continue;
+    g.beginPath();g.moveTo(x,y-8);g.lineTo(x,y+8);g.stroke();
+   }
+  }
+  g.restore();
+ }
  if(vip.indoorFloor===indoorWorld.currentFloor+1){drawEscapeVipSprite(g,vip.x,vip.y,vip.face,vip.moving,vip);if(vip.stunT>0)drawStunStars(vip.x,vip.y);}
 }
 
