@@ -60,7 +60,7 @@ test('EXIT requires five uninterrupted seconds on foot, resets outside, and fina
 test('VIP follows unarmed, rejoins from below without healing, and takes enemy fire',()=>{
  const h=start();
  assert.equal(h.run('mission.vip.hp'),3);
- h.run('p.y-=100;globalThis.before=D(p,mission.vip);for(let i=0;i<40;i++)updateEscapeVip(1/60)');
+ h.run('p.y-=100;globalThis.before=D(p,mission.vip);for(let i=0;i<55;i++)updateEscapeVip(1/60)');
  assert.ok(h.run('D(p,mission.vip)<before'));
  assert.equal(h.run('bullets.length'),0);
  h.run("mission.vip.hp=2;mission.vip.y=0;recallEscapeVip(mission.vip)");
@@ -78,13 +78,13 @@ test('VIP follows unarmed, rejoins from below without healing, and takes enemy f
  assert.equal(h.run('scoreStats.final.cleared'),false);
  assert.equal(h.run("targetObj('escapeVip')"),null);
 });
-test('VIP waits 0.3 seconds before following at 70 percent speed',()=>{
+test('VIP waits 0.6 seconds before following at 70 percent speed',()=>{
  const h=start();
- h.run('p.y-=100;globalThis.from={x:mission.vip.x,y:mission.vip.y};for(let i=0;i<18;i++)updateEscapeVip(1/60)');
+ h.run('p.y-=100;globalThis.from={x:mission.vip.x,y:mission.vip.y};for(let i=0;i<36;i++)updateEscapeVip(1/60)');
  assert.equal(h.run('D(from,mission.vip)'),0);
  h.run('updateEscapeVip(.1)');
  assert.ok(h.run('Math.abs(D(from,mission.vip)-212*.7*.1)<1e-7'));
- h.run('Object.assign(mission.vip,partnerFollowGoal(36));updateEscapeVip(.1);p.y-=50;Object.assign(from,mission.vip);updateEscapeVip(.29)');
+ h.run('Object.assign(mission.vip,partnerFollowGoal(36));updateEscapeVip(.1);p.y-=50;Object.assign(from,mission.vip);updateEscapeVip(.59)');
  assert.equal(h.run('D(from,mission.vip)'),0);
  h.run('updateEscapeVip(.02)');
  assert.ok(h.run('Math.abs(D(from,mission.vip)-212*.7*.01)<1e-7'));

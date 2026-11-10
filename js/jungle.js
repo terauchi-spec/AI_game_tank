@@ -6,6 +6,21 @@ const JUNGLE_BUILDING_BASE={wood_hut_small:[160*1.1,135*1.1],wood_hut_large:[220
 function loadJungleAssets(){
  for(const key of [...Object.keys(JUNGLE_ASSETS),...JUNGLE_PLANTS])if(!COVER_IMG['jungle_'+key])COVER_IMG['jungle_'+key]=makeAssetImage(ASSET_DIR+'jungle/'+key+'.webp?v='+GAME_VERSION);
 }
+let escapeHutShade=null;
+function escapeHutImage(image){
+ if(escapeHutShade)return escapeHutShade;
+ // Shade the sprite once; source-atop preserves its transparent outline.
+ const canvas=document.createElement('canvas');
+ canvas.width=image.naturalWidth;canvas.height=image.naturalHeight;
+ const ctx=gameCanvasContext(canvas);
+ if(!ctx)return image;
+ ctx.drawImage(image,0,0);
+ ctx.globalCompositeOperation='source-atop';
+ ctx.fillStyle='rgba(0,0,0,.10)';
+ ctx.fillRect(0,0,canvas.width,canvas.height);
+ escapeHutShade=canvas;
+ return canvas;
+}
 // Alpha silhouettes are compiled at build time; collision never reads canvas pixels.
 // Each of the 32 rows is a bitset. Query only cells near the actor/projectile.
 function jungleMaskIntersects(c,x0,y0,x1,y1,test,hitScale=1){

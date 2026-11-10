@@ -1,6 +1,6 @@
 // Developer-only escape mission. Terrain, foliage, combat and EXIT art reuse existing systems.
 const ESCAPE_TEST_AREAS=5,ESCAPE_TEST_AREA_HEIGHT=2400;
-const ESCAPE_VIP_FOLLOW_DELAY=.3,ESCAPE_VIP_FOLLOW_SPEED=212*.7;
+const ESCAPE_VIP_FOLLOW_DELAY=.6,ESCAPE_VIP_FOLLOW_SPEED=212*.7;
 function setupEscapeTestZones(){
  const makeZone=(n,y0,y1)=>({n,y0,y1,g:ZONE_STYLE[n].g,p:ZONE_STYLE[n].p.slice()});
  const jungleStart=ESCAPE_TEST_AREAS*ESCAPE_TEST_AREA_HEIGHT+400;
