@@ -89,6 +89,31 @@ test('VIP waits 0.6 seconds before following at 70 percent speed',()=>{
  h.run('updateEscapeVip(.02)');
  assert.ok(h.run('Math.abs(D(from,mission.vip)-212*.7*.01)<1e-7'));
 });
+test('VIP waits again when the player restarts before the VIP catches up',()=>{
+ const h=start();
+ h.run('p.y-=150;updateEscapeVip(.61);updateEscapeVip(.1)');
+ assert.equal(h.run('mission.vip.moving'),true);
+ h.run('p.y-=50;globalThis.restart={x:mission.vip.x,y:mission.vip.y};updateEscapeVip(.59)');
+ assert.equal(h.run('D(restart,mission.vip)'),0);
+ h.run('updateEscapeVip(.02)');
+ assert.ok(h.run('Math.abs(D(restart,mission.vip)-212*.7*.01)<1e-7'));
+});
+test('grass hides the VIP from fresh searches and clears existing pursuit after one second',()=>{
+ const h=start();
+ h.run(`p.dig=2;Object.assign(mission.vip,{x:520,y:12600});
+  globalThis.guard={x:545,y:12600,alive:true,st:1,target:'escapeVip'};
+  globalThis.tank={...guard};globalThis.playerGuard={...guard,target:'p'};
+  humans=[guard,playerGuard];etanks=[tank];bushes=[];covers=[];objects=[];rebuildSpatialGrid();`);
+ assert.equal(h.run("findDetectedTarget(guard,Math.PI).key"),'escapeVip');
+ h.run('bushes=[{x:500,y:12580,w:40,h:40}];rebuildSpatialGrid();updateEscapeVipConcealment(mission.vip,.99)');
+ assert.equal(h.run('findDetectedTarget(guard,Math.PI)'),null);
+ assert.equal(h.run('inheritAlertFromHuman(playerGuard,guard)'),false);
+ assert.equal(h.run("guard.target==='escapeVip'&&tank.target==='escapeVip'"),true);
+ h.run('updateEscapeVipConcealment(mission.vip,.01)');
+ assert.equal(h.run("guard.target===null&&tank.target===null&&playerGuard.target==='p'"),true);
+ h.run('bushes=[];rebuildSpatialGrid();updateEscapeVipConcealment(mission.vip,.1);guard._nextDetectAt=0');
+ assert.equal(h.run("findDetectedTarget(guard,Math.PI).key"),'escapeVip');
+});
 test('VIP hearts are drawn in the top right even when the EXIT is off-screen',()=>{
  const h=start();
  const hearts=h.run(`mission.vip.hp=2;cam=WH-H;missionHudNextAt=0;

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.10.2223</title>
+<title>こっそり戦車大作戦 2026.11.10.2245</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -1021,7 +1021,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.10.2223',FILE_CREATED_AT='2026/11/10 22:23',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.10.2245',FILE_CREATED_AT='2026/11/10 22:45',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -3725,7 +3725,7 @@ function canDetect(o,target,face,key){
  if(stageMode==='indoor'&&o?.indoorGuard&&key==='p'&&indoorStairProtected())return false;
  if(!target)return false;const d=D(o,target),known=o.st&&o.target===key,searchBoost=(o&&o.sus>0&&!o.st)?1.5:1,eliteRange=o&&o.commander==='white'?1.6:o&&o.elite?1.2:1,eliteFov=o&&o.commander==='white'?1.3:o&&o.elite?1.2:1,humanFov=(humans||[]).includes(o)?1.2:1,fovBoost=eliteFov*humanFov;
  const chatSight=(o&&o.chatT>0)?.5:1,tankSight=frontlineTankSightScale(o);
- const hiddenPlayer=(key==='partner'&&(partner?.down||inBush(partner)))||(key==='p'&&(debugMode>=2||inTumbleweed(p)||p.dig>0||(!p.tank&&inBush(p))||((weather==='rain'||weather==='squall')&&inWaterAt(p.x,p.y,0))));if(hiddenPlayer)return false;
+ const hiddenPlayer=(key==='partner'&&(partner?.down||inBush(partner)))||(key==='p'&&(debugMode>=2||inTumbleweed(p)||p.dig>0||(!p.tank&&inBush(p))||((weather==='rain'||weather==='squall')&&inWaterAt(p.x,p.y,0))));if(hiddenPlayer||(key==='escapeVip'&&inBush(target)))return false;
  if(known){if(d>=(o&&o.commander==='white'?WHITE_CHASE_DROP:detectDropRange(key)*eliteRange*tankSight))return false;return los(o,target);}
  // 潜入専用: 暗所は視認距離が短くなるが、兵士のライト照射中は発見される。
  // 視線遮蔽は本編と共通のlos()を必ず通す。
@@ -3743,7 +3743,8 @@ function findDetectedTarget(o,face){
  if(o&&o.burnSuspicionHold>0){o._detectCache=null;o._nextDetectAt=0;return null;}
  const now=performance.now(),lure=decoy&&decoy.t>0?decoy:null;
  // New placement, replacement and expiry invalidate only this target-choice cache.
- if(o&&o._nextDetectAt>now&&(o._detectLure||null)===lure)return o._detectCache||null;
+ if(o&&o._nextDetectAt>now&&(o._detectLure||null)===lure&&
+    (o._detectCache?.key!=='escapeVip'||!inBush(o._detectCache.obj)))return o._detectCache||null;
  let best=null,areaTarget=null;
  // Sound can lure through cover; weapon firing still requires its existing line of sight.
  // Once selected, a nearby ally or capture alarm must not overwrite the decoy.
@@ -4380,7 +4381,7 @@ function alertedHumanInSearch(h){
  for(const b of (humans||[])){if(b===h||!b.alive||!b.st||b.stun>0||!b.target||(b.whistleSignalT||0)>0)continue;if(canDetect(h,b,h.face,'human'))return b;}
  return null;
 }
-function inheritAlertFromHuman(h,b){if(!b)return false;const tg=targetObj(b.target);if(!tg)return false;enterHumanFound(h,b.target);h.sharePause=0;h.face=Math.atan2(tg.y-h.y,tg.x-h.x);return true;}
+function inheritAlertFromHuman(h,b){if(!b)return false;const tg=targetObj(b.target);if(!tg||(b.target==='escapeVip'&&inBush(tg)))return false;enterHumanFound(h,b.target);h.sharePause=0;h.face=Math.atan2(tg.y-h.y,tg.x-h.x);return true;}
 function enemyBombPoint(h,a,maxD=100){let d=0;for(let q=8;q<=maxD;q+=5){const x=h.x+Math.cos(a)*q,y=h.y+Math.sin(a)*q;if(x<8||x>WW-8||y<8||y>WH-8||hitsM(x,y,6))break;d=q;}return{x:h.x+Math.cos(a)*d,y:h.y+Math.sin(a)*d};}
 function coverPerimeterState(c,x,y,m=12){
  const rx=c.x-m,ry=c.y-m,rw=c.w+m*2,rh=c.h+m*2,px=Math.max(rx,Math.min(rx+rw,x)),py=Math.max(ry,Math.min(ry+rh,y));
@@ -6130,7 +6131,7 @@ function update(dt){
  if(radio&&!radio.got&&D(radio,p)<30){radio.got=true;startAirstrike();}
  if(whiteRadio&&!whiteRadio.got&&D(whiteRadio,p)<30){whiteRadio.got=true;startReinforcementPass();}
  updateHound(dt);
- const vip=stageMode==='escapeTest'?mission?.vip:null;if(vip)updateEscapeVip(dt);
+ const vip=stageMode==='escapeTest'?mission?.vip:null;if(vip?.hp>0){updateEscapeVip(dt);updateEscapeVipConcealment(vip,dt);}
  const tumbleCover=updateTumbleweedStealth();
  const stealthCover=tumbleCover||(!p.tank&&inBush(p))||((weather==='rain'||weather==='squall')&&inWaterAt(p.x,p.y,0))||(p.dig>0);
  if(stealthCover){const wasFound=humans.some(h=>h.alive&&h.st&&h.target==='p')||etanks.some(e=>e.alive&&e.st&&e.target==='p');p.bushHide=(p.bushHide||0)+dt;if(!wasFound||p.bushHide>=1){for(const h of humans)if(h.alive&&h.target==='p'&&!(stageMode==='indoor'&&h.indoorGuard)&&!(h.sniperForcedFoundT>0)){h.st=0;h.target=null;h.lost=0;h.foundPause=0;pauseAfterEnemyDetection(h);}for(const e of etanks)if(e.alive&&e.target==='p'&&!(e.sniperForcedFoundT>0)){e.st=0;e.target=null;e.lost=0;e.foundPause=0;pauseAfterEnemyDetection(e);}}}else p.bushHide=0;
@@ -8867,7 +8868,7 @@ function reportGameError(error){
 <script src="js/jungle-hit-masks.js?v=2026.11.08.1710"></script>
 <script src="js/jungle-placement-masks.js?v=2026.11.08.2145"></script>
 <script src="js/jungle.js?v=2026.11.10.2223"></script>
-<script src="js/escape-test.js?v=2026.11.10.2223"></script>
+<script src="js/escape-test.js?v=2026.11.10.2245"></script>
 <script src="js/canyon.js?v=2026.11.10.2210"></script>
 <script src="js/vegetation.js?v=2026.11.08.1806"></script>
 <script src="js/laboratory.js?v=2026.10.31.2206"></script>

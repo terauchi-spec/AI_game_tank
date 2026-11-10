@@ -71,7 +71,7 @@ function separateJungleLake(z,river,pond){
  const [lo,hi]=choices[Math.floor(R()*choices.length)];pond.y=lo+R()*(hi-lo);
 }
 function setupEscapeTestMission(){
- mission={escapeTest:true,vip:{x:p.x-30,y:p.y+40,face:p.body,hp:3,moving:false},exit:ZONES[ZONES.length-1].escapeExit,escapeProgress:0,escapeExit:null,escapeComplete:false,points:[],index:0,enemyDrop:{next:0,plane:null,parachutes:[],retry:0}};missionHudNextAt=0;
+ mission={escapeTest:true,vip:{x:p.x-30,y:p.y+40,face:p.body,hp:3,moving:false,leaderX:p.x,leaderY:p.y},exit:ZONES[ZONES.length-1].escapeExit,escapeProgress:0,escapeExit:null,escapeComplete:false,points:[],index:0,enemyDrop:{next:0,plane:null,parachutes:[],retry:0}};missionHudNextAt=0;
 }
 // The two passes are keyed to progress, so backtracking cannot repeat them.
 const ESCAPE_ENEMY_DROP_AREAS=[1,3];
@@ -171,6 +171,9 @@ function recallEscapeVip(vip){
 }
 function updateEscapeVip(dt){
  const vip=escapeVipTarget();if(!vip)return;
+ const leaderMoving=Math.abs(p.x-vip.leaderX)+Math.abs(p.y-vip.leaderY)>1e-6;
+ if(leaderMoving&&!vip.leaderMoving)vip.followWait=ESCAPE_VIP_FOLLOW_DELAY;
+ vip.leaderMoving=leaderMoving;vip.leaderX=p.x;vip.leaderY=p.y;
  recallEscapeVip(vip);
  const exit=mission.exit,waiting=!p.tank&&D(p,exit)<INDOOR_EXIT_RADIUS;
  const behind=partnerFollowGoal(36);
@@ -186,6 +189,17 @@ function updateEscapeVip(dt){
  vip.followWait=Math.max(0,-moveDt);
  if(moveDt>1e-9)movePartnerFollower(vip,goal,Math.min(ESCAPE_VIP_FOLLOW_SPEED,(distance-arrival)/moveDt),moveDt);
  else vip.moving=false;
+}
+function updateEscapeVipConcealment(vip,dt){
+ if(!inBush(vip)){vip.bushHide=0;return;}
+ const before=vip.bushHide||0;
+ vip.bushHide=before+dt;
+ if(before>=1||vip.bushHide<1)return;
+ for(const units of [humans,etanks])for(const enemy of units){
+  if(!enemy.alive||enemy.target!=='escapeVip')continue;
+  enemy.st=0;enemy.target=null;enemy.lost=0;enemy.foundPause=0;enemy.sharePause=0;
+  pauseAfterEnemyDetection(enemy);
+ }
 }
 function drawEscapeVipSprite(ctx,x,y,face,moving){
  const stride=moving?Math.sin(performance.now()*.018)*3:0;
