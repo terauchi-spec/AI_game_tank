@@ -101,7 +101,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null,second
   const stairDraw=stairOptions[Math.floor(rng()*stairOptions.length)];
   const stairIndex=Number.isInteger(sharedStairIndex)&&hall.has(sharedStairIndex)?sharedStairIndex:stairDraw;
   const stair=center(stairIndex);
-  const stairs=[stair,...(laboratory&&Number.isInteger(secondaryStairIndex)?[center(secondaryStairIndex)]:[])];
+  const stairs=[stair,...((laboratory||rescueAdvancedTest)&&Number.isInteger(secondaryStairIndex)?[center(secondaryStairIndex)]:[])];
   const distToStair=new Map([[stairIndex,0]]),queue=[stairIndex];
   for(let at=0;at<queue.length;at++){
     const i=queue[at],d=distToStair.get(i);
@@ -1049,7 +1049,7 @@ function indoorGenerateExterior(floor,rng,worldWidth=960){
 function setupInfiltrationWorld(){
   // Scale physical floor area, retaining the same rendering resolution and two-floor layout.
   const beginner=isInfiltrationBeginner(),size=beginner?Math.sqrt(.8):1;
-  INDOOR_FILES_TOTAL=beginner?2:3;
+  INDOOR_FILES_TOTAL=rescueAdvancedTest?0:beginner?2:3;
   INDOOR_SCALE_X=size*(typeof isLaboratoryStage==='function'&&isLaboratoryStage() ? .95 : 1);INDOOR_SCALE_Y=1.75*size;INDOOR_OFFSET_X=480-520*INDOOR_SCALE_X;
   const ground=ZONE_STYLE['敵迷路基地'];
   ZONES=[{n:'敵迷路基地',y0:WH,y1:-400,g:'#202820',p:ground.p.slice(),pat:null,indoor:true}];
@@ -1065,7 +1065,8 @@ function setupInfiltrationWorld(){
   // 全階で同じ階段位置を共有。間取りは各階別々のランダムシード。
   const indoorSeedRng=seed=>{let x=seed>>>0;return()=>{x=(Math.imul(x,1664525)+1013904223)>>>0;return x/4294967296;};};
   const laboratory=typeof isLaboratoryStage==='function'&&isLaboratoryStage();
-  const floorNumbers=laboratory?[1,2,3]:[1,2];
+  const multiFloor=laboratory||rescueAdvancedTest;
+  const floorNumbers=multiFloor?[1,2,3]:[1,2];
   const seeds=floorNumbers.map(()=>Math.floor(R()*4294967296));
   const trial=floorNumbers.map((n,i)=>indoorGenerateFloor(n,indoorSeedRng(seeds[i])));
   const cellId=tile=>Math.round((tile.y-80)/180)*5+Math.round((tile.x-70)/180);
@@ -1076,10 +1077,10 @@ function setupInfiltrationWorld(){
   });
   const sharedStair=sharedOptions[Math.floor(R()*sharedOptions.length)];
   if(!Number.isInteger(sharedStair))throw Error('共通階段の設置候補がありません');
-  const upperOptions=laboratory?sharedOptions.filter(id=>id%5!==sharedStair%5):[];
-  const upperStair=laboratory?upperOptions[Math.floor(R()*upperOptions.length)]:null;
+  const upperOptions=multiFloor?sharedOptions.filter(id=>id!==sharedStair):[];
+  const upperStair=multiFloor?upperOptions[Math.floor(R()*upperOptions.length)]:null;
   const rawFloors=floorNumbers.map((n,i)=>indoorGenerateFloor(n,indoorSeedRng(seeds[i]),
-    laboratory&&n===3?upperStair:sharedStair,laboratory&&n===2?upperStair:null));
+    multiFloor&&n===3?upperStair:sharedStair,multiFloor&&n===2?upperStair:null));
   const fileDistribution=R(),groundFiles=beginner?1:fileDistribution<.5?1:2;
   const shuffled=floorNumbers;
   for(const n of shuffled){
@@ -1153,7 +1154,7 @@ function setupInfiltrationWorld(){
     };
     navigation.grid=indoorMakeGuardGrid(raw,off);
     const stair=to(raw.stair),stairObstacle=indoorStairObstacleBounds(stair,n);
-    const stairs=laboratory?raw.stairs.map((q,i)=>{
+    const stairs=multiFloor?raw.stairs.map((q,i)=>{
       const destination=n===1?1:n===3?1:i===0?0:2;
       return {...to(q),id:n===3||i===1?'upper':'lower',destination,direction:destination>n-1?1:-1};
     }):null;
@@ -1192,7 +1193,7 @@ function setupInfiltrationWorld(){
       humans.push(guard);guards.push(guard);postGuards.push(guard);
     }
     // 初級は各階1箇所、上級は従来の合計3箇所を配分する。
-    const count=laboratory?1:n===1?groundFiles:INDOOR_FILES_TOTAL-groundFiles;
+    const count=rescueAdvancedTest?0:laboratory?1:n===1?groundFiles:INDOOR_FILES_TOTAL-groundFiles;
     const intel=raw.intel.slice(0,count).map((q,i)=>({...to(q),id:q.id,name:'重要資料 '+n+'F-'+(i+1),roomId:q.roomId,fixtureArt:q.fixtureArt,done:false,floor:n,progress:0}));
     indoorWorld.intel.push(...intel);
     const entrances=raw.entrances.map(to);
@@ -1248,7 +1249,8 @@ function setupInfiltrationWorld(){
   covers.push(...indoorWorld.exterior);
   patrolRoutesVisible=false;
   rebuildSpatialGrid();
-  say('拠点潜入：廊下の物資に身を隠し、重要資料'+INDOOR_FILES_TOTAL+'箇所を回収せよ');
+  if(rescueAdvancedTest)setupRescueAdvancedMission();
+  else say('拠点潜入：廊下の物資に身を隠し、重要資料'+INDOOR_FILES_TOTAL+'箇所を回収せよ');
 }
 // One pair on 1F in advanced sorties; laboratories reuse one patrol per floor.
 // Setup-only grid sampling; no extra roster slot or recurring dog reinforcement.
@@ -1414,6 +1416,70 @@ function indoorReplenishGuards(dt){
   if(indoorWorld.alarm?.active)indoorBeginAlarmSweep(guard);
  }
 }
+
+function setupRescueAdvancedMission(){
+ const w=indoorWorld,basement=w.floors[2];
+ const room=basement.rooms.find(q=>q.tiles?.length&&basement.doors.some(d=>d.kind==='room'&&Math.hypot(d.x-(q.x+q.w/2),d.y-(q.y+q.h/2))<Math.max(q.w,q.h)))||basement.rooms[0];
+ const doors=basement.doors.slice().sort((a,b)=>Math.hypot(a.x-room.x-room.w/2,a.y-room.y-room.h/2)-Math.hypot(b.x-room.x-room.w/2,b.y-room.y-room.h/2));
+ const door=doors[0];if(!door)throw Error('救出ステージ：牢屋の扉を生成できません');
+ door.rescueCell=true;door.rescueUnlocked=false;
+ const vipPoint=room.tiles?.length?{x:room.tiles[0].x+room.tiles[0].w/2,y:room.tiles[0].y+room.tiles[0].h/2}:{x:room.x+room.w/2,y:room.y+room.h/2};
+ const keyFloor=w.floors[Math.floor(R()*2)],keySource=keyFloor.rooms.find(q=>q.tiles?.length)||keyFloor.rooms[0];
+ const keyPoint=keySource.tiles?.[0]||keySource;
+ const key={x:keyPoint.x+keyPoint.w/2,y:keyPoint.y+keyPoint.h/2,floor:keyFloor.number,progress:0,done:false};
+ w.rescue={vip:{...vipPoint,face:0,hp:3,moving:false,leaderX:p.x,leaderY:p.y,indoorFloor:3,freed:false},key,door,room};
+ mission={index:0,progress:0,points:[],exit:w.exit,detected:false,current:null,alarm:0,escapeProgress:0,escapeExit:null,escapeComplete:false,rescueAdvanced:true};
+ say('救出作戦：鍵を入手し、地下3階の要人を救出して地上のEXITへ');
+}
+function updateRescueAdvancedMission(dt){
+ const w=indoorWorld,m=mission,r=w.rescue,vip=r.vip;
+ indoorTickStairSanctuary(dt);
+ if(w.alarm?.active)w.alarm.elapsed+=dt;
+ m.detected=playerDetectedNow();
+ indoorReplenishGuards(dt);indoorUpdateEntranceGuards(dt);
+ updateInfiltrationDoors(dt);indoorUpdatePostChats(dt);indoorUpdateAlarmChats(dt);indoorScanStunnedGuards(dt);
+ w.stairMoveLock=Math.max(0,(w.stairMoveLock||0)-dt);w.stairsCooldown=Math.max(0,w.stairsCooldown-dt);
+ const floor=w.floors[w.currentFloor];
+ if(indoorStairTravelReady(floor)&&w.stairsCooldown<=0){
+  const source=w.stairActive;w.currentFloor=indoorStairDestination(floor,source);
+  const target=w.floors[w.currentFloor],stair=target.stairs?.find(q=>q.id===source?.id)||target.stair;
+  Object.assign(p,indoorStairLanding(target,stair));
+  indoorPartnerStairLanding(target,stair);
+  if(vip.freed){Object.assign(vip,indoorStairLanding(target,stair));vip.indoorFloor=w.currentFloor+1;vip.followWait=.6;vip.moving=false;}
+  indoorBeginStairSanctuary(target,stair);w.stairsCooldown=2;w.stairEntryFloor=null;w.stairEntryId=null;w.stairActive=null;w.stairMoveLock=.5;
+  cam=Math.max(0,Math.min(WH-H,p.y-H*.6));say(['1F','B1F','B2F'][w.currentFloor]+'へ移動');sfx('skill');
+ }
+ if(!r.key.done&&w.currentFloor+1===r.key.floor&&!p.tank&&D(p,r.key)<INDOOR_ACQUIRE_RADIUS){
+  r.key.progress=Math.min(INDOOR_ACQUIRE_SECONDS,r.key.progress+dt);
+  if(r.key.progress>=INDOOR_ACQUIRE_SECONDS){r.key.done=true;sfx('document');say('牢屋の鍵を入手！ 赤い扉を開けられる');}
+ }
+ if(!vip.freed&&r.door.rescueUnlocked&&w.currentFloor===2&&!p.tank&&D(p,vip)<27){
+  vip.freed=true;vip.followWait=.6;vip.leaderX=p.x;vip.leaderY=p.y;say('要人を救出！ 地上のEXITへ向かえ');
+ }
+ if(vip.freed&&vip.hp>0&&w.currentFloor+1===vip.indoorFloor){
+  vip.stunImmuneT=Math.max(0,(vip.stunImmuneT||0)-dt);
+  if(vip.stunT>0){vip.stunT=Math.max(0,vip.stunT-dt);vip.stunContactDelay=Math.max(0,(vip.stunContactDelay||0)-dt);vip.moving=false;
+   if(vip.stunT>0&&vip.stunContactDelay<=0&&!p.tank&&D(p,vip)<25)vip.stunT=0;
+   if(vip.stunT===0){vip.stunImmuneT=15;vip.followWait=.6;}
+  }else{
+   const goal=partnerFollowGoal(36),dist=D(vip,goal);
+   if(dist>3){const wait=vip.followWait||0;vip.followWait=Math.max(0,wait-dt);if(wait<=dt)movePartnerFollower(vip,goal,Math.min(ESCAPE_VIP_FOLLOW_SPEED,(dist-2)/Math.max(dt,.001)),dt);}
+   else vip.moving=false;
+  }
+ }
+ const ground=w.floors[0].footprint,outside=p.y<ground.y-12||p.y>ground.y+ground.h+12;
+ const escape=vip.freed&&vip.hp>0&&!(vip.stunT>0)&&w.currentFloor===0&&!p.tank&&outside
+  ?w.exits.find(q=>D(p,q)<INDOOR_EXIT_RADIUS&&D(vip,q)<INDOOR_EXIT_RADIUS):null;
+ if(escape){if(m.escapeExit!==escape)m.escapeProgress=0;m.escapeExit=escape;m.escapeProgress=Math.min(INDOOR_EXIT_SECONDS,m.escapeProgress+dt);
+  if(m.escapeProgress>=INDOOR_EXIT_SECONDS&&!m.escapeComplete){m.escapeComplete=true;completeMission();beginInfiltrationExtraction(escape);}
+ }else{m.escapeExit=null;m.escapeProgress=0;}
+}
+function drawRescueAdvancedMission(){
+ const r=indoorWorld?.rescue;if(!r)return;
+ const vip=r.vip;
+ if(vip.indoorFloor===indoorWorld.currentFloor+1){drawEscapeVipSprite(g,vip.x,vip.y,vip.face,vip.moving,vip);if(vip.stunT>0)drawStunStars(vip.x,vip.y);}
+}
+
 function setupInfiltrationMission(){
   mission={index:0,progress:0,points:indoorWorld.intel,exit:indoorWorld.exit,detected:false,
     current:null,alarm:0,escapeProgress:0,escapeExit:null,escapeComplete:false};
@@ -2574,6 +2640,7 @@ function indoorPartnerDocumentTarget(){
 }
 function updateInfiltrationMission(dt){
   if(!indoorWorld||!mission||state!=='play')return;
+  if(rescueAdvancedTest){updateRescueAdvancedMission(dt);return;}
   const w=indoorWorld,m=mission;
   indoorTickStairSanctuary(dt);
   if(w.alarm?.active){w.alarm.elapsed+=dt;if(typeof scoreStats!=='undefined'&&scoreStats)scoreStats.indoorAlarm=true;}
