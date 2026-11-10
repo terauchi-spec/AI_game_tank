@@ -52,8 +52,31 @@ function setupEscapeTestWorld(){
  captureBuildingGroundMarks();rebuildSpatialGrid();
  for(const z of jungles)spawnAreaDebugEnemies(z,{blueCommander:true});
  setupRoadTruckEvents();
+ placeEscapeTestRadios(jungles);
  roadBands.push({x:0,y:last.escapeExit.y-160,w:WW,h:320,kind:'asphalt',lanes:4});
  say('脱出：要人女性を護衛し、最後の草原のEXITへ');
+}
+// Place one of each existing support radio in the five jungle areas, once per run.
+function placeEscapeTestRadios(jungles){
+ radio=null;whiteRadio=null;
+ const shuffled=jungles.slice();
+ for(let i=shuffled.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];}
+ const place=(avoid)=>{
+  for(const z of shuffled){
+   for(let i=0;i<240;i++){
+    const q={x:65+R()*(WW-130),y:z.y1+110+R()*(z.y0-z.y1-220)};
+    if(avoid&&D(q,avoid)<120)continue;
+    if(!specialSpawnValid(q,12,60))continue;
+    if(z.escapeRiver&&ov2({x:q.x-18,y:q.y-18,w:36,h:36},z.escapeRiver,20))continue;
+    if(z.oasis&&oasisContains(z.oasis,q.x,q.y,28))continue;
+    return {...q,got:false};
+   }
+  }
+  return null;
+ };
+ radio=place(null);
+ whiteRadio=place(radio);
+ if(!radio||!whiteRadio)console.warn('Escape radio placement incomplete');
 }
 // Keep both independent rolls and original lake size. Reserve both feathered banks,
 // relocate the lake first, and move the river only if neither side has enough space.
