@@ -68,7 +68,21 @@ function characterGait(actor,x,y,moving,now,jog=true){
  if(moving&&distance>0&&distance<30){anim.phase+=Math.min(distance*travelPhase,elapsed/cadence);anim.lastMove=now;}
  return moving&&now-anim.lastMove<100?Math.sin(anim.phase):0;
 }
-function prepareCharacterLayers(im){
+function loadEscapeVipArtwork(){
+ if(CHARACTER_GRAPHICS_MODE!=='webp'||CHARACTER_ART.escapeVip)return;
+ CHARACTER_ART.escapeVip=makeAssetImage('assets/characters/escape-vip.webp?v='+GAME_VERSION,
+  ()=>prepareCharacterLayers(CHARACTER_ART.escapeVip,false));
+}
+function drawEscapeVipArtwork(x,y,face,moving,actor){
+ const im=CHARACTER_ART.escapeVip;
+ if(CHARACTER_GRAPHICS_MODE!=='webp'||!assetOK(im))return false;
+ const stride=characterGait(actor,x,y,moving,performance.now());
+ g.save();g.imageSmoothingEnabled=true;g.translate(x,y);g.scale(CHARACTER_GRAPHICS_SCALE,CHARACTER_GRAPHICS_SCALE);
+ g.fillStyle='rgba(8,12,9,.30)';g.beginPath();g.ellipse(1,3,11,7,0,0,Math.PI*2);g.fill();
+ g.rotate(face);drawOverheadCutout(im,32,32*im.naturalHeight/im.naturalWidth,stride);
+ g.restore();return true;
+}
+function prepareCharacterLayers(im,includePack=true){
  const iw=im.naturalWidth,ih=im.naturalHeight;
  const copy=()=>{const c=document.createElement('canvas');c.width=iw;c.height=ih;c.getContext('2d').drawImage(im,0,0);return c;};
  // The overhead asset faces right. Boots are at the rear/left; fingertips
@@ -83,6 +97,7 @@ function prepareCharacterLayers(im){
   parts.push({im:c,x:sx/iw,y:sy/ih,w:sw/iw,h:sh/ih});
  }
  for(const canvas of [core]){const q=canvas.getContext('2d');q.save();q.beginPath();q.ellipse(iw*.60,ih*.50,iw*.34,ih*.34,0,0,Math.PI*2);q.clip();q.drawImage(im,0,0);q.restore();}
+ if(!includePack){CHARACTER_LAYERS.set(im,{core,parts,pack:null});return;}
  // Isolate the existing rear equipment texture; enlarge it behind the helmet.
  const pack=document.createElement('canvas'),sx=Math.round(iw*.18),sy=Math.round(ih*.13);
  pack.width=Math.round(iw*.27);pack.height=Math.round(ih*.74);
@@ -114,7 +129,7 @@ function drawCommanderRadio(pack,width){
 }
 function composeOverheadCutout(im,width,height,stride=0,armed=false,radio=false){
  const left=-width*.60,top=-height*.50,layers=CHARACTER_LAYERS.get(im);
- const trousers=(im===CHARACTER_ART.player||im===CHARACTER_ART.player_plain||im===CHARACTER_ART.player_blue)?'#77734f':im===CHARACTER_ART.white||im===CHARACTER_ART.white_commander?'#d0cdbd':'#7c97b5';
+ const trousers=im===CHARACTER_ART.escapeVip?'#454638':(im===CHARACTER_ART.player||im===CHARACTER_ART.player_plain||im===CHARACTER_ART.player_blue)?'#77734f':im===CHARACTER_ART.white||im===CHARACTER_ART.white_commander?'#d0cdbd':'#7c97b5';
  if(!layers){g.drawImage(im,left,top,width,height);return;}
  for(let i=0;i<layers.parts.length;i++){
   const part=layers.parts[i];

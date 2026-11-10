@@ -11,7 +11,7 @@ function setupEscapeTestZones(){
   }),makeZone('草原',400,0)];
 }
 function setupEscapeTestWorld(){
- loadJungleAssets();document.body.classList.remove('front-battle');
+ loadJungleAssets();loadEscapeVipArtwork();document.body.classList.remove('front-battle');
  p.x=WW/2;p.y=ZONES[0].y0-170;p.body=p.ang=-Math.PI/2;p.tank=null;
  scoreStats.startY=p.y;scoreStats.escapeTest=true;scoreStats.debugUsed=true;
  base={x:WW/2,y:-60000,w:COMMAND_BASE_W,h:COMMAND_BASE_H,hp:30,maxHp:30,deadAt:0};
@@ -201,7 +201,10 @@ function updateEscapeVipConcealment(vip,dt){
   pauseAfterEnemyDetection(enemy);
  }
 }
-function drawEscapeVipSprite(ctx,x,y,face,moving){
+function drawEscapeVipSprite(ctx,x,y,face,moving,actor=null){
+ const saved=g;g=ctx;
+ try{if(drawEscapeVipArtwork(x,y,face,moving,actor))return;}
+ finally{g=saved;}
  const stride=moving?Math.sin(performance.now()*.018)*3:0;
  ctx.save();ctx.translate(x,y);ctx.rotate(face);
  ctx.fillStyle='rgba(0,0,0,.28)';ctx.beginPath();ctx.ellipse(-1,2,10,11,0,0,Math.PI*2);ctx.fill();
@@ -215,7 +218,7 @@ function drawEscapeVipSprite(ctx,x,y,face,moving){
 function drawEscapeVip(cx,cy){
  const vip=mission?.vip;
  if(!vip||mission.extraction?.vip?.boarded||!drawPointInView(vip.x,vip.y,cx,cy,45))return;
- drawEscapeVipSprite(g,vip.x,vip.y,vip.face,vip.moving);
+ drawEscapeVipSprite(g,vip.x,vip.y,vip.face,vip.moving,vip);
 }
 function updateEscapeVipBoarding(v,t){
  const ride=v.vip,vip=ride.actor;
