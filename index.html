@@ -7901,7 +7901,7 @@ function draw(near){
   if(debugMode>0&&typeof indoorRecordRenderTime==='function')indoorRecordRenderTime('walls',performance.now()-indoorWallDrawAt);
   drawInfiltrationOpenings(cx,cy);
  }
- for(const o of objectsInBox(cx-80,cy-80,cx+W+80,cy+H+80)){if(o.x+o.w<cx-70||o.x>cx+W+70||o.y+o.h<cy-70||o.y>cy+H+70)continue;drawObject(o);}
+ for(const o of objectsInBox(cx-80,cy-80,cx+W+80,cy+H+80)){if(o.x+o.w<cx-70||o.x>cx+W+70||o.y+o.h<cy-70||o.y>cy+H+70)continue;if(stageMode==='escapeTest'&&o.escapeBuildingSupply)continue;drawObject(o);}
  drawFrontlineAntennas(cx,cy);
  drawPatrolRoutes(cx,cy);
  for(const it of items)if((p.tank||it.areaDebug)&&!it.got&&drawPointInView(it.x,it.y,cx,cy,100))drawFuelPickup(it.x,it.y);
