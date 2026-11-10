@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.10.2340</title>
+<title>こっそり戦車大作戦 2026.11.11.0001</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -7954,6 +7954,11 @@ function draw(near){
  drawGrassBushChunks(cx,cy);
  for(const b of nearbyBushes(cx+W/2,cy+H/2,Math.max(W,H)*.8+100)){if(b.spinifex||isGrassBush(b)||b.x+b.w<cx-40||b.x>cx+W+40||b.y+b.h<cy-40||b.y>cy+H+40)continue;drawBushCached(b);}
  drawSpinifexTopLayer(cx,cy);
+ // Jungle escape supplies stay visible above grass; other stages keep their draw order.
+ if(stageMode==='escapeTest')for(const o of objectsInBox(cx-80,cy-80,cx+W+80,cy+H+80)){
+  if(!o.escapeBuildingSupply||o.x+o.w<cx-70||o.x>cx+W+70||o.y+o.h<cy-70||o.y>cy+H+70)continue;
+  drawObject(o);
+ }
  if(jungleCoversOnTop)drawJungleCoversAboveGrass(visibleCovers,cx,cy);
  // アンテナ上部・ロケット全体をすべての草むらより前面に重ねる。
  drawFrontlineAntennas(cx,cy,true);
