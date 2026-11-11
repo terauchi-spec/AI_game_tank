@@ -1067,7 +1067,7 @@ function setupInfiltrationWorld(){
   const laboratory=typeof isLaboratoryStage==='function'&&isLaboratoryStage();
   const multiFloor=laboratory||rescueAdvancedTest;
   const floorNumbers=rescueAdvancedTest?[1,2,3,4]:multiFloor?[1,2,3]:[1,2];
-  const seeds=floorNumbers.map(()=>Math.floor(R()*4294967296));
+  const seeds=rescueAdvancedTest?Array(floorNumbers.length).fill(Math.floor(R()*4294967296)):floorNumbers.map(()=>Math.floor(R()*4294967296));
   const trial=floorNumbers.map((n,i)=>indoorGenerateFloor(n,indoorSeedRng(seeds[i])));
   const cellId=tile=>Math.round((tile.y-80)/180)*5+Math.round((tile.x-70)/180);
   const onUpper=trial.slice(1).map(f=>new Set(f.corridors.map(cellId)));
