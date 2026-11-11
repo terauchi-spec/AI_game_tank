@@ -1087,7 +1087,7 @@ function setupInfiltrationWorld(){
   const fileDistribution=R(),groundFiles=beginner?1:fileDistribution<.5?1:2;
   const shuffled=floorNumbers;
   for(const n of shuffled){
-    const raw=rawFloors[n-1],off=rescueAdvancedTest?[10100,7300,4500,1700][n-1]:INDOOR_FLOOR_OFFSETS[n-1];
+    const raw=rawFloors[n-1],off=rescueAdvancedTest?[8800,6100,3400,700][n-1]:INDOOR_FLOOR_OFFSETS[n-1];
     const to=pt=>indoorAt(pt.x,pt.y,off);
     const rooms=raw.rooms.map(r=>{const rect=indoorRect(r,off);
       return{...rect,id:r.id,name:r.name,purpose:r.purpose,size:r.size,isGuardPost:!!r.isGuardPost,...(r.laboratoryRole?{laboratoryRole:r.laboratoryRole}:{}),tiles:r.tiles.map(tile=>indoorRect(tile,off))};
