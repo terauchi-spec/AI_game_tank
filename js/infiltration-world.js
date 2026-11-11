@@ -1454,7 +1454,7 @@ function updateRescueAdvancedMission(dt){
   r.key.progress=Math.min(INDOOR_ACQUIRE_SECONDS,r.key.progress+dt);
   if(r.key.progress>=INDOOR_ACQUIRE_SECONDS){r.key.done=true;sfx('document');say('牢屋の鍵を入手！ 赤い扉を開けられる');}
  }
- if(!vip.freed&&r.door.rescueUnlocked&&w.currentFloor===2&&!p.tank&&D(p,vip)<27){
+ if(!vip.freed&&w.currentFloor===2&&!p.tank&&D(p,vip)<27){
   vip.freed=true;vip.followWait=.6;vip.leaderX=p.x;vip.leaderY=p.y;say('要人を救出！ 地上のEXITへ向かえ');
  }
  if(vip.freed&&vip.hp>0&&w.currentFloor+1===vip.indoorFloor){
@@ -3156,11 +3156,29 @@ function drawInfiltrationAlarmEyes(){
  }
  gm.restore();
 }
+function drawInfiltrationAlarmOverlay(){
+ gm.save();gm.setTransform(1,0,0,1,0,0);
+   drawInfiltrationPostChats();
+  drawInfiltrationAlarmChats();
+  if(indoorWorld.alarm?.active){
+    const height=Math.min(150,H*.2);
+    if(!indoorAlarmGradient){
+      indoorAlarmGradient=gm.createLinearGradient(0,0,0,height);
+      indoorAlarmGradient.addColorStop(0,'rgba(190,22,18,.48)');
+      indoorAlarmGradient.addColorStop(1,'rgba(190,22,18,0)');
+    }
+    gm.fillStyle=indoorAlarmGradient;gm.fillRect(0,0,W,height);
+    gm.fillStyle='#ffc6bd';gm.font='bold 14px system-ui';gm.textAlign='center';
+    gm.fillText('館内アラート',W/2,25);
+  }
+  drawInfiltrationAlarmEyes();
+ gm.restore();
+}
 function drawRescueAdvancedHud(el){
  const r=indoorWorld.rescue;if(!r)return;
  const floor=indoorWorld.currentFloor,labels=['1F','B1F','B2F'];
  const rescued=r.vip.freed,hasKey=r.key.done,unlocked=r.door.rescueUnlocked;
- const task=!hasKey?'鍵を探して円内で8秒待機':!unlocked?'B2Fの赤い扉を解錠':!rescued?'B2Fの要人に接触': '要人と一緒に1F屋外のEXITへ';
+ const task=rescued?'要人と一緒に1F屋外のEXITへ':!hasKey?'B2Fの要人に接触（鍵は任意）':!unlocked?'B2Fの要人に接触（解錠は任意）':'B2Fの要人に接触';
  el.innerHTML='<b>救出（上級） '+labels[floor]+'</b><small>'+task+'</small>';
  gm.save();gm.setTransform(1,0,0,1,0,0);
  gm.textAlign='right';gm.font='bold 14px system-ui';gm.fillStyle='#e6e9d8';
@@ -3177,6 +3195,7 @@ function drawRescueAdvancedHud(el){
   gm.font='bold 22px system-ui';gm.textAlign='center';gm.fillStyle='#ffe69c';gm.fillText('⚿',x,y+7);
  }
  gm.restore();
+ drawInfiltrationAlarmOverlay();
 }
 function drawInfiltrationMission(){
   const el=document.getElementById('missionHud');
@@ -3195,20 +3214,7 @@ function drawInfiltrationMission(){
     if(nextText!==indoorHudSnapshot){indoorHudSnapshot=nextText;el.innerHTML=nextText;}
   }
   gm.save();gm.setTransform(1,0,0,1,0,0);
-  drawInfiltrationPostChats();
-  drawInfiltrationAlarmChats();
-  if(indoorWorld.alarm?.active){
-    const height=Math.min(150,H*.2);
-    if(!indoorAlarmGradient){
-      indoorAlarmGradient=gm.createLinearGradient(0,0,0,height);
-      indoorAlarmGradient.addColorStop(0,'rgba(190,22,18,.48)');
-      indoorAlarmGradient.addColorStop(1,'rgba(190,22,18,0)');
-    }
-    gm.fillStyle=indoorAlarmGradient;gm.fillRect(0,0,W,height);
-    gm.fillStyle='#ffc6bd';gm.font='bold 14px system-ui';gm.textAlign='center';
-    gm.fillText('館内アラート',W/2,25);
-  }
-  drawInfiltrationAlarmEyes();
+  drawInfiltrationAlarmOverlay();
   if(indoorStairProtected()){
     const area=indoorWorld.stairSanctuary,x=area.x-camX,y=area.y-cam;
     gm.save();gm.fillStyle='rgba(110,220,240,.08)';gm.strokeStyle='rgba(150,235,255,.6)';gm.lineWidth=2;
