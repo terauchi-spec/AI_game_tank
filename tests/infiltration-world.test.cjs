@@ -1354,7 +1354,7 @@ function alarmWorld(seed=1771){
  vm.runInContext(source+`;setupInfiltrationWorld();setupInfiltrationMission();
   indoorGuardSeesPlayer=()=>false;
   api={entranceGuards:indoorUpdateEntranceGuards,hearExplosion:indoorHearExplosion,postChats:indoorUpdatePostChats,lightLevel:indoorLightLevel,seesAlly:indoorGuardSeesAlly,allyCombat:indoorUpdateAllyCombat,selectSweep:indoorSelectSweepGoal,sweepPoints:indoorAlarmSweepPoints,reinforce:indoorReplenishGuards,spawnPoint:indoorReinforcementPoint,get world(){return indoorWorld;},record:indoorRecordGuardDiscovery,begin:indoorStartGuardPursuit,
-   updateMission:updateInfiltrationMission,update:updateInfiltrationGuardAI,finish:indoorFinishGuardSearch,sweep:indoorBeginAlarmSweep,
+   updateMission:updateInfiltrationMission,transition:updateIndoorStairTransition,update:updateInfiltrationGuardAI,finish:indoorFinishGuardSearch,sweep:indoorBeginAlarmSweep,
    draw:drawInfiltrationMission,setup:setupInfiltrationWorld,chats:indoorUpdateAlarmChats,
    cancelChat:indoorCancelAlarmChat,scanBodies:indoorScanStunnedGuards,level:indoorAlarmLevel,weapon:indoorUpdateCommanderWeapon,setVisible:h=>{indoorGuardSeesPlayer=q=>q===h;}};`,sandbox);
  sandbox.enterHumanFound=(h,key='p')=>{h.st=1;h.target=key;if(key==='p')sandbox.api.begin(h);};
@@ -1727,7 +1727,7 @@ test('document charge accumulates across leaving, switching documents and changi
  const stair=world.floors[0].stair;world.stairsCooldown=0;
  Object.assign(s.sandbox.p,{x:stair.x,y:stair.y+84});s.api.updateMission(.01);
  s.sandbox.p.y=stair.y-76;
- s.api.updateMission(.01);assert.equal(world.currentFloor,1);assert.equal(b.progress,2);assert.equal(a.progress,3);
+ s.api.updateMission(.01);s.api.transition(.5);assert.equal(world.currentFloor,1);assert.equal(b.progress,2);assert.equal(a.progress,3);
  world.currentFloor=0;Object.assign(s.sandbox.p,{x:a.x,y:a.y});
  s.api.updateMission(5);assert.equal(a.done,true);assert.equal(a.progress,8);assert.equal(m.index,1);
  s.api.updateMission(.1);assert.equal(m.index,1,'completed document cannot be collected twice');

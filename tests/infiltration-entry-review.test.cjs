@@ -38,3 +38,35 @@ test('both ordinary infiltration floors draw destination arrows inside their lan
   assert.ok(result.points.every(p=>p.x>=result.safe.x&&p.x<=result.safe.x+result.safe.w&&p.y>=result.safe.y&&p.y<=result.safe.y+result.safe.h));
  }
 });
+
+test('beginner and intermediate infiltration fade through both stair directions and preserve documents',()=>{
+ for(const beginner of [true,false]){
+  const h=createGameEngine(root,{seed:1771});
+  h.run(`stageMode='indoor';indoorBeginner=${beginner};reset(false);state='play';
+   globalThis.documentCheck=mission.points[0];documentCheck.progress=3;`);
+  for(const destination of [1,0]){
+   h.run(`(()=>{
+    const w=indoorWorld,floor=w.floors[w.currentFloor],stair=floor.stair;
+    const bounds=indoorStairBounds(stair,floor.number);
+    w.stairsCooldown=0;
+    Object.assign(p,{x:stair.x,y:bounds.y+bounds.h-5});updateInfiltrationMission(0);
+    p.y=bounds.y+22;updateInfiltrationMission(0);
+   })()`);
+   h.run('update(.24)');
+   assert.notEqual(h.run('indoorWorld.currentFloor'),destination);
+   h.run('update(.01)');
+   assert.equal(h.run('indoorWorld.currentFloor'),destination);
+   assert.equal(h.run('indoorStairProtected()'),true);
+   const fade=h.run(`(()=>{
+    let alpha=0;const fill=gm.fillRect;
+    gm.fillRect=(x,y,w,h)=>{if(x===0&&y===0&&w===W&&h===H&&gm.fillStyle==='#080b0d')alpha=gm.globalAlpha;};
+    try{drawInfiltrationMission();}finally{gm.fillRect=fill;}
+    return alpha;
+   })()`);
+   assert.ok(fade>.99);
+   h.run('update(.25)');
+   assert.equal(h.run('indoorWorld.stairTransition'),null);
+   assert.equal(h.run('documentCheck.progress'),3);
+  }
+ }
+});

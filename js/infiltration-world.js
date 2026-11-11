@@ -1419,8 +1419,6 @@ function indoorReplenishGuards(dt){
  }
 }
 
-const RESCUE_STAIR_TRANSITION_SECONDS=.5;
-
 function setupRescueAdvancedMission(){
  const w=indoorWorld,basement=w.floors[2];
  for(const floor of w.floors)floor.stairSafeAreas=floor.stairs.map(stair=>indoorStairSafeArea(floor,stair));
@@ -1442,14 +1440,7 @@ function updateRescueAdvancedMission(dt){
  m.detected=playerDetectedNow();
  indoorReplenishGuards(dt);indoorUpdateEntranceGuards(dt);
  updateInfiltrationDoors(dt);indoorUpdatePostChats(dt);indoorUpdateAlarmChats(dt);indoorScanStunnedGuards(dt);
- w.stairMoveLock=Math.max(0,(w.stairMoveLock||0)-dt);w.stairsCooldown=Math.max(0,w.stairsCooldown-dt);
- const floor=w.floors[w.currentFloor];
- if(indoorStairTravelReady(floor)&&w.stairsCooldown<=0){
-  const source=w.stairActive;
-  w.stairTransition={source,destination:indoorStairDestination(floor,source),remaining:RESCUE_STAIR_TRANSITION_SECONDS};
-  w.stairMoveLock=RESCUE_STAIR_TRANSITION_SECONDS;
-  return;
- }
+ if(beginIndoorStairTransition(dt))return;
  if(!r.key.done&&w.currentFloor+1===r.key.floor&&!p.tank&&D(p,r.key)<INDOOR_ACQUIRE_RADIUS){
   r.key.progress=Math.min(INDOOR_ACQUIRE_SECONDS,r.key.progress+dt);
   if(r.key.progress>=INDOOR_ACQUIRE_SECONDS){r.key.done=true;sfx('document');say('牢屋の鍵を入手！ 赤い扉を開けられる');}
@@ -1476,32 +1467,47 @@ function updateRescueAdvancedMission(dt){
   if(m.escapeProgress>=INDOOR_EXIT_SECONDS&&!m.escapeComplete){m.escapeComplete=true;completeMission();beginInfiltrationExtraction(escape);}
  }else{m.escapeExit=null;m.escapeProgress=0;}
 }
-function updateRescueStairTransition(dt){
+const INDOOR_STAIR_TRANSITION_SECONDS=.5;
+
+function beginIndoorStairTransition(dt){
+ const w=indoorWorld,floor=w.floors[w.currentFloor];
+ w.stairsCooldown=Math.max(0,w.stairsCooldown-dt);
+ if(!indoorStairTravelReady(floor)||w.stairsCooldown>0)return false;
+ const source=w.stairActive;
+ w.stairTransition={source,destination:indoorStairDestination(floor,source),remaining:INDOOR_STAIR_TRANSITION_SECONDS};
+ w.stairMoveLock=INDOOR_STAIR_TRANSITION_SECONDS;
+ return true;
+}
+
+function updateIndoorStairTransition(dt){
  const w=indoorWorld,transition=w.stairTransition;
- const half=RESCUE_STAIR_TRANSITION_SECONDS/2;
+ const half=INDOOR_STAIR_TRANSITION_SECONDS/2;
  const remaining=Math.max(0,transition.remaining-dt);
  if(w.currentFloor!==transition.destination&&remaining<=half+1e-9){
   w.currentFloor=transition.destination;
-  const floor=w.floors[w.currentFloor],stair=floor.stairs.find(q=>q.id===transition.source?.id)||floor.stair;
-  const landing=indoorStairLanding(floor,stair),vip=w.rescue.vip;
+  const floor=w.floors[w.currentFloor],stair=floor.stairs?.find(q=>q.id===transition.source?.id)||floor.stair;
+  const landing=indoorStairLanding(floor,stair),vip=w.rescue?.vip;
   Object.assign(p,landing);
-  if(scoreStats)scoreStats.lastY=p.y;
+  if(typeof scoreStats!=='undefined'&&scoreStats)scoreStats.lastY=p.y;
   indoorPartnerStairLanding(floor,stair);
-  if(vip.freed)Object.assign(vip,landing,{indoorFloor:floor.number,followWait:.6,moving:false,wallFollow:null,sideStep:null});
+  if(vip?.freed)Object.assign(vip,landing,{indoorFloor:floor.number,followWait:.6,moving:false,wallFollow:null,sideStep:null});
   indoorBeginStairSanctuary(floor,stair);
-  w.stairsCooldown=2;w.stairEntryFloor=null;w.stairEntryId=null;w.stairActive=null;
-  cam=Math.max(0,Math.min(WH-H,p.y-H*.6));say(['1F','B1F','B2F'][w.currentFloor]+'へ移動');sfx('skill');
+  w.stairsCooldown=w.rescue?2:2-INDOOR_STAIR_TRANSITION_SECONDS;
+  w.stairEntryFloor=null;w.stairEntryId=null;w.stairActive=null;
+  if(!w.rescue){mission.progress=0;mission.current=null;}
+  cam=Math.max(0,Math.min(WH-H,p.y-H*.6));
+  say((w.rescue?['1F','B1F','B2F'][w.currentFloor]:floor.number+'階')+'へ移動');sfx('skill');
  }
  transition.remaining=remaining;
  w.stairMoveLock=remaining;
  if(remaining<=1e-9){w.stairTransition=null;w.stairMoveLock=0;}
 }
 
-function drawRescueStairTransition(){
+function drawIndoorStairTransition(){
  const remaining=indoorWorld.stairTransition?.remaining;
  if(!remaining)return;
  gm.save();gm.setTransform(1,0,0,1,0,0);
- gm.globalAlpha=1-Math.abs(1-2*remaining/RESCUE_STAIR_TRANSITION_SECONDS);
+ gm.globalAlpha=1-Math.abs(1-2*remaining/INDOOR_STAIR_TRANSITION_SECONDS);
  gm.fillStyle='#080b0d';gm.fillRect(0,0,W,H);gm.restore();
 }
 
@@ -2746,22 +2752,7 @@ function updateInfiltrationMission(dt){
   indoorUpdateAlarmChats(dt);
   indoorScanStunnedGuards(dt);
   // 発見だけでは終了させず、潜入専用AIの追跡・最終目撃地点確認・捜索を継続する。
-  w.stairMoveLock=Math.max(0,(w.stairMoveLock||0)-dt);
-  w.stairsCooldown=Math.max(0,w.stairsCooldown-dt);
-  const floor=w.floors[w.currentFloor];
-  if(indoorStairTravelReady(floor)&&w.stairsCooldown<=0){
-    const sourceStair=w.stairActive;
-    w.currentFloor=indoorStairDestination(floor,sourceStair);
-    const target=w.floors[w.currentFloor],targetStair=target.stairs?.find(q=>q.id===sourceStair?.id)||target.stair;
-    Object.assign(p,indoorStairLanding(target,targetStair));
-    if(typeof scoreStats!=='undefined'&&scoreStats)scoreStats.lastY=p.y;
-    indoorPartnerStairLanding(target,targetStair);
-    indoorBeginStairSanctuary(target,targetStair);
-    w.stairsCooldown=2;w.stairEntryFloor=null;w.stairEntryId=null;w.stairActive=null;w.stairMoveLock=.5;
-    m.progress=0;m.current=null;
-    cam=Math.max(0,Math.min(WH-H,p.y-H*.6));
-    say((w.currentFloor+1)+'階へ移動');sfx('skill');
-  }
+  if(beginIndoorStairTransition(dt))return;
   for(const q of m.points)if(q.collectedT>0)q.collectedT=Math.max(0,q.collectedT-dt);
   m.current=null;m.progress=0;
   for(const q of m.points){
@@ -3277,7 +3268,7 @@ function drawRescueAdvancedHud(el){
  const playerArea=rescueStairSafeArea(p),vipArea=rescued&&rescueStairSafeArea(r.vip);
  if(playerArea)drawIndoorStairSafeArea(playerArea);
  if(vipArea&&vipArea!==playerArea)drawIndoorStairSafeArea(vipArea);
- drawRescueStairTransition();
+ drawIndoorStairTransition();
 }
 function drawIndoorStairSafeArea(area){
   const x=area.x-camX,y=area.y-cam;
@@ -3361,6 +3352,7 @@ function drawInfiltrationMission(){
     gm.fillText(guideFloor?'→'+guideFloor+'F':'→EXIT',W-12,95);
   }
   gm.restore();
+  drawIndoorStairTransition();
 }
 if(typeof module!=='undefined'&&module.exports)module.exports={indoorGenerateExterior,indoorGenerateFloor,indoorAt,indoorRect,indoorGuardCell,indoorGuardCellRoute,indoorMakeGuardGrid,indoorGridDetour,indoorGridPoint,indoorGridSafePoint};
 

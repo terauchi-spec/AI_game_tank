@@ -108,7 +108,7 @@ test('stair travel fades for half a second and moves the player and VIP at the m
  const opacity=h.run(`(()=>{
   const original=gm.fillRect;let alpha=0;
   gm.fillRect=()=>{alpha=gm.globalAlpha;};
-  try{drawRescueStairTransition();}finally{gm.fillRect=original;}
+  try{drawIndoorStairTransition();}finally{gm.fillRect=original;}
   return alpha;
  })()`);
  assert.ok(opacity>.99);

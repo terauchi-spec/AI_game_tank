@@ -272,9 +272,13 @@ test('separate stairs travel 1-2-3-2-1 with matching partner landings and no imm
  const h=game(true);h.run("state='play';skill='partner';partner={alive:true,x:p.x,y:p.y,hp:3};");
  for(const target of [1,2,1,0]){
   h.run(`(()=>{const w=indoorWorld,f=w.floors[w.currentFloor],stair=f.stairs.find(q=>q.destination===${target}),b=indoorStairBounds(stair,f.number);w.stairsCooldown=0;w.stairMoveLock=0;w.stairEntryFloor=null;w.stairEntryId=null;p.tank=null;p.x=stair.x;p.y=b.y+b.h-14;updateInfiltrationMission(.01);p.y=b.y+20;updateInfiltrationMission(.01);w.testArrivalId=stair.id;})()`);
+  assert.notEqual(h.run('indoorWorld.currentFloor'),target);
+  h.run('update(.24)');
+  assert.notEqual(h.run('indoorWorld.currentFloor'),target);
+  h.run('update(.01)');
   assert.equal(h.run('indoorWorld.currentFloor'),target);
   assert.equal(h.run(`(()=>{const f=indoorWorld.floors[indoorWorld.currentFloor],stair=f.stairs.find(q=>q.id===indoorWorld.testArrivalId),landing=indoorStairLanding(f,stair);return p.x===landing.x&&p.y===landing.y&&partner.x===landing.x+14&&partner.y===landing.y+12&&indoorStairProtected();})()`),true);
-  h.run('updateInfiltrationMission(2.1);');assert.equal(h.run('indoorWorld.currentFloor'),target,'no immediate return at landing');
+  h.run('update(.25);updateInfiltrationMission(2.1);');assert.equal(h.run('indoorWorld.currentFloor'),target,'no immediate return at landing');
  }
  const standard=game(false);assert.equal(standard.run('indoorWorld.floors.length'),2);assert.equal(standard.run('enemyDogs.length'),1);
 });

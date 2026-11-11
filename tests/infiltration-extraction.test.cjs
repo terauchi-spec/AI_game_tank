@@ -16,7 +16,7 @@ function harness(seed=1,width=480){
  vm.runInContext(source+`;setupInfiltrationWorld();setupInfiltrationMission();
   api={get world(){return indoorWorld;},bounds:infiltrationFloorBounds,clamp:enforceInfiltrationBoundary,
     camera:infiltrationCamera,begin:beginInfiltrationExtraction,update:updateInfiltrationExtraction,
-    mission:updateInfiltrationMission,draw:drawInfiltrationExtraction,sprite:infiltrationJeepSprite,
+    mission:updateInfiltrationMission,transition:updateIndoorStairTransition,draw:drawInfiltrationExtraction,sprite:infiltrationJeepSprite,
     protected:indoorStairProtected,protect:indoorBeginStairSanctuary,tick:indoorTickStairSanctuary,sees:indoorGuardSeesPlayer,record:indoorRecordGuardDiscovery,stairBlocked:indoorGuardStairBlocked,move:indoorMoveGuardTo,stairBounds:indoorStairBounds,landing:indoorStairLanding};`,c);
  return{c,api:c.api,draws,get completed(){return completed;},get canvases(){return canvases;}};
 }
@@ -108,7 +108,7 @@ test('both stair directions bring the partner onto the protected landing and cle
   for(const destination of [1,0]){
    const f=w.floors[w.currentFloor],b=h.api.stairBounds(f.stair,f.number);w.stairsCooldown=0;
    c.order.pressed=true;c.order.drawing=true;c.order.path=[{x:1,y:2}];
-   Object.assign(c.p,{x:f.stair.x,y:b.y+b.h-12});h.api.mission(.01);c.p.y=b.y+20;h.api.mission(.01);
+   Object.assign(c.p,{x:f.stair.x,y:b.y+b.h-12});h.api.mission(.01);c.p.y=b.y+20;h.api.mission(.01);h.api.transition(.25);
    assert.equal(w.currentFloor,destination);const landing=h.api.landing(w.floors[destination]),q=c.partner;
    assert.equal(q.x,landing.x+14);assert.equal(q.y,landing.y+12);
    const area=w.stairSanctuary;assert.ok(q.x>=area.x&&q.x<=area.x+area.w&&q.y>=area.y&&q.y<=area.y+area.h);
@@ -116,6 +116,7 @@ test('both stair directions bring the partner onto the protected landing and cle
    assert.equal(c.order.pressed,false);assert.equal(c.order.drawing,false);assert.equal(c.order.path.length,0);
    const x=q.x,y=q.y;c.updatePartner(.1);assert.equal(q.x,x);assert.equal(q.y,y,'partner shares the landing pause');
    assert.equal(q.hp,condition==='down'?0:2);assert.equal(q.down,condition==='down');assert.equal(q.stunT,condition==='stunned'?3:0);
+   h.api.transition(.25);
   }
  }
 });
@@ -224,7 +225,7 @@ test('stair transition grants sanctuary until the landing area is left and clear
  Object.assign(c.p,{x:w.floors[0].stair.x,y:b.y+b.h-12});h.api.mission(.01);
  c.p.y=b.y+20;guard.st=1;guard.target='p';guard.indoorAlert={phase:'found'};
  guard.indoorNotice={visible:true,exposure:1};guard._detectCache={key:'p',obj:c.p};guard._nextDetectAt=9999;
- h.api.mission(.01);
+ h.api.mission(.01);h.api.transition(.25);
  assert.equal(w.currentFloor,1);assert.equal(h.api.protected(),true);assert.ok(w.stairSanctuary);
  assert.equal(guard.st,0);assert.equal(guard.target,null);assert.equal(guard.indoorNotice,null);assert.equal(guard._detectCache,null);
  assert.equal(h.api.sees(guard),false,'even a point-blank guard cannot see the landing player');
