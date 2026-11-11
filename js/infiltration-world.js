@@ -1468,12 +1468,26 @@ function updateRescueAdvancedMission(dt){
    else vip.moving=false;
   }
  }
+ updateRescueVipGuardDetection(dt);
  const ground=w.floors[0].footprint,outside=p.y<ground.y-12||p.y>ground.y+ground.h+12;
  const escape=vip.freed&&vip.hp>0&&!(vip.stunT>0)&&w.currentFloor===0&&!p.tank&&outside
   ?w.exits.find(q=>D(p,q)<INDOOR_EXIT_RADIUS&&D(vip,q)<INDOOR_EXIT_RADIUS):null;
  if(escape){if(m.escapeExit!==escape)m.escapeProgress=0;m.escapeExit=escape;m.escapeProgress=Math.min(INDOOR_EXIT_SECONDS,m.escapeProgress+dt);
   if(m.escapeProgress>=INDOOR_EXIT_SECONDS&&!m.escapeComplete){m.escapeComplete=true;completeMission();beginInfiltrationExtraction(escape);}
  }else{m.escapeExit=null;m.escapeProgress=0;}
+}
+function updateRescueVipGuardDetection(dt){
+ const w=indoorWorld,v=w?.rescue?.vip;
+ if(!v?.freed||v.hp<=0||v.stunT>0||v.indoorFloor!==w.currentFloor+1)return;
+ for(const h of w.floors[w.currentFloor].guards||[]){
+  if(!h.alive||h.stun>0||h.stunRecover>0||h.houndPinned||h.blastAirT>0||h.indoorAllyCombat)continue;
+  const distance=D(h,v),angle=Math.abs(angD(Math.atan2(v.y-h.y,v.x-h.x),h.face));
+  if(distance>detectRange('p')*1.4||angle>DETECT_OUTER_HALF*1.4||!cachedLos(h,v)){h.rescueVipSightT=0;continue;}
+  h.rescueVipSightT=(h.rescueVipSightT||0)+dt;
+  if(h.rescueVipSightT>=.65&&(!h.indoorAlert||h.indoorAlert.phase!=='found')){
+   indoorGuardAlertAt(h,v);indoorRecordWitness(h,'要人が敵兵に発見された');
+  }
+ }
 }
 function drawRescueAdvancedMission(){
  const r=indoorWorld?.rescue;if(!r)return;
@@ -2611,6 +2625,7 @@ function updateInfiltrationDoors(dt){
       indoorEndAllyCombat(h);h.indoorAlert=null;h.indoorNotice=null;
     }
     const players=[p,...floor.guards,...(allies||[])];
+    if(rescueAdvancedTest&&indoorWorld.rescue?.vip?.freed&&indoorWorld.rescue.vip.indoorFloor===floor.number)players.push(indoorWorld.rescue.vip);
     if(partner)players.push(partner);
     if(hound)players.push(hound);
     if(typeof enemyDogs!=='undefined')players.push(...enemyDogs.filter(d=>d.indoorFloor===floor.number));
@@ -2927,11 +2942,12 @@ function drawInfiltrationStairSprite(floor){
 }
 function drawInfiltrationStairArrow(floor,stair,height){
   const direction=stair.direction||(floor.number===1?1:-1),x=stair.x,y=stair.y-height/2+24;
+  const arrowDirection=rescueAdvancedTest?-direction:direction;
   g.save();
   g.fillStyle='rgba(20,30,35,.8)';g.beginPath();g.arc(x,y,15,0,Math.PI*2);g.fill();
   // A north-pointing arrow denotes up a floor, a south-pointing arrow down.
   g.beginPath();const pts=[[-9,0],[0,-11],[9,0],[4,0],[4,10],[-4,10],[-4,0]];
-  for(let i=0;i<pts.length;i++){const [dx,dy]=pts[i];if(i)g.lineTo(x+dx,y+dy*direction);else g.moveTo(x+dx,y+dy*direction);}
+  for(let i=0;i<pts.length;i++){const [dx,dy]=pts[i];if(i)g.lineTo(x+dx,y+dy*arrowDirection);else g.moveTo(x+dx,y+dy*direction);}
   g.closePath();g.fillStyle=direction>0?'#fff0a8':'#a5e8ff';g.strokeStyle='#15232b';g.lineWidth=1.5;g.fill();g.stroke();
   g.restore();
 }
@@ -2996,7 +3012,7 @@ function drawInfiltrationFloors(cx,cy){
       drawInfiltrationStairArrow(f,stair,116);
       }
     }
-    if(arguments[2]!==false)drawInfiltrationExitsForFloor(f,cx,cy);
+    if(arguments[2]!==false&&(!rescueAdvancedTest||f.number===1))drawInfiltrationExitsForFloor(f,cx,cy);
   }
 }
 
@@ -3013,6 +3029,7 @@ function drawExitCircle(q,radius,progress,active){
 }
 function drawInfiltrationExitsForFloor(f,cx,cy){
     // 前線制圧のような円形の脱出範囲。描画と待機判定は同じ半径を使う。
+    if(rescueAdvancedTest&&f.number!==1)return;
     for(const q of [f.entrance||f.entrances?.[0],f.emergency].filter(Boolean)){
       const radius=INDOOR_EXIT_RADIUS;
       if(q.x+radius<cx||q.x-radius>cx+W||q.y+radius<cy||q.y-radius>cy+H)continue;
@@ -3183,7 +3200,7 @@ function drawRescueAdvancedHud(el){
  gm.save();gm.setTransform(1,0,0,1,0,0);
  gm.textAlign='right';gm.font='bold 14px system-ui';gm.fillStyle='#e6e9d8';
  gm.fillText('エリア:'+labels[floor],W-12,34);
- if(hasKey){gm.fillStyle='#ffdb68';gm.font='bold 23px system-ui';gm.fillText('⚿',W-18,65);}
+ if(hasKey){gm.fillStyle='#ffdb68';gm.font='bold 23px system-ui';gm.fillText('⚿',W-18,126);}
  if(!rescued&&floor!==2){gm.fillStyle='#ffe1a0';gm.font='bold 26px system-ui';gm.fillText('→B2F',W-12,99);}
  else if(!rescued){const a=Math.atan2(r.vip.y-p.y,r.vip.x-p.x);gm.save();gm.translate(W-35,94);gm.rotate(a);gm.fillStyle='#ffe1a0';gm.beginPath();gm.moveTo(18,0);gm.lineTo(-10,-11);gm.lineTo(-4,0);gm.lineTo(-10,11);gm.closePath();gm.fill();gm.restore();}
  else {gm.fillStyle='#a9f3c0';gm.font='bold 21px system-ui';gm.fillText('→EXIT',W-12,99);}
