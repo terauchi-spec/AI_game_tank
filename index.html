@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.11.0950</title>
+<title>こっそり戦車大作戦 2026.11.11.2042</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -1022,7 +1022,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.11.0950',FILE_CREATED_AT='2026/11/11 09:50',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.11.2042',FILE_CREATED_AT='2026/11/11 20:42',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -3721,7 +3721,7 @@ function los(a,b){
 function cachedLos(o,target,ms=90){
  const now=performance.now();if(o&&o._visTarget===target&&o._nextVisAt>now)return !!o._visCache;const v=los(o,target);if(o){o._visTarget=target;o._visCache=v;o._nextVisAt=now+ms;}return v;
 }
-function targetObj(key){if(key==='escapeVip')return escapeVipTarget();if(key==='partner')return partner&&!partner.down?partner:null;if(key&&key.startsWith('ally:')){const id=+key.slice(5);return (allies||[]).find(a=>a.alive&&a.id===id)||null;}if(key==='decoy')return decoy;return key==='p'?p:null;}
+function targetObj(key){if(key==='rescueVip')return rescueVipTarget();if(key==='escapeVip')return escapeVipTarget();if(key==='partner')return partner&&!partner.down?partner:null;if(key&&key.startsWith('ally:')){const id=+key.slice(5);return (allies||[]).find(a=>a.alive&&a.id===id)||null;}if(key==='decoy')return decoy;return key==='p'?p:null;}
 function canDetect(o,target,face,key){
  if(stageMode==='indoor'&&o?.indoorGuard&&key==='p'&&indoorStairProtected())return false;
  if(!target)return false;const d=D(o,target),known=o.st&&o.target===key,searchBoost=(o&&o.sus>0&&!o.st)?1.5:1,eliteRange=o&&o.commander==='white'?1.6:o&&o.elite?1.2:1,eliteFov=o&&o.commander==='white'?1.3:o&&o.elite?1.2:1,humanFov=(humans||[]).includes(o)?1.2:1,fovBoost=eliteFov*humanFov;
@@ -4209,10 +4209,11 @@ function updateCommanderAI(h,dt){
  }
  return true;
 }
+function combatVipTarget(){return stageMode==='escapeTest'?escapeVipTarget():rescueVipTarget();}
 function commanderRocketBlast(x,y){
  cannonImpactFx(x,y);scatterSpinifexAt(x,y,COMMANDER_BLAST_RADIUS);sfx('explosion');damageObjectsInRadius(x,y,COMMANDER_BLAST_RADIUS,'cannonBlast');damageObjectsInRadius(x,y,28,'cannonDirect');carve(x,y,48,false,'cannonBlast');
  stunHoundAtBlast(x,y,COMMANDER_BLAST_RADIUS);
- const vip=stageMode==='escapeTest'?mission?.vip:null;if(vip?.hp>0&&Math.hypot(vip.x-x,vip.y-y)<COMMANDER_BLAST_RADIUS)damageEscapeVip(vip);
+ const vip=combatVipTarget();if(vip&&Math.hypot(vip.x-x,vip.y-y)<COMMANDER_BLAST_RADIUS)damageMissionVip(vip);
  for(const h of humans)if(h.alive&&Math.hypot(h.x-x,h.y-y)<COMMANDER_BLAST_RADIUS){if(typeof noteEnemyFallHit==='function')noteEnemyFallHit(h,h.x-x,h.y-y);h.alive=false;burst(h.x,h.y,12,'#c05a3a',160);}
  for(const ally of allies||[])if(ally.alive&&Math.hypot(ally.x-x,ally.y-y)<COMMANDER_BLAST_RADIUS){ally.alive=false;if(typeof rememberFallenAlly==='function')rememberFallenAlly(ally,ally.x-x,ally.y-y);burst(ally.x,ally.y,12,'#8fd7ff',160);}
  for(const e of etanks)if(e.alive&&Math.hypot(e.x-x,e.y-y)<COMMANDER_BLAST_RADIUS)destroyEnemyTank(e,x,y);
@@ -4228,7 +4229,7 @@ function commanderRocketBlast(x,y){
 }
 function updateCommanderRocket(b,ox,oy,expired){
  if(b.from==='ally')return updateFrontlineCommanderRocket(b,ox,oy,expired);
- const vip=stageMode==='escapeTest'?mission?.vip:null,distance=Math.hypot(b.x-ox,b.y-oy),steps=Math.max(1,Math.ceil(distance/8));
+ const vip=combatVipTarget(),distance=Math.hypot(b.x-ox,b.y-oy),steps=Math.max(1,Math.ceil(distance/8));
  for(let i=1;i<=steps;i++){
   const q={x:ox+(b.x-ox)*i/steps,y:oy+(b.y-oy)*i/steps},travelled=Math.hypot(q.x-b.sx,q.y-b.sy);
   const hit=hitsC(q.x,q.y,3)||(vip?.hp>0&&D(vip,q)<12)||(p.dig<=0&&D(q,p)<(p.tank?TANK_HIT:10))||(allies||[]).some(a=>a.alive&&D(a,q)<10)||travelled>48&&(humans.some(h=>h!==b.commanderShooter&&h.alive&&D(h,q)<11)||etanks.some(e=>e.alive&&D(e,q)<TANK_HIT));
@@ -6132,7 +6133,7 @@ function update(dt){
  if(radio&&!radio.got&&D(radio,p)<30){radio.got=true;startAirstrike();}
  if(whiteRadio&&!whiteRadio.got&&D(whiteRadio,p)<30){whiteRadio.got=true;startReinforcementPass();}
  updateHound(dt);
- const vip=stageMode==='escapeTest'?mission?.vip:null;if(vip?.hp>0){updateEscapeVip(dt);updateEscapeVipConcealment(vip,dt);}
+ const vip=combatVipTarget();if(stageMode==='escapeTest'&&vip){updateEscapeVip(dt);updateEscapeVipConcealment(vip,dt);}
  const tumbleCover=updateTumbleweedStealth();
  const stealthCover=tumbleCover||(!p.tank&&inBush(p))||((weather==='rain'||weather==='squall')&&inWaterAt(p.x,p.y,0))||(p.dig>0);
  if(stealthCover){const wasFound=humans.some(h=>h.alive&&h.st&&h.target==='p')||etanks.some(e=>e.alive&&e.st&&e.target==='p');p.bushHide=(p.bushHide||0)+dt;if(!wasFound||p.bushHide>=1){for(const h of humans)if(h.alive&&h.target==='p'&&!(stageMode==='indoor'&&h.indoorGuard)&&!(h.sniperForcedFoundT>0)){h.st=0;h.target=null;h.lost=0;h.foundPause=0;pauseAfterEnemyDetection(h);}for(const e of etanks)if(e.alive&&e.target==='p'&&!(e.sniperForcedFoundT>0)){e.st=0;e.target=null;e.lost=0;e.foundPause=0;pauseAfterEnemyDetection(e);}}}else p.bushHide=0;
@@ -6258,7 +6259,7 @@ function update(dt){
   if(b.own==='e'){b.t-=dt;
    if(vip?.hp>0&&D(vip,b)<14){
     bombs.splice(i,1);sfx('explosion');fb(b.x,b.y,28);burst(b.x,b.y,34,'#ff8a3a',300);
-    damageEscapeVip(vip);if(state==='failed')return;continue;
+    damageMissionVip(vip);if(state==='failed')return;continue;
    }
    const houndStep=hound&&hound.stun<=0&&D(hound,b)<14;if(houndStep){stunHound(5);sfx('explosion');fb(b.x,b.y,28);burst(b.x,b.y,34,'#ff8a3a',300);shake=Math.max(shake,10);bombs.splice(i,1);continue;}
    const allyStep=(allies||[]).find(a=>a.alive&&!(a.chute>0)&&D(a,b)<14);if(allyStep){for(const a of (allies||[]))if(a.alive&&!(a.chute>0)&&D(a,b)<34){a.alive=false;if(typeof rememberFallenAlly==='function')rememberFallenAlly(a,a.x-b.x,a.y-b.y);burst(a.x,a.y,18,'#8fd7ff',180);}sfx('explosion');fb(b.x,b.y,28);burst(b.x,b.y,34,'#ff8a3a',300);shake=Math.max(shake,10);bombs.splice(i,1);say('増援が地雷でやられた!');continue;}
@@ -6310,7 +6311,7 @@ function update(dt){
    }
    if(!dead&&vip?.hp>0&&pointSegDist(vip.x,vip.y,{x:ox,y:oy},b)<12){
     dead=true;if(b.k==='c')cannonImpact(b.x,b.y,b.from);
-    damageEscapeVip(vip,b.k==='c'?3:1);
+    damageMissionVip(vip,b.k==='c'?3:1);
    }
    if(!dead&&partner&&!partner.down&&!(p.tank&&(partner.vehicle===p.tank||partner.passengerVehicle===p.tank))&&D(b,partner)<(partner.vehicle?30:12)){
     dead=true;if(b.k==='c')cannonImpact(b.x,b.y,b.from);
@@ -8604,7 +8605,7 @@ document.getElementById('missionSuccessEvaluate').addEventListener('click',()=>{
 let failureFrameDrawn=false;
 function syncMissionFailure(){
  const active=state==='failed',wasOpen=document.body.classList.contains('failure-open');
- if(active!==wasOpen){document.body.classList.toggle('failure-open',active);if(active){document.getElementById('missionFailureTitle').textContent=stageMode==='escapeTest'&&mission?.vip?.hp===0?'作戦失敗 ― 要人女性が倒れた':'作戦失敗';document.getElementById('missionEvaluate').textContent=stageMode==='training'?'訓練を振り返る':'作戦評価';document.getElementById('missionEvaluate').focus({preventScroll:true});}}
+ if(active!==wasOpen){document.body.classList.toggle('failure-open',active);if(active){document.getElementById('missionFailureTitle').textContent=(stageMode==='escapeTest'&&mission?.vip?.hp===0||stageMode==='indoor'&&rescueAdvancedTest&&indoorWorld?.rescue?.vip.hp===0)?'作戦失敗 ― 要人女性が倒れた':'作戦失敗';document.getElementById('missionEvaluate').textContent=stageMode==='training'?'訓練を振り返る':'作戦評価';document.getElementById('missionEvaluate').focus({preventScroll:true});}}
 }
 document.getElementById('missionEvaluate').addEventListener('click',()=>{
  if(state!=='failed')return;
@@ -8875,11 +8876,11 @@ function reportGameError(error){
 <script src="js/jungle-hit-masks.js?v=2026.11.08.1710"></script>
 <script src="js/jungle-placement-masks.js?v=2026.11.08.2145"></script>
 <script src="js/jungle.js?v=2026.11.10.2223"></script>
-<script src="js/escape-test.js?v=2026.11.11.0738"></script>
+<script src="js/escape-test.js?v=2026.11.11.2042"></script>
 <script src="js/canyon.js?v=2026.11.10.2210"></script>
 <script src="js/vegetation.js?v=2026.11.08.1806"></script>
 <script src="js/laboratory.js?v=2026.10.31.2206"></script>
-<script src="js/infiltration-world.js?v=2026.11.11.rescue-vip-exit-02f8692"></script>
+<script src="js/infiltration-world.js?v=2026.11.11.2042"></script>
 <script src="js/infiltration-render.js?v=2026.10.31.2206"></script>
 <script src="js/input-diagnostics.js?v=2026.10.28.0713"></script>
 <script>

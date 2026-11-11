@@ -192,7 +192,7 @@ function escapeVipTarget(){
  const vip=mission?.vip;
  return vip?.hp>0?vip:null;
 }
-function damageEscapeVip(vip,damage=1){
+function damageMissionVip(vip,damage=1){
  if(!vip||vip.hp<=0||state!=='play')return;
  vip.hp=Math.max(0,vip.hp-damage);
  burst(vip.x,vip.y,7,'#f28b9f',75);
