@@ -1,8 +1,6 @@
 // Stage progress is independent of skill unlocks and persists even when debug controls are used.
 let selectedStageId=null,expandedStageId=null,stageDebugAll=false,intermediateStageId=null,rescueAdvancedTest=false;
 const LABORATORY_STAGE={id:'indoorLab',target:'先端科学研究所',name:'潜入（上級）',image:'laboratory_scene_white'};
-const RESCUE_ADVANCED_TEST_STAGE={id:'rescueAdvancedTest',target:'軍需格納庫',name:'救出（上級）',image:'infiltration_advanced'};
-const ESCAPE_TEST_STAGE={id:'escapeTest',target:'密林5エリア',name:'脱出（テスト）',image:'palm'};
 const TRAINING_STAGE={id:'training',target:'訓練場',name:'準備',image:'training'};
 const STAGE_PROGRESS_KEY='tankGameStageProgressV1';
 const LEGACY_STAGE_ORDER=['beginner','indoorBeginner','frontBeginner','base','indoor','front','decisive'];
@@ -13,11 +11,14 @@ const STAGE_ORDER=[
  {id:'baseIntermediate',target:'軍司令施設（北部）',name:'破壊（中級）',image:'headquarters'},
  {id:'indoor',target:'軍需格納庫',name:'潜入（中級）',image:'infiltration_advanced'},
  {id:'frontIntermediate',target:'戦術アンテナ',name:'制圧（中級）',image:'antenna'},
+ {id:'escapeTest',target:'ジャングル',name:'救出（中級）',image:'palm',imagePath:'assets/jungle/palm.webp'},
  {id:'base',target:'戦略ミサイル基地',name:'破壊（上級）',image:'missile_base_scene'},
  LABORATORY_STAGE,
  {id:'front',target:'戦術アンテナ',name:'制圧（上級）',image:'antenna'},
+ {id:'rescueAdvancedTest',target:'軍需格納庫',name:'救出（上級）',image:'infiltration_advanced'},
  {id:'decisive',target:'移動要塞',name:'決戦',image:'decisive'}
 ];
+const PRE_RESCUE_STAGE_ORDER=STAGE_ORDER.filter(stage=>stage.id!=='escapeTest'&&stage.id!=='rescueAdvancedTest');
 const STAGE_DISPLAY_ORDER=STAGE_ORDER.map(stage=>stage.id);
 function stageDisplayNumber(id){if(id==='training')return '00';return String(STAGE_DISPLAY_ORDER.indexOf(id)+1).padStart(2,'0');}
 function stageSelectionName(name){return name.replace('拠点破壊','破壊').replace('前線制圧','制圧');}
@@ -25,19 +26,28 @@ function currentStageId(){if(rescueAdvancedTest&&stageMode==='indoor')return 're
 function readStageProgress(){
  let saved;try{saved=JSON.parse(localStorage.getItem(STAGE_PROGRESS_KEY)||'null');}catch(_){}
  const earned=new Set();
- if(saved?.version===2||saved?.version===3){
+ if([2,3,4].includes(saved?.version)){
   for(const stage of STAGE_ORDER)if(Array.isArray(saved.cleared)&&saved.cleared.includes(stage.id))earned.add(stage.id);
  }else{
   // 旧4ステージの連続クリアと、別保存だった潜入の実績を引き継ぐ。
   for(const id of ['beginner','frontBeginner','base','front']){if(!Array.isArray(saved?.cleared)||!saved.cleared.includes(id))break;earned.add(id);}
   for(const id of ['indoorBeginner','indoor'])if(Array.isArray(saved?.indoorCleared)&&saved.indoorCleared.includes(id))earned.add(id);
  }
- // Version 3 preserves previously selectable stages without pretending new stages were cleared.
- const unlocked=saved?.version===3?(Array.isArray(saved.unlocked)?saved.unlocked:[]):saved?LEGACY_STAGE_ORDER.filter((id,i)=>LEGACY_STAGE_ORDER.slice(0,i).every(q=>earned.has(q))):[];
- return{version:3,cleared:STAGE_ORDER.filter(stage=>earned.has(stage.id)).map(stage=>stage.id),unlocked:STAGE_ORDER.filter(stage=>unlocked.includes(stage.id)).map(stage=>stage.id)};
+ // Preserve access to existing stages when the rescue stages are inserted.
+ const unlocked=new Set(saved?.version>=3?(Array.isArray(saved.unlocked)?saved.unlocked:[]):
+  saved?LEGACY_STAGE_ORDER.filter((id,i)=>LEGACY_STAGE_ORDER.slice(0,i).every(q=>earned.has(q))):[]);
+ if(saved?.version===2||saved?.version===3){
+  for(const stage of PRE_RESCUE_STAGE_ORDER){
+   unlocked.add(stage.id);
+   if(!earned.has(stage.id))break;
+  }
+ }
+ return{version:4,cleared:STAGE_ORDER.filter(stage=>earned.has(stage.id)).map(stage=>stage.id),unlocked:STAGE_ORDER.filter(stage=>unlocked.has(stage.id)).map(stage=>stage.id)};
 }
 function stageSelectable(id,progress=readStageProgress()){
  if(id==='training')return true;
+ if(id==='escapeTest')return progress.cleared.includes('frontIntermediate')&&stageSelectable('frontIntermediate',progress);
+ if(id==='rescueAdvancedTest')return progress.cleared.includes('front')&&stageSelectable('front',progress);
  const index=STAGE_ORDER.findIndex(stage=>stage.id===id);
  return index>=0&&(progress.unlocked?.includes(id)||STAGE_ORDER.slice(0,index).every(stage=>progress.cleared.includes(stage.id)));
 }
@@ -55,7 +65,6 @@ function unlockStageOnClear(s){
 function stageAvailableForSelection(id,progress=readStageProgress()){
  if(id==='training')return true;
  const developer=typeof isDeveloperMode==='function'&&isDeveloperMode();
- if(id==='escapeTest'||id==='rescueAdvancedTest')return developer;
  if(id==='decisive'&&!developer)return false;
  return (id==='areaDebug'&&developer)||(STAGE_ORDER.some(stage=>stage.id===id)&&((developer&&stageDebugAll)||stageSelectable(id,progress)));
 }
@@ -72,13 +81,13 @@ function readStageRecords(){
  return{version:1,stages};
 }
 function recordStageSortie(s){
- if(!s||s.stageSortieRecorded||areaDebugEnabled||rescueAdvancedTest)return;
+ if(!s||s.stageSortieRecorded||areaDebugEnabled)return;
  const id=currentStageId();if(!STAGE_ORDER.some(stage=>stage.id===id))return;
  const data=readStageRecords();data.stages[id].sorties++;
  try{localStorage.setItem(STAGE_RECORDS_KEY,JSON.stringify(data));s.stageSortieRecorded=true;s.stageRecordId=id;}catch(_){s.stageRecordSaveFailed=true;}
 }
 function recordStageResult(s){
- if(!s?.final||s.stageResultRecorded||areaDebugEnabled||rescueAdvancedTest)return;
+ if(!s?.final||s.stageResultRecorded||areaDebugEnabled)return;
  recordStageSortie(s);
  const id=s.stageRecordId;if(!STAGE_ORDER.some(stage=>stage.id===id))return;
  const data=readStageRecords(),v=data.stages[id],score=s.final.total,rank=s.final.rank;
@@ -109,7 +118,7 @@ function setSelectedStage(id,toggle=true){
  if(toggle)expandedStageId=expandedStageId===id?null:id;else if(selectedStageId!==id)expandedStageId=null;
  selectedStageId=id;
  document.querySelectorAll('[data-stage]').forEach(card=>{const chosen=card.dataset.stage===id;card.classList.toggle('selected',chosen);card.setAttribute('aria-pressed',String(chosen));});
- const stage=id==='rescueAdvancedTest'?RESCUE_ADVANCED_TEST_STAGE:id==='escapeTest'?ESCAPE_TEST_STAGE:id==='training'?TRAINING_STAGE:id==='indoorLab'?LABORATORY_STAGE:STAGE_ORDER.find(stage=>stage.id===id),button=document.getElementById('stageDeploy');
+ const stage=id==='training'?TRAINING_STAGE:STAGE_ORDER.find(stage=>stage.id===id),button=document.getElementById('stageDeploy');
  button.disabled=typeof gameBuildQueued!=='undefined'&&gameBuildQueued;
  button.textContent=id==='areaDebug'?'エリアデバッグへ':stage.name+'で出撃';
  renderStageRecords();
@@ -130,7 +139,6 @@ function renderStageLocks(){
  document.querySelectorAll('[data-stage]').forEach(button=>{
   const id=button.dataset.stage,index=STAGE_ORDER.findIndex(stage=>stage.id===id),stage=STAGE_ORDER[index];
   if(id==='training'){button.disabled=false;button.classList.toggle('locked',false);button.classList.toggle('stage-concealed',false);button.querySelector('.stage-target').textContent='訓練場';button.querySelector('.stage-number').textContent='00';button.setAttribute('aria-label','00 準備 訓練場');return;}
-  if(id==='escapeTest'||id==='rescueAdvancedTest'){const developer=typeof isDeveloperMode==='function'&&isDeveloperMode();button.hidden=!developer;button.disabled=!developer;button.classList.toggle('locked',false);button.classList.toggle('stage-concealed',false);button.setAttribute('aria-label',id==='rescueAdvancedTest'?'救出（上級） テスト 軍需格納庫':'脱出（テスト） 密林5エリア');return;}
   if(id==='areaDebug'){
    button.disabled=!(typeof isDeveloperMode==='function'&&isDeveloperMode());button.classList.toggle('locked',false);button.setAttribute('aria-label','エリアデバッグ');return;
   }
@@ -159,5 +167,5 @@ function renderStageUnlock(s){
  const stage=STAGE_ORDER.find(stage=>stage.id===s.unlockedStage),notice=document.getElementById('resStageUnlock'),image=document.getElementById('resStageUnlockImage');
  notice.hidden=!stage;
  document.getElementById('resStageUnlockName').textContent=stage?stageDisplayNumber(stage.id)+' '+stageSelectionName(stage.name):'';
- if(stage)image.src=(stage.image.startsWith('laboratory/')?'assets/indoor/':'assets/ui/stages/')+stage.image+'.webp';else image.removeAttribute('src');
+ if(stage)image.src=stage.imagePath||(stage.image.startsWith('laboratory/')?'assets/indoor/':'assets/ui/stages/')+stage.image+'.webp';else image.removeAttribute('src');
 }

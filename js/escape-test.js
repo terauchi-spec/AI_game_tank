@@ -1,4 +1,4 @@
-// Developer-only escape mission. Terrain, foliage, combat and EXIT art reuse existing systems.
+// Jungle rescue mission. Terrain, foliage, combat and EXIT art reuse existing systems.
 const ESCAPE_TEST_AREAS=5,ESCAPE_TEST_AREA_HEIGHT=2400;
 const ESCAPE_VIP_FOLLOW_DELAY=.6,ESCAPE_VIP_FOLLOW_SPEED=212*.7;
 function setupEscapeTestZones(){
@@ -13,7 +13,7 @@ function setupEscapeTestZones(){
 function setupEscapeTestWorld(){
  loadJungleAssets();loadEscapeVipArtwork();document.body.classList.remove('front-battle');
  p.x=WW/2;p.y=ZONES[0].y0-170;p.body=p.ang=-Math.PI/2;p.tank=null;
- scoreStats.startY=p.y;scoreStats.escapeTest=true;scoreStats.debugUsed=true;
+ scoreStats.startY=p.y;
  base={x:WW/2,y:-60000,w:COMMAND_BASE_W,h:COMMAND_BASE_H,hp:30,maxHp:30,deadAt:0};
  covers=[];objects=[];bushes=[];water=[];bridges=[];mud=[];cars=[];humans=[];etanks=[];items=[];bullets=[];parts=[];waves=[];fx=[];bombs=[];roadBands=[];areaDebugLabels=[];
  const jungles=ZONES.slice(1,-1);
@@ -309,7 +309,7 @@ function drawEscapeTestMission(){
  if(performance.now()>=missionHudNextAt){
   missionHudNextAt=performance.now()+100;
   const zone=ZONES[m.index],area=zone.escapeArea===undefined?(m.index===0?'開始草原':'脱出地点の草原'):'密林 '+(zone.escapeArea+1)+'/'+ESCAPE_TEST_AREAS;
-  const text='脱出（テスト）　'+area+'\n'+(m.escapeExit?'EXIT：あと '+Math.max(0,INDOOR_EXIT_SECONDS-m.escapeProgress).toFixed(1)+'秒':'EXITまで '+distanceMeters(D(p,m.exit))+'m ／ 要人と円内で5秒待機');
+  const text='救出（中級）　'+area+'\n'+(m.escapeExit?'EXIT：あと '+Math.max(0,INDOOR_EXIT_SECONDS-m.escapeProgress).toFixed(1)+'秒':'EXITまで '+distanceMeters(D(p,m.exit))+'m ／ 要人と円内で5秒待機');
   if(hud.textContent!==text)hud.textContent=text;
  }
  const previous=g;gm.save();g=gm;

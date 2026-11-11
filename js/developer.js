@@ -10,7 +10,7 @@ function setDeveloperMode(active){
   skillDebugAll=false;stageDebugAll=false;areaDebugEnabled=false;selectedAreaDebug=null;debugMode=0;debugInvincible=false;patrolRoutesVisible=false;
   if(typeof resetMazeComparison==='function')resetMazeComparison();
   debugRenderDiagnostic=null;skillMenuDirty=true;
-  if(selectedStageId==='areaDebug'||selectedStageId==='frontOni'||selectedStageId==='escapeTest')selectedStageId=null;
+  if(selectedStageId==='areaDebug'||selectedStageId==='frontOni')selectedStageId=null;
   if(typeof updateDebugBadge==='function')updateDebugBadge();
  }
 }

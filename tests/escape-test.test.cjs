@@ -1,14 +1,24 @@
 const test=require('node:test'),assert=require('node:assert/strict'),path=require('node:path'),fs=require('node:fs'),vm=require('node:vm');
 const {createGameEngine}=require('./helpers/game-engine.cjs'),root=path.join(__dirname,'..');
 function start(seed=7){const h=createGameEngine(root,{seed});h.run("stageMode='escapeTest';areaDebugEnabled=false;skill='throw';reset(false)");return h;}
-test('escape test selection is developer-only and does not change the ten official stages',()=>{
- const h=createGameEngine(root);assert.equal(h.run('STAGE_ORDER.length'),10);
- assert.equal(h.run("setSelectedStage('escapeTest')"),false);
- h.run('setDeveloperMode(true)');assert.equal(h.run("setSelectedStage('escapeTest')"),true);
- assert.equal(h.nodes.get('stageDeploy').textContent,'脱出（テスト）で出撃');
- h.run("state='stage';selectedSkillId='throw'");assert.equal(h.run('deploySelectedStage()'),true);assert.equal(h.run('stageMode'),'escapeTest');assert.equal(h.run('areaDebugEnabled'),false);
- h.run('setDeveloperMode(false)');assert.equal(h.run('selectedStageId'),null);
- const html=fs.readFileSync(path.join(root,'index.html'),'utf8');assert.match(html,/data-stage="escapeTest" hidden/);
+const previousStages=['beginner','indoorBeginner','frontBeginner','baseIntermediate','indoor','frontIntermediate'];
+function unlockRescue(h,advanced=false){
+ const cleared=advanced?[...previousStages,'escapeTest','base','indoorLab','front']:previousStages;
+ h.storage.set('tankGameStageProgressV1',JSON.stringify({version:4,cleared,unlocked:[]}));
+}
+test('both rescue missions are selectable and deploy through the public stage menu after their prerequisites',()=>{
+ const h=createGameEngine(root);
+ assert.equal(h.run('STAGE_ORDER.length'),12);
+ for(const [id,name,mode] of [['escapeTest','救出（中級）','escapeTest'],['rescueAdvancedTest','救出（上級）','indoor']]){
+  assert.equal(h.run(`setSelectedStage('${id}')`),false);
+  unlockRescue(h,id==='rescueAdvancedTest');
+  assert.equal(h.run(`setSelectedStage('${id}')`),true);
+  assert.equal(h.nodes.get('stageDeploy').textContent,name+'で出撃');
+  h.run("state='stage';selectedSkillId='throw';gameBuildQueued=false");
+  assert.equal(h.run('deploySelectedStage()'),true);
+  assert.equal(h.run('stageMode'),mode);
+  assert.equal(h.run('currentStageId()'),id);
+ }
 });
 test('five contiguous jungle areas reuse normal combat and terrain, with safe start and EXIT',()=>{
  const variants=new Set();
@@ -38,8 +48,8 @@ test('five contiguous jungle areas reuse normal combat and terrain, with safe st
  }
  assert.ok(variants.size>1);
 });
-test('EXIT requires five uninterrupted seconds on foot, resets outside, and finalizes exactly once without saving',()=>{
- const h=start(),before=Array.from(h.storage.entries());h.run('recordStageSortie(scoreStats);p.x=mission.exit.x;p.y=mission.exit.y;updateMission(5)');
+test('EXIT requires five uninterrupted seconds on foot, resets outside, and finalizes exactly once and records a public clear',()=>{
+ const h=start();unlockRescue(h);h.run('recordStageSortie(scoreStats);p.x=mission.exit.x;p.y=mission.exit.y;updateMission(5)');
  assert.equal(h.run('state'),'play');assert.equal(h.run('mission.escapeProgress'),0);
  h.run('Object.assign(mission.vip,mission.exit);updateMission(4.9)');
  assert.equal(h.run('mission.escapeProgress'),4.9);
@@ -53,9 +63,10 @@ test('EXIT requires five uninterrupted seconds on foot, resets outside, and fina
  assert.equal(h.run('state'),'indoorEscape');assert.equal(h.run('mission.extraction.carX<mission.extraction.stopX'),true);
  h.run('updateInfiltrationExtraction(2.8);draw()');assert.equal(h.run('state'),'succeeded');assert.equal(h.run('mission.extraction.vip.boarded'),true);
  h.run('updateInfiltrationExtraction(1.8)');assert.equal(h.run('mission.extraction.phase'),'departed');assert.equal(h.run('scoreStats.final.cleared'),true);
- assert.equal(h.run('scoreStats.awards.disabled&&scoreStats.debugUsed'),true);assert.equal(h.run('scoreStats.objectiveProgress'),1);
+ assert.equal(h.run('scoreStats.awards.disabled||scoreStats.debugUsed'),false);assert.equal(h.run('scoreStats.objectiveProgress'),1);
  const final=h.run('scoreStats.final');h.run('updateMission(5);finalizeScore(true);draw()');assert.equal(h.run('scoreStats.final'),final);
- assert.deepEqual(Array.from(h.storage.entries()),before);
+ assert.equal(h.run('readStageRecords().stages.escapeTest.successes'),1);
+ assert.equal(h.run("stageSelectable('base')"),true);
 });
 test('VIP follows unarmed, rejoins from below without healing, and takes enemy fire',()=>{
  const h=start();
@@ -139,8 +150,8 @@ test('VIP settles behind a stationary player and still enters EXIT at the edge o
  assert.match(h.nodes.get('missionHud').textContent,/EXIT：あと/);
  assert.doesNotMatch(h.nodes.get('missionHud').textContent,/要人 ♥/);
 });
-test('test failure cannot save records and returning to a normal stage clears the escape mission',()=>{
- const h=start(),before=Array.from(h.storage.entries());h.run("p.hp=0;updateMission(5);finalizeScore(false)");assert.equal(h.run('scoreStats.final.cleared'),false);assert.deepEqual(Array.from(h.storage.entries()),before);
+test('rescue failure records a sortie without a clear, and returning to another stage clears the escape mission',()=>{
+ const h=start();unlockRescue(h);h.run("p.hp=0;updateMission(5);finalizeScore(false)");assert.equal(h.run('scoreStats.final.cleared'),false);assert.equal(h.run('readStageRecords().stages.escapeTest.sorties'),1);assert.equal(h.run('readStageRecords().stages.escapeTest.successes'),0);
  h.run("stageMode='beginner';reset(false);draw();update(1/60)");assert.equal(h.run('!!mission?.escapeTest'),false);assert.equal(h.run("ZONES.some(z=>z.escapeArea!==undefined)"),false);assert.equal(h.run('!!scoreStats.escapeTest'),false);
 });
 test('shared river and lake generators retain legacy probability boundaries, sizes and random draw counts',()=>{
@@ -252,4 +263,19 @@ test('escape areas two and four each drop three white soldiers early without bom
  h.run('p.y=ZONES[2].y0-160;updateEscapeTestMission(1);p.y=ZONES[4].y0-160;updateEscapeTestMission(1)');
  assert.equal(h.run('humans.filter(h=>h.escapeParatrooper).length'),6);
  assert.equal(h.run('mission.enemyDrop.plane'),null);
+});
+
+test('advanced rescue completion saves official stage results and clears',()=>{
+ const h=createGameEngine(root,{seed:1771});unlockRescue(h,true);
+ h.run(`stageMode='indoor';rescueAdvancedTest=true;reset(false);state='play';
+  recordStageSortie(scoreStats);
+  const vip=indoorWorld.rescue.vip;
+  Object.assign(p,indoorWorld.exit);
+  Object.assign(vip,indoorWorld.exit,{freed:true,indoorFloor:1});
+  updateMission(5);`);
+ assert.equal(h.run('state'),'indoorEscape');
+ assert.equal(h.run('scoreStats.final.cleared'),true);
+ assert.equal(h.run('scoreStats.awards.disabled'),false);
+ assert.equal(h.run('readStageRecords().stages.rescueAdvancedTest.successes'),1);
+ assert.equal(h.run("readStageProgress().cleared.includes('rescueAdvancedTest')"),true);
 });

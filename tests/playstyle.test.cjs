@@ -138,15 +138,15 @@ test('debug saves the final title and mythic, and mythic has the highest priorit
 function stageHarness(cleared=[]){
  const c=harness();Object.assign(c,{stageMode:'front',frontlineBeginner:false,frontlineOni:false,indoorBeginner:false});
  vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/stage-progress.js'),'utf8'),c);
- c.saved.set('tankGameStageProgressV1',JSON.stringify({version:2,cleared}));return c;
+ c.saved.set('tankGameStageProgressV1',JSON.stringify({version:4,cleared}));return c;
 }
-const allStages=['beginner','indoorBeginner','frontBeginner','baseIntermediate','indoor','frontIntermediate','base','indoorLab','front','decisive'];
+const allStages=['beginner','indoorBeginner','frontBeginner','baseIntermediate','indoor','frontIntermediate','escapeTest','base','indoorLab','front','rescueAdvancedTest','decisive'];
 test('last normal stage grants the legendary and mythic together before stage persistence, only once',()=>{
- const c=stageHarness(allStages.slice(0,-2));c.stageMode='front';const ids=Array.from(c.get('TITLE_COLLECTION_TARGETS'));
+ const c=stageHarness(allStages.slice(0,-2));c.stageMode='indoor';c.get('rescueAdvancedTest=true');const ids=Array.from(c.get('TITLE_COLLECTION_TARGETS'));
  c.saved.set(c.get('TITLE_ARCHIVE_KEY'),JSON.stringify({titles:Object.fromEntries(ids.filter(id=>id!=='v3_all_stages_clear').map(id=>[id,{count:1}])),runs:32}));
  const s=Object.assign(c.scoreStats,{final:{cleared:true,total:1000}});c.recordRunAchievements(s);
  for(const id of ['v3_all_stages_clear','v3_mythic_complete'])assert.ok(s.awards.newTitles.includes(id));
- assert.equal(c.readStageProgress().cleared.length,8);c.unlockStageOnClear(s);assert.equal(c.readStageProgress().cleared.length,9);
+ assert.equal(c.readStageProgress().cleared.length,10);c.unlockStageOnClear(s);assert.equal(c.readStageProgress().cleared.length,11);
  c.recordRunAchievements(s);const a=c.readTitleArchive();assert.equal(a.runs,33);assert.equal(a.titles.v3_all_stages_clear.count,1);assert.equal(a.titles.v3_mythic_complete.count,1);
 });
 test('failure, area debug, test Oni and missing normal stages cannot complete the legendary condition',()=>{
@@ -156,7 +156,7 @@ test('failure, area debug, test Oni and missing normal stages cannot complete th
   c.recordRunAchievements(s);assert.equal(c.readTitleArchive().titles.v3_all_stages_clear,undefined,mode);
  }
 });
-test('all ten persisted clears award the legendary; legacy saves await newly added stages',()=>{
+test('all public stages cleared award the legendary; legacy saves await newly added stages',()=>{
  for(const legacy of [false,true]){
   const c=stageHarness(allStages);
   if(legacy)c.saved.set('tankGameStageProgressV1',JSON.stringify({cleared:['beginner','frontBeginner','base','front'],indoorCleared:['indoorBeginner','indoor']}));
@@ -187,7 +187,7 @@ test('debug finalization persists unlocks, high score, achievements and history 
  }
 });
 test('debug clear of the last normal stage earns the all-stage title in the same result',()=>{
- const c=stageHarness(allStages.slice(0,-2));c.stageMode='front';const s=Object.assign(c.scoreStats,{debugUsed:true,final:{cleared:true,total:1000}});c.recordRunAchievements(s);assert.ok(s.awards.newTitles.includes('v3_all_stages_clear'));
+ const c=stageHarness(allStages.slice(0,-2));c.stageMode='indoor';c.get('rescueAdvancedTest=true');const s=Object.assign(c.scoreStats,{debugUsed:true,final:{cleared:true,total:1000}});c.recordRunAchievements(s);assert.ok(s.awards.newTitles.includes('v3_all_stages_clear'));
 });
 
 test('persisted new titles announce the highest new career rank once, while repeats do not promote',()=>{
@@ -200,7 +200,7 @@ test('unsaved achievements and area debug never announce a career promotion',()=
 });
 
 test('all-stage title is primary on first acquisition and remains visible after saving, but never on later runs',()=>{
- const c=stageHarness(allStages.slice(0,-2));c.stageMode='front';
+ const c=stageHarness(allStages.slice(0,-2));c.stageMode='indoor';c.get('rescueAdvancedTest=true');
  const first=Object.assign(c.scoreStats,{objectiveDamage:1,final:{cleared:true,total:1000}});c.recordRunAchievements(first);
  assert.equal(first.awards.primary,'v3_all_stages_clear');assert.equal(c.resultStyle(c.metrics(first).map(c.get('resLevel')),first)[2].id,'v3_all_stages_clear');
  c.unlockStageOnClear(first);

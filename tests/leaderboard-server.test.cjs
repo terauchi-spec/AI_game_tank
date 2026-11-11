@@ -54,9 +54,9 @@ test('developer login attempts are bounded and cookie-looking forgeries cannot r
 });
 
 
-test('new official middle and laboratory stages have independent writable and readable boards',async()=>{
+test('new official middle, laboratory and rescue stages have independent writable and readable boards',async()=>{
  const {Scoreboard,validateScore}=await mod,h=storageHarness(),board=new Scoreboard(h);
- for(const stage of ['baseIntermediate','frontIntermediate','indoorLab']){
+ for(const stage of ['baseIntermediate','frontIntermediate','indoorLab','escapeTest','rescueAdvancedTest']){
   assert.equal(validateScore(sample({stage})).stage,stage);
   const post=await board.fetch(new Request('https://game.test/api/leaderboard',{method:'POST',body:JSON.stringify({player:'12345678-1234-1234-1234-123456789012',entry:sample({stage})})}));assert.equal(post.status,200);
   const result=await (await board.fetch(new Request('https://game.test/api/leaderboard?board='+stage))).json();assert.equal(result.entries[0].stage,stage);
