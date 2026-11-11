@@ -69,10 +69,10 @@ test('fixed menu, area debug navigation and removed skill toggle are wired to th
 
 
 test('decisive appears with its artwork and deploys in developer all-stage selection without granting normal progression',()=>{
- const c=harness(),{buttons,nodes}=cards(c),card=buttons.find(b=>b.dataset.stage==='decisive');c.renderStageLocks();assert.equal(card.disabled,true);assert.equal(card.classList['stage-concealed'],true);
+ const c=harness(),{buttons,nodes}=cards(c),card=buttons.find(b=>b.dataset.stage==='decisive');c.renderStageLocks();assert.equal(card.disabled,true);assert.equal(card.classList['stage-concealed'],false);
  vm.runInContext('stageDebugAll=true',c);c.renderStageLocks();assert.equal(card.disabled,false);assert.equal(card.target.textContent,'移動要塞');assert.equal(card.classList['stage-concealed'],false);assert.equal(c.stageSelectable('decisive'),false);assert.equal(c.setSelectedStage('decisive'),true);assert.equal(nodes.stageDeploy.textContent,'決戦で出撃');
  Object.assign(c,{state:'stage',gameBuildQueued:false,skillDebugAll:false,selectedSkillId:'throw',skillMenuList:()=>[{id:'throw'}],selectSkillIndex:()=>true});assert.equal(c.deploySelectedStage(),true);assert.equal(c.stageMode,'decisive');assert.equal(c.frontlineOni,false);assert.equal(c.currentStageId(),'decisive');assert.equal(c.storage.size,0);
- vm.runInContext('stageDebugAll=false',c);c.renderStageLocks();assert.equal(card.disabled,true);assert.equal(card.classList['stage-concealed'],true);assert.equal(card.target.textContent,'？');assert.equal(nodes.stageDeploy.textContent,'破壊（初級）で出撃');
+ vm.runInContext('stageDebugAll=false',c);c.renderStageLocks();assert.equal(card.disabled,true);assert.equal(card.classList['stage-concealed'],false);assert.equal(card.target.textContent,'移動要塞');assert.equal(nodes.stageDeploy.textContent,'破壊（初級）で出撃');
 });
 test('Oni is absent from HTML and cannot be selected or deployed even with stale developer state',()=>{
  const c=harness();vm.runInContext('stageDebugAll=true',c);assert.equal(c.stageAvailableForSelection('frontOni'),false);assert.equal(c.setSelectedStage('frontOni'),false);Object.assign(c,{state:'stage',gameBuildQueued:false});vm.runInContext("selectedStageId='frontOni'",c);assert.equal(c.deploySelectedStage(),false);
@@ -96,9 +96,9 @@ test('stage record counts survive an abandoned run and include debug but exclude
 test('selected stage records open, toggle closed and switch with matching score, rank artwork and sortie count',()=>{
  const c=harness(),{buttons}=cards(c),panels={};
  for(const card of buttons){const entries={};for(const key of ['.stage-record-metrics','.stage-record-note','.stage-record-score','.stage-record-count','.stage-record-rank','img'])entries[key]={removeAttribute(k){delete this[k];}};const panel={hidden:true,entries,querySelector:k=>entries[k]};panels[card.dataset.stage]=panel;card.querySelector=sel=>sel==='.stage-records'?panel:sel==='.stage-target'?card.target:sel==='.stage-number'?card.number:null;}
- c.storage.set('tankGameStageRecordsV1',JSON.stringify({stages:{beginner:{sorties:12,successes:3,bestScore:8000,bestRank:'A'}}}));c.renderStageLocks();assert.equal(panels.beginner.hidden,true);c.setSelectedStage('beginner');let panel=panels.beginner;assert.equal(panel.hidden,false);assert.equal(panel.entries['.stage-record-score'].textContent,'8,000');assert.equal(panel.entries['.stage-record-count'].textContent,'3 / 12回');assert.match(panel.entries.img.src,/rank_a\.webp/);
- c.setSelectedStage('beginner');assert.equal(panel.hidden,true);c.renderStageLocks();assert.equal(panel.hidden,true);clear(c,'beginner');c.setSelectedStage('indoorBeginner');assert.equal(panel.hidden,true);panel=panels.indoorBeginner;assert.equal(panel.hidden,false);assert.equal(panel.entries['.stage-record-score'].textContent,'—');assert.equal(panel.entries.img.hidden,true);assert.equal(panel.entries['.stage-record-count'].textContent,'0 / 0回');
- const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');assert.match(html,/recordStageSortie\(scoreStats\);\s*state='play'/);assert.match(html,/recordStageResult\(scoreStats\)/);assert.match(html,/STAGE_PROGRESS_KEY,STAGE_RECORDS_KEY/);assert.equal((html.match(/class="stage-records" hidden/g)||[]).length,13);
+ c.storage.set('tankGameStageRecordsV1',JSON.stringify({stages:{beginner:{sorties:12,successes:3,bestScore:8000,bestRank:'A'}}}));c.renderStageLocks();assert.equal(panels.beginner.hidden,true);c.setSelectedStage('beginner');let panel=panels.beginner;assert.equal(panel.hidden,false);assert.equal(buttons[0]['aria-expanded'],'true');assert.equal(panel.entries['.stage-record-score'].textContent,'8,000');assert.equal(panel.entries['.stage-record-count'].textContent,'3 / 12回');assert.match(panel.entries.img.src,/rank_a\.webp/);
+ c.setSelectedStage('beginner');assert.equal(panel.hidden,true);assert.equal(buttons[0]['aria-expanded'],'false');c.renderStageLocks();assert.equal(panel.hidden,true);clear(c,'beginner');c.setSelectedStage('indoorBeginner');assert.equal(panel.hidden,true);panel=panels.indoorBeginner;assert.equal(panel.hidden,false);assert.equal(panel.entries['.stage-record-score'].textContent,'—');assert.equal(panel.entries.img.hidden,true);assert.equal(panel.entries['.stage-record-count'].textContent,'0 / 0回');
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');assert.match(html,/recordStageSortie\(scoreStats\);\s*state='play'/);assert.match(html,/recordStageResult\(scoreStats\)/);assert.match(html,/STAGE_PROGRESS_KEY,STAGE_RECORDS_KEY/);assert.equal((html.match(/class="stage-records" hidden/g)||[]).length,order.length+2);
 });
 
 test('successes count completed clears once per sortie, preserving old records and including debug clears',()=>{
@@ -110,11 +110,24 @@ test('successes count completed clears once per sortie, preserving old records a
  const restored=harness();restored.storage.set('tankGameStageRecordsV1',c.storage.get('tankGameStageRecordsV1'));r=restored.readStageRecords().stages.beginner;assert.equal(r.successes,2);assert.equal(r.sorties,16);
  for(const successes of [-1,2.5,'4',999]){c.storage.set('tankGameStageRecordsV1',JSON.stringify({stages:{beginner:{sorties:4,successes}}}));assert.equal(c.readStageRecords().stages.beginner.successes,successes===999?4:0);}
 });
-test('locked facility names stay unknown until normal unlock, including during all-stage debug selection',()=>{
- const c=harness(),{buttons,nodes}=cards(c);c.renderStageLocks();assert.equal(buttons[0].target.textContent,'軍事衛星施設');assert.equal(buttons[4].target.textContent,'？');assert.equal(buttons[4].classList['stage-concealed'],true);
- vm.runInContext('stageDebugAll=true',c);c.renderStageLocks();assert.equal(buttons[4].disabled,false);assert.equal(buttons[4].target.textContent,'？');assert.equal(buttons[4].classList['stage-concealed'],true);
- vm.runInContext('stageDebugAll=false',c);for(const id of order.slice(0,4))clear(c,id);c.renderStageLocks();assert.equal(buttons[4].target.textContent,'軍需格納庫');assert.equal(buttons[4].classList['stage-concealed'],false);
- c.setSelectedStage('frontBeginner');assert.equal(nodes.stageDeploy.textContent,'制圧（初級）で出撃');
+test('developer mode shows all stage information independently of the unlock toggle',()=>{
+ const c=harness(),{buttons}=cards(c);
+ const normalFacility=buttons.find(card=>card.dataset.stage==='indoor');
+ const decisive=buttons.find(card=>card.dataset.stage==='decisive');
+ c.renderStageLocks();
+ assert.ok(buttons.every(card=>!card.classList['stage-concealed']&&card.target.textContent!=='？'));
+ assert.equal(normalFacility.disabled,true);
+ assert.equal(decisive.hidden,false);
+ vm.runInContext('stageDebugAll=true',c);
+ c.renderStageLocks();
+ assert.equal(normalFacility.disabled,false);
+ assert.equal(normalFacility.target.textContent,'軍需格納庫');
+ c.isDeveloperMode=()=>false;
+ c.renderStageLocks();
+ assert.equal(normalFacility.disabled,true);
+ assert.equal(normalFacility.target.textContent,'？');
+ assert.equal(normalFacility.classList['stage-concealed'],true);
+ assert.equal(decisive.hidden,true);
 });
 test('non-developers cannot bypass unlocks or select area debug and Oni even with stale all-stage flags',()=>{
  const c=harness();c.isDeveloperMode=()=>false;vm.runInContext('stageDebugAll=true',c);assert.equal(c.stageAvailableForSelection('beginner'),true);for(const id of ['front','areaDebug','frontOni','decisive'])assert.equal(c.stageAvailableForSelection(id),false,id);c.isDeveloperMode=()=>true;for(const id of ['front','areaDebug','decisive'])assert.equal(c.stageAvailableForSelection(id),true,id);assert.equal(c.stageAvailableForSelection('frontOni'),false);

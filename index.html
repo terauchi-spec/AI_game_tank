@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.12.0539</title>
+<title>こっそり戦車大作戦 2026.11.12.0550</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -903,7 +903,7 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 @media(max-height:620px) and (min-width:581px){.stage-options{padding-top:18px}.stage-card{min-height:95px;padding-top:10px;padding-bottom:10px}}
 /* Compact operation cards leave the war-room background visible. */
 #stageScreen .stage-options{grid-template-columns:minmax(0,1fr);gap:8px;padding-top:24px;width:min(100%,740px);align-self:center}
-#stageScreen .stage-card{box-sizing:border-box;display:grid;grid-template-columns:42px minmax(0,1fr) 108px;align-items:center;gap:18px;min-height:88px;padding:6px 10px 6px 14px;border-left-width:5px}
+#stageScreen .stage-card{--stage-number-width:42px;--stage-art-width:108px;--stage-art-height:72px;box-sizing:border-box;display:grid;grid-template-columns:var(--stage-number-width) minmax(0,1fr) var(--stage-art-column,var(--stage-art-width));align-items:center;gap:18px;min-height:88px;padding:6px 10px 6px 14px;border-left-width:5px}
 #stageScreen .stage-card[hidden]{display:none}
 #stageScreen .stage-card:before{content:none}
 #stageScreen .stage-card.locked .stage-art{position:relative}
@@ -913,17 +913,19 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 #stageScreen .stage-copy{display:flex;flex-direction:column;justify-content:center;gap:7px;min-width:0;text-align:left}
 #stageScreen .stage-copy strong,#stageScreen .stage-target{display:block;font-size:20px;font-weight:800;line-height:1.35;letter-spacing:.02em;overflow-wrap:anywhere}
 #stageScreen .stage-art{display:flex;align-items:center;justify-content:center;min-width:0;overflow:hidden;border:1px solid #ac936460;border-radius:3px;background:#242c1d}
-#stageScreen .stage-art img{display:block;width:100%;height:72px;object-fit:contain;image-rendering:auto}
+#stageScreen .stage-art img{display:block;width:100%;height:var(--stage-art-height);object-fit:contain;image-rendering:auto}
+/* Scale the image area while leaving its 1px frame intact. */
+#stageScreen .stage-card[aria-expanded="true"]:not([data-stage="areaDebug"]){--stage-art-column:calc(var(--stage-art-width) * 1.5 - 1px)}
+#stageScreen .stage-card[aria-expanded="true"] .stage-art img{height:calc(var(--stage-art-height) * 1.5)}
 @media(max-width:580px){
  #stageScreen .stage-options{gap:7px;padding-top:18px}
- #stageScreen .stage-card{grid-template-columns:32px minmax(0,1fr) 90px;gap:10px;padding:5px 7px 5px 9px;min-height:76px}
+ #stageScreen .stage-card{--stage-number-width:32px;--stage-art-width:90px;--stage-art-height:62px;gap:10px;padding:5px 7px 5px 9px;min-height:76px}
  #stageScreen .stage-number{width:32px;height:32px;font-size:17px}
  #stageScreen .stage-copy{gap:5px}
  #stageScreen .stage-copy strong,#stageScreen .stage-target{font-size:17px;letter-spacing:0}
- #stageScreen .stage-art img{height:62px}
 }
 @media(max-width:360px){
- #stageScreen .stage-card{grid-template-columns:26px minmax(0,1fr) 72px;gap:7px;padding-left:7px}
+ #stageScreen .stage-card{--stage-number-width:26px;--stage-art-width:72px;gap:7px;padding-left:7px}
  #stageScreen .stage-number{width:26px;height:26px;font-size:14px}
  #stageScreen .stage-copy strong,#stageScreen .stage-target{font-size:15px}
 }
@@ -1023,7 +1025,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.12.0539',FILE_CREATED_AT='2026/11/12 05:39',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.12.0550',FILE_CREATED_AT='2026/11/12 05:50',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -8865,7 +8867,7 @@ function reportGameError(error){
 }
 </script>
 <script src="js/road-trucks.js?v=2026.11.09.0927"></script>
-<script src="js/stage-progress.js?v=2026.11.11.2322"></script>
+<script src="js/stage-progress.js?v=2026.11.12.0550"></script>
 <script src="js/decisive.js?v=2026.10.28.0713"></script>
 <script src="js/frontline.js?v=2026.11.06.2245"></script>
 <script src="js/award-icons.js?v=2026.10.31.0807"></script>

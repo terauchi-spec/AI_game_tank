@@ -135,18 +135,18 @@ function deploySelectedStage(){
  return selectSkillIndex(skillMenuList().findIndex(skill=>skill.id===selectedSkillId),true);
 }
 function renderStageLocks(){
- const progress=readStageProgress();
+ const progress=readStageProgress(),developer=typeof isDeveloperMode==='function'&&isDeveloperMode();
  document.querySelectorAll('[data-stage]').forEach(button=>{
   const id=button.dataset.stage,index=STAGE_ORDER.findIndex(stage=>stage.id===id),stage=STAGE_ORDER[index];
   if(id==='training'){button.disabled=false;button.classList.toggle('locked',false);button.classList.toggle('stage-concealed',false);button.querySelector('.stage-target').textContent='訓練場';button.querySelector('.stage-number').textContent='00';button.setAttribute('aria-label','00 準備 訓練場');return;}
   if(id==='areaDebug'){
-   button.disabled=!(typeof isDeveloperMode==='function'&&isDeveloperMode());button.classList.toggle('locked',false);button.setAttribute('aria-label','エリアデバッグ');return;
+   button.disabled=!developer;button.classList.toggle('locked',false);button.setAttribute('aria-label','エリアデバッグ');return;
   }
   if(!stage){button.disabled=true;return;}
-  button.hidden=id==='decisive'&&!(typeof isDeveloperMode==='function'&&isDeveloperMode());
+  button.hidden=id==='decisive'&&!developer;
   const locked=!stageAvailableForSelection(id,progress);
   button.disabled=locked;button.classList.toggle('locked',locked);
-  const concealed=!stageSelectable(id,progress)&&!(id==='decisive'&&stageDebugAll&&typeof isDeveloperMode==='function'&&isDeveloperMode());
+  const concealed=!developer&&!stageSelectable(id,progress);
   button.classList.toggle('stage-concealed',concealed);
   button.querySelector('.stage-target').textContent=concealed?'？':stage.target;
   button.classList.toggle('stage-cleared',progress.cleared.includes(id));
