@@ -3012,7 +3012,7 @@ function drawInfiltrationFloors(cx,cy){
       drawInfiltrationStairArrow(f,stair,116);
       }
     }
-    if(arguments[2]!==false&&(!rescueAdvancedTest||f.number===1))drawInfiltrationExitsForFloor(f,cx,cy);
+    if(arguments[2]!==false&&(!rescueAdvancedTest||(f.number===1&&indoorWorld.currentFloor===0)))drawInfiltrationExitsForFloor(f,cx,cy);
   }
 }
 
@@ -3029,7 +3029,7 @@ function drawExitCircle(q,radius,progress,active){
 }
 function drawInfiltrationExitsForFloor(f,cx,cy){
     // 前線制圧のような円形の脱出範囲。描画と待機判定は同じ半径を使う。
-    if(rescueAdvancedTest&&f.number!==1)return;
+    if(rescueAdvancedTest&&(f.number!==1||indoorWorld.currentFloor!==0))return;
     for(const q of [f.entrance||f.entrances?.[0],f.emergency].filter(Boolean)){
       const radius=INDOOR_EXIT_RADIUS;
       if(q.x+radius<cx||q.x-radius>cx+W||q.y+radius<cy||q.y-radius>cy+H)continue;
