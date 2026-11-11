@@ -15,7 +15,7 @@ const STAGE_ORDER=[
  {id:'base',target:'戦略ミサイル基地',name:'破壊（上級）',image:'missile_base_scene'},
  LABORATORY_STAGE,
  {id:'front',target:'戦術アンテナ',name:'制圧（上級）',image:'antenna'},
- {id:'rescueAdvancedTest',target:'軍需格納庫',name:'救出（上級）',image:'infiltration_advanced'},
+ {id:'rescueAdvancedTest',target:'軍事バンカー',name:'救出（上級）',image:'infiltration_advanced'},
  {id:'decisive',target:'移動要塞',name:'決戦',image:'decisive'}
 ];
 const PRE_RESCUE_STAGE_ORDER=STAGE_ORDER.filter(stage=>stage.id!=='escapeTest'&&stage.id!=='rescueAdvancedTest');
