@@ -8,6 +8,8 @@ function unlockRescue(h,advanced=false){
 }
 test('both rescue missions are selectable and deploy through the public stage menu after their prerequisites',()=>{
  const h=createGameEngine(root);
+ const css=fs.readFileSync(path.join(root,'css/developer.css'),'utf8');
+ assert.doesNotMatch(css,/\[data-stage=["']escapeTest["']\]/);
  assert.equal(h.run('STAGE_ORDER.length'),12);
  for(const [id,name,mode] of [['escapeTest','救出（中級）','escapeTest'],['rescueAdvancedTest','救出（上級）','indoor']]){
   assert.equal(h.run(`setSelectedStage('${id}')`),false);
