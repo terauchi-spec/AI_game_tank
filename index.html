@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.11.2042</title>
+<title>こっそり戦車大作戦 2026.11.11.2103</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -1022,7 +1022,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.11.2042',FILE_CREATED_AT='2026/11/11 20:42',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.11.2103',FILE_CREATED_AT='2026/11/11 21:03',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -4209,7 +4209,11 @@ function updateCommanderAI(h,dt){
  }
  return true;
 }
-function combatVipTarget(){return stageMode==='escapeTest'?escapeVipTarget():rescueVipTarget();}
+function combatVipTarget(){
+ if(stageMode==='escapeTest')return escapeVipTarget();
+ const vip=rescueVipTarget();
+ return vip&&!rescueStairSafeArea(vip)?vip:null;
+}
 function commanderRocketBlast(x,y){
  cannonImpactFx(x,y);scatterSpinifexAt(x,y,COMMANDER_BLAST_RADIUS);sfx('explosion');damageObjectsInRadius(x,y,COMMANDER_BLAST_RADIUS,'cannonBlast');damageObjectsInRadius(x,y,28,'cannonDirect');carve(x,y,48,false,'cannonBlast');
  stunHoundAtBlast(x,y,COMMANDER_BLAST_RADIUS);
@@ -4217,7 +4221,8 @@ function commanderRocketBlast(x,y){
  for(const h of humans)if(h.alive&&Math.hypot(h.x-x,h.y-y)<COMMANDER_BLAST_RADIUS){if(typeof noteEnemyFallHit==='function')noteEnemyFallHit(h,h.x-x,h.y-y);h.alive=false;burst(h.x,h.y,12,'#c05a3a',160);}
  for(const ally of allies||[])if(ally.alive&&Math.hypot(ally.x-x,ally.y-y)<COMMANDER_BLAST_RADIUS){ally.alive=false;if(typeof rememberFallenAlly==='function')rememberFallenAlly(ally,ally.x-x,ally.y-y);burst(ally.x,ally.y,12,'#8fd7ff',160);}
  for(const e of etanks)if(e.alive&&Math.hypot(e.x-x,e.y-y)<COMMANDER_BLAST_RADIUS)destroyEnemyTank(e,x,y);
- if(state!=='play'||p.dig>0||Math.hypot(p.x-x,p.y-y)>=COMMANDER_BLAST_RADIUS)return;
+ if(state!=='play'||p.dig>0||Math.hypot(p.x-x,p.y-y)>=COMMANDER_BLAST_RADIUS||
+    (stageMode==='indoor'&&rescueStairSafeArea(p)))return;
  if(p.tank){
   if(p.tank.kind==='truck'){wreck();return;}
   if(p.tank.kind==='fighter'){recordPlayerDamage(Math.min(p.tank.hp,1.5)/FIGHTER_TYPE.hp,true);p.tank.hp-=1.5;sfx('vehicleHit');shake=Math.max(shake,7);if(p.tank.hp<=0)wreck();return;}
@@ -4230,9 +4235,10 @@ function commanderRocketBlast(x,y){
 function updateCommanderRocket(b,ox,oy,expired){
  if(b.from==='ally')return updateFrontlineCommanderRocket(b,ox,oy,expired);
  const vip=combatVipTarget(),distance=Math.hypot(b.x-ox,b.y-oy),steps=Math.max(1,Math.ceil(distance/8));
+ const playerExposed=p.dig<=0&&!(stageMode==='indoor'&&rescueStairSafeArea(p));
  for(let i=1;i<=steps;i++){
   const q={x:ox+(b.x-ox)*i/steps,y:oy+(b.y-oy)*i/steps},travelled=Math.hypot(q.x-b.sx,q.y-b.sy);
-  const hit=hitsC(q.x,q.y,3)||(vip?.hp>0&&D(vip,q)<12)||(p.dig<=0&&D(q,p)<(p.tank?TANK_HIT:10))||(allies||[]).some(a=>a.alive&&D(a,q)<10)||travelled>48&&(humans.some(h=>h!==b.commanderShooter&&h.alive&&D(h,q)<11)||etanks.some(e=>e.alive&&D(e,q)<TANK_HIT));
+  const hit=hitsC(q.x,q.y,3)||(vip?.hp>0&&D(vip,q)<12)||(playerExposed&&D(q,p)<(p.tank?TANK_HIT:10))||(allies||[]).some(a=>a.alive&&D(a,q)<10)||travelled>48&&(humans.some(h=>h!==b.commanderShooter&&h.alive&&D(h,q)<11)||etanks.some(e=>e.alive&&D(e,q)<TANK_HIT));
   if(hit){if(scoreStats&&!scoreStats.finalized){const wall=nearbyCovers(q.x,q.y,4).find(c=>(c.playerBuilt||c.pb)&&circleHitsCover(q.x,q.y,3,c));if(wall)scoreStats.wallBlocks++;}commanderRocketBlast(q.x,q.y);return true;}
  }
  if(expired){commanderRocketBlast(b.x,b.y);return true;}
@@ -4774,7 +4780,7 @@ function stunHumanBlast(h,sec=5){
  h.grapple=0;h.st=0;h.target=null;h.lost=0;h.foundPause=0;h.sharePause=0;h.sus=0;h.susPause=0;h.wallFollow=null;h.burstLeft=0;h.cd=0;h.ct=0;h.plantT=0;h.plantA=null;
 }
 function beginBlastFlight(o,x,y,rad,force,r,landStun=0){
- if(stageMode==='training'&&o===p)return 0;
+ if(o===p&&(stageMode==='training'||(stageMode==='indoor'&&rescueStairSafeArea(p))))return 0;
  if(!o||o.tank?.kind==='tower'||o.vehicle?.kind==='tower'||o.kind==='tower')return 0;const dx=o.x-x,dy=o.y-y,d=Math.hypot(dx,dy);if(d>=rad)return 0;
  const a=d>.5?Math.atan2(dy,dx):R()*6.28318,push=Math.max(0,force*(1-d/rad));if(push<.5)return 0;
  o.blastAirDur=.42;o.blastAirT=.42;o.blastEase=0;o.blastDX=Math.cos(a)*push;o.blastDY=Math.sin(a)*push;o.blastR=r;o.blastLandStun=Math.max(o.blastLandStun||0,landStun);
@@ -5228,7 +5234,7 @@ function updateHQSpawn(dt){if(stageMode!=='base'||areaDebugEnabled){baseSpawnT=9
  if(!base||base.hp<=0||(base.missileFacility?zoneAt(p.y)!==ZONES[ZONES.length-1]:zoneAt(p.y).n!=='敵司令本部')){baseSpawnT=interval;return;}
  baseSpawnT-=dt;if(baseSpawnT<=0){baseSpawnT+=interval;const activeHQ=(humans||[]).filter(h=>h.alive&&h.hq).length;if(activeHQ<Math.round(8*scale))spawnHQEnemy();}}
 function enemyPlayerBulletImpact(b,ox,oy){
- if(b.from!=='e'||b.commanderRocket||p.dig>0)return null;
+ if(b.from!=='e'||b.commanderRocket||p.dig>0||(stageMode==='indoor'&&rescueStairSafeArea(p)))return null;
  const dx=b.x-ox,dy=b.y-oy,rx=ox-p.x,ry=oy-p.y,r=p.tank?TANK_HIT:9;
  const c=rx*rx+ry*ry-r*r,a=dx*dx+dy*dy;
  if(c<=0)return{x:ox,y:oy};
@@ -6049,6 +6055,7 @@ function drawSniperScope(){
  }
 
 function update(dt){
+ if(stageMode==='indoor'&&indoorWorld?.stairTransition){updateRescueStairTransition(dt);return null;}
  if(areaDebugEnabled&&typeof updateEnemyBomber==='function'){updateEnemyBomber(dt);if(state!=='play')return null;}
  if(stageMode==='training'&&updateTrainingPresentation(dt))return null;
  if(typeof updateFallenEnemies==='function')updateFallenEnemies(dt);
@@ -6264,7 +6271,7 @@ function update(dt){
    const houndStep=hound&&hound.stun<=0&&D(hound,b)<14;if(houndStep){stunHound(5);sfx('explosion');fb(b.x,b.y,28);burst(b.x,b.y,34,'#ff8a3a',300);shake=Math.max(shake,10);bombs.splice(i,1);continue;}
    const allyStep=(allies||[]).find(a=>a.alive&&!(a.chute>0)&&D(a,b)<14);if(allyStep){for(const a of (allies||[]))if(a.alive&&!(a.chute>0)&&D(a,b)<34){a.alive=false;if(typeof rememberFallenAlly==='function')rememberFallenAlly(a,a.x-b.x,a.y-b.y);burst(a.x,a.y,18,'#8fd7ff',180);}sfx('explosion');fb(b.x,b.y,28);burst(b.x,b.y,34,'#ff8a3a',300);shake=Math.max(shake,10);bombs.splice(i,1);say('増援が地雷でやられた!');continue;}
    const tk=etanks.find(e=>e.alive&&Math.hypot(e.x-b.x,e.y-b.y)<TANK_HIT);if(tk){destroyEnemyTank(tk,b.x,b.y);burst(tk.x,tk.y,45,'#ff6a2a',360);shake=12;bombs.splice(i,1);continue;}
-   if(!(p.dig>0)&&(!p.tank||p.tank.kind!=='fighter')&&D(b,p)<(p.tank?TANK_HIT:14)){bombs.splice(i,1);burst(b.x,b.y,40,'#ff8a3a',320);shake=14;if(p.tank)wreck();else{triggerPlayerDeath();}}
+   if(!(p.dig>0)&&(!p.tank||p.tank.kind!=='fighter')&&D(b,p)<(p.tank?TANK_HIT:14)&&!(stageMode==='indoor'&&rescueStairSafeArea(p))){bombs.splice(i,1);burst(b.x,b.y,40,'#ff8a3a',320);shake=14;if(p.tank)wreck();else{triggerPlayerDeath();}}
    else if(b.t<=0){stunHoundAtBlast(b.x,b.y,95);bombs.splice(i,1);burst(b.x,b.y,30,'#ff9a2a',240);burst(b.x,b.y,10,'#fff3b0',300);}
    continue;}
   if(!b.armed&&D(b,p)>36)b.armed=true;
@@ -8880,7 +8887,7 @@ function reportGameError(error){
 <script src="js/canyon.js?v=2026.11.10.2210"></script>
 <script src="js/vegetation.js?v=2026.11.08.1806"></script>
 <script src="js/laboratory.js?v=2026.10.31.2206"></script>
-<script src="js/infiltration-world.js?v=2026.11.11.2042"></script>
+<script src="js/infiltration-world.js?v=2026.11.11.2103"></script>
 <script src="js/infiltration-render.js?v=2026.10.31.2206"></script>
 <script src="js/input-diagnostics.js?v=2026.10.28.0713"></script>
 <script>
