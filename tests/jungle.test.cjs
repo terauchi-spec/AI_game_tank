@@ -223,13 +223,13 @@ test('central logs, giant ferns and optional buildings force alternating detours
  }
 });
 
-test('forest broadleaves draw at jungle dimensions without changing cover collision',()=>{
+test('forest broadleaves share jungle dimensions and silhouette collision',()=>{
  const setups=[
   "stageMode='base'",
   "stageMode='base';areaDebugEnabled=true;selectedAreaDebug='森林'",
   "stageMode='escapeTest';rescueBeginner=true"
  ];
- const appearance="covers.filter(c=>c.jungleTreeArt==='jungle_broadleaf_tree')";
+ const appearance="covers.filter(c=>c.jungleAsset==='broadleaf_tree')";
  for(const setup of setups){
   const h=createGameEngine(root,{seed:7});
   h.run(setup+';reset(false)');
@@ -238,7 +238,7 @@ test('forest broadleaves draw at jungle dimensions without changing cover collis
   assert.equal(h.run(`${appearance}.every(c=>{
    const z=zoneAt(c.y+c.h/2),rect=coverSpriteRect(c);
    return z.n==='森林'&&rect.y>=z.y1&&rect.y+rect.h<=z.y0&&
-    rect.w===JUNGLE_ASSETS.broadleaf_tree[1]&&rect.h===JUNGLE_ASSETS.broadleaf_tree[2]&&
+    rect.w===JUNGLE_ASSETS.broadleaf_tree[1]&&rect.h===JUNGLE_ASSETS.broadleaf_tree[2]&&c.jungleHitScale===.95&&
     (!rescueBeginner||rect.x+rect.w<=WW/2-36||rect.x>=WW/2+36);
   })`),true);
   assert.equal(h.run(`(()=>{
@@ -250,9 +250,14 @@ test('forest broadleaves draw at jungle dimensions without changing cover collis
   })()`),true);
   assert.deepEqual(Array.from(h.run("Object.keys(COVER_IMG).filter(k=>k.startsWith('jungle_'))")),['jungle_broadleaf_tree']);
  }
- const geometry='JSON.stringify(covers.map(c=>[c.kd,c.x,c.y,c.w,c.h,coverHitCircle(c)]))';
- const plain=createGameEngine(root,{seed:7}),variant=createGameEngine(root,{seed:7});
- plain.run("setupForestBroadleafTrees=()=>{};stageMode='escapeTest';rescueBeginner=true;reset(false)");
- variant.run("stageMode='escapeTest';rescueBeginner=true;reset(false)");
- assert.equal(variant.run(geometry),plain.run(geometry));
+ const h=createGameEngine(root,{seed:7});
+ h.run("stageMode='escapeTest';rescueBeginner=true;reset(false)");
+ assert.equal(h.run(`(()=>{
+  const c=${appearance}[0],cx=c.x+c.w/2,cy=c.y+c.h/2;
+  const hits=Array.from({length:17},(_,i)=>({x:cx+(i-8)*9,y:cy})).filter(q=>pointHitsCover(q.x,q.y,c));
+  const edge=hits.find(q=>Math.abs(q.x-cx)>TREE_BOX_MAX*.37);
+  return !!edge&&circleHitsCover(edge.x,edge.y,2,c)&&
+   segmentHitsCover({x:edge.x,y:edge.y-2},{x:edge.x,y:edge.y+2},c)&&
+   !pointHitsCover(c.x+1,c.y+1,c)&&coversInBox(edge.x,edge.y,edge.x,edge.y).includes(c);
+ })()`),true);
 });

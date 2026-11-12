@@ -1,35 +1,47 @@
 // Jungle scenery reuses the existing cover physics and spatially culled renderer.
 // Load only the assets used in the selected terrain.
 const JUNGLE_ASSETS={palm:[6,136,136],fallen_log:[0,190*1.3,62*1.3],wood_hut_small:[4,160*1.1*1.1,135*1.1*1.1],wood_hut_large:[4,220*1.1*1.1,158*1.1*1.1],concrete_hut:[3,185*1.1*1.1,156*1.1*1.1],watchtower:[3,150*1.1,205*1.1],wood_watchtower:[4,150*1.1*2,150*1.1*2*320/295],broadleaf_tree:[6,166,166],fern_tree:[6,332,332]};
+const JUNGLE_TREE_HIT_SCALE=.95;
 const JUNGLE_PLANTS=['round_leaf','flower_leaf'];
 const JUNGLE_BUILDING_BASE={wood_hut_small:[160*1.1,135*1.1],wood_hut_large:[220*1.1,158*1.1],concrete_hut:[185*1.1,156*1.1],wood_watchtower:[150*1.1,150*1.1*320/295]};
 function loadJungleAssets(keys=[...Object.keys(JUNGLE_ASSETS),...JUNGLE_PLANTS]){
  for(const key of keys)if(!COVER_IMG['jungle_'+key])COVER_IMG['jungle_'+key]=makeAssetImage(ASSET_DIR+'jungle/'+key+'.webp?v='+GAME_VERSION);
 }
-function forestBroadleafSpriteRect(c){
- const [,w,h]=JUNGLE_ASSETS.broadleaf_tree;
- return centerRect(c.x+c.w/2,c.y+c.h/2,w,h);
-}
 function setupForestBroadleafTrees(route=null){
+ const forests=ZONES.filter(z=>z.n==='森林');
+ if(!forests.length)return;
+ const [kd,w,h]=JUNGLE_ASSETS.broadleaf_tree;
  const rockets=stageMode==='front'&&!areaDebugEnabled?(mission?.points||[]).map(point=>point.antenna).filter(antenna=>antenna?.rocket):[];
- for(const z of ZONES){
-  if(z.n!=='森林')continue;
+ const occupants=[
+  ...[p,...humans,...allies,radio,whiteRadio].filter(Boolean).map(o=>[o,12]),
+  ...[...cars,...etanks].map(o=>[o,TANK_HIT+4])
+ ];
+ const occupied=c=>occupants.some(([o,r])=>circleHitsCover(o.x,o.y,r,c)||o.path?.some((a,i)=>{
+  const b=o.path[i+1]||(o.loop?o.path[0]:null);
+  return b&&segmentHitsCover(a,b,c,r);
+ }));
+ let changed=false;
+ for(const z of forests){
   const trees=covers.filter(c=>c.kd===6&&!c.fr&&!c.jungleAsset&&c.y+c.h/2>z.y1&&c.y+c.h/2<=z.y0);
   if(!trees.length)continue;
-  // The canopy uses the jungle dimensions; the existing trunk collider keeps routes passable.
   const count=1+Math.floor(stableRand(trees[0],97)*3),placed=[];
   for(let i=0;i<trees.length&&placed.length<count;i++){
    const j=i+Math.floor(stableRand(trees[i],101+i)*(trees.length-i));
    [trees[i],trees[j]]=[trees[j],trees[i]];
-   const tree=trees[i],rect=forestBroadleafSpriteRect(tree);
+   const tree=trees[i],cx=tree.x+tree.w/2,cy=tree.y+tree.h/2,rect=centerRect(cx,cy,w,h);
    if(rect.x<0||rect.x+rect.w>WW||rect.y<z.y1||rect.y+rect.h>z.y0)continue;
    if(overlapsRoad(rect)||route&&ov2(rect,route,0)||placed.some(other=>ov2(rect,other,0)))continue;
    if(base&&ov2(rect,base,0)||rockets.some(a=>frontlineRocketOverlap(rect,{x:a.x,y:a.y,w:a.width,h:a.height})))continue;
-   tree.jungleTreeArt='jungle_broadleaf_tree';
+   if(z.forestCorridor&&Math.abs(cx-z.forestCorridor(cy))<w/2+48)continue;
+   if(water.some(body=>ov2(rect,body,8))||objects.some(o=>ov2(rect,objectAABB(o),0)))continue;
+   const broadleaf={...rect,kd,jungleAsset:'broadleaf_tree',jungleHitScale:JUNGLE_TREE_HIT_SCALE};
+   if(occupied(broadleaf))continue;
+   Object.assign(tree,broadleaf);
    placed.push(rect);
+   changed=true;
   }
-  if(placed.length)loadJungleAssets(['broadleaf_tree']);
  }
+ if(changed){loadJungleAssets(['broadleaf_tree']);rebuildSpatialGrid();}
 }
 let escapeHutShade=null;
 function escapeHutImage(image){
@@ -165,7 +177,7 @@ function setupJungleScenery(z, giantBlocked=()=>false){
   if(c.kd===6&&!c.jungleAsset)c.jungleTreeArt=stableRand(c,61)<.5?'tree_v2':'tree';
  }
  if(packJunglePopulation(denseCovers,denseBushes,z)){covers=denseCovers;bushes=denseBushes;if(!arrangeJungleCore(z))z.jungleWalkRoute=buildJungleWalkRoute(z,covers);targets.grass=randomizeJungleVegetation(z,targets.trees,giantBlocked);}
- for(const c of covers)if(c.kd===6||c.jungleAsset==='fallen_log')c.jungleHitScale=.95;
+ for(const c of covers)if(c.kd===6||c.jungleAsset==='fallen_log')c.jungleHitScale=JUNGLE_TREE_HIT_SCALE;
  z.jungleDensity={targets,trees:covers.filter(c=>c.kd===6).length,grass:bushes.filter(b=>!b.junglePlant).length,plants:bushes.filter(b=>b.junglePlant).length};
 }
 // Bounded random corner/order attempts followed by compact fallbacks; stage setup only.
