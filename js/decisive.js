@@ -4,7 +4,7 @@ let decisiveBattle=null;
 function isDecisiveStage(){return stageMode==='decisive'||stageMode==='front'&&!!decisiveBattle;}
 function loadDecisiveAssets(){
  for(const key of ['fortress','bunker','sandbags'])if(!COVER_IMG['decisive_'+key])COVER_IMG['decisive_'+key]=makeAssetImage('assets/decisive/'+key+'.webp');
- if(!TERRAIN_IMG['砂漠'])TERRAIN_IMG['砂漠']=makeAssetImage('assets/decisive/desert.webp',()=>{for(const z of ZONES)if(z.n==='砂漠')z.pat=null;});
+ if(!TERRAIN_IMG['砂漠'])TERRAIN_IMG['砂漠']=makeAssetImage('assets/decisive/desert.webp?v='+GAME_VERSION,()=>{for(const z of ZONES)if(z.n==='砂漠')z.pat=null;});
 }
 function setupDecisiveZones(){
  const pool=['草原','森林','村','丘陵','敵前線基地','街','湿地','荒野'];
