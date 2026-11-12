@@ -1,10 +1,11 @@
 // Stage 07 orchestrates existing destruction combat and bounded frontline armies.
 // stageMode changes to 'front' only after the relay falls; the persistent stage ID stays decisive.
 const DECISIVE_RELAY_CAPTURE_SECONDS=15;
+const DECISIVE_BUNKER_SCAN_SECONDS=.2;
 let decisiveBattle=null;
 function isDecisiveStage(){return stageMode==='decisive'||stageMode==='front'&&!!decisiveBattle;}
 function loadDecisiveAssets(){
- for(const key of ['fortress','bunker','sandbags'])if(!COVER_IMG['decisive_'+key])COVER_IMG['decisive_'+key]=makeAssetImage('assets/decisive/'+key+'.webp');
+ for(const key of ['fortress','bunker','sandbags','bunker-barrel'])if(!COVER_IMG['decisive_'+key])COVER_IMG['decisive_'+key]=makeAssetImage('assets/decisive/'+key+'.webp?v='+GAME_VERSION);
  if(!TERRAIN_IMG['砂漠'])TERRAIN_IMG['砂漠']=makeAssetImage('assets/decisive/desert.webp?v='+GAME_VERSION,()=>{for(const z of ZONES)if(z.n==='砂漠')z.pat=null;});
 }
 function setupDecisiveZones(){
@@ -101,14 +102,27 @@ function decisiveGunTarget(x,y,range){
  }
  return target;
 }
+function decisiveBunkerAngle(bunker,now){
+ const aim=bunker.gunAim??Math.PI/2,from=bunker.gunFrom??aim;
+ const blend=Math.min(1,(now-(bunker.gunAimAt??now))/(1000*DECISIVE_BUNKER_SCAN_SECONDS));
+ const delta=aim-from;
+ return from+Math.atan2(Math.sin(delta),Math.cos(delta))*blend;
+}
 function updateDecisiveBunkers(dt){
- const d=decisiveBattle;d.gunScan-=dt;if(d.gunScan>0)return;d.gunScan=.2;
+ const d=decisiveBattle;d.gunScan-=dt;if(d.gunScan>0)return;d.gunScan=DECISIVE_BUNKER_SCAN_SECONDS;
+ const now=performance.now();
  for(const bunker of d.bunkers){
   if(Math.abs(bunker.y-p.y)>900||!covers.includes(bunker))continue;
-  bunker.gunCd-=.2;if(bunker.gunCd>0)continue;
+  bunker.gunCd-=DECISIVE_BUNKER_SCAN_SECONDS;
   const x=bunker.x+bunker.w/2,y=bunker.y+bunker.h+8,target=decisiveGunTarget(x,y,560);
   if(!target)continue;
-  fire(x,y,Math.atan2(target.y-y,target.x-x),'e','v',480,620,.3);bunker.gunCd=1.1;
+  const aim=Math.atan2(target.y-y,target.x-x);
+  if(aim!==bunker.gunAim){
+   bunker.gunFrom=decisiveBunkerAngle(bunker,now);bunker.gunAim=aim;bunker.gunAimAt=now;
+  }
+  if(bunker.gunCd>0)continue;
+  bunker.gunFrom=aim;bunker.gunShotAt=now;
+  fire(x,y,aim,'e','v',480,620,.3);bunker.gunCd=1.1;
  }
 }
 function updateDecisiveFortress(dt){
@@ -131,6 +145,13 @@ function drawDecisiveCover(c){
  const im=COVER_IMG['decisive_'+c.decisiveKind];
  if(assetOK(im))g.drawImage(im,c.x,c.y,c.w,c.h);
  else{g.fillStyle=c.decisiveKind==='bunker'?'#81795e':'#b69c68';g.fillRect(c.x,c.y,c.w,c.h);}
+ // Fragment renders only carry the body art. A broken bunker has no working gun.
+ const barrel=COVER_IMG['decisive_bunker-barrel'];
+ if(c.decisiveKind==='bunker'&&c.gunCd!==undefined&&assetOK(barrel)){
+  const now=performance.now(),recoil=4*Math.max(0,1-(now-(c.gunShotAt??-Infinity))/130);
+  g.save();g.translate(c.x+c.w/2,c.y+c.h-6);g.rotate(decisiveBunkerAngle(c,now));
+  g.drawImage(barrel,-6-recoil,-5,36,10);g.restore();
+ }
  return true;
 }
 function drawDecisiveMission(){

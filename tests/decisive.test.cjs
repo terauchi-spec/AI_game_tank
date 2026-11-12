@@ -43,12 +43,19 @@ test('moving fortress yields to nearby units; bunker and fortress guns reuse exi
  const {run}=start();run('humans=[];etanks=[];p.x=decisiveBattle.gate.x;p.y=decisiveBattle.gate.y;updateMission(15)');const x=run('base.x');run('updateDecisiveFortress(.1)');assert.notEqual(run('base.x'),x);
  run('p.x=base.x+base.w+5;p.y=base.y+100');const blocked=run('base.x');run('updateDecisiveFortress(.1)');assert.equal(run('base.x'),blocked);
  run('p.x=base.x+base.w/2;p.y=base.y+base.h+150;decisiveBattle.fortressCd=0;updateDecisiveFortress(.1)');assert.ok(run('bullets.some(b=>b.from==="e"&&b.k==="c")'));
- run('const bunker=decisiveBattle.bunkers[0];p.x=bunker.x+bunker.w/2;p.y=bunker.y+bunker.h+45;bunker.gunCd=0;decisiveBattle.gunScan=0;updateDecisiveBunkers(.2)');assert.ok(run('bullets.some(b=>b.from==="e"&&b.k==="v")'));
+ run('const bunker=decisiveBattle.bunkers[0];p.x=bunker.x+bunker.w/2+44;p.y=bunker.y+bunker.h+52;bunker.gunCd=.8;decisiveBattle.gunScan=0;updateDecisiveBunkers(.2)');
+ assert.equal(run('bunker.gunAim'),Math.PI/4);
+ assert.equal(run('decisiveBunkerAngle(bunker,performance.now()+100)'),3*Math.PI/8);
+ assert.equal(run('bullets.some(b=>b.from==="e"&&b.k==="v")'),false);
+ run('bunker.gunCd=0;decisiveBattle.gunScan=0;updateDecisiveBunkers(.2)');
+ assert.ok(run('bullets.some(b=>b.from==="e"&&b.k==="v"&&Math.abs(Math.atan2(b.vy,b.vx)-bunker.gunAim)<1e-10)'));
+ run('var bunkerLayers=[];g.drawImage=(im)=>bunkerLayers.push(im.src);drawDecisiveCover(bunker);drawDecisiveCover({decisiveKind:"bunker",x:bunker.x,y:bunker.y,w:bunker.w,h:bunker.h});');
+ assert.deepEqual(Array.from(run('bunkerLayers.map(src=>src.split("/").pop().split("?")[0])')),['bunker.webp','bunker-barrel.webp','bunker.webp']);
 });
 test('starting an existing stage clears decisive state and preserves its normal map and mission rules',()=>{
  const {run}=start();run("stageMode='beginner';reset(false)");assert.equal(run('decisiveBattle'),null);assert.equal(run('isDecisiveStage()'),false);assert.equal(run('currentStageId()'),'beginner');assert.equal(run('ZONES.length'),5);assert.equal(run('ZONES.some(z=>z.n==="砂漠")'),false);assert.equal(run('base.maxHp'),30);assert.equal(run('mission'),null);
  run("stageMode='front';frontlineBeginner=false;reset(false)");assert.equal(run('decisiveBattle'),null);assert.equal(run('mission.points.length'),3);assert.equal(run('currentStageId()'),'front');assert.ok(run('allies.length>0'));
 });
 test('decisive sprites, stage preview and script exist without new per-frame image loading',()=>{
- const src=fs.readFileSync(path.join(root,'js/decisive.js'),'utf8');for(const name of ['fortress','bunker','sandbags','desert'])assert.ok(fs.statSync(path.join(root,'assets/decisive',name+'.webp')).size<16000);assert.ok(fs.statSync(path.join(root,'assets/ui/stages/decisive.webp')).size<16000);assert.doesNotMatch(src.slice(src.indexOf('function updateDecisiveMission')),/makeAssetImage\(/);
+ const src=fs.readFileSync(path.join(root,'js/decisive.js'),'utf8');for(const name of ['fortress','bunker','sandbags','desert','bunker-barrel'])assert.ok(fs.statSync(path.join(root,'assets/decisive',name+'.webp')).size<16000);assert.ok(fs.statSync(path.join(root,'assets/ui/stages/decisive.webp')).size<16000);assert.doesNotMatch(src.slice(src.indexOf('function updateDecisiveMission')),/makeAssetImage\(/);
 });
