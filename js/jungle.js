@@ -11,6 +11,7 @@ function forestBroadleafSpriteRect(c){
  return centerRect(c.x+c.w/2,c.y+c.h/2,w,h);
 }
 function setupForestBroadleafTrees(route=null){
+ const rockets=stageMode==='front'&&!areaDebugEnabled?(mission?.points||[]).map(point=>point.antenna).filter(antenna=>antenna?.rocket):[];
  for(const z of ZONES){
   if(z.n!=='森林')continue;
   const trees=covers.filter(c=>c.kd===6&&!c.fr&&!c.jungleAsset&&c.y+c.h/2>z.y1&&c.y+c.h/2<=z.y0);
@@ -23,6 +24,7 @@ function setupForestBroadleafTrees(route=null){
    const tree=trees[i],rect=forestBroadleafSpriteRect(tree);
    if(rect.x<0||rect.x+rect.w>WW||rect.y<z.y1||rect.y+rect.h>z.y0)continue;
    if(overlapsRoad(rect)||route&&ov2(rect,route,0)||placed.some(other=>ov2(rect,other,0)))continue;
+   if(base&&ov2(rect,base,0)||rockets.some(a=>frontlineRocketOverlap(rect,{x:a.x,y:a.y,w:a.width,h:a.height})))continue;
    tree.jungleTreeArt='jungle_broadleaf_tree';
    placed.push(rect);
   }
