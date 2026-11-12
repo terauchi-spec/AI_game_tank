@@ -140,13 +140,13 @@ function stageHarness(cleared=[]){
  vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/stage-progress.js'),'utf8'),c);
  c.saved.set('tankGameStageProgressV1',JSON.stringify({version:4,cleared}));return c;
 }
-const allStages=['beginner','indoorBeginner','frontBeginner','baseIntermediate','indoor','frontIntermediate','escapeTest','base','indoorLab','front','rescueAdvancedTest','decisive'];
+const allStages=['beginner','indoorBeginner','frontBeginner','rescueBeginner','baseIntermediate','indoor','frontIntermediate','escapeTest','base','indoorLab','front','rescueAdvancedTest','decisive'];
 test('last normal stage grants the legendary and mythic together before stage persistence, only once',()=>{
  const c=stageHarness(allStages.slice(0,-2));c.stageMode='indoor';c.get('rescueAdvancedTest=true');const ids=Array.from(c.get('TITLE_COLLECTION_TARGETS'));
  c.saved.set(c.get('TITLE_ARCHIVE_KEY'),JSON.stringify({titles:Object.fromEntries(ids.filter(id=>id!=='v3_all_stages_clear').map(id=>[id,{count:1}])),runs:32}));
  const s=Object.assign(c.scoreStats,{final:{cleared:true,total:1000}});c.recordRunAchievements(s);
  for(const id of ['v3_all_stages_clear','v3_mythic_complete'])assert.ok(s.awards.newTitles.includes(id));
- assert.equal(c.readStageProgress().cleared.length,10);c.unlockStageOnClear(s);assert.equal(c.readStageProgress().cleared.length,11);
+ assert.equal(c.readStageProgress().cleared.length,11);c.unlockStageOnClear(s);assert.equal(c.readStageProgress().cleared.length,12);
  c.recordRunAchievements(s);const a=c.readTitleArchive();assert.equal(a.runs,33);assert.equal(a.titles.v3_all_stages_clear.count,1);assert.equal(a.titles.v3_mythic_complete.count,1);
 });
 test('failure, area debug, test Oni and missing normal stages cannot complete the legendary condition',()=>{

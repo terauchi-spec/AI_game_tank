@@ -1,7 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),path=require('node:path'),fs=require('node:fs'),vm=require('node:vm');
 const {createGameEngine}=require('./helpers/game-engine.cjs'),root=path.join(__dirname,'..');
 function start(seed=7){const h=createGameEngine(root,{seed});h.run("stageMode='escapeTest';areaDebugEnabled=false;skill='throw';reset(false)");return h;}
-const previousStages=['beginner','indoorBeginner','frontBeginner','baseIntermediate','indoor','frontIntermediate'];
+const previousStages=['beginner','indoorBeginner','frontBeginner','rescueBeginner','baseIntermediate','indoor','frontIntermediate'];
 function unlockRescue(h,advanced=false){
  const cleared=advanced?[...previousStages,'escapeTest','base','indoorLab','front']:previousStages;
  h.storage.set('tankGameStageProgressV1',JSON.stringify({version:4,cleared,unlocked:[]}));
@@ -10,7 +10,7 @@ test('both rescue missions are selectable and deploy through the public stage me
  const h=createGameEngine(root);
  const css=fs.readFileSync(path.join(root,'css/developer.css'),'utf8');
  assert.doesNotMatch(css,/\[data-stage=["']escapeTest["']\]/);
- assert.equal(h.run('STAGE_ORDER.length'),12);
+ assert.equal(h.run('STAGE_ORDER.length'),13);
  for(const [id,name,mode] of [['escapeTest','救出（中級）','escapeTest'],['rescueAdvancedTest','救出（上級）','indoor']]){
   assert.equal(h.run(`setSelectedStage('${id}')`),false);
   unlockRescue(h,id==='rescueAdvancedTest');
@@ -280,4 +280,29 @@ test('advanced rescue completion saves official stage results and clears',()=>{
  assert.equal(h.run('scoreStats.awards.disabled'),false);
  assert.equal(h.run('readStageRecords().stages.rescueAdvancedTest.successes'),1);
  assert.equal(h.run("readStageProgress().cleared.includes('rescueAdvancedTest')"),true);
+});
+
+test('beginner rescue deploys after beginner capture, uses forest and villages, and saves the shared VIP mission',()=>{
+ const h=createGameEngine(root,{seed:13});
+ assert.equal(h.run("setSelectedStage('rescueBeginner')"),false);
+ h.storage.set('tankGameStageProgressV1',JSON.stringify({version:5,cleared:previousStages.slice(0,3),unlocked:[]}));
+ assert.equal(h.run("setSelectedStage('rescueBeginner')"),true);
+ h.run("state='stage';selectedSkillId='throw';deploySelectedStage();reset(false);");
+ assert.equal(h.run("stageDisplayNumber(currentStageId())"),'04');
+ assert.equal(h.run("ZONES.map(z=>z.n).join('/')"),'草原/森林/村/村/草原');
+ assert.equal(h.run("ZONES.slice(1,-1).every(z=>humans.some(h=>zoneAt(h.y)===z))"),true);
+ assert.equal(h.run("etanks.length===0&&humans.every(h=>!h.commander)&&!mission.enemyDrop"),true);
+ assert.equal(h.run("!hitsM(p.x,p.y,10)&&!hitsM(mission.vip.x,mission.vip.y,10)&&!hitsM(mission.exit.x,mission.exit.y,90)"),true);
+ assert.equal(h.run(`(()=>{for(let y=mission.exit.y;y<p.y;y+=8)if(hitsM(WW/2,y,16))return false;return true;})()`),true);
+ h.run("spawnParachuteAlly(p.x,p.y,p.y,0,true);");
+ assert.equal(h.run("allies[0].frontCommander"),false);
+ h.run("Object.assign(p,mission.exit);Object.assign(mission.vip,mission.exit);updateMission(5);");
+ assert.equal(h.run("state"),'indoorEscape');
+ assert.equal(h.run("readStageRecords().stages.rescueBeginner.successes"),1);
+ assert.equal(h.run("stageSelectable('baseIntermediate')"),true);
+ assert.equal(h.run("readStageRecords().stages.escapeTest.successes"),0);
+ h.run("state='stage';localStorage.setItem(STAGE_PROGRESS_KEY,JSON.stringify({version:5,cleared:STAGE_DISPLAY_ORDER.slice(0,7)}));setSelectedStage('escapeTest');gameBuildQueued=false;deploySelectedStage();reset(false)");
+ assert.equal(h.run("rescueBeginner"),false);
+ assert.equal(h.run("ZONES.filter(z=>z.n==='密林').length"),5);
+ assert.ok(h.run("etanks.length>0&&humans.some(h=>h.commander==='blue')&&!!mission.enemyDrop"));
 });

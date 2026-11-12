@@ -1,8 +1,15 @@
-// Jungle rescue mission. Terrain, foliage, combat and EXIT art reuse existing systems.
+// Outdoor rescue missions. Terrain, foliage, combat and EXIT art reuse existing systems.
 const ESCAPE_TEST_AREAS=5,ESCAPE_TEST_AREA_HEIGHT=2400;
 const ESCAPE_VIP_FOLLOW_DELAY=.6,ESCAPE_VIP_FOLLOW_SPEED=212*.7;
 function setupEscapeTestZones(){
  const makeZone=(n,y0,y1)=>({n,y0,y1,g:ZONE_STYLE[n].g,p:ZONE_STYLE[n].p.slice()});
+ if(rescueBeginner){
+  const areas=['森林','村','村'],end=400,start=end+areas.length*ESCAPE_TEST_AREA_HEIGHT;
+  ZONES=[makeZone('草原',WH,start),
+   ...areas.map((name,i)=>makeZone(name,start-i*ESCAPE_TEST_AREA_HEIGHT,start-(i+1)*ESCAPE_TEST_AREA_HEIGHT)),
+   makeZone('草原',end,0)];
+  return;
+ }
  const jungleStart=ESCAPE_TEST_AREAS*ESCAPE_TEST_AREA_HEIGHT+400;
  ZONES=[makeZone('草原',WH,jungleStart),
   ...Array.from({length:ESCAPE_TEST_AREAS},(_,i)=>{
@@ -11,11 +18,13 @@ function setupEscapeTestZones(){
   }),makeZone('草原',400,0)];
 }
 function setupEscapeTestWorld(){
- loadJungleAssets();loadEscapeVipArtwork();document.body.classList.remove('front-battle');
- p.x=WW/2;p.y=ZONES[0].y0-170;p.body=p.ang=-Math.PI/2;p.tank=null;
+ if(!rescueBeginner)loadJungleAssets();
+ loadEscapeVipArtwork();document.body.classList.remove('front-battle');
+ p.x=WW/2;p.y=rescueBeginner?ZONES[0].y1+230:ZONES[0].y0-170;p.body=p.ang=-Math.PI/2;p.tank=null;
  scoreStats.startY=p.y;
  base={x:WW/2,y:-60000,w:COMMAND_BASE_W,h:COMMAND_BASE_H,hp:30,maxHp:30,deadAt:0};
  covers=[];objects=[];bushes=[];water=[];bridges=[];mud=[];cars=[];humans=[];etanks=[];items=[];bullets=[];parts=[];waves=[];fx=[];bombs=[];roadBands=[];areaDebugLabels=[];
+ if(rescueBeginner){setupRescueBeginnerWorld();return;}
  const jungles=ZONES.slice(1,-1);
  planJungleBuildings(jungles,2);
  for(const z of jungles){
@@ -57,6 +66,39 @@ function setupEscapeTestWorld(){
  roadBands.push({x:0,y:last.escapeExit.y-160,w:WW,h:320,kind:'asphalt',lanes:4});
  say('脱出：要人女性を護衛し、最後の草原のEXITへ');
 }
+function setupRescueBeginnerWorld(){
+ const areas=ZONES.slice(1,-1),last=ZONES[ZONES.length-1];
+ last.escapeExit={x:WW/2,y:200};
+ base.y/=MAP_SCALE;
+ genCovers();genObjects();
+ base.y*=MAP_SCALE;
+ for(const cover of covers)cover.y*=MAP_SCALE;
+ for(const object of objects)object.y*=MAP_SCALE;
+ roadBands.push({x:0,y:last.escapeExit.y-160,w:WW,h:320,kind:'asphalt',lanes:4});
+ clearRoadScenery();
+ // Keep a continuous path for the player and VIP through dense generated scenery.
+ const route={x:WW/2-36,y:last.escapeExit.y,w:72,h:p.y-last.escapeExit.y};
+ const clearRoute=rect=>!ov2(route,rect,0)&&!circleHitsRect(WW/2+36,p.y-35,200,rect);
+ covers=covers.filter(c=>clearRoute(coverAABB(c)));
+ objects=objects.filter(o=>clearRoute(objectAABB(o)));
+ rebuildSpatialGrid();
+ for(const z of areas){
+  const count=z.n==='森林'?12:8;
+  for(let tries=0,placed=0;tries<count*40&&placed<count;tries++){
+   const x=40+R()*(WW-150),y=z.y1+140+R()*1900;
+   const bush={x,y,w:85,h:55};
+   if(hitsM(x+42,y+27,44)||bushes.some(other=>ov2(other,bush,8)))continue;
+   bushes.push(bush);placed++;
+  }
+  spawnAreaDebugEnemies(z,{tanks:0});
+ }
+ const t=TYPES[0];
+ cars.push({x:WW/2+130,y:p.y-100,t,kind:'tank',hp:t.hp,c:t.cmax,v:t.vmax,f:t.fmax,ch:0,mgHits:0,body:-Math.PI/2});
+ debugMode=0;debugInvincible=false;baseSpawnT=99999;
+ captureBuildingGroundMarks();
+ placeEscapeTestRadios(areas);
+ say('救出（初級）：森林と村を抜け、要人女性をEXITへ護衛せよ');
+}
 // Reuse the ordinary crate and drum objects around existing jungle buildings.
 function placeEscapeBuildingSupplies(jungles){
  const buildings=covers.filter(c=>JUNGLE_BUILDING_KEYS.includes(c.jungleAsset));
@@ -79,9 +121,9 @@ function placeEscapeBuildingSupplies(jungles){
  }
 }
 // Place one of each existing support radio in the five jungle areas, once per run.
-function placeEscapeTestRadios(jungles){
+function placeEscapeTestRadios(areas){
  radio=null;whiteRadio=null;
- const shuffled=jungles.slice();
+ const shuffled=areas.slice();
  for(let i=shuffled.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];}
  const place=(avoid)=>{
   for(const z of shuffled){
@@ -116,7 +158,7 @@ function separateJungleLake(z,river,pond){
  const [lo,hi]=choices[Math.floor(R()*choices.length)];pond.y=lo+R()*(hi-lo);
 }
 function setupEscapeTestMission(){
- mission={escapeTest:true,vip:{x:p.x-30,y:p.y+40,face:p.body,hp:3,moving:false,leaderX:p.x,leaderY:p.y},exit:ZONES[ZONES.length-1].escapeExit,escapeProgress:0,escapeExit:null,escapeComplete:false,points:[],index:0,enemyDrop:{next:0,plane:null,parachutes:[],retry:0}};missionHudNextAt=0;
+ mission={escapeTest:true,vip:{x:p.x-30,y:p.y+40,face:p.body,hp:3,moving:false,leaderX:p.x,leaderY:p.y},exit:ZONES[ZONES.length-1].escapeExit,escapeProgress:0,escapeExit:null,escapeComplete:false,points:[],index:0,enemyDrop:rescueBeginner?null:{next:0,plane:null,parachutes:[],retry:0}};missionHudNextAt=0;
 }
 // The two passes are keyed to progress, so backtracking cannot repeat them.
 const ESCAPE_ENEMY_DROP_AREAS=[1,3];
@@ -293,7 +335,7 @@ function updateEscapeVipBoarding(v,t){
 function updateEscapeTestMission(dt){
  if(state!=='play'||!mission?.escapeTest||mission.escapeComplete)return;
  const m=mission;m.index=Math.max(0,ZONES.indexOf(zoneAt(p.y)));
- updateEscapeEnemyDrop(m,dt);
+ if(m.enemyDrop)updateEscapeEnemyDrop(m,dt);
  const playerInside=p.hp>0&&!p.tank&&D(p,m.exit)<INDOOR_EXIT_RADIUS;
  const inside=playerInside&&m.vip.hp>0&&!(m.vip.stunT>0)&&D(m.vip,m.exit)<INDOOR_EXIT_RADIUS;
  m.escapeExit=inside?m.exit:null;m.escapeProgress=inside?Math.min(INDOOR_EXIT_SECONDS,m.escapeProgress+dt):0;
@@ -308,8 +350,8 @@ function drawEscapeTestMission(){
  const m=mission;
  if(performance.now()>=missionHudNextAt){
   missionHudNextAt=performance.now()+100;
-  const zone=ZONES[m.index],area=zone.escapeArea===undefined?(m.index===0?'開始草原':'脱出地点の草原'):'密林 '+(zone.escapeArea+1)+'/'+ESCAPE_TEST_AREAS;
-  const text='救出（中級）　'+area+'\n'+(m.escapeExit?'EXIT：あと '+Math.max(0,INDOOR_EXIT_SECONDS-m.escapeProgress).toFixed(1)+'秒':'EXITまで '+distanceMeters(D(p,m.exit))+'m ／ 要人と円内で5秒待機');
+  const zone=ZONES[m.index],area=rescueBeginner?(zone.n==='村'?'村 '+(m.index-1)+'/2':zone.n):zone.escapeArea===undefined?(m.index===0?'開始草原':'脱出地点の草原'):'密林 '+(zone.escapeArea+1)+'/'+ESCAPE_TEST_AREAS;
+  const text=(rescueBeginner?'救出（初級）':'救出（中級）')+'　'+area+'\n'+(m.escapeExit?'EXIT：あと '+Math.max(0,INDOOR_EXIT_SECONDS-m.escapeProgress).toFixed(1)+'秒':'EXITまで '+distanceMeters(D(p,m.exit))+'m ／ 要人と円内で5秒待機');
   if(hud.textContent!==text)hud.textContent=text;
  }
  const previous=g;gm.save();g=gm;

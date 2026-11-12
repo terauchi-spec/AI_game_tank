@@ -241,7 +241,7 @@ function drawSandstormOverlay(){
 }
 let selectedAreaDebug=null,areaDebugEnemyBomber=false;
 // Small fixed enemy population uses final-world collision checks and normal AI.
-function spawnAreaDebugEnemies(z,{blueCommander=false}={}){
+function spawnAreaDebugEnemies(z,{blueCommander=false,tanks=2}={}){
  const placed=[];
  const add=(tank,count,commander=false)=>{for(let i=0;i<count;i++)for(let tries=0;tries<(commander?300:100);tries++){
   const r=tank?TANK_HIT:8,x=55+R()*(WW-110),y=z.y1+130+R()*(z.y0-z.y1-650),a=R()<.5?0:Math.PI/2,len=40+R()*70;
@@ -260,7 +260,7 @@ function spawnAreaDebugEnemies(z,{blueCommander=false}={}){
   placed.push(o);break;
  }};
  if(blueCommander)add(false,1,true);
- add(false,8);add(true,2);
+ add(false,8);if(tanks>0)add(true,tanks);
 }
 function setupSelectedAreaDebugStage(){
  const name=selectedAreaDebug||'草原',z={n:name,y0:WH-40,y1:WH-2440,g:ZONE_STYLE[name].g,p:ZONE_STYLE[name].p.slice(),areaDebug:1};ZONES=[z];
