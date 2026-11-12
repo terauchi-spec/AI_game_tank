@@ -429,14 +429,14 @@ function drawFrontlineVictorySignal(){
  }
  gm.restore();
 }
-function frontlineCaptureVisual(m){
- const fraction=Math.max(0,Math.min(1,(m.progress||0)/FRONTLINE_CAPTURE_SECONDS));
- const remaining=Math.max(0,FRONTLINE_CAPTURE_SECONDS-(m.progress||0))/Math.max(1,m.captureRate||1);
+function frontlineCaptureVisual(m,requiredSeconds=FRONTLINE_CAPTURE_SECONDS){
+ const fraction=Math.max(0,Math.min(1,(m.progress||0)/requiredSeconds));
+ const remaining=Math.max(0,requiredSeconds-(m.progress||0))/Math.max(1,m.captureRate||1);
  return{fraction,remaining,label:m.captureReady===false&&!m.contested?'プレイヤーの進入待ち':m.captureCount===0&&!m.contested?'味方兵の合流待ち':(m.contested?'敵が範囲内 ／ ':m.capturing?'制圧まで ':'制圧一時停止 ／ 残り ')+remaining.toFixed(1)+'秒'+(m.capturing&&m.captureCount>1?'（'+m.captureCount+'人）':'')};
 }
-function drawFrontlineCaptureRing(point,x,y,m){
+function drawFrontlineCaptureRing(point,x,y,m,requiredSeconds){
  const active=m.points[m.index]===point,waiting=m.captureCount===0&&D(p,point)<frontlineCaptureRadius(point);if(!active||(!(m.progress>0)&&!m.capturing&&!waiting))return;
- const status=frontlineCaptureVisual(m),radius=frontlineCaptureRadius(point),colors=frontlineCaptureColors(point,m);
+ const status=frontlineCaptureVisual(m,requiredSeconds),radius=frontlineCaptureRadius(point),colors=frontlineCaptureColors(point,m);
  gm.save();gm.lineWidth=7;gm.strokeStyle=colors.track;gm.beginPath();gm.arc(x,y,radius,0,Math.PI*2);gm.stroke();
  if(status.fraction>0){gm.strokeStyle=colors.stroke;gm.lineCap='round';gm.beginPath();gm.arc(x,y,radius,-Math.PI/2,-Math.PI/2+Math.PI*2*status.fraction);gm.stroke();}
  gm.textAlign='center';gm.font='bold 16px system-ui';gm.lineWidth=4;gm.strokeStyle='rgba(0,0,0,.8)';const labelY=y+(point.cargo?136:point.antenna?86:-35);gm.strokeText(status.label,x,labelY);gm.fillStyle=colors.text;gm.fillText(status.label,x,labelY);gm.restore();

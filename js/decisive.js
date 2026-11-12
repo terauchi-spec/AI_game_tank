@@ -1,5 +1,6 @@
 // Stage 07 orchestrates existing destruction combat and bounded frontline armies.
 // stageMode changes to 'front' only after the relay falls; the persistent stage ID stays decisive.
+const DECISIVE_RELAY_CAPTURE_SECONDS=15;
 let decisiveBattle=null;
 function isDecisiveStage(){return stageMode==='decisive'||stageMode==='front'&&!!decisiveBattle;}
 function loadDecisiveAssets(){
@@ -76,10 +77,10 @@ function updateDecisiveMission(dt){
   m.contested=foes>0;m.enemiesInside=m.contested;
   m.captureReady=D(p,q)<r&&!(p.dig>0)&&p.tank?.kind!=='fighter';
   m.captureCount=m.captureReady?1:0;m.captureRate=m.captureCount;m.capturing=m.captureReady&&!foes;
-  if(m.capturing){m.progress=Math.min(FRONTLINE_CAPTURE_SECONDS,m.progress+dt);scoreStats.captureSeconds+=dt;}
+  if(m.capturing){m.progress=Math.min(DECISIVE_RELAY_CAPTURE_SECONDS,m.progress+dt);scoreStats.captureSeconds+=dt;}
   else if(foes)m.progress=Math.max(0,m.progress-dt*.35);
-  scoreStats.objectiveProgress=.5*m.progress/FRONTLINE_CAPTURE_SECONDS;
-  if(m.progress>=FRONTLINE_CAPTURE_SECONDS){scoreStats.capturePoints=1;beginDecisiveAssault();}
+  scoreStats.objectiveProgress=.5*m.progress/DECISIVE_RELAY_CAPTURE_SECONDS;
+  if(m.progress>=DECISIVE_RELAY_CAPTURE_SECONDS){scoreStats.capturePoints=1;beginDecisiveAssault();}
   return;
  }
  updateDecisiveFortress(dt);
@@ -140,10 +141,10 @@ function drawDecisiveMission(){
  gm.save();gm.setTransform(1,0,0,1,0,0);
  if(d.phase==='infiltration'){
   const x=q.x-camX,y=q.y-cam,r=frontlineCaptureRadius(q),colors=frontlineCaptureColors(q,mission);
-  if(y>-r&&y<H+r){gm.strokeStyle=colors.stroke;gm.fillStyle=colors.fill;gm.lineWidth=3;gm.beginPath();gm.arc(x,y,r,0,Math.PI*2);gm.fill();gm.stroke();drawFrontlineCaptureRing(q,x,y,mission);}
+  if(y>-r&&y<H+r){gm.strokeStyle=colors.stroke;gm.fillStyle=colors.fill;gm.lineWidth=3;gm.beginPath();gm.arc(x,y,r,0,Math.PI*2);gm.fill();gm.stroke();drawFrontlineCaptureRing(q,x,y,mission,DECISIVE_RELAY_CAPTURE_SECONDS);}
  }
  drawFrontlineArrow(q);
  gm.font='bold 16px system-ui';gm.fillStyle='#fff1c0';gm.textAlign='center';gm.strokeStyle='#302a20';gm.lineWidth=4;
- const text=d.phase==='infiltration'?'中継拠点を制圧 '+Math.floor(mission.progress/FRONTLINE_CAPTURE_SECONDS*100)+'%':'決戦：移動要塞を破壊せよ';
+ const text=d.phase==='infiltration'?'中継拠点を制圧 '+Math.floor(mission.progress/DECISIVE_RELAY_CAPTURE_SECONDS*100)+'%':'決戦：移動要塞を破壊せよ';
  gm.strokeText(text,W/2,32);gm.fillText(text,W/2,32);gm.restore();
 }

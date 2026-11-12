@@ -7,7 +7,7 @@ function start(seed=7){
 test('developer-only 13 preserves its identity through phase change and victory while public completion is already earned',()=>{
  const {run,storage}=start();assert.equal(run('currentStageId()'),'decisive');assert.equal(run('stageDisplayNumber(currentStageId())'),'13');
  assert.equal(run('allies.length'),0);assert.equal(run('p.tank'),null);assert.equal(run('zoneAt(p.y)===ZONES[0]'),true);assert.equal(run('scoreStats.stageRecordId'),'decisive');
- run('humans=[];etanks=[];p.x=decisiveBattle.gate.x;p.y=decisiveBattle.gate.y;for(let i=0;i<48;i++)updateMission(1)');
+ run('humans=[];etanks=[];p.x=decisiveBattle.gate.x;p.y=decisiveBattle.gate.y;for(let i=0;i<15;i++)updateMission(1)');
  assert.equal(run('decisiveBattle.phase'),'assault');assert.equal(run('stageMode'),'front');assert.equal(run('currentStageId()'),'decisive');assert.equal(run('scoreStats.stage'),'decisive');
  assert.equal(run('allies.length'),6);assert.ok(run('allies.every(a=>a.frontline)'));assert.ok(run('humans.length>0&&humans.length<=frontlineEnemyLimit()&&humans.every(h=>h.frontMarch)'));assert.equal(run('state'),'play');
  run('draw();for(let i=0;i<90;i++)update(1/60);draw()');assert.equal(run('state'),'play');
@@ -30,13 +30,17 @@ test('desert defenses leave a central vehicle route and the relay cannot be bypa
  run('humans=[];etanks=[];p.x=decisiveBattle.gate.x;p.y=decisiveBattle.gate.y;p.dig=1;updateMission(10)');assert.equal(run('mission.progress'),0);run('p.dig=0;p.tank={kind:"fighter"};updateMission(10)');assert.equal(run('mission.progress'),0);
  run('p.tank=null;humans=[{x:p.x+20,y:p.y,alive:true}];updateMission(10)');assert.equal(run('mission.progress'),0);assert.equal(run('mission.contested'),true);
  run('humans=[];updateMission(10)');assert.equal(run('mission.progress'),10);assert.equal(run('allies.length'),0);assert.equal(run('stageMode'),'decisive');
+ assert.equal(run('frontlineCaptureVisual(mission,DECISIVE_RELAY_CAPTURE_SECONDS).remaining'),5);
+ run('p.x+=400;updateMission(5);p.x-=400;updateMission(4)');
+ assert.equal(run('mission.progress'),14);assert.equal(run('decisiveBattle.phase'),'infiltration');
+ run('updateMission(1)');assert.equal(run('decisiveBattle.phase'),'assault');
 });
 test('capturing the relay or reaching the final objective cannot finish the stage; wave and ally bounds persist',()=>{
- const {run}=start();run('humans=[];etanks=[];p.x=decisiveBattle.gate.x;p.y=decisiveBattle.gate.y;updateMission(48)');assert.equal(run('state'),'play');assert.equal(run('beginDecisiveAssault()'),false);
+ const {run}=start();run('humans=[];etanks=[];p.x=decisiveBattle.gate.x;p.y=decisiveBattle.gate.y;updateMission(15)');assert.equal(run('state'),'play');assert.equal(run('beginDecisiveAssault()'),false);
  run('p.x=mission.points[0].x;p.y=mission.points[0].y;for(let i=0;i<200;i++)updateMission(.5)');assert.equal(run('state'),'play');assert.ok(run('base.hp>0'));assert.ok(run('humans.filter(h=>h.alive).length<=frontlineEnemyLimit()'));assert.ok(run('allies.filter(a=>a.alive&&a.frontline).length<=10'));assert.equal(run('scoreStats.final'),null);
 });
 test('moving fortress yields to nearby units; bunker and fortress guns reuse existing enemy projectiles',()=>{
- const {run}=start();run('humans=[];etanks=[];p.x=decisiveBattle.gate.x;p.y=decisiveBattle.gate.y;updateMission(48)');const x=run('base.x');run('updateDecisiveFortress(.1)');assert.notEqual(run('base.x'),x);
+ const {run}=start();run('humans=[];etanks=[];p.x=decisiveBattle.gate.x;p.y=decisiveBattle.gate.y;updateMission(15)');const x=run('base.x');run('updateDecisiveFortress(.1)');assert.notEqual(run('base.x'),x);
  run('p.x=base.x+base.w+5;p.y=base.y+100');const blocked=run('base.x');run('updateDecisiveFortress(.1)');assert.equal(run('base.x'),blocked);
  run('p.x=base.x+base.w/2;p.y=base.y+base.h+150;decisiveBattle.fortressCd=0;updateDecisiveFortress(.1)');assert.ok(run('bullets.some(b=>b.from==="e"&&b.k==="c")'));
  run('const bunker=decisiveBattle.bunkers[0];p.x=bunker.x+bunker.w/2;p.y=bunker.y+bunker.h+45;bunker.gunCd=0;decisiveBattle.gunScan=0;updateDecisiveBunkers(.2)');assert.ok(run('bullets.some(b=>b.from==="e"&&b.k==="v")'));
