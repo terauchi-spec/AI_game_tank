@@ -97,7 +97,7 @@ function setupRescueBeginnerWorld(){
  debugMode=0;debugInvincible=false;baseSpawnT=99999;
  captureBuildingGroundMarks();
  placeEscapeTestRadios(areas);
- setupForestBroadleafTrees();
+ setupForestBroadleafTrees(route);
  say('救出（初級）：森林と村を抜け、要人女性をEXITへ護衛せよ');
 }
 // Reuse the ordinary crate and drum objects around existing jungle buildings.

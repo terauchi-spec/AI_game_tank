@@ -223,7 +223,7 @@ test('central logs, giant ferns and optional buildings force alternating detours
  }
 });
 
-test('forest areas reuse one to three jungle broadleaf sprites without changing cover placement',()=>{
+test('forest broadleaves draw at jungle dimensions without changing cover collision',()=>{
  const setups=[
   "stageMode='base'",
   "stageMode='base';areaDebugEnabled=true;selectedAreaDebug='森林'",
@@ -235,7 +235,19 @@ test('forest areas reuse one to three jungle broadleaf sprites without changing 
   h.run(setup+';reset(false)');
   const counts=Array.from(h.run(`ZONES.filter(z=>z.n==='森林').map(z=>${appearance}.filter(c=>zoneAt(c.y+c.h/2)===z).length)`));
   assert.ok(counts.length>0&&counts.every(count=>count>=1&&count<=3));
-  assert.equal(h.run(`${appearance}.every(c=>zoneAt(c.y+c.h/2).n==='森林'&&naturalCoverImage(c,'tree')===COVER_IMG.jungle_broadleaf_tree)`),true);
+  assert.equal(h.run(`${appearance}.every(c=>{
+   const z=zoneAt(c.y+c.h/2),rect=coverSpriteRect(c);
+   return z.n==='森林'&&rect.y>=z.y1&&rect.y+rect.h<=z.y0&&
+    rect.w===JUNGLE_ASSETS.broadleaf_tree[1]&&rect.h===JUNGLE_ASSETS.broadleaf_tree[2]&&
+    (!rescueBeginner||rect.x+rect.w<=WW/2-36||rect.x>=WW/2+36);
+  })`),true);
+  assert.equal(h.run(`(()=>{
+   const tree=${appearance}[0],rect=coverSpriteRect(tree),original=g.drawImage,draws=[];
+   g.drawImage=(...args)=>draws.push(args);
+   try{drawCoverAsset(tree);}finally{g.drawImage=original;}
+   return draws.length===1&&draws[0][0]===COVER_IMG.jungle_broadleaf_tree&&
+    draws[0].slice(1).every((value,i)=>value===[rect.x,rect.y,rect.w,rect.h][i]);
+  })()`),true);
   assert.deepEqual(Array.from(h.run("Object.keys(COVER_IMG).filter(k=>k.startsWith('jungle_'))")),['jungle_broadleaf_tree']);
  }
  const geometry='JSON.stringify(covers.map(c=>[c.kd,c.x,c.y,c.w,c.h,coverHitCircle(c)]))';

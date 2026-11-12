@@ -6,19 +6,27 @@ const JUNGLE_BUILDING_BASE={wood_hut_small:[160*1.1,135*1.1],wood_hut_large:[220
 function loadJungleAssets(keys=[...Object.keys(JUNGLE_ASSETS),...JUNGLE_PLANTS]){
  for(const key of keys)if(!COVER_IMG['jungle_'+key])COVER_IMG['jungle_'+key]=makeAssetImage(ASSET_DIR+'jungle/'+key+'.webp?v='+GAME_VERSION);
 }
-function setupForestBroadleafTrees(){
+function forestBroadleafSpriteRect(c){
+ const [,w,h]=JUNGLE_ASSETS.broadleaf_tree;
+ return centerRect(c.x+c.w/2,c.y+c.h/2,w,h);
+}
+function setupForestBroadleafTrees(route=null){
  for(const z of ZONES){
   if(z.n!=='森林')continue;
   const trees=covers.filter(c=>c.kd===6&&!c.fr&&!c.jungleAsset&&c.y+c.h/2>z.y1&&c.y+c.h/2<=z.y0);
   if(!trees.length)continue;
-  loadJungleAssets(['broadleaf_tree']);
-  // Change the sprite of existing trees without changing their colliders or spawn positions.
-  const count=Math.min(trees.length,1+Math.floor(stableRand(trees[0],97)*3));
-  for(let i=0;i<count;i++){
+  // The canopy uses the jungle dimensions; the existing trunk collider keeps routes passable.
+  const count=1+Math.floor(stableRand(trees[0],97)*3),placed=[];
+  for(let i=0;i<trees.length&&placed.length<count;i++){
    const j=i+Math.floor(stableRand(trees[i],101+i)*(trees.length-i));
    [trees[i],trees[j]]=[trees[j],trees[i]];
-   trees[i].jungleTreeArt='jungle_broadleaf_tree';
+   const tree=trees[i],rect=forestBroadleafSpriteRect(tree);
+   if(rect.x<0||rect.x+rect.w>WW||rect.y<z.y1||rect.y+rect.h>z.y0)continue;
+   if(overlapsRoad(rect)||route&&ov2(rect,route,0)||placed.some(other=>ov2(rect,other,0)))continue;
+   tree.jungleTreeArt='jungle_broadleaf_tree';
+   placed.push(rect);
   }
+  if(placed.length)loadJungleAssets(['broadleaf_tree']);
  }
 }
 let escapeHutShade=null;
