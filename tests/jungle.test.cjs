@@ -222,3 +222,25 @@ test('central logs, giant ferns and optional buildings force alternating detours
   assert.equal(h.run('(()=>{const qs=ZONES[0].jungleWalkRoute;for(let i=1;i<qs.length;i++){const a=qs[i-1],b=qs[i],n=Math.ceil(D(a,b)/8);for(let j=0;j<=n;j++){const t=j/n;if(hitsC(a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t,28))return false;}}return true;})()'),true,'vehicle detours seed '+seed);
  }
 });
+
+test('forest areas reuse one to three jungle broadleaf sprites without changing cover placement',()=>{
+ const setups=[
+  "stageMode='base'",
+  "stageMode='base';areaDebugEnabled=true;selectedAreaDebug='森林'",
+  "stageMode='escapeTest';rescueBeginner=true"
+ ];
+ const appearance="covers.filter(c=>c.jungleTreeArt==='jungle_broadleaf_tree')";
+ for(const setup of setups){
+  const h=createGameEngine(root,{seed:7});
+  h.run(setup+';reset(false)');
+  const counts=Array.from(h.run(`ZONES.filter(z=>z.n==='森林').map(z=>${appearance}.filter(c=>zoneAt(c.y+c.h/2)===z).length)`));
+  assert.ok(counts.length>0&&counts.every(count=>count>=1&&count<=3));
+  assert.equal(h.run(`${appearance}.every(c=>zoneAt(c.y+c.h/2).n==='森林'&&naturalCoverImage(c,'tree')===COVER_IMG.jungle_broadleaf_tree)`),true);
+  assert.deepEqual(Array.from(h.run("Object.keys(COVER_IMG).filter(k=>k.startsWith('jungle_'))")),['jungle_broadleaf_tree']);
+ }
+ const geometry='JSON.stringify(covers.map(c=>[c.kd,c.x,c.y,c.w,c.h,coverHitCircle(c)]))';
+ const plain=createGameEngine(root,{seed:7}),variant=createGameEngine(root,{seed:7});
+ plain.run("setupForestBroadleafTrees=()=>{};stageMode='escapeTest';rescueBeginner=true;reset(false)");
+ variant.run("stageMode='escapeTest';rescueBeginner=true;reset(false)");
+ assert.equal(variant.run(geometry),plain.run(geometry));
+});

@@ -1,10 +1,25 @@
-// Test-only scenery: reuse the existing cover physics and spatially culled renderer.
-// Images load only after selecting the jungle, leaving normal stage startup unchanged.
+// Jungle scenery reuses the existing cover physics and spatially culled renderer.
+// Load only the assets used in the selected terrain.
 const JUNGLE_ASSETS={palm:[6,136,136],fallen_log:[0,190*1.3,62*1.3],wood_hut_small:[4,160*1.1*1.1,135*1.1*1.1],wood_hut_large:[4,220*1.1*1.1,158*1.1*1.1],concrete_hut:[3,185*1.1*1.1,156*1.1*1.1],watchtower:[3,150*1.1,205*1.1],wood_watchtower:[4,150*1.1*2,150*1.1*2*320/295],broadleaf_tree:[6,166,166],fern_tree:[6,332,332]};
 const JUNGLE_PLANTS=['round_leaf','flower_leaf'];
 const JUNGLE_BUILDING_BASE={wood_hut_small:[160*1.1,135*1.1],wood_hut_large:[220*1.1,158*1.1],concrete_hut:[185*1.1,156*1.1],wood_watchtower:[150*1.1,150*1.1*320/295]};
-function loadJungleAssets(){
- for(const key of [...Object.keys(JUNGLE_ASSETS),...JUNGLE_PLANTS])if(!COVER_IMG['jungle_'+key])COVER_IMG['jungle_'+key]=makeAssetImage(ASSET_DIR+'jungle/'+key+'.webp?v='+GAME_VERSION);
+function loadJungleAssets(keys=[...Object.keys(JUNGLE_ASSETS),...JUNGLE_PLANTS]){
+ for(const key of keys)if(!COVER_IMG['jungle_'+key])COVER_IMG['jungle_'+key]=makeAssetImage(ASSET_DIR+'jungle/'+key+'.webp?v='+GAME_VERSION);
+}
+function setupForestBroadleafTrees(){
+ for(const z of ZONES){
+  if(z.n!=='森林')continue;
+  const trees=covers.filter(c=>c.kd===6&&!c.fr&&!c.jungleAsset&&c.y+c.h/2>z.y1&&c.y+c.h/2<=z.y0);
+  if(!trees.length)continue;
+  loadJungleAssets(['broadleaf_tree']);
+  // Change the sprite of existing trees without changing their colliders or spawn positions.
+  const count=Math.min(trees.length,1+Math.floor(stableRand(trees[0],97)*3));
+  for(let i=0;i<count;i++){
+   const j=i+Math.floor(stableRand(trees[i],101+i)*(trees.length-i));
+   [trees[i],trees[j]]=[trees[j],trees[i]];
+   trees[i].jungleTreeArt='jungle_broadleaf_tree';
+  }
+ }
 }
 let escapeHutShade=null;
 function escapeHutImage(image){
