@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.12.2306</title>
+<title>こっそり戦車大作戦 2026.11.12.2309</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -1027,7 +1027,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.12.2306',FILE_CREATED_AT='2026/11/12 23:06',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.12.2309',FILE_CREATED_AT='2026/11/12 23:09',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -3160,7 +3160,7 @@ function reset(rerollSkills=true){
  setupZones();if(rerollSkills)rollSkillChoices();
  waterRipples=[];
  p={x:WW/2,y:3100,hp:3,tank:null,cc:0,vc:0,ang:-1.57,body:-1.57,dig:0,digPrep:0,digElapsed:0,digExitAnim:0,digExitX:0,digExitY:0,scd:0,scdMax:0,drill:0,drillHit:0,drillTarget:null,drillSfx:0,bushHide:0,grappleT:0,grappleTarget:null,flameFuel:3,flameActive:false,flameLockA:null,flamePath:[],flameSfx:0,flameReach:0,fireExposure:0,sniperMode:false,sniperLockA:null,sniperAimN:0,sniperZoom:1.5,sniperLensChangeT:0,sniperEnterT:0,sniperReadyT:0,sniperExitT:0,sniperFlash:0,sniperHitT:0,sniperHitX:0,sniperHitY:0,sniperFireCd:0,sniperNoiseEvents:[]};touchTurretAngle=null;
- if(areaDebugEnabled&&selectedAreaDebug){setupSelectedAreaDebugStage();if(skill==='hound')spawnHound();setupMission();return;}
+ if(areaDebugEnabled&&selectedAreaDebug){setupSelectedAreaDebugStage();setupForestBroadleafTrees();if(skill==='hound')spawnHound();setupMission();return;}
  if(stageMode==='escapeTest'){setupEscapeTestWorld();if(skill==='hound')spawnHound();setupMission();return;}
  if(stageMode==='training'){setupTrainingWorld();return;}
  if(stageMode==='indoor'){setupInfiltrationWorld();if(skill==='hound')spawnHound();setupMission();return;}
@@ -8892,7 +8892,7 @@ function reportGameError(error){
 <script src="js/jungle-placement-masks.js?v=2026.11.08.2145"></script>
 <script src="js/jungle.js?v=2026.11.12.2306"></script>
 <script src="js/escape-test.js?v=2026.11.12.2306"></script>
-<script src="js/canyon.js?v=2026.11.12.2306"></script>
+<script src="js/canyon.js?v=2026.11.12.2006"></script>
 <script src="js/vegetation.js?v=2026.11.08.1806"></script>
 <script src="js/laboratory.js?v=2026.10.31.2206"></script>
 <script src="js/infiltration-world.js?v=2026.11.11.2308"></script>
