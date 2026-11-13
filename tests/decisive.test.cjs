@@ -196,3 +196,19 @@ test('an obstructed adobe exit stays closed and retries on its regular timer',()
  run('updateDesertTownEvents(.16);');
  assert.equal(run('humans.length'),1);
 });
+test('every desert town section adds four ordinary blue guards on clear building loops',()=>{
+ const check=(run,count)=>assert.ok(run(`(()=>{
+  const guards=humans.filter(h=>h.desertTownPatrol);
+  return guards.length===${count}&&ZONES.filter(z=>z.n==='砂漠街').every(z=>{
+   const group=guards.filter(h=>zoneAt(h.y)===z);
+   return group.length===4&&group.every((h,i)=>h.alive&&!h.elite&&!h.commander&&h.loop&&
+    h.buildingPatrol&&covers.includes(h.patrolCover)&&pOK(h.path,8,true)&&
+    !hitsM(h.x,h.y,10)&&h.path.every(q=>zoneAt(q.y)===z)&&
+    group.slice(0,i).every(other=>D(h,other)>=32));
+  });
+ })()`));
+ for(const seed of [3,5,9])check(start(seed).run,16);
+ const {run}=createGameEngine(root);
+ run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='砂漠街';reset(false)");
+ check(run,4);
+});
