@@ -22,6 +22,8 @@ function setupDecisiveZones(){
  const edges=[13200,10800,9040,7280,5520,3680,1840,-400];
  ZONES=names.map((n,i)=>({n,y0:edges[i],y1:edges[i+1],g:ZONE_STYLE[n].g,p:ZONE_STYLE[n].p.slice(),edgeRisk:R()<.5?'left':'right',decisiveArea:i}));
 }
+const DESERT_TOWN_SCALE=1.5;
+const DESERT_TOWN_SANDBAG_ROW_GAP=168;
 const DESERT_TOWN_BUILDINGS=[
  ['adobe-house',4,180,120],
  ['adobe-building',4,240,120],
@@ -34,15 +36,25 @@ function addDesertTownBuildings(z){
  for(const [key] of DESERT_TOWN_BUILDINGS){
   if(!COVER_IMG['decisive_'+key])COVER_IMG['decisive_'+key]=makeAssetImage(ASSET_DIR+'desert-town/'+key+'.webp?v='+GAME_VERSION);
  }
- // Six lots leave a continuous 200px lane and keep the relay clearing open.
- const top=z.y1+(z.decisiveArea===3?800:70),bottom=z.y0-(z.areaDebug?650:70),lot=(bottom-top)/3;
+ // Two columns leave a continuous 200px lane. The relay section has fewer lots.
+ const top=z.y1+(z.decisiveArea===3?800:70),bottom=z.y0-(z.areaDebug?650:70);
  const first=Math.floor(R()*DESERT_TOWN_BUILDINGS.length);
- for(let row=0;row<3;row++)for(let side=0;side<2;side++){
+ const rows=Array.from({length:z.decisiveArea===3?2:3},(_,row)=>[0,1].map(side=>{
   const [key,kd,w,h]=DESERT_TOWN_BUILDINGS[(first+row*2+side)%DESERT_TOWN_BUILDINGS.length];
-  const left=side?WW/2+100:24,right=side?WW-24:WW/2-100;
-  const x=left+R()*(right-left-w),y=top+row*lot+R()*Math.max(0,lot-h);
-  // The normal generator scales Y later; sprite dimensions are already in world pixels.
-  covers.push({kd,x,y:y/MAP_SCALE,w,h,decisiveKind:key});
+  return {key,kd,w:w*DESERT_TOWN_SCALE,h:h*DESERT_TOWN_SCALE};
+ }));
+ const heights=rows.map(row=>Math.max(...row.map(building=>building.h)));
+ const spare=(bottom-top-heights.reduce((sum,h)=>sum+h,0))/rows.length;
+ let rowTop=top;
+ for(const [i,row] of rows.entries()){
+  const lot=heights[i]+spare;
+  for(const [side,{key,kd,w,h}] of row.entries()){
+   const left=side?WW/2+100:16,right=side?WW-16:WW/2-100;
+   const x=left+R()*(right-left-w),y=rowTop+R()*(lot-h);
+   // The normal generator scales Y later; sprite dimensions are already in world pixels.
+   covers.push({kd,x,y:y/MAP_SCALE,w,h,decisiveKind:key});
+  }
+  rowTop+=lot;
  }
 }
 function addDesertTownScenery(z){
@@ -62,9 +74,25 @@ function addDesertTownScenery(z){
    list.push({...props,...rect,y:y/MAP_SCALE});placed++;
   }
  };
- place(covers,{kd:1,decisiveKind:'sandbags'},210,52,3);
  place(objects,{kind:'crate'},CRATE_W,CRATE_H,3);
  place(objects,{kind:'barrel'},BARREL_SIZE,BARREL_SIZE,3);
+ const sandbagW=210*DESERT_TOWN_SCALE,sandbagH=52*DESERT_TOWN_SCALE;
+ const gridBottom=z.y0-(z.areaDebug?650:70);
+ const inset=(WW/2-100-sandbagW)/2,columns=[inset,WW-inset-sandbagW];
+ const gridOptions=Array.from({length:6},(_,i)=>{
+  const cells=[];
+  for(let y=top+i*28;y+sandbagH<=gridBottom;y+=DESERT_TOWN_SANDBAG_ROW_GAP)
+   for(const x of columns){
+    const rect={x,y,w:sandbagW,h:sandbagH};
+    if(!occupied.some(other=>decisiveRectsOverlap(rect,other,16)))cells.push(rect);
+   }
+  return cells;
+ });
+ const cells=gridOptions.reduce((best,row)=>row.length>best.length?row:best);
+ for(const rect of cells){
+  occupied.push(rect);
+  covers.push({...rect,y:rect.y/MAP_SCALE,kd:1,decisiveKind:'sandbags'});
+ }
  place(bushes,{},85,55,8);
 }
 function decisiveRectsOverlap(a,b,pad=0){return a.x<b.x+b.w+pad&&a.x+a.w+pad>b.x&&a.y<b.y+b.h+pad&&a.y+a.h+pad>b.y;}

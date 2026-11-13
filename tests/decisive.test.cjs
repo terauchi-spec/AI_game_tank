@@ -25,6 +25,7 @@ test('desert town replaces the random sections and shares the desert tile and us
    const buildings=covers.filter(c=>c.y>=z.y1&&c.y+c.h<=z.y0&&DESERT_TOWN_BUILDINGS.some(([key])=>key===c.decisiveKind));
    return buildings.length>=2&&buildings.every((c,i)=>
     (c.x+c.w<=WW/2-100||c.x>=WW/2+100)&&
+    DESERT_TOWN_BUILDINGS.some(([key,,w,h])=>c.decisiveKind===key&&c.w===w*1.5&&c.h===h*1.5)&&
     circleHitsCover(c.x+c.w/2,c.y+c.h/2,8,c)&&
     buildings.slice(i+1).every(other=>!decisiveRectsOverlap(c,other)));
   })`));
@@ -46,7 +47,9 @@ test('desert town scatters all four scenery types clear of buildings, the lane a
    const sandbags=covers.filter(c=>c.decisiveKind==='sandbags'&&inside(c)&&c.y>=decisiveBattle.border+800);
    const grass=bushes.filter(inside),props=objects.filter(inside),buildings=covers.filter(c=>inside(c)&&DESERT_TOWN_BUILDINGS.some(([key])=>key===c.decisiveKind));
    const scenery=[...sandbags,...grass,...props.map(o=>o.kind==='barrel'?barrelVisualRect(o):o)];
-   return sandbags.length>=1&&grass.length>=1&&props.some(o=>o.kind==='crate')&&props.some(o=>o.kind==='barrel')&&
+   const rows=sandbags.map(c=>c.y),columns=new Set(sandbags.map(c=>c.x));
+   return sandbags.length>=(z.decisiveArea===3?1:4)&&columns.size<=2&&
+    sandbags.every(c=>c.w===315&&c.h===78&&(c.y-rows[0])%168===0)&&grass.length>=1&&props.some(o=>o.kind==='crate')&&props.some(o=>o.kind==='barrel')&&
     scenery.every((o,i)=>(o.x+o.w<=WW/2-100||o.x>=WW/2+100)&&
      !circleHitsRect(decisiveBattle.gate.x,decisiveBattle.gate.y,300,o)&&
      !buildings.some(b=>decisiveRectsOverlap(o,b))&&scenery.slice(i+1).every(q=>!decisiveRectsOverlap(o,q)));
@@ -70,7 +73,7 @@ test('desert town clears ongoing rain, prevents new rain and lets the usual sche
  assert.equal(run('weather'),'rain');
 });
 test('desert defenses leave a central vehicle route and the relay cannot be bypassed or farmed from hiding',()=>{
- const {run}=start(11);assert.equal(run('covers.filter(c=>c.decisiveKind==="bunker").length'),9);assert.equal(run('covers.filter(c=>c.decisiveKind==="sandbags"&&c.y<decisiveBattle.border+70).length'),18);assert.ok(run('covers.every(c=>!decisiveRectsOverlap(c,{x:base.x-75,y:base.y,w:base.w+150,h:base.h}))'));
+ const {run}=start(11);assert.equal(run('covers.filter(c=>c.decisiveKind==="bunker").length'),9);assert.equal(run('covers.filter(c=>c.decisiveKind==="sandbags"&&c.w===210&&c.h===52&&c.y<decisiveBattle.border+70).length'),18);assert.ok(run('covers.every(c=>!decisiveRectsOverlap(c,{x:base.x-75,y:base.y,w:base.w+150,h:base.h}))'));
  assert.ok(run('covers.filter(c=>c.decisiveKind).every(c=>c.x+c.w<WW/2-100||c.x>WW/2+100)'));assert.ok(run('ZONES.slice(4).every(z=>cars.some(v=>v.y<z.y0&&v.y>z.y1))'));
  const hp=run('base.hp');run("damageBase(1000,base.x,base.y,60,1,'bomb')");assert.equal(run('base.hp'),hp);assert.equal(run('state'),'play');
  run('p.y=100;updateMission(.1)');assert.equal(run('p.y'),run('decisiveBattle.border+32'));
