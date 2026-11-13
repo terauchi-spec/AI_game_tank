@@ -5,8 +5,11 @@ const DECISIVE_BUNKER_SCAN_SECONDS=.2;
 let decisiveBattle=null;
 function isDecisiveStage(){return stageMode==='decisive'||stageMode==='front'&&!!decisiveBattle;}
 function loadDecisiveAssets(){
- for(const key of ['fortress','bunker','sandbags','bunker-barrel'])if(!COVER_IMG['decisive_'+key])COVER_IMG['decisive_'+key]=makeAssetImage('assets/decisive/'+key+'.webp?v='+GAME_VERSION);
- loadDesertTerrain();
+ for(const key of ['fortress','bunker','bunker-barrel'])if(!COVER_IMG['decisive_'+key])COVER_IMG['decisive_'+key]=makeAssetImage('assets/decisive/'+key+'.webp?v='+GAME_VERSION);
+ loadDesertTerrain();loadDesertSandbags();
+}
+function loadDesertSandbags(){
+ if(!COVER_IMG.decisive_sandbags)COVER_IMG.decisive_sandbags=makeAssetImage('assets/decisive/sandbags.webp?v='+GAME_VERSION);
 }
 function loadDesertTerrain(){
  if(!TERRAIN_IMG['砂漠'])TERRAIN_IMG['砂漠']=makeAssetImage('assets/decisive/desert.webp?v='+GAME_VERSION,()=>{
@@ -33,6 +36,28 @@ function addDesertTownBuildings(z){
   // The normal generator scales Y later; sprite dimensions are already in world pixels.
   covers.push({kd,x,y:y/MAP_SCALE,w,h,jungleAsset:key});
  }
+}
+function addDesertTownScenery(z){
+ loadDesertSandbags();
+ const top=z.y1+(z.decisiveArea===3?800:70),bottom=z.y0-70;
+ // Position in world pixels, then store the same pre-scaling Y as ordinary scenery.
+ const occupied=covers.concat(objects,bushes).map(o=>({...o,y:o.y*MAP_SCALE}));
+ const place=(list,props,w,h,count)=>{
+  for(let tries=0,placed=0;tries<count*30&&placed<count;tries++){
+   const side=R()<.5,left=side?WW/2+100:24,right=side?WW-24:WW/2-100;
+   const x=left+R()*(right-left-w),y=top+R()*(bottom-top-h);
+   const rect={x,y,w,h};
+   const footprint=props.kind==='barrel'?barrelVisualRect(rect):rect;
+   if(footprint.x<left||footprint.x+footprint.w>right||footprint.y<top||
+      occupied.some(other=>decisiveRectsOverlap(footprint,other,16)))continue;
+   occupied.push(footprint);
+   list.push({...props,...rect,y:y/MAP_SCALE});placed++;
+  }
+ };
+ place(covers,{kd:1,decisiveKind:'sandbags'},210,52,3);
+ place(objects,{kind:'crate'},CRATE_W,CRATE_H,3);
+ place(objects,{kind:'barrel'},BARREL_SIZE,BARREL_SIZE,3);
+ place(bushes,{},85,55,8);
 }
 function decisiveRectsOverlap(a,b,pad=0){return a.x<b.x+b.w+pad&&a.x+a.w+pad>b.x&&a.y<b.y+b.h+pad&&a.y+a.h+pad>b.y;}
 function setupDecisiveWorld(){

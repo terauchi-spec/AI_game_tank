@@ -35,8 +35,40 @@ test('desert town replaces the random sections and shares the desert tile and ju
  assert.equal(run('ZONES[0].n'),'砂漠街');
  assert.ok(run('covers.some(c=>JUNGLE_BUILDING_KEYS.includes(c.jungleAsset))'));
 });
+test('desert town scatters all four scenery types clear of buildings, the lane and relay',()=>{
+ const layouts=new Set();
+ for(const seed of [7,11,42]){
+  const {run}=start(seed);
+  assert.ok(run(`ZONES.slice(1,4).every(z=>{
+   const inside=o=>o.y>=z.y1&&o.y+o.h<=z.y0;
+   const sandbags=covers.filter(c=>c.decisiveKind==='sandbags'&&inside(c)&&c.y>=decisiveBattle.border+800);
+   const grass=bushes.filter(inside),props=objects.filter(inside),buildings=covers.filter(c=>c.jungleAsset&&inside(c));
+   const scenery=[...sandbags,...grass,...props.map(o=>o.kind==='barrel'?barrelVisualRect(o):o)];
+   return sandbags.length>=1&&grass.length>=1&&props.some(o=>o.kind==='crate')&&props.some(o=>o.kind==='barrel')&&
+    scenery.every((o,i)=>(o.x+o.w<=WW/2-100||o.x>=WW/2+100)&&
+     !circleHitsRect(decisiveBattle.gate.x,decisiveBattle.gate.y,300,o)&&
+     !buildings.some(b=>decisiveRectsOverlap(o,b))&&scenery.slice(i+1).every(q=>!decisiveRectsOverlap(o,q)));
+  })`),'scenery layout for seed '+seed);
+  layouts.add(run('JSON.stringify(covers.filter(c=>c.decisiveKind==="sandbags"&&c.y>decisiveBattle.border))'));
+ }
+ assert.equal(layouts.size,3);
+ const {run}=createGameEngine(root);
+ run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='砂漠街';reset(false)");
+ assert.ok(run("covers.some(c=>c.decisiveKind==='sandbags')&&bushes.length>0&&objects.some(o=>o.kind==='barrel')&&objects.some(o=>o.kind==='crate')&&assetOK(COVER_IMG.decisive_sandbags)"));
+});
+test('desert town clears ongoing rain, prevents new rain and lets the usual schedule resume outside',()=>{
+ const {run}=start();
+ run("p.y=ZONES[0].y1+1;weatherNext=0;updateWeather(1);");
+ assert.equal(run('weather'),'rain');
+ run("p.y=ZONES[1].y0-1;rainIntensity=1;updateWeather(1);");
+ assert.deepEqual(Array.from(run('[weather,weatherT,rainIntensity]')),['clear',0,0]);
+ run('weatherNext=0;updateWeather(120)');
+ assert.equal(run('weather'),'clear');
+ run('p.y=ZONES[0].y1+1;updateWeather(1)');
+ assert.equal(run('weather'),'rain');
+});
 test('desert defenses leave a central vehicle route and the relay cannot be bypassed or farmed from hiding',()=>{
- const {run}=start(11);assert.equal(run('covers.filter(c=>c.decisiveKind==="bunker").length'),9);assert.equal(run('covers.filter(c=>c.decisiveKind==="sandbags").length'),18);assert.ok(run('covers.every(c=>!decisiveRectsOverlap(c,{x:base.x-75,y:base.y,w:base.w+150,h:base.h}))'));
+ const {run}=start(11);assert.equal(run('covers.filter(c=>c.decisiveKind==="bunker").length'),9);assert.equal(run('covers.filter(c=>c.decisiveKind==="sandbags"&&c.y<decisiveBattle.border+70).length'),18);assert.ok(run('covers.every(c=>!decisiveRectsOverlap(c,{x:base.x-75,y:base.y,w:base.w+150,h:base.h}))'));
  assert.ok(run('covers.filter(c=>c.decisiveKind).every(c=>c.x+c.w<WW/2-100||c.x>WW/2+100)'));assert.ok(run('ZONES.slice(4).every(z=>cars.some(v=>v.y<z.y0&&v.y>z.y1))'));
  const hp=run('base.hp');run("damageBase(1000,base.x,base.y,60,1,'bomb')");assert.equal(run('base.hp'),hp);assert.equal(run('state'),'play');
  run('p.y=100;updateMission(.1)');assert.equal(run('p.y'),run('decisiveBattle.border+32'));
