@@ -1,7 +1,8 @@
 // Stage 07 orchestrates existing destruction combat and bounded frontline armies.
 // stageMode changes to 'front' only after the relay falls; the persistent stage ID stays decisive.
 const DECISIVE_RELAY_CAPTURE_SECONDS=15;
-const DECISIVE_DESERT_START=5;
+const DECISIVE_RELAY_RADIUS=240;
+const DECISIVE_DESERT_START=6;
 const DESERT_SANDBAG_W=210,DESERT_SANDBAG_H=52;
 const DECISIVE_BUNKER_SCAN_SECONDS=.2;
 let decisiveBattle=null,desertTownEvents=null;
@@ -20,8 +21,8 @@ function loadDesertTerrain(){
  TERRAIN_IMG['砂漠街']=TERRAIN_IMG['砂漠'];
 }
 function setupDecisiveZones(){
- const names=['草原','砂漠街','砂漠街','砂漠街','砂漠街','砂漠','砂漠','砂漠'];
- const edges=[13200,10800,9080,8040,6960,5520,3680,1840,-400];
+ const names=['草原','砂漠街','砂漠街','砂漠街','砂漠街','砂漠街','砂漠','砂漠','砂漠'];
+ const edges=[13200,11400,10350,9330,8310,7320,5520,3680,1840,-400];
  ZONES=names.map((n,i)=>({n,y0:edges[i],y1:edges[i+1],g:ZONE_STYLE[n].g,p:ZONE_STYLE[n].p.slice(),edgeRisk:R()<.5?'left':'right',decisiveArea:i}));
 }
 const DESERT_TOWN_SCALE=1.5;
@@ -36,12 +37,16 @@ const DESERT_TOWN_BUILDINGS=[
  ['citadel-ruins',3,210,212.8]
 ];
 function setupDesertTownConditions(zones){
- for(const z of zones)z.desertTownStorm=R()<.3;
- const z=zones[0];
+ for(const z of zones)z.desertTownStorm=R()<.5;
+ const z=zones.length===1?zones[0]:zones[Math.floor(R()*zones.length)];
  // Use the jungle size distribution, including its 2,400px reference section.
  const lake=rollWildernessLake({...z,y0:z.y1+ESCAPE_TEST_AREA_HEIGHT},1);
- lake.x=Math.min(16,WW-152-lake.w);
- lake.y=z.y1+48;
+ const relay=z.decisiveArea===DECISIVE_DESERT_START-1;
+ lake.y=z.y1+(relay?800:48);
+ // Leave room for the dry route beside the lake, the defenses, and a building row.
+ const buildingReserve=(relay?320:270)+DESERT_TOWN_GATE_DEPTH+32+96;
+ const fit=Math.min(1,(WW-168)/lake.w,(z.y0-lake.y-buildingReserve)/lake.h);
+ lake.w*=fit;lake.h*=fit;lake.x=16;
  z.oasis=lake;
  water.push({...lake,y:lake.y/MAP_SCALE});
 }
@@ -52,7 +57,7 @@ function addDesertTownBuildings(z){
  }
  // Pair the widest building with the tower to leave room for a vehicle to pass.
  const relay=z.decisiveArea===DECISIVE_DESERT_START-1;
- const top=relay?z.y1+800:z.oasis?z.oasis.y+z.oasis.h+32:z.y1+70;
+ const top=z.oasis?z.oasis.y+z.oasis.h+32:z.y1+(relay?800:70);
  const bottom=z.y0-(z.areaDebug?650:70);
  const pairs=[[1,2],[0,3]],first=relay?1:z.oasis&&!z.areaDebug?0:Math.floor(R()*pairs.length);
  const rows=Array.from({length:relay||z.oasis&&!z.areaDebug?1:2},(_,row)=>pairs[(first+row)%pairs.length].map(index=>{
@@ -89,8 +94,9 @@ function addDesertTownBuildings(z){
    if(!side)central=!wideRow&&roll<.35;
    const x=!side&&central?WW/2-w*.85:left+roll*(right-left-w),y=rowTop+(lot-h)*(.35+R()*.3);
    const desertTownPatrolSite=i===0&&side===1;
+   const patrolMargin=desertTownPatrolSite||key.startsWith('adobe-');
    // The normal generator scales Y later; sprite dimensions are already in world pixels.
-   covers.push({kd,x:desertTownPatrolSite?Math.min(x,WW-w-24):x,y:y/MAP_SCALE,w,h,decisiveKind:key,desertTownPatrolSite});
+   covers.push({kd,x:patrolMargin?Math.max(24,Math.min(x,WW-w-24)):x,y:y/MAP_SCALE,w,h,decisiveKind:key,desertTownPatrolSite});
   }
   rowTop+=lot;
  }
@@ -100,7 +106,7 @@ function addDesertTownScenery(z){
  const top=z.y1+(z.decisiveArea===DECISIVE_DESERT_START-1?800:70),bottom=z.y0-70;
  // Position in world pixels, then store the same pre-scaling Y as ordinary scenery.
  const occupied=covers.concat(objects,bushes,water).map(o=>{
-  const pad=o.desertTownPatrolSite?DESERT_TOWN_PATROL_MARGIN:0;
+  const pad=o.desertTownPatrolSite||DESERT_TOWN_DOORS[o.decisiveKind]?DESERT_TOWN_PATROL_MARGIN:0;
   return {...o,x:o.x-pad,y:o.y*MAP_SCALE-pad,w:o.w+pad*2,h:o.h+pad*2};
  });
  // Preserve the passage between the left and right buildings and across the rows.
@@ -173,7 +179,7 @@ function setupDesertTownEvents(){
   const zone=zoneAt(c.y+c.h/2);
   const [x,y,w,h]=panel,door={
    x:c.x+c.w*x,y:c.y+c.h*y,w:c.w*w,h:c.h*h,
-   kind:c.decisiveKind,panel,exitY:c.y+c.h+16,remaining:10+R()*20,elapsed:0,broken:false
+   kind:c.decisiveKind,panel,building:c,zone,remaining:5+R()*5,elapsed:0,departed:0,broken:false
   };
   c.desertTownDoor=door;
   if(!doorsByZone.has(zone))doorsByZone.set(zone,[]);
@@ -187,26 +193,24 @@ function damageDesertTownDoor(door,tile){
  }
 }
 function desertTownDoorPatrol(door){
- const x=door.x+door.w/2,y=door.exitY,q={x,y};
- if(hitsM(x,y,10)||inWaterAt(x,y,10)||D(p,q)<(p.tank?40:20)||
-    humans.some(h=>h.alive&&D(h,q)<24)||etanks.some(e=>e.alive&&D(e,q)<TANK_HIT+14)||
-    cars.some(c=>c.kind!=='fighter'&&D(c,q)<34))return null;
- const path=[q];
- for(const [dx,dy] of [[0,54],[-42,24],[42,24]]){
-  const end={x:x+dx,y:y+dy};
-  if(patrolLineClear(q,end,8)&&pOK([q,end],8,false)){path.push(end);break;}
- }
- return path.length>1?path:null;
+ const route=buildingPerimeterPatrol(door.building,door.zone,8,[DESERT_TOWN_PATROL_MARGIN,14,22,34],10);
+ if(!route)return null;
+ const x=door.x+door.w/2,y=route.path[2].y,q={x,y},wi=3;
+ if(!patrolLineClear({x,y:door.building.y+door.building.h+11},q,8)||
+    D(p,q)<(p.tank?40:20)||humans.some(h=>h.alive&&D(h,q)<24)||
+    etanks.some(e=>e.alive&&D(e,q)<TANK_HIT+14)||cars.some(c=>c.kind!=='fighter'&&D(c,q)<34))return null;
+ return {...route,x,y,wi};
 }
 function spawnDesertTownDoorSoldier(door){
- const path=desertTownDoorPatrol(door);
- if(!path)return;
- const {x,y}=path[0];
- const human={x,y,path,loop:false,wi:1,dir:1,stk:0,alive:true,st:0,sus:0,lost:0,
-  cd:.7,face:Math.atan2(path[1].y-y,path[1].x-x),target:null,foundPause:0,
-  patrolMode:'axis',elite:false,walkStartX:x,walkStartY:y};
+ const route=desertTownDoorPatrol(door);
+ if(!route)return;
+ const {x,y,path,wi}=route;
+ const human={...route,dir:1,stk:0,alive:true,st:0,sus:0,lost:0,
+  cd:.7,face:Math.atan2(path[wi].y-y,path[wi].x-x),target:null,foundPause:0,
+  patrolMode:'building',elite:false,walkStartX:x,walkStartY:y};
  if(R()<.5)Object.assign(human,enemyCommanderFields('blue'));
  humans.push(human);
+ door.departed++;
 }
 function updateDesertTownEvents(dt){
  if(!desertTownEvents||state!=='play')return;
@@ -220,8 +224,8 @@ function updateDesertTownEvents(dt){
     door.elapsed+=dt;
     if(before<.3&&door.elapsed>=.3)spawnDesertTownDoorSoldier(door);
     if(door.elapsed>=.9)door.elapsed=0;
-   }else if(door.remaining<=.3){
-    door.remaining=.3+10+R()*20;
+   }else if(door.departed<2&&door.remaining<=.3){
+    door.remaining=.3+5+R()*5;
     if(desertTownDoorPatrol(door))door.elapsed=Number.EPSILON;
    }
   }
@@ -278,7 +282,7 @@ function spawnDesertTownPatrols(zones){
 function decisiveRectsOverlap(a,b,pad=0){return a.x<b.x+b.w+pad&&a.x+a.w+pad>b.x&&a.y<b.y+b.h+pad&&a.y+a.h+pad>b.y;}
 function setupDecisiveWorld(){
  loadDecisiveAssets();
- const border=ZONES[DECISIVE_DESERT_START].y0,gate={x:WW/2,y:border+420,captureRadius:300,name:'中継拠点',done:false};
+ const border=ZONES[DECISIVE_DESERT_START].y0,gate={x:WW/2,y:border+420,captureRadius:DECISIVE_RELAY_RADIUS,name:'中継拠点',done:false};
  decisiveBattle={phase:'infiltration',border,gate,reserve:[],bunkers:[],fortressDir:1,fortressCd:2,gunScan:0};
  // Reserve a dry, open relay circle. The desert has an uninterrupted central route.
  const clearing={x:gate.x-350,y:gate.y-350,w:700,h:700};
