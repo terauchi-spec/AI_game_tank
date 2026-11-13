@@ -25,22 +25,21 @@ function setupDecisiveZones(){
 const DESERT_TOWN_SCALE=1.5;
 const DESERT_TOWN_SANDBAG_ROW_GAP=168;
 const DESERT_TOWN_BUILDINGS=[
- ['adobe-house',4,180,120],
- ['adobe-building',4,240,120],
+ ['adobe-house',4,270,180],
+ ['adobe-building',4,360,180],
  ['desert-watchtower',3,160,180],
- ['citadel-ruins',3,210,212.8],
- ['citadel-rubble',7,150,77]
+ ['citadel-ruins',3,210,212.8]
 ];
 function addDesertTownBuildings(z){
  loadDesertTerrain();
  for(const [key] of DESERT_TOWN_BUILDINGS){
   if(!COVER_IMG['decisive_'+key])COVER_IMG['decisive_'+key]=makeAssetImage(ASSET_DIR+'desert-town/'+key+'.webp?v='+GAME_VERSION);
  }
- // Two columns leave a continuous 200px lane. The relay section has fewer lots.
+ // Pair the widest building with the tower to leave room for a vehicle to pass.
  const top=z.y1+(z.decisiveArea===3?800:70),bottom=z.y0-(z.areaDebug?650:70);
- const first=Math.floor(R()*DESERT_TOWN_BUILDINGS.length);
- const rows=Array.from({length:z.decisiveArea===3?2:3},(_,row)=>[0,1].map(side=>{
-  const [key,kd,w,h]=DESERT_TOWN_BUILDINGS[(first+row*2+side)%DESERT_TOWN_BUILDINGS.length];
+ const pairs=[[1,2],[0,3]],first=Math.floor(R()*pairs.length);
+ const rows=Array.from({length:z.decisiveArea===3?2:3},(_,row)=>pairs[(first+row)%pairs.length].map(index=>{
+  const [key,kd,w,h]=DESERT_TOWN_BUILDINGS[index];
   return {key,kd,w:w*DESERT_TOWN_SCALE,h:h*DESERT_TOWN_SCALE};
  }));
  const heights=rows.map(row=>Math.max(...row.map(building=>building.h)));
@@ -49,8 +48,9 @@ function addDesertTownBuildings(z){
  for(const [i,row] of rows.entries()){
   const lot=heights[i]+spare;
   for(const [side,{key,kd,w,h}] of row.entries()){
-   const left=side?WW/2+100:16,right=side?WW-16:WW/2-100;
-   const x=left+R()*(right-left-w),y=rowTop+R()*(lot-h);
+   const wideRow=row[0].key==='adobe-building';
+   const left=side?WW/2+(wideRow?156:100):16,right=side?WW-16:Math.max(WW/2-100,16+w);
+   const x=left+R()*(right-left-w),y=rowTop+(lot-h)*(.35+R()*.3);
    // The normal generator scales Y later; sprite dimensions are already in world pixels.
    covers.push({kd,x,y:y/MAP_SCALE,w,h,decisiveKind:key});
   }
@@ -62,20 +62,25 @@ function addDesertTownScenery(z){
  const top=z.y1+(z.decisiveArea===3?800:70),bottom=z.y0-70;
  // Position in world pixels, then store the same pre-scaling Y as ordinary scenery.
  const occupied=covers.concat(objects,bushes).map(o=>({...o,y:o.y*MAP_SCALE}));
+ // Reserve the bend on the right of each wide building without blocking its whole frontage.
+ for(const c of covers)if(c.decisiveKind==='adobe-building'){
+  occupied.push({x:c.x+c.w,y:c.y*MAP_SCALE-64,w:80,h:c.h+128});
+ }
+ // The sides of the relay plaza can hold small props while its clearing stays open.
+ const propsTop=z.y1+70,relayClearing=z.decisiveArea===3?{x:WW/2-350,y:z.y1+70,w:700,h:700}:null;
  const place=(list,props,w,h,count)=>{
   for(let tries=0,placed=0;tries<count*30&&placed<count;tries++){
    const side=R()<.5,left=side?WW/2+100:24,right=side?WW-24:WW/2-100;
-   const x=left+R()*(right-left-w),y=top+R()*(bottom-top-h);
+   const x=left+R()*(right-left-w),y=propsTop+R()*(bottom-propsTop-h);
    const rect={x,y,w,h};
    const footprint=props.kind==='barrel'?barrelVisualRect(rect):rect;
-   if(footprint.x<left||footprint.x+footprint.w>right||footprint.y<top||
+   if(footprint.x<left||footprint.x+footprint.w>right||footprint.y<propsTop||
+      (relayClearing&&decisiveRectsOverlap(footprint,relayClearing,16))||
       occupied.some(other=>decisiveRectsOverlap(footprint,other,16)))continue;
    occupied.push(footprint);
    list.push({...props,...rect,y:y/MAP_SCALE});placed++;
   }
  };
- place(objects,{kind:'crate'},CRATE_W,CRATE_H,3);
- place(objects,{kind:'barrel'},BARREL_SIZE,BARREL_SIZE,3);
  const sandbagW=210*DESERT_TOWN_SCALE,sandbagH=52*DESERT_TOWN_SCALE;
  const gridBottom=z.y0-(z.areaDebug?650:70);
  const inset=(WW/2-100-sandbagW)/2,columns=[inset,WW-inset-sandbagW];
@@ -89,11 +94,21 @@ function addDesertTownScenery(z){
   return cells;
  });
  const cells=gridOptions.reduce((best,row)=>row.length>best.length?row:best);
- for(const rect of cells){
+ const addSandbag=rect=>{
   occupied.push(rect);
   covers.push({...rect,y:rect.y/MAP_SCALE,kd:1,decisiveKind:'sandbags'});
+ };
+ if(cells.length)addSandbag(cells.shift());
+ // Place the first of each prop before filling the rest of the grid.
+ place(objects,{kind:'crate'},CRATE_W,CRATE_H,1);
+ place(objects,{kind:'barrel'},BARREL_SIZE,BARREL_SIZE,1);
+ place(bushes,{},85,55,1);
+ for(const rect of cells){
+  if(!occupied.some(other=>decisiveRectsOverlap(rect,other,16)))addSandbag(rect);
  }
- place(bushes,{},85,55,8);
+ place(objects,{kind:'crate'},CRATE_W,CRATE_H,2);
+ place(objects,{kind:'barrel'},BARREL_SIZE,BARREL_SIZE,2);
+ place(bushes,{},85,55,7);
 }
 function decisiveRectsOverlap(a,b,pad=0){return a.x<b.x+b.w+pad&&a.x+a.w+pad>b.x&&a.y<b.y+b.h+pad&&a.y+a.h+pad>b.y;}
 function setupDecisiveWorld(){
