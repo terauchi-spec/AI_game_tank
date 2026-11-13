@@ -32,8 +32,8 @@ test('desert town replaces the random sections and shares the desert tile and us
   assert.ok(run(`DESERT_TOWN_BUILDINGS.every(([key])=>covers.some(c=>c.decisiveKind===key)&&assetOK(COVER_IMG['decisive_'+key]))&&
    !covers.some(c=>c.decisiveKind==='citadel-rubble'||JUNGLE_BUILDING_KEYS.includes(c.jungleAsset))&&
    !COVER_IMG['decisive_citadel-rubble']&&
-   covers.filter(c=>c.decisiveKind==='adobe-house').every(c=>c.w===405&&c.h===270)&&
-   covers.filter(c=>c.decisiveKind==='adobe-building').every(c=>c.w===540&&c.h===270)&&
+   covers.filter(c=>c.decisiveKind==='adobe-house').every(c=>c.w===324&&c.h===216)&&
+   covers.filter(c=>c.decisiveKind==='adobe-building').every(c=>c.w===432&&c.h===216)&&
    covers.every(c=>!DESERT_TOWN_BUILDINGS.some(([key])=>key===c.decisiveKind)||!circleHitsRect(decisiveBattle.gate.x,decisiveBattle.gate.y,300,c))`));
  }
  const {run}=createGameEngine(root,{seed:7});
@@ -52,7 +52,7 @@ test('desert town scatters all four scenery types clear of buildings, the lane a
    const scenery=[...sandbags,...grass,...props.map(o=>o.kind==='barrel'?barrelVisualRect(o):o)];
    const rows=sandbags.map(c=>c.y),columns=new Set(sandbags.map(c=>c.x));
    return sandbags.length>=1&&columns.size<=2&&
-    sandbags.every(c=>c.w===315&&c.h===78&&(c.y-rows[0])%168===0)&&grass.length>=1&&props.some(o=>o.kind==='crate')&&props.some(o=>o.kind==='barrel')&&
+    sandbags.every(c=>c.w===252&&c.h===62.4&&(c.y-rows[0])%168===0)&&grass.length>=1&&props.some(o=>o.kind==='crate')&&props.some(o=>o.kind==='barrel')&&
     scenery.every((o,i)=>(o.x+o.w<=WW/2-100||o.x>=WW/2+100)&&
      !circleHitsRect(decisiveBattle.gate.x,decisiveBattle.gate.y,300,o)&&
      !buildings.some(b=>decisiveRectsOverlap(o,b))&&scenery.slice(i+1).every(q=>!decisiveRectsOverlap(o,q)));

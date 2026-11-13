@@ -25,8 +25,8 @@ function setupDecisiveZones(){
 const DESERT_TOWN_SCALE=1.5;
 const DESERT_TOWN_SANDBAG_ROW_GAP=168;
 const DESERT_TOWN_BUILDINGS=[
- ['adobe-house',4,270,180],
- ['adobe-building',4,360,180],
+ ['adobe-house',4,216,144],
+ ['adobe-building',4,288,144],
  ['desert-watchtower',3,160,180],
  ['citadel-ruins',3,210,212.8]
 ];
@@ -81,7 +81,7 @@ function addDesertTownScenery(z){
    list.push({...props,...rect,y:y/MAP_SCALE});placed++;
   }
  };
- const sandbagW=210*DESERT_TOWN_SCALE,sandbagH=52*DESERT_TOWN_SCALE;
+ const sandbagW=252,sandbagH=62.4;
  const gridBottom=z.y0-(z.areaDebug?650:70);
  const inset=(WW/2-100-sandbagW)/2,columns=[inset,WW-inset-sandbagW];
  const gridOptions=Array.from({length:6},(_,i)=>{
