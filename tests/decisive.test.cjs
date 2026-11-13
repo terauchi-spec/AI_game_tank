@@ -133,3 +133,47 @@ test('starting an existing stage clears decisive state and preserves its normal 
 test('decisive sprites, stage preview and script exist without new per-frame image loading',()=>{
  const src=fs.readFileSync(path.join(root,'js/decisive.js'),'utf8');for(const name of ['fortress','bunker','sandbags','desert','bunker-barrel'])assert.ok(fs.statSync(path.join(root,'assets/decisive',name+'.webp')).size<16000);assert.ok(fs.statSync(path.join(root,'assets/ui/stages/decisive.webp')).size<16000);assert.doesNotMatch(src.slice(src.indexOf('function updateDecisiveMission')),/makeAssetImage\(/);
 });
+test('adobe doors deploy blue infantry and stay disabled after damage to their entrance',()=>{
+ const {run}=start(11);
+ run(`const town=ZONES[2],building=covers.find(c=>c.desertTownDoor&&zoneAt(c.y)===town);
+  covers=[building];humans=[];etanks=[];cars=[];objects=[];water=[];rebuildSpatialGrid();
+  p.x=WW/2;p.y=town.y0-10;
+  setupDesertTownEvents();const door=building.desertTownDoor;`);
+ assert.ok(run('door.remaining>=10&&door.remaining<=30'));
+ run("carve(building.x+20,building.y+20,34,false,null);rebuildSpatialGrid();");
+ assert.equal(run('door.broken'),false);
+ run('door.remaining=.2;updateDesertTownEvents(.02);draw();updateDesertTownEvents(.3);');
+ assert.equal(run('humans.length'),1);
+ assert.ok(run("humans[0].y===door.exitY&&!humans[0].elite&&(!humans[0].commander||humans[0].commander==='blue')"));
+ run("carve(door.x+door.w/2,door.y+door.h/2,32,false,null);rebuildSpatialGrid();");
+ assert.equal(run('door.broken&&door.elapsed===0'),true);
+ run('humans=[];door.remaining=0;updateDesertTownEvents(.5);updateDesertTownEvents(.5);');
+ assert.equal(run('humans.length'),0);
+});
+test('desert town airdrops recur, deploy three white soldiers, and roll commanders individually',()=>{
+ const {run}=start();
+ run(`const town=ZONES[2],drop=desertTownEvents.drop,rolls=[.1,.4,.8];
+  const tickDrop=(function(R){return ${run('updateEnemyParachutePass.toString()')}})(()=>rolls.shift()??.8);
+  covers=[];objects=[];humans=[];etanks=[];cars=[];water=[];rebuildSpatialGrid();
+  desertTownEvents.doorsByZone.clear();`);
+ assert.ok(run('drop.remaining>=45&&drop.remaining<=60'));
+ const before=run('drop.remaining');
+ run('updateDesertTownEvents(10)');
+ assert.equal(run('drop.remaining'),before);
+ run('p.y=town.y0-250;drop.remaining=.01;updateDesertTownEvents(.02);');
+ assert.ok(run('drop.plane&&drop.plane.targets.length===3&&drop.remaining>=45&&drop.remaining<=60'));
+ run('for(let i=0;i<110;i++)tickDrop(drop,.1);draw();');
+ assert.equal(run('humans.length'),3);
+ assert.ok(run('humans.every(h=>h.elite&&zoneAt(h.y)===town)'));
+ assert.equal(run("humans.filter(h=>h.commander==='white').length"),1);
+ assert.equal(run('bombs.length+airbombs.length'),0);
+ run('drop.remaining=.01;updateDesertTownEvents(.02);');
+ assert.ok(run('drop.plane'));
+});
+test('town sandstorms preserve at least eighty percent enemy opacity',()=>{
+ const {run}=start();
+ run('sandIntensity=1;sandWeatherZone=ZONES[1];');
+ assert.equal(run('sandstormEnemyOpacity()'),.8);
+ run('sandWeatherZone={n:"荒野"};');
+ assert.equal(run('sandstormEnemyOpacity()'),0);
+});

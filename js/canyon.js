@@ -190,6 +190,7 @@ function drawTumbleweeds(cx,cy){
   if(b.burnT>0){const t=performance.now()*.012+(b.burnSeed||0),cx=b.x,cy=b.y;g.save();g.globalCompositeOperation='lighter';for(let j=0;j<3;j++)flameBlob(cx+Math.sin(t+j*2.1)*b.r*.28,cy-b.r*.35+j*3,5+j%2*2,t+j*1.8,.68);g.restore();}
  }
 }
+function sandstormEnemyOpacity(){return 1-sandIntensity*(sandWeatherZone?.n==='砂漠街'?.2:1);}
 function sandstormSightScale(){return sandWeatherZone?.n==='砂漠街'?.75:.55;}
 function updateSandstorm(dt){
  const z=p&&zoneAt(p.y),town=z?.n==='砂漠街',arid=z?.n==='荒野'||town&&(z.desertTownStorm||sandWeatherZone===z);
@@ -288,7 +289,7 @@ function setupSelectedAreaDebugStage(){
  objects=objects.filter(clearStart);bushes=bushes.filter(clearStart);mud=mud.filter(clearStart);
  spawnAreaDebugPlayerTanks();
  weather='clear';weatherT=0;weatherNext=name==='荒野'?10:name==='密林'?5+R()*10:99999;rainIntensity=0;baseSpawnT=99999;placeAreaDebugRadios();airstrike=null;reinforcementPass=null;airbombs=[];debugMode=1;debugInvincible=true;
- captureBuildingGroundMarks();rebuildSpatialGrid();if(name==='砂漠街')placeDesertTownGunTowers([z]);spawnAreaDebugEnemies(z);say(name+' テスト：無敵／全' + TYPES.length + '種戦車／弾数・燃料無制限');
+ captureBuildingGroundMarks();rebuildSpatialGrid();if(name==='砂漠街'){placeDesertTownGunTowers([z]);setupDesertTownEvents();}spawnAreaDebugEnemies(z);say(name+' テスト：無敵／全' + TYPES.length + '種戦車／弾数・燃料無制限');
 }
 function syncAreaDebugPicker(){
  const show=state==='areaPick';document.body.classList.toggle('area-picker-open',show);

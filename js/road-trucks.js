@@ -6,14 +6,18 @@ function jungleRoadTruckMode(){
 }
 function setupRoadTruckEvents(){
  roadTruckEvents=[];
- if(!jungleRoadTruckMode()&&(areaDebugEnabled||stageMode!=='base'||!['baseIntermediate','base'].includes(currentStageId())))return;
+ const standard=jungleRoadTruckMode()||!areaDebugEnabled&&stageMode==='base'&&['baseIntermediate','base'].includes(currentStageId());
  for(const road of roadBands){
-  const dir=R()<.5?1:-1,unload=R()<.5;
-  const passengers=unload?1+(R()*3|0):0;
-  const arrivalDelay=R()<.5?2+R()*3:0;
-  roadTruckEvents.push({road,dir,unload,passengers,arrivalDelay,dropped:0,state:'waiting',
-   x:0,y:road.y+road.h/2+(road.lanes>1?dir*road.h/4:0),body:dir>0?0:Math.PI,speed:190,t:0,
-   kind:'truck',hp:5,maxHp:5});
+  const town=zoneAt(road.y+road.h/2)?.n==='砂漠街';
+  if(!town&&!standard)continue;
+  const firstDir=R()<.5?1:-1;
+  for(const dir of town&&road.lanes===4?[firstDir,-firstDir]:[firstDir]){
+   const unload=R()<.5,passengers=unload?1+(R()*3|0):0;
+   const arrivalDelay=R()<.5?2+R()*3:0;
+   roadTruckEvents.push({road,dir,unload,passengers,arrivalDelay,dropped:0,state:'waiting',
+    x:0,y:road.y+road.h/2+(road.lanes>1?dir*road.h/4:0),body:dir>0?0:Math.PI,speed:190,t:0,
+    kind:'truck',hp:5,maxHp:5});
+  }
  }
 }
 function roadTruckDropSoldier(truck){
@@ -39,7 +43,7 @@ function roadTruckDropSoldier(truck){
  return false;
 }
 function updateRoadTrucks(dt){
- if(state!=='play'||(!jungleRoadTruckMode()&&(stageMode!=='base'||areaDebugEnabled)))return;
+ if(state!=='play'||!roadTruckEvents.length)return;
  const cy=Math.max(0,Math.min(WH-H,p.y-H*.6)),cx=Math.max(0,Math.min(WW-W,p.x-W/2));
  for(const truck of roadTruckEvents){
   if(truck.state==='done'||truck.state==='destroyed')continue;

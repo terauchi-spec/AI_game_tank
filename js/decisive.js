@@ -4,7 +4,7 @@ const DECISIVE_RELAY_CAPTURE_SECONDS=15;
 const DECISIVE_DESERT_START=5;
 const DESERT_SANDBAG_W=210,DESERT_SANDBAG_H=52;
 const DECISIVE_BUNKER_SCAN_SECONDS=.2;
-let decisiveBattle=null;
+let decisiveBattle=null,desertTownEvents=null;
 function isDecisiveStage(){return stageMode==='decisive'||stageMode==='front'&&!!decisiveBattle;}
 function loadDecisiveAssets(){
  for(const key of ['fortress','bunker','bunker-barrel'])if(!COVER_IMG['decisive_'+key])COVER_IMG['decisive_'+key]=makeAssetImage('assets/decisive/'+key+'.webp?v='+GAME_VERSION);
@@ -155,6 +155,82 @@ function placeDesertTownGunTowers(zones){
   if(!hitsM(spot.x,spot.y,GUN_TOWER_TYPE.coverRadius)&&cars.every(v=>D(v,spot)>96))cars.push(makeGunTower(spot));
  }
 }
+// Coordinates are normalized to the visible door panel on each facade.
+const DESERT_TOWN_DOORS={
+ 'adobe-house':[132/300,174/200,32/300,25/200],
+ 'adobe-building':[175/384,162/192,34/384,29/192]
+};
+function setupDesertTownEvents(){
+ const doorsByZone=new Map();
+ for(const c of covers){
+  const panel=DESERT_TOWN_DOORS[c.decisiveKind];
+  if(!panel)continue;
+  const zone=zoneAt(c.y+c.h/2);
+  const [x,y,w,h]=panel,door={
+   x:c.x+c.w*x,y:c.y+c.h*y,w:c.w*w,h:c.h*h,
+   exitY:c.y+c.h+16,remaining:10+R()*20,elapsed:0,broken:false
+  };
+  c.desertTownDoor=door;
+  if(!doorsByZone.has(zone))doorsByZone.set(zone,[]);
+  doorsByZone.get(zone).push(door);
+ }
+ desertTownEvents={doorsByZone,drop:{remaining:45+R()*15,plane:null,parachutes:[]}};
+}
+function damageDesertTownDoor(door,tile){
+ if(!door.broken&&decisiveRectsOverlap(door,tile,8)){
+  door.broken=true;door.elapsed=0;
+ }
+}
+function spawnDesertTownDoorSoldier(door){
+ const x=door.x+door.w/2,y=door.exitY,q={x,y};
+ if(hitsM(x,y,10)||inWaterAt(x,y,10)||D(p,q)<(p.tank?40:20)||
+    humans.some(h=>h.alive&&D(h,q)<24)||etanks.some(e=>e.alive&&D(e,q)<TANK_HIT+14)||
+    cars.some(c=>c.kind!=='fighter'&&D(c,q)<34))return false;
+ const path=[q];
+ for(const [dx,dy] of [[0,54],[-42,24],[42,24]]){
+  const end={x:x+dx,y:y+dy};
+  if(patrolLineClear(q,end,8)&&pOK([q,end],8,false)){path.push(end);break;}
+ }
+ if(path.length<2)return false;
+ const human={...q,path,loop:false,wi:1,dir:1,stk:0,alive:true,st:0,sus:0,lost:0,
+  cd:.7,face:Math.atan2(path[1].y-y,path[1].x-x),target:null,foundPause:0,
+  patrolMode:'axis',elite:false,walkStartX:x,walkStartY:y};
+ if(R()<.5)Object.assign(human,enemyCommanderFields('blue'));
+ humans.push(human);
+ return true;
+}
+function updateDesertTownEvents(dt){
+ if(!desertTownEvents||state!=='play')return;
+ const zone=zoneAt(p.y),{doorsByZone,drop}=desertTownEvents;
+ if(zone.n==='砂漠街'){
+  for(const door of doorsByZone.get(zone)||[]){
+   if(door.broken)continue;
+   door.remaining-=dt;
+   if(door.elapsed>0){
+    const before=door.elapsed;
+    door.elapsed+=dt;
+    if(before<.3&&door.elapsed>=.3&&!spawnDesertTownDoorSoldier(door))door.remaining=1;
+    if(door.elapsed>=.9)door.elapsed=0;
+   }else if(door.remaining<=.3){
+    door.elapsed=Number.EPSILON;door.remaining=.3+10+R()*20;
+   }
+  }
+  drop.remaining-=dt;
+  if(drop.remaining<=0&&!drop.plane&&!drop.parachutes.length){
+   drop.remaining=startEnemyParachutePass(drop,zone)?45+R()*15:1;
+  }
+ }
+ if(drop.plane||drop.parachutes.length)updateEnemyParachutePass(drop,dt);
+}
+function drawDesertTownDoors(cx,cy){
+ if(!desertTownEvents||!p)return;
+ for(const door of desertTownEvents.doorsByZone.get(zoneAt(p.y))||[]){
+  if(!door.elapsed||!drawPointInView(door.x,door.y,cx,cy,45))continue;
+  const open=Math.min(1,door.elapsed/.3,(.9-door.elapsed)/.35);
+  g.fillStyle='#231a12';g.fillRect(door.x,door.y,door.w,door.h);
+  g.fillStyle='#63503a';g.fillRect(door.x,door.y,door.w*(1-open),door.h);
+ }
+}
 function decisiveRectsOverlap(a,b,pad=0){return a.x<b.x+b.w+pad&&a.x+a.w+pad>b.x&&a.y<b.y+b.h+pad&&a.y+a.h+pad>b.y;}
 function setupDecisiveWorld(){
  loadDecisiveAssets();
@@ -192,6 +268,7 @@ function setupDecisiveWorld(){
  scoreStats.objectiveTotal=2;scoreStats.objectiveProgress=0;
  rebuildSpatialGrid();captureBuildingGroundMarks();ensurePlayerVehicleSpawns();ensureEnemyTankSpawns();
  placeDesertTownGunTowers(ZONES.slice(1,DECISIVE_DESERT_START));
+ setupDesertTownEvents();
  say('決戦：中継拠点を制圧し、砂漠の移動要塞を破壊せよ');
 }
 function beginDecisiveAssault(){

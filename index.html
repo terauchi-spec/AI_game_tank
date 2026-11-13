@@ -1027,7 +1027,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.13.1834',FILE_CREATED_AT='2026/11/13 18:34',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.13.2242',FILE_CREATED_AT='2026/11/13 22:42',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -3154,7 +3154,7 @@ function rollRiverCrossing(ry,{jungle=false,chance=.75,maxWidth=jungle?250:600}=
 }
 function reset(rerollSkills=true){
  if(typeof clearFallenEnemies==='function'){clearFallenEnemies();loadFallenEnemyArtwork();}
- if(typeof decisiveBattle!=='undefined')decisiveBattle=null;
+ if(typeof decisiveBattle!=='undefined'){decisiveBattle=null;desertTownEvents=null;}
  if(typeof stopGameAudio==='function')stopGameAudio();
  if(typeof clearInfiltrationRenderCache==='function')clearInfiltrationRenderCache();
  clearStaticRasterCache();clearFragmentRenderCache();clearMazeWallChunks();clearCanyonTiles();clearSpinifexScatters();
@@ -4071,9 +4071,13 @@ function spawnCommanderClasses(types=['blue','white']){
   }else{
    for(const length of [150,80,40]){for(const a of [0,Math.PI/2,Math.PI,Math.PI*1.5]){const q={x:spot.x+Math.cos(a)*length,y:spot.y+Math.sin(a)*length};if(zoneAt(q.y)!==ZONES[0]&&patrolLineClear(spot,q,8)){path.push(q);break;}}if(path.length>1)break;}
   }
-  const unit={x:spot.x,y:spot.y,path,wi:path.length>1?1:0,dir:1,loop:false,stk:0,alive:true,elite:type==='white',commander:type,st:0,sus:0,lost:0,cd:1,burstLeft:0,face:Math.PI/2,commanderScan:0,commanderTactics:0,commanderMode:'intercept',commanderCharge:0,commanderCooldown:2,whistleT:0,whistleCooldown:0};
+  const unit={x:spot.x,y:spot.y,path,wi:path.length>1?1:0,dir:1,loop:false,stk:0,alive:true,elite:type==='white',st:0,sus:0,lost:0,cd:1,burstLeft:0,face:Math.PI/2,...enemyCommanderFields(type)};
   if(replacement){Object.assign(replacement,unit);replacement.patrolMode='axis';replacement.buildingPatrol=false;replacement.patrolCover=null;replacement.edgePatrol=null;replacement.target=null;replacement.hq=false;}else humans.push(unit);
  }
+}
+function enemyCommanderFields(type){
+ return {commander:type,commanderScan:0,commanderTactics:0,commanderMode:'intercept',
+  commanderCharge:0,commanderCooldown:2,whistleT:0,whistleCooldown:0};
 }
 function commanderWhistle(h,key){
  if(h.dogHandler||commanderRallying||h.commander!=='blue'||key!=='p'||(h.whistleCooldown||0)>0)return;
@@ -6082,7 +6086,7 @@ function update(dt){
  for(const o of humans){o.modeStartX=o.x;o.modeStartY=o.y;o.modeFrozen=false;}
   for(const o of etanks){o.modeStartX=o.x;o.modeStartY=o.y;o.modeFrozen=false;}
  for(const h of humans){h.walkStartX=h.x;h.walkStartY=h.y;}
- updateWeather(dt);updateHQSpawn(dt);updateRoadTrucks(dt);updateDrill(dt);updatePartnerOrder(dt);
+ updateWeather(dt);updateHQSpawn(dt);updateRoadTrucks(dt);updateDesertTownEvents(dt);updateDrill(dt);updatePartnerOrder(dt);
  const sniperLocked=updateSniperState(dt);
  const playerAir=updateBlastFlight(p,dt);
  if(interact&&p.sniperMode){interact=false;beginSniperExit();}else if(interact&&(p.sniperEnterT>0||p.sniperReadyT>0)){interact=false;}
@@ -6432,7 +6436,7 @@ function carve(x,y,r,credit=false,objectDamageSource='impact',preserveNature=fal
    if(fd>r){
     if(fd<=r+Math.max(c.w,c.h)*1.15&&!c.edge){c.edge=1;if(c._fragmentGroup)markFragmentRenderDirty(c._fragmentGroup,c);}
     out.push(c);
-   }else{coverChanged=true;markFragmentRenderRemoved(c);if(c.indoorWall)recordIndoorWallGroundMark(c,c._fragmentGroup);removedArea+=c.w*c.h;if(!c.pb&&!c.playerBuilt)styleRemoved+=c.w*c.h;if(objectDamageSource==='cannonBlast')cannonDebris.push({x:c.x+c.w/2,y:c.y+c.h/2,col:c.col||CCol[c.kd]||'#8a7a55',n:1});}
+   }else{coverChanged=true;const door=c._fragmentGroup?.desertTownDoor;if(door)damageDesertTownDoor(door,c);markFragmentRenderRemoved(c);if(c.indoorWall)recordIndoorWallGroundMark(c,c._fragmentGroup);removedArea+=c.w*c.h;if(!c.pb&&!c.playerBuilt)styleRemoved+=c.w*c.h;if(objectDamageSource==='cannonBlast')cannonDebris.push({x:c.x+c.w/2,y:c.y+c.h/2,col:c.col||CCol[c.kd]||'#8a7a55',n:1});}
    continue;
   }
 
@@ -6443,10 +6447,11 @@ function carve(x,y,r,credit=false,objectDamageSource='impact',preserveNature=fal
   const pal=FRAG_COLORS[c.kd]||[CCol[c.kd]||'#8a7a55'],tile=14,ox=fr.x,oy=fr.y,ow=fr.w,oh=fr.h;
   coverChanged=true;const fragmentGroup={x:Math.floor(ox)-2,y:Math.floor(oy)-2,w:Math.ceil(ox+ow)-Math.floor(ox)+4,h:Math.ceil(oy+oh)-Math.floor(oy)+4,fragments:[],remaining:0,revision:0,lastDraw:-1};
   if(c.indoorProp){fragmentGroup.indoorProp=true;c.indoorDamageGroup=fragmentGroup;}
+  if(c.desertTownDoor)fragmentGroup.desertTownDoor=c.desertTownDoor;
   let keptArea=0;
   for(let a=ox;a<ox+ow;a+=tile)for(let b=oy;b<oy+oh;b+=tile){
    const w=Math.min(tile,ox+ow-a),h=Math.min(tile,oy+oh-b),mx=a+w/2,my=b+h/2,dist=Math.hypot(mx-x,my-y);
-   if(dist<=r)continue;
+   if(dist<=r){if(c.desertTownDoor)damageDesertTownDoor(c.desertTownDoor,{x:a,y:b,w,h});continue;}
    keptArea+=w*h;
    const rx=(a-ox)/Math.max(1,ow),ry=(b-oy)/Math.max(1,oh),idx=((a/tile|0)+(b/tile|0))%pal.length;
    const edge=dist<=r+tile*1.1;
@@ -7379,7 +7384,7 @@ function drawAllWaterCrossings(cx,cy){
 }
 function drawAllyParachute(ally,enemy=false){
  if(!ally||!ally.alive||!(ally.chute>0))return;
- const alpha=Math.max(0,1-sandIntensity);if(alpha<=.001)return;
+ const alpha=enemy?sandstormEnemyOpacity():Math.max(0,1-sandIntensity);if(alpha<=.001)return;
  g.save();g.translate(ally.x,ally.y);
  const canopyY=-48,canopyW=44,canopyH=43;
  // 軍用パラシュートを横長の帯ではなく、張りのある半円ドームとして描く。
@@ -7403,7 +7408,7 @@ function drawAllyParachute(ally,enemy=false){
  g.strokeStyle='#758a82';g.lineWidth=1.25;g.beginPath();g.moveTo(-10,-10);g.lineTo(10,-10);g.stroke();
  g.fillStyle='#263b38';g.fillRect(-9,-12,18,6);g.fillStyle='#bacbc4';g.fillRect(-7,-10,14,2);
  g.restore();
- g.save();g.globalAlpha*=alpha;soldier(ally.x,ally.y,ally.face,!enemy,false,false,enemy&&ally.elite,'',false,false,ally);g.restore();
+ g.save();g.globalAlpha*=alpha;soldier(ally.x,ally.y,ally.face,!enemy,false,false,enemy&&ally.elite,enemy?ally.commander||'':'',false,false,ally);g.restore();
 }
 
 function baseSpriteKey(){return base?.decisiveFortress?'decisive_fortress':base?.missileFacility?'missile_base':stageMode==='beginner'&&!areaDebugEnabled?'radio_facility':'command_building_1';}
@@ -7932,6 +7937,7 @@ function draw(near){
   if(debugMode>0&&typeof indoorRecordRenderTime==='function')indoorRecordRenderTime('walls',performance.now()-indoorWallDrawAt);
   drawInfiltrationOpenings(cx,cy);
  }
+ drawDesertTownDoors(cx,cy);
  for(const o of objectsInBox(cx-80,cy-80,cx+W+80,cy+H+80)){if(o.x+o.w<cx-70||o.x>cx+W+70||o.y+o.h<cy-70||o.y>cy+H+70)continue;if(stageMode==='escapeTest'&&o.escapeBuildingSupply)continue;drawObject(o);}
  drawFrontlineAntennas(cx,cy);
  drawPatrolRoutes(cx,cy);
@@ -7946,7 +7952,7 @@ function draw(near){
  for(const c of cars){if(!drawPointInView(c.x,c.y,cx,cy,160))continue;const foregroundVehicle=c.kind==='truck'||(c.kind==='tank'&&inBush(c));if(!foregroundVehicle)drawVehicle(c,c.x,c.y,c.body??-1.57,c.body??-1.57);const iy=c.y-(c.kind==='fighter'?66:c.kind==='tower'?96:c.kind==='truck'?42:50);if(c.kind!=='tower'||gunTowerAvailable(c))markVehicle(c.x,iy,c.kind!=='tower'&&c.f<=0?'fuel':'ride');if(near===c)lab(c.t.n,c.x,iy-24,c.kind==='tank'?'bold 17px system-ui':'bold 14px system-ui','#fff');}
  const allyAlpha=Math.max(0,1-sandIntensity);
  if(allyAlpha>.001&&stageMode==='front'){g.save();g.globalAlpha*=allyAlpha;for(const ally of allies||[])if(ally.alive&&enemyInView(ally,cx,cy,430))drawFrontlineAllyVision(ally);g.restore();}
- const enemyAlpha=digEnemyAlpha()*(1-sandIntensity);if(enemyAlpha>.001)for(const e of etanks){if(!enemyInView(e,cx,cy,140))continue;g.save();g.globalAlpha*=enemyAlpha;if(e.alive){if(!inBush(e))tankShape(e.x,e.y,e.body,e.ang,{id:'enemy',col:'#4b5f9e'},TANK_DRAW);}else if(!e.wreckSpawned){g.fillStyle='#1c1a18';g.beginPath();g.arc(e.x,e.y,14,0,6.28);g.fill();}g.restore();if(e.alive&&enemyAlpha>.18){if(e.st)lab('!',e.x,e.y-38,'bold 18px system-ui','#ff5a5a');else if(e.sus>0)lab('?',e.x,e.y-38,'bold 18px system-ui','#ffd27a');}}
+ const enemyAlpha=digEnemyAlpha()*sandstormEnemyOpacity();if(enemyAlpha>.001)for(const e of etanks){if(!enemyInView(e,cx,cy,140))continue;g.save();g.globalAlpha*=enemyAlpha;if(e.alive){if(!inBush(e))tankShape(e.x,e.y,e.body,e.ang,{id:'enemy',col:'#4b5f9e'},TANK_DRAW);}else if(!e.wreckSpawned){g.fillStyle='#1c1a18';g.beginPath();g.arc(e.x,e.y,14,0,6.28);g.fill();}g.restore();if(e.alive&&enemyAlpha>.18){if(e.st)lab('!',e.x,e.y-38,'bold 18px system-ui','#ff5a5a');else if(e.sus>0)lab('?',e.x,e.y-38,'bold 18px system-ui','#ffd27a');}}
  drawRoadTrucks(cx,cy);
  drawEnemyDogLeashes();
  if(enemyAlpha>.001)for(const h of humans){const sniperFalling=!h.alive&&h.sniperFallT>0;if(h.gunTower||h.fallenSpriteRecorded||(!h.alive&&!sniperFalling)||!enemyInView(h,cx,cy,100))continue;const lift=sniperFalling?0:blastLift(h);if(!sniperFalling)drawBlastShadow(h);g.save();g.translate(0,-lift);g.globalAlpha*=enemyAlpha;if(sniperFalling){const fk=Math.max(0,Math.min(1,1-h.sniperFallT/Math.max(.01,h.sniperFallMax||.72))),side=(h.sniperFallA&&Math.sin(h.sniperFallA)<0?-1:1);g.translate(h.x,h.y);g.rotate(side*fk*1.18);g.translate(-h.x,-h.y);g.globalAlpha*=Math.max(.35,1-fk*.38);}soldier(h.x,h.y,h.face,false,sniperFalling?false:h.st,!sniperFalling&&!!h.walking,!!h.elite,h.commander||'',!sniperFalling&&!(h.commander==='blue'&&h.whistleT>0)&&(h.commander==='white'?h.commanderCharge>0||h.commanderShotT>0:!!h.st),false,h);drawCommanderOverlay(h);
@@ -8013,7 +8019,7 @@ function draw(near){
  // 航空支援は草むら内を含む全車両より上に描画する。
  if(airstrike)drawSupportBomber(airstrike.x,airstrike.y);
  if(reinforcementPass)drawSupportBomber(reinforcementPass.x,reinforcementPass.y);
- if(stageMode==='escapeTest')drawEscapeEnemyDrop(cx,cy);
+ drawEnemyParachutePass(stageMode==='escapeTest'?mission?.enemyDrop:desertTownEvents?.drop,cx,cy);
  if(typeof drawEnemyBomberAircraft==='function')drawEnemyBomberAircraft();
  for(const q of parts){const psz=q.sz||4,dy=q.y-(q.z||0);if(q.x+psz<cx-30||q.x-psz>cx+W+30||dy+psz<cy-30||dy-psz>cy+H+30)continue;g.globalAlpha=Math.min(1,q.life*2);g.fillStyle=q.col;if(q.arcFrag){g.save();g.translate(q.x,dy);g.rotate(q.rot||0);g.fillRect(-psz/2,-psz/2,psz,Math.max(2,psz*.65));g.restore();}else if(q.rescueCross){g.strokeStyle='#fff';g.lineWidth=2;g.beginPath();const a=psz/2,b=psz/6;g.moveTo(q.x-b,dy-a);g.lineTo(q.x+b,dy-a);g.lineTo(q.x+b,dy-b);g.lineTo(q.x+a,dy-b);g.lineTo(q.x+a,dy+b);g.lineTo(q.x+b,dy+b);g.lineTo(q.x+b,dy+a);g.lineTo(q.x-b,dy+a);g.lineTo(q.x-b,dy+b);g.lineTo(q.x-a,dy+b);g.lineTo(q.x-a,dy-b);g.lineTo(q.x-b,dy-b);g.closePath();g.stroke();g.fill();}else if(q.waterRipple){const k=1-q.life/(q.ttl||.5);g.save();g.strokeStyle=q.col;g.globalAlpha=Math.max(0,(1-k)*.72);g.lineWidth=1.7;g.beginPath();g.ellipse(q.x,dy,psz*(.45+k*.78),psz*(.20+k*.30),0,0,6.28);g.stroke();g.restore();}else g.fillRect(q.x-psz/2,dy-psz/2,psz,psz);}g.globalAlpha=1;
  let explosionComposing=false;for(const f of fx){if(f.x+f.max<cx-40||f.x-f.max>cx+W+40||f.y+f.max<cy-40||f.y-f.max>cy+H+40)continue;if(!explosionComposing){g.save();g.globalCompositeOperation='lighter';explosionComposing=true;}const t=1-f.l/.45,r=f.max*(.35+.65*t),gr=g.createRadialGradient(f.x,f.y,0,f.x,f.y,r);gr.addColorStop(0,'rgba(255,250,200,'+(1-t)+')');gr.addColorStop(.45,'rgba(255,140,30,'+.8*(1-t)+')');gr.addColorStop(1,'rgba(160,30,0,0)');g.fillStyle=gr;g.beginPath();g.arc(f.x,f.y,r,0,6.28);g.fill();}if(explosionComposing)g.restore();
@@ -8888,9 +8894,9 @@ function reportGameError(error){
  panel.textContent='v205 作戦：'+STAGE_NAMES[stageMode]+' ／ エラー '+gameErrorCount+'回\n'+stack+'\nこの表示をスクリーンショットで共有してください。';
 }
 </script>
-<script src="js/road-trucks.js?v=2026.11.09.0927"></script>
+<script src="js/road-trucks.js?v=2026.11.13.2242"></script>
 <script src="js/stage-progress.js?v=2026.11.12.2006"></script>
-<script src="js/decisive.js?v=2026.11.13.1834"></script>
+<script src="js/decisive.js?v=2026.11.13.2242"></script>
 <script src="js/frontline.js?v=2026.11.13.1834"></script>
 <script src="js/award-icons.js?v=2026.10.31.0807"></script>
 <script src="js/developer.js?v=2026.11.11.2308"></script>
@@ -8908,8 +8914,8 @@ function reportGameError(error){
 <script src="js/jungle-hit-masks.js?v=2026.11.08.1710"></script>
 <script src="js/jungle-placement-masks.js?v=2026.11.08.2145"></script>
 <script src="js/jungle.js?v=2026.11.12.2330"></script>
-<script src="js/escape-test.js?v=2026.11.12.2322"></script>
-<script src="js/canyon.js?v=2026.11.13.1834"></script>
+<script src="js/escape-test.js?v=2026.11.13.2242"></script>
+<script src="js/canyon.js?v=2026.11.13.2242"></script>
 <script src="js/vegetation.js?v=2026.11.08.1806"></script>
 <script src="js/laboratory.js?v=2026.10.31.2206"></script>
 <script src="js/infiltration-world.js?v=2026.11.11.2308"></script>

@@ -255,7 +255,7 @@ test('escape areas two and four each drop three white soldiers early without bom
   assert.equal(h.run('mission.enemyDrop.parachutes.length'),3);
   assert.ok(h.run('mission.enemyDrop.parachutes.every(unit=>unit.elite)'));
   assert.equal(h.run("humans.filter(h=>h.escapeParatrooper).length"),total-3);
-  h.run('drawEscapeEnemyDrop(0,Math.max(0,p.y-H*.6));');
+  h.run('drawEnemyParachutePass(mission.enemyDrop,0,Math.max(0,p.y-H*.6));');
   h.run('for(let i=0;i<400;i++)updateEscapeTestMission(1/60)');
   assert.equal(h.run('humans.filter(h=>h.escapeParatrooper).length'),total);
   assert.ok(h.run('humans.filter(h=>h.escapeParatrooper).every(h=>h.elite&&!hitsM(h.x,h.y,12))'));

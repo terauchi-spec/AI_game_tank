@@ -131,3 +131,13 @@ test('offscreen waiting and finished trucks cannot be hit, and explosions beyond
  h.run("roadTruckEvents[0].state='done';damageRoadTruck(roadTruckEvents[0],5);");assert.equal(h.run('roadTruckEvents[0].hp'),5);
  h.run("roadTruckEvents[0].state='leaving';damageRoadTrucksInRadius(700,5000,95);");assert.equal(h.run('roadTruckEvents[0].hp'),5);
 });
+test('desert town roads always schedule traffic, with opposite lanes for a four-lane road',()=>{
+ const h=scene('decisive');
+ h.run(`ZONES=[{n:'砂漠街',y0:5500,y1:4200},{n:'砂漠',y0:4200,y1:0}];
+  roadBands.push({x:0,y:4400,w:WW,h:320,lanes:4,kind:'asphalt'},{x:0,y:3900,w:WW,h:176,lanes:2,kind:'asphalt'});
+  setupRoadTruckEvents();`);
+ assert.equal(h.run('roadTruckEvents.length'),3);
+ assert.ok(h.run('roadTruckEvents[1].dir===-roadTruckEvents[2].dir&&roadTruckEvents[1].y!==roadTruckEvents[2].y'));
+ h.run("p.y=4860;for(const t of roadTruckEvents)t.arrivalDelay=0;updateRoadTrucks(.1)");
+ assert.ok(h.run("roadTruckEvents.every(t=>t.state==='entering')"));
+});
