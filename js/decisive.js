@@ -157,8 +157,8 @@ function placeDesertTownGunTowers(zones){
 }
 // Coordinates are normalized to the visible door panel on each facade.
 const DESERT_TOWN_DOORS={
- 'adobe-house':[132/300,174/200,32/300,25/200],
- 'adobe-building':[175/384,162/192,34/384,29/192]
+ 'adobe-house':[133/300,172/200,32/300,25/200],
+ 'adobe-building':[173/384,162/192,36/384,27/192]
 };
 function setupDesertTownEvents(){
  const doorsByZone=new Map();
@@ -168,7 +168,7 @@ function setupDesertTownEvents(){
   const zone=zoneAt(c.y+c.h/2);
   const [x,y,w,h]=panel,door={
    x:c.x+c.w*x,y:c.y+c.h*y,w:c.w*w,h:c.h*h,
-   exitY:c.y+c.h+16,remaining:10+R()*20,elapsed:0,broken:false
+   kind:c.decisiveKind,panel,exitY:c.y+c.h+16,remaining:10+R()*20,elapsed:0,broken:false
   };
   c.desertTownDoor=door;
   if(!doorsByZone.has(zone))doorsByZone.set(zone,[]);
@@ -181,23 +181,27 @@ function damageDesertTownDoor(door,tile){
   door.broken=true;door.elapsed=0;
  }
 }
-function spawnDesertTownDoorSoldier(door){
+function desertTownDoorPatrol(door){
  const x=door.x+door.w/2,y=door.exitY,q={x,y};
  if(hitsM(x,y,10)||inWaterAt(x,y,10)||D(p,q)<(p.tank?40:20)||
     humans.some(h=>h.alive&&D(h,q)<24)||etanks.some(e=>e.alive&&D(e,q)<TANK_HIT+14)||
-    cars.some(c=>c.kind!=='fighter'&&D(c,q)<34))return false;
+    cars.some(c=>c.kind!=='fighter'&&D(c,q)<34))return null;
  const path=[q];
  for(const [dx,dy] of [[0,54],[-42,24],[42,24]]){
   const end={x:x+dx,y:y+dy};
   if(patrolLineClear(q,end,8)&&pOK([q,end],8,false)){path.push(end);break;}
  }
- if(path.length<2)return false;
- const human={...q,path,loop:false,wi:1,dir:1,stk:0,alive:true,st:0,sus:0,lost:0,
+ return path.length>1?path:null;
+}
+function spawnDesertTownDoorSoldier(door){
+ const path=desertTownDoorPatrol(door);
+ if(!path)return;
+ const {x,y}=path[0];
+ const human={x,y,path,loop:false,wi:1,dir:1,stk:0,alive:true,st:0,sus:0,lost:0,
   cd:.7,face:Math.atan2(path[1].y-y,path[1].x-x),target:null,foundPause:0,
   patrolMode:'axis',elite:false,walkStartX:x,walkStartY:y};
  if(R()<.5)Object.assign(human,enemyCommanderFields('blue'));
  humans.push(human);
- return true;
 }
 function updateDesertTownEvents(dt){
  if(!desertTownEvents||state!=='play')return;
@@ -209,10 +213,11 @@ function updateDesertTownEvents(dt){
    if(door.elapsed>0){
     const before=door.elapsed;
     door.elapsed+=dt;
-    if(before<.3&&door.elapsed>=.3&&!spawnDesertTownDoorSoldier(door))door.remaining=1;
+    if(before<.3&&door.elapsed>=.3)spawnDesertTownDoorSoldier(door);
     if(door.elapsed>=.9)door.elapsed=0;
    }else if(door.remaining<=.3){
-    door.elapsed=Number.EPSILON;door.remaining=.3+10+R()*20;
+    door.remaining=.3+10+R()*20;
+    if(desertTownDoorPatrol(door))door.elapsed=Number.EPSILON;
    }
   }
   drop.remaining-=dt;
@@ -226,9 +231,24 @@ function drawDesertTownDoors(cx,cy){
  if(!desertTownEvents||!p)return;
  for(const door of desertTownEvents.doorsByZone.get(zoneAt(p.y))||[]){
   if(!door.elapsed||!drawPointInView(door.x,door.y,cx,cy,45))continue;
-  const open=Math.min(1,door.elapsed/.3,(.9-door.elapsed)/.35);
-  g.fillStyle='#231a12';g.fillRect(door.x,door.y,door.w,door.h);
-  g.fillStyle='#63503a';g.fillRect(door.x,door.y,door.w*(1-open),door.h);
+  const {x,y,w,h,elapsed}=door;
+  const t=Math.min(1,elapsed/.3,(.9-elapsed)/.35);
+  const leaf=w*Math.cos(t*t*(3-2*t)*Math.PI/2);
+  // Keep the frame baked into the facade. The original wooden leaf swings inward.
+  g.fillStyle='#59402e';g.fillRect(x,y,w,h);
+  g.fillStyle='#453123';g.fillRect(x,y,w,h*.73);
+  g.fillStyle='#74553a';g.fillRect(x,y+h*.9,w,h*.1);
+  if(leaf<.5)continue;
+  const im=COVER_IMG['decisive_'+door.kind];
+  if(assetOK(im)){
+   const [sx,sy,sw,sh]=door.panel,iw=im.naturalWidth,ih=im.naturalHeight;
+   g.drawImage(im,sx*iw,sy*ih,sw*iw,sh*ih,x,y,leaf,h);
+  }else{
+   g.fillStyle='#7a593b';g.fillRect(x,y,leaf,h);
+  }
+  if(leaf<w-.5){
+   g.fillStyle='#9a7552';g.fillRect(x+leaf-1,y,1,h);
+  }
  }
 }
 function decisiveRectsOverlap(a,b,pad=0){return a.x<b.x+b.w+pad&&a.x+a.w+pad>b.x&&a.y<b.y+b.h+pad&&a.y+a.h+pad>b.y;}

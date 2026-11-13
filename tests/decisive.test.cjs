@@ -177,3 +177,22 @@ test('town sandstorms preserve at least eighty percent enemy opacity',()=>{
  run('sandWeatherZone={n:"荒野"};');
  assert.equal(run('sandstormEnemyOpacity()'),0);
 });
+test('an obstructed adobe exit stays closed and retries on its regular timer',()=>{
+ const {run}=start(11);
+ run(`const town=ZONES[2],building=covers.find(c=>c.desertTownDoor&&zoneAt(c.y)===town);
+  const door=building.desertTownDoor,x=door.x+door.w/2;
+  p.x=WW/2;p.y=town.y0-10;
+  covers=[building,{kd:1,x:x-40,y:door.exitY-5,w:80,h:50,decisiveKind:'sandbags'}];
+  humans=[];etanks=[];cars=[];objects=[];water=[];rebuildSpatialGrid();door.remaining=.2;
+  for(let i=0;i<180;i++)updateDesertTownEvents(1/60);`);
+ assert.equal(run('door.elapsed'),0);
+ assert.equal(run('humans.length'),0);
+ assert.ok(run('door.remaining>7&&door.remaining<=30'));
+ run('covers=[building];rebuildSpatialGrid();door.remaining=.2;updateDesertTownEvents(.02);updateDesertTownEvents(.15);');
+ assert.equal(run('humans.length'),0);
+ run(`const crops=[];g.drawImage=(...args)=>crops.push(args);drawPointInView=()=>true;
+  drawDesertTownDoors(0,0);`);
+ assert.ok(run('crops.some(([im,,,,,,,w,h])=>im===COVER_IMG["decisive_"+door.kind]&&w>0&&w<door.w&&h===door.h)'));
+ run('updateDesertTownEvents(.16);');
+ assert.equal(run('humans.length'),1);
+});
