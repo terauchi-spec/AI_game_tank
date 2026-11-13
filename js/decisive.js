@@ -22,19 +22,27 @@ function setupDecisiveZones(){
  const edges=[13200,10800,9040,7280,5520,3680,1840,-400];
  ZONES=names.map((n,i)=>({n,y0:edges[i],y1:edges[i+1],g:ZONE_STYLE[n].g,p:ZONE_STYLE[n].p.slice(),edgeRisk:R()<.5?'left':'right',decisiveArea:i}));
 }
+const DESERT_TOWN_BUILDINGS=[
+ ['adobe-house',4,180,120],
+ ['adobe-building',4,240,120],
+ ['desert-watchtower',3,160,180],
+ ['citadel-ruins',3,210,212.8],
+ ['citadel-rubble',7,150,77]
+];
 function addDesertTownBuildings(z){
- loadDesertTerrain();loadJungleAssets(JUNGLE_BUILDING_KEYS);
- // Building lots leave a continuous 200px lane between the two sides.
- // Reserve the north end of the final town section for the relay clearing.
- const relaySection=z.decisiveArea===3,rows=relaySection?2:3;
- const top=z.y1+(relaySection?800:70),bottom=z.y0-70,lot=(bottom-top)/rows;
- const first=Math.floor(R()*JUNGLE_BUILDING_KEYS.length);
- for(let row=0;row<rows;row++)for(let side=0;side<2;side++){
-  const key=JUNGLE_BUILDING_KEYS[(first+row*2+side)%JUNGLE_BUILDING_KEYS.length];
-  const [kd,w,h]=JUNGLE_ASSETS[key],left=side?WW/2+100:24,right=side?WW-24:WW/2-100;
+ loadDesertTerrain();
+ for(const [key] of DESERT_TOWN_BUILDINGS){
+  if(!COVER_IMG['decisive_'+key])COVER_IMG['decisive_'+key]=makeAssetImage(ASSET_DIR+'desert-town/'+key+'.webp?v='+GAME_VERSION);
+ }
+ // Six lots leave a continuous 200px lane and keep the relay clearing open.
+ const top=z.y1+(z.decisiveArea===3?800:70),bottom=z.y0-(z.areaDebug?650:70),lot=(bottom-top)/3;
+ const first=Math.floor(R()*DESERT_TOWN_BUILDINGS.length);
+ for(let row=0;row<3;row++)for(let side=0;side<2;side++){
+  const [key,kd,w,h]=DESERT_TOWN_BUILDINGS[(first+row*2+side)%DESERT_TOWN_BUILDINGS.length];
+  const left=side?WW/2+100:24,right=side?WW-24:WW/2-100;
   const x=left+R()*(right-left-w),y=top+row*lot+R()*Math.max(0,lot-h);
   // The normal generator scales Y later; sprite dimensions are already in world pixels.
-  covers.push({kd,x,y:y/MAP_SCALE,w,h,jungleAsset:key});
+  covers.push({kd,x,y:y/MAP_SCALE,w,h,decisiveKind:key});
  }
 }
 function addDesertTownScenery(z){

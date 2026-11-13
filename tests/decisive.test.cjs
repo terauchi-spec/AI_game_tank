@@ -15,25 +15,27 @@ test('developer-only 13 preserves its identity through phase change and victory 
  run('blastUpdate(3)');assert.equal(run('state'),'succeeded');assert.equal(run('scoreStats.final.cleared'),true);assert.equal(run('scoreStats.objectiveProgress'),1);
  assert.equal(run('scoreStats.stageRecordId'),'decisive');assert.equal(run('readStageRecords().stages.decisive.successes'),1);assert.equal(run('readStageRecords().stages.front.successes'),0);assert.equal(run('leaderboardPending.decisive.stage'),'decisive');assert.equal(run('readStageProgress().cleared.length'),13);assert.ok(run("readTitleArchive().titles.v3_all_stages_clear"));assert.equal(run("scoreStats.awards.newTitles.includes('v3_all_stages_clear')"),false);
 });
-test('desert town replaces the random sections and shares the desert tile and jungle buildings',()=>{
+test('desert town replaces the random sections and shares the desert tile and uses its own buildings',()=>{
  for(const seed of [7,11,42]){
   const {run}=start(seed);
   assert.deepEqual(Array.from(run('ZONES.map(z=>z.n)')),['草原','砂漠街','砂漠街','砂漠街','砂漠','砂漠','砂漠']);
   assert.ok(run('ZONES.slice(1).every((z,i)=>z.y0===ZONES[i].y1)'));
   assert.ok(run("TERRAIN_IMG['砂漠街']===TERRAIN_IMG['砂漠']&&terrainSurfacePattern(ZONES[1])===terrainSurfacePattern(ZONES[4])"));
   assert.ok(run(`ZONES.slice(1,4).every(z=>{
-   const buildings=covers.filter(c=>c.y>=z.y1&&c.y+c.h<=z.y0&&JUNGLE_BUILDING_KEYS.includes(c.jungleAsset));
+   const buildings=covers.filter(c=>c.y>=z.y1&&c.y+c.h<=z.y0&&DESERT_TOWN_BUILDINGS.some(([key])=>key===c.decisiveKind));
    return buildings.length>=2&&buildings.every((c,i)=>
     (c.x+c.w<=WW/2-100||c.x>=WW/2+100)&&
     circleHitsCover(c.x+c.w/2,c.y+c.h/2,8,c)&&
     buildings.slice(i+1).every(other=>!decisiveRectsOverlap(c,other)));
   })`));
-  assert.ok(run('covers.every(c=>!JUNGLE_BUILDING_KEYS.includes(c.jungleAsset)||!circleHitsRect(decisiveBattle.gate.x,decisiveBattle.gate.y,300,c))'));
+  assert.ok(run(`DESERT_TOWN_BUILDINGS.every(([key])=>covers.some(c=>c.decisiveKind===key)&&assetOK(COVER_IMG['decisive_'+key]))&&
+   !covers.some(c=>JUNGLE_BUILDING_KEYS.includes(c.jungleAsset))&&
+   covers.every(c=>!DESERT_TOWN_BUILDINGS.some(([key])=>key===c.decisiveKind)||!circleHitsRect(decisiveBattle.gate.x,decisiveBattle.gate.y,300,c))`));
  }
  const {run}=createGameEngine(root,{seed:7});
  run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='砂漠街';reset(false)");
  assert.equal(run('ZONES[0].n'),'砂漠街');
- assert.ok(run('covers.some(c=>JUNGLE_BUILDING_KEYS.includes(c.jungleAsset))'));
+ assert.ok(run('DESERT_TOWN_BUILDINGS.every(([key])=>covers.some(c=>c.decisiveKind===key))'));
 });
 test('desert town scatters all four scenery types clear of buildings, the lane and relay',()=>{
  const layouts=new Set();
@@ -42,7 +44,7 @@ test('desert town scatters all four scenery types clear of buildings, the lane a
   assert.ok(run(`ZONES.slice(1,4).every(z=>{
    const inside=o=>o.y>=z.y1&&o.y+o.h<=z.y0;
    const sandbags=covers.filter(c=>c.decisiveKind==='sandbags'&&inside(c)&&c.y>=decisiveBattle.border+800);
-   const grass=bushes.filter(inside),props=objects.filter(inside),buildings=covers.filter(c=>c.jungleAsset&&inside(c));
+   const grass=bushes.filter(inside),props=objects.filter(inside),buildings=covers.filter(c=>inside(c)&&DESERT_TOWN_BUILDINGS.some(([key])=>key===c.decisiveKind));
    const scenery=[...sandbags,...grass,...props.map(o=>o.kind==='barrel'?barrelVisualRect(o):o)];
    return sandbags.length>=1&&grass.length>=1&&props.some(o=>o.kind==='crate')&&props.some(o=>o.kind==='barrel')&&
     scenery.every((o,i)=>(o.x+o.w<=WW/2-100||o.x>=WW/2+100)&&
