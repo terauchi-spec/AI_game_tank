@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.13.1635</title>
+<title>こっそり戦車大作戦 2026.11.13.1834</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -1027,7 +1027,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.13.1635',FILE_CREATED_AT='2026/11/13 16:35',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.13.1834',FILE_CREATED_AT='2026/11/13 18:34',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -2237,7 +2237,7 @@ let state,p,cars,etanks,humans,covers,objects,bullets,parts,base,shake,flash,msg
 const DETECT_RANGE_BASE=315,DETECT_CENTER_HALF=7.5*Math.PI/180,DETECT_OUTER_HALF=52.5*Math.PI/180,DETECT_OUTER_SCALE=.7,DETECT_MEMORY=3,TANK_DRAW=30,TANK_HIT=28,TANK_BOMB_HIT=42,LOG_LONG=126,LOG_SHORT=39,CRATE_W=74.8,CRATE_H=74.8,BARREL_SIZE=39.1,CONCRETE_W=264,CONCRETE_H=183.7,WOOD_W=278.3,WOOD_H=223.85,MINI_CONCRETE_W=151.3,MINI_CONCRETE_H=151.3,MINI_WOOD_W=213.6,MINI_WOOD_H=213.6,CONCRETE_MINI_W=151.3,CONCRETE_MINI_H=151.3,WOOD_MINI_W=213.6,WOOD_MINI_H=213.6,TREE_BOX=83,TREE_BOX_MAX=124.5,ROCK_W=58,ROCK_H=40,BARRIER_LONG=208,BARRIER_SHORT=52,FENCE_LONG=188,FENCE_SHORT=81,COMMAND_BASE_W=390,COMMAND_BASE_H=336.7;
 const FACTORY_SCALE=1.3,FACTORY_W=CONCRETE_W*FACTORY_SCALE,FACTORY_H=CONCRETE_H*FACTORY_SCALE;
 const playerMoving=()=>!!(p&&(keys.ArrowUp||keys.ArrowDown||keys.ArrowLeft||keys.ArrowRight)&&(!p.tank||p.tank.f>0));
-const detectRange=(key='p')=>DETECT_RANGE_BASE*((key==='p'&&p&&p.tank)?2:1)*((key==='p'&&!playerMoving())?.8:1)*(weather==='sandstorm'?.55:weather==='squall'?.45:weather==='rain'?.75:1),detectOuterRange=(key='p')=>detectRange(key)*DETECT_OUTER_SCALE,detectDropRange=(key='p')=>detectRange(key)*1.5;
+const detectRange=(key='p')=>DETECT_RANGE_BASE*((key==='p'&&p&&p.tank)?2:1)*((key==='p'&&!playerMoving())?.8:1)*(weather==='sandstorm'?sandstormSightScale():weather==='squall'?.45:weather==='rain'?.75:1),detectOuterRange=(key='p')=>detectRange(key)*DETECT_OUTER_SCALE,detectDropRange=(key='p')=>detectRange(key)*1.5;
 const D=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),R=Math.random;
 const angD=(a,b)=>((a-b+9.42477)%6.28318)-3.14159;
 const nearBridge=(c,m=60)=>bridges&&bridges.some(b=>ov2({x:b.x-m,y:b.y-m,w:(b.w||100)+m*2,h:(b.h||100)+m*2},c,0));
@@ -3173,6 +3173,7 @@ function reset(rerollSkills=true){
  const baseW=beginner?360:missileFacility?COMMAND_BASE_W*MISSILE_BASE_SCALE:COMMAND_BASE_W,baseH=beginner?355:missileFacility?MISSILE_BASE_H*MISSILE_BASE_SCALE:COMMAND_BASE_H;
  base={x:WW/2-baseW/2,y:60,w:baseW,h:baseH,hp:missileFacility?60:30,maxHp:missileFacility?60:30,deadAt:0,missileFacility};bullets=[];parts=[];bombs=[];waves=[];fx=[];items=[];bushes=[];
  roadBands=[];water=[];bridges=[];mud=[];
+ if(stageMode==='decisive')setupDesertTownConditions(ZONES.slice(1,DECISIVE_DESERT_START));
  for(const ry of [2675,1325]){
   if(['荒野','砂漠','砂漠街'].includes(zoneAt(ry*MAP_SCALE).n))continue;
   rollRiverCrossing(ry);
@@ -5632,7 +5633,7 @@ function shiftSniperLens(dir){
  p.sniperZoom=next;p.sniperLensChangeT=.24;sfx('sniperLens');return true;
 }
 function sniperFov(){return Math.PI/(5*sniperZoom());}
-function sniperViewRange(){return weather==='sandstorm'?0:(weather==='rain'||weather==='squall')?SNIPER_RANGE*.7:SNIPER_RANGE;}
+function sniperViewRange(){return weather==='sandstorm'?(sandstormSightScale()===.75?SNIPER_RANGE*.7:0):(weather==='rain'||weather==='squall')?SNIPER_RANGE*.7:SNIPER_RANGE;}
 function enterSniperMode(){
  if(!p||p.tank||p.dig>0||p.digPrep>0||p.drill>0||p.grappleT>0||p.sniperMode||p.sniperEnterT>0||p.sniperReadyT>0)return false;
  p.sniperMode=false;p.sniperLockA=p.body;p.sniperAimN=0;p.sniperZoom=SNIPER_ZOOM_MIN;p.sniperLensChangeT=0;p.sniperExitT=0;p.sniperFlash=0;p.sniperHitT=0;p.sniperEnterT=SNIPER_DEPLOY_TIME;p.sniperReadyT=SNIPER_SETTLE_TIME;p.body=p.sniperLockA;
@@ -8889,8 +8890,8 @@ function reportGameError(error){
 </script>
 <script src="js/road-trucks.js?v=2026.11.09.0927"></script>
 <script src="js/stage-progress.js?v=2026.11.12.2006"></script>
-<script src="js/decisive.js?v=2026.11.13.1635"></script>
-<script src="js/frontline.js?v=2026.11.13.0814"></script>
+<script src="js/decisive.js?v=2026.11.13.1834"></script>
+<script src="js/frontline.js?v=2026.11.13.1834"></script>
 <script src="js/award-icons.js?v=2026.10.31.0807"></script>
 <script src="js/developer.js?v=2026.11.11.2308"></script>
 <script src="js/leaderboard.js?v=2026.10.28.0713"></script>
@@ -8901,14 +8902,14 @@ function reportGameError(error){
 <script src="js/fallen-enemies.js?v=2026.11.03.0131"></script>
 <script src="js/enemy-dogs.js?v=2026.10.28.0713"></script>
 <script src="js/training.js?v=2026.10.31.0728"></script>
-<script src="js/gun-tower.js?v=2026.11.07.2250"></script>
+<script src="js/gun-tower.js?v=2026.11.13.1834"></script>
 <script src="js/partner.js?v=2026.11.10.2149"></script>
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/jungle-hit-masks.js?v=2026.11.08.1710"></script>
 <script src="js/jungle-placement-masks.js?v=2026.11.08.2145"></script>
 <script src="js/jungle.js?v=2026.11.12.2330"></script>
 <script src="js/escape-test.js?v=2026.11.12.2322"></script>
-<script src="js/canyon.js?v=2026.11.13.0940"></script>
+<script src="js/canyon.js?v=2026.11.13.1834"></script>
 <script src="js/vegetation.js?v=2026.11.08.1806"></script>
 <script src="js/laboratory.js?v=2026.10.31.2206"></script>
 <script src="js/infiltration-world.js?v=2026.11.11.2308"></script>

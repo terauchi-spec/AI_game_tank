@@ -35,6 +35,9 @@ function findFrontlineGunTowerSpot(index,clear){
  }
  return null;
 }
+function makeGunTower(spot){
+ return {...spot,t:GUN_TOWER_TYPE,kind:'tower',hp:8,c:0,v:500,f:0,ch:0,mgHits:0,body:Math.PI/2,aim:Math.PI/2,reboardT:2,gunT:0,scanT:0};
+}
 function setupGunTowers(){
  if(areaDebugEnabled||!['base','front'].includes(currentStageId()))return 0;
  const advancedFront=stageMode==='front';
@@ -59,7 +62,7 @@ function setupGunTowers(){
    }
   }
   if(!spot)continue;
-  const v={...spot,t:GUN_TOWER_TYPE,kind:'tower',hp:8,c:0,v:500,f:0,ch:0,mgHits:0,body:Math.PI/2,aim:Math.PI/2,reboardT:2,gunT:0,scanT:0};cars.push(v);count++;
+  const v=makeGunTower(spot);cars.push(v);count++;
   if(R()<.5){
    const h={...spot,alive:true,elite:false,st:0,sus:0,lost:0,cd:1,burstLeft:0,face:Math.PI/2,target:null,path:[],wi:0,dir:1,loop:false,stk:0,scoreCounted:false};humans.push(h);boardEnemyGunTower(v,h);
   }

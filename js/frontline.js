@@ -635,7 +635,7 @@ function updateFrontlineAllyStun(a,dt){
 }
 
 function frontlineAllySightRange(known=false){
- return(known?420:300)*(weather==='sandstorm'?.55:weather==='rain'?.75:1);
+ return(known?420:300)*(weather==='sandstorm'?(typeof sandstormSightScale==='function'?sandstormSightScale():.55):weather==='rain'?.75:1);
 }
 function frontlineAllyCanSee(a,h,known=false,area=frontlineCombatPoint(a)){
  if(!h.alive)return false;

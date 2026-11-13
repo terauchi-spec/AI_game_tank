@@ -1,6 +1,8 @@
 // Stage 07 orchestrates existing destruction combat and bounded frontline armies.
 // stageMode changes to 'front' only after the relay falls; the persistent stage ID stays decisive.
 const DECISIVE_RELAY_CAPTURE_SECONDS=15;
+const DECISIVE_DESERT_START=5;
+const DESERT_SANDBAG_W=210,DESERT_SANDBAG_H=52;
 const DECISIVE_BUNKER_SCAN_SECONDS=.2;
 let decisiveBattle=null;
 function isDecisiveStage(){return stageMode==='decisive'||stageMode==='front'&&!!decisiveBattle;}
@@ -18,13 +20,13 @@ function loadDesertTerrain(){
  TERRAIN_IMG['砂漠街']=TERRAIN_IMG['砂漠'];
 }
 function setupDecisiveZones(){
- const names=['草原','砂漠街','砂漠街','砂漠街','砂漠','砂漠','砂漠'];
- const edges=[13200,10800,9040,7280,5520,3680,1840,-400];
+ const names=['草原','砂漠街','砂漠街','砂漠街','砂漠街','砂漠','砂漠','砂漠'];
+ const edges=[13200,10800,9080,8040,6960,5520,3680,1840,-400];
  ZONES=names.map((n,i)=>({n,y0:edges[i],y1:edges[i+1],g:ZONE_STYLE[n].g,p:ZONE_STYLE[n].p.slice(),edgeRisk:R()<.5?'left':'right',decisiveArea:i}));
 }
 const DESERT_TOWN_SCALE=1.5;
 const DESERT_TOWN_SANDBAG_ROW_GAP=168;
-const DESERT_TOWN_SANDBAG_W=252,DESERT_TOWN_SANDBAG_H=62.4;
+const DESERT_TOWN_GATE_GAP=92;
 const DESERT_TOWN_GATE_DEPTH=222;
 const DESERT_TOWN_BUILDINGS=[
  ['adobe-house',4,216,144],
@@ -32,39 +34,59 @@ const DESERT_TOWN_BUILDINGS=[
  ['desert-watchtower',3,160,180],
  ['citadel-ruins',3,210,212.8]
 ];
+function setupDesertTownConditions(zones){
+ for(const z of zones)z.desertTownStorm=R()<.3;
+ const z=zones[0];
+ // Use the jungle size distribution, including its 2,400px reference section.
+ const lake=rollWildernessLake({...z,y0:z.y1+ESCAPE_TEST_AREA_HEIGHT},1);
+ lake.x=Math.min(16,WW-152-lake.w);
+ lake.y=z.y1+48;
+ z.oasis=lake;
+ water.push({...lake,y:lake.y/MAP_SCALE});
+}
 function addDesertTownBuildings(z){
  loadDesertTerrain();
  for(const [key] of DESERT_TOWN_BUILDINGS){
   if(!COVER_IMG['decisive_'+key])COVER_IMG['decisive_'+key]=makeAssetImage(ASSET_DIR+'desert-town/'+key+'.webp?v='+GAME_VERSION);
  }
  // Pair the widest building with the tower to leave room for a vehicle to pass.
- const top=z.y1+(z.decisiveArea===3?800:70),bottom=z.y0-(z.areaDebug?650:70);
- const pairs=[[1,2],[0,3]],first=Math.floor(R()*pairs.length);
- const rows=Array.from({length:z.decisiveArea===3?2:3},(_,row)=>pairs[(first+row)%pairs.length].map(index=>{
+ const relay=z.decisiveArea===DECISIVE_DESERT_START-1;
+ const top=relay?z.y1+800:z.oasis?z.oasis.y+z.oasis.h+32:z.y1+70;
+ const bottom=z.y0-(z.areaDebug?650:70);
+ const pairs=[[1,2],[0,3]],first=relay?1:z.oasis&&!z.areaDebug?0:Math.floor(R()*pairs.length);
+ const rows=Array.from({length:relay||z.oasis&&!z.areaDebug?1:2},(_,row)=>pairs[(first+row)%pairs.length].map(index=>{
   const [key,kd,w,h]=DESERT_TOWN_BUILDINGS[index];
   return {key,kd,w:w*DESERT_TOWN_SCALE,h:h*DESERT_TOWN_SCALE};
  }));
  const heights=rows.map(row=>Math.max(...row.map(building=>building.h)));
- const gateCount=z.areaDebug?3:1;
+ const gateCount=z.areaDebug?2:1;
  const spare=(bottom-top-gateCount*DESERT_TOWN_GATE_DEPTH-heights.reduce((sum,h)=>sum+h,0))/rows.length;
  let rowTop=top;
  for(const [i,row] of rows.entries()){
-  if(z.areaDebug||i===1){
+  if(z.areaDebug||i===0){
    // Leave the opening on alternating sides so no northbound line crosses the town.
    const openRight=(z.areaDebug?i:z.decisiveArea)%2===1;
+   const emplace=R()<.35;
    for(let column=0;column<3;column++){
-    const offset=column*(DESERT_TOWN_SANDBAG_W+4);
-    const x=openRight?offset:WW-offset-DESERT_TOWN_SANDBAG_W;
+    const offset=column*(DESERT_SANDBAG_W+DESERT_TOWN_GATE_GAP);
+    const x=openRight?offset:WW-offset-DESERT_SANDBAG_W;
     const y=rowTop+64+column*16;
-    covers.push({kd:1,x,y:y/MAP_SCALE,w:DESERT_TOWN_SANDBAG_W,h:DESERT_TOWN_SANDBAG_H,decisiveKind:'sandbags',desertTownGate:true});
+    covers.push({kd:1,x,y:y/MAP_SCALE,w:DESERT_SANDBAG_W,h:DESERT_SANDBAG_H,decisiveKind:'sandbags',desertTownGate:true});
+   }
+   if(emplace){
+    const gapCenter=DESERT_SANDBAG_W+DESERT_TOWN_GATE_GAP/2;
+    (z.desertTownTowers??=[]).push({x:openRight?gapCenter:WW-gapCenter,y:rowTop+98});
    }
    rowTop+=DESERT_TOWN_GATE_DEPTH;
   }
   const lot=heights[i]+spare;
+  let central=false;
   for(const [side,{key,kd,w,h}] of row.entries()){
    const wideRow=row[0].key==='adobe-building';
-   const left=side?WW/2+(wideRow?156:100):16,right=side?WW-16:Math.max(WW/2-100,16+w);
-   const x=left+R()*(right-left-w),y=rowTop+(lot-h)*(.35+R()*.3);
+   const left=side?WW/2+(wideRow?156:central?145:100):16,right=side?WW-16:Math.max(WW/2-100,16+w);
+   const roll=R();
+   if(!side)central=!wideRow&&roll<.35;
+   const x=!side&&central?WW/2-w*.85:left+roll*(right-left-w),y=rowTop+(lot-h)*(.35+R()*.3);
    // The normal generator scales Y later; sprite dimensions are already in world pixels.
    covers.push({kd,x,y:y/MAP_SCALE,w,h,decisiveKind:key});
   }
@@ -73,19 +95,18 @@ function addDesertTownBuildings(z){
 }
 function addDesertTownScenery(z){
  loadDesertSandbags();
- const top=z.y1+(z.decisiveArea===3?800:70),bottom=z.y0-70;
+ const top=z.y1+(z.decisiveArea===DECISIVE_DESERT_START-1?800:70),bottom=z.y0-70;
  // Position in world pixels, then store the same pre-scaling Y as ordinary scenery.
- const occupied=covers.concat(objects,bushes).map(o=>({...o,y:o.y*MAP_SCALE}));
- // Reserve the bend on the right of each wide building without blocking its whole frontage.
- for(const c of covers)if(c.decisiveKind==='adobe-building'){
-  occupied.push({x:c.x+c.w,y:c.y*MAP_SCALE-64,w:80,h:c.h+128});
- }
+ const occupied=covers.concat(objects,bushes,water).map(o=>({...o,y:o.y*MAP_SCALE}));
+ // Preserve the passage between the left and right buildings and across the rows.
+ occupied.push({x:448,y:z.y1,w:176,h:z.y0-z.y1});
  // Leave the entire staggered row clear of other scenery, including its opening.
  for(const c of covers)if(c.desertTownGate){
   occupied.push({x:0,y:c.y*MAP_SCALE-64,w:WW,h:c.h+128});
  }
  // The sides of the relay plaza can hold small props while its clearing stays open.
- const propsTop=z.y1+70,relayClearing=z.decisiveArea===3?{x:WW/2-350,y:z.y1+70,w:700,h:700}:null;
+ if(z.oasis)occupied.push({x:WW-152,y:z.oasis.y-32,w:152,h:z.oasis.h+64});
+ const propsTop=z.y1+70,relayClearing=z.decisiveArea===DECISIVE_DESERT_START-1?{x:WW/2-350,y:z.y1+70,w:700,h:700}:null;
  const place=(list,props,w,h,count)=>{
   for(let tries=0,placed=0;tries<count*30&&placed<count;tries++){
    const side=R()<.5,left=side?WW/2+100:24,right=side?WW-24:WW/2-100;
@@ -99,7 +120,7 @@ function addDesertTownScenery(z){
    list.push({...props,...rect,y:y/MAP_SCALE});placed++;
   }
  };
- const sandbagW=DESERT_TOWN_SANDBAG_W,sandbagH=DESERT_TOWN_SANDBAG_H;
+ const sandbagW=DESERT_SANDBAG_W,sandbagH=DESERT_SANDBAG_H;
  const gridBottom=z.y0-(z.areaDebug?650:70);
  const inset=(WW/2-100-sandbagW)/2,columns=[inset,WW-inset-sandbagW];
  const gridOptions=Array.from({length:6},(_,i)=>{
@@ -128,10 +149,16 @@ function addDesertTownScenery(z){
  place(objects,{kind:'barrel'},BARREL_SIZE,BARREL_SIZE,2);
  place(bushes,{},85,55,7);
 }
+function placeDesertTownGunTowers(zones){
+ for(const z of zones)for(const spot of z.desertTownTowers||[]){
+  // The existing tower remains accessible from either end of the gap.
+  if(!hitsM(spot.x,spot.y,GUN_TOWER_TYPE.coverRadius)&&cars.every(v=>D(v,spot)>96))cars.push(makeGunTower(spot));
+ }
+}
 function decisiveRectsOverlap(a,b,pad=0){return a.x<b.x+b.w+pad&&a.x+a.w+pad>b.x&&a.y<b.y+b.h+pad&&a.y+a.h+pad>b.y;}
 function setupDecisiveWorld(){
  loadDecisiveAssets();
- const border=ZONES[4].y0,gate={x:WW/2,y:border+420,captureRadius:300,name:'中継拠点',done:false};
+ const border=ZONES[DECISIVE_DESERT_START].y0,gate={x:WW/2,y:border+420,captureRadius:300,name:'中継拠点',done:false};
  decisiveBattle={phase:'infiltration',border,gate,reserve:[],bunkers:[],fortressDir:1,fortressCd:2,gunScan:0};
  // Reserve a dry, open relay circle. The desert has an uninterrupted central route.
  const clearing={x:gate.x-350,y:gate.y-350,w:700,h:700};
@@ -142,14 +169,14 @@ function setupDecisiveWorld(){
  bridges=bridges.filter(b=>b.y>=border&&!decisiveRectsOverlap(b,clearing));
  roadBands=roadBands.filter(r=>r.y>=border);
  base={x:WW/2-300,y:140,w:600,h:400,hp:90,maxHp:90,deadAt:0,decisiveFortress:true,decisiveLocked:true};
- for(const zone of ZONES.slice(4)){
+ for(const zone of ZONES.slice(DECISIVE_DESERT_START)){
   for(let i=0;i<3;i++){
    const side=i%2===0?'left':'right',x=side==='left'?82:WW-262,y=zone.y0-300-i*460;
    const bunker={kd:3,x,y,w:180,h:140,decisiveKind:'bunker',gunCd:1+i*.4};
    covers.push(bunker);decisiveBattle.bunkers.push(bunker);
-   for(const dy of [210,340])covers.push({kd:1,x:side==='left'?45:WW-255,y:y+dy,w:210,h:52,decisiveKind:'sandbags'});
+   for(const dy of [210,340])covers.push({kd:1,x:side==='left'?45:WW-255,y:y+dy,w:DESERT_SANDBAG_W,h:DESERT_SANDBAG_H,decisiveKind:'sandbags'});
   }
-  const t=TYPES[(zone.decisiveArea-2)%TYPES.length],spot={x:WW/2,y:(zone.y0+Math.max(40,zone.y1))/2};
+  const t=TYPES[(zone.decisiveArea-DECISIVE_DESERT_START+2)%TYPES.length],spot={x:WW/2,y:(zone.y0+Math.max(40,zone.y1))/2};
   // The wide centre lane remains open for tanks, trucks and the shared infantry detour AI.
   cars=cars.filter(v=>!decisiveRectsOverlap({x:v.x-50,y:v.y-50,w:100,h:100},{x:spot.x-55,y:spot.y-55,w:110,h:110}));
   cars.push({...spot,t,kind:'tank',hp:t.hp,c:t.cmax,v:t.vmax,f:t.fmax,ch:0,mgHits:0,body:-Math.PI/2});
@@ -164,6 +191,7 @@ function setupDecisiveWorld(){
  mission={index:0,progress:0,points:[gate],waveT:6,reinforceT:18,captureReady:false,capturing:false,contested:false};
  scoreStats.objectiveTotal=2;scoreStats.objectiveProgress=0;
  rebuildSpatialGrid();captureBuildingGroundMarks();ensurePlayerVehicleSpawns();ensureEnemyTankSpawns();
+ placeDesertTownGunTowers(ZONES.slice(1,DECISIVE_DESERT_START));
  say('決戦：中継拠点を制圧し、砂漠の移動要塞を破壊せよ');
 }
 function beginDecisiveAssault(){
