@@ -24,6 +24,8 @@ function setupDecisiveZones(){
 }
 const DESERT_TOWN_SCALE=1.5;
 const DESERT_TOWN_SANDBAG_ROW_GAP=168;
+const DESERT_TOWN_SANDBAG_W=252,DESERT_TOWN_SANDBAG_H=62.4;
+const DESERT_TOWN_GATE_DEPTH=222;
 const DESERT_TOWN_BUILDINGS=[
  ['adobe-house',4,216,144],
  ['adobe-building',4,288,144],
@@ -43,9 +45,21 @@ function addDesertTownBuildings(z){
   return {key,kd,w:w*DESERT_TOWN_SCALE,h:h*DESERT_TOWN_SCALE};
  }));
  const heights=rows.map(row=>Math.max(...row.map(building=>building.h)));
- const spare=(bottom-top-heights.reduce((sum,h)=>sum+h,0))/rows.length;
+ const gateCount=z.areaDebug?3:1;
+ const spare=(bottom-top-gateCount*DESERT_TOWN_GATE_DEPTH-heights.reduce((sum,h)=>sum+h,0))/rows.length;
  let rowTop=top;
  for(const [i,row] of rows.entries()){
+  if(z.areaDebug||i===1){
+   // Leave the opening on alternating sides so no northbound line crosses the town.
+   const openRight=(z.areaDebug?i:z.decisiveArea)%2===1;
+   for(let column=0;column<3;column++){
+    const offset=column*(DESERT_TOWN_SANDBAG_W+4);
+    const x=openRight?offset:WW-offset-DESERT_TOWN_SANDBAG_W;
+    const y=rowTop+64+column*16;
+    covers.push({kd:1,x,y:y/MAP_SCALE,w:DESERT_TOWN_SANDBAG_W,h:DESERT_TOWN_SANDBAG_H,decisiveKind:'sandbags',desertTownGate:true});
+   }
+   rowTop+=DESERT_TOWN_GATE_DEPTH;
+  }
   const lot=heights[i]+spare;
   for(const [side,{key,kd,w,h}] of row.entries()){
    const wideRow=row[0].key==='adobe-building';
@@ -66,6 +80,10 @@ function addDesertTownScenery(z){
  for(const c of covers)if(c.decisiveKind==='adobe-building'){
   occupied.push({x:c.x+c.w,y:c.y*MAP_SCALE-64,w:80,h:c.h+128});
  }
+ // Leave the entire staggered row clear of other scenery, including its opening.
+ for(const c of covers)if(c.desertTownGate){
+  occupied.push({x:0,y:c.y*MAP_SCALE-64,w:WW,h:c.h+128});
+ }
  // The sides of the relay plaza can hold small props while its clearing stays open.
  const propsTop=z.y1+70,relayClearing=z.decisiveArea===3?{x:WW/2-350,y:z.y1+70,w:700,h:700}:null;
  const place=(list,props,w,h,count)=>{
@@ -81,7 +99,7 @@ function addDesertTownScenery(z){
    list.push({...props,...rect,y:y/MAP_SCALE});placed++;
   }
  };
- const sandbagW=252,sandbagH=62.4;
+ const sandbagW=DESERT_TOWN_SANDBAG_W,sandbagH=DESERT_TOWN_SANDBAG_H;
  const gridBottom=z.y0-(z.areaDebug?650:70);
  const inset=(WW/2-100-sandbagW)/2,columns=[inset,WW-inset-sandbagW];
  const gridOptions=Array.from({length:6},(_,i)=>{
