@@ -6,14 +6,33 @@ let decisiveBattle=null;
 function isDecisiveStage(){return stageMode==='decisive'||stageMode==='front'&&!!decisiveBattle;}
 function loadDecisiveAssets(){
  for(const key of ['fortress','bunker','sandbags','bunker-barrel'])if(!COVER_IMG['decisive_'+key])COVER_IMG['decisive_'+key]=makeAssetImage('assets/decisive/'+key+'.webp?v='+GAME_VERSION);
- if(!TERRAIN_IMG['砂漠'])TERRAIN_IMG['砂漠']=makeAssetImage('assets/decisive/desert.webp?v='+GAME_VERSION,()=>{for(const z of ZONES)if(z.n==='砂漠')z.pat=null;});
+ loadDesertTerrain();
+}
+function loadDesertTerrain(){
+ if(!TERRAIN_IMG['砂漠'])TERRAIN_IMG['砂漠']=makeAssetImage('assets/decisive/desert.webp?v='+GAME_VERSION,()=>{
+  for(const z of ZONES)if(z.n==='砂漠'||z.n==='砂漠街')z.pat=null;
+ });
+ TERRAIN_IMG['砂漠街']=TERRAIN_IMG['砂漠'];
 }
 function setupDecisiveZones(){
- const pool=['草原','森林','村','丘陵','敵前線基地','街','湿地','荒野'];
- for(let i=pool.length-1;i>0;i--){const j=R()*(i+1)|0;[pool[i],pool[j]]=[pool[j],pool[i]];}
- const names=['草原',...pool.slice(0,3),'砂漠','砂漠','砂漠'];
+ const names=['草原','砂漠街','砂漠街','砂漠街','砂漠','砂漠','砂漠'];
  const edges=[13200,10800,9040,7280,5520,3680,1840,-400];
  ZONES=names.map((n,i)=>({n,y0:edges[i],y1:edges[i+1],g:ZONE_STYLE[n].g,p:ZONE_STYLE[n].p.slice(),edgeRisk:R()<.5?'left':'right',decisiveArea:i}));
+}
+function addDesertTownBuildings(z){
+ loadDesertTerrain();loadJungleAssets(JUNGLE_BUILDING_KEYS);
+ // Building lots leave a continuous 200px lane between the two sides.
+ // Reserve the north end of the final town section for the relay clearing.
+ const relaySection=z.decisiveArea===3,rows=relaySection?2:3;
+ const top=z.y1+(relaySection?800:70),bottom=z.y0-70,lot=(bottom-top)/rows;
+ const first=Math.floor(R()*JUNGLE_BUILDING_KEYS.length);
+ for(let row=0;row<rows;row++)for(let side=0;side<2;side++){
+  const key=JUNGLE_BUILDING_KEYS[(first+row*2+side)%JUNGLE_BUILDING_KEYS.length];
+  const [kd,w,h]=JUNGLE_ASSETS[key],left=side?WW/2+100:24,right=side?WW-24:WW/2-100;
+  const x=left+R()*(right-left-w),y=top+row*lot+R()*Math.max(0,lot-h);
+  // The normal generator scales Y later; sprite dimensions are already in world pixels.
+  covers.push({kd,x,y:y/MAP_SCALE,w,h,jungleAsset:key});
+ }
 }
 function decisiveRectsOverlap(a,b,pad=0){return a.x<b.x+b.w+pad&&a.x+a.w+pad>b.x&&a.y<b.y+b.h+pad&&a.y+a.h+pad>b.y;}
 function setupDecisiveWorld(){

@@ -5,8 +5,8 @@
 The world keeps the existing 960 × 12800 coordinate system and generation pipeline:
 
 1. Starting grass, with one player and no automatic allies.
-2. Three distinct shuffled areas from the existing outdoor pool (grass, forest, village, hills, frontline base, town, wetland, wilderness).
-3. A relay capture circle near the north end of the third random area. Its 300px radius and dry clearing are reserved after generation. The player can capture alone here: 15 seconds while not hiding or flying and with no conscious enemies or enemy tanks inside. Enemies contest/decay progress using the capture-stage rule. The desert boundary stays closed until capture finishes.
+2. Three consecutive desert-town sections using the desert ground tile and existing jungle building sprites, with a clear central lane.
+3. A relay capture circle near the north end of the final desert-town section. Its 300px radius and dry clearing are reserved after generation. The player can capture alone here: 15 seconds while not hiding or flying and with no conscious enemies or enemy tanks inside. Enemies contest/decay progress using the capture-stage rule. The desert boundary stays closed until capture finishes.
 4. Three consecutive desert zones. Each has three concrete bunkers, six destructible sandbag walls and a supplied tank. Defenses occupy alternating flanks, preserving a central route. Bunkers stop shooting when their intact cover is broken.
 5. The final desert contains a 600 × 400 moving fortress with 90 HP, using existing base hit detection, fragment damage, bombs, cannons and destruction/success flow. It moves laterally at 18px/s within a 150px patrol range and waits if the next collider position would overlap units or vehicles. Its front cannon uses existing enemy shells. It cannot take objective damage before the relay falls.
 

@@ -15,12 +15,25 @@ test('developer-only 13 preserves its identity through phase change and victory 
  run('blastUpdate(3)');assert.equal(run('state'),'succeeded');assert.equal(run('scoreStats.final.cleared'),true);assert.equal(run('scoreStats.objectiveProgress'),1);
  assert.equal(run('scoreStats.stageRecordId'),'decisive');assert.equal(run('readStageRecords().stages.decisive.successes'),1);assert.equal(run('readStageRecords().stages.front.successes'),0);assert.equal(run('leaderboardPending.decisive.stage'),'decisive');assert.equal(run('readStageProgress().cleared.length'),13);assert.ok(run("readTitleArchive().titles.v3_all_stages_clear"));assert.equal(run("scoreStats.awards.newTitles.includes('v3_all_stages_clear')"),false);
 });
-test('layout is starting grass, three distinct random areas and three contiguous desert areas',()=>{
- const {run}=start();const variants=new Set();
- for(let i=0;i<35;i++){
-  run('setupDecisiveZones()');const z=JSON.parse(run('JSON.stringify(ZONES)'));assert.equal(z.length,7);assert.equal(z[0].n,'草原');assert.equal(new Set(z.slice(1,4).map(z=>z.n)).size,3);assert.ok(z.slice(4).every(z=>z.n==='砂漠'));for(let j=1;j<7;j++)assert.equal(z[j].y0,z[j-1].y1);variants.add(z.slice(1,4).map(z=>z.n).join(','));
+test('desert town replaces the random sections and shares the desert tile and jungle buildings',()=>{
+ for(const seed of [7,11,42]){
+  const {run}=start(seed);
+  assert.deepEqual(Array.from(run('ZONES.map(z=>z.n)')),['草原','砂漠街','砂漠街','砂漠街','砂漠','砂漠','砂漠']);
+  assert.ok(run('ZONES.slice(1).every((z,i)=>z.y0===ZONES[i].y1)'));
+  assert.ok(run("TERRAIN_IMG['砂漠街']===TERRAIN_IMG['砂漠']&&terrainSurfacePattern(ZONES[1])===terrainSurfacePattern(ZONES[4])"));
+  assert.ok(run(`ZONES.slice(1,4).every(z=>{
+   const buildings=covers.filter(c=>c.y>=z.y1&&c.y+c.h<=z.y0&&JUNGLE_BUILDING_KEYS.includes(c.jungleAsset));
+   return buildings.length>=2&&buildings.every((c,i)=>
+    (c.x+c.w<=WW/2-100||c.x>=WW/2+100)&&
+    circleHitsCover(c.x+c.w/2,c.y+c.h/2,8,c)&&
+    buildings.slice(i+1).every(other=>!decisiveRectsOverlap(c,other)));
+  })`));
+  assert.ok(run('covers.every(c=>!JUNGLE_BUILDING_KEYS.includes(c.jungleAsset)||!circleHitsRect(decisiveBattle.gate.x,decisiveBattle.gate.y,300,c))'));
  }
- assert.ok(variants.size>20);
+ const {run}=createGameEngine(root,{seed:7});
+ run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='砂漠街';reset(false)");
+ assert.equal(run('ZONES[0].n'),'砂漠街');
+ assert.ok(run('covers.some(c=>JUNGLE_BUILDING_KEYS.includes(c.jungleAsset))'));
 });
 test('desert defenses leave a central vehicle route and the relay cannot be bypassed or farmed from hiding',()=>{
  const {run}=start(11);assert.equal(run('covers.filter(c=>c.decisiveKind==="bunker").length'),9);assert.equal(run('covers.filter(c=>c.decisiveKind==="sandbags").length'),18);assert.ok(run('covers.every(c=>!decisiveRectsOverlap(c,{x:base.x-75,y:base.y,w:base.w+150,h:base.h}))'));
