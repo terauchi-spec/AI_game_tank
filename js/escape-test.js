@@ -361,7 +361,8 @@ function updateEscapeTestMission(dt){
  const playerInside=p.hp>0&&!p.tank&&D(p,m.exit)<INDOOR_EXIT_RADIUS;
  const inside=playerInside&&m.vip.hp>0&&!(m.vip.stunT>0)&&D(m.vip,m.exit)<INDOOR_EXIT_RADIUS;
  m.escapeExit=inside?m.exit:null;m.escapeProgress=inside?Math.min(INDOOR_EXIT_SECONDS,m.escapeProgress+dt):0;
- scoreStats.objectiveProgress=Math.max(scoreStats.objectiveProgress,(m.index+m.escapeProgress/INDOOR_EXIT_SECONDS)/ZONES.length);
+ const escortedArea=Math.max(0,ZONES.indexOf(zoneAt(m.vip.y)));
+ scoreStats.objectiveProgress=Math.max(scoreStats.objectiveProgress,(escortedArea+m.escapeProgress/INDOOR_EXIT_SECONDS)/ZONES.length);
  if(m.escapeProgress>=INDOOR_EXIT_SECONDS-1e-9){m.escapeComplete=true;scoreStats.objectiveProgress=1;completeMission();
   beginInfiltrationExtraction(m.exit,{x:Math.max(0,Math.min(WW-W,p.x-W/2)),y:0});
   m.extraction.vip={actor:m.vip,x:m.vip.x,y:m.vip.y,boarded:false};}

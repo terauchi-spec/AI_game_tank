@@ -306,3 +306,14 @@ test('beginner rescue deploys after beginner capture, uses forest and villages, 
  assert.equal(h.run("ZONES.filter(z=>z.n==='密林').length"),5);
  assert.ok(h.run("etanks.length>0&&humans.some(h=>h.commander==='blue')&&!!mission.enemyDrop"));
 });
+
+test('outdoor rescue evaluation follows the VIP instead of the player across areas',()=>{
+ for(const beginner of [true,false]){
+  const h=start(7);
+  if(beginner)h.run('rescueBeginner=true;reset(false)');
+  h.run("state='play';mission.enemyDrop=null;p.y=mission.exit.y;updateEscapeTestMission(0)");
+  assert.equal(h.run('scoreStats.objectiveProgress'),0);
+  h.run('mission.vip.y=(ZONES[1].y0+ZONES[1].y1)/2;updateEscapeTestMission(0)');
+  assert.equal(h.run('scoreStats.objectiveProgress'),h.run('1/ZONES.length'));
+ }
+});

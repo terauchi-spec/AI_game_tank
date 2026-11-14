@@ -23,7 +23,7 @@ test('teamwork notes describe the recorded point weights and the shared time cap
   h.c.sampleStats=stats;assert.equal(h.run('teamworkSuccesses(sampleStats)'),points);
  }
  const note=h.run('TITLE_TEAMWORK_NOTE');for(const text of ['相棒救助1回＝3pt','同乗中の共同撃破1体＝1pt','参加した資料1件＝4pt','共同制圧4秒＝1pt','参加した資料1件＝2pt','合計は8ptまで'])assert.ok(note.includes(text),text);
- assert.match(h.run('TITLE_AXIS_REQUIREMENTS[6].normalNote'),/目安：21pt（潜入14pt）/);assert.match(h.run('TITLE_AXIS_REQUIREMENTS[6].eliteNote'),/目安：24pt（潜入16pt）/);
+ assert.match(h.run('TITLE_AXIS_REQUIREMENTS[6].normalNote'),/目安：21pt（潜入と制圧2拠点は14pt、潜入初級は7pt）/);assert.match(h.run('TITLE_AXIS_REQUIREMENTS[6].eliteNote'),/目安：24pt（潜入と制圧2拠点は16pt、潜入初級は8pt）/);
 });
 test('multi-kill text describes the interval rule; eight kills over 27.3 seconds retain eligibility',()=>{
  const h=createGameEngine(root);h.run("p={x:0,y:0,tank:null};humans=[];etanks=[];scoreStats=newScoreStats();for(let i=0;i<8;i++){scoreStats.time=i*3.9;recordPlayerKill(newCombatAction('mg'),'mg',{});}");
@@ -73,4 +73,25 @@ test('front commander requires every capture, at least two completed joint captu
   const complete=earns();s.capturePoints--;const missed=earns();s.capturePoints++;s.jointCapturePoints=1;
   return [complete,missed,earns()];
  })()`)),[true,false,false]);
+});
+
+test('two-document infiltration earns Shadow Pair through partner recovery alone',()=>{
+ const h=createGameEngine(root);
+ const ids=h.run(`(()=>{
+  const s=Object.assign(newScoreStats(),{stage:'indoor',documents:2,documentTotal:2,hiddenDocuments:2,partnerDocuments:2});
+  const r={cleared:true},m=resultMetrics(s,r);
+  return evaluateRunTitles(m.map(resLevel),m,s,r,{titles:{}}).titles.map(t=>t.id);
+ })()`);
+ assert.ok(ids.includes('v3_shadow_pair'));
+ assert.ok(ids.includes('v3_single_6_elite'));
+});
+
+test('two joint captures qualify for Front Commander without requiring extra kills',()=>{
+ const h=createGameEngine(root);
+ const earns=h.run(`(()=>{
+  const s=Object.assign(newScoreStats(),{stage:'front',objectiveProgress:1,objectiveTotal:2,capturePoints:2,jointCapturePoints:2});
+  const r={cleared:true},m=resultMetrics(s,r);
+  return evaluateRunTitles(m.map(resLevel),m,s,r,{titles:{}}).titles.some(t=>t.id==='v3_front_commander');
+ })()`);
+ assert.equal(earns,true);
 });
