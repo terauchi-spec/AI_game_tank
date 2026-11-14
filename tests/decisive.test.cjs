@@ -396,12 +396,39 @@ test('desert truck probability is per sector and destroyed sandbags retain their
   carve(bag.x+bag.w/2,bag.y+bag.h/2,230,false,null);`);
  assert.ok(run('mark&&buildingGroundMarks.includes(mark)&&!covers.includes(bag)'));
 });
+test('six fortress mounts traverse independently and the south mounts fire beyond the hull',()=>{
+ const {run}=start();completeFacility(run);
+ assert.equal(run('decisiveBattle.fortressGuns.length'),6);
+ for(const [x,y,side] of [[.5,1.5,'south'],[-.24,.7,'west'],[1.24,.7,'east']]){
+  assert.equal(run(`(()=>{
+   for(const gun of decisiveBattle.fortressGuns){gun.gunShotAt=undefined;gun.gunAim=gun.neutral;}
+   los=()=>true;allies=[];bullets=[];
+   p.x=base.x+base.w*${x};p.y=base.y+base.h*${y};
+   decisiveBattle.fortressCd=0;updateDecisiveFortress(.1);
+   const gun=decisiveBattle.fortressGuns.find(q=>q.gunShotAt!==undefined),shot=bullets[0];
+   return !!gun&&!!shot&&bullets.length===1&&!circleHitsBase(shot.x,shot.y,2)&&
+    (${JSON.stringify(side)}==='south'?gun.y>.85:${JSON.stringify(side)}==='west'?gun.x<.2:gun.x>.8);
+  })()`),true,side);
+ }
+});
+test('fortress drive follows signed movement and stops at a blocked step',()=>{
+ const {run}=start();completeFacility(run);
+ assert.ok(run('updateDecisiveFortress(.1);decisiveBattle.fortressTravel>0'));
+ assert.ok(run(`(()=>{
+  const travel=decisiveBattle.fortressTravel;
+  p.x=base.x+base.w/2;p.y=base.y+100;updateDecisiveFortress(.1);
+  if(decisiveBattle.fortressTravel!==travel)return false;
+  p.y=base.y+base.h+500;decisiveBattle.fortressDir=-1;updateDecisiveFortress(.1);
+  return decisiveBattle.fortressTravel<travel;
+ })()`));
+});
 test('starting an existing stage clears decisive state and preserves its normal map and mission rules',()=>{
  const {run}=start();run("stageMode='beginner';reset(false)");assert.equal(run('decisiveBattle'),null);assert.equal(run('isDecisiveStage()'),false);assert.equal(run('currentStageId()'),'beginner');assert.equal(run('ZONES.length'),5);assert.equal(run('ZONES.some(z=>z.n==="砂漠")'),false);assert.equal(run('base.maxHp'),30);assert.equal(run('mission'),null);
  run("stageMode='front';frontlineBeginner=false;reset(false)");assert.equal(run('decisiveBattle'),null);assert.equal(run('mission.points.length'),3);assert.equal(run('currentStageId()'),'front');assert.ok(run('allies.length>0'));
 });
 test('decisive sprites, stage preview and script exist without new per-frame image loading',()=>{
  const src=fs.readFileSync(path.join(root,'js/decisive.js'),'utf8');for(const name of ['fortress','bunker','sandbags','desert','bunker-barrel'])assert.ok(fs.statSync(path.join(root,'assets/decisive',name+'.webp')).size<16000);assert.ok(fs.statSync(path.join(root,'assets/ui/stages/decisive.webp')).size<16000);assert.doesNotMatch(src.slice(src.indexOf('function updateDecisiveMission')),/makeAssetImage\(/);
+ for(const [name,limit] of [['fortress-hull',120000],['fortress-gear',10000]])assert.ok(fs.statSync(path.join(root,'assets/decisive',name+'.webp')).size<limit);
 });
 test('adobe doors deploy blue infantry and stay disabled after damage to their entrance',()=>{
  const {run}=start(11);
