@@ -724,52 +724,65 @@ function updateDecisiveMission(dt){
  const point=mission.points[0];point.x=base.x+base.w/2;point.y=base.y+base.h+220;
  updateDecisiveBunkers(dt);
 }
-function decisiveTankLanding(x,y){
+function tankLandingIsClear(x,y,minY){
  const r=TANK_HIT;
- return x>=r&&x<=WW-r&&y>=base.y+base.h+55&&y<=WH-r&&!hitsM(x,y,r)&&
+ return x>=r&&x<=WW-r&&y>=minY&&y<=WH-r&&!hitsM(x,y,r)&&
   !cars.some(v=>Math.hypot(v.x-x,v.y-y)<r+32)&&
   !etanks.some(v=>v.alive&&Math.hypot(v.x-x,v.y-y)<r+32)&&
   !humans.some(h=>h.alive&&Math.hypot(h.x-x,h.y-y)<r+12)&&
   !allies.some(a=>a.alive&&!(a.chute>0)&&Math.hypot(a.x-x,a.y-y)<r+12)&&
   Math.hypot(p.x-x,p.y-y)>=r+12;
 }
-function updateDecisiveTankDrop(d,dt){
- if(state!=='play'||base.hp<=0)return;
- if(d.tankCargo){
-  const cargo=d.tankCargo;
-  cargo.chute=Math.max(0,cargo.chute-dt);
-  if(cargo.chute>0)return;
-  d.tankCargo=null;d.tankDropCheck=2;
-  const v=cargo.vehicle;
-  if(!decisiveTankLanding(v.x,v.y))return;
-  cars.push(v);say('補充戦車が到着！');
-  return;
+function findTankLanding(anchor,minY){
+ for(const dy of [140,220,300,80,-100,-180,0])for(const dx of [0,-100,100,-200,200]){
+  const x=Math.max(42,Math.min(WW-42,anchor.x+dx)),y=Math.min(WH-42,anchor.y+dy);
+  if(tankLandingIsClear(x,y,minY))return {x,y};
  }
- if(reinforcementPass||p.tank?.kind==='tank'||p.y<base.y+base.h||p.y>base.y+base.h+DECISIVE_FORTRESS_APPROACH)return;
+ return null;
+}
+function startTankDrop(minY=TANK_HIT){
+ if(reinforcementPass||tankDropCargo)return false;
+ const spot=findTankLanding(p,minY);
+ if(!spot)return false;
+ const {x,y}=spot,t=TYPES[Math.floor(R()*TYPES.length)],view=frontlineView();
+ const vehicle={x,y,t,kind:'tank',hp:t.hp,c:t.cmax,v:t.vmax,f:t.fmax,ch:0,mgHits:0,body:-Math.PI/2};
+ reinforcementPass={x,y:view.y+view.h+180,endY:view.y-180,offsets:[0],cargoFlight:true,tankCargo:vehicle,minY};
+ sfx('radio');say('味方機が補充戦車を投下します');
+ return true;
+}
+function updateDecisiveTankDrop(d,dt){
+ if(state!=='play'||base.hp<=0||tankDropCargo||reinforcementPass||p.tank?.kind==='tank'||
+    p.y<base.y+base.h||p.y>base.y+base.h+DECISIVE_FORTRESS_APPROACH)return;
  d.tankDropCheck=(d.tankDropCheck||0)-dt;
  if(d.tankDropCheck>0)return;
  d.tankDropCheck=1;
  if(cars.some(v=>v.kind==='tank'&&v.t?.cmax>0&&v.f>0&&Math.hypot(v.x-p.x,v.y-p.y)<700))return;
- for(const dy of [140,220,300,80])for(const dx of [0,-100,100,-200,200]){
-  const x=Math.max(42,Math.min(WW-42,p.x+dx)),y=p.y+dy;
-  if(!decisiveTankLanding(x,y))continue;
-  const t=TYPES[Math.floor(R()*TYPES.length)],view=frontlineView();
-  const vehicle={x,y,t,kind:'tank',hp:t.hp,c:t.cmax,v:t.vmax,f:t.fmax,ch:0,mgHits:0,body:-Math.PI/2};
-  reinforcementPass={x,y:view.y+view.h+180,endY:view.y-180,offsets:[0],cargoFlight:true,tankCargo:vehicle};
-  sfx('radio');say('味方機が補充戦車を投下します');
-  return;
- }
+ startTankDrop(base.y+base.h+55);
 }
-function updateDecisiveTankTransport(pass){
+function updateTankTransport(pass){
  if(pass.tankCargo&&pass.y<=pass.tankCargo.y){
-  decisiveBattle.tankCargo={vehicle:pass.tankCargo,chute:2.6};
+  tankDropCargo={vehicle:pass.tankCargo,chute:2.6,minY:pass.minY};
   pass.tankCargo=null;
  }
  if(pass.y<pass.endY&&!pass.tankCargo)reinforcementPass=null;
 }
-function drawDecisiveTankDrop(cx,cy){
- const cargo=decisiveBattle?.tankCargo;
- if(!cargo||!drawPointInView(cargo.vehicle.x,cargo.vehicle.y,cx,cy,230))return;
+function updateTankDropCargo(dt){
+ const cargo=tankDropCargo;
+ cargo.chute=Math.max(0,cargo.chute-dt);
+ if(cargo.chute>0)return;
+ const v=cargo.vehicle;
+ const minY=decisiveBattle?.phase==='assault'?Math.max(cargo.minY,base.y+base.h+55):cargo.minY;
+ if(!tankLandingIsClear(v.x,v.y,minY)){
+  const spot=findTankLanding(v,minY);
+  if(!spot){cargo.chute=.5;return;}
+  Object.assign(v,spot);
+ }
+ tankDropCargo=null;
+ cars.push(v);say('補充戦車が到着！');
+}
+function drawTankDrop(cx,cy){
+ const cargo=tankDropCargo;
+ if(!drawPointInView(cargo.vehicle.x,cargo.vehicle.y,cx,cy,230))return;
  const v=cargo.vehicle,lift=cargo.chute/2.6*130;
  drawAllyParachute({x:v.x,y:v.y-lift,alive:true,chute:cargo.chute},false,v);
 }

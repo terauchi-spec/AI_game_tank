@@ -437,10 +437,22 @@ test('tank support starts below view only when a working tank is unavailable and
  run('cars=[];updateDecisiveTankDrop(decisiveBattle,1)');
  assert.ok(run('reinforcementPass.cargoFlight&&reinforcementPass.y>frontlineView().y+H&&TYPES.includes(reinforcementPass.tankCargo.t)'));
  run('updateReinforcementPass(10)');
- assert.ok(run('decisiveBattle.tankCargo&&cars.length===0&&allies.length===0'));
- run('updateDecisiveTankDrop(decisiveBattle,2.6)');
- assert.ok(run('cars.length===1&&cars[0].c===cars[0].t.cmax&&cars[0].f===cars[0].t.fmax&&!decisiveBattle.tankCargo'));
+ assert.ok(run('tankDropCargo&&cars.length===0&&allies.length===0'));
+ run('updateTankDropCargo(2.6)');
+ assert.ok(run('cars.length===1&&cars[0].c===cars[0].t.cmax&&cars[0].f===cars[0].t.fmax&&!tankDropCargo'));
  run('updateDecisiveTankDrop(decisiveBattle,5)');
+ assert.equal(run('reinforcementPass'),null);
+});
+test('red radio shares the tank transport outside Decisive and waits if support is busy',()=>{
+ const {run}=createGameEngine(root);
+ run(`stageMode='beginner';reset(false);covers=[];objects=[];water=[];cars=[];humans=[];allies=[];etanks=[];rebuildSpatialGrid();
+  redRadio={x:p.x,y:p.y,got:false};startReinforcementPass();collectRedRadio()`);
+ assert.equal(run('redRadio.got'),false);
+ run('reinforcementPass=null;collectRedRadio()');
+ assert.ok(run('redRadio.got&&reinforcementPass.cargoFlight&&TYPES.includes(reinforcementPass.tankCargo.t)'));
+ run('updateReinforcementPass(10);updateTankDropCargo(2.6)');
+ assert.ok(run('cars.length===1&&cars[0].kind==="tank"&&cars[0].f===cars[0].t.fmax&&!tankDropCargo'));
+ run('collectRedRadio()');
  assert.equal(run('reinforcementPass'),null);
 });
 test('fortress drive follows signed movement and stops at a blocked step',()=>{
