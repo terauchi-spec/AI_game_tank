@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.15.0054</title>
+<title>こっそり戦車大作戦 2026.11.15.0256</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -1027,7 +1027,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.15.0054',FILE_CREATED_AT='2026/11/15 00:54',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.15.0256',FILE_CREATED_AT='2026/11/15 02:56',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -1881,10 +1881,13 @@ function captureBuildingGroundMarks(){
  buildingGroundMarks=[];
  for(const c of (covers||[])){
   if(c.fr||c.playerBuilt||!(BUILDING_SHADOW_KDS.has(c.kd)||c.decisiveKind==='sandbags'))continue;
-  const rc=c.kd===8?coverSpriteRect(c):{x:c.x+c.w*.01,y:c.y+c.h*.01,w:c.w*.98,h:c.h*.98};
-  buildingGroundMarks.push({...rc,kind:buildingShadowKind(c.kd),sandbags:c.decisiveKind==='sandbags'});
+  addCoverGroundMark(c);
  }
  if(base)buildingGroundMarks.push({x:base.x,y:base.y,w:base.w,h:base.h,kind:'hq',hq:true});
+}
+function addCoverGroundMark(c){
+ const rc=c.kd===8?coverSpriteRect(c):{x:c.x+c.w*.01,y:c.y+c.h*.01,w:c.w*.98,h:c.h*.98};
+ buildingGroundMarks.push({...rc,kind:buildingShadowKind(c.kd),sandbags:c.decisiveKind==='sandbags'});
 }
 // 潜入の壁が実際に欠けた時だけ、建物と同じ地面の跡を一度登録する。
 // 本体・破片とは独立させ、最後の破片がなくなっても残す。
@@ -9046,7 +9049,7 @@ function reportGameError(error){
 </script>
 <script src="js/road-trucks.js?v=2026.11.14.1728"></script>
 <script src="js/stage-progress.js?v=2026.11.12.2006"></script>
-<script src="js/decisive.js?v=2026.11.15.0054"></script>
+<script src="js/decisive.js?v=2026.11.15.0256"></script>
 <script src="js/frontline.js?v=2026.11.13.1834"></script>
 <script src="js/award-icons.js?v=2026.10.31.0807"></script>
 <script src="js/developer.js?v=2026.11.11.2308"></script>
@@ -9063,7 +9066,7 @@ function reportGameError(error){
 <script src="js/maze-walls.js?v=2026.10.14.1653"></script>
 <script src="js/jungle-hit-masks.js?v=2026.11.08.1710"></script>
 <script src="js/jungle-placement-masks.js?v=2026.11.08.2145"></script>
-<script src="js/jungle.js?v=2026.11.12.2330"></script>
+<script src="js/jungle.js?v=2026.11.15.0256"></script>
 <script src="js/escape-test.js?v=2026.11.14.1830"></script>
 <script src="js/canyon.js?v=2026.11.14.2146"></script>
 <script src="js/vegetation.js?v=2026.11.08.1806"></script>

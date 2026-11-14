@@ -83,11 +83,15 @@ function jungleSegmentHit(c,a,b,pad=0){
  return jungleMaskIntersects(c,Math.min(a.x,b.x)-pad,Math.min(a.y,b.y)-pad,Math.max(a.x,b.x)+pad,Math.max(a.y,b.y)+pad,
   (x,y,w,h)=>segmentHitsRect(a,b,{x:x-pad,y:y-pad,w:w+pad*2,h:h+pad*2}),c.jungleHitScale??1);
 }
-// Build a rotated collision mask once per log; rendering and fragments share this transform.
 function rotateJungleLog(c,angle){
- const [,w,h]=JUNGLE_ASSETS.fallen_log,co=Math.cos(angle),si=Math.sin(angle);
+ const [,w,h]=JUNGLE_ASSETS.fallen_log;
+ rotateCoverMask(c,angle,w,h,JUNGLE_HIT_MASKS.fallen_log);
+}
+// Build the rotated mask once; rendering and fragments share this transform.
+function rotateCoverMask(c,angle,w,h,source){
+ const co=Math.cos(angle),si=Math.sin(angle);
  c.jungleAngle=angle;c.jungleSpriteW=w;c.jungleSpriteH=h;c.w=w*Math.abs(co)+h*Math.abs(si);c.h=w*Math.abs(si)+h*Math.abs(co);
- const source=JUNGLE_HIT_MASKS.fallen_log,rows=new Uint32Array(32);
+ const rows=new Uint32Array(32);
  for(let row=0;row<32;row++)for(let col=0;col<32;col++)for(const fy of [.25,.75])for(const fx of [.25,.75]){
   const x=(col+fx)*c.w/32-c.w/2,y=(row+fy)*c.h/32-c.h/2,sx=Math.floor((co*x+si*y+w/2)*32/w),sy=Math.floor((-si*x+co*y+h/2)*32/h);
   if(sx>=0&&sx<32&&sy>=0&&sy<32&&(source[sy]&(1<<sx)))rows[row]|=1<<col;

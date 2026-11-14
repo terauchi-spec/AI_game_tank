@@ -72,10 +72,26 @@ const DECISIVE_DECK_SPANS=[
 ];
 const DECISIVE_ALLIED_AIRDROP_DISTANCE=200,DECISIVE_ENEMY_RELEASE_DISTANCE=500;
 let decisiveBattle=null,desertTownEvents=null;
+// Collision masks follow the alpha silhouettes of the cropped WebP sprites.
+const DECISIVE_SANDSTONE=[
+ ['sandstone-slab',168,168*197/384,[
+  0x06000000,0x0f800000,0x0fc00000,0x1ff00000,0x1ff80000,0x3ffc1fc0,0x3fffffe0,0x3ffffff0,
+  0x3ffffff0,0x3ffffff8,0x3ffffffc,0x3ffffffc,0x3ffffffe,0x7ffffffe,0x7ffffffe,0xfffffffe,
+  0xffffffff,0xffffffff,0xffffffff,0xffffffff,0x7fffffff,0x7fffffff,0x7ffffffe,0x3ffffffe,
+  0x3ffffffe,0x3ffffffe,0x3ffffffc,0x1ffffffc,0x1ffffffc,0x09ffffc8,0x00ff0f80,0x00100000
+ ]],
+ ['sandstone-stack',140*352/384,140,[
+  0x001c0000,0x003fc000,0x01ffe000,0x03fffc00,0x07fffe00,0x0fffff00,0x1fffff00,0x3fffff80,
+  0x7fffffc0,0x7fffffe0,0x7fffffe0,0x7ffffff0,0xfffffff0,0xfffffff0,0x7ffffff0,0x7fffffe0,
+  0xfffffff0,0xfffffff8,0xfffffffc,0x7ffffffe,0x7fffffff,0x7fffffff,0x7fffffff,0x3fffffff,
+  0x1ffffffe,0x0ffffffe,0x0ffffffe,0x07fffff8,0x01fffff0,0x007fffe0,0x001fff00,0x0007f000
+ ]]
+];
 function isDecisiveFacility(){return stageMode==='indoor'&&decisiveBattle?.phase==='facility';}
 function isDecisiveStage(){return stageMode==='decisive'||isDecisiveFacility()||stageMode==='front'&&!!decisiveBattle;}
 function loadDecisiveAssets(){
  for(const key of ['fortress','fortress-hull','fortress-underlay','fortress-gear','bunker','bunker-barrel','command-facility'])if(!COVER_IMG['decisive_'+key])COVER_IMG['decisive_'+key]=makeAssetImage('assets/decisive/'+key+'.webp?v='+GAME_VERSION);
+ for(const [key] of DECISIVE_SANDSTONE)if(!COVER_IMG['jungle_'+key])COVER_IMG['jungle_'+key]=makeAssetImage('assets/decisive/'+key+'.webp?v='+GAME_VERSION);
  loadDesertTerrain();loadDesertSandbags();
 }
 function loadDesertSandbags(){
@@ -461,6 +477,35 @@ function setupDecisiveDesertRoadTrucks(){
   roadTruckEvents.at(-1).decisiveZone=zone;
  }
 }
+function placeDecisiveSandstone(){
+ const occupied=[...covers,...bushes,...water,...bridges,...roadBands,
+  ...objects.map(o=>o.kind==='barrel'?barrelVisualRect(o):o)];
+ const vehicles=[...cars,...decisiveBattle.pendingEnemyTanks];
+ for(const zone of ZONES.slice(DECISIVE_DESERT_START)){
+  const top=zone.y1<0?base.y+base.h+DECISIVE_FORTRESS_DEPTH+96:zone.y1+100;
+  const bottom=zone.y0-100;
+  const pickups=[...items,...zone.decisiveRadios];
+  const firstSide=R()<.5?0:1;
+  let previousY=-Infinity;
+  for(const [i,[key,w,h,mask]] of DECISIVE_SANDSTONE.entries()){
+   const scale=.95+R()*.1,rock={kd:8,jungleAsset:key};
+   rotateCoverMask(rock,R()*Math.PI*2,w*scale,h*scale,mask);
+   const left=(i+firstSide)%2===0?30:WW/2+136;
+   const right=left<WW/2?WW/2-136:WW-30;
+   for(let attempt=0;attempt<48;attempt++){
+    rock.x=left+R()*(right-left-rock.w);
+    rock.y=top+R()*(bottom-top-rock.h);
+    const y=rock.y+rock.h/2;
+    if(Math.abs(y-previousY)<180||occupied.some(o=>decisiveRectsOverlap(rock,o,32))||
+       vehicles.some(v=>circleHitsRect(v.x,v.y,76,rock))||
+       pickups.some(q=>circleHitsRect(q.x,q.y,48,rock)))continue;
+    covers.push(rock);occupied.push(rock);addCoverGroundMark(rock);previousY=y;
+    break;
+   }
+  }
+ }
+ rebuildSpatialGrid();
+}
 function updateDecisiveAircraftCollisions(dt){
  const d=decisiveBattle;
  if(d?.phase!=='assault'||state!=='play')return;
@@ -683,6 +728,7 @@ function openDecisiveAssault(){
  d.crashingAircraft=[];
  setupEnemyBomber(true);
  setupDecisiveDesertRoadTrucks();
+ placeDecisiveSandstone();
  p.hp=3;sfx('capture');say('施設から脱出！ 増援部隊と砂漠の移動要塞へ進軍せよ');
  return true;
 }
