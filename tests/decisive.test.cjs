@@ -460,7 +460,11 @@ test('roof guns alternate and their marked arc lands at the original aim point',
   decisiveBattle.roofCd=0;updateDecisiveRoofGuns(base,decisiveBattle,0)`);
  assert.equal(run('decisiveBattle.roofNext'),1);
  assert.equal(run('decisiveBattle.roofShell.targetX'),run('p.x'));
- assert.equal(run('decisiveBattle.roofShell.x'),run('base.x+base.w*DECISIVE_ROOF_TURRETS[0][0]'));
+ assert.ok(run(`(()=>{
+  const gun=decisiveBattle.roofGuns[0],shell=decisiveBattle.roofShell;
+  const x=base.x+base.w*gun.x,y=base.y+base.h*gun.y;
+  return Math.abs(Math.hypot(shell.x-x,shell.y-y)-base.w*.086)<1e-8&&shell.y>y;
+ })()`));
  assert.notEqual(run('decisiveBattle.roofGuns[0].gunAim'),run('decisiveBattle.roofGuns[1].gunAim'));
  run('const originalHp=p.hp;p.x+=100;updateDecisiveRoofShell(decisiveBattle,DECISIVE_ARC_TIME/2)');
  assert.ok(run('decisiveBattle.roofShell'));
@@ -470,6 +474,7 @@ test('roof guns alternate and their marked arc lands at the original aim point',
  run('decisiveBattle.roofCd=0;updateDecisiveRoofGuns(base,decisiveBattle,2000);updateDecisiveRoofShell(decisiveBattle,DECISIVE_ARC_TIME)');
  assert.equal(run('decisiveBattle.roofNext'),0);
  assert.equal(run('p.hp'),run('originalHp-.5'));
+ assert.ok(run('fx.some(f=>f.max===125*1.3)'));
 });
 test('fortress door opens, releases a single blue soldier and closes',()=>{
  const {run}=start();completeFacility(run);
@@ -485,6 +490,37 @@ test('fortress door opens, releases a single blue soldier and closes',()=>{
  run('updateDecisiveFortressDoor(base,decisiveBattle,.6)');
  assert.equal(run('humans.length'),1);
  assert.equal(run('decisiveBattle.door'),null);
+});
+test('fortress dimensions increase and its timed depth movement reverses',()=>{
+ const {run}=start();completeFacility(run);
+ assert.equal(run('base.w'),630);assert.equal(run('base.h'),420);
+ assert.ok(run(`(()=>{
+  humans=[];etanks=[];allies=[];cars=[];p.y=base.y+base.h+2500;
+  const y=base.y;decisiveBattle.fortressDepthT=0;
+  updateDecisiveFortress(.1);updateDecisiveFortress(3);
+  if(base.y!==y+DECISIVE_FORTRESS_DEPTH)return false;
+  decisiveBattle.fortressDepthT=0;
+  updateDecisiveFortress(.1);updateDecisiveFortress(3);
+  return base.y===y;
+ })()`));
+});
+test('destroyed turret mounts and doors cannot act or render their overlays',()=>{
+ const {run}=start();completeFacility(run);
+ assert.ok(run(`(()=>{
+  const d=decisiveBattle;
+  for(const gun of d.fortressGuns)carveBaseFragments(base.x+base.w*gun.x,base.y+base.h*gun.y,12);
+  const target={x:base.x+base.w/2,y:base.y+base.h+150};
+  if(scanDecisiveFortressGuns(base,d,target,0,true)!==null)return false;
+  let barrels=0;const old=g.drawImage,barrel=COVER_IMG['decisive_bunker-barrel'];
+  g.drawImage=image=>{if(image===barrel)barrels++;};
+  try{drawDecisiveFortressTurrets(base);}finally{g.drawImage=old;}
+  if(barrels!==0)return false;
+  humans=[];d.door={index:0,elapsed:.6};
+  const y=base.y+base.h*(DECISIVE_FORTRESS_DOOR_TOP+DECISIVE_FORTRESS_DOOR_HEIGHT/2);
+  carveBaseFragments(base.x+base.w*DECISIVE_FORTRESS_DOORS[0],y,12);
+  updateDecisiveFortressDoor(base,d,.2);
+  return !d.door&&!humans.length&&decisiveFortressDoorExit(base,0)===null&&decisiveFortressDoorIntact(base,1);
+ })()`));
 });
 test('starting an existing stage clears decisive state and preserves its normal map and mission rules',()=>{
  const {run}=start();run("stageMode='beginner';reset(false)");assert.equal(run('decisiveBattle'),null);assert.equal(run('isDecisiveStage()'),false);assert.equal(run('currentStageId()'),'beginner');assert.equal(run('ZONES.length'),5);assert.equal(run('ZONES.some(z=>z.n==="砂漠")'),false);assert.equal(run('base.maxHp'),30);assert.equal(run('mission'),null);

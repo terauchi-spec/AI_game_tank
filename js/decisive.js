@@ -36,7 +36,12 @@ const DECISIVE_FORTRESS_MOUNTS=[
 ];
 const DECISIVE_ROOF_TURRETS=[[.264,.506],[.736,.506]];
 const DECISIVE_FORTRESS_DOORS=[.293,.5,.707];
-const DECISIVE_ARC_TIME=1.65,DECISIVE_ARC_HEIGHT=146,DECISIVE_ARC_RADIUS=52;
+const DECISIVE_ARC_TIME=1.65,DECISIVE_ARC_HEIGHT=146,DECISIVE_ARC_DAMAGE_RADIUS=52;
+const DECISIVE_ARC_BLAST_SCALE=1.3;
+const DECISIVE_FORTRESS_W=630,DECISIVE_FORTRESS_H=420,DECISIVE_FORTRESS_Y=140;
+const DECISIVE_FORTRESS_SWEEP=115,DECISIVE_FORTRESS_SPEED=38;
+const DECISIVE_FORTRESS_DEPTH=62,DECISIVE_FORTRESS_DEPTH_SPEED=25;
+const DECISIVE_FORTRESS_DOOR_TOP=.825,DECISIVE_FORTRESS_DOOR_HEIGHT=.071;
 const DECISIVE_FORTRESS_APPROACH=650;
 const DECISIVE_DOOR_TIME=1.35,DECISIVE_DOOR_RELEASE=.72;
 const DECISIVE_FORTRESS_GEARS=[[.175,51],[.282,31],[.368,39],[.469,42],[.56,29],[.663,47],[.765,34],[.86,53]];
@@ -350,7 +355,7 @@ function setupDecisiveWorld(){
  const border=ZONES[DECISIVE_DESERT_START].y0;
  const w=440,h=w*439/448,building={x:(WW-w)/2,y:border+86,w,h,kd:3,decisiveKind:'command-facility'};
  const gate={x:WW/2,y:building.y+h+22,name:DECISIVE_FACILITY_NAME};
- decisiveBattle={phase:'town',border,gate,building,reserve:[],bunkers:[],fortressDir:1,fortressCd:2,fortressTravel:0,fortressScan:0,
+ decisiveBattle={phase:'town',border,gate,building,reserve:[],bunkers:[],fortressDir:1,fortressDepthT:5,fortressTargetY:DECISIVE_FORTRESS_Y,fortressCd:2,fortressTravel:0,fortressScan:0,
   roofGuns:DECISIVE_ROOF_TURRETS.map(([x,y])=>({x,y,gunAim:Math.PI/2})),roofCd:4,roofNext:0,roofShell:null,
   doorCd:5,doorNext:0,door:null,fortressGuns:DECISIVE_FORTRESS_MOUNTS.map(([x,y,neutral])=>({x,y,neutral,gunAim:neutral})),gunScan:0};
  // 施設と南側正面の進入路を砂漠街の生成物から空ける。
@@ -366,7 +371,7 @@ function setupDecisiveWorld(){
  const nearFacilityDefense=c=>decisiveRectsOverlap(c,building,DECISIVE_FACILITY_DEFENSE_CLEARANCE);
  covers=covers.filter(c=>c.decisiveKind!=='sandbags'||!nearFacilityDefense(c));
  covers.push(building);
- base={x:WW/2-300,y:140,w:600,h:400,hp:90,maxHp:90,deadAt:0,decisiveFortress:true,decisiveLocked:true};
+ base={x:(WW-DECISIVE_FORTRESS_W)/2,y:DECISIVE_FORTRESS_Y,w:DECISIVE_FORTRESS_W,h:DECISIVE_FORTRESS_H,hp:90,maxHp:90,deadAt:0,decisiveFortress:true,decisiveLocked:true};
  for(const zone of ZONES.slice(DECISIVE_DESERT_START)){
   // Alternate the side placements around a bunker in the middle of the area.
   const leftFirst=R()<.5;
@@ -783,6 +788,7 @@ function scanDecisiveFortressGuns(b,d,target,now,canFire){
  let selected=null,best=Infinity;
  for(const gun of d.fortressGuns){
   const x=b.x+b.w*gun.x,y=b.y+b.h*gun.y;
+  if(b.fragMask&&!baseFragmentAliveAt(x,y))continue;
   const angle=target?Math.atan2(target.y-y,target.x-x):gun.neutral;
   const offset=Math.atan2(Math.sin(angle-gun.neutral),Math.cos(angle-gun.neutral));
   const inArc=Math.abs(offset)<=Math.PI/2;
@@ -807,14 +813,28 @@ function updateDecisiveFortress(dt){
  const d=decisiveBattle;
  if(!base||base.decisiveLocked||d?.phase!=='assault')return;
  if(base.hp<=0){d.roofShell=null;d.door=null;return;}
- const minX=WW/2-base.w/2-75,maxX=WW/2-base.w/2+75;
- const nx=base.x+d.fortressDir*18*dt;
- if(nx<minX||nx>maxX)d.fortressDir*=-1;
- else{
-  const box={x:nx-42,y:base.y-42,w:base.w+84,h:base.h+84};
-  // Do not sweep the moving collider through soldiers, player vehicles or abandoned vehicles.
-  const blocked=[p,...humans,...etanks,...allies,...cars].some(u=>u.alive!==false&&u.x>box.x&&u.x<box.x+box.w&&u.y>box.y&&u.y<box.y+box.h);
-  if(!blocked){d.fortressTravel+=nx-base.x;base.x=nx;}
+ const center=(WW-base.w)/2,minX=center-DECISIVE_FORTRESS_SWEEP,maxX=center+DECISIVE_FORTRESS_SWEEP;
+ const stepX=base.x+d.fortressDir*DECISIVE_FORTRESS_SPEED*dt;
+ const nx=Math.max(minX,Math.min(maxX,stepX));
+ if(stepX<=minX||stepX>=maxX)d.fortressDir*=-1;
+ const gapY=d.fortressTargetY-base.y,stepY=DECISIVE_FORTRESS_DEPTH_SPEED*dt;
+ const ny=Math.abs(gapY)<=stepY?d.fortressTargetY:base.y+Math.sign(gapY)*stepY;
+ if(nx!==base.x||ny!==base.y){
+  // Check the swept bounds on both axes before moving the collider.
+  const left=Math.min(nx,base.x)-42,right=Math.max(nx,base.x)+base.w+42;
+  const top=Math.min(ny,base.y)-42,bottom=Math.max(ny,base.y)+base.h+42;
+  const blocked=[p,...humans,...etanks,...allies,...cars].some(u=>u.alive!==false&&u.x>left&&u.x<right&&u.y>top&&u.y<bottom);
+  if(!blocked){
+   d.fortressTravel+=Math.sign(nx-base.x||ny-base.y)*Math.hypot(nx-base.x,ny-base.y);
+   base.x=nx;base.y=ny;
+  }
+ }
+ if(base.y===d.fortressTargetY){
+  d.fortressDepthT-=dt;
+  if(d.fortressDepthT<=0){
+   d.fortressTargetY=base.y===DECISIVE_FORTRESS_Y?DECISIVE_FORTRESS_Y+DECISIVE_FORTRESS_DEPTH:DECISIVE_FORTRESS_Y;
+   d.fortressDepthT=7;
+  }
  }
  updateDecisiveRoofShell(d,dt);
  if(state!=='play')return;
@@ -839,17 +859,21 @@ function updateDecisiveFortress(dt){
  }
 }
 function updateDecisiveRoofGuns(b,d,now){
- const firingIndex=d.roofCd<=0&&!d.roofShell?d.roofNext:-1;
+ const intact=gun=>!b.fragMask||baseFragmentAliveAt(b.x+b.w*gun.x,b.y+b.h*gun.y);
+ const firingIndex=d.roofCd<=0&&!d.roofShell?(intact(d.roofGuns[d.roofNext])?d.roofNext:1-d.roofNext):-1;
  const dx=p.x-(b.x+b.w/2),dy=p.y-(b.y+b.h);
  const target=dy>40&&Math.hypot(dx,dy)<850&&!(p.dig>0)&&debugMode<2?p:null;
  for(let i=0;i<d.roofGuns.length;i++){
   const gun=d.roofGuns[i],x=b.x+b.w*gun.x,y=b.y+b.h*gun.y;
+  if(!intact(gun))continue;
   const aim=target?Math.atan2(target.y-y,target.x-x):Math.PI/2;
   if(aim!==gun.gunAim){
    gun.gunFrom=decisiveBunkerAngle(gun,now);gun.gunAim=aim;gun.gunAimAt=now;
   }
   if(!target||i!==firingIndex)continue;
-  d.roofShell={x,y,targetX:target.x,targetY:target.y,elapsed:0};
+  gun.gunFrom=aim;
+  const muzzle=b.w*.086;
+  d.roofShell={x:x+Math.cos(aim)*muzzle,y:y+Math.sin(aim)*muzzle,targetX:target.x,targetY:target.y,elapsed:0};
   d.roofCd=6;d.roofNext=1-i;
   sfx('enemyCannon',{x,y});
  }
@@ -860,9 +884,9 @@ function updateDecisiveRoofShell(d,dt){
  shell.elapsed+=dt;
  if(shell.elapsed<DECISIVE_ARC_TIME)return;
  d.roofShell=null;
- const {targetX:x,targetY:y}=shell,r=DECISIVE_ARC_RADIUS;
- sfx('shellExplosion',{x,y});fb(x,y,r);burst(x,y,48,'#ff9b47',300);
- for(const a of allies)if(a.alive&&!(a.chute>0)&&Math.hypot(a.x-x,a.y-y)<r)beginBlastFlight(a,x,y,r,65,8,3);
+ const {targetX:x,targetY:y}=shell,r=DECISIVE_ARC_DAMAGE_RADIUS;
+ sfx('shellExplosion',{x,y});cannonImpactFx(x,y,DECISIVE_ARC_BLAST_SCALE);
+ cannonBlastPush(x,y,'e',3,DECISIVE_ARC_BLAST_SCALE);
  if(p.dig>0||debugInvincible||p.tank?.kind==='fighter'||Math.hypot(p.x-x,p.y-y)>=r)return;
  if(p.tank){
   const v=p.tank;
@@ -870,11 +894,15 @@ function updateDecisiveRoofShell(d,dt){
   else{const armor=v.t.armor||3;recordPlayerDamage(.55/armor,true);v.ch=(v.ch||0)+.55;if(v.ch>=armor-1e-9)wreck();}
  }else{
   recordPlayerDamage(Math.min(p.hp,.5)/3);p.hp-=.5;
-  beginBlastFlight(p,x,y,r,60,8,0);
   if(p.hp<=0)triggerPlayerDeath();
  }
 }
+function decisiveFortressDoorIntact(b,index){
+ return !b.fragMask||baseFragmentAliveAt(b.x+b.w*DECISIVE_FORTRESS_DOORS[index],
+  b.y+b.h*(DECISIVE_FORTRESS_DOOR_TOP+DECISIVE_FORTRESS_DOOR_HEIGHT/2));
+}
 function decisiveFortressDoorExit(b,index){
+ if(!decisiveFortressDoorIntact(b,index))return null;
  const point={x:b.x+b.w*DECISIVE_FORTRESS_DOORS[index],y:b.y+b.h+12};
  if(hitsM(point.x,point.y,8)||D(p,point)<32||
   humans.filter(h=>h.alive).length>=frontlineEnemyLimit()||
@@ -885,6 +913,7 @@ function decisiveFortressDoorExit(b,index){
 function updateDecisiveFortressDoor(b,d,dt){
  if(d.door){
   const door=d.door,before=door.elapsed;
+  if(!decisiveFortressDoorIntact(b,door.index)){d.door=null;return;}
   door.elapsed+=dt;
   if(before<DECISIVE_DOOR_RELEASE&&door.elapsed>=DECISIVE_DOOR_RELEASE){
    const exit=decisiveFortressDoorExit(b,door.index);
@@ -908,9 +937,9 @@ function drawDecisiveRoofShell(cx,cy){
  if(!shell||base?.hp<=0)return;
  const {x,y,targetX,targetY}=shell,t=Math.min(1,shell.elapsed/DECISIVE_ARC_TIME);
  const px=x+(targetX-x)*t,py=y+(targetY-y)*t-4*DECISIVE_ARC_HEIGHT*t*(1-t);
- if(drawPointInView(targetX,targetY,cx,cy,DECISIVE_ARC_RADIUS)){
+ if(drawPointInView(targetX,targetY,cx,cy,DECISIVE_ARC_DAMAGE_RADIUS)){
   g.strokeStyle='rgba(255,168,77,.8)';g.lineWidth=2;g.beginPath();
-  g.arc(targetX,targetY,DECISIVE_ARC_RADIUS,0,Math.PI*2);g.stroke();
+  g.arc(targetX,targetY,DECISIVE_ARC_DAMAGE_RADIUS,0,Math.PI*2);g.stroke();
  }
  if(drawPointInView(px,py,cx,cy,15)){
   g.fillStyle='#ffe1a0';g.beginPath();g.ellipse(px,py,5,8,Math.atan2(targetY-y,targetX-x)-Math.PI/2,0,Math.PI*2);g.fill();
@@ -939,9 +968,9 @@ function drawDecisiveRoofGuns(b,d,image,now){
  }
 }
 function drawDecisiveFortressDoor(b,d,image){
- if(!d.door)return;
+ if(!d.door||!decisiveFortressDoorIntact(b,d.door.index))return;
  const {index,elapsed}=d.door,open=Math.min(1,elapsed/.28,(DECISIVE_DOOR_TIME-elapsed)/.35);
- const u=DECISIVE_FORTRESS_DOORS[index],v=.825,w=.043,h=.071;
+ const u=DECISIVE_FORTRESS_DOORS[index],v=DECISIVE_FORTRESS_DOOR_TOP,w=.043,h=DECISIVE_FORTRESS_DOOR_HEIGHT;
  const left=b.x+b.w*(u-w/2),top=b.y+b.h*v,width=b.w*w,height=b.h*h;
  g.fillStyle='#232629';g.fillRect(left,top,width,height);
  const fraction=1-open;
@@ -992,8 +1021,10 @@ function drawDecisiveFortressTurrets(b){
  }
  if(!assetOK(barrel))return;
  for(const gun of guns){
+  const x=b.x+b.w*gun.x,y=b.y+b.h*gun.y;
+  if(b.fragMask&&!baseFragmentAliveAt(x,y))continue;
   const recoil=4*Math.max(0,1-(now-(gun.gunShotAt??-Infinity))/130);
-  g.save();g.translate(b.x+b.w*gun.x,b.y+b.h*gun.y);g.rotate(decisiveBunkerAngle(gun,now));
+  g.save();g.translate(x,y);g.rotate(decisiveBunkerAngle(gun,now));
   g.drawImage(barrel,(-6-recoil)*scale,-6*scale,33*scale,12*scale);g.restore();
  }
 }
