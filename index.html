@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.15.0309</title>
+<title>こっそり戦車大作戦 2026.11.15.0832</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -1027,7 +1027,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.15.0309',FILE_CREATED_AT='2026/11/15 03:09',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.15.0832',FILE_CREATED_AT='2026/11/15 08:32',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -7518,7 +7518,8 @@ function baseDamageCanvas(){
   q.restore();
   if(dead){b._damageCanvas=c;b._damageCanvasKey=key;return c;}
  }else if(deckReady)q.drawImage(deck,0,0,c.width,c.height);
- const t=b.fragTile,cols=b.fragCols,rows=b.fragRows,pal=['#666865','#8c8f8a','#4e514e'];
+ const t=b.fragTile,cols=b.fragCols,rows=b.fragRows;
+ const pal=b.decisiveFortress?['#a92d12','#e95916','#ff941f']:['#666865','#8c8f8a','#4e514e'];
  const alive=(cx,ry)=>cx>=0&&ry>=0&&cx<cols&&ry<rows&&b.fragMask[ry*cols+cx];
  for(let ry=0;ry<rows;ry++)for(let cx=0;cx<cols;cx++){
   const idx=ry*cols+cx;if(!b.fragMask[idx])continue;
@@ -7526,8 +7527,9 @@ function baseDamageCanvas(){
   const sx=x/c.width*im.naturalWidth,sy=y/c.height*im.naturalHeight,sw=w/c.width*im.naturalWidth,sh=h/c.height*im.naturalHeight;
   // 他の建築物の破片描画と同じく、わずかに重ねて継ぎ目を防止。
   q.save();q.beginPath();q.rect(x-.7,y-.7,w+1.4,h+1.4);q.clip();q.drawImage(im,sx,sy,sw,sh,x,y,w,h);q.restore();
-  const edge=(cx>0&&!alive(cx-1,ry))||(cx<cols-1&&!alive(cx+1,ry))||(ry>0&&!alive(cx,ry-1))||(ry<rows-1&&!alive(cx,ry+1));
-  if(edge){
+  const left=cx>0&&!alive(cx-1,ry),right=cx<cols-1&&!alive(cx+1,ry);
+  const top=ry>0&&!alive(cx,ry-1),bottom=ry<rows-1&&!alive(cx,ry+1);
+  if(left||right||top||bottom){
    // 通常建築物の破壊縁と同じく、複数の小瓦礫＋暗い崩れ面＋明るい断面を重ねる。
    const seed=(cx*17+ry*29+idx*3)|0,col=pal[Math.abs(seed)%pal.length];
    q.globalAlpha=.78;q.fillStyle=col;
@@ -7538,8 +7540,19 @@ function baseDamageCanvas(){
     const rx=x+(Math.abs(seed+i*11)%spanX),ry2=y+(Math.abs(seed+i*17)%spanY);
     q.save();q.translate(rx+rw/2,ry2+rh/2);q.rotate((((seed+i*19)%9)-4)*.08);q.fillRect(-rw/2,-rh/2,rw,rh);q.restore();
    }
-   q.globalAlpha=.48;q.fillStyle='rgba(42,32,24,.72)';q.fillRect(x,y+h*.72,w,Math.max(2,h*.18));
-   q.globalAlpha=.32;q.fillStyle='rgba(214,198,166,.65)';q.fillRect(x+w*.08,y+h*.08,w*.55,Math.max(2,h*.10));
+   if(b.decisiveFortress){
+    // 赤い熱の縁に、細い橙〜黄の断面を重ねる。
+    q.beginPath();
+    if(left){q.moveTo(x+1,y);q.lineTo(x+1,y+h);}
+    if(right){q.moveTo(x+w-1,y);q.lineTo(x+w-1,y+h);}
+    if(top){q.moveTo(x,y+1);q.lineTo(x+w,y+1);}
+    if(bottom){q.moveTo(x,y+h-1);q.lineTo(x+w,y+h-1);}
+    q.globalAlpha=.75;q.strokeStyle='#ef3e14';q.lineWidth=4;q.stroke();
+    q.globalAlpha=.92;q.strokeStyle=seed%3===0?'#ffdf68':'#ff9b28';q.lineWidth=1.5;q.stroke();
+   }else{
+    q.globalAlpha=.48;q.fillStyle='rgba(42,32,24,.72)';q.fillRect(x,y+h*.72,w,Math.max(2,h*.18));
+    q.globalAlpha=.32;q.fillStyle='rgba(214,198,166,.65)';q.fillRect(x+w*.08,y+h*.08,w*.55,Math.max(2,h*.10));
+   }
    q.globalAlpha=1;
   }
  }
