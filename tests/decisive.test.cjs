@@ -422,6 +422,38 @@ test('fortress drive follows signed movement and stops at a blocked step',()=>{
   return decisiveBattle.fortressTravel<travel;
  })()`));
 });
+test('roof guns alternate and their marked arc lands at the original aim point',()=>{
+ const {run}=start();completeFacility(run);
+ run(`p.x=base.x+base.w*.6;p.y=base.y+base.h+500;p.dig=0;debugMode=0;debugInvincible=false;decisiveBattle.roofShell=null;decisiveBattle.roofNext=0;
+  decisiveBattle.roofCd=0;updateDecisiveRoofGuns(base,decisiveBattle,0)`);
+ assert.equal(run('decisiveBattle.roofNext'),1);
+ assert.equal(run('decisiveBattle.roofShell.targetX'),run('p.x'));
+ assert.equal(run('decisiveBattle.roofShell.x'),run('base.x+base.w*DECISIVE_ROOF_TURRETS[0][0]'));
+ assert.notEqual(run('decisiveBattle.roofGuns[0].gunAim'),run('decisiveBattle.roofGuns[1].gunAim'));
+ run('const originalHp=p.hp;p.x+=100;updateDecisiveRoofShell(decisiveBattle,DECISIVE_ARC_TIME/2)');
+ assert.ok(run('decisiveBattle.roofShell'));
+ run('updateDecisiveRoofShell(decisiveBattle,DECISIVE_ARC_TIME/2)');
+ assert.equal(run('decisiveBattle.roofShell'),null);
+ assert.equal(run('p.hp'),run('originalHp'));
+ run('decisiveBattle.roofCd=0;updateDecisiveRoofGuns(base,decisiveBattle,2000);updateDecisiveRoofShell(decisiveBattle,DECISIVE_ARC_TIME)');
+ assert.equal(run('decisiveBattle.roofNext'),0);
+ assert.equal(run('p.hp'),run('originalHp-.5'));
+});
+test('fortress door opens, releases a single blue soldier and closes',()=>{
+ const {run}=start();completeFacility(run);
+ run(`p.x=base.x+base.w/2;p.y=base.y+base.h+300;humans=[];allies=[];etanks=[];cars=[];covers=[];objects=[];water=[];rebuildSpatialGrid();
+  decisiveBattle.doorCd=0;updateDecisiveFortressDoor(base,decisiveBattle,.1)`);
+ assert.equal(run('decisiveBattle.door.index'),0);
+ run('updateDecisiveFortressDoor(base,decisiveBattle,.5)');
+ assert.equal(run('humans.length'),0);
+ run('updateDecisiveFortressDoor(base,decisiveBattle,.3)');
+ assert.equal(run('humans.length'),1);
+ assert.equal(run('humans[0].commander'),'blue');
+ assert.equal(run('humans[0].y'),run('base.y+base.h+12'));
+ run('updateDecisiveFortressDoor(base,decisiveBattle,.6)');
+ assert.equal(run('humans.length'),1);
+ assert.equal(run('decisiveBattle.door'),null);
+});
 test('starting an existing stage clears decisive state and preserves its normal map and mission rules',()=>{
  const {run}=start();run("stageMode='beginner';reset(false)");assert.equal(run('decisiveBattle'),null);assert.equal(run('isDecisiveStage()'),false);assert.equal(run('currentStageId()'),'beginner');assert.equal(run('ZONES.length'),5);assert.equal(run('ZONES.some(z=>z.n==="砂漠")'),false);assert.equal(run('base.maxHp'),30);assert.equal(run('mission'),null);
  run("stageMode='front';frontlineBeginner=false;reset(false)");assert.equal(run('decisiveBattle'),null);assert.equal(run('mission.points.length'),3);assert.equal(run('currentStageId()'),'front');assert.ok(run('allies.length>0'));
