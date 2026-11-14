@@ -80,15 +80,20 @@ test('desert town scatters all four scenery types clear of buildings, the lane a
  run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='砂漠街';reset(false)");
  assert.ok(run("covers.some(c=>c.decisiveKind==='sandbags')&&bushes.length>0&&objects.some(o=>o.kind==='barrel')&&objects.some(o=>o.kind==='crate')&&assetOK(COVER_IMG.decisive_sandbags)"));
 });
-test('desert town clears ongoing rain, prevents new rain and lets the usual schedule resume outside',()=>{
+test('decisive suppresses rain in every phase and normal stages still start rain',()=>{
  const {run}=start();
- run("p.y=ZONES[0].y1+1;weatherNext=0;updateWeather(1);");
- assert.equal(run('weather'),'rain');
- run("ZONES[1].desertTownStorm=false;p.y=ZONES[1].y0-1;rainIntensity=1;updateWeather(1);");
+ run("p.y=ZONES[0].y1+1;weatherNext=0;updateWeather(120)");
+ assert.equal(run('weather'),'clear');
+ run("ZONES[1].desertTownStorm=false;p.y=ZONES[1].y0-1;weather='rain';weatherT=20;rainIntensity=1;updateWeather(1)");
  assert.deepEqual(Array.from(run('[weather,weatherT,rainIntensity]')),['clear',0,0]);
+ enterFacility(run);
  run('weatherNext=0;updateWeather(120)');
  assert.equal(run('weather'),'clear');
- run('p.y=ZONES[0].y1+1;updateWeather(1)');
+ run("indoorWorld.currentFloor=1;for(let i=0;i<3;i++)bombBlast(mission.computer.x,mission.computer.y,0,false,true);indoorWorld.currentFloor=0;p.x=indoorWorld.exit.x;p.y=indoorWorld.exit.y;p.blastAirT=0;updateMission(5)");
+ assert.equal(run('decisiveBattle.phase'),'assault');
+ run('weatherNext=0;updateWeather(120)');
+ assert.deepEqual(Array.from(run('[weather,weatherT,rainIntensity]')),['clear',0,0]);
+ run("stageMode='beginner';reset(false);weatherNext=0;updateWeather(1)");
  assert.equal(run('weather'),'rain');
 });
 test('a selected town section gets one sandstorm with the same detection penalty as rain',()=>{
