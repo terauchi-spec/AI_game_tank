@@ -1,6 +1,27 @@
 // 決戦の砂漠街、施設潜入、砂漠戦を一つの作戦として進める。
 const DECISIVE_FACILITY_NAME='最高指揮通信施設';
 const DECISIVE_FACILITY_ENTRY_RADIUS=58;
+const DECISIVE_COMPUTER_HITS=3;
+const decisiveFacilityOutdoorTerrain={n:'砂漠',g:ZONE_STYLE['砂漠'].g};
+
+function placeDecisiveRoomComputers(room,objects){
+ const center=room.x+room.w/2;
+ const place=(kind,x,y,w,h)=>objects.push({
+  kind,x:x-w/(2*INDOOR_SCALE_X),y:room.y+y/INDOOR_SCALE_Y,
+  w:w/INDOOR_SCALE_X,h:h/INDOOR_SCALE_Y,group:'command-room'
+ });
+ place('commandMain',center,15,360,360*184/512);
+ for(let row=0;row<3;row++)for(let col=-1;col<=1;col++){
+  place('commandSmall',center+col*145/INDOOR_SCALE_X,218+row*105,80,80*87/192);
+ }
+}
+
+function drawDecisiveComputerObject(o){
+ const main=o.kind==='commandMain',image=COVER_IMG[main?'decisive_computer-large':'decisive_computer-small'];
+ if(drawAssetSprite(image,o.x+o.w/2,o.y+o.h/2,o.w,o.h))return;
+ g.fillStyle='#373733';g.fillRect(o.x,o.y,o.w,o.h);
+ g.fillStyle='#296e55';g.fillRect(o.x+o.w*.06,o.y+o.h*.1,o.w*.88,o.h*.28);
+}
 const DECISIVE_DESERT_START=6;
 const DESERT_SANDBAG_W=210,DESERT_SANDBAG_H=52;
 const DECISIVE_BUNKER_SCAN_SECONDS=.2;
@@ -336,13 +357,14 @@ function enterDecisiveFacility(){
   patrolRoutesVisible,roadTruckEvents,waterRipples,burningNature:[...burningNatureSet],fallen:fallenEnemies.slice()};
  d.phase='facility';stageMode='indoor';
  const hp=p.hp;
+ for(const key of ['computer-small','computer-large'])if(!COVER_IMG['decisive_'+key])COVER_IMG['decisive_'+key]=makeAssetImage('assets/decisive/'+key+'.webp?v='+GAME_VERSION);
  setupInfiltrationWorld(true);
  setupInfiltrationMission();
  p.hp=hp;scoreStats.lastY=p.y;
  whiteRadio=null;reinforcementPass=null;roadTruckEvents=[];waterRipples=[];
  sandIntensity=0;sandWeatherZone=null;
  resetDecisiveLocation();
- say('地下2階のコンピューターを設置爆弾で破壊せよ');
+ say('地下1階の大型コンピューターを設置爆弾で破壊せよ');
  return true;
 }
 function resetDecisiveLocation(){
@@ -360,12 +382,21 @@ function resetDecisiveLocation(){
 }
 function damageDecisiveComputer(x,y){
  const target=mission?.computer,blast={x,y};
- if(state!=='play'||!target||target.done||target.floor!==indoorWorld.currentFloor+1||D(target,blast)>70||!los(blast,target))return;
+ if(state!=='play'||!target||target.done||target.floor!==indoorWorld.currentFloor+1)return;
+ const rect=objectHitRect(target.object);
+ const hit={x:Math.max(rect.x,Math.min(x,rect.x+rect.w)),y:Math.max(rect.y,Math.min(y,rect.y+rect.h))};
+ if(D(blast,hit)>70||!los(blast,hit,target.object))return;
+ target.hits++;
+ if(target.hits<DECISIVE_COMPUTER_HITS){
+  fb(hit.x,hit.y,20);burst(hit.x,hit.y,12,'#ffb347',140);
+  say('大型コンピューター：設置爆弾あと'+(DECISIVE_COMPUTER_HITS-target.hits)+'回');
+  return;
+ }
  target.done=true;
  scoreStats.objectiveProgress=.25;
- fb(target.x,target.y,34);
- burst(target.x,target.y,24,'#ffb347',220);
- say('コンピューターを破壊！ 地上階のEXITへ');
+ explodeObject(target.object);
+ indoorRefreshDamagedNavigation(target.x,target.y,target.object.w);
+ say('大型コンピューターを破壊！ 地上階のEXITへ');
 }
 function updateDecisiveFacilityExit(dt){
  const m=mission,w=indoorWorld,ground=w.floors[0].footprint;
@@ -493,33 +524,23 @@ function drawDecisiveMission(){
  const text=town?(D(p,q)<=DECISIVE_FACILITY_ENTRY_RADIUS?'入口でA：施設へ潜入':'決戦：最高指揮通信施設へ'):'決戦：移動要塞を破壊せよ';
  gm.strokeText(text,W/2,32);gm.fillText(text,W/2,32);gm.restore();
 }
-function drawDecisiveComputer(cx,cy){
- const q=mission?.computer;
- if(!q||q.floor!==indoorWorld.currentFloor+1||!drawPointInView(q.x,q.y,cx,cy,30))return;
- const {x,y}=q;
- g.fillStyle='#262927';g.fillRect(x-16,y-12,32,24);
- g.fillStyle='#646a63';g.fillRect(x-14,y-14,28,17);
- g.fillStyle=q.done?'#343431':'#90db9b';g.fillRect(x-10,y-11,20,11);
- g.fillStyle=q.done?'#8d5745':'#737f73';g.fillRect(x-10,y+6,20,3);
-}
 function drawDecisiveFacilityHud(el){
  const w=indoorWorld,q=mission.computer,floor=w.currentFloor;
- const basement=['1F','B1F','B2F'][floor];
- const task=q.done?'地上のEXITで5秒待機':'地下2階のコンピューターを設置爆弾で破壊';
+ const basement=['1F','B1F'][floor];
+ const task=q.done?'地上のEXITで5秒待機':'大型コンピューターを破壊 ／ 設置爆弾あと'+(DECISIVE_COMPUTER_HITS-q.hits)+'回';
  const alarm=w.alarm?.active?'館内アラート発令中 ／ ':'';
  const hud='<b>'+DECISIVE_FACILITY_NAME+' '+basement+'</b><small>'+alarm+task+'</small>';
  if(hud!==indoorHudSnapshot){indoorHudSnapshot=hud;el.innerHTML=hud;}
- const targetFloor=q.done?0:2;
+ const targetFloor=q.done?0:q.floor-1;
  const guide=floor===targetFloor?(q.done?w.exit:q):w.floors[floor].stairs.find(s=>s.destination===floor+Math.sign(targetFloor-floor));
  gm.save();gm.setTransform(1,0,0,1,0,0);
  drawInfiltrationAlarmOverlay();
  if(indoorStairProtected())drawIndoorStairSafeArea(w.stairSanctuary);
  drawFrontlineArrow(guide);
- if(floor===2&&!q.done&&drawPointInView(q.x,q.y,camX,cam,40)){
-  const x=q.x-camX,y=q.y-cam;
+ if(floor===targetFloor&&!q.done&&drawPointInView(q.x,q.y,camX,cam,40)){
+  const x=q.x-camX,y=q.object.y+q.object.h-cam;
   gm.font='bold 15px system-ui';gm.textAlign='center';gm.lineWidth=4;gm.strokeStyle='#302a20';gm.fillStyle='#ffe1a0';
-  gm.strokeText('コンピューター',x,y-30);gm.fillText('コンピューター',x,y-30);
-  gm.beginPath();gm.arc(x,y,18,0,Math.PI*2);gm.strokeStyle='#ffe1a0';gm.lineWidth=2;gm.stroke();
+  gm.strokeText('大型コンピューター',x,y-12);gm.fillText('大型コンピューター',x,y-12);
  }
  gm.restore();drawIndoorStairTransition();
 }

@@ -57,9 +57,13 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null,second
   const neighbors=i=>{const {c,r}=coord(i),a=[];if(r>0)a.push(index(c,r-1));if(c<COLS-1)a.push(index(c+1,r));if(r<ROWS-1)a.push(index(c,r+1));if(c>0)a.push(index(c-1,r));return a;};
   const center=i=>{const {c,r}=coord(i);return{x:X0+(c+.5)*SIZE,y:Y0+(r+.5)*SIZE};};
   const patterns=['H','L','T','四角','コ'];
-  const pattern=laboratory?'外周':patterns[Math.floor(rng()*patterns.length)];
+  const commandBasement=commandFacility&&number===2;
+  const pattern=commandBasement?'指揮室':laboratory?'外周':patterns[Math.floor(rng()*patterns.length)];
   const hall=new Set(),add=(c,r)=>hall.add(index(c,r));
-  if(laboratory){
+  if(commandBasement){
+    for(let c=0;c<COLS;c++){add(c,1);add(c,5);}
+    for(let r=2;r<=4;r++){add(0,r);add(COLS-1,r);}
+  }else if(laboratory){
     for(let c=0;c<COLS;c++){add(c,0);add(c,ROWS-1);}
     for(let r=1;r<ROWS-1;r++){add(0,r);add(COLS-1,r);}
   }else if(pattern==='H'){
@@ -109,7 +113,8 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null,second
   }
   if(distToStair.size!==hall.size)throw Error('屋内廊下が分断されています');
   const exit=entrance; // 外周玄関がスタート地点と通常の脱出地点
-  const free=all.filter(i=>!hall.has(i)),freeSet=new Set(free);
+  const commandCells=new Set(commandBasement?all.filter(i=>{const {c,r}=coord(i);return c>=1&&c<=3&&r>=2&&r<=4;}):[]);
+  const free=all.filter(i=>!hall.has(i)&&!commandCells.has(i)),freeSet=new Set(free);
   const adjacency=new Map(free.map(i=>[i,neighbors(i).filter(n=>freeSet.has(n))]));
   const boundary=free.filter(i=>neighbors(i).some(n=>hall.has(n)));
   // 非廊下の連結成分から最低1室を確保。各部屋には必ず廊下側の扉が存在する。
@@ -129,7 +134,8 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null,second
     if(!edges.length)throw Error('廊下への出入口がない部屋群');
     seeds.push(edges[Math.floor(rng()*edges.length)]);
   }
-  while(seeds.length<ROOM_COUNT){
+  const regularRoomCount=commandBasement?6:ROOM_COUNT;
+  while(seeds.length<regularRoomCount){
     const options=boundary.filter(i=>!seeds.includes(i));
     if(!options.length)throw Error('部屋の出入口が不足');
     // 少し離れた扉から順に部屋を成長させて、大部屋の偏りを避ける。
@@ -185,7 +191,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null,second
   }
   while(remaining>0){
     const candidates=[];
-    for(let k=0;k<ROOM_COUNT;k++)if(k!==frozen)for(const cell of grouped[k])for(const n of adjacency.get(cell))if(owner[n]===-2){
+    for(let k=0;k<regularRoomCount;k++)if(k!==frozen)for(const cell of grouped[k])for(const n of adjacency.get(cell))if(owner[n]===-2){
       const growth=grouped[k].length,goal=targets[k];
       candidates.push({k,n,weight:growth<goal?5+(goal-growth):1/(growth+1)});
     }
@@ -197,6 +203,11 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null,second
     if(owner[choice.n]!==-2)continue;
     owner[choice.n]=choice.k;grouped[choice.k].push(choice.n);remaining--;
     if(++rounds>1000)throw Error('部屋分割が終了しない');
+  }
+  const commandRoomId=commandBasement?grouped.length:-1;
+  if(commandBasement){
+    grouped.push([...commandCells]);
+    for(const cell of commandCells)owner[cell]=commandRoomId;
   }
   const names=indoorShuffle(['資料室','通信室','作戦室','兵員室','書庫','会議室','倉庫','解析室','記録室','機材室'],rng);
   const rooms=grouped.map((cells,id)=>{
@@ -220,6 +231,10 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null,second
     return true;
   };
   for(const room of rooms){
+    if(room.id===commandRoomId){
+      for(const c of [1,3])addDoor(index(c,4),index(c,5),'room-hall');
+      continue;
+    }
     const edges=[];
     for(const cell of room.cellIds)for(const other of neighbors(cell))if(hall.has(other))edges.push([cell,other]);
     if(!edges.length)throw Error('廊下に面していない部屋');
@@ -244,7 +259,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null,second
   for(const cell of all)for(const other of neighbors(cell)){
     if(other<=cell||owner[cell]===owner[other])continue;
     const a=owner[cell],b=owner[other];
-    if(a===-1&&b===-1)continue;
+    if(a===-1&&b===-1||commandBasement&&(a===commandRoomId||b===commandRoomId))continue;
     if(doors.has(doorKey(cell,other)))continue;
     extraEdges.push({a:cell,b:other,kind:a>=0&&b>=0?'room-room':'room-hall',
       size:Math.max(a>=0?rooms[a].size:0,b>=0?rooms[b].size:0),
@@ -326,12 +341,13 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null,second
     }
   }
   // 最大の部屋を詰所にしてテーブルを囲む青兵4～8体を用意.
-  const largest=Math.max(...rooms.map(r=>r.size));
-  const postCandidates=rooms.filter(r=>r.size===largest);
+  const ordinaryRooms=rooms.filter(r=>r.id!==commandRoomId);
+  const largest=Math.max(...ordinaryRooms.map(r=>r.size));
+  const postCandidates=ordinaryRooms.filter(r=>r.size===largest);
   const postRoom=postCandidates[Math.floor(rng()*postCandidates.length)];
   postRoom.name='青兵詰所';postRoom.isGuardPost=true;postRoom.purpose='guard_post';
   // 用途は生成時だけ決定。大きい部屋を作戦室にし、残りを役割ごとに装備する。
-  const roleRooms=rooms.filter(r=>r!==postRoom).sort((a,b)=>b.size-a.size||a.id-b.id);
+  const roleRooms=ordinaryRooms.filter(r=>r!==postRoom).sort((a,b)=>b.size-a.size||a.id-b.id);
   for(const [purpose,name] of [['utilities','設備室'],['communications','通信室'],['operations','作戦室'],['armory','武器庫']]){
     const preferred=purpose==='utilities'?roleRooms.findIndex(r=>r.tiles.some(t=>r.tiles.some(u=>u.y===t.y&&u.x===t.x+SIZE))):0;
     const room=roleRooms.splice(Math.max(0,preferred),1)[0];room.purpose=purpose;room.name=name;
@@ -340,6 +356,8 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null,second
     room.purpose=room.size===1?'quarters':i%2?'records':'storage';
     room.name=room.purpose==='quarters'?'兵員室':room.purpose==='records'?'資料室':'倉庫';
   }
+  const commandRoom=rooms[commandRoomId];
+  if(commandRoom)Object.assign(commandRoom,{name:'指揮コンピューター室',purpose:'command_computer'});
   // 部屋の奥を詰所中心にして、扉を塞がず待機できる位置を優先。
   const doorCell=coord(postRoom.door.inside);
   const postCell=postRoom.cellIds.slice().sort((a,b)=>{
@@ -358,7 +376,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null,second
   }
   const furniture=[];
   const addFurniture=(kind,x,y,w,h,zone)=>furniture.push({kind,x,y,w,h,zone});
-  for(const room of laboratory?[]:rooms){
+  for(const room of laboratory?[]:ordinaryRooms){
     const tiles=indoorShuffle(room.tiles.slice(),rng);
     for(let k=0;k<Math.min(room.size>=3?3:2,tiles.length);k++){
       const tile=tiles[k];
@@ -369,7 +387,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null,second
     }
   }
   // 各部屋に補助家具を一つ追加。入口・壁との衝突があれば後段で移動または省略する。
-  for(const room of rooms)if(!laboratory&&room!==postRoom){
+  for(const room of ordinaryRooms)if(!laboratory&&room!==postRoom){
     const tile=room.tiles[0];
     addFurniture('roomSupport',tile.x+SIZE-68,tile.y+SIZE-62,50,40,'room');
   }
@@ -421,7 +439,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null,second
   // Crates use a vertical 2:1 world ratio; shell pallets keep their large footprint.
   const explosiveObjects=[];
   const clusterCells=indoorShuffle(laboratory?[]:halls.filter(i=>!lobbyIds.includes(i)&&i!==stairIndex&&i!==index(2,0)),rng);
-  const roomCells=indoorShuffle(laboratory?[]:rooms.filter(r=>r!==postRoom).flatMap(r=>r.cellIds),rng);
+  const roomCells=indoorShuffle(laboratory?[]:ordinaryRooms.filter(r=>r!==postRoom).flatMap(r=>r.cellIds),rng);
   const overlap=(a,b,pad=0)=>a.x<b.x+b.w+pad&&a.x+a.w>b.x-pad&&a.y<b.y+b.h+pad&&a.y+a.h>b.y-pad;
   const doorLane=d=>d.vertical
     ?{x:d.x-35,y:d.y-30,w:70,h:60}
@@ -725,7 +743,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null,second
   // This is a bounded generation-only pass: no new assets or per-frame planning.
   let extraFurniture=0;
   for(const room of rooms){
-    if(laboratory||room===postRoom)continue; // Lab density is planned by room role.
+    if(laboratory||room===postRoom||room===commandRoom)continue; // Lab density is planned by room role.
     const target=Math.min(9,Math.max(3,room.size*2));
     const palette=INDOOR_ROOM_ART[room.purpose].filter(art=>
       art!=='server_rack'&&art!=='generator'&&(art!=='bed'||room.size===1)&&
@@ -780,7 +798,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null,second
   };
   const documentArts=new Set(['cabinet','desk','server_rack','operations_table','personal_lockers','shelf','equipment',...(laboratory?['transport_container','ultra_freezer','centrifuge','incubator','wash_station']:[])]);
   const worldDistance=(a,b)=>Math.hypot((a.x-b.x)*INDOOR_SCALE_X,(a.y-b.y)*INDOOR_SCALE_Y);
-  const intelCandidates=rooms.filter(r=>r!==postRoom).map(room=>{
+  const intelCandidates=ordinaryRooms.filter(r=>r!==postRoom).map(room=>{
     const fixtures=furniture.filter(o=>o.roomId===room.id&&documentArts.has(laboratory?laboratoryBaseArt(o.artKind):o.artKind));
     const candidates=[];
     for(const fixture of fixtures){
@@ -798,7 +816,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null,second
     valid.sort((a,b)=>doorDistance(b)-doorDistance(a));
     return valid.length?{room,point:valid[0]}:null;
   }).filter(Boolean);
-  if(intelCandidates.length<2)throw Error('家具付近の資料への通行可能な配置が不足');
+  if(!commandFacility&&intelCandidates.length<2)throw Error('家具付近の資料への通行可能な配置が不足');
   const intel=indoorShuffle(intelCandidates,rng).slice(0,INDOOR_FILES_TOTAL).map(({room,point},i)=>
     ({x:point.x,y:point.y,room:room.name,roomId:room.id,fixtureArt:point.fixture.artKind,id:number+'-'+i,taken:false}));
   // 既存AIのpatrol()へ渡す巡回経路を、建物全体の通行グラフから探索。
@@ -863,6 +881,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null,second
   }
   const entryOpenings=hasExterior?[{x:entrance.x,y:mainDoor.y,side:1,w:2*SIZE},
     ...(hasEmergency?[{x:emergencyDoor.x,y:emergencyDoor.y,side:-1,w:SIZE}]:[])]:[];
+  if(commandRoom)placeDecisiveRoomComputers(commandRoom,explosiveObjects);
   return{number,pattern,rooms,walls,furniture,entryOpenings,explosiveObjects,lightFixtures,guards,postGuards,postCount,postRoomId:postRoom.id,intel,stair,stairs,exit,entrance,entrances,emergency,
     roomRoomDoors:connectingRooms,extraHallDoors:moreHallDoors,
     doors:doorMarks,windows,
@@ -1050,9 +1069,9 @@ function setupInfiltrationWorld(commandFacility=false){
   // Scale physical floor area, retaining the same rendering resolution and two-floor layout.
   const beginner=commandFacility||isInfiltrationBeginner(),size=beginner?Math.sqrt(.8):1;
   INDOOR_FILES_TOTAL=rescueAdvancedTest?0:beginner?2:3;
-  INDOOR_SCALE_X=size*(typeof isLaboratoryStage==='function'&&isLaboratoryStage() ? .95 : 1);INDOOR_SCALE_Y=1.75*size;INDOOR_OFFSET_X=480-520*INDOOR_SCALE_X;
-  const ground=ZONE_STYLE['敵迷路基地'];
-  ZONES=[{n:'敵迷路基地',y0:WH,y1:-400,g:'#202820',p:ground.p.slice(),pat:null,indoor:true}];
+  INDOOR_SCALE_X=size*(typeof isLaboratoryStage==='function'&&isLaboratoryStage() ? .95 : 1);INDOOR_SCALE_Y=1.75*size*(commandFacility?.7:1);INDOOR_OFFSET_X=480-520*INDOOR_SCALE_X;
+  const ground=ZONE_STYLE[commandFacility?'砂漠':'敵迷路基地'];
+  ZONES=[{n:'敵迷路基地',y0:WH,y1:-400,g:commandFacility?ground.g:'#202820',p:ground.p.slice(),pat:null,indoor:true}];
   roadBands=[];areaDebugLabels=[];covers=[];objects=[];bushes=[];mud=[];water=[];bridges=[];cars=[];
   enemyDogs=[];etanks=[];humans=[];bullets=[];parts=[];bombs=[];items=[];waves=[];fx=[];allies=[];
   builtWalls=[];tankWrecks=[];buildingGroundMarks=[];decoy=null;radio=null;airstrike=null;airbombs=[];
@@ -1066,19 +1085,19 @@ function setupInfiltrationWorld(commandFacility=false){
   const indoorSeedRng=seed=>{let x=seed>>>0;return()=>{x=(Math.imul(x,1664525)+1013904223)>>>0;return x/4294967296;};};
   const laboratory=typeof isLaboratoryStage==='function'&&isLaboratoryStage();
   const basementLayout=commandFacility||rescueAdvancedTest,multiFloor=laboratory||basementLayout;
-  const floorNumbers=multiFloor?[1,2,3]:[1,2];
+  const floorNumbers=multiFloor&&!commandFacility?[1,2,3]:[1,2];
   const seeds=rescueAdvancedTest?Array(floorNumbers.length).fill(Math.floor(R()*4294967296)):floorNumbers.map(()=>Math.floor(R()*4294967296));
-  const trial=floorNumbers.map((n,i)=>indoorGenerateFloor(n,indoorSeedRng(seeds[i])));
+  const trial=floorNumbers.map((n,i)=>indoorGenerateFloor(n,indoorSeedRng(seeds[i]),null,null,false,commandFacility));
   const cellId=tile=>Math.round((tile.y-80)/180)*5+Math.round((tile.x-70)/180);
   const onUpper=trial.slice(1).map(f=>new Set(f.corridors.map(cellId)));
   const sharedOptions=trial[0].corridors.map(cellId).filter(id=>{
     const row=Math.floor(id/5);
-    return row>=1&&row<=4&&onUpper.every(cells=>cells.has(id));
+    return (commandFacility?id===7:row>=1&&row<=4)&&onUpper.every(cells=>cells.has(id));
   });
   const sharedStair=sharedOptions[Math.floor(R()*sharedOptions.length)];
   if(!Number.isInteger(sharedStair))throw Error('共通階段の設置候補がありません');
-  const upperOptions=multiFloor?sharedOptions.filter(id=>id!==sharedStair):[];
-  const upperStair=multiFloor?upperOptions[Math.floor(R()*upperOptions.length)]:null;
+  const upperOptions=floorNumbers.length===3?sharedOptions.filter(id=>id!==sharedStair):[];
+  const upperStair=floorNumbers.length===3?upperOptions[Math.floor(R()*upperOptions.length)]:null;
     const rawFloors=floorNumbers.map((n,i)=>indoorGenerateFloor(n,indoorSeedRng(seeds[i]),
     basementLayout?(n<=2?sharedStair:upperStair):multiFloor&&n===3?upperStair:sharedStair,
     basementLayout?(n===2?upperStair:null):multiFloor&&n===2?upperStair:null,
@@ -1117,8 +1136,12 @@ function setupInfiltrationWorld(commandFacility=false){
     // 共通の木箱/ドラム缶/砲弾ケースを通常の爆発オブジェクトとして登録。
     for(const item of raw.explosiveObjects){
       const q=indoorRect(item,off);
-      objects.push({...q,kind:item.kind==='shellPallet'?'shellPallet':item.kind,
-        indoorExplosive:true,indoorGroup:item.group,mgHits:0,...(item.laboratoryArt?{laboratoryArt:item.laboratoryArt,laboratoryRoomId:item.roomId,laboratoryRole:item.laboratoryRole,laboratoryWallSide:item.laboratoryWallSide}:{})});
+      const object={...q,kind:item.kind,indoorExplosive:true,indoorGroup:item.group,mgHits:0,
+        ...(item.laboratoryArt?{laboratoryArt:item.laboratoryArt,laboratoryRoomId:item.roomId,laboratoryRole:item.laboratoryRole,laboratoryWallSide:item.laboratoryWallSide}:{})};
+      objects.push(object);
+      if(item.kind==='commandMain'){
+        indoorWorld.computer={x:q.x+q.w/2,y:q.y+q.h/2,floor:n,done:false,hits:0,object};
+      }
     }
     const corridors=raw.corridors.map(tile=>indoorRect(tile,off));
     const lobbyArea=raw.lobbyArea?indoorRect(raw.lobbyArea,off):null;
@@ -1196,10 +1219,6 @@ function setupInfiltrationWorld(commandFacility=false){
       humans.push(guard);guards.push(guard);postGuards.push(guard);
     }
     // 初級は各階1箇所、上級は従来の合計3箇所を配分する。
-    if(commandFacility&&n===3){
-      const terminal=raw.intel[0];
-      indoorWorld.computer={...to(terminal),floor:n,done:false};
-    }
     const count=basementLayout?0:laboratory?1:n===1?groundFiles:INDOOR_FILES_TOTAL-groundFiles;
     const intel=raw.intel.slice(0,count).map((q,i)=>({...to(q),id:q.id,name:'重要資料 '+n+'F-'+(i+1),roomId:q.roomId,fixtureArt:q.fixtureArt,done:false,floor:n,progress:0}));
     indoorWorld.intel.push(...intel);
@@ -1575,8 +1594,9 @@ function indoorStairBounds(stair,number){
   // The lab shares one tall staircase on both floors. Its surrounding walls,
   // landing and sanctuary must follow that silhouette, not the military down stair.
   const laboratory=typeof isLaboratoryStage==='function'&&isLaboratoryStage();
-  const h=INDOOR_STAIR_WIDTH*(laboratory?384/107:number===1?320/100:320/162);
-  return{x:stair.x-INDOOR_STAIR_WIDTH/2,y:stair.y-h/2,w:INDOOR_STAIR_WIDTH,h};
+  const w=indoorWorld?.commandFacility&&number===1?40:INDOOR_STAIR_WIDTH;
+  const h=w*(laboratory?384/107:number===1?320/100:320/162);
+  return{x:stair.x-w/2,y:stair.y-h/2,w,h};
 }
 function indoorStairWalls(stair,number){
   const b=indoorStairBounds(stair,number),t=8;
@@ -2989,7 +3009,7 @@ function drawInfiltrationStairSprite(floor){
   const stair=arguments[1]||floor.stairs?.[0]||floor.stair;
   const image=indoorPropImage(floor.number===1?'stairs_up':'stairs_down');if(!image)return false;
   const iw=image.naturalWidth||image.width,ih=image.naturalHeight||image.height;
-  const w=INDOOR_STAIR_WIDTH,h=w*ih/iw;
+  const w=indoorStairBounds(stair,floor.number).w,h=w*ih/iw;
   g.save();g.imageSmoothingEnabled=true;
   g.drawImage(image,stair.x-w/2,stair.y-h/2,w,h);
   if(floor.number===1){
@@ -3014,7 +3034,7 @@ function drawInfiltrationFloors(cx,cy){
   if(!indoorWorld)return;
   const left=Math.max(0,cx-24),top=cy-24,right=Math.min(WW,cx+W+24),bottom=cy+H+24;
   // Upstairs has no exterior floor: use a flat void, never walkable ground.
-  const outdoor=typeof isLaboratoryStage==='function'&&isLaboratoryStage()?indoorLaboratoryOutdoorTerrain:indoorOutdoorTerrain;
+  const outdoor=indoorWorld.commandFacility?decisiveFacilityOutdoorTerrain:typeof isLaboratoryStage==='function'&&isLaboratoryStage()?indoorLaboratoryOutdoorTerrain:indoorOutdoorTerrain;
   g.fillStyle=indoorWorld.currentFloor>=1?'#11171c':terrainSurfacePattern(outdoor)||outdoor.g;
   g.fillRect(left,top,right-left,bottom-top);
   // Lab rescue roads belong to the static floor layer. Drawing them in the
@@ -3089,6 +3109,7 @@ function drawExitCircle(q,radius,progress,active){
 function drawInfiltrationExitsForFloor(f,cx,cy){
     // 前線制圧のような円形の脱出範囲。描画と待機判定は同じ半径を使う。
     if((rescueAdvancedTest||indoorWorld.commandFacility)&&(f.number!==1||indoorWorld.currentFloor!==0))return;
+    if(indoorWorld.commandFacility&&!mission?.computer?.done)return;
     const exits=indoorWorld.commandFacility?[indoorWorld.exit]:[f.entrance||f.entrances?.[0],f.emergency].filter(Boolean);
     for(const q of exits){
       const radius=INDOOR_EXIT_RADIUS;

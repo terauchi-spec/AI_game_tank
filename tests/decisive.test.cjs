@@ -10,7 +10,7 @@ function enterFacility(run){
 }
 function completeFacility(run){
  enterFacility(run);
- run('debugInvincible=true;indoorWorld.currentFloor=2;p.x=mission.computer.x;p.y=mission.computer.y;bombReq=true;update(1/60);bombReq=true;update(1/60)');
+ run('debugInvincible=true;indoorWorld.currentFloor=1;for(let i=0;i<3;i++)bombBlast(mission.computer.x,mission.computer.y,0,false,true)');
  assert.equal(run('mission.computer.done'),true);
  run('indoorWorld.currentFloor=0;p.x=indoorWorld.exit.x;p.y=indoorWorld.exit.y;p.blastAirT=0;for(let i=0;i<5;i++)updateMission(1);debugInvincible=false');
 }
@@ -135,7 +135,7 @@ test('the facility stairs, placed bomb and ground EXIT lead into the existing as
  run('var originalScore=scoreStats,originalCovers=covers;scoreStats.playerKillPoints=400;p.hp=2');
  enterFacility(run);
  assert.equal(run('p.hp'),2);
- assert.equal(run('indoorWorld.floors.map(f=>f.stairs.map(s=>s.destination).join()).join(";")'),'1;0,2;1');
+ assert.equal(run('indoorWorld.floors.map(f=>f.stairs.map(s=>s.destination).join()).join(";")'),'1;0');
  run(`function useStair(destination){
   const f=indoorWorld.floors[indoorWorld.currentFloor],s=f.stairs.find(q=>q.destination===destination);
   const b=indoorStairBounds(s,f.number);
@@ -148,13 +148,17 @@ test('the facility stairs, placed bomb and ground EXIT lead into the existing as
  assert.equal(run('mission.escapeProgress'),0);
  run('useStair(1)');
  assert.equal(run('indoorWorld.currentFloor'),1);
- run('useStair(2)');
- assert.equal(run('indoorWorld.currentFloor'),2);
- run('draw();drawMission();p.x=mission.computer.x;p.y=mission.computer.y;bombBlast(p.x,p.y);');
- assert.equal(run('mission.computer.done'),false);
- run('p.blastAirT=0;debugInvincible=true;bombReq=true;update(.016);bombReq=true;update(.016)');
- assert.equal(run('mission.computer.done'),true);
- run('p.blastAirT=0;useStair(1);useStair(0);p.x=indoorWorld.exit.x;p.y=indoorWorld.exit.y;updateMission(4.9)');
+ run('draw();drawMission();p.x=mission.computer.x;p.y=mission.computer.object.y+mission.computer.object.h+35;bombBlast(p.x,p.y);');
+ assert.equal(run('mission.computer.hits'),0);
+ run('damageObject(mission.computer.object,"cannonDirect");damageObject(mission.computer.object,"objectBlast")');
+ assert.equal(run('mission.computer.hits'),0);
+ for(let hits=1;hits<=3;hits++){
+  run('p.blastAirT=0;debugInvincible=true;bombReq=true;update(.016);bombReq=true;update(.016)');
+  assert.equal(run('mission.computer.hits'),hits);
+  assert.equal(run('mission.computer.done'),hits===3);
+ }
+ assert.equal(run('objects.includes(mission.computer.object)'),false);
+ run('p.blastAirT=0;useStair(0);p.x=indoorWorld.exit.x;p.y=indoorWorld.exit.y;updateMission(4.9)');
  assert.equal(run('stageMode'),'indoor');
  run('p.x+=200;updateMission(.2);p.x-=200;updateMission(4.9)');
  assert.equal(run('stageMode'),'indoor');
@@ -167,6 +171,41 @@ test('the facility stairs, placed bomb and ground EXIT lead into the existing as
  assert.equal(run('state'),'play');
  assert.ok(run('base.hp>0&&humans.filter(h=>h.alive).length<=frontlineEnemyLimit()&&allies.filter(a=>a.alive&&a.frontline).length<=10'));
  assert.equal(run('scoreStats.final'),null);
+});
+test('command facility keeps both floor dimensions, a fixed central room and nine explosive terminals',()=>{
+ const {run}=start(14);
+ enterFacility(run);
+ assert.ok(run(`indoorWorld.floors.every(f=>Math.abs(f.footprint.w-900*Math.sqrt(.8))<1e-6&&
+  Math.abs(f.footprint.h-1260*1.75*Math.sqrt(.8)*.7)<1e-6)`));
+ assert.ok(run(`(()=>{
+  const f=indoorWorld.floors[1],room=f.rooms.find(r=>r.purpose==='command_computer');
+  const small=objects.filter(o=>o.kind==='commandSmall'),main=mission.computer.object;
+  return room.size===9&&Math.abs(room.x+room.w/2-f.footprint.x-f.footprint.w/2)<1e-6&&
+   Math.abs(room.y+room.h/2-f.footprint.y-f.footprint.h/2)<1e-6&&main.y-room.y<20&&
+   small.length===9&&new Set(small.map(o=>o.x)).size===3&&new Set(small.map(o=>o.y)).size===3&&
+   small.every(o=>o.indoorExplosive&&o.y>main.y+main.h);
+ })()`));
+ assert.ok(run(`(()=>{
+  const small=objects.find(o=>o.kind==='commandSmall');
+  damageObject(small,'mg');damageObject(small,'mg');
+  if(small.burnT!==3)return false;
+  updateBurningObjects(3.1);
+  return !objects.includes(small)&&mission.computer.hits===0;
+ })()`));
+ assert.match(run('COVER_IMG["decisive_computer-large"].src'),/computer-large\.webp/);
+ assert.equal(run('decisiveFacilityOutdoorTerrain.n'),'砂漠');
+ assert.deepEqual(Array.from(run(`(()=>{
+  indoorWorld.currentFloor=0;
+  const original=drawExitCircle,calls=[];
+  drawExitCircle=()=>calls.push(true);
+  const f=indoorWorld.floors[0],q=indoorWorld.exit;
+  try{
+   drawInfiltrationExitsForFloor(f,q.x-50,q.y-50);
+   calls.push(false);mission.computer.done=true;
+   drawInfiltrationExitsForFloor(f,q.x-50,q.y-50);
+  }finally{drawExitCircle=original;mission.computer.done=false;}
+  return calls;
+ })()`)),[false,true]);
 });
 test('moving fortress yields to nearby units; bunker and fortress guns reuse existing enemy projectiles',()=>{
  const {run}=start();completeFacility(run);const x=run('base.x');run('updateDecisiveFortress(.1)');assert.notEqual(run('base.x'),x);

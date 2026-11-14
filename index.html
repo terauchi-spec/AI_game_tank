@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.14.1302</title>
+<title>こっそり戦車大作戦 2026.11.14.1432</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -710,7 +710,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 1250ms ease-o
 <li><strong>10 潜入（上級）：</strong>3階建ての先端科学研究所で各階の重要資料を回収して脱出します。</li>
 <li><strong>11 制圧（上級）：</strong>運搬用ロケットパーツのある3拠点を順に制圧します。</li>
 <li><strong>12 救出（上級）：</strong>軍事バンカーの地下2階で要人に接触し、1階屋外のEXITに護衛します。鍵の入手と赤い扉の解錠は任意です。要人とEXIT円内で5秒待つと脱出できます。</li>
-<li><strong>13 決戦（開発者モード）：</strong>砂漠街の最高指揮通信施設に潜入し、地下2階のコンピューターを設置爆弾で破壊します。施設を脱出したら、砂漠の移動要塞を破壊します。</li>
+<li><strong>13 決戦（開発者モード）：</strong>砂漠街の最高指揮通信施設に潜入し、地下1階の大型コンピューターを設置爆弾3回で破壊します。施設を脱出したら、砂漠の移動要塞を破壊します。</li>
 </ol>
 <p><strong>潜入の共通ルール：</strong>資料の円内で回収を進めます。1人での回収は1か所につき8秒です。全資料を回収後、EXIT円内で5秒間待機すると脱出できます。</p>
 <p><strong>制圧の共通ルール：</strong>プレイヤーが地上で一度進入した拠点は、円内に行動可能な味方兵が1人以上いて、近くに敵がいなければ制圧が進みます。プレイヤー単独では進みません。参加者が1人なら48秒、2人なら24秒、3人なら16秒が目安です。気絶中・降下中の兵士は人数に含まれません。敵が円内に入るとゲージが水色からオレンジに変わります。敵が近くにいる間は制圧ゲージが徐々に戻ります。</p>
@@ -990,7 +990,7 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 #stageScreen .stage-card.stage-cleared .stage-number{border-color:#b3db9c;color:#c8e9a5}
 </style>
 <section id="areaDebugPicker" aria-labelledby="areaDebugHeading"><div class="area-debug-panel"><h1 id="areaDebugHeading">テストするエリア</h1><p>無敵で地形や遮蔽物を確認できます。<br>開始地点の戦車は弾数・燃料無制限です。</p><label class="area-debug-bomber-switch"><input id="areaDebugEnemyBomber" type="checkbox" role="switch"><span>敵爆撃機（30秒ごと）<small>50%の確率で味方戦闘機が迎撃</small></span><strong id="areaDebugEnemyBomberState">OFF</strong></label><div id="areaDebugList"></div><button id="areaDebugBack" type="button">ステージ選択に戻る</button></div></section>
-<div id="missionBriefing" role="dialog" aria-modal="true" aria-labelledby="missionBriefingTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_hero.webp?v=2026.10.14.1653" alt="円形爆弾を抱えて走る主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionBriefingTitle">ミッション</h1><p id="missionBriefingGoal">敵の拠点にたどりつき、破壊せよ</p><ul class="mission-hud-guide" aria-label="ゲーム画面のアイコン説明"><li><img src="assets/ui/ui_heart_full.png" alt="ハート" decoding="async"><span>残りライフ</span></li><li><img src="assets/ui/ui_bomb_normal.png" alt="爆弾" decoding="async"><span>爆弾の設置状態</span></li><li><svg viewBox="-18 -18 36 36" role="img" aria-label="目に斜線"><path d="M-14 0 C-7-11 7-11 14 0 C7 11-7 11-14 0Z" fill="white" stroke="black" stroke-width="3"/><circle r="5" fill="black"/><path d="M-12 11 12-11" stroke="black" stroke-width="3.5"/><path d="M-12 11 12-11" stroke="#ef3434" stroke-width="2"/></svg><span>敵から隠れている状態</span></li></ul><div id="missionFrontlineRules" hidden><ul class="mission-front-rules" aria-label="最前線の制圧ルール"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V3m0 1c5-4 8 4 14 0v10c-6 4-9-4-14 0"/></svg><span id="missionFrontlineOrder">3拠点を順番に制圧</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 1v4m0 14v4M1 12h4m14 0h4"/></svg><span>円に入り、敵を排除</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><circle cx="4" cy="10" r="2"/><circle cx="20" cy="10" r="2"/><path d="M6 22v-4a6 6 0 0 1 12 0v4M1 21v-5a3 3 0 0 1 4-3m18 8v-5a3 3 0 0 0-4-3"/></svg><span>味方兵と制圧！人数で加速</span></li></ul></div><div id="missionEscapeRules" hidden><ul class="mission-front-rules"><li id="missionRescueRoute">ライフ3の要人女性を護衛して密林5エリアを突破</li><li id="missionRescueTerrain">各エリアに川・湖がランダム出現</li><li>最後の草原のEXITで要人と徒歩で合流し、円内で5秒待つ</li></ul></div><div id="missionDecisiveRules" hidden><ul class="mission-front-rules" aria-label="決戦の作戦ポイント"><li>1人で開始草原から、砂漠街を突破</li><li>砂漠街の奥の最高指揮通信施設：入口でA、地下2階のコンピューターを設置爆弾で破壊し、地上のEXITで5秒待機</li><li>制圧後は味方部隊と砂漠3エリアへ進軍</li><li>巨大移動要塞を主砲・設置爆弾などで破壊</li></ul></div><div id="missionIndoorRules" hidden><ul class="mission-front-rules" aria-label="潜入の作戦ポイント"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2h9l5 5v15H5ZM14 2v6h5M8 12h8M8 16h8"/></svg><span id="missionIndoorDocuments">円に入り、重要資料3か所を回収</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12C7 4 17 4 22 12C17 20 7 20 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><span>赤い目3つで館内アラート発令</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3H3v18h7M7 12h15m-5-5 5 5-5 5"/></svg><span id="missionIndoorExitRule">回収後は施設外のEXITから脱出</span></li></ul></div><button type="button" id="missionBegin">作戦開始</button></div></div></div>
+<div id="missionBriefing" role="dialog" aria-modal="true" aria-labelledby="missionBriefingTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_hero.webp?v=2026.10.14.1653" alt="円形爆弾を抱えて走る主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionBriefingTitle">ミッション</h1><p id="missionBriefingGoal">敵の拠点にたどりつき、破壊せよ</p><ul class="mission-hud-guide" aria-label="ゲーム画面のアイコン説明"><li><img src="assets/ui/ui_heart_full.png" alt="ハート" decoding="async"><span>残りライフ</span></li><li><img src="assets/ui/ui_bomb_normal.png" alt="爆弾" decoding="async"><span>爆弾の設置状態</span></li><li><svg viewBox="-18 -18 36 36" role="img" aria-label="目に斜線"><path d="M-14 0 C-7-11 7-11 14 0 C7 11-7 11-14 0Z" fill="white" stroke="black" stroke-width="3"/><circle r="5" fill="black"/><path d="M-12 11 12-11" stroke="black" stroke-width="3.5"/><path d="M-12 11 12-11" stroke="#ef3434" stroke-width="2"/></svg><span>敵から隠れている状態</span></li></ul><div id="missionFrontlineRules" hidden><ul class="mission-front-rules" aria-label="最前線の制圧ルール"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V3m0 1c5-4 8 4 14 0v10c-6 4-9-4-14 0"/></svg><span id="missionFrontlineOrder">3拠点を順番に制圧</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 1v4m0 14v4M1 12h4m14 0h4"/></svg><span>円に入り、敵を排除</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><circle cx="4" cy="10" r="2"/><circle cx="20" cy="10" r="2"/><path d="M6 22v-4a6 6 0 0 1 12 0v4M1 21v-5a3 3 0 0 1 4-3m18 8v-5a3 3 0 0 0-4-3"/></svg><span>味方兵と制圧！人数で加速</span></li></ul></div><div id="missionEscapeRules" hidden><ul class="mission-front-rules"><li id="missionRescueRoute">ライフ3の要人女性を護衛して密林5エリアを突破</li><li id="missionRescueTerrain">各エリアに川・湖がランダム出現</li><li>最後の草原のEXITで要人と徒歩で合流し、円内で5秒待つ</li></ul></div><div id="missionDecisiveRules" hidden><ul class="mission-front-rules" aria-label="決戦の作戦ポイント"><li>1人で開始草原から、砂漠街を突破</li><li>砂漠街の奥の最高指揮通信施設：入口でA、地下1階の大型コンピューターを設置爆弾3回で破壊し、地上のEXITで5秒待機</li><li>制圧後は味方部隊と砂漠3エリアへ進軍</li><li>巨大移動要塞を主砲・設置爆弾などで破壊</li></ul></div><div id="missionIndoorRules" hidden><ul class="mission-front-rules" aria-label="潜入の作戦ポイント"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2h9l5 5v15H5ZM14 2v6h5M8 12h8M8 16h8"/></svg><span id="missionIndoorDocuments">円に入り、重要資料3か所を回収</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12C7 4 17 4 22 12C17 20 7 20 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><span>赤い目3つで館内アラート発令</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3H3v18h7M7 12h15m-5-5 5 5-5 5"/></svg><span id="missionIndoorExitRule">回収後は施設外のEXITから脱出</span></li></ul></div><button type="button" id="missionBegin">作戦開始</button></div></div></div>
 <div id="stageLoadingScreen" role="status" aria-live="polite"><div class="stage-loading-title">作戦準備中…</div></div>
 <div id="stageScreen" role="region" aria-label="ステージ選択"><div class="stage-shell">
 <header class="stage-header"><div><div class="stage-kicker">CHOOSE YOUR MISSION</div><h1>ステージ選択</h1></div><button type="button" class="sk-home" id="stageBack">スキル選択</button></header><p id="stageSkill"></p>
@@ -1027,7 +1027,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.14.1302',FILE_CREATED_AT='2026/11/14 13:02',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.14.1432',FILE_CREATED_AT='2026/11/14 14:32',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -1636,6 +1636,7 @@ function explodeObject(o,fxOn=true){
 function destroyObject(o,fxOn=true){return explodeObject(o,fxOn);}
 function damageObject(o,source='impact'){
  if(!objects||!o||!objects.includes(o))return false;
+ if(o.kind==='commandMain')return false; // Only the placed-bomb mission handler can damage this target.
  if(typeof stageMode!=='undefined'&&stageMode==='training'&&trainingObjectDamage(o,source))return true;
  if(source==='enemyBomb')o.enemyAirStrikeOrigin=true;else if(o.enemyAirStrikeOrigin)delete o.enemyAirStrikeOrigin;
  if(radioStrikeKillContext>0)o.radioStrikeOrigin=true;
@@ -1676,6 +1677,7 @@ function updateBurningObjects(dt){
  for(let i=objects.length-1;i>=0;i--){const o=objects[i];if(!(o.burnT>0))continue;o.burnT-=dt;if(o.burnT<=0)explodeObject(o,true);}
 }
 function drawObject(o){
+ if(o.kind==='commandMain'||o.kind==='commandSmall'){drawDecisiveComputerObject(o);return;}
  if(typeof stageMode!=='undefined'&&stageMode==='training'&&o.trainingTarget){drawTrainingTarget(o);return;}
  if(o.laboratoryArt&&typeof drawLaboratoryObject==='function'){drawLaboratoryObject(o);return;}
  const cx=o.x+o.w/2,cy=o.y+o.h/2;
@@ -3720,7 +3722,7 @@ function segmentHitsRect(a,b,r){
  const clip=(p,q)=>{if(p===0)return q>=0;const t=q/p;if(p<0){if(t>t1)return false;if(t>t0)t0=t;}else{if(t<t0)return false;if(t<t1)t1=t;}return true;};
  return clip(-dx,a.x-r.x)&&clip(dx,r.x+r.w-a.x)&&clip(-dy,a.y-r.y)&&clip(dy,r.y+r.h-a.y);
 }
-function los(a,b){
+function los(a,b,ignoredObject=null){
  const minX=Math.min(a.x,b.x),maxX=Math.max(a.x,b.x),minY=Math.min(a.y,b.y),maxY=Math.max(a.y,b.y);
  const coverBlocked=coversInBox(minX-2,minY-2,maxX+2,maxY+2).some(c=>{
   const rc=coverHitRect(c),cc=coverHitCircle(c),re=rockHitEllipse(c);
@@ -3729,7 +3731,7 @@ function los(a,b){
   if(!rc)return false;if(rc.x>maxX||rc.x+rc.w<minX||rc.y>maxY||rc.y+rc.h<minY)return false;return segmentHitsCover(a,b,c);
  });
  if(coverBlocked)return false;
- return !objectsInBox(minX-2,minY-2,maxX+2,maxY+2).some(o=>{const rc=objectHitRect(o),cc=objectHitCircle(o);if(cc){if(cc.x+cc.r<minX||cc.x-cc.r>maxX||cc.y+cc.r<minY||cc.y-cc.r>maxY)return false;return segmentHitsObject(a,b,o);}if(rc.x>maxX||rc.x+rc.w<minX||rc.y>maxY||rc.y+rc.h<minY)return false;return segmentHitsObject(a,b,o);});
+ return !objectsInBox(minX-2,minY-2,maxX+2,maxY+2).some(o=>{if(o===ignoredObject)return false;const rc=objectHitRect(o),cc=objectHitCircle(o);if(cc){if(cc.x+cc.r<minX||cc.x-cc.r>maxX||cc.y+cc.r<minY||cc.y-cc.r>maxY)return false;return segmentHitsObject(a,b,o);}if(rc.x>maxX||rc.x+rc.w<minX||rc.y>maxY||rc.y+rc.h<minY)return false;return segmentHitsObject(a,b,o);});
 }
 function cachedLos(o,target,ms=90){
  const now=performance.now();if(o&&o._visTarget===target&&o._nextVisAt>now)return !!o._visCache;const v=los(o,target);if(o){o._visTarget=target;o._visCache=v;o._nextVisAt=now+ms;}return v;
@@ -7943,7 +7945,6 @@ function draw(near){
  if(stageMode==='indoor'){
   if(debugMode>0&&typeof indoorRecordRenderTime==='function')indoorRecordRenderTime('walls',performance.now()-indoorWallDrawAt);
   drawInfiltrationOpenings(cx,cy);
-  if(isDecisiveFacility())drawDecisiveComputer(cx,cy);
  }
  drawDesertTownDoors(cx,cy);
  for(const o of objectsInBox(cx-80,cy-80,cx+W+80,cy+H+80)){if(o.x+o.w<cx-70||o.x>cx+W+70||o.y+o.h<cy-70||o.y>cy+H+70)continue;if(stageMode==='escapeTest'&&o.escapeBuildingSupply)continue;drawObject(o);}
@@ -8908,7 +8909,7 @@ function reportGameError(error){
 </script>
 <script src="js/road-trucks.js?v=2026.11.13.2242"></script>
 <script src="js/stage-progress.js?v=2026.11.12.2006"></script>
-<script src="js/decisive.js?v=2026.11.14.1302"></script>
+<script src="js/decisive.js?v=2026.11.14.1432"></script>
 <script src="js/frontline.js?v=2026.11.13.1834"></script>
 <script src="js/award-icons.js?v=2026.10.31.0807"></script>
 <script src="js/developer.js?v=2026.11.11.2308"></script>
@@ -8930,8 +8931,8 @@ function reportGameError(error){
 <script src="js/canyon.js?v=2026.11.14.0824"></script>
 <script src="js/vegetation.js?v=2026.11.08.1806"></script>
 <script src="js/laboratory.js?v=2026.10.31.2206"></script>
-<script src="js/infiltration-world.js?v=2026.11.14.1302"></script>
-<script src="js/infiltration-render.js?v=2026.10.31.2206"></script>
+<script src="js/infiltration-world.js?v=2026.11.14.1432"></script>
+<script src="js/infiltration-render.js?v=2026.11.14.1432"></script>
 <script src="js/input-diagnostics.js?v=2026.10.28.0713"></script>
 <script>
 (function(){
