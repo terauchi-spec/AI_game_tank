@@ -593,6 +593,31 @@ test('fortress collision follows surviving hull and gears while the exposed deck
   return !!raster&&raster===baseDamageCanvas()&&assetOK(COVER_IMG['decisive_fortress-underlay']);
  })()`));
 });
+test('fortress heat spreads as mottled patches near the damage and clips to the artwork',()=>{
+ const {run}=createGameEngine(root);
+ assert.ok(run(`(()=>{
+  const cols=45,rows=30,fragMask=new Uint8Array(cols*rows).fill(1);
+  for(let y=12;y<18;y++)for(let x=19;x<26;x++)fragMask[y*cols+x]=0;
+  const b={fragCols:cols,fragRows:rows,fragTile:14,fragMask};
+  const originalContext=gameCanvasContext;
+  let raster,operation,count=0;
+  gameCanvasContext=()=>({
+   createImageData:(width,height)=>({width,height,data:new Uint8ClampedArray(width*height*4)}),
+   putImageData:image=>{raster=image;count++;}
+  });
+  try{
+   const context={save(){},restore(){},drawImage(){operation=this.globalCompositeOperation;}};
+   drawDecisiveFortressHeat(context,b,630,420);
+   if(count!==1||operation!=='source-atop'||raster.width!==210||raster.height!==140)return false;
+   const alpha=(x,y)=>raster.data[(y*raster.width+x)*4+3];
+   const inside=Array.from({length:12},(_,i)=>alpha(93+i,53));
+   const outside=Array.from({length:12},(_,i)=>alpha(93+i,58));
+   if(!inside.some(a=>a>20)||!outside.some(a=>a>20)||new Set(outside).size<5||alpha(30,30)!==0)return false;
+   b.fragMask.fill(1);drawDecisiveFortressHeat(context,b,630,420);
+   return count===1;
+  }finally{gameCanvasContext=originalContext;}
+ })()`));
+});
 test('starting an existing stage clears decisive state and preserves its normal map and mission rules',()=>{
  const {run}=start();run("stageMode='beginner';reset(false)");assert.equal(run('decisiveBattle'),null);assert.equal(run('isDecisiveStage()'),false);assert.equal(run('currentStageId()'),'beginner');assert.equal(run('ZONES.length'),5);assert.equal(run('ZONES.some(z=>z.n==="砂漠")'),false);assert.equal(run('base.maxHp'),30);assert.equal(run('mission'),null);
  run("stageMode='front';frontlineBeginner=false;reset(false)");assert.equal(run('decisiveBattle'),null);assert.equal(run('mission.points.length'),3);assert.equal(run('currentStageId()'),'front');assert.ok(run('allies.length>0'));
