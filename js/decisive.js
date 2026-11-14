@@ -26,7 +26,7 @@ function drawDecisiveComputerObject(o){
  g.fillStyle='#373733';g.fillRect(o.x,o.y,o.w,o.h);
  g.fillStyle=o.wrecked?'#232321':'#296e55';g.fillRect(o.x+o.w*.06,o.y+o.h*.1,o.w*.88,o.h*.28);
 }
-const DECISIVE_DESERT_START=6;
+const DECISIVE_DESERT_START=6,DECISIVE_DESERT_EXTENSION=3680;
 const DESERT_SANDBAG_W=210,DESERT_SANDBAG_H=52;
 const DECISIVE_BUNKER_SCAN_SECONDS=.2;
 const DECISIVE_ALLIED_AIRDROP_DISTANCE=200,DECISIVE_ENEMY_RELEASE_DISTANCE=500;
@@ -47,8 +47,8 @@ function loadDesertTerrain(){
  TERRAIN_IMG['砂漠街']=TERRAIN_IMG['砂漠'];
 }
 function setupDecisiveZones(){
- const names=['草原','砂漠街','砂漠街','砂漠街','砂漠街','砂漠街','砂漠','砂漠','砂漠'];
- const edges=[13200,11400,10350,9330,8310,7320,5520,3680,1840,-400];
+ const names=['草原','砂漠街','砂漠街','砂漠街','砂漠街','砂漠街','砂漠','砂漠','砂漠','砂漠','砂漠'];
+ const edges=[16880,15080,14030,13010,11990,11000,9200,7360,5520,3680,1840,-400];
  ZONES=names.map((n,i)=>({n,y0:edges[i],y1:edges[i+1],g:ZONE_STYLE[n].g,p:ZONE_STYLE[n].p.slice(),edgeRisk:R()<.5?'left':'right',decisiveArea:i}));
 }
 const DESERT_TOWN_SCALE=1.5;
@@ -258,14 +258,19 @@ function updateDesertTownEvents(dt){
  }
  updateDecisiveEnemyDrop(drop,zone.n==='砂漠街'?zone:null,dt);
 }
-function updateDecisiveEnemyDrop(drop,zone,dt){
+function updateDecisiveEnemyDrop(drop,zone,dt,minDelay=45,delayRange=15){
  if(zone){
   drop.remaining-=dt;
   if(drop.remaining<=0&&!drop.plane&&!drop.parachutes.length){
-   drop.remaining=startEnemyParachutePass(drop,zone)?45+R()*15:1;
+   const full=drop===decisiveBattle?.desertDrop&&humans.filter(h=>h.alive).length>frontlineEnemyLimit();
+   drop.remaining=!full&&startEnemyParachutePass(drop,zone)?minDelay+R()*delayRange:1;
   }
  }
- if(drop.plane||drop.parachutes.length)updateEnemyParachutePass(drop,dt);
+ if(drop.plane||drop.parachutes.length){
+  const before=humans.length;
+  updateEnemyParachutePass(drop,dt);
+  if(drop===decisiveBattle?.desertDrop)for(let i=before;i<humans.length;i++)humans[i].frontMarch=true;
+ }
 }
 function drawDesertTownDoors(cx,cy){
  if(!desertTownEvents||!p||stageMode==='indoor')return;
@@ -341,8 +346,11 @@ function setupDecisiveWorld(){
    if(!nearFacilityDefense(bunker)){
     covers.push(bunker);decisiveBattle.bunkers.push(bunker);
    }
-   for(const dy of [202,258]){
-    const sandbags={kd:1,x:x<WW/2?WW-255:45,y:y+dy,w:DESERT_SANDBAG_W,h:DESERT_SANDBAG_H,decisiveKind:'sandbags'};
+   // Stagger three bags across the width, leaving a vehicle-width gap between them.
+   const step=DESERT_SANDBAG_W+DESERT_TOWN_GATE_GAP;
+   for(let column=0;column<3;column++){
+    const x=(i%2===0)===leftFirst?column*step:WW-DESERT_SANDBAG_W-column*step;
+    const sandbags={kd:1,x,y:y+205+column*16,w:DESERT_SANDBAG_W,h:DESERT_SANDBAG_H,decisiveKind:'sandbags'};
     if(!nearFacilityDefense(sandbags))covers.push(sandbags);
    }
   }
@@ -352,6 +360,9 @@ function setupDecisiveWorld(){
   cars.push({...spot,t,kind:'tank',hp:t.hp,c:t.cmax,v:t.vmax,f:t.fmax,ch:0,mgHits:0,body:-Math.PI/2});
   for(const dx of [-70,70])items.push({x:spot.x+dx,y:spot.y+100,got:false});
  }
+ rebuildSpatialGrid();
+ for(const zone of ZONES.slice(DECISIVE_DESERT_START))placeDecisiveDesertSupplies(zone);
+ if(radio&&zoneAt(radio.y).n==='砂漠')radio=null;
  // No desert patrol is updated before the phase change. Keep its classes as wave reserves.
  decisiveBattle.reserve=humans.filter(h=>h.y<border);
  humans=humans.filter(h=>h.y>=border);
@@ -366,6 +377,54 @@ function setupDecisiveWorld(){
  spawnDesertTownPatrols(townZones);
  setupDesertTownEvents();
  say('決戦：最高指揮通信施設に潜入せよ');
+}
+function placeDecisiveDesertSupplies(zone){
+ const inZone=y=>y>=Math.max(0,zone.y1)+60&&y<=zone.y0-60;
+ const clear=(x,y,r)=>x>=r+14&&x<=WW-r-14&&inZone(y)&&!hitsM(x,y,r)&&!inBase(x,y)&&
+  !cars.some(v=>D(v,{x,y})<r+50)&&!items.some(item=>D(item,{x,y})<r+28);
+ const defenses=covers.filter(c=>zoneAt(c.y)===zone&&['bunker','sandbags'].includes(c.decisiveKind));
+ for(const kind of ['bunker','sandbags']){
+  for(const c of defenses.filter(c=>c.decisiveKind===kind)){
+   const size=BARREL_SIZE;
+   // Place beside the flank or behind, away from the passage through the sandbags.
+   const spots=kind==='sandbags'?[[c.x+c.w/2,c.y-48]]:[[c.x-45,c.y+c.h/2],[c.x+c.w+45,c.y+c.h/2],[c.x+c.w/2,c.y-45]];
+   const spot=spots.find(([x,y])=>clear(x,y,28));
+   if(!spot)continue;
+   const [x,y]=spot;
+   objects.push({kind:'barrel',x:x-size/2,y:y-size/2,w:size,h:size});
+   break;
+  }
+ }
+ zone.decisiveRadios=[];
+ const mid=(zone.y0+Math.max(0,zone.y1))/2;
+ for(const white of [true,false]){
+  let found=null;
+  for(let dy=0;!found&&dy<zone.y0-zone.y1;dy+=48){
+   const y=mid+(white?-1:1)*dy;
+   for(const x of white?[220,740,350,610,480]:[740,220,610,350,480]){
+    if(!clear(x,y,16)||zone.decisiveRadios.some(q=>D(q,{x,y})<80))continue;
+    found={x,y,white,got:false};break;
+   }
+  }
+  if(found)zone.decisiveRadios.push(found);
+ }
+}
+function collectDecisiveDesertRadios(){
+ if(decisiveBattle?.phase!=='assault')return;
+ for(const pickup of zoneAt(p.y).decisiveRadios||[]){
+  if(pickup.got||D(p,pickup)>=30||(pickup.white?reinforcementPass||decisiveBattle.pendingReinforcement:airstrike))continue;
+  pickup.got=true;
+  if(pickup.white)startReinforcementPass();
+  else startAirstrike(pickup);
+ }
+}
+function drawDecisiveDesertRadios(cx,cy){
+ if(decisiveBattle?.phase!=='assault')return;
+ for(let i=DECISIVE_DESERT_START;i<ZONES.length;i++){
+  const zone=ZONES[i];
+  if(zone.y0<cy-100||zone.y1>cy+H+100)continue;
+  for(const q of zone.decisiveRadios)if(!q.got&&drawPointInView(q.x,q.y,cx,cy,100))drawRadioPickup(q.x,q.y,q.white,!q.white);
+ }
 }
 function enterDecisiveFacility(){
  const d=decisiveBattle;
@@ -478,7 +537,7 @@ function openDecisiveAssault(){
  setupFrontlineArmy();mission.advanceReleased=true;
  for(const ally of allies)if(ally.alive){ally.frontline=true;assignFrontlineAllyRole(ally);}
  missionAllies(d.gate.y);setupFrontlineVehicles();
- d.desertDrop={remaining:45+R()*15,plane:null,parachutes:[]};
+ d.desertDrop={remaining:10+R()*10,plane:null,parachutes:[]};
  setupEnemyBomber(true);
  p.hp=3;sfx('capture');say('施設から脱出！ 増援部隊と砂漠の移動要塞へ進軍せよ');
  return true;
@@ -497,7 +556,13 @@ function updateDecisiveMission(dt){
   startReinforcementPass(true);
  }
  if(!mission.enemyWavesStarted){
-  if(advance<DECISIVE_ENEMY_RELEASE_DISTANCE)return;
+  if(advance<DECISIVE_ENEMY_RELEASE_DISTANCE){
+   if(zoneAt(p.y).n==='砂漠'){
+    const raid=mission.enemyAirRaid;
+    raid.nextPassT=Math.max(5,raid.nextPassT-dt);
+   }
+   return;
+  }
   etanks=d.pendingEnemyTanks;d.pendingEnemyTanks=null;
   mission.enemyWavesStarted=true;
   spawnFrontlineWave(6);
@@ -505,7 +570,7 @@ function updateDecisiveMission(dt){
  updateDecisiveFortress(dt);
  cleanupFrontlineArmy(dt);updateFrontlineWaves(dt);
  const zone=zoneAt(p.y);
- updateDecisiveEnemyDrop(d.desertDrop,zone.n==='砂漠'?zone:null,dt);
+ updateDecisiveEnemyDrop(d.desertDrop,zone.n==='砂漠'?zone:null,dt,10,10);
  updateEnemyBomber(dt);
  if(state!=='play')return;
  mission.reinforceT-=dt;

@@ -279,12 +279,12 @@ test('fighter arrival starts 0.6 seconds into the bomber pass',()=>{
 
 test('decisive raids recur and roll a fresh 50% interception chance',()=>{
  for(const roll of [.49,.5]){
-  const s=harness([.5,roll]),c=s.c;
+  const s=harness([.5,.5,roll]),c=s.c;
   c.zoneAt=()=>({n:'砂漠'});
   c.setupEnemyBomber(true);
   const raid=c.mission.enemyAirRaid;
   raid.fighterUsed=true;
-  c.updateEnemyBomber(49);
+  c.updateEnemyBomber(19);
   assert.equal(raid.phase,'idle');
   c.updateEnemyBomber(1);
   assert.equal(raid.phase,'warning');
@@ -293,6 +293,6 @@ test('decisive raids recur and roll a fresh 50% interception chance',()=>{
   raid.plane.y=raid.plane.endY;raid.plane.drops=25;
   c.updateEnemyBomber(.01);
   assert.equal(raid.phase,'idle');
-  assert.ok(raid.nextPassT>=55&&raid.nextPassT<=70);
+  assert.ok(raid.nextPassT>=19.99&&raid.nextPassT<=30);
  }
 });

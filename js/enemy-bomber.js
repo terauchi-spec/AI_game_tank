@@ -16,12 +16,12 @@ function enemyBomberInRandomArea(){
 }
 function setupEnemyBomber(decisive=false){
  if(!enemyBomberEnabled()||!mission)return;
- mission.enemyAirRaid={decisive,remaining:decisive?Infinity:R()<.5?1:2,nextPassT:decisive?55:0,passes:0,phase:'idle',timer:0,route:null,plane:null,bombs:[],gradient:null,gradientHeight:0,fighter:null,fighterUsed:false,wrecks:[]};
+ mission.enemyAirRaid={decisive,remaining:decisive?Infinity:R()<.5?1:2,nextPassT:decisive?20+R()*10:0,passes:0,phase:'idle',timer:0,route:null,plane:null,bombs:[],gradient:null,gradientHeight:0,fighter:null,fighterUsed:false,wrecks:[]};
 }
 function updateEnemyBomber(dt){
  if(!enemyBomberEnabled()||state!=='play'||!enemyBomberRaid())return;
  const raid=enemyBomberRaid();
- if(raid.decisive&&raid.phase==='idle'&&zoneAt(p.y).n==='砂漠')raid.nextPassT=Math.max(0,raid.nextPassT-dt);
+ if(raid.decisive&&zoneAt(p.y).n==='砂漠')raid.nextPassT=Math.max(0,raid.nextPassT-dt);
  if(raid.debug)raid.nextPassT=Math.max(0,raid.nextPassT-dt);
  updateEnemyBomberInterception(raid,dt);
  for(let i=raid.bombs.length-1;i>=0;i--){
@@ -37,7 +37,7 @@ function updateEnemyBomber(dt){
    const view=frontlineView();
    raid.route={x:Math.max(30,Math.min(WW-30,view.x+view.w*(.2+R()*.6)))};
   }else raid.route={x:R()*WW};
-  raid.phase='warning';raid.timer=raid.debug?raid.nextPassT:5;sfx('airWarning');return;
+  raid.phase='warning';raid.timer=raid.debug||raid.decisive?raid.nextPassT:5;sfx('airWarning');return;
  }
  if(raid.phase==='cooldown'){
   raid.timer=Math.max(0,raid.timer-dt);if(raid.timer===0)raid.phase='idle';return;
@@ -49,7 +49,7 @@ function updateEnemyBomber(dt){
   // The margin keeps the entire aircraft above the first visible frame.
   const view=frontlineView(),entryMargin=180;
   raid.plane={x:raid.route.x,y:view.y-entryMargin,endY:view.y+view.h+entryMargin,drop:.05,drops:0,maxDrops:25,age:0,intercept:(raid.debug||raid.decisive||!raid.fighterUsed&&typeof isFrontlineAdvanced==='function'&&isFrontlineAdvanced())&&R()<.5};
-  if(raid.debug)raid.nextPassT=30;else raid.remaining--;raid.passes++;raid.phase='flight';return;
+  if(raid.debug)raid.nextPassT=30;else if(raid.decisive)raid.nextPassT=20+R()*10;else raid.remaining--;raid.passes++;raid.phase='flight';return;
  }
  if(raid.phase!=='flight')return;
  const plane=raid.plane;plane.age+=dt;
@@ -74,7 +74,7 @@ function updateEnemyBomber(dt){
  }
  // Keep the warning until both the complete aircraft and its drop run have passed.
  if(plane.y>plane.endY&&plane.drops===plane.maxDrops){
-  raid.plane=null;raid.phase=raid.debug||raid.decisive?'idle':raid.remaining?'cooldown':'done';if(raid.decisive)raid.nextPassT=55+R()*15;else raid.timer=22+R()*16;
+  raid.plane=null;raid.phase=raid.debug||raid.decisive?'idle':raid.remaining?'cooldown':'done';if(!raid.decisive)raid.timer=22+R()*16;
  }
 }
 // Twelve reusable paired tracers cover the doubled 556px flight range without per-frame allocation.
@@ -122,7 +122,7 @@ function crashEnemyBomber(raid,plane){
  for(const o of nearbyCovers(x,y,r+160))if(!o.fr&&o.kd===6&&touches(o))igniteNature(o);
  for(const o of nearbyBushes(x,y,r+160))if(touches(o))igniteNature(o);
  for(const br of bridges)if(touches(br))igniteBridge(br);
- raid.plane=null;raid.phase=raid.debug||raid.decisive?'idle':raid.remaining?'cooldown':'done';if(raid.decisive)raid.nextPassT=55+R()*15;else raid.timer=22+R()*16;
+ raid.plane=null;raid.phase=raid.debug||raid.decisive?'idle':raid.remaining?'cooldown':'done';if(!raid.decisive)raid.timer=22+R()*16;
 }
 // Static detail is rasterized once, keeping recurring debug wrecks cheap to draw.
 const enemyAircraftSpriteCache={};

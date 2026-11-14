@@ -61,7 +61,7 @@ test('allied bombers arrive at 20m and enemies spawn at 50m after escape',()=>{
 test('desert town replaces the random sections and shares the desert tile and uses its own buildings',()=>{
  for(const seed of [7,11,42]){
   const {run}=start(seed);
-  assert.deepEqual(Array.from(run('ZONES.map(z=>z.n)')),['草原','砂漠街','砂漠街','砂漠街','砂漠街','砂漠街','砂漠','砂漠','砂漠']);
+  assert.deepEqual(Array.from(run('ZONES.map(z=>z.n)')),['草原','砂漠街','砂漠街','砂漠街','砂漠街','砂漠街','砂漠','砂漠','砂漠','砂漠','砂漠']);
   assert.ok(run('ZONES.slice(1).every((z,i)=>z.y0===ZONES[i].y1)'));
   assert.equal(run('water.filter(w=>w.oasis).length'),1);
   assert.ok(run('water.some(w=>w.oasis&&w.sizeScale>=.2&&w.sizeScale<=1.5)'));
@@ -147,9 +147,12 @@ test('a selected town section gets one sandstorm with the same detection penalty
 });
 test('the facility replaces the capture circle and A opens it only on foot at the entrance',()=>{
  const {run}=start(11);
- assert.equal(run('covers.filter(c=>c.decisiveKind==="bunker").length'),8);
+ assert.equal(run('covers.filter(c=>c.decisiveKind==="bunker").length'),14);
  assert.ok(run('ZONES.slice(DECISIVE_DESERT_START).every(z=>decisiveBattle.bunkers.some(b=>b.x+b.w/2===WW/2&&zoneAt(b.y)===z))'));
- assert.equal(run('covers.filter(c=>c.decisiveKind==="sandbags"&&c.y<decisiveBattle.border+70).length'),16);
+ assert.ok(run(`ZONES.slice(DECISIVE_DESERT_START).every(z=>
+  z.decisiveRadios.length===2&&z.decisiveRadios.some(q=>q.white)&&z.decisiveRadios.some(q=>!q.white)&&
+  z.decisiveRadios.every(q=>zoneAt(q.y)===z&&!hitsM(q.x,q.y,12))&&
+  objects.filter(o=>o.kind==='barrel'&&zoneAt(o.y)===z).length===2)`));
  assert.ok(run(`covers.filter(c=>['bunker','sandbags'].includes(c.decisiveKind)).every(c=>
   !decisiveRectsOverlap(c,decisiveBattle.building,DECISIVE_FACILITY_DEFENSE_CLEARANCE))`));
  assert.ok(run('ZONES.slice(DECISIVE_DESERT_START).every(z=>cars.some(v=>v.y<z.y0&&v.y>z.y1))'));
@@ -225,7 +228,7 @@ test('the facility stairs, placed bomb and ground EXIT lead into the existing as
  assert.equal(run('beginDecisiveAssault()'),false);
  run('p.x=mission.points[0].x;p.y=mission.points[0].y;for(let i=0;i<200;i++)updateMission(.5)');
  assert.equal(run('state'),'play');
- assert.ok(run('base.hp>0&&humans.filter(h=>h.alive).length<=frontlineEnemyLimit()&&allies.filter(a=>a.alive&&a.frontline).length<=10'));
+ assert.ok(run('base.hp>0&&humans.filter(h=>h.alive).length<=frontlineEnemyLimit()+3&&allies.filter(a=>a.alive&&a.frontline).length<=10'));
  assert.equal(run('scoreStats.final'),null);
 });
 test('command facility keeps both floor dimensions, a fixed central room and nine explosive terminals',()=>{
@@ -327,8 +330,11 @@ test('moving fortress yields to nearby units; bunker and fortress guns reuse exi
  assert.equal(run('bullets.filter(b=>b.from==="e"&&b.k==="v").length'),5);
  run('updateDecisiveBunkers(.2)');
  assert.equal(run('bullets.filter(b=>b.from==="e"&&b.k==="v").length'),5);
- assert.ok(run(`covers.filter(c=>c.decisiveKind==='sandbags'&&c.y<decisiveBattle.border).every(bag=>
-  decisiveBattle.bunkers.every(b=>Math.abs(b.x+b.w/2-bag.x-bag.w/2)>240||Math.abs(b.y-bag.y)>200))`));
+ assert.ok(run(`ZONES.slice(DECISIVE_DESERT_START+1).every(z=>{
+  const bags=covers.filter(c=>c.decisiveKind==='sandbags'&&zoneAt(c.y)===z).sort((a,b)=>a.y-b.y);
+  return bags.length===9&&bags.every((c,i)=>i%3===0||c.y-bags[i-1].y===16&&
+   Math.abs(c.x-bags[i-1].x)-c.w>=2*TANK_HIT);
+ })`));
  run('var bunkerLayers=[];g.drawImage=(im)=>bunkerLayers.push(im.src);drawDecisiveCover(bunker);drawDecisiveCover({decisiveKind:"bunker",x:bunker.x,y:bunker.y,w:bunker.w,h:bunker.h});');
  assert.deepEqual(Array.from(run('bunkerLayers.map(src=>src.split("/").pop().split("?")[0])')),['bunker.webp','bunker-barrel.webp','bunker.webp']);
 });
@@ -336,11 +342,19 @@ test('decisive desert schedules both recurring air events',()=>{
  const {run}=start();
  completeFacility(run);
  run('p.y=decisiveBattle.assaultStartY-500;decisiveBattle.desertDrop.remaining=0;updateDecisiveMission(.01)');
- assert.ok(run('decisiveBattle.desertDrop.plane.targets.length===3'));
+ assert.ok(run('decisiveBattle.desertDrop.plane.targets.length===3&&decisiveBattle.desertDrop.remaining>=10&&decisiveBattle.desertDrop.remaining<=20'));
  run('mission.enemyAirRaid.nextPassT=5;updateDecisiveMission(.01)');
  assert.equal(run('mission.enemyAirRaid.phase'),'warning');
- assert.equal(run('mission.enemyAirRaid.timer'),5);
+ assert.ok(run('mission.enemyAirRaid.timer>4.98&&mission.enemyAirRaid.timer<=5'));
  assert.equal(run('mission.enemyAirRaid.remaining'),Infinity);
+ run(`const desertRadios=ZONES[DECISIVE_DESERT_START].decisiveRadios;
+  for(const pickup of desertRadios){
+   Object.assign(p,{x:pickup.x,y:pickup.y});
+   reinforcementPass=null;airstrike=null;collectDecisiveDesertRadios();
+   if(!(pickup.got&&(pickup.white?reinforcementPass:airstrike)))throw Error('radio not activated');
+  }`);
+ assert.ok(run('desertRadios.every(q=>q.got)'));
+
 });
 test('starting an existing stage clears decisive state and preserves its normal map and mission rules',()=>{
  const {run}=start();run("stageMode='beginner';reset(false)");assert.equal(run('decisiveBattle'),null);assert.equal(run('isDecisiveStage()'),false);assert.equal(run('currentStageId()'),'beginner');assert.equal(run('ZONES.length'),5);assert.equal(run('ZONES.some(z=>z.n==="砂漠")'),false);assert.equal(run('base.maxHp'),30);assert.equal(run('mission'),null);
