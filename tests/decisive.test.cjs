@@ -32,6 +32,25 @@ test('developer-only 13 preserves its identity through phase change and victory 
  run('blastUpdate(3)');assert.equal(run('state'),'succeeded');assert.equal(run('scoreStats.final.cleared'),true);assert.equal(run('scoreStats.objectiveProgress'),1);
  assert.equal(run('scoreStats.stageRecordId'),'decisive');assert.equal(run('readStageRecords().stages.decisive.successes'),1);assert.equal(run('readStageRecords().stages.front.successes'),0);assert.equal(run('leaderboardPending.decisive.stage'),'decisive');assert.equal(run('readStageProgress().cleared.length'),13);assert.ok(run("readTitleArchive().titles.v3_all_stages_clear"));assert.equal(run("scoreStats.awards.newTitles.includes('v3_all_stages_clear')"),false);
 });
+test('two allied bombers arrive together after escape and drop six troops',()=>{
+ const {run}=start();
+ completeFacility(run);
+ assert.ok(run(`(()=>{
+  const pass=reinforcementPass,view=frontlineView();
+  return pass.offsets.length===2&&pass.offsets[1]-pass.offsets[0]>=260&&pass.y<view.y+view.h;
+ })()`));
+ assert.ok(run(`(()=>{
+  const drawBomber=drawSupportBomber,calls=[];
+  drawSupportBomber=(x,y)=>calls.push({x,y});
+  try{draw();}finally{drawSupportBomber=drawBomber;}
+  return calls.length===2&&calls[0].x!==calls[1].x&&calls[0].y===calls[1].y;
+ })()`));
+ run('updateReinforcementPass(3)');
+ assert.equal(run('allies.filter(a=>a.chute>0).length'),6);
+ assert.equal(run('allies.filter(a=>a.chute>0&&a.frontCommander).length'),2);
+ assert.ok(run('allies.filter(a=>a.chute>0).every(a=>a.startY<p.y&&a.landY<p.y)'));
+ assert.equal(run('reinforcementPass'),null);
+});
 test('desert town replaces the random sections and shares the desert tile and uses its own buildings',()=>{
  for(const seed of [7,11,42]){
   const {run}=start(seed);

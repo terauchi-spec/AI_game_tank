@@ -466,7 +466,8 @@ function openDecisiveAssault(){
  setupFrontlineArmy();mission.enemyWavesStarted=true;mission.advanceReleased=true;
  for(const ally of allies)if(ally.alive){ally.frontline=true;assignFrontlineAllyRole(ally);}
  missionAllies(d.gate.y);setupFrontlineVehicles();spawnFrontlineWave(6);
- p.hp=3;sfx('capture');say('施設から脱出！ 味方部隊と砂漠の移動要塞へ進軍せよ');
+ startReinforcementPass(true);
+ p.hp=3;sfx('capture');say('施設から脱出！ 増援部隊と砂漠の移動要塞へ進軍せよ');
  return true;
 }
 function updateDecisiveMission(dt){
