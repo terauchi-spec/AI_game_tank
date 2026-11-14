@@ -344,6 +344,23 @@ test('moving fortress yields to nearby units; bunker and fortress guns reuse exi
  run('var bunkerLayers=[];g.drawImage=(im)=>bunkerLayers.push(im.src);drawDecisiveCover(bunker);drawDecisiveCover({decisiveKind:"bunker",x:bunker.x,y:bunker.y,w:bunker.w,h:bunker.h});');
  assert.deepEqual(Array.from(run('bunkerLayers.map(src=>src.split("/").pop().split("?")[0])')),['bunker.webp','bunker-barrel.webp','bunker.webp']);
 });
+test('desert radios are rerolled on sortie and bombing radios stay outside the moving fortress approach',()=>{
+ const {run}=start();
+ const validate=`ZONES.slice(DECISIVE_DESERT_START).every(z=>{
+  const [white,bomb]=z.decisiveRadios;
+  const approach=base.y+base.h+DECISIVE_FORTRESS_DEPTH+DECISIVE_FORTRESS_APPROACH;
+  return white?.white===true&&bomb?.white===false&&bomb.y>=approach+30&&D(white,bomb)>=80&&
+   z.decisiveRadios.every(q=>zoneAt(q.y)===z&&!hitsM(q.x,q.y,16)&&
+    !cars.some(v=>D(v,q)<66)&&!items.some(item=>D(item,q)<44));
+ })`;
+ const coords=white=>run(`JSON.stringify(ZONES.slice(DECISIVE_DESERT_START).map(z=>z.decisiveRadios.find(q=>q.white===${white})))`);
+ assert.ok(run(validate));
+ const first=[coords(true),coords(false)];
+ run('reset(false)');
+ assert.ok(run(validate));
+ assert.notEqual(coords(true),first[0]);
+ assert.notEqual(coords(false),first[1]);
+});
 test('decisive desert schedules both recurring air events',()=>{
  const {run}=start();
  completeFacility(run);

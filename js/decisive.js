@@ -528,14 +528,21 @@ function placeDecisiveDesertSupplies(zone){
   }
  }
  zone.decisiveRadios=[];
- const mid=(zone.y0+Math.max(0,zone.y1))/2;
+ const maxY=zone.y0-60;
+ // Leave room for collecting the pickup outside the fortress's full approach range.
+ const bombRadioMinY=base.y+base.h+DECISIVE_FORTRESS_DEPTH+DECISIVE_FORTRESS_APPROACH+30;
  for(const white of [true,false]){
+  const minY=Math.max(Math.max(0,zone.y1)+60,white?0:bombRadioMinY);
+  if(minY>maxY)continue;
+  const valid=(x,y)=>clear(x,y,16)&&!zone.decisiveRadios.some(q=>D(q,{x,y})<80);
   let found=null;
-  for(let dy=0;!found&&dy<zone.y0-zone.y1;dy+=48){
-   const y=mid+(white?-1:1)*dy;
-   for(const x of white?[220,740,350,610,480]:[740,220,610,350,480]){
-    if(!clear(x,y,16)||zone.decisiveRadios.some(q=>D(q,{x,y})<80))continue;
-    found={x,y,white,got:false};break;
+  for(let i=0;!found&&i<32;i++){
+   const x=30+R()*(WW-60),y=minY+R()*(maxY-minY);
+   if(valid(x,y))found={x,y,white,got:false};
+  }
+  for(let y=minY;!found&&y<=maxY;y+=48){
+   for(let x=30;x<=WW-30;x+=48){
+    if(valid(x,y)){found={x,y,white,got:false};break;}
    }
   }
   if(found)zone.decisiveRadios.push(found);
