@@ -83,3 +83,19 @@ test('parked, newly boarded and stationary driven tanks use identical full-width
  }
  assert.equal(h.depth(),0);
 });
+
+test('blue enemy tanks reuse the track strip and cache two layers; movement drives their phase',()=>{
+ const h=artHarness();h.c.TANK_DRAW=30;h.c.state='play';
+ h.c.tankShape(0,0,0,0,h.c.types[0],30);
+ const strip=h.rasters[0][0],enemy={x:0,y:0,body:0,ang:0};
+ const draw=()=>{h.rasters.length=0;h.c.drawEnemyTank(enemy);
+  assert.equal(h.rasters.length,4);assert.equal(h.rasters[0][0],strip);return h.rasters[0][2];};
+ assert.equal(draw(),0);
+ assert.equal(h.canvases.length,5);
+ enemy.x=6;assert.equal(draw(),3);
+ enemy.ang=1;assert.equal(draw(),3);
+ h.c.state='paused';enemy.x=8;assert.equal(draw(),3);
+ h.c.state='play';enemy.x=4;assert.equal(draw(),1);
+ assert.equal(h.canvases.length,5);
+ assert.equal(h.depth(),0);
+});
