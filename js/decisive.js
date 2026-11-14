@@ -17,25 +17,13 @@ function placeDecisiveRoomComputers(room,objects){
  }
 }
 
-function recordDecisiveComputerWreck(o){
- if(!isDecisiveFacility())return;
- decisiveBattle.computerWrecks.push({x:o.x,y:o.y,w:o.w,h:o.h,kind:o.kind});
- indoorRefreshDamagedNavigation(o.x+o.w/2,o.y+o.h/2,Math.max(o.w,o.h));
-}
-function drawDecisiveComputerWrecks(cx,cy){
- if(indoorWorld.currentFloor!==1)return;
- for(const q of decisiveBattle.computerWrecks){
-  if(!drawBoundsInView(q.x,q.y,q.w,q.h,cx,cy))continue;
-  const image=COVER_IMG[q.kind==='commandMain'?'decisive_computer-large-wreck':'decisive_computer-small-wreck'];
-  const [w,h]=fitAspect(image,q.w,q.h);
-  drawAssetSprite(image,q.x+q.w/2,q.y+q.h/2,w,h);
- }
-}
 function drawDecisiveComputerObject(o){
- const main=o.kind==='commandMain',image=COVER_IMG[main?'decisive_computer-large':'decisive_computer-small'];
- if(drawAssetSprite(image,o.x+o.w/2,o.y+o.h/2,o.w,o.h))return;
+ const size=o.kind==='commandMain'?'large':'small';
+ const image=COVER_IMG['decisive_computer-'+size+(o.wrecked?'-wreck':'')];
+ const [w,h]=o.wrecked?fitAspect(image,o.w,o.h):[o.w,o.h];
+ if(drawAssetSprite(image,o.x+o.w/2,o.y+o.h/2,w,h))return;
  g.fillStyle='#373733';g.fillRect(o.x,o.y,o.w,o.h);
- g.fillStyle='#296e55';g.fillRect(o.x+o.w*.06,o.y+o.h*.1,o.w*.88,o.h*.28);
+ g.fillStyle=o.wrecked?'#232321':'#296e55';g.fillRect(o.x+o.w*.06,o.y+o.h*.1,o.w*.88,o.h*.28);
 }
 const DECISIVE_DESERT_START=6;
 const DESERT_SANDBAG_W=210,DESERT_SANDBAG_H=52;
@@ -370,7 +358,7 @@ function enterDecisiveFacility(){
  d.outdoors={ZONES,roadBands,covers,objects,bushes,mud,water,bridges,cars,enemyDogs,etanks,humans,
   bombs,items,allies,builtWalls,tankWrecks,buildingGroundMarks,radio,whiteRadio,base,baseSpawnT,
   patrolRoutesVisible,roadTruckEvents,waterRipples,burningNature:[...burningNatureSet],fallen:fallenEnemies.slice()};
- d.phase='facility';d.computerWrecks=[];stageMode='indoor';
+ d.phase='facility';stageMode='indoor';
  const hp=p.hp;
  for(const key of ['computer-small','computer-large','computer-small-wreck','computer-large-wreck'])if(!COVER_IMG['decisive_'+key])COVER_IMG['decisive_'+key]=makeAssetImage('assets/decisive/'+key+'.webp?v='+GAME_VERSION);
  setupInfiltrationWorld(true);
@@ -414,7 +402,7 @@ function damageDecisiveComputer(x,y){
 }
 function updateDecisiveFacilityExit(dt){
  const m=mission,w=indoorWorld,ground=w.floors[0].footprint;
- const atExit=m.computer.done&&w.currentFloor===0&&!p.tank&&!(p.dig>0)&&!(p.digPrep>0)&&!(p.blastAirT>0)&&p.y>ground.y+ground.h+12&&D(p,w.exit)<INDOOR_EXIT_RADIUS;
+ const atExit=m.computer.done&&w.currentFloor===0&&!p.tank&&!(p.dig>0)&&!(p.digPrep>0)&&!(p.blastAirT>0)&&p.y<ground.y-12&&D(p,w.exit)<INDOOR_EXIT_RADIUS;
  m.escapeExit=atExit?w.exit:null;
  m.escapeProgress=atExit?m.escapeProgress+dt:0;
  if(m.escapeProgress>=INDOOR_EXIT_SECONDS-1e-9)beginDecisiveAssault();
@@ -422,7 +410,7 @@ function updateDecisiveFacilityExit(dt){
 function beginDecisiveAssault(){
  const d=decisiveBattle;
  if(!isDecisiveFacility()||!mission?.computer?.done||mission.escapeProgress<INDOOR_EXIT_SECONDS-1e-9)return false;
- const saved=d.outdoors;d.outdoors=null;d.computerWrecks=null;d.phase='assault';
+ const saved=d.outdoors;d.outdoors=null;d.phase='assault';
  ({ZONES,roadBands,covers,objects,bushes,mud,water,bridges,cars,enemyDogs,etanks,humans,
    bombs,items,allies,builtWalls,tankWrecks,buildingGroundMarks,radio,whiteRadio,base,baseSpawnT,
    patrolRoutesVisible,roadTruckEvents,waterRipples}=saved);
@@ -546,11 +534,15 @@ function drawDecisiveFacilityHud(el){
  const hud='<b>'+DECISIVE_FACILITY_NAME+' '+basement+'</b><small>'+alarm+task+'</small>';
  if(hud!==indoorHudSnapshot){indoorHudSnapshot=hud;el.innerHTML=hud;}
  const targetFloor=q.done?0:q.floor-1;
- const guide=floor===targetFloor?(q.done?w.exit:q):w.floors[floor].stairs.find(s=>s.destination===floor+Math.sign(targetFloor-floor));
  gm.save();gm.setTransform(1,0,0,1,0,0);
  drawInfiltrationAlarmOverlay();
  if(indoorStairProtected())drawIndoorStairSafeArea(w.stairSanctuary);
- drawFrontlineArrow(guide);
+ if(floor===targetFloor)drawFrontlineArrow(q.done?w.exit:q);
+ else{
+  gm.font='bold 21px system-ui';gm.textAlign='right';
+  gm.fillStyle=q.done?'#a9f3c0':'#ffe1a0';
+  gm.fillText(q.done?'→EXIT':'→B1F',W-12,83);
+ }
  const {x,y,w:width,h:height}=q.object;
  const cx=Math.round(camX/2)*2,cy=Math.round(cam/2)*2;
  if(!q.done&&floor===targetFloor&&drawBoundsInView(x,y,width,height,cx,cy,48)){

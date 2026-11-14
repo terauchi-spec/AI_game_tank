@@ -88,7 +88,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null,second
     for(let c=1;c<=3;c++)add(c,5);
   }
   // Exterior entrances and the broad lobby belong only to the ground floor.
-  const hasExterior=number===1,emergencyRoll=hasExterior?rng():1,hasEmergency=hasExterior&&emergencyRoll<.5&&!commandFacility&&!isInfiltrationBeginner();
+  const hasExterior=number===1,emergencyRoll=hasExterior?rng():1,hasEmergency=hasExterior&&(commandFacility||emergencyRoll<.5&&!isInfiltrationBeginner());
   if(!laboratory){add(2,1);add(1,1);}if(hasExterior)add(2,0);
   const south=[1,2,3].filter(c=>hall.has(index(c,5)));
   const entranceCol=south.length?south[Math.floor(rng()*south.length)]:1;
@@ -1247,7 +1247,7 @@ function setupInfiltrationWorld(commandFacility=false){
     });
     indoorWorld.floors.push({number:n,offset:off,pattern:raw.pattern,
       corridors,lobbyArea,rooms,stair,stairs,stairObstacle,stairObstacles,openings,
-      entrance,entrances,exit:entrance,emergency,
+      entrance,entrances,exit:commandFacility?emergency:entrance,emergency,
       footprint:indoorRect(raw.footprint,off),
       doors,windows,guards,postGuards,
       guardPostId:raw.postRoomId,walls:wallRects,props,lightFixtures,navigation});
@@ -1272,10 +1272,10 @@ function setupInfiltrationWorld(commandFacility=false){
     scoreStats.startY=p.y;scoreStats.stage='indoor';
     scoreStats.documentTotal=INDOOR_FILES_TOTAL;scoreStats.objectiveTotal=INDOOR_FILES_TOTAL;
   }
-  indoorWorld.exit={...entrance.entrance};
+  indoorWorld.exit={...entrance.exit};
   indoorWorld.entrance={...entrance.entrance};
   indoorWorld.emergency=entrance.emergency?{...entrance.emergency}:null;
-  indoorWorld.exits=[entrance.entrance,entrance.emergency].filter(Boolean);
+  indoorWorld.exits=commandFacility?[indoorWorld.exit]:[entrance.entrance,entrance.emergency].filter(Boolean);
   indoorWorld.currentFloor=0;
   // Lab pickup roads reuse destruction-stage asphalt, markings and its shared
   // one-time visual cache. Both possible jeep lanes (+/-68px) fit the 320px road.
@@ -1602,12 +1602,17 @@ function setupInfiltrationMission(){
 
 
 const INDOOR_STAIR_WIDTH=60;
+function indoorStairAsset(number){
+  const upstairs=indoorWorld?.commandFacility?number===2:number===1;
+  return upstairs?'stairs_up':'stairs_down';
+}
 function indoorStairBounds(stair,number){
   // The lab shares one tall staircase on both floors. Its surrounding walls,
   // landing and sanctuary must follow that silhouette, not the military down stair.
   const laboratory=typeof isLaboratoryStage==='function'&&isLaboratoryStage();
-  const w=indoorWorld?.commandFacility&&number===1?40:INDOOR_STAIR_WIDTH;
-  const h=w*(laboratory?384/107:number===1?320/100:320/162);
+  const up=indoorStairAsset(number)==='stairs_up';
+  const w=indoorWorld?.commandFacility&&up?40:INDOOR_STAIR_WIDTH;
+  const h=w*(laboratory?384/107:up?320/100:320/162);
   return{x:stair.x-w/2,y:stair.y-h/2,w,h};
 }
 function indoorStairWalls(stair,number){
@@ -3019,7 +3024,7 @@ const indoorOutdoorTerrain={n:'丘陵',g:'#6b7a3a'};
 const indoorLaboratoryOutdoorTerrain={n:'街',g:'#57595e'};
 function drawInfiltrationStairSprite(floor){
   const stair=arguments[1]||floor.stairs?.[0]||floor.stair;
-  const image=indoorPropImage(floor.number===1?'stairs_up':'stairs_down');if(!image)return false;
+  const image=indoorPropImage(indoorStairAsset(floor.number));if(!image)return false;
   const iw=image.naturalWidth||image.width,ih=image.naturalHeight||image.height;
   const w=indoorStairBounds(stair,floor.number).w,h=w*ih/iw;
   g.save();g.imageSmoothingEnabled=true;
