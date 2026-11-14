@@ -44,3 +44,33 @@ test('decisive results preserve previously earned titles and counters and never 
  assert.equal(h.run('sampleRun.awards.excluded'),true);assert.equal(h.run('sampleRun.awards.titles.length'),0);assert.equal(h.run('sampleRun.awards.newTitles.length'),0);assert.equal(h.run('JSON.stringify(readTitleArchive())===beforeArchive'),true);
  const result=h.run('evaluateRunTitles(Array(8).fill(5),Array(8).fill(100),sampleRun,sampleRun.final)');assert.equal(result.titles.length,0);assert.equal(result.primary.id,'unranked');
 });
+
+test('escort score and titles distinguish a quiet, intact rescue from a spotted or injured VIP',()=>{
+ const h=createGameEngine(root);
+ const result=h.run(`(()=>{
+  const s=Object.assign(newScoreStats(),{stage:'indoor',rescue:true,vipMaxHp:3,vipHp:3,escortDist:600,hiddenEscortDist:600,objectiveProgress:1});
+  const r={cleared:true},archive={titles:{}};
+  const check=()=>{const m=resultMetrics(s,r);return evaluateRunTitles(m.map(resLevel),m,s,r,archive).titles.map(t=>t.id);};
+  const intact=check(),full=calculateScore(s,true,false).total;
+  s.vipDetections=1;const spotted=check();
+  s.vipHp=2;const injured=check();
+  return {intact,spotted,injured,full,damaged:calculateScore(s,true,false).total};
+ })()`);
+ assert.ok(result.intact.includes('v3_single_1_elite'));
+ assert.ok(result.intact.includes('v3_single_7_elite'));
+ assert.ok(!result.spotted.includes('v3_single_1_elite'));
+ assert.ok(!result.injured.includes('v3_single_0_elite'));
+ assert.ok(!result.injured.includes('v3_single_7_elite'));
+ assert.ok(result.full>result.damaged);
+});
+
+test('front commander requires every capture, at least two completed joint captures and defence kills',()=>{
+ const h=createGameEngine(root);
+ assert.deepEqual(Array.from(h.run(`(()=>{
+  const s=Object.assign(newScoreStats(),{stage:'front',objectiveProgress:1,objectiveTotal:3,capturePoints:3,jointCapturePoints:3,captureDefenseKills:5});
+  const r={cleared:true};
+  const earns=()=>{const m=resultMetrics(s,r);return evaluateRunTitles(m.map(resLevel),m,s,r,{titles:{}}).titles.some(t=>t.id==='v3_front_commander');};
+  const complete=earns();s.capturePoints--;const missed=earns();s.capturePoints++;s.jointCapturePoints=1;
+  return [complete,missed,earns()];
+ })()`)),[true,false,false]);
+});

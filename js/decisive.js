@@ -557,13 +557,14 @@ function damageDecisiveComputer(x,y){
  const hit={x:Math.max(rect.x,Math.min(x,rect.x+rect.w)),y:Math.max(rect.y,Math.min(y,rect.y+rect.h))};
  if(D(blast,hit)>70||!los(blast,hit,target.object))return;
  target.hits++;
+ scoreStats.decisiveTerminalHits=target.hits;
+ scoreStats.objectiveProgress=.25*target.hits/DECISIVE_COMPUTER_HITS;
  if(target.hits<DECISIVE_COMPUTER_HITS){
   fb(hit.x,hit.y,20);burst(hit.x,hit.y,12,'#ffb347',140);
   say('大型コンピューター：設置爆弾あと'+(DECISIVE_COMPUTER_HITS-target.hits)+'回');
   return;
  }
  target.done=true;
- scoreStats.objectiveProgress=.25;
  explodeObject(target.object);
  say('大型コンピューターを破壊！ 地上階のEXITへ');
 }
@@ -582,6 +583,7 @@ function beginDecisiveAssault(){
 function openDecisiveAssault(){
  const d=decisiveBattle;
  const saved=d.outdoors;d.outdoors=null;d.phase='assault';
+ if(indoorWorld.alarm?.active)scoreStats.indoorAlarm=true;
  ({ZONES,roadBands,covers,objects,bushes,mud,water,bridges,cars,enemyDogs,etanks,humans,
    bombs,items,allies,builtWalls,tankWrecks,buildingGroundMarks,radio,whiteRadio,base,baseSpawnT,
    patrolRoutesVisible,roadTruckEvents,waterRipples}=saved);

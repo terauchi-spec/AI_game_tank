@@ -46,6 +46,8 @@ test('rescued VIP is confirmed, pursued, hit by enemy rifles and lost at zero li
  h.tick(.6,"if(state==='play')update(1/60)");
  assert.equal(h.run('vip.hp'),0);
  assert.equal(h.run('state'),'failed');
+ assert.equal(h.run('scoreStats.vipHp'),0);
+ assert.equal(h.run('scoreStats.vipDetections'),1);
 });
 
 test('indoor commander can hit the VIP and guards cannot see the VIP on another floor',()=>{

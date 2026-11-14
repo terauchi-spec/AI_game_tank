@@ -686,7 +686,7 @@ test('evaluation records personal and joint capture participation but not remote
  for(const present of [false,true]){
   const c=harness(),q={x:480,y:10000,counterTriggered:true,playerEntered:true};c.mission={points:[q,{x:480,y:6500}],index:0,progress:46,waveT:999,reinforceT:999};c.p.y=present?10000:10400;c.scoreStats={};c.allies=[{x:480,y:10000,alive:true,frontline:true}];
   vm.runInContext(html.slice(html.indexOf('function updateMission('),html.indexOf('let missionHudNextAt=')),c);c.updateMission(3);
-  assert.equal(c.mission.index,1);assert.equal(c.scoreStats.capturePoints,Number(present));assert.equal(c.scoreStats.captureSeconds||0,present?3:0);assert.equal(c.scoreStats.jointObjectiveSeconds||0,present?3:0);assert.equal(c.scoreStats.objectiveProgress,.5);
+  assert.equal(c.mission.index,1);assert.equal(c.scoreStats.capturePoints,Number(present));assert.equal(c.scoreStats.captureSeconds||0,present?3:0);assert.equal(c.scoreStats.jointObjectiveSeconds||0,present?3:0);assert.equal(c.scoreStats.jointCapturePoints,Number(present));assert.equal(c.scoreStats.objectiveProgress,.5);
  }
 });
 

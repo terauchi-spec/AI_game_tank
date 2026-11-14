@@ -17,7 +17,12 @@ function enterFacility(run){
 }
 function completeFacility(run){
  enterFacility(run);
- run('debugInvincible=true;indoorWorld.currentFloor=1;for(let i=0;i<3;i++)bombBlast(mission.computer.x,mission.computer.y,0,false,true)');
+ run('debugInvincible=true;indoorWorld.currentFloor=1');
+ for(let hit=1;hit<=3;hit++){
+  run('bombBlast(mission.computer.x,mission.computer.y,0,false,true)');
+  assert.equal(run('scoreStats.decisiveTerminalHits'),hit);
+  assert.equal(run('missionProgress(scoreStats)'),.25*hit/3);
+ }
  assert.equal(run('mission.computer.done'),true);
  run('indoorWorld.currentFloor=0;p.x=indoorWorld.exit.x;p.y=indoorWorld.exit.y;p.blastAirT=0;for(let i=0;i<5;i++)updateMission(1);update(.25);update(.25);debugInvincible=false');
 }

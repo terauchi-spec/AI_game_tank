@@ -160,6 +160,7 @@ function separateJungleLake(z,river,pond){
 }
 function setupEscapeTestMission(){
  mission={escapeTest:true,vip:{x:p.x-30,y:p.y+40,face:p.body,hp:3,moving:false,leaderX:p.x,leaderY:p.y},exit:ZONES[ZONES.length-1].escapeExit,escapeProgress:0,escapeExit:null,escapeComplete:false,points:[],index:0,enemyDrop:rescueBeginner?null:{next:0,plane:null,parachutes:[],retry:0}};missionHudNextAt=0;
+ scoreStats.rescue=true;scoreStats.vipMaxHp=scoreStats.vipHp=mission.vip.hp;
 }
 // The two passes are keyed to progress, so backtracking cannot repeat them.
 const ESCAPE_ENEMY_DROP_AREAS=[1,3];
@@ -253,6 +254,7 @@ function escapeVipTarget(){
 function damageMissionVip(vip,damage=1){
  if(!vip||vip.hp<=0||state!=='play')return;
  vip.hp=Math.max(0,vip.hp-damage);
+ if(scoreStats?.rescue&&!scoreStats.finalized)scoreStats.vipHp=vip.hp;
  burst(vip.x,vip.y,7,'#f28b9f',75);
  if(vip.hp>0){say('要人女性が被弾！ 残りライフ '+vip.hp);return;}
  vip.moving=false;state='failed';failureFrameDrawn=false;
@@ -307,7 +309,11 @@ function updateEscapeVip(dt){
  }
  const wait=vip.followWait??ESCAPE_VIP_FOLLOW_DELAY,moveDt=dt-wait;
  vip.followWait=Math.max(0,-moveDt);
- if(moveDt>1e-9)movePartnerFollower(vip,goal,Math.min(ESCAPE_VIP_FOLLOW_SPEED,(distance-arrival)/moveDt),moveDt);
+ if(moveDt>1e-9){
+  const startX=vip.x,startY=vip.y;
+  movePartnerFollower(vip,goal,Math.min(ESCAPE_VIP_FOLLOW_SPEED,(distance-arrival)/moveDt),moveDt);
+  scoreEscortAdvance(vip,exit,startX,startY);
+ }
  else vip.moving=false;
 }
 function updateEscapeVipConcealment(vip,dt){
@@ -355,7 +361,7 @@ function updateEscapeTestMission(dt){
  const playerInside=p.hp>0&&!p.tank&&D(p,m.exit)<INDOOR_EXIT_RADIUS;
  const inside=playerInside&&m.vip.hp>0&&!(m.vip.stunT>0)&&D(m.vip,m.exit)<INDOOR_EXIT_RADIUS;
  m.escapeExit=inside?m.exit:null;m.escapeProgress=inside?Math.min(INDOOR_EXIT_SECONDS,m.escapeProgress+dt):0;
- scoreStats.objectiveProgress=(m.index+Math.min(1,m.escapeProgress/INDOOR_EXIT_SECONDS))/ZONES.length;
+ scoreStats.objectiveProgress=Math.max(scoreStats.objectiveProgress,(m.index+m.escapeProgress/INDOOR_EXIT_SECONDS)/ZONES.length);
  if(m.escapeProgress>=INDOOR_EXIT_SECONDS-1e-9){m.escapeComplete=true;scoreStats.objectiveProgress=1;completeMission();
   beginInfiltrationExtraction(m.exit,{x:Math.max(0,Math.min(WW-W,p.x-W/2)),y:0});
   m.extraction.vip={actor:m.vip,x:m.vip.x,y:m.vip.y,boarded:false};}

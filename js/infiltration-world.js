@@ -1468,6 +1468,7 @@ function setupRescueAdvancedMission(){
  const key={x:keyPoint.x+keyPoint.w/2,y:keyPoint.y+keyPoint.h/2,floor:keyFloor.number,progress:0,done:false};
  w.rescue={vip:{...vipPoint,face:0,hp:3,moving:false,leaderX:p.x,leaderY:p.y,indoorFloor:3,freed:false},key,door,room};
  mission={index:0,progress:0,points:[],exit:w.exit,detected:false,current:null,alarm:0,escapeProgress:0,escapeExit:null,escapeComplete:false,rescueAdvanced:true};
+ scoreStats.rescue=true;scoreStats.vipMaxHp=scoreStats.vipHp=w.rescue.vip.hp;
  say('救出作戦：鍵を入手し、地下2階の要人を救出して地上のEXITへ');
 }
 function updateRescueAdvancedMission(dt){
@@ -1492,7 +1493,15 @@ function updateRescueAdvancedMission(dt){
    if(vip.stunT===0){vip.stunImmuneT=15;vip.followWait=.6;}
   }else{
    const goal=partnerFollowGoal(36),dist=D(vip,goal);
-   if(dist>3){const wait=vip.followWait||0;vip.followWait=Math.max(0,wait-dt);if(wait<=dt)movePartnerFollower(vip,goal,Math.min(ESCAPE_VIP_FOLLOW_SPEED,(dist-2)/Math.max(dt,.001)),dt);}
+   if(dist>3){
+    const wait=vip.followWait||0;vip.followWait=Math.max(0,wait-dt);
+    if(wait<=dt){
+     const floor=w.floors[w.currentFloor],startX=vip.x,startY=vip.y;
+     floor.rescueEscortTarget??=w.currentFloor===0?w.exits.reduce((a,b)=>D(vip,a)<D(vip,b)?a:b):floor.stairs.find(stair=>indoorStairDestination(floor,stair)<w.currentFloor);
+     movePartnerFollower(vip,goal,Math.min(ESCAPE_VIP_FOLLOW_SPEED,(dist-2)/Math.max(dt,.001)),dt);
+     scoreEscortAdvance(vip,floor.rescueEscortTarget,startX,startY);
+    }
+   }
    else vip.moving=false;
   }
  }
@@ -1500,9 +1509,12 @@ function updateRescueAdvancedMission(dt){
  const ground=w.floors[0].footprint,outside=p.y<ground.y-12||p.y>ground.y+ground.h+12;
  const escape=vip.freed&&vip.hp>0&&!(vip.stunT>0)&&w.currentFloor===0&&!p.tank&&outside
   ?w.exits.find(q=>D(p,q)<INDOOR_EXIT_RADIUS&&D(vip,q)<INDOOR_EXIT_RADIUS):null;
+ const searchProgress=r.key.done?.25:w.currentFloor*.1;
+ const progress=vip.freed?.5+(2-w.currentFloor)*.125:searchProgress;
  if(escape){if(m.escapeExit!==escape)m.escapeProgress=0;m.escapeExit=escape;m.escapeProgress=Math.min(INDOOR_EXIT_SECONDS,m.escapeProgress+dt);
-  if(m.escapeProgress>=INDOOR_EXIT_SECONDS&&!m.escapeComplete){m.escapeComplete=true;completeMission();beginInfiltrationExtraction(escape);}
+  if(m.escapeProgress>=INDOOR_EXIT_SECONDS&&!m.escapeComplete){scoreStats.objectiveProgress=1;m.escapeComplete=true;completeMission();beginInfiltrationExtraction(escape);}
  }else{m.escapeExit=null;m.escapeProgress=0;}
+ scoreStats.objectiveProgress=Math.max(scoreStats.objectiveProgress,progress+.25*m.escapeProgress/INDOOR_EXIT_SECONDS);
 }
 const INDOOR_STAIR_TRANSITION_SECONDS=.5;
 
@@ -2815,7 +2827,7 @@ function updateInfiltrationMission(dt){
        scoreStats.documents=(scoreStats.documents||0)+1;scoreStats.documentTotal=m.points.length;
        scoreStats.hiddenDocuments=(scoreStats.hiddenDocuments||0)+Number(!q.scoreExposed);
        scoreStats.partnerDocuments=(scoreStats.partnerDocuments||0)+Number(!!q.partnerContributed);
-       scoreStats.jointObjectiveSeconds=(scoreStats.jointObjectiveSeconds||0)+(q.playerContributed&&q.partnerContributed?INDOOR_ACQUIRE_SECONDS:0);
+       scoreStats.jointDocuments+=Number(q.playerContributed&&q.partnerContributed);
        scoreStats.objectiveProgress=.75*m.index/m.points.length;
       }
       say('重要資料回収 '+m.index+'/'+m.points.length);
@@ -2832,6 +2844,7 @@ function updateInfiltrationMission(dt){
   if(escape){
     if(m.escapeExit!==escape)m.escapeProgress=0;
     m.escapeExit=escape;m.escapeProgress=Math.min(INDOOR_EXIT_SECONDS,(m.escapeProgress||0)+dt);
+    scoreStats.objectiveProgress=Math.max(scoreStats.objectiveProgress,.75+.25*m.escapeProgress/INDOOR_EXIT_SECONDS);
     if(m.escapeProgress>=INDOOR_EXIT_SECONDS-1e-9&&!m.escapeComplete){m.escapeComplete=true;completeMission();beginInfiltrationExtraction(escape);}
   }else{m.escapeExit=null;m.escapeProgress=0;}
 
