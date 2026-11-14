@@ -379,14 +379,25 @@ function spawnDesertTownPatrols(zones){
  }
 }
 function decisiveRectsOverlap(a,b,pad=0){return a.x<b.x+b.w+pad&&a.x+a.w+pad>b.x&&a.y<b.y+b.h+pad&&a.y+a.h+pad>b.y;}
+function createDecisiveFortress(locked){
+ return {x:(WW-DECISIVE_FORTRESS_W)/2,y:DECISIVE_FORTRESS_Y,w:DECISIVE_FORTRESS_W,h:DECISIVE_FORTRESS_H,hp:90,maxHp:90,deadAt:0,decisiveFortress:true,decisiveLocked:locked};
+}
+function createDecisiveFortressState(){
+ return {fortressDir:1,fortressDepthT:5,fortressTargetY:DECISIVE_FORTRESS_Y,fortressCd:2,fortressTravel:0,fortressScan:0,
+  roofGuns:DECISIVE_ROOF_TURRETS.map(([x,y])=>({x,y,gunAim:Math.PI/2})),roofCd:4,roofNext:0,roofShell:null,
+  doorCd:5,doorNext:0,door:null,fortressGuns:DECISIVE_FORTRESS_MOUNTS.map(([x,y,neutral])=>({x,y,neutral,gunAim:neutral})),gunScan:0};
+}
+function setupDecisiveFortressDebug(){
+ loadDecisiveAssets();
+ base=createDecisiveFortress(false);
+ decisiveBattle={phase:'fortressDebug',...createDecisiveFortressState()};
+}
 function setupDecisiveWorld(){
  loadDecisiveAssets();
  const border=ZONES[DECISIVE_DESERT_START].y0;
  const w=440,h=w*439/448,building={x:(WW-w)/2,y:border+86,w,h,kd:3,decisiveKind:'command-facility'};
  const gate={x:WW/2,y:building.y+h+22,name:DECISIVE_FACILITY_NAME};
- decisiveBattle={phase:'town',border,gate,building,reserve:[],bunkers:[],fortressDir:1,fortressDepthT:5,fortressTargetY:DECISIVE_FORTRESS_Y,fortressCd:2,fortressTravel:0,fortressScan:0,
-  roofGuns:DECISIVE_ROOF_TURRETS.map(([x,y])=>({x,y,gunAim:Math.PI/2})),roofCd:4,roofNext:0,roofShell:null,
-  doorCd:5,doorNext:0,door:null,fortressGuns:DECISIVE_FORTRESS_MOUNTS.map(([x,y,neutral])=>({x,y,neutral,gunAim:neutral})),gunScan:0};
+ decisiveBattle={phase:'town',border,gate,building,reserve:[],bunkers:[],...createDecisiveFortressState()};
  // 施設と南側正面の進入路を砂漠街の生成物から空ける。
  const clearing={x:gate.x-350,y:border+24,w:700,h:740};
  covers=covers.filter(c=>c.y>=border&&!decisiveRectsOverlap(c,clearing));
@@ -400,7 +411,7 @@ function setupDecisiveWorld(){
  const nearFacilityDefense=c=>decisiveRectsOverlap(c,building,DECISIVE_FACILITY_DEFENSE_CLEARANCE);
  covers=covers.filter(c=>c.decisiveKind!=='sandbags'||!nearFacilityDefense(c));
  covers.push(building);
- base={x:(WW-DECISIVE_FORTRESS_W)/2,y:DECISIVE_FORTRESS_Y,w:DECISIVE_FORTRESS_W,h:DECISIVE_FORTRESS_H,hp:90,maxHp:90,deadAt:0,decisiveFortress:true,decisiveLocked:true};
+ base=createDecisiveFortress(true);
  for(const zone of ZONES.slice(DECISIVE_DESERT_START)){
   // Alternate the side placements around a bunker in the middle of the area.
   const leftFirst=R()<.5;
@@ -917,7 +928,7 @@ function scanDecisiveFortressGuns(b,d,target,now,canFire){
 }
 function updateDecisiveFortress(dt){
  const d=decisiveBattle;
- if(!base||base.decisiveLocked||d?.phase!=='assault')return;
+ if(!base?.decisiveFortress||base.decisiveLocked||!d)return;
  if(base.hp<=0){d.roofShell=null;d.door=null;return;}
  const center=(WW-base.w)/2,minX=center-DECISIVE_FORTRESS_SWEEP,maxX=center+DECISIVE_FORTRESS_SWEEP;
  const stepX=base.x+d.fortressDir*DECISIVE_FORTRESS_SPEED*dt;
@@ -1125,7 +1136,7 @@ function drawDecisiveFortressTurrets(b){
  const barrel=COVER_IMG['decisive_bunker-barrel'],guns=decisiveBattle?.fortressGuns;
  if(!guns||decisiveFortressSpriteKey()!=='decisive_fortress-hull')return;
  const now=performance.now(),scale=b.w/600,image=COVER_IMG['decisive_fortress-hull'];
- if(decisiveBattle.phase==='assault'){
+ if(!b.decisiveLocked){
   drawDecisiveRoofGuns(b,decisiveBattle,image,now);
   drawDecisiveFortressDoor(b,decisiveBattle,image);
  }

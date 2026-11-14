@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.15.0832</title>
+<title>こっそり戦車大作戦 2026.11.15.0839</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -1027,7 +1027,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.15.0832',FILE_CREATED_AT='2026/11/15 08:32',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.15.0839',FILE_CREATED_AT='2026/11/15 08:39',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -6586,7 +6586,7 @@ function useSkill(wx,wy){if(scoreStats&&!scoreStats.finalized)scoreStats.skillUs
  else if(skill==='flame'){/* S長押しで連続使用 */}
  else if(skill==='sniper')enterSniperMode();
  else if(skill==='hound')beginHoundAttack();}
-function winSeq(){if(stageMode!=='base'&&stageMode!=='beginner'&&!(base?.decisiveFortress&&!base.decisiveLocked)){base.hp=30;say('作戦目標を達成しよう');return;}if(areaDebugEnabled){base.hp=30;say('エリアデバッグ中：司令部破壊判定を無効化');return;}state='blast';blastT=2.4;bq=0;p.dig=0;p.digPrep=0;p.drill=0;}
+function winSeq(){if(stageMode!=='base'&&stageMode!=='beginner'&&!(base?.decisiveFortress&&!base.decisiveLocked)){base.hp=30;say('作戦目標を達成しよう');return;}if(areaDebugEnabled){if(base.decisiveFortress){say('移動要塞を破壊！');return;}base.hp=30;say('エリアデバッグ中：司令部破壊判定を無効化');return;}state='blast';blastT=2.4;bq=0;p.dig=0;p.digPrep=0;p.drill=0;}
 function blastUpdate(dt){blastT-=dt;bq-=dt;if(bq<=0){bq=.1;const x=base.x+R()*base.w,y=base.y+R()*base.h;fb(x,y,28+R()*34);burst(x,y,25,'#ff8a3a',380);shake=14;if(R()<.3)flash=.5;}
  for(const f of fx)f.l-=dt;fx=fx.filter(f=>f.l>0);updateParts(dt);
  flash=Math.max(0,flash-dt*2.5);if(blastT<=0){state='succeeded';successFrameDrawn=false;shake=0;finalizeScore(true);}}
@@ -8183,7 +8183,7 @@ function draw(near){
  }
  drawLabels(cx,cy);drawVehicleMarkers(cx,cy);
  // 右上のナビ情報は従来どおり。スマホでは状態HUDを左上へ集約する。
- g.fillStyle='#e6e9d8';g.font='bold 14px system-ui';g.textAlign='right';g.fillText(stageMode==='training'?'訓練場':stageMode==='indoor'?'':areaDebugEnabled?'エリアテスト：'+zoneAt(p.y).n:'司令部まで '+distanceMeters(p.y-150)+'m',W-12,22);
+ g.fillStyle='#e6e9d8';g.font='bold 14px system-ui';g.textAlign='right';g.fillText(stageMode==='training'?'訓練場':stageMode==='indoor'?'':areaDebugEnabled?'エリアテスト：'+(selectedAreaDebug||zoneAt(p.y).n):'司令部まで '+distanceMeters(p.y-150)+'m',W-12,22);
  g.fillStyle=areaDebugEnabled?'#ffd27a':'#b9c19a';g.font='12px system-ui';g.fillText(stageMode==='training'?'基本操作の練習':stageMode==='indoor'?'':(areaDebugEnabled?'AREA DEBUG / ':'エリア: ')+zoneAt(p.y).n,W-12,40);
  // 歩兵HUDはHP・爆弾・索敵解除をアイコン化。スマホは左上、PCは左下に表示する。
  drawInfantryBottomHud();if(stageMode!=='training')drawSkillBottomHud();drawVehicleBottomHud();
@@ -8873,6 +8873,7 @@ function setupMission(){
 }
 function completeMission(){if(state!=='play')return;if(stageMode==='escapeTest'){state='succeeded';shake=0;finalizeScore(true);return;}const frontline=beginFrontlineVictory();if(!frontline)state='win';shake=0;finalizeScore(true);if(!frontline&&state==='win'&&stageMode!=='indoor')sfx('win');}
 function updateMission(dt){
+ if(areaDebugEnabled&&decisiveBattle?.phase==='fortressDebug'){updateDecisiveFortress(dt);return;}
  if(stageMode==='escapeTest'){updateEscapeTestMission(dt);return;}
  if(stageMode==='training'){updateTrainingMission(dt);return;}
  if(typeof isDecisiveStage==='function'&&isDecisiveStage()){updateDecisiveMission(dt);return;}
@@ -9062,7 +9063,7 @@ function reportGameError(error){
 </script>
 <script src="js/road-trucks.js?v=2026.11.14.1728"></script>
 <script src="js/stage-progress.js?v=2026.11.12.2006"></script>
-<script src="js/decisive.js?v=2026.11.15.0309"></script>
+<script src="js/decisive.js?v=2026.11.15.0839"></script>
 <script src="js/frontline.js?v=2026.11.13.1834"></script>
 <script src="js/award-icons.js?v=2026.10.31.0807"></script>
 <script src="js/developer.js?v=2026.11.11.2308"></script>
@@ -9081,7 +9082,7 @@ function reportGameError(error){
 <script src="js/jungle-placement-masks.js?v=2026.11.08.2145"></script>
 <script src="js/jungle.js?v=2026.11.15.0256"></script>
 <script src="js/escape-test.js?v=2026.11.14.1830"></script>
-<script src="js/canyon.js?v=2026.11.14.2146"></script>
+<script src="js/canyon.js?v=2026.11.15.0839"></script>
 <script src="js/vegetation.js?v=2026.11.08.1806"></script>
 <script src="js/laboratory.js?v=2026.10.31.2206"></script>
 <script src="js/infiltration-world.js?v=2026.11.14.1734"></script>

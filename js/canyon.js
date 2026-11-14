@@ -269,11 +269,20 @@ function spawnAreaDebugEnemies(z,{blueCommander=false,tanks=2}={}){
  add(false,8);if(tanks>0)add(true,tanks);
 }
 function setupSelectedAreaDebugStage(){
- const name=selectedAreaDebug||'草原',z={n:name,y0:WH-40,y1:WH-(name==='砂漠街'?3240:2440),g:ZONE_STYLE[name].g,p:ZONE_STYLE[name].p.slice(),areaDebug:1};ZONES=[z];
+ const name=selectedAreaDebug||'草原',fortress=name==='移動要塞',terrain=fortress?'砂漠':name;
+ const z={n:terrain,y0:fortress?1840:WH-40,y1:fortress?0:WH-(name==='砂漠街'?3240:2440),g:ZONE_STYLE[terrain].g,p:ZONE_STYLE[terrain].p.slice(),areaDebug:1};
+ ZONES=[z];
  clearCanyonTiles();clearMazeWallChunks();clearFragmentRenderCache();
  covers=[];objects=[];bushes=[];water=[];bridges=[];mud=[];cars=[];humans=[];etanks=[];items=[];bullets=[];parts=[];waves=[];fx=[];bombs=[];roadBands=[];areaDebugLabels=[];
- base={x:WW/2-COMMAND_BASE_W/2,y:name==='敵司令本部'?z.y1+160:-60000,w:COMMAND_BASE_W,h:COMMAND_BASE_H,hp:30,maxHp:30,deadAt:0};
- p.x=WW/2;p.y=z.y0-170;p.hp=3;p.tank=null;p.body=p.ang=-Math.PI/2;scoreStats.startY=p.y;scoreStats.debugUsed=true;
+ if(fortress)setupDecisiveFortressDebug();
+ else base={x:WW/2-COMMAND_BASE_W/2,y:name==='敵司令本部'?z.y1+160:-60000,w:COMMAND_BASE_W,h:COMMAND_BASE_H,hp:30,maxHp:30,deadAt:0};
+ p.x=WW/2;p.y=fortress?base.y+base.h+420:z.y0-170;p.hp=3;p.tank=null;p.body=p.ang=-Math.PI/2;scoreStats.startY=p.y;scoreStats.debugUsed=true;
+ if(fortress){
+  finishSelectedAreaDebugStage(name);
+  cam=Math.max(0,p.y-H*.6);camX=Math.max(0,Math.min(WW-W,p.x-W/2));
+  say('移動要塞テスト：無敵／弾数・燃料無制限');
+  return;
+ }
  if(name==='砂漠街')setupDesertTownConditions([z]);
  base.y/=MAP_SCALE;genCovers();genObjects();base.y*=MAP_SCALE;covers.forEach(c=>c.y*=MAP_SCALE);objects.forEach(o=>o.y*=MAP_SCALE);
  if(name==='砂漠街'){water.forEach(o=>o.y*=MAP_SCALE);bushes.forEach(o=>o.y*=MAP_SCALE);}
@@ -287,9 +296,15 @@ function setupSelectedAreaDebugStage(){
  const clearStart=o=>!circleHitsRect(WW/2,p.y-150,310,o);
  covers=covers.filter(c=>clearStart(coverSpriteRect(c)||c));
  objects=objects.filter(clearStart);bushes=bushes.filter(clearStart);mud=mud.filter(clearStart);
+ finishSelectedAreaDebugStage(name);
+ if(name==='砂漠街'){plantDesertTownLakeBushes([z]);placeDesertTownGunTowers([z]);setupDesertTownEvents();}
+ spawnAreaDebugEnemies(z);if(name==='砂漠街')spawnDesertTownPatrols([z]);
+ say(name+' テスト：無敵／全' + TYPES.length + '種戦車／弾数・燃料無制限');
+}
+function finishSelectedAreaDebugStage(name){
  spawnAreaDebugPlayerTanks();
  weather='clear';weatherT=0;weatherNext=name==='荒野'?10:name==='密林'?5+R()*10:99999;rainIntensity=0;baseSpawnT=99999;placeAreaDebugRadios();airstrike=null;reinforcementPass=null;airbombs=[];debugMode=1;debugInvincible=true;
- captureBuildingGroundMarks();rebuildSpatialGrid();if(name==='砂漠街'){plantDesertTownLakeBushes([z]);placeDesertTownGunTowers([z]);setupDesertTownEvents();}spawnAreaDebugEnemies(z);if(name==='砂漠街')spawnDesertTownPatrols([z]);say(name+' テスト：無敵／全' + TYPES.length + '種戦車／弾数・燃料無制限');
+ captureBuildingGroundMarks();rebuildSpatialGrid();
 }
 function syncAreaDebugPicker(){
  const show=state==='areaPick';document.body.classList.toggle('area-picker-open',show);
@@ -300,5 +315,5 @@ document.getElementById('areaDebugEnemyBomber').addEventListener('change',event=
  areaDebugEnemyBomber=event.target.checked;syncAreaDebugPicker();
 });
 const areaList=document.getElementById('areaDebugList');
-for(const name of [...AREA_DEBUG_ORDER,'砂漠街']){const b=document.createElement('button');b.type='button';b.textContent=name;b.addEventListener('click',()=>{if(state!=='areaPick'||typeof isDeveloperMode!=='function'||!isDeveloperMode())return;selectedAreaDebug=name;if(name==='密林')loadJungleAssets();stageMode='base';const i=skillMenuList().findIndex(k=>k.id===selectedSkillId);selectSkillIndex(i,true);});areaList.append(b);}
+for(const name of [...AREA_DEBUG_ORDER,'砂漠街','移動要塞']){const b=document.createElement('button');b.type='button';b.textContent=name;b.addEventListener('click',()=>{if(state!=='areaPick'||typeof isDeveloperMode!=='function'||!isDeveloperMode())return;selectedAreaDebug=name;if(name==='密林')loadJungleAssets();stageMode='base';const i=skillMenuList().findIndex(k=>k.id===selectedSkillId);selectSkillIndex(i,true);});areaList.append(b);}
 document.getElementById('areaDebugBack').addEventListener('click',()=>{if(state==='areaPick'){state='stage';areaDebugEnabled=false;selectedAreaDebug=null;}});

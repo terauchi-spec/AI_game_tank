@@ -93,6 +93,33 @@ test('desert town replaces the random sections and shares the desert tile and us
  assert.equal(run('water.filter(w=>w.oasis).length'),1);
  assert.ok(run('DESERT_TOWN_BUILDINGS.every(([key])=>covers.some(c=>c.decisiveKind===key))'));
 });
+test('the mobile fortress area debug starts a live and repeatable boss test without campaign progress',()=>{
+ const {run,storage}=createGameEngine(root);
+ assert.equal(run("stageMode='base';state='stage';selectedStageId='areaDebug';deploySelectedStage()"),false);
+ run("setDeveloperMode(true);state='stage';selectedStageId='areaDebug'");
+ assert.equal(run('deploySelectedStage()'),true);
+ assert.equal(run('state'),'areaPick');
+ run("selectedAreaDebug='移動要塞';reset(false)");
+ assert.ok(run(`state==='play'&&debugInvincible&&areaDebugEnabled&&scoreStats.debugUsed&&mission===null&&
+  decisiveBattle.phase==='fortressDebug'&&!isDecisiveStage()&&base.decisiveFortress&&!base.decisiveLocked&&
+  ZONES.length===1&&ZONES[0].n==='砂漠'&&p.y>base.y+base.h&&
+  cars.length===TYPES.length&&cars.every(v=>v.debugInfinite)&&radio&&whiteRadio&&redRadio`));
+ const x=run('base.x');
+ run("decisiveBattle.fortressCd=0;decisiveBattle.roofCd=0;decisiveBattle.doorCd=0;update(1/60);draw()");
+ assert.notEqual(run('base.x'),x);
+ assert.ok(run("bullets.some(b=>b.from==='e')&&decisiveBattle.roofShell&&decisiveBattle.door"));
+ run('for(let i=0;i<9;i++)update(.1)');
+ assert.ok(run("humans.some(h=>h.commander==='blue')"));
+ run('damageBase(10,base.x+base.w/2,base.y+base.h/2,40)');
+ assert.ok(run('base.hp===80&&!circleHitsBase(base.x+base.w/2,base.y+base.h/2,12)&&baseDamageCanvas()'));
+ run('damageBase(100,base.x+base.w/2,base.y+base.h/2,40);update(1/60);draw()');
+ assert.ok(run("state==='play'&&base.hp===0&&scoreStats.final===null&&!decisiveBattle.roofShell&&!decisiveBattle.door"));
+ for(const key of ['tankGameStageProgressV1','tankGameStageRecordsV1'])assert.equal(storage.has(key),false);
+ run('reset(false)');
+ assert.ok(run('base.hp===90&&!base.fragMask&&state==="play"'));
+ run("selectedAreaDebug='草原';reset(false)");
+ assert.ok(run("decisiveBattle===null&&!base.decisiveFortress&&ZONES[0].n==='草原'"));
+});
 test('desert town scatters all four scenery types clear of buildings, the lane and facility',()=>{
  const layouts=new Set();
  for(const seed of [7,11,42]){
