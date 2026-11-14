@@ -54,3 +54,32 @@ test('forest objective retains timed reinforcements only in its own zone and whi
  h.run('p.y=base.y+base.h+250;baseSpawnT=0;updateHQSpawn(.1);');assert.equal(h.run('humans.length'),1);
  h.run('humans=[];base.hp=0;baseSpawnT=0;updateHQSpawn(.1);');assert.equal(h.run('humans.length'),0);
 });
+
+test('each destruction objective composites its own damaged deck and rubble and caches the result',()=>{
+ for(const [id,key] of [['beginner','radio_facility'],['baseIntermediate','command_building_1'],['base','missile_base']]){
+  const h=id==='beginner'?createGameEngine(root):stage(id);
+  if(id==='beginner')h.run("stageMode='beginner';reset(false)");
+  h.run('startAssetLoading()');
+  h.c.expectedArt=key;
+  assert.ok(h.run(`(()=>{
+   if(base.damageArt!==expectedArt||baseDamageCanvas()!==null)return false;
+   const deck=COVER_IMG[expectedArt+'-underlay'],rubble=COVER_IMG[expectedArt+'-rubble'];
+   if(!assetOK(deck)||!assetOK(rubble))return false;
+   const create=gameCanvasContext,events=[];
+   gameCanvasContext=()=>new Proxy({
+    rect(){events.push('rect');},clip(){events.push('clip');},
+    drawImage(im){events.push(im===deck?'deck':im===rubble?'rubble':'roof');}
+   },{get:(o,k)=>o[k]??(()=>{})});
+   try{
+    carveBaseFragments(base.x+base.w/2,base.y+base.h/2,30);
+    const partial=baseDamageCanvas();
+    if(!partial||partial!==baseDamageCanvas()||events.indexOf('clip')<0||
+       events.indexOf('deck')<events.indexOf('clip')||events.indexOf('rubble')<=events.indexOf('deck')||
+       events.indexOf('roof')<=events.indexOf('rubble'))return false;
+    events.length=0;base.hp=0;
+    const destroyed=baseDamageCanvas();
+    return destroyed!==partial&&events.join(',')==='deck,rubble';
+   }finally{gameCanvasContext=create;}
+  })()`),id);
+ }
+});
