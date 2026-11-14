@@ -54,8 +54,7 @@ function updateEnemyBomber(dt){
  if(raid.phase!=='flight')return;
  const plane=raid.plane;plane.age+=dt;
  if(plane.falling){
-  plane.fallT=Math.min(.9,plane.fallT+dt);plane.fallAngle=plane.fallT*1.3;plane.fallScale=1-plane.fallT*.35;plane.y+=110*dt;plane.x=Math.max(28,Math.min(WW-28,plane.x+45*dt));
-  if(plane.fallT>=.9){crashEnemyBomber(raid,plane);return;}
+  if(advanceBomberFall(plane,dt,1)){crashEnemyBomber(raid,plane);return;}
   plane.fallFxT=(plane.fallFxT||0)-dt;
   if(plane.fallFxT<=0){plane.fallFxT=.22;enemyBomberExplosionFx(plane.x,plane.y,.35,false);}
   return;
@@ -109,11 +108,23 @@ function updateEnemyBomberInterception(raid,dt){
   fighter.exitT-=dt;if(fighter.exitT<=0)raid.fighter=null;
  }
 }
-function crashEnemyBomber(raid,plane){
- const x=plane.x,y=plane.y,r=150;
- raid.wrecks.push({x,y,angle:plane.fallAngle??(plane.fallT||0)*1.3,scale:plane.fallScale??1-(plane.fallT||0)*.35,missingWing:R()<.5?-1:1});
+function advanceBomberFall(plane,dt,direction){
+ plane.fallT=Math.min(.9,plane.fallT+dt);
+ plane.fallAngle=direction*plane.fallT*1.3;
+ plane.fallScale=1-plane.fallT*.35;
+ plane.y+=110*direction*dt;
+ plane.x=Math.max(28,Math.min(WW-28,plane.x+45*direction*dt));
+ return plane.fallT>=.9;
+}
+function recordBomberWreck(raid,plane){
+ const {x,y}=plane;
+ raid.wrecks.push({x,y,angle:plane.fallAngle??(plane.fallT||0)*1.3,scale:plane.fallScale??1-(plane.fallT||0)*.35,missingWing:R()<.5?-1:1,friendly:plane.enemy===false});
  if((raid.debug||raid.decisive)&&raid.wrecks.length>6)raid.wrecks.shift();
  enemyBomberExplosionFx(x,y,1.25);
+}
+function crashEnemyBomber(raid,plane){
+ const x=plane.x,y=plane.y,r=150;
+ recordBomberWreck(raid,plane);
  // The wreck clears hard cover, while trees and grass retain their flame-skill burning.
  carve(x,y,r,false,null,true);
  damageObjectsInRadius(x,y,r,'enemyBomb');
@@ -136,21 +147,22 @@ function drawCachedEnemyAircraft(key,draw,variant=0,width=400,height=400){
  }
  if(sprite)g.drawImage(sprite,-width/2,-height/2);else draw(variant);
 }
-function drawEnemyBomberWreckShape(side){
+function drawEnemyBomberWreckShape(side,enemy=true){
  const w={missingWing:side};
   g.fillStyle='rgba(12,10,8,.30)';g.beginPath();g.ellipse(0,0,122,82,0,0,Math.PI*2);g.fill();
   // Reuse the original six-engine aircraft: about 70% stays attached, including the fuselage, tail and wing root.
-  drawSupportBomber(0,0,true,w);
-  g.save();g.rotate(Math.PI/2);g.scale(2.5,2.5);
+  drawSupportBomber(0,0,enemy,w);
+  g.save();g.rotate(enemy?Math.PI/2:-Math.PI/2);g.scale(2.5,2.5);
   g.translate(-13,side*19);g.rotate(side*.27);
-  drawSupportBomberWing(side,true,true,'tip');g.restore();
+  drawSupportBomberWing(side,enemy,true,'tip');g.restore();
 }
 function drawEnemyBomberWrecks(cx,cy){
  const raid=enemyBomberRaid();if(!raid)return;
  for(const w of raid.wrecks){
   if(w.x<cx-180||w.x>cx+W+180||w.y<cy-180||w.y>cy+H+180)continue;
   g.save();g.translate(w.x,w.y);g.rotate(w.angle);g.scale(w.scale??1,w.scale??1);
-  drawCachedEnemyAircraft('wreck:'+w.missingWing,drawEnemyBomberWreckShape,w.missingWing);
+  if(w.friendly)drawCachedEnemyAircraft('friendlyWreck:'+w.missingWing,side=>drawEnemyBomberWreckShape(side,false),w.missingWing);
+  else drawCachedEnemyAircraft('wreck:'+w.missingWing,drawEnemyBomberWreckShape,w.missingWing);
   g.restore();
  }
 }
@@ -248,12 +260,17 @@ function drawEnemyBomberAircraft(){
  }
  if(raid.plane){
   const plane=raid.plane;g.save();
-  if(plane.falling){g.translate(plane.x,plane.y);g.rotate(plane.fallAngle??plane.fallT*1.3);const scale=plane.fallScale??1-plane.fallT*.35;g.scale(scale,scale);drawSupportBomber(0,0,true);}
+  if(plane.falling)drawFallingBomber(plane,true);
   else drawSupportBomber(plane.x,plane.y,true);
   g.restore();
  }
  if(raid.fighter)drawInterceptionFighter(raid.fighter,raid.plane);
  g.restore();
+}
+function drawFallingBomber(plane,enemy){
+ g.save();g.translate(plane.x,plane.y);g.rotate(plane.fallAngle??0);
+ const scale=plane.fallScale??1;g.scale(scale,scale);
+ drawSupportBomber(0,0,enemy);g.restore();
 }
 function drawEnemyBomberWarning(){
  if(!enemyBomberEnabled()||state!=='play'||!enemyBomberRaid())return;
@@ -271,6 +288,6 @@ function drawEnemyBomberWarning(){
  gm.textAlign='center';gm.font='bold 14px system-ui';gm.lineJoin='round';gm.lineWidth=4;gm.strokeStyle='rgba(10,12,15,.9)';gm.fillStyle='#ffc6bd';
  if(raid.phase==='warning'){
   for(const [text,y] of [['敵の通信を傍受！',25],['敵の爆撃機がそちらに向かっている',47]]){gm.strokeText(text,W/2,y,W-16);gm.fillText(text,W/2,y,W-16);}
- }else{const text=raid.plane?.falling?'味方戦闘機が敵爆撃機を撃墜！':raid.fighter?'味方戦闘機が迎撃中！':'敵爆撃機 通過中';gm.strokeText(text,W/2,25,W-16);gm.fillText(text,W/2,25,W-16);}
+ }else{const text=raid.plane?.collision?'爆撃機が衝突！':raid.plane?.falling?'味方戦闘機が敵爆撃機を撃墜！':raid.fighter?'味方戦闘機が迎撃中！':'敵爆撃機 通過中';gm.strokeText(text,W/2,25,W-16);gm.fillText(text,W/2,25,W-16);}
  gm.restore();
 }

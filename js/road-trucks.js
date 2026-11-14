@@ -12,13 +12,16 @@ function setupRoadTruckEvents(){
   if(!town&&!standard)continue;
   const firstDir=R()<.5?1:-1;
   for(const dir of town&&road.lanes===4?[firstDir,-firstDir]:[firstDir]){
-   const unload=R()<.5,passengers=unload?1+(R()*3|0):0;
-   const arrivalDelay=R()<.5?2+R()*3:0;
-   roadTruckEvents.push({road,dir,unload,passengers,arrivalDelay,dropped:0,state:'waiting',
-    x:0,y:road.y+road.h/2+(road.lanes>1?dir*road.h/4:0),body:dir>0?0:Math.PI,speed:190,t:0,
-    kind:'truck',hp:5,maxHp:5});
+   addRoadTruckEvent(road,dir,R);
   }
  }
+}
+function addRoadTruckEvent(road,dir,random=R){
+ const unload=random()<.5,passengers=unload?1+(random()*3|0):0;
+ const arrivalDelay=random()<.5?2+random()*3:0;
+ roadTruckEvents.push({road,dir,unload,passengers,arrivalDelay,dropped:0,state:'waiting',
+  x:0,y:road.y+road.h/2+(road.lanes>1?dir*road.h/4:0),body:dir>0?0:Math.PI,speed:190,t:0,
+  kind:'truck',hp:5,maxHp:5});
 }
 function roadTruckDropSoldier(truck){
  if(!roadTruckActive(truck))return false;
@@ -48,6 +51,7 @@ function updateRoadTrucks(dt){
  for(const truck of roadTruckEvents){
   if(truck.state==='done'||truck.state==='destroyed')continue;
   if(truck.state==='waiting'){
+   if(truck.decisiveZone&&(!mission.enemyWavesStarted||zoneAt(p.y)!==truck.decisiveZone))continue;
    if(truck.y<cy||truck.y>cy+H)continue;
    truck.arrivalDelay=Math.max(0,truck.arrivalDelay-dt);
    if(truck.arrivalDelay>1e-9)continue;

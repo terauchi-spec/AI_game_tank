@@ -378,6 +378,76 @@ function setupDecisiveWorld(){
  setupDesertTownEvents();
  say('決戦：最高指揮通信施設に潜入せよ');
 }
+function setupDecisiveDesertRoadTrucks(){
+ for(const zone of ZONES.slice(DECISIVE_DESERT_START)){
+  if(R()>=.25)continue;
+  const span={x:0,w:WW,h:96};
+  const occupied=r=>decisiveRectsOverlap(r,base,16)||covers.some(c=>decisiveRectsOverlap(r,c,16))||
+   objects.some(o=>decisiveRectsOverlap(r,objectHitRect(o),16))||
+   cars.some(v=>v.y>r.y-50&&v.y<r.y+r.h+50);
+  let road=roadBands.find(r=>r.y>=zone.y1&&r.y+r.h<=zone.y0&&
+   !occupied(r));
+  if(!road){
+   for(let y=zone.y0-224;y>=Math.max(0,zone.y1)+96;y-=28){
+    const candidate={...span,y,kind:'dirt',lanes:1};
+    if(occupied(candidate)||roadBands.some(r=>decisiveRectsOverlap(candidate,r,16)))continue;
+    road=candidate;roadBands.push(road);break;
+   }
+  }
+  if(!road)continue;
+  addRoadTruckEvent(road,R()<.5?1:-1);
+  roadTruckEvents.at(-1).decisiveZone=zone;
+ }
+}
+function updateDecisiveAircraftCollisions(dt){
+ const d=decisiveBattle;
+ if(d?.phase!=='assault'||state!=='play')return;
+ const raid=mission.enemyAirRaid,drop=d.desertDrop;
+ for(let i=d.crashingAircraft.length-1;i>=0;i--){
+  const plane=d.crashingAircraft[i];
+  if(advanceBomberFall(plane,dt,plane.enemy?1:-1)){
+   recordBomberWreck(raid,plane);
+   d.crashingAircraft.splice(i,1);
+  }
+ }
+ const enemyPlanes=[raid.plane,drop.plane];
+ for(const enemy of enemyPlanes){
+  if(!enemy||enemy.falling)continue;
+  let x=null,y=null;
+  if(airstrike&&bomberPathsCollide(enemy,airstrike.x,airstrike.y,dt)){
+   ({x,y}=airstrike);airstrike=null;
+  }else if(reinforcementPass){
+   const pass=reinforcementPass;
+   const i=pass.offsets.findIndex(offset=>bomberPathsCollide(enemy,pass.x+offset,pass.y,dt));
+   if(i>=0){
+    x=pass.x+pass.offsets[i];y=pass.y;
+    pass.offsets.splice(i,1);
+    if(!pass.offsets.length)reinforcementPass=null;
+   }
+  }
+  if(x===null)continue;
+  const position=(enemy.y+y)/2;
+  d.crashingAircraft.push({x,y:position,enemy:false,fallT:0});
+  enemy.y=position;enemy.falling=true;enemy.collision=true;enemy.fallT=0;enemy.fallFxT=.22;
+  if(enemy===drop.plane){
+   drop.plane=null;
+   d.crashingAircraft.push({...enemy,enemy:true});
+  }
+  if(enemy===raid.plane&&raid.fighter)raid.fighter.exitT=1.6;
+  enemyBomberExplosionFx((x+enemy.x)/2,position,.75);
+  say('爆撃機が衝突！');
+ }
+}
+function bomberPathsCollide(enemy,x,y,dt){
+ const gap=y-enemy.y;
+ return Math.abs(enemy.x-x)<110&&gap>=-95&&gap-760*dt<=95;
+}
+function drawDecisiveCrashingAircraft(cx,cy){
+ if(decisiveBattle?.phase!=='assault')return;
+ for(const plane of decisiveBattle.crashingAircraft){
+  if(drawPointInView(plane.x,plane.y,cx,cy,180))drawFallingBomber(plane,plane.enemy);
+ }
+}
 function placeDecisiveDesertSupplies(zone){
  const inZone=y=>y>=Math.max(0,zone.y1)+60&&y<=zone.y0-60;
  const clear=(x,y,r)=>x>=r+14&&x<=WW-r-14&&inZone(y)&&!hitsM(x,y,r)&&!inBase(x,y)&&
@@ -538,7 +608,9 @@ function openDecisiveAssault(){
  for(const ally of allies)if(ally.alive){ally.frontline=true;assignFrontlineAllyRole(ally);}
  missionAllies(d.gate.y);setupFrontlineVehicles();
  d.desertDrop={remaining:10+R()*10,plane:null,parachutes:[]};
+ d.crashingAircraft=[];
  setupEnemyBomber(true);
+ setupDecisiveDesertRoadTrucks();
  p.hp=3;sfx('capture');say('施設から脱出！ 増援部隊と砂漠の移動要塞へ進軍せよ');
  return true;
 }

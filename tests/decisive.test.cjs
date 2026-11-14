@@ -356,6 +356,41 @@ test('decisive desert schedules both recurring air events',()=>{
  assert.ok(run('desertRadios.every(q=>q.got)'));
 
 });
+test('desert bomber collisions stop both missions and preserve another aircraft in formation',()=>{
+ const {run}=start();completeFacility(run);
+ run(`p.y=decisiveBattle.assaultStartY-500;updateDecisiveMission(.01);
+  const raid=mission.enemyAirRaid;
+  raid.phase='flight';raid.plane={x:340,y:p.y-60,age:0,drops:0,drop:0};
+  decisiveBattle.desertDrop.plane={x:620,y:p.y-60,drops:0};
+  reinforcementPass={x:480,y:p.y+60,offsets:[-140,140],drops:0};
+  updateDecisiveAircraftCollisions(.1);
+ `);
+ assert.ok(run('raid.plane.collision&&raid.plane.falling&&!reinforcementPass&&!decisiveBattle.desertDrop.plane'));
+ run('updateDecisiveAircraftCollisions(.9);updateEnemyBomber(.9)');
+ assert.equal(run('raid.wrecks.length'),4);
+ assert.equal(run('raid.wrecks.filter(w=>w.friendly).length'),2);
+ assert.equal(run('raid.bombs.length'),0);
+ run(`raid.plane={x:340,y:p.y-35};reinforcementPass={x:480,y:p.y+35,offsets:[-140,140]};
+  updateDecisiveAircraftCollisions(.016)`);
+ assert.deepEqual(Array.from(run('reinforcementPass.offsets')),[140]);
+});
+test('desert truck probability is per sector and destroyed sandbags retain their ground mark',()=>{
+ const {run,c}=start();completeFacility(run);
+ c.desertRolls=[.249999,.5,.25,.99,.99,.99];
+ run(`roadTruckEvents=[];const addTruck=addRoadTruckEvent;
+  addRoadTruckEvent=(road,dir)=>addTruck(road,dir,()=>.99);
+  try{(function(R){return ${run('setupDecisiveDesertRoadTrucks.toString()')}})(()=>desertRolls.shift()??.99)();}
+  finally{addRoadTruckEvent=addTruck;}`);
+ assert.equal(run('roadTruckEvents.length'),1);
+ assert.ok(run(`(()=>{
+  const t=roadTruckEvents[0];return t.decisiveZone===ZONES[DECISIVE_DESERT_START]&&roadBands.includes(t.road)&&
+   !covers.some(c=>decisiveRectsOverlap(t.road,c));
+ })()`));
+ run(`const bag=covers.find(c=>c.decisiveKind==='sandbags'&&c.y<decisiveBattle.border);
+  const mark=buildingGroundMarks.find(m=>Math.abs(m.x-bag.x)<4&&Math.abs(m.y-bag.y)<4);
+  carve(bag.x+bag.w/2,bag.y+bag.h/2,230,false,null);`);
+ assert.ok(run('mark&&buildingGroundMarks.includes(mark)&&!covers.includes(bag)'));
+});
 test('starting an existing stage clears decisive state and preserves its normal map and mission rules',()=>{
  const {run}=start();run("stageMode='beginner';reset(false)");assert.equal(run('decisiveBattle'),null);assert.equal(run('isDecisiveStage()'),false);assert.equal(run('currentStageId()'),'beginner');assert.equal(run('ZONES.length'),5);assert.equal(run('ZONES.some(z=>z.n==="砂漠")'),false);assert.equal(run('base.maxHp'),30);assert.equal(run('mission'),null);
  run("stageMode='front';frontlineBeginner=false;reset(false)");assert.equal(run('decisiveBattle'),null);assert.equal(run('mission.points.length'),3);assert.equal(run('currentStageId()'),'front');assert.ok(run('allies.length>0'));

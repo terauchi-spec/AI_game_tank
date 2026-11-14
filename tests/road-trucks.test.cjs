@@ -5,7 +5,7 @@ function scene(id='base',rolls=[.1,.1,.99]){
  h.run(`stageMode='${['base','baseIntermediate'].includes(id)?'base':id}';intermediateStageId=${id==='baseIntermediate'?"'baseIntermediate'":'null'};state='play';
  p={x:480,y:5000,hp:3};base={x:0,y:-1000,w:20,h:20,hp:30};covers=[];objects=[];water=[];bridges=[];mud=[];bushes=[];humans=[];etanks=[];cars=[];
  roadBands=[{x:0,y:4952,w:WW,h:96,lanes:1,kind:'dirt'}];rebuildSpatialGrid();
- (function(R){return ${h.run('setupRoadTruckEvents.toString()')}})(()=>rolls.shift()??.5)();`);
+ (function(R){${h.run('addRoadTruckEvent.toString()')};(${h.run('setupRoadTruckEvents.toString()')})();})(()=>rolls.shift()??.5);`);
  return h;
 }
 test('every generated road gets one event in both destruction difficulties, independent of its surface',()=>{
