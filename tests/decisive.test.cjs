@@ -26,15 +26,18 @@ test('developer-only 13 preserves its identity through phase change and victory 
  assert.equal(run('allies.length'),0);assert.equal(run('p.tank'),null);assert.equal(run('zoneAt(p.y)===ZONES[0]'),true);assert.equal(run('scoreStats.stageRecordId'),'decisive');
  completeFacility(run);
  assert.equal(run('decisiveBattle.phase'),'assault');assert.equal(run('stageMode'),'front');assert.equal(run('currentStageId()'),'decisive');assert.equal(run('scoreStats.stage'),'decisive');
- assert.equal(run('allies.length'),6);assert.ok(run('allies.every(a=>a.frontline)'));assert.ok(run('humans.length>0&&humans.length<=frontlineEnemyLimit()&&humans.every(h=>h.frontMarch)'));assert.equal(run('state'),'play');
+ assert.equal(run('allies.length'),6);assert.ok(run('allies.every(a=>a.frontline)'));assert.equal(run('humans.length'),0);assert.equal(run('state'),'play');
  run('draw();for(let i=0;i<90;i++)update(1/60);draw()');assert.equal(run('state'),'play');
  run("damageBase(1000,base.x+base.w/2,base.y+base.h/2,100,1,'player')");assert.equal(run('state'),'blast');
  run('blastUpdate(3)');assert.equal(run('state'),'succeeded');assert.equal(run('scoreStats.final.cleared'),true);assert.equal(run('scoreStats.objectiveProgress'),1);
  assert.equal(run('scoreStats.stageRecordId'),'decisive');assert.equal(run('readStageRecords().stages.decisive.successes'),1);assert.equal(run('readStageRecords().stages.front.successes'),0);assert.equal(run('leaderboardPending.decisive.stage'),'decisive');assert.equal(run('readStageProgress().cleared.length'),13);assert.ok(run("readTitleArchive().titles.v3_all_stages_clear"));assert.equal(run("scoreStats.awards.newTitles.includes('v3_all_stages_clear')"),false);
 });
-test('two allied bombers arrive together after escape and drop six troops',()=>{
+test('allied bombers arrive at 20m and enemies spawn at 50m after escape',()=>{
  const {run}=start();
  completeFacility(run);
+ run('updateDecisiveMission(80);p.y=decisiveBattle.assaultStartY-199;updateDecisiveMission(.01)');
+ assert.equal(run('reinforcementPass'),null);
+ run('p.y-=1;updateDecisiveMission(.01)');
  assert.ok(run(`(()=>{
   const pass=reinforcementPass,view=frontlineView();
   return pass.offsets.length===2&&pass.offsets[1]-pass.offsets[0]>=260&&pass.y<view.y+view.h;
@@ -50,6 +53,10 @@ test('two allied bombers arrive together after escape and drop six troops',()=>{
  assert.equal(run('allies.filter(a=>a.chute>0&&a.frontCommander).length'),2);
  assert.ok(run('allies.filter(a=>a.chute>0).every(a=>a.startY<p.y&&a.landY<p.y)'));
  assert.equal(run('reinforcementPass'),null);
+ run('p.y=decisiveBattle.assaultStartY-499;updateDecisiveMission(80)');
+ assert.ok(run('!mission.enemyWavesStarted&&!humans.length&&!etanks.length&&!enemyDogs.length&&!reinforcementPass'));
+ run('p.y-=1;updateDecisiveMission(.01)');
+ assert.ok(run('mission.enemyWavesStarted&&humans.length>0&&humans.every(h=>h.frontMarch)&&!reinforcementPass'));
 });
 test('desert town replaces the random sections and shares the desert tile and uses its own buildings',()=>{
  for(const seed of [7,11,42]){
@@ -141,6 +148,7 @@ test('a selected town section gets one sandstorm with the same detection penalty
 test('the facility replaces the capture circle and A opens it only on foot at the entrance',()=>{
  const {run}=start(11);
  assert.equal(run('covers.filter(c=>c.decisiveKind==="bunker").length'),8);
+ assert.ok(run('ZONES.slice(DECISIVE_DESERT_START).every(z=>decisiveBattle.bunkers.some(b=>b.x+b.w/2===WW/2&&zoneAt(b.y)===z))'));
  assert.equal(run('covers.filter(c=>c.decisiveKind==="sandbags"&&c.y<decisiveBattle.border+70).length'),16);
  assert.ok(run(`covers.filter(c=>['bunker','sandbags'].includes(c.decisiveKind)).every(c=>
   !decisiveRectsOverlap(c,decisiveBattle.building,DECISIVE_FACILITY_DEFENSE_CLEARANCE))`));
@@ -327,7 +335,7 @@ test('moving fortress yields to nearby units; bunker and fortress guns reuse exi
 test('decisive desert schedules both recurring air events',()=>{
  const {run}=start();
  completeFacility(run);
- run('decisiveBattle.desertDrop.remaining=0;updateDecisiveMission(.01)');
+ run('p.y=decisiveBattle.assaultStartY-500;decisiveBattle.desertDrop.remaining=0;updateDecisiveMission(.01)');
  assert.ok(run('decisiveBattle.desertDrop.plane.targets.length===3'));
  run('mission.enemyAirRaid.nextPassT=5;updateDecisiveMission(.01)');
  assert.equal(run('mission.enemyAirRaid.phase'),'warning');
