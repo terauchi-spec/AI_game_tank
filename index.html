@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.15.0256</title>
+<title>こっそり戦車大作戦 2026.11.15.0309</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -1027,7 +1027,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.15.0256',FILE_CREATED_AT='2026/11/15 02:56',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.15.0309',FILE_CREATED_AT='2026/11/15 03:09',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -9049,7 +9049,7 @@ function reportGameError(error){
 </script>
 <script src="js/road-trucks.js?v=2026.11.14.1728"></script>
 <script src="js/stage-progress.js?v=2026.11.12.2006"></script>
-<script src="js/decisive.js?v=2026.11.15.0256"></script>
+<script src="js/decisive.js?v=2026.11.15.0309"></script>
 <script src="js/frontline.js?v=2026.11.13.1834"></script>
 <script src="js/award-icons.js?v=2026.10.31.0807"></script>
 <script src="js/developer.js?v=2026.11.11.2308"></script>

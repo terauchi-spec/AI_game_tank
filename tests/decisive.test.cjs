@@ -551,14 +551,17 @@ test('destroyed turret mounts and doors cannot act or render their overlays',()=
   return !d.door&&!humans.length&&decisiveFortressDoorExit(base,0)===null&&decisiveFortressDoorIntact(base,1);
  })()`));
 });
-test('fortress collision follows the hull and gears and the damaged deck stays solid',()=>{
+test('fortress collision follows surviving hull and gears while the exposed deck is visual only',()=>{
  const {run}=start();completeFacility(run);
  assert.ok(run(`(()=>{
   const b=base,x=b.x+b.w/2,y=b.y+b.h/2;
   if(circleHitsBase(b.x+4,b.y+4,2)||!circleHitsBase(x,y,0))return false;
   if(!circleHitsBase(b.x+b.w*.052,b.y+b.h*.175,0))return false;
   carveBaseFragments(x,y,35);
-  if(baseFragmentAliveAt(x,y)||!circleHitsBase(x,y,0))return false;
+  if(baseFragmentAliveAt(x,y)||inBase(x,y)||circleHitsBase(x,y,12))return false;
+  if(segmentBaseImpact({x:x-12,y},{x:x+12,y},2))return false;
+  if(!circleHitsBase(x+70,y,12)||!circleHitsBase(b.x+b.w*.052,b.y+b.h*.175,0))return false;
+  if(!decisiveFortressHits(b,x+90,y,12,b.x+20,b.y)||decisiveFortressHits(b,x+20,y,12,b.x+20,b.y))return false;
   const raster=baseDamageCanvas();
   return !!raster&&raster===baseDamageCanvas()&&assetOK(COVER_IMG['decisive_fortress-underlay']);
  })()`));
