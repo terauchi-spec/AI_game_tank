@@ -1541,7 +1541,9 @@ function updateIndoorStairTransition(dt){
 }
 
 function drawIndoorStairTransition(){
- const remaining=indoorWorld.stairTransition?.remaining;
+ drawIndoorTransitionFade(indoorWorld.stairTransition?.remaining);
+}
+function drawIndoorTransitionFade(remaining){
  if(!remaining)return;
  gm.save();gm.setTransform(1,0,0,1,0,0);
  gm.globalAlpha=1-Math.abs(1-2*remaining/INDOOR_STAIR_TRANSITION_SECONDS);

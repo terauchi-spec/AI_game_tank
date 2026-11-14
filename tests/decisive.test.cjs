@@ -6,13 +6,20 @@ function start(seed=7){
 }
 function enterFacility(run){
  run('p.x=decisiveBattle.gate.x;p.y=decisiveBattle.gate.y;interact=true;update(1/60)');
+ assert.equal(run('decisiveBattle.phase'),'town');
+ run('update(.24)');
+ assert.equal(run('decisiveBattle.phase'),'town');
+ run('update(.01)');
  assert.equal(run('decisiveBattle.phase'),'facility');
+ assert.equal(run('decisiveBattle.facilityTransition.remaining'),.25);
+ run('update(.25)');
+ assert.equal(run('decisiveBattle.facilityTransition'),null);
 }
 function completeFacility(run){
  enterFacility(run);
  run('debugInvincible=true;indoorWorld.currentFloor=1;for(let i=0;i<3;i++)bombBlast(mission.computer.x,mission.computer.y,0,false,true)');
  assert.equal(run('mission.computer.done'),true);
- run('indoorWorld.currentFloor=0;p.x=indoorWorld.exit.x;p.y=indoorWorld.exit.y;p.blastAirT=0;for(let i=0;i<5;i++)updateMission(1);debugInvincible=false');
+ run('indoorWorld.currentFloor=0;p.x=indoorWorld.exit.x;p.y=indoorWorld.exit.y;p.blastAirT=0;for(let i=0;i<5;i++)updateMission(1);update(.25);update(.25);debugInvincible=false');
 }
 test('developer-only 13 preserves its identity through phase change and victory while public completion is already earned',()=>{
  const {run,storage}=start();assert.equal(run('currentStageId()'),'decisive');assert.equal(run('stageDisplayNumber(currentStageId())'),'13');
@@ -65,8 +72,9 @@ test('desert town scatters all four scenery types clear of buildings, the lane a
    const scenery=[...sandbags,...grass,...props.map(o=>o.kind==='barrel'?barrelVisualRect(o):o)];
    const rows=sandbags.map(c=>c.y),columns=new Set(sandbags.map(c=>c.x));
    const gates=covers.filter(c=>c.desertTownGate&&inside(c)).sort((a,b)=>a.y-b.y);
-   return gates.length===3&&gates.every(c=>c.w===210&&c.h===52)&&
-    Math.abs(gates[1].x-gates[0].x)-gates[0].w>=2*TANK_HIT&&columns.size<=2&&
+   const relay=z.decisiveArea===DECISIVE_DESERT_START-1;
+   return (relay?gates.length<=3:gates.length===3)&&gates.every((c,i)=>
+    c.w===210&&c.h===52&&(i===0||Math.abs(c.x-gates[i-1].x)-c.w>=2*TANK_HIT))&&columns.size<=2&&
     sandbags.every(c=>c.w===210&&c.h===52&&(c.y-rows[0])%168===0)&&
     scenery.every((o,i)=>(o.x+o.w<=WW/2-100||o.x>=WW/2+100)&&
      !decisiveRectsOverlap(decisiveBattle.building,o,20)&&
@@ -89,7 +97,7 @@ test('decisive suppresses rain in every phase and normal stages still start rain
  enterFacility(run);
  run('weatherNext=0;updateWeather(120)');
  assert.equal(run('weather'),'clear');
- run("indoorWorld.currentFloor=1;for(let i=0;i<3;i++)bombBlast(mission.computer.x,mission.computer.y,0,false,true);indoorWorld.currentFloor=0;p.x=indoorWorld.exit.x;p.y=indoorWorld.exit.y;p.blastAirT=0;updateMission(5)");
+ run("indoorWorld.currentFloor=1;for(let i=0;i<3;i++)bombBlast(mission.computer.x,mission.computer.y,0,false,true);indoorWorld.currentFloor=0;p.x=indoorWorld.exit.x;p.y=indoorWorld.exit.y;p.blastAirT=0;updateMission(5);update(.5)");
  assert.equal(run('decisiveBattle.phase'),'assault');
  run('weatherNext=0;updateWeather(120)');
  assert.deepEqual(Array.from(run('[weather,weatherT,rainIntensity]')),['clear',0,0]);
@@ -113,8 +121,10 @@ test('a selected town section gets one sandstorm with the same detection penalty
 });
 test('the facility replaces the capture circle and A opens it only on foot at the entrance',()=>{
  const {run}=start(11);
- assert.equal(run('covers.filter(c=>c.decisiveKind==="bunker").length'),9);
- assert.equal(run('covers.filter(c=>c.decisiveKind==="sandbags"&&c.y<decisiveBattle.border+70).length'),18);
+ assert.equal(run('covers.filter(c=>c.decisiveKind==="bunker").length'),8);
+ assert.equal(run('covers.filter(c=>c.decisiveKind==="sandbags"&&c.y<decisiveBattle.border+70).length'),16);
+ assert.ok(run(`covers.filter(c=>['bunker','sandbags'].includes(c.decisiveKind)).every(c=>
+  !decisiveRectsOverlap(c,decisiveBattle.building,DECISIVE_FACILITY_DEFENSE_CLEARANCE))`));
  assert.ok(run('ZONES.slice(DECISIVE_DESERT_START).every(z=>cars.some(v=>v.y<z.y0&&v.y>z.y1))'));
  const hp=run('base.hp');
  run("damageBase(1000,base.x,base.y,60,1,'bomb');p.y=100;updateMission(.1)");
@@ -170,8 +180,18 @@ test('the facility stairs, placed bomb and ground EXIT lead into the existing as
  assert.equal(run('stageMode'),'indoor');
  run('p.x+=200;updateMission(.2);p.x-=200;updateMission(4.9)');
  assert.equal(run('stageMode'),'indoor');
- run('updateMission(.1);draw();drawMission()');
+ run('updateMission(.1);draw();drawMission();update(.24)');
+ assert.equal(run('stageMode'),'indoor');
+ run('update(.01);draw();drawMission()');
  assert.equal(run('stageMode'),'front');
+ assert.equal(run('decisiveBattle.facilityTransition.remaining'),.25);
+ run('update(.25)');
+ assert.equal(run('decisiveBattle.facilityTransition'),null);
+ assert.ok(run(`(()=>{
+  const b=decisiveBattle.building;
+  drawDecisiveFacilitySmoke(b.x,b.y-100);
+  return decisiveSmokeSprite?.width===96;
+ })()`));
  assert.ok(run('scoreStats===originalScore&&covers===originalCovers&&scoreStats.playerKillPoints===400&&scoreStats.stageRecordId==="decisive"'));
  assert.equal(run('zoneAt(p.y).n'),'砂漠');
  assert.ok(run('!objects.some(o=>o.wrecked)'));

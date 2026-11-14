@@ -1,6 +1,7 @@
 // 決戦の砂漠街、施設潜入、砂漠戦を一つの作戦として進める。
 const DECISIVE_FACILITY_NAME='最高指揮通信施設';
 const DECISIVE_FACILITY_ENTRY_RADIUS=58;
+const DECISIVE_FACILITY_DEFENSE_CLEARANCE=360;
 const DECISIVE_COMPUTER_HITS=3;
 const decisiveFacilityOutdoorTerrain={n:'砂漠',g:ZONE_STYLE['砂漠'].g};
 
@@ -320,14 +321,21 @@ function setupDecisiveWorld(){
  roadBands=roadBands.filter(r=>r.y>=border);
  mud=mud.filter(m=>!decisiveRectsOverlap(m,clearing));
  cars=cars.filter(v=>!decisiveRectsOverlap({x:v.x-32,y:v.y-32,w:64,h:64},clearing));
+ const nearFacilityDefense=c=>decisiveRectsOverlap(c,building,DECISIVE_FACILITY_DEFENSE_CLEARANCE);
+ covers=covers.filter(c=>c.decisiveKind!=='sandbags'||!nearFacilityDefense(c));
  covers.push(building);
  base={x:WW/2-300,y:140,w:600,h:400,hp:90,maxHp:90,deadAt:0,decisiveFortress:true,decisiveLocked:true};
  for(const zone of ZONES.slice(DECISIVE_DESERT_START)){
   for(let i=0;i<3;i++){
    const side=i%2===0?'left':'right',x=side==='left'?82:WW-262,y=zone.y0-300-i*460;
    const bunker={kd:3,x,y,w:180,h:140,decisiveKind:'bunker',gunCd:1+i*.4};
-   covers.push(bunker);decisiveBattle.bunkers.push(bunker);
-   for(const dy of [210,340])covers.push({kd:1,x:side==='left'?45:WW-255,y:y+dy,w:DESERT_SANDBAG_W,h:DESERT_SANDBAG_H,decisiveKind:'sandbags'});
+   if(!nearFacilityDefense(bunker)){
+    covers.push(bunker);decisiveBattle.bunkers.push(bunker);
+   }
+   for(const dy of [210,340]){
+    const sandbags={kd:1,x:side==='left'?45:WW-255,y:y+dy,w:DESERT_SANDBAG_W,h:DESERT_SANDBAG_H,decisiveKind:'sandbags'};
+    if(!nearFacilityDefense(sandbags))covers.push(sandbags);
+   }
   }
   const t=TYPES[(zone.decisiveArea-DECISIVE_DESERT_START+2)%TYPES.length],spot={x:WW/2,y:(zone.y0+Math.max(40,zone.y1))/2};
   // The wide centre lane remains open for tanks, trucks and the shared infantry detour AI.
@@ -352,7 +360,28 @@ function setupDecisiveWorld(){
 }
 function enterDecisiveFacility(){
  const d=decisiveBattle;
- if(stageMode!=='decisive'||d?.phase!=='town'||p.tank||p.dig>0||p.digPrep>0||p.drill>0||D(p,d.gate)>DECISIVE_FACILITY_ENTRY_RADIUS)return false;
+ if(stageMode!=='decisive'||d?.phase!=='town'||d.facilityTransition||p.tank||p.dig>0||p.digPrep>0||p.drill>0||D(p,d.gate)>DECISIVE_FACILITY_ENTRY_RADIUS)return false;
+ return startDecisiveFacilityTransition(openDecisiveFacility);
+}
+function startDecisiveFacilityTransition(switchWorld){
+ if(decisiveBattle.facilityTransition)return false;
+ decisiveBattle.facilityTransition={remaining:INDOOR_STAIR_TRANSITION_SECONDS,switchWorld};
+ return true;
+}
+function updateDecisiveFacilityTransition(dt){
+ const d=decisiveBattle,transition=d?.facilityTransition;
+ if(!transition)return false;
+ transition.remaining=Math.max(0,transition.remaining-dt);
+ if(transition.switchWorld&&transition.remaining<=INDOOR_STAIR_TRANSITION_SECONDS/2+1e-9){
+  const switchWorld=transition.switchWorld;
+  transition.switchWorld=null;
+  switchWorld();
+ }
+ if(transition.remaining<=1e-9)d.facilityTransition=null;
+ return true;
+}
+function openDecisiveFacility(){
+ const d=decisiveBattle;
  if(partner)indoorPreparePartnerTravel(partner);
  // 砂漠街と後半エリアは生成済みの状態を保持し、潜入中の更新を止める。
  d.outdoors={ZONES,roadBands,covers,objects,bushes,mud,water,bridges,cars,enemyDogs,etanks,humans,
@@ -410,6 +439,10 @@ function updateDecisiveFacilityExit(dt){
 function beginDecisiveAssault(){
  const d=decisiveBattle;
  if(!isDecisiveFacility()||!mission?.computer?.done||mission.escapeProgress<INDOOR_EXIT_SECONDS-1e-9)return false;
+ return startDecisiveFacilityTransition(openDecisiveAssault);
+}
+function openDecisiveAssault(){
+ const d=decisiveBattle;
  const saved=d.outdoors;d.outdoors=null;d.phase='assault';
  ({ZONES,roadBands,covers,objects,bushes,mud,water,bridges,cars,enemyDogs,etanks,humans,
    bombs,items,allies,builtWalls,tankWrecks,buildingGroundMarks,radio,whiteRadio,base,baseSpawnT,
@@ -500,6 +533,34 @@ function updateDecisiveFortress(dt){
  const sx=base.x+base.w/2,sy=base.y+base.h+18,target=decisiveGunTarget(sx,sy,900);
  if(target){fire(sx,sy,Math.atan2(target.y-sy,target.x-sx),'e','c',420,1000,1.4,'enemyCannon');d.fortressCd=3;}
  else d.fortressCd=.25;
+}
+let decisiveSmokeSprite=null;
+function drawDecisiveFacilitySmoke(cx,cy){
+ const d=decisiveBattle;
+ if(d?.phase!=='assault')return;
+ const {x,y,w,h}=d.building,originX=x+w*.48,originY=y+h*.26;
+ if(!drawBoundsInView(originX-135,originY-400,310,450,cx,cy,0))return;
+ if(!decisiveSmokeSprite){
+  const sprite=document.createElement('canvas');sprite.width=sprite.height=96;
+  const ctx=gameCanvasContext(sprite);
+  for(const [px,py,r] of [[38,45,31],[58,44,29],[49,59,31],[50,35,24]]){
+   const fade=ctx.createRadialGradient(px,py,0,px,py,r);
+   fade.addColorStop(0,'rgba(12,11,10,.85)');
+   fade.addColorStop(.42,'rgba(20,19,18,.67)');
+   fade.addColorStop(1,'rgba(34,33,31,0)');
+   ctx.fillStyle=fade;ctx.fillRect(px-r,py-r,r*2,r*2);
+  }
+  decisiveSmokeSprite=sprite;
+ }
+ const time=performance.now()/4400;
+ g.save();g.imageSmoothingEnabled=true;
+ for(let i=0;i<9;i++){
+  const age=(time+i/9)%1,size=55+age*153;
+  const px=originX+age*65+Math.sin(age*12+i)*age*24,py=originY-age*300;
+  g.globalAlpha=.88*Math.min(1,age*20)*(1-age*age);
+  g.drawImage(decisiveSmokeSprite,px-size/2,py-size/2,size,size);
+ }
+ g.restore();
 }
 function drawDecisiveCover(c){
  const im=COVER_IMG['decisive_'+c.decisiveKind];
