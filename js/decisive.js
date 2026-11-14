@@ -254,6 +254,11 @@ function updateDesertTownEvents(dt){
     if(desertTownDoorPatrol(door))door.elapsed=Number.EPSILON;
    }
   }
+ }
+ updateDecisiveEnemyDrop(drop,zone.n==='砂漠街'?zone:null,dt);
+}
+function updateDecisiveEnemyDrop(drop,zone,dt){
+ if(zone){
   drop.remaining-=dt;
   if(drop.remaining<=0&&!drop.plane&&!drop.parachutes.length){
    drop.remaining=startEnemyParachutePass(drop,zone)?45+R()*15:1;
@@ -332,8 +337,8 @@ function setupDecisiveWorld(){
    if(!nearFacilityDefense(bunker)){
     covers.push(bunker);decisiveBattle.bunkers.push(bunker);
    }
-   for(const dy of [210,340]){
-    const sandbags={kd:1,x:side==='left'?45:WW-255,y:y+dy,w:DESERT_SANDBAG_W,h:DESERT_SANDBAG_H,decisiveKind:'sandbags'};
+   for(const dy of [202,258]){
+    const sandbags={kd:1,x:side==='left'?WW-255:45,y:y+dy,w:DESERT_SANDBAG_W,h:DESERT_SANDBAG_H,decisiveKind:'sandbags'};
     if(!nearFacilityDefense(sandbags))covers.push(sandbags);
    }
   }
@@ -466,6 +471,8 @@ function openDecisiveAssault(){
  setupFrontlineArmy();mission.enemyWavesStarted=true;mission.advanceReleased=true;
  for(const ally of allies)if(ally.alive){ally.frontline=true;assignFrontlineAllyRole(ally);}
  missionAllies(d.gate.y);setupFrontlineVehicles();spawnFrontlineWave(6);
+ d.desertDrop={remaining:45+R()*15,plane:null,parachutes:[]};
+ setupEnemyBomber(true);
  startReinforcementPass(true);
  p.hp=3;sfx('capture');say('施設から脱出！ 増援部隊と砂漠の移動要塞へ進軍せよ');
  return true;
@@ -480,6 +487,10 @@ function updateDecisiveMission(dt){
  if(d.phase==='facility'){updateInfiltrationMission(dt);return;}
  updateDecisiveFortress(dt);
  cleanupFrontlineArmy(dt);updateFrontlineWaves(dt);
+ const zone=zoneAt(p.y);
+ updateDecisiveEnemyDrop(d.desertDrop,zone.n==='砂漠'?zone:null,dt);
+ updateEnemyBomber(dt);
+ if(state!=='play')return;
  mission.reinforceT-=dt;
  if(mission.reinforceT<=0){mission.reinforceT=18;if(allies.filter(a=>a.alive&&a.frontline).length<4)missionAllies(Math.min(d.gate.y,p.y+120));}
  scoreStats.objectiveProgress=.5+.5*(1-base.hp/base.maxHp);
@@ -509,14 +520,15 @@ function updateDecisiveBunkers(dt){
   if(Math.abs(bunker.y-p.y)>900||!covers.includes(bunker))continue;
   bunker.gunCd-=DECISIVE_BUNKER_SCAN_SECONDS;
   const x=bunker.x+bunker.w/2,y=bunker.y+bunker.h+8,target=decisiveGunTarget(x,y,560);
-  if(!target)continue;
-  const aim=Math.atan2(target.y-y,target.x-x);
+  if(!target&&!bunker.burstLeft)continue;
+  const aim=target?Math.atan2(target.y-y,target.x-x):bunker.gunAim;
   if(aim!==bunker.gunAim){
    bunker.gunFrom=decisiveBunkerAngle(bunker,now);bunker.gunAim=aim;bunker.gunAimAt=now;
   }
   if(bunker.gunCd>0)continue;
   bunker.gunFrom=aim;bunker.gunShotAt=now;
-  fire(x,y,aim,'e','v',480,620,.3);bunker.gunCd=1.1;
+  bunker.burstLeft=(bunker.burstLeft||5)-1;
+  fire(x,y,aim,'e','v',480,620,.3);bunker.gunCd=bunker.burstLeft?DECISIVE_BUNKER_SCAN_SECONDS:1.1;
  }
 }
 function updateDecisiveFortress(dt){

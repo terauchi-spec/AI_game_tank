@@ -315,8 +315,24 @@ test('moving fortress yields to nearby units; bunker and fortress guns reuse exi
  assert.equal(run('bullets.some(b=>b.from==="e"&&b.k==="v")'),false);
  run('bunker.gunCd=0;decisiveBattle.gunScan=0;updateDecisiveBunkers(.2)');
  assert.ok(run('bullets.some(b=>b.from==="e"&&b.k==="v"&&Math.abs(Math.atan2(b.vy,b.vx)-bunker.gunAim)<1e-10)'));
+ run('for(let i=0;i<4;i++)updateDecisiveBunkers(.2)');
+ assert.equal(run('bullets.filter(b=>b.from==="e"&&b.k==="v").length'),5);
+ run('updateDecisiveBunkers(.2)');
+ assert.equal(run('bullets.filter(b=>b.from==="e"&&b.k==="v").length'),5);
+ assert.ok(run(`covers.filter(c=>c.decisiveKind==='sandbags'&&c.y<decisiveBattle.border).every(bag=>
+  decisiveBattle.bunkers.every(b=>Math.abs(b.x+b.w/2-bag.x-bag.w/2)>240||Math.abs(b.y-bag.y)>200))`));
  run('var bunkerLayers=[];g.drawImage=(im)=>bunkerLayers.push(im.src);drawDecisiveCover(bunker);drawDecisiveCover({decisiveKind:"bunker",x:bunker.x,y:bunker.y,w:bunker.w,h:bunker.h});');
  assert.deepEqual(Array.from(run('bunkerLayers.map(src=>src.split("/").pop().split("?")[0])')),['bunker.webp','bunker-barrel.webp','bunker.webp']);
+});
+test('decisive desert schedules both recurring air events',()=>{
+ const {run}=start();
+ completeFacility(run);
+ run('decisiveBattle.desertDrop.remaining=0;updateDecisiveMission(.01)');
+ assert.ok(run('decisiveBattle.desertDrop.plane.targets.length===3'));
+ run('mission.enemyAirRaid.nextPassT=5;updateDecisiveMission(.01)');
+ assert.equal(run('mission.enemyAirRaid.phase'),'warning');
+ assert.equal(run('mission.enemyAirRaid.timer'),5);
+ assert.equal(run('mission.enemyAirRaid.remaining'),Infinity);
 });
 test('starting an existing stage clears decisive state and preserves its normal map and mission rules',()=>{
  const {run}=start();run("stageMode='beginner';reset(false)");assert.equal(run('decisiveBattle'),null);assert.equal(run('isDecisiveStage()'),false);assert.equal(run('currentStageId()'),'beginner');assert.equal(run('ZONES.length'),5);assert.equal(run('ZONES.some(z=>z.n==="砂漠")'),false);assert.equal(run('base.maxHp'),30);assert.equal(run('mission'),null);
