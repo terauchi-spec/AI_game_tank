@@ -324,7 +324,7 @@ test('command facility keeps both floor dimensions, a fixed central room and nin
 });
 test('moving fortress yields to nearby units; bunker and fortress guns reuse existing enemy projectiles',()=>{
  const {run}=start();completeFacility(run);const x=run('base.x');run('updateDecisiveFortress(.1)');assert.notEqual(run('base.x'),x);
- run('p.x=base.x+base.w+5;p.y=base.y+100');const blocked=run('base.x');run('updateDecisiveFortress(.1)');assert.equal(run('base.x'),blocked);
+ run('p.x=base.x+base.w*.948+30;p.y=base.y+base.h*.175');const blocked=run('base.x');run('updateDecisiveFortress(.1)');assert.equal(run('base.x'),blocked);
  run('p.x=base.x+base.w/2;p.y=base.y+base.h+150;decisiveBattle.fortressCd=0;updateDecisiveFortress(.1)');assert.ok(run('bullets.some(b=>b.from==="e"&&b.k==="v")'));
  run('const bunker=decisiveBattle.bunkers[0];bullets=[];allies=[];p.x=bunker.x+bunker.w/2+44;p.y=bunker.y+bunker.h+52;bunker.gunCd=.8;decisiveBattle.gunScan=0;updateDecisiveBunkers(.2)');
  assert.equal(run('bunker.gunAim'),Math.PI/4);
@@ -520,6 +520,18 @@ test('destroyed turret mounts and doors cannot act or render their overlays',()=
   carveBaseFragments(base.x+base.w*DECISIVE_FORTRESS_DOORS[0],y,12);
   updateDecisiveFortressDoor(base,d,.2);
   return !d.door&&!humans.length&&decisiveFortressDoorExit(base,0)===null&&decisiveFortressDoorIntact(base,1);
+ })()`));
+});
+test('fortress collision follows the hull and gears and the damaged deck stays solid',()=>{
+ const {run}=start();completeFacility(run);
+ assert.ok(run(`(()=>{
+  const b=base,x=b.x+b.w/2,y=b.y+b.h/2;
+  if(circleHitsBase(b.x+4,b.y+4,2)||!circleHitsBase(x,y,0))return false;
+  if(!circleHitsBase(b.x+b.w*.052,b.y+b.h*.175,0))return false;
+  carveBaseFragments(x,y,35);
+  if(baseFragmentAliveAt(x,y)||!circleHitsBase(x,y,0))return false;
+  const raster=baseDamageCanvas();
+  return !!raster&&raster===baseDamageCanvas()&&assetOK(COVER_IMG['decisive_fortress-underlay']);
  })()`));
 });
 test('starting an existing stage clears decisive state and preserves its normal map and mission rules',()=>{

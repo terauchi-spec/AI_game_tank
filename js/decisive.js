@@ -45,12 +45,37 @@ const DECISIVE_FORTRESS_DOOR_TOP=.825,DECISIVE_FORTRESS_DOOR_HEIGHT=.071;
 const DECISIVE_FORTRESS_APPROACH=650;
 const DECISIVE_DOOR_TIME=1.35,DECISIVE_DOOR_RELEASE=.72;
 const DECISIVE_FORTRESS_GEARS=[[.175,51],[.282,31],[.368,39],[.469,42],[.56,29],[.663,47],[.765,34],[.86,53]];
+// Alpha outlines of the registered hull and lower deck, sampled on a 120 × 80 grid.
+const DECISIVE_HULL_SPANS=[
+ [],[],[56,58],[55,56,66,71],[55,56,57,58,65,72],[55,56,57,58,65,73],[49,51,54,59,64,73],[10,17,49,52,53,73,103,109],
+ [10,17,23,26,35,39,45,75,81,85,94,97,103,110],[9,42,44,76,78,111],[9,42,43,77,78,111],[9,111],[9,111],[9,110],[9,110],[9,110],
+ [9,110],[9,110],[9,110],[9,110],[9,110],[9,110],[9,110],[9,110],
+ [9,110],[9,110],[10,110],[10,110],[10,110],[10,110],[10,110],[9,110],
+ [9,111],[8,111],[8,112],[8,112],[8,112],[8,112],[8,112],[8,112],
+ [8,112],[9,111],[10,110],[10,110],[10,110],[10,110],[10,110],[10,110],
+ [9,111],[9,111],[9,111],[8,112],[8,112],[8,112],[8,112],[8,112],
+ [8,112],[8,112],[9,111],[10,110],[10,110],[10,110],[10,110],[10,110],
+ [10,110],[10,110],[10,110],[11,109],[11,109],[11,109],[11,109],[11,109],
+ [12,108],[12,107],[13,107],[16,19,31,39,56,64,81,89,101,104],[32,39,57,64,81,89],[32,38,57,63,82,88],[],[]
+];
+const DECISIVE_DECK_SPANS=[
+ [],[],[],[],[],[],[],[10,17,54,66,103,109],
+ [10,17,23,26,35,39,45,52,53,67,68,75,82,85,94,97,103,110],[9,41,44,75,79,111],[9,42,43,76,78,111],[9,111],[9,111],[9,110],[9,110],[9,110],
+ [9,110],[9,110],[9,110],[9,110],[9,110],[9,110],[9,110],[9,110],
+ [9,110],[9,110],[10,110],[10,110],[10,110],[10,110],[10,110],[9,110],
+ [9,111],[8,111],[8,112],[8,112],[8,112],[8,112],[8,112],[8,112],
+ [8,112],[9,111],[10,110],[10,110],[10,110],[10,110],[10,110],[10,110],
+ [9,111],[9,111],[9,111],[8,112],[8,112],[8,112],[8,112],[8,112],
+ [8,112],[8,112],[9,111],[10,110],[10,110],[10,110],[10,110],[10,110],
+ [10,110],[10,110],[10,110],[11,109],[11,109],[11,109],[11,109],[11,109],
+ [12,108],[12,107],[13,107],[16,19,101,104],[],[],[],[]
+];
 const DECISIVE_ALLIED_AIRDROP_DISTANCE=200,DECISIVE_ENEMY_RELEASE_DISTANCE=500;
 let decisiveBattle=null,desertTownEvents=null;
 function isDecisiveFacility(){return stageMode==='indoor'&&decisiveBattle?.phase==='facility';}
 function isDecisiveStage(){return stageMode==='decisive'||isDecisiveFacility()||stageMode==='front'&&!!decisiveBattle;}
 function loadDecisiveAssets(){
- for(const key of ['fortress','fortress-hull','fortress-gear','bunker','bunker-barrel','command-facility'])if(!COVER_IMG['decisive_'+key])COVER_IMG['decisive_'+key]=makeAssetImage('assets/decisive/'+key+'.webp?v='+GAME_VERSION);
+ for(const key of ['fortress','fortress-hull','fortress-underlay','fortress-gear','bunker','bunker-barrel','command-facility'])if(!COVER_IMG['decisive_'+key])COVER_IMG['decisive_'+key]=makeAssetImage('assets/decisive/'+key+'.webp?v='+GAME_VERSION);
  loadDesertTerrain();loadDesertSandbags();
 }
 function loadDesertSandbags(){
@@ -781,6 +806,26 @@ function updateDecisiveBunkers(dt){
   fire(x,y,aim,'e','v',480,620,.3);bunker.gunCd=bunker.burstLeft?DECISIVE_BUNKER_SCAN_SECONDS:1.1;
  }
 }
+function decisiveFortressHits(b,x,y,r=0,originX=b.x,originY=b.y){
+ const lx=x-originX,ly=y-originY;
+ if(lx+r<0||lx-r>=b.w||ly+r<0||ly-r>=b.h)return false;
+ if(b.fragMask&&facilitySpriteHits(b.x+lx,b.y+ly,r,DECISIVE_HULL_SPANS,120,80,1))return true;
+ const spans=b.fragMask?DECISIVE_DECK_SPANS:DECISIVE_HULL_SPANS,unitX=b.w/120,unitY=b.h/80;
+ const first=Math.max(0,Math.floor((ly-r)/unitY)),last=Math.min(79,Math.floor((ly+r)/unitY));
+ for(let row=first;row<=last;row++)for(let i=0;i<spans[row].length;i+=2){
+  const dx=Math.max(0,spans[row][i]*unitX-lx,lx-spans[row][i+1]*unitX);
+  const dy=Math.max(0,row*unitY-ly,ly-(row+1)*unitY);
+  if(dx*dx+dy*dy<=r*r)return true;
+ }
+ if(b.hp<=0)return false;
+ const gearX=Math.min(Math.abs(lx-b.w*.052),Math.abs(lx-b.w*.948));
+ if(gearX>53*b.w/1200+r)return false;
+ for(const [height,width] of DECISIVE_FORTRESS_GEARS){
+  const limit=width*b.w/1200+r,dy=ly-b.h*height;
+  if(gearX*gearX+dy*dy<=limit*limit)return true;
+ }
+ return false;
+}
 function decisiveFortressSpriteKey(){
  return assetOK(COVER_IMG['decisive_fortress-hull'])?'decisive_fortress-hull':'decisive_fortress';
 }
@@ -823,7 +868,11 @@ function updateDecisiveFortress(dt){
   // Check the swept bounds on both axes before moving the collider.
   const left=Math.min(nx,base.x)-42,right=Math.max(nx,base.x)+base.w+42;
   const top=Math.min(ny,base.y)-42,bottom=Math.max(ny,base.y)+base.h+42;
-  const blocked=[p,...humans,...etanks,...allies,...cars].some(u=>u.alive!==false&&u.x>left&&u.x<right&&u.y>top&&u.y<bottom);
+  const sweep=Math.hypot(nx-base.x,ny-base.y)/2,centerX=(nx+base.x)/2,centerY=(ny+base.y)/2;
+  const overlaps=(u,r)=>u.alive!==false&&u.x>left&&u.x<right&&u.y>top&&u.y<bottom&&
+   decisiveFortressHits(base,u.x,u.y,r+sweep,centerX,centerY);
+  const blocked=overlaps(p,p.tank?32:12)||humans.some(u=>overlaps(u,12))||allies.some(u=>overlaps(u,12))||
+   etanks.some(u=>overlaps(u,32))||cars.some(u=>overlaps(u,32));
   if(!blocked){
    d.fortressTravel+=Math.sign(nx-base.x||ny-base.y)*Math.hypot(nx-base.x,ny-base.y);
    base.x=nx;base.y=ny;
