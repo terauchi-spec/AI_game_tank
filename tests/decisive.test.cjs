@@ -45,7 +45,7 @@ test('allied bombers arrive at 20m and enemies spawn at 50m after escape',()=>{
  run('p.y-=1;updateDecisiveMission(.01)');
  assert.ok(run(`(()=>{
   const pass=reinforcementPass,view=frontlineView();
-  return pass.offsets.length===2&&pass.offsets[1]-pass.offsets[0]>=260&&pass.y<view.y+view.h;
+  return pass.offsets.length===2&&pass.offsets[1]-pass.offsets[0]>=260&&pass.y>view.y+view.h;
  })()`));
  assert.ok(run(`(()=>{
   const drawBomber=drawSupportBomber,calls=[];
@@ -53,7 +53,7 @@ test('allied bombers arrive at 20m and enemies spawn at 50m after escape',()=>{
   try{draw();}finally{drawSupportBomber=drawBomber;}
   return calls.length===2&&calls[0].x!==calls[1].x&&calls[0].y===calls[1].y;
  })()`));
- run('updateReinforcementPass(3)');
+ run('updateReinforcementPass(4)');
  assert.equal(run('allies.filter(a=>a.chute>0).length'),6);
  assert.equal(run('allies.filter(a=>a.chute>0&&a.frontCommander).length'),2);
  assert.ok(run('allies.filter(a=>a.chute>0).every(a=>a.startY<p.y&&a.landY<p.y)'));
@@ -61,7 +61,7 @@ test('allied bombers arrive at 20m and enemies spawn at 50m after escape',()=>{
  run('p.y=decisiveBattle.assaultStartY-499;updateDecisiveMission(80)');
  assert.ok(run('!mission.enemyWavesStarted&&!humans.length&&!etanks.length&&!enemyDogs.length&&!reinforcementPass'));
  run('p.y-=1;updateDecisiveMission(.01)');
- assert.ok(run('mission.enemyWavesStarted&&humans.length>0&&humans.every(h=>h.frontMarch)&&!reinforcementPass'));
+ assert.ok(run('mission.enemyWavesStarted&&humans.length>0&&humans.every(h=>h.frontMarch&&!h.dogHandler&&!h.dog)&&mission.enemyRoster.every(h=>!h.dogHandler&&!h.dog)&&!enemyDogs.length&&!reinforcementPass'));
 });
 test('desert town replaces the random sections and shares the desert tile and uses its own buildings',()=>{
  for(const seed of [7,11,42]){
@@ -69,6 +69,7 @@ test('desert town replaces the random sections and shares the desert tile and us
   assert.deepEqual(Array.from(run('ZONES.map(z=>z.n)')),['草原','砂漠街','砂漠街','砂漠街','砂漠街','砂漠街','砂漠','砂漠','砂漠','砂漠','砂漠']);
   assert.ok(run('ZONES.slice(1).every((z,i)=>z.y0===ZONES[i].y1)'));
   assert.equal(run('water.filter(w=>w.oasis).length'),1);
+  assert.ok(run('bushes.some(b=>b.desertLakeBush)&&bushes.filter(b=>b.desertLakeBush).every(b=>zoneAt(b.y+b.h/2).oasis&&!hitsM(b.x+b.w/2,b.y+b.h/2,40))'));
   assert.ok(run('water.some(w=>w.oasis&&w.sizeScale>=.2&&w.sizeScale<=1.5)'));
   assert.ok(run("TERRAIN_IMG['砂漠街']===TERRAIN_IMG['砂漠']&&terrainSurfacePattern(ZONES[1])===terrainSurfacePattern(ZONES[DECISIVE_DESERT_START])"));
   assert.ok(run(`(ZONES.slice(1,DECISIVE_DESERT_START).every(z=>{
@@ -307,7 +308,7 @@ test('command facility keeps both floor dimensions, a fixed central room and nin
    drawDecisiveFacilityHud({});
   }finally{drawObjectiveHealthBar=bar;drawHudBomb=bomb;target.hits=0;target.done=false;}
   return calls;
- })()`)),[1,'bomb',1-1/3,'bomb']);
+ })()`)),[1,1-1/3]);
  assert.deepEqual(Array.from(run(`(()=>{
   indoorWorld.currentFloor=0;
   const original=drawExitCircle,calls=[];
@@ -324,8 +325,8 @@ test('command facility keeps both floor dimensions, a fixed central room and nin
 test('moving fortress yields to nearby units; bunker and fortress guns reuse existing enemy projectiles',()=>{
  const {run}=start();completeFacility(run);const x=run('base.x');run('updateDecisiveFortress(.1)');assert.notEqual(run('base.x'),x);
  run('p.x=base.x+base.w+5;p.y=base.y+100');const blocked=run('base.x');run('updateDecisiveFortress(.1)');assert.equal(run('base.x'),blocked);
- run('p.x=base.x+base.w/2;p.y=base.y+base.h+150;decisiveBattle.fortressCd=0;updateDecisiveFortress(.1)');assert.ok(run('bullets.some(b=>b.from==="e"&&b.k==="c")'));
- run('const bunker=decisiveBattle.bunkers[0];allies=[];p.x=bunker.x+bunker.w/2+44;p.y=bunker.y+bunker.h+52;bunker.gunCd=.8;decisiveBattle.gunScan=0;updateDecisiveBunkers(.2)');
+ run('p.x=base.x+base.w/2;p.y=base.y+base.h+150;decisiveBattle.fortressCd=0;updateDecisiveFortress(.1)');assert.ok(run('bullets.some(b=>b.from==="e"&&b.k==="v")'));
+ run('const bunker=decisiveBattle.bunkers[0];bullets=[];allies=[];p.x=bunker.x+bunker.w/2+44;p.y=bunker.y+bunker.h+52;bunker.gunCd=.8;decisiveBattle.gunScan=0;updateDecisiveBunkers(.2)');
  assert.equal(run('bunker.gunAim'),Math.PI/4);
  assert.equal(run('decisiveBunkerAngle(bunker,performance.now()+100)'),3*Math.PI/8);
  assert.equal(run('bullets.some(b=>b.from==="e"&&b.k==="v")'),false);
@@ -406,10 +407,26 @@ test('six fortress mounts traverse independently and the south mounts fire beyon
    p.x=base.x+base.w*${x};p.y=base.y+base.h*${y};
    decisiveBattle.fortressCd=0;updateDecisiveFortress(.1);
    const gun=decisiveBattle.fortressGuns.find(q=>q.gunShotAt!==undefined),shot=bullets[0];
-   return !!gun&&!!shot&&bullets.length===1&&!circleHitsBase(shot.x,shot.y,2)&&
+   return !!gun&&!!shot&&bullets.length===1&&!circleHitsBase(shot.x,shot.y,2)&&shot.k===(${JSON.stringify(side)}==='south'?'v':'c')&&
     (${JSON.stringify(side)}==='south'?gun.y>.85:${JSON.stringify(side)}==='west'?gun.x<.2:gun.x>.8);
   })()`),true,side);
  }
+});
+test('tank support starts below view only when a working tank is unavailable and lands one usable tank',()=>{
+ const {run}=start();completeFacility(run);
+ run(`p.x=WW/2;p.y=base.y+base.h+400;reinforcementPass=null;
+  covers=[];objects=[];water=[];humans=[];allies=[];etanks=[];
+  cars=[{x:p.x+120,y:p.y,t:TYPES[0],kind:'tank',f:25}];rebuildSpatialGrid();
+  updateDecisiveTankDrop(decisiveBattle,1)`);
+ assert.equal(run('reinforcementPass'),null);
+ run('cars=[];updateDecisiveTankDrop(decisiveBattle,1)');
+ assert.ok(run('reinforcementPass.cargoFlight&&reinforcementPass.y>frontlineView().y+H&&TYPES.includes(reinforcementPass.tankCargo.t)'));
+ run('updateReinforcementPass(10)');
+ assert.ok(run('decisiveBattle.tankCargo&&cars.length===0&&allies.length===0'));
+ run('updateDecisiveTankDrop(decisiveBattle,2.6)');
+ assert.ok(run('cars.length===1&&cars[0].c===cars[0].t.cmax&&cars[0].f===cars[0].t.fmax&&!decisiveBattle.tankCargo'));
+ run('updateDecisiveTankDrop(decisiveBattle,5)');
+ assert.equal(run('reinforcementPass'),null);
 });
 test('fortress drive follows signed movement and stops at a blocked step',()=>{
  const {run}=start();completeFacility(run);
@@ -468,7 +485,7 @@ test('adobe doors deploy blue infantry and stay disabled after damage to their e
   covers=[building];humans=[];etanks=[];cars=[];objects=[];water=[];rebuildSpatialGrid();
   p.x=WW/2;p.y=town.y0-10;
   setupDesertTownEvents();const door=building.desertTownDoor;`);
- assert.ok(run('door.remaining>=5&&door.remaining<=10'));
+ assert.ok(run('door.remaining>=2.5&&door.remaining<=5'));
  run("carve(building.x+20,building.y+20,34,false,null);rebuildSpatialGrid();");
  assert.equal(run('door.broken'),false);
  run('door.remaining=.2;updateDesertTownEvents(.02);draw();updateDesertTownEvents(.3);');
@@ -516,7 +533,7 @@ test('an obstructed adobe exit stays closed and retries on its regular timer',()
   for(let i=0;i<180;i++)updateDesertTownEvents(1/60);`);
  assert.equal(run('door.elapsed'),0);
  assert.equal(run('humans.length'),0);
- assert.ok(run('door.remaining>2&&door.remaining<=10'));
+ assert.ok(run('door.remaining>0&&door.remaining<=2.3'));
  run('covers=[building];rebuildSpatialGrid();door.remaining=.2;updateDesertTownEvents(.02);updateDesertTownEvents(.15);');
  assert.equal(run('humans.length'),0);
  run(`const crops=[];g.drawImage=(...args)=>crops.push(args);drawPointInView=()=>true;

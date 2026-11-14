@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.14.2008</title>
+<title>こっそり戦車大作戦 2026.11.14.2146</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -1027,7 +1027,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.14.2008',FILE_CREATED_AT='2026/11/14 20:08',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.14.2146',FILE_CREATED_AT='2026/11/14 21:46',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -5217,7 +5217,7 @@ function startReinforcementPass(paired=false){
  // Let the bomber pass the player before dropping; parachutes drift south as they land.
  const view=frontlineView(),dropY=Math.min(WH-80,p.y-320);
  const offsets=paired?[-140,140]:[0],margin=100+offsets.at(-1);
- reinforcementPass={x:Math.max(margin,Math.min(WW-margin,p.x)),y:paired?p.y+105:view.y+view.h+180,
+ reinforcementPass={x:Math.max(margin,Math.min(WW-margin,p.x)),y:view.y+view.h+180,
   endY:Math.min(view.y-180,dropY-380),dropY,drops:0,offsets};
  sfx('radio');
  if(!paired)say('白い無線取得！ 増援部隊が飛来！');
@@ -5225,6 +5225,7 @@ function startReinforcementPass(paired=false){
 function updateReinforcementPass(dt){
  const pass=reinforcementPass;if(!pass)return;
  pass.y-=380*dt;
+ if(pass.cargoFlight){updateDecisiveTankTransport(pass);return;}
  while(pass.drops<3&&pass.y<=pass.dropY-pass.drops*90){
   const index=pass.drops++,targetY=pass.dropY-index*90;
   for(const offset of pass.offsets){
@@ -7437,7 +7438,7 @@ function drawAllWaterCrossings(cx,cy){
  for(const e of etanks)if(e.alive&&enemyInView(e,cx,cy,150))drawWaterWake(e,e.body,true,TANK_HIT);
  g.restore();
 }
-function drawAllyParachute(ally,enemy=false){
+function drawAllyParachute(ally,enemy=false,cargo=null){
  if(!ally||!ally.alive||!(ally.chute>0))return;
  const alpha=enemy?sandstormEnemyOpacity():Math.max(0,1-sandIntensity);if(alpha<=.001)return;
  g.save();g.translate(ally.x,ally.y);
@@ -7463,6 +7464,7 @@ function drawAllyParachute(ally,enemy=false){
  g.strokeStyle='#758a82';g.lineWidth=1.25;g.beginPath();g.moveTo(-10,-10);g.lineTo(10,-10);g.stroke();
  g.fillStyle='#263b38';g.fillRect(-9,-12,18,6);g.fillStyle='#bacbc4';g.fillRect(-7,-10,14,2);
  g.restore();
+ if(cargo){g.save();g.globalAlpha*=alpha;drawVehicle(cargo,ally.x,ally.y,cargo.body,cargo.body);g.restore();return;}
  g.save();g.globalAlpha*=alpha;soldier(ally.x,ally.y,ally.face,!enemy,false,false,enemy&&ally.elite,enemy?ally.commander||'':'',false,false,ally);g.restore();
 }
 
@@ -8085,6 +8087,7 @@ function draw(near){
  // 航空支援は草むら内を含む全車両より上に描画する。
  if(decisiveBattle)drawDecisiveCrashingAircraft(cx,cy);
  if(airstrike)drawSupportBomber(airstrike.x,airstrike.y);
+ if(decisiveBattle?.tankCargo)drawDecisiveTankDrop(cx,cy);
  if(reinforcementPass)for(const offset of reinforcementPass.offsets)drawSupportBomber(reinforcementPass.x+offset,reinforcementPass.y);
  if(stageMode!=='indoor'){
   drawEnemyParachutePass(stageMode==='escapeTest'?mission?.enemyDrop:desertTownEvents?.drop,cx,cy);
@@ -9002,7 +9005,7 @@ function reportGameError(error){
 </script>
 <script src="js/road-trucks.js?v=2026.11.14.1728"></script>
 <script src="js/stage-progress.js?v=2026.11.12.2006"></script>
-<script src="js/decisive.js?v=2026.11.14.2008"></script>
+<script src="js/decisive.js?v=2026.11.14.2146"></script>
 <script src="js/frontline.js?v=2026.11.13.1834"></script>
 <script src="js/award-icons.js?v=2026.10.31.0807"></script>
 <script src="js/developer.js?v=2026.11.11.2308"></script>
@@ -9021,7 +9024,7 @@ function reportGameError(error){
 <script src="js/jungle-placement-masks.js?v=2026.11.08.2145"></script>
 <script src="js/jungle.js?v=2026.11.12.2330"></script>
 <script src="js/escape-test.js?v=2026.11.14.1830"></script>
-<script src="js/canyon.js?v=2026.11.14.0824"></script>
+<script src="js/canyon.js?v=2026.11.14.2146"></script>
 <script src="js/vegetation.js?v=2026.11.08.1806"></script>
 <script src="js/laboratory.js?v=2026.10.31.2206"></script>
 <script src="js/infiltration-world.js?v=2026.11.14.1734"></script>

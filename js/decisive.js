@@ -86,6 +86,24 @@ function setupDesertTownConditions(zones){
  z.oasis=lake;
  water.push({...lake,y:lake.y/MAP_SCALE});
 }
+function plantDesertTownLakeBushes(zones){
+ for(const z of zones){
+  const lake=z.oasis;if(!lake)continue;
+  for(let i=0;i<24;i++){
+   const a=i*Math.PI/12,w=72,h=52;
+   const x=lake.x+lake.w/2+Math.cos(a)*(lake.w/2+70);
+   const y=lake.y+lake.h/2+Math.sin(a)*(lake.h/2+70);
+   const shrub={x:x-w/2,y:y-h/2,w,h,desertLakeBush:true};
+   if(x<48||x>WW-48||y<z.y1+40||y>z.y0-40||hitsM(x,y,40)||
+      (shrub.x+shrub.w>WW/2-100&&shrub.x<WW/2+100)||
+      (decisiveBattle?.building&&decisiveRectsOverlap(decisiveBattle.building,shrub,20))||
+      covers.some(c=>decisiveRectsOverlap(c,shrub))||
+      objects.some(o=>decisiveRectsOverlap(o.kind==='barrel'?barrelVisualRect(o):o,shrub))||
+      bushes.some(b=>decisiveRectsOverlap(b,shrub,6)))continue;
+   bushes.push(shrub);
+  }
+ }
+}
 function addDesertTownBuildings(z){
  loadDesertTerrain();
  for(const [key] of DESERT_TOWN_BUILDINGS){
@@ -215,7 +233,7 @@ function setupDesertTownEvents(){
   const zone=zoneAt(c.y+c.h/2);
   const [x,y,w,h]=panel,door={
    x:c.x+c.w*x,y:c.y+c.h*y,w:c.w*w,h:c.h*h,
-   kind:c.decisiveKind,panel,building:c,zone,remaining:5+R()*5,elapsed:0,departed:0,broken:false
+   kind:c.decisiveKind,panel,building:c,zone,remaining:2.5+R()*2.5,elapsed:0,departed:0,broken:false
   };
   c.desertTownDoor=door;
   if(!doorsByZone.has(zone))doorsByZone.set(zone,[]);
@@ -261,7 +279,7 @@ function updateDesertTownEvents(dt){
     if(before<.3&&door.elapsed>=.3)spawnDesertTownDoorSoldier(door);
     if(door.elapsed>=.9)door.elapsed=0;
    }else if(door.departed<2&&door.remaining<=.3){
-    door.remaining=.3+5+R()*5;
+    door.remaining=.3+2.5+R()*2.5;
     if(desertTownDoorPatrol(door))door.elapsed=Number.EPSILON;
    }
   }
@@ -385,6 +403,7 @@ function setupDecisiveWorld(){
  scoreStats.objectiveTotal=2;scoreStats.objectiveProgress=0;
  rebuildSpatialGrid();captureBuildingGroundMarks();ensurePlayerVehicleSpawns();ensureEnemyTankSpawns();
  const townZones=ZONES.slice(1,DECISIVE_DESERT_START);
+ plantDesertTownLakeBushes(townZones);
  placeDesertTownGunTowers(townZones);
  spawnDesertTownPatrols(townZones);
  setupDesertTownEvents();
@@ -618,6 +637,7 @@ function openDecisiveAssault(){
  stageMode='front';frontlineBeginner=false;frontlineOni=false;
  humans=humans.filter(h=>h.alive&&!(h.stun>0));humans.push(...d.reserve.filter(h=>h.alive));d.reserve=[];
  mission={index:0,progress:0,points:[{x:base.x+base.w/2,y:base.y+base.h+220,captureRadius:540,name:'移動要塞',done:false}],waveT:6,reinforceT:18,advanceReleased:true,northEdge:0};
+ for(const h of humans){h.dogHandler=false;h.dog=null;}
  setupFrontlineArmy();mission.advanceReleased=true;
  for(const ally of allies)if(ally.alive){ally.frontline=true;assignFrontlineAllyRole(ally);}
  missionAllies(d.gate.y);setupFrontlineVehicles();
@@ -654,6 +674,7 @@ function updateDecisiveMission(dt){
   spawnFrontlineWave(6);
  }
  updateDecisiveFortress(dt);
+ updateDecisiveTankDrop(d,dt);
  if(state!=='play')return;
  cleanupFrontlineArmy(dt);updateFrontlineWaves(dt);
  const zone=zoneAt(p.y);
@@ -666,6 +687,55 @@ function updateDecisiveMission(dt){
  // The frontline objective guides the squad to a safe firing position, never to another capture finish.
  const point=mission.points[0];point.x=base.x+base.w/2;point.y=base.y+base.h+220;
  updateDecisiveBunkers(dt);
+}
+function decisiveTankLanding(x,y){
+ const r=TANK_HIT;
+ return x>=r&&x<=WW-r&&y>=base.y+base.h+55&&y<=WH-r&&!hitsM(x,y,r)&&
+  !cars.some(v=>Math.hypot(v.x-x,v.y-y)<r+32)&&
+  !etanks.some(v=>v.alive&&Math.hypot(v.x-x,v.y-y)<r+32)&&
+  !humans.some(h=>h.alive&&Math.hypot(h.x-x,h.y-y)<r+12)&&
+  !allies.some(a=>a.alive&&!(a.chute>0)&&Math.hypot(a.x-x,a.y-y)<r+12)&&
+  Math.hypot(p.x-x,p.y-y)>=r+12;
+}
+function updateDecisiveTankDrop(d,dt){
+ if(state!=='play'||base.hp<=0)return;
+ if(d.tankCargo){
+  const cargo=d.tankCargo;
+  cargo.chute=Math.max(0,cargo.chute-dt);
+  if(cargo.chute>0)return;
+  d.tankCargo=null;d.tankDropCheck=2;
+  const v=cargo.vehicle;
+  if(!decisiveTankLanding(v.x,v.y))return;
+  cars.push(v);say('補充戦車が到着！');
+  return;
+ }
+ if(reinforcementPass||p.tank?.kind==='tank'||p.y<base.y+base.h||p.y>base.y+base.h+650)return;
+ d.tankDropCheck=(d.tankDropCheck||0)-dt;
+ if(d.tankDropCheck>0)return;
+ d.tankDropCheck=1;
+ if(cars.some(v=>v.kind==='tank'&&v.t?.cmax>0&&v.f>0&&Math.hypot(v.x-p.x,v.y-p.y)<700))return;
+ for(const dy of [140,220,300,80])for(const dx of [0,-100,100,-200,200]){
+  const x=Math.max(42,Math.min(WW-42,p.x+dx)),y=p.y+dy;
+  if(!decisiveTankLanding(x,y))continue;
+  const t=TYPES[Math.floor(R()*TYPES.length)],view=frontlineView();
+  const vehicle={x,y,t,kind:'tank',hp:t.hp,c:t.cmax,v:t.vmax,f:t.fmax,ch:0,mgHits:0,body:-Math.PI/2};
+  reinforcementPass={x,y:view.y+view.h+180,endY:view.y-180,offsets:[0],cargoFlight:true,tankCargo:vehicle};
+  sfx('radio');say('味方機が補充戦車を投下します');
+  return;
+ }
+}
+function updateDecisiveTankTransport(pass){
+ if(pass.tankCargo&&pass.y<=pass.tankCargo.y){
+  decisiveBattle.tankCargo={vehicle:pass.tankCargo,chute:2.6};
+  pass.tankCargo=null;
+ }
+ if(pass.y<pass.endY&&!pass.tankCargo)reinforcementPass=null;
+}
+function drawDecisiveTankDrop(cx,cy){
+ const cargo=decisiveBattle?.tankCargo;
+ if(!cargo||!drawPointInView(cargo.vehicle.x,cargo.vehicle.y,cx,cy,230))return;
+ const v=cargo.vehicle,lift=cargo.chute/2.6*130;
+ drawAllyParachute({x:v.x,y:v.y-lift,alive:true,chute:cargo.chute},false,v);
 }
 function decisiveGunTarget(x,y,range){
  let target=null,best=range;
@@ -750,9 +820,17 @@ function updateDecisiveFortress(dt){
  updateDecisiveRoofGuns(base,d,now);
  const target=decisiveGunTarget(x,y,900),shot=scanDecisiveFortressGuns(base,d,target,now,d.fortressCd<=0);
  if(d.fortressCd>0)return;
- if(!shot){d.fortressCd=.25;return;}
+ if(!shot){d.fortressCd=.25;d.fortressBurst=0;return;}
  shot.gun.gunFrom=shot.gun.gunAim;shot.gun.gunShotAt=now;
- fire(shot.x,shot.y,shot.angle,'e','c',420,1000,1.4,'enemyCannon');d.fortressCd=3;
+ if(shot.gun.y>.85){
+  fire(shot.x,shot.y,shot.angle,'e','v',480,620,.3);
+  d.fortressBurst=(d.fortressBurst||0)+1;
+  d.fortressCd=d.fortressBurst<4?.16:3;
+  if(d.fortressBurst>=4)d.fortressBurst=0;
+ }else{
+  d.fortressBurst=0;
+  fire(shot.x,shot.y,shot.angle,'e','c',420,1000,1.4,'enemyCannon');d.fortressCd=3;
+ }
 }
 function updateDecisiveRoofGuns(b,d,now){
  const firingIndex=d.roofCd<=0&&!d.roofShell?d.roofNext:-1;
@@ -987,7 +1065,6 @@ function drawDecisiveFacilityHud(el){
  const cx=Math.round(camX/2)*2,cy=Math.round(cam/2)*2;
  if(!q.done&&floor===targetFloor&&drawBoundsInView(x,y,width,height,cx,cy,48)){
   drawObjectiveHealthBar(gm,x+10-cx,y-16-cy,width-20,1-q.hits/DECISIVE_COMPUTER_HITS);
-  drawHudBomb(q.x-cx,y-32-cy);
  }
  gm.restore();drawIndoorStairTransition();
 }
