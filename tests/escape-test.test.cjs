@@ -1,6 +1,30 @@
 const test=require('node:test'),assert=require('node:assert/strict'),path=require('node:path'),fs=require('node:fs'),vm=require('node:vm');
 const {createGameEngine}=require('./helpers/game-engine.cjs'),root=path.join(__dirname,'..');
 function start(seed=7){const h=createGameEngine(root,{seed});h.run("stageMode='escapeTest';areaDebugEnabled=false;skill='throw';reset(false)");return h;}
+// Search for a continuous vehicle-width passage. Supplies placed after terrain
+// generation can cross the planned centerline. Rivers slow movement.
+function hasEscapePassage(h){
+ return h.run(`(()=>{
+  const step=12,radius=28,columns=Math.floor((WW-radius*2)/step)+1;
+  const rows=Math.floor((p.y-mission.exit.y+INDOOR_EXIT_RADIUS)/step)+1;
+  const start=Math.round((p.x-radius)/step);
+  const visited=new Uint8Array(columns*rows),queue=new Int32Array(visited.length);
+  const xAt=col=>radius+col*step,yAt=row=>p.y-row*step;
+  if(hitsC(xAt(start),p.y,radius))return false;
+  visited[start]=1;queue[0]=start;
+  for(let head=0,tail=1;head<tail;head++){
+   const index=queue[head],col=index%columns,row=Math.floor(index/columns),x=xAt(col),y=yAt(row);
+   if(Math.hypot(x-mission.exit.x,y-mission.exit.y)<INDOOR_EXIT_RADIUS)return true;
+   for(const [nextCol,nextRow] of [[col-1,row],[col+1,row],[col,row-1],[col,row+1]]){
+    if(nextCol<0||nextCol>=columns||nextRow<0||nextRow>=rows)continue;
+    const next=nextRow*columns+nextCol,nextX=xAt(nextCol),nextY=yAt(nextRow);
+    if(visited[next]||hitsC(nextX,nextY,radius)||hitsC((x+nextX)/2,(y+nextY)/2,radius))continue;
+    visited[next]=1;queue[tail++]=next;
+   }
+  }
+  return false;
+ })()`);
+}
 const previousStages=['beginner','indoorBeginner','frontBeginner','rescueBeginner','baseIntermediate','indoor','frontIntermediate'];
 function unlockRescue(h,advanced=false){
  const cleared=advanced?[...previousStages,'escapeTest','base','indoorLab','front']:previousStages;
@@ -44,7 +68,7 @@ test('five contiguous jungle areas reuse normal combat and terrain, with safe st
   assert.equal(h.run("ZONES.slice(1,-1).every(z=>humans.filter(h=>h.commander==='blue'&&zoneAt(h.y)===z).length===1)"),true);
   variants.add(h.run('ZONES.map(z=>Number(!!z.escapeRiver)+2*Number(!!z.oasis)).join()'));
   assert.equal(h.run('ZONES.slice(1,-1).every(z=>z.jungleCoreLayout)&&covers.filter(c=>c.jungleCore).length>=3'),true);
-  assert.equal(h.run('ZONES.slice(1,-1).every(z=>{for(let y=z.y1+32;y<Math.min(p.y,z.y0)-40;y+=8)if(hitsC(jungleRouteX(z,y),y,28))return false;return true;})'),true);
+  assert.equal(hasEscapePassage(h),true,'vehicle-width passage to EXIT for seed '+seed);
   h.run('draw();for(let i=0;i<120;i++)update(1/60);p.x=mission.exit.x;p.y=mission.exit.y;cam=p.y-300;draw()');
   assert.equal(h.run('state'),'play');
  }

@@ -7,6 +7,7 @@ function harness(beginner=true,seed=1,code=source){
   ZONE_STYLE:{'敵迷路基地':{p:[]}},module:{exports:{}},document:{body:{classList:{remove(){}}}},rebuildSpatialGrid(){},say(){},sfx(){},
   partner:null,hound:null,debugMode:0,hitsM:()=>false,playerDetectedNow:()=>false,los:()=>true,D:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),
   completeMission(){completed++;c.state='win';}};
+ c.rescueAdvancedTest=false;
  vm.createContext(c);vm.runInContext(code+`;setupInfiltrationWorld();setupInfiltrationMission();api={get world(){return indoorWorld;},get files(){return INDOOR_FILES_TOTAL;},setup:setupInfiltrationWorld,mission:updateInfiltrationMission,roles:indoorReinforcementRole,replenish:indoorReplenishGuards,entrance:indoorUpdateEntranceGuards,landing:indoorStairLanding,stairBounds:indoorStairBounds,point:indoorGridPoint,nearest:indoorGridFreeNearest};`,c);
  return{c,api:c.api,get completed(){return completed;}};
 }

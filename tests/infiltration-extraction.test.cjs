@@ -12,6 +12,7 @@ function harness(seed=1,width=480){
   gameCanvasContext:()=>context,gm,rebuildSpatialGrid(){},say(){},sfx(){},partner:null,hound:null,
   playerDetectedNow:()=>false,los:()=>true,D:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),
   completeMission:()=>{completed++;c.state='win';}};
+ c.rescueAdvancedTest=false;
  vm.createContext(c);
  vm.runInContext(source+`;setupInfiltrationWorld();setupInfiltrationMission();
   api={get world(){return indoorWorld;},bounds:infiltrationFloorBounds,clamp:enforceInfiltrationBoundary,
@@ -311,7 +312,9 @@ test('stairs have three solid sides, require entering at the mouth, and switch o
    assert.equal(w.currentFloor,before,'side/back access cannot activate travel');
    c.p.y=b.y+b.h-12;h.api.mission(.01);assert.equal(w.currentFloor,before);
    c.p.y=f.stair.y;h.api.mission(.01);assert.equal(w.currentFloor,before,'middle is not the trigger');
-   c.p.y=b.y+20;h.api.mission(.01);assert.equal(w.currentFloor,1-before);
+   c.p.y=b.y+20;h.api.mission(.01);assert.equal(w.currentFloor,before);
+   assert.ok(w.stairTransition);
+   h.api.transition(.5);assert.equal(w.currentFloor,1-before);
    assert.equal(h.api.protected(),true);
    const area=w.stairSanctuary;
    const landing=h.api.landing(w.floors[w.currentFloor]);
@@ -339,9 +342,11 @@ test('stair arrival freezes only the infiltration player for 0.5 seconds',()=>{
  const x=c.p.x,y=c.p.y;
  c.mv(c.p,5,5,8);assert.equal(c.p.x,x);assert.equal(c.p.y,y);
  const ally={x:100,y:c.p.y};c.mv(ally,5,0,8);assert.equal(ally.x,105);
- h.api.mission(.49);c.mv(c.p,5,0,8);assert.equal(c.p.x,x);
- h.api.mission(.011);c.mv(c.p,5,0,8);assert.equal(c.p.x,x+5);
- w.stairMoveLock=.5;c.stageMode='base';c.mv(c.p,5,0,8);assert.equal(c.p.x,x+10);
+ h.api.transition(.24);c.mv(c.p,5,0,8);assert.equal(c.p.x,x);
+ h.api.transition(.25);const landing=h.api.landing(w.floors[w.currentFloor]);
+ c.mv(c.p,5,0,8);assert.equal(c.p.x,landing.x);
+ h.api.transition(.011);c.mv(c.p,5,0,8);assert.equal(c.p.x,landing.x+5);
+ w.stairMoveLock=.5;c.stageMode='base';c.mv(c.p,5,0,8);assert.equal(c.p.x,landing.x+10);
 });
 
 

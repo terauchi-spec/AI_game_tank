@@ -152,9 +152,9 @@ test('actual drill collision logic reports contact for cover, objects, targets a
 
 function incomingBulletHarness({kind='r',vehicle='tank',id='t34',hit=true}={}){
  const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),section=(a,b)=>html.slice(html.indexOf(a),html.indexOf(b,html.indexOf(a))),sounds=[];
- const c={p:{x:0,y:0,hp:3,tank:vehicle?{kind:vehicle,t:{id,armor:2},ch:0,hp:8}:null},scoreStats:{damageHits:0},bullets:[{x:-40,y:hit?0:100,vx:1000,vy:0,life:1,from:'e',k:kind}],humans:[],etanks:[],allies:[],partner:null,hound:null,decoy:null,TANK_HIT:28,FIGHTER_TYPE:{hp:8},stageMode:'base',shake:0,sfx:n=>sounds.push(n),burst(){},cannonImpact(){},hitRoadTruckBullet:()=>false,segmentBaseImpact:()=>null,objectsInBox:()=>[],coversInBox:()=>[],wreck(){c.wrecked=true;},triggerPlayerDeath(){c.died=true;},D:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y)};
+ const c={state:'play',p:{x:0,y:0,hp:3,tank:vehicle?{kind:vehicle,t:{id,armor:2},ch:0,hp:8}:null},scoreStats:{damageHits:0},bullets:[{x:-40,y:hit?0:100,vx:1000,vy:0,life:1,from:'e',k:kind}],humans:[],etanks:[],allies:[],partner:null,hound:null,decoy:null,TANK_HIT:28,FIGHTER_TYPE:{hp:8},stageMode:'base',shake:0,sfx:n=>sounds.push(n),burst(){},cannonImpact(){},hitRoadTruckBullet:()=>false,segmentBaseImpact:()=>null,objectsInBox:()=>[],coversInBox:()=>[],wreck(){c.wrecked=true;},triggerPlayerDeath(){c.died=true;},D:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y)};
  vm.createContext(c);vm.runInContext(section('function recordPlayerDamage(','function trackObjectiveMovement('),c);vm.runInContext(section('function enemyPlayerBulletImpact(','function pointSegDist('),c);
- vm.runInContext('function incoming(dt){'+section(' for(let i=bullets.length-1;i>=0;i--){const b=bullets[i],ox=b.x',' for(const w of waves){w.r+=260*dt')+'}',c);c.incoming(.05);return{c,sounds};
+ vm.runInContext('function incoming(dt){const vip=null;'+section(' for(let i=bullets.length-1;i>=0;i--){const b=bullets[i],ox=b.x',' for(const w of waves){w.r+=260*dt')+'}',c);c.incoming(.05);return{c,sounds};
 }
 test('infantry bullets ping every player tank with the existing armor-hit SE, without damage or score penalties',()=>{
  for(const id of ['t34','tiger','type10','m1','sherman','churchill','kingtiger']){

@@ -1,5 +1,7 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
+// These standalone generator tests exercise ordinary infiltration.
+globalThis.rescueAdvancedTest=false;
 const {indoorGenerateFloor,indoorAt,indoorRect}=require('../js/infiltration-world.js');
 const random=seed=>{let x=Math.imul(seed,2654435761)>>>0;return()=>{x=(Math.imul(x,1664525)+1013904223)>>>0;return x/4294967296}};
 const offset=9300,STEP=12,COLS=80,ROWS=360,GRID_Y=-700;
@@ -1244,8 +1246,8 @@ test('upper-floor drawing omits exterior paths and entrance signs while preservi
   {get:(o,k)=>k in o?o[k]:()=>{}});
  for(const floorNo of [1,2]){
   const f=indoorGenerateFloor(floorNo,random(313));
-  const draw=new Function('g','indoorWorld','WW','H','INDOOR_FORECOURT_DEPTH','W','terrainSurfacePattern','indoorOutdoorTerrain','indoorConcretePattern','INDOOR_EXIT_RADIUS','INDOOR_EXIT_SECONDS','drawInfiltrationStairSprite',src.slice(src.indexOf('function drawInfiltrationStairArrow('),from)+src.slice(from,to)+';return drawInfiltrationFloors;')(
-   g,{floors:[f]},960,2500,900,960,()=>null,{g:0},()=>null,90,5,()=>false);
+  const draw=new Function('rescueAdvancedTest','g','indoorWorld','WW','H','INDOOR_FORECOURT_DEPTH','W','terrainSurfacePattern','indoorOutdoorTerrain','indoorConcretePattern','INDOOR_EXIT_RADIUS','INDOOR_EXIT_SECONDS','drawInfiltrationStairSprite',src.slice(src.indexOf('function drawInfiltrationStairArrow('),from)+src.slice(from,to)+';return drawInfiltrationFloors;')(
+   false,g,{floors:[f]},960,2500,900,960,()=>null,{g:0},()=>null,90,5,()=>false);
   labels.length=0;fills.length=0;draw(0,0);
   if(floorNo===1){
    assert.ok(labels.includes('EXIT'));assert.ok(!labels.includes('2F ▲'));
@@ -1262,6 +1264,7 @@ test('world setup accepts upstairs null entry metadata and preserves paired stai
  const source=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
  const sandbox={ZONE_STYLE:{'敵迷路基地':{p:[]}},WH:14000,p:{},scoreStats:{},R:random(917),
   document:{body:{classList:{remove(){}}}},rebuildSpatialGrid(){},say(){},module:{exports:{}}};
+ sandbox.rescueAdvancedTest=false;
  vm.createContext(sandbox);
  vm.runInContext(source+';setupInfiltrationWorld();result=indoorWorld;',sandbox);
  const [ground,upper]=sandbox.result.floors;
@@ -1321,6 +1324,7 @@ test('a completed mission cannot escape from the upper floor through an emergenc
   module:{exports:{}},partner:null,hound:null,stageMode:'indoor',state:'play',playerDetectedNow:()=>false,
   D:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),los:()=>true,completeMission(){completed++;},
   mission:{index:3,points:[],progress:0,current:null}};
+ sandbox.rescueAdvancedTest=false;
  vm.createContext(sandbox);
  vm.runInContext(source+`;setupInfiltrationWorld();
   for(let i=0;i<30&&!indoorWorld.emergency;i++)setupInfiltrationWorld();
@@ -1350,6 +1354,7 @@ function alarmWorld(seed=1771){
   enemyCannonSpeed:()=>630,fire:(...args)=>sandbox.bullets.push({args}),
   D:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),angD:(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b)),
   mv:(h,dx,dy)=>{h.x+=dx;h.y+=dy;},pauseAfterEnemyDetection(){},gm,cam:0,camX:0};
+ sandbox.rescueAdvancedTest=false;
  vm.createContext(sandbox);
  vm.runInContext(source+`;setupInfiltrationWorld();setupInfiltrationMission();
   indoorGuardSeesPlayer=()=>false;
@@ -2265,8 +2270,8 @@ test('infiltration floors use hills outdoors and concrete only within the buildi
  const fills=[],hill={},concrete={};let terrain;
  const g=new Proxy({fillRect(...rect){fills.push({style:this.fillStyle,rect});}},{get:(obj,key)=>key in obj?obj[key]:()=>{}});
  const f={footprint:{x:100,y:200,w:700,h:800},entrances:[],corridors:[],rooms:[],stair:{x:300,y:-1000}};
- const draw=new Function('g','indoorWorld','WW','W','H','INDOOR_FORECOURT_DEPTH','terrainSurfacePattern','indoorOutdoorTerrain','indoorConcretePattern','INDOOR_EXIT_RADIUS','INDOOR_EXIT_SECONDS',source.slice(start,end)+';return drawInfiltrationFloors;')(
-  g,{floors:[f]},960,480,720,900,z=>{terrain=z;return hill;},{n:'丘陵',g:'#6b7a3a'},()=>concrete,90,5);
+ const draw=new Function('rescueAdvancedTest','g','indoorWorld','WW','W','H','INDOOR_FORECOURT_DEPTH','terrainSurfacePattern','indoorOutdoorTerrain','indoorConcretePattern','INDOOR_EXIT_RADIUS','INDOOR_EXIT_SECONDS',source.slice(start,end)+';return drawInfiltrationFloors;')(
+  false,g,{floors:[f]},960,480,720,900,z=>{terrain=z;return hill;},{n:'丘陵',g:'#6b7a3a'},()=>concrete,90,5);
  draw(50,100);
  assert.deepEqual(terrain,{n:'丘陵',g:'#6b7a3a'});
  assert.deepEqual(fills[0],{style:hill,rect:[26,76,528,768]});
@@ -2364,8 +2369,8 @@ test('open lobby has no floor outline or inset shading that could imitate a miss
   {get:(o,k)=>k in o?o[k]:()=>{}});
  const tile={x:200,y:200,w:180,h:315},f={footprint:{x:0,y:0,w:960,h:1200},corridors:[tile],
   rooms:[],stair:{x:0,y:-1000},lobbyArea:{x:200,y:200,w:360,h:630}};
- const draw=new Function('g','indoorWorld','WW','W','H','INDOOR_FORECOURT_DEPTH','terrainSurfacePattern','indoorOutdoorTerrain','indoorConcretePattern','INDOOR_EXIT_RADIUS','INDOOR_EXIT_SECONDS',
-  source.slice(start,end)+';return drawInfiltrationFloors;')(g,{floors:[f]},960,960,720,900,()=>null,{g:'#123'},()=>null,90,5);
+ const draw=new Function('rescueAdvancedTest','g','indoorWorld','WW','W','H','INDOOR_FORECOURT_DEPTH','terrainSurfacePattern','indoorOutdoorTerrain','indoorConcretePattern','INDOOR_EXIT_RADIUS','INDOOR_EXIT_SECONDS',
+  source.slice(start,end)+';return drawInfiltrationFloors;')(false,g,{floors:[f]},960,960,720,900,()=>null,{g:'#123'},()=>null,90,5);
  draw(0,0);const withLobby=JSON.stringify(operations);operations.length=0;f.lobbyArea=null;draw(0,0);
  assert.equal(JSON.stringify(operations),withLobby,'lobby metadata cannot paint a false boundary on the same floor');
  assert.ok(!operations.some(op=>op[0]==='border'));

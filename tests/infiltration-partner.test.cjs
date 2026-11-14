@@ -11,6 +11,7 @@ function harness(vertical=false){
   enemyTankObjectBlocked:()=>false,tankBlocked:()=>false,enemyUnitBlocked:()=>false,frontlineMovementTop:()=>0,
   moveAllySmart:()=>fallback++,burst(){},inBush:()=>false};
  c.hitsC=(x,y,r)=>c.covers.some(q=>hit(x,y,r,q))||c.objects.some(q=>hit(x,y,r,q));
+ c.rescueAdvancedTest=false;
  vm.createContext(c);vm.runInContext(indoor+'\n'+companion,c);
  const a=html.indexOf('function mv(o,'),b=html.indexOf('\nlet lastEnemySeparationAt=',a);vm.runInContext(html.slice(a,b),c);
  vm.runInContext(`door={x:${vertical?450:400},y:${vertical?400:500},vertical:${vertical},open:0};door.cover={...indoorDoorCollisionRect(door),indoorDoor:true};covers.push(door.cover);

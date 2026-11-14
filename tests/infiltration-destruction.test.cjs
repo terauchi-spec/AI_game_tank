@@ -12,6 +12,7 @@ function harness(){
   drawStaticRaster:(...a)=>rasters.push(a),coverHitCircle:()=>null,rockHitEllipse:()=>null,objectHitRect:o=>o,
   cannonCoverDebris(){},CCol:['#888','#777'],FRAG_COLORS:{1:['#777','#666']},COVER_IMG:{},
   drawAssetSprite:()=>true};
+ c.rescueAdvancedTest=false;
  vm.createContext(c);
  const cut=(start,end)=>html.slice(html.indexOf(start),html.indexOf(end,html.indexOf(start)));
  vm.runInContext(source+`;setupInfiltrationWorld();setupInfiltrationMission();`,c);

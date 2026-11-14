@@ -6,7 +6,7 @@ function harness(){
  const c={WW:960,WH:12800,W:480,H:800,TANK_HIT:28,cars:[],etanks:[],p:{x:480,y:10000,body:0},stageMode:'front',debugMode:0,weather:'clear',areaDebugEnabled:false,mission:{points:[],index:0,enemyRoster:[],enemyRosterIndex:0},humans:[],enemyDogs:[],allies:[],allySeq:0,covers:[],bridges:[],gm,
  performance:{now:()=>1000},patrolRoutePlanAt:0,PATROL_SEARCH_PENDING:Symbol('pending'),findPatrolReturnPath:()=>null,R:()=>((seed=(seed*1664525+1013904223)>>>0)/2**32),D:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),hitsM:()=>false,hitsC:()=>false,inWaterAt:()=>false,inBase:()=>false,patrolLineClear:()=>true,missionSpot:(x,y)=>({x,y}),rebuildSpatialGrid(){},ensureEnemyTankSpawns(){},setSkillCooldown(){},sfx(){},say(){},
  mv:(a,dx,dy)=>{a.x+=dx;a.y+=dy;},dogMoveAround:(h,q,sp,dt)=>{const angle=Math.atan2(q.y-h.y,q.x-h.x);h.x+=Math.cos(angle)*sp*dt;h.y+=Math.sin(angle)*sp*dt;}};
- c.spawnRescueCross=()=>{};vm.createContext(c);vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/frontline.js'),'utf8'),c);
+ c.spawnRescueCross=()=>{};c.currentStageId=()=>c.stageMode;vm.createContext(c);vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/frontline.js'),'utf8'),c);
  vm.runInContext(html.slice(html.indexOf('function missionAllies('),html.indexOf('function setupMission(')),c);
  vm.runInContext(html.slice(html.indexOf('function moveAllySmart('),html.indexOf('function stunHuman(')),c);
  vm.runInContext(html.slice(html.indexOf('function summonAlly('),html.indexOf('let partner=null;')),c);
@@ -183,7 +183,7 @@ test('ally vision cones stay hidden while found markers disappear when stunned',
 function mazeHarness(mode,seed=3){
  const c=harness();Object.assign(c,{stageMode:mode,MAP_SCALE:4,ZONES:[{n:'敵迷路基地',y0:9000,y1:7000}],water:[],bridges:[],mud:[],bushes:[],base:{x:0,y:-1000,w:1,h:1},BLOCK_WALL_LONG:128,BLOCK_WALL_SHORT:32,BARRIER_LONG:126,BARRIER_SHORT:39,CRATE_W:74.8,CRATE_H:74.8,BARREL_SIZE:39.1,nearBridge:()=>false,coverFragmentRect:q=>q});
  c.R=()=>((seed=(seed*1664525+1013904223)>>>0)/2**32);
- vm.runInContext(html.slice(html.indexOf('function genCovers('),html.indexOf('const AREA_DEBUG_ORDER=')),c);return c;
+ vm.runInContext(html.slice(html.indexOf('function missileBaseApproachOverlaps('),html.indexOf('const AREA_DEBUG_ORDER=')),c);return c;
 }
 test('Frontline maze restores at least 2.5 times the sparse wall count across twenty seeds',()=>{
  for(let seed=1;seed<=20;seed++){
@@ -338,7 +338,7 @@ test('camera movement alone does not discard a useful detour toward the same obj
 });
 
 test('Frontline infantry clearance is larger than separation distance, preventing repeated pushes',()=>{
- const c=harness();vm.runInContext(html.slice(html.indexOf('function enemyUnitBlocked('),html.indexOf('// 敵戦車は描画')),c);
+ const c=harness();c.enemyMoveIndex=null;vm.runInContext(html.slice(html.indexOf('function enemyUnitBlocked('),html.indexOf('// 敵戦車は描画')),c);
  const mover={x:480,y:9900,alive:true,frontMarch:true},other={x:480,y:10000,alive:true};c.humans=[mover,other];
  assert.equal(c.enemyUnitBlocked(mover,480,9972,8),true);assert.equal(c.enemyUnitBlocked(mover,480,9971,8),false);
  mover.frontMarch=false;assert.equal(c.enemyUnitBlocked(mover,480,9972,8),false);
@@ -388,7 +388,7 @@ test('only Frontline enemy tanks double their range, field of view and known-tar
  c.los=()=>false;target.x=600;assert.equal(c.canDetect(e,target,0,'ally:1'),false);
 });
 test('the third objective alone uses a 540px capture circle for progress, awareness and rendering',()=>{
- const c=harness();vm.runInContext(html.slice(html.indexOf('function setupMission('),html.indexOf('function completeMission(')),c);c.setupMission();
+ const c=harness();c.currentStageId=()=> 'frontIntermediate';vm.runInContext(html.slice(html.indexOf('function setupMission('),html.indexOf('function completeMission(')),c);c.setupMission();
  assert.deepEqual(Array.from(c.mission.points,q=>c.frontlineCaptureRadius(q)),[360,360,540]);const q=c.mission.points[2];q.counterTriggered=true;c.mission.index=2;c.mission.waveT=999;c.mission.reinforceT=999;
  c.p.x=q.x;c.p.y=q.y+500;const a={x:q.x,y:q.y+500,alive:true,id:7};c.allies=[a];assert.equal(c.frontlineCaptureCount(q),2);assert.equal(c.frontlineCombatPoint(a),q);
  vm.runInContext(html.slice(html.indexOf('function updateMission('),html.indexOf('let missionHudNextAt=')),c);c.updateMission(1);assert.equal(c.mission.progress,2);assert.equal(q.playerEntered,true);
@@ -431,27 +431,27 @@ test('starting vehicle additions are exclusive to the standard Frontline stage',
 });
 
 test('Frontline objective antennas use two small sprites and one large sprite with base-only colliders',()=>{
- const c=harness();c.mission.points=[{x:480,y:10000},{x:480,y:6500},{x:480,y:3000}];c.setupFrontlineAntennas();
+ const c=harness();c.currentStageId=()=> 'frontIntermediate';c.mission.points=[{x:480,y:10000},{x:480,y:6500},{x:480,y:3000}];c.setupFrontlineAntennas();
  assert.deepEqual(Array.from(c.mission.points,q=>q.antenna.asset),['frontline_antenna_small','frontline_antenna_small','frontline_antenna_large']);assert.equal(c.covers.length,3);
  for(const q of c.mission.points){const a=q.antenna;assert.equal(a.collider.frontAntenna,true);assert.ok(a.collider.h<a.height*.12);assert.equal(a.collider.x+a.collider.w/2,q.x);assert.equal(a.collider.y+a.collider.h/2,q.y);}
  assert.ok(c.mission.points[2].antenna.height>c.mission.points[0].antenna.height);c.setupFrontlineAntennas();assert.equal(c.covers.length,3);
 });
 test('antenna colliders survive cannon, blast and crushing damage without fragmenting or awarding destruction points',()=>{
- const c=harness();c.mission.points=[{x:480,y:10000},{x:480,y:6500},{x:480,y:3000}];c.setupFrontlineAntennas();const original=c.covers;
+ const c=harness();c.currentStageId=()=> 'frontIntermediate';c.mission.points=[{x:480,y:10000},{x:480,y:6500},{x:480,y:3000}];c.setupFrontlineAntennas();const original=c.covers;
  c.damageObjectsInRadius=()=>{};c.scoreStats={coverDestroyed:0,styleDestroyed:0};
  vm.runInContext(html.slice(html.indexOf('function carve('),html.indexOf('function useSkill(')),c);
  for(const source of ['cannonBlast','bombBlast','impact',null])for(const q of c.mission.points)assert.equal(c.carve(q.x,q.y,300,true,source),0);
  assert.equal(c.covers,original);assert.equal(c.covers.length,3);assert.ok(c.covers.every(o=>!o.fr));assert.equal(c.scoreStats.coverDestroyed,0);assert.equal(c.scoreStats.styleDestroyed,0);
 });
 test('antenna rendering splits a static upper sprite from the ground pass and culls distant objectives',()=>{
- const c=harness();c.g=c.gm;c.COVER_IMG={frontline_antenna_small:{naturalWidth:320,naturalHeight:640},frontline_antenna_large:{naturalWidth:480,naturalHeight:960}};c.assetOK=()=>true;
+ const c=harness();c.currentStageId=()=> 'frontIntermediate';c.g=c.gm;c.COVER_IMG={frontline_antenna_small:{naturalWidth:320,naturalHeight:640},frontline_antenna_large:{naturalWidth:480,naturalHeight:960}};c.assetOK=()=>true;
  c.mission.points=[{x:480,y:10000},{x:480,y:6500},{x:480,y:3000}];c.setupFrontlineAntennas();c.drawFrontlineAntennas(0,9700);c.drawFrontlineAntennas(0,9700,true);
  const calls=c.calls.filter(x=>x[0]==='drawImage');assert.equal(calls.length,2);assert.equal(calls[0][1],c.COVER_IMG.frontline_antenna_small);assert.equal(calls[0].length,6);assert.equal(calls[1].length,10);assert.ok(calls[1][5]<640);
  c.stageMode='base';const count=c.calls.length;c.drawFrontlineAntennas(0,9700);assert.equal(c.calls.length,count);
 });
 
 test('antenna placement avoids parked vehicles and is disabled outside standard Frontline',()=>{
- const c=harness(),q={x:480,y:10000};c.mission.points=[q];c.cars=[{...q}];c.setupFrontlineAntennas();assert.ok(c.D(q,c.cars[0])>=85);assert.equal(c.covers.length,1);
+ const c=harness(),q={x:480,y:10000};c.currentStageId=()=> 'frontIntermediate';c.mission.points=[q];c.cars=[{...q}];c.setupFrontlineAntennas();assert.ok(c.D(q,c.cars[0])>=85);assert.equal(c.covers.length,1);
  for(const mode of ['base','beginner','stealth']){const other=harness();other.stageMode=mode;other.mission.points=[{x:480,y:10000}];other.setupFrontlineAntennas();assert.equal(other.covers.length,0);}
  const debug=harness();debug.areaDebugEnabled=true;debug.mission.points=[{x:480,y:10000}];debug.setupFrontlineAntennas();assert.equal(debug.covers.length,0);
 });
@@ -501,7 +501,7 @@ test('allied rockets sweep fast segments, collide with enemies and cover, and pa
  c.hitsC=()=>false;assert.equal(c.updateFrontlineCommanderRocket(bullet,0,0,true),true);assert.equal(hits[2].x,200);
 });
 test('one allied bazooka blast destroys a tank and credits support without damaging player or allies',()=>{
- const c=commanderHarness();let support=0;Object.assign(c,{cannonImpactFx(){},damageObjectsInRadius(){},carve(){},scatterSpinifexAt(){},fb(){},burst(){},suspectTanksNear(){},recordSupportResult:()=>support++,destroyEnemyTank:e=>{e.alive=false;}});
+ const c=commanderHarness();let support=0;Object.assign(c,{cannonImpactFx(){},damageObjectsInRadius(){},damageRoadTrucksInRadius(){},carve(){},scatterSpinifexAt(){},fb(){},burst(){},suspectTanksNear(){},recordSupportResult:()=>support++,destroyEnemyTank:e=>{e.alive=false;}});
  vm.runInContext(html.slice(html.indexOf('function explode('),html.indexOf('function summonAlly(')),c);
  c.p={x:480,y:10000,hp:3};c.allies=[{x:480,y:10000,alive:true}];c.etanks=[{x:480,y:10000,alive:true,hp:999}];c.humans=[{x:500,y:10000,alive:true}];
  c.frontlineCommanderRocketBlast(480,10000);assert.equal(c.etanks[0].alive,false);assert.equal(c.humans[0].alive,false);assert.equal(support,2);assert.equal(c.p.hp,3);assert.equal(c.allies[0].alive,true);

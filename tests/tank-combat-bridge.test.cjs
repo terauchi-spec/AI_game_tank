@@ -29,7 +29,7 @@ test('first detection and repeated detection do not snap the turret toward the t
  vm.runInContext(section('function enterTankFound(','// Main gun follows'),c);c.enterTankFound(e,'p');assert.equal(e.ang,0);assert.equal(c.scoreStats.foundEntries,1);c.enterTankFound(e,'p');assert.equal(e.ang,0);assert.equal(c.scoreStats.foundEntries,1);
 });
 function bombContext(){
- const kills=[],c={Math,TANK_HIT:28,TANK_BOMB_HIT:42,p:{x:500,y:500,tank:null,dig:0},bombs:[],etanks:[],humans:[],hound:null,newCombatAction:()=>7,destroyEnemyTank:e=>{e.alive=false;},recordPlayerKill:(id,_s,e)=>kills.push([id,e]),burst(){},bombBlast(){},D:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),waves:[],baseHitRect:()=>({x:900,y:900,w:10,h:10}),damageBase(){},fb(){},shake:0};vm.createContext(c);
+ const kills=[],c={Math,TANK_HIT:28,TANK_BOMB_HIT:42,p:{x:500,y:500,tank:null,dig:0},bombs:[],etanks:[],humans:[],hound:null,newCombatAction:()=>7,destroyEnemyTank:e=>{e.alive=false;},recordPlayerKill:(id,_s,e)=>kills.push([id,e]),burst(){},bombBlast(){},roadTruckOnBomb:()=>null,D:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),waves:[],baseHitRect:()=>({x:900,y:900,w:10,h:10}),damageBase(){},fb(){},shake:0};vm.createContext(c);
  vm.runInContext('function updateBombs(dt){'+section(' // 爆弾\n for(let i=bombs.length-1',' // 弾\n')+'}',c);
  vm.runInContext('function updateWaves(dt){'+section(' for(const w of waves){w.r+=260*dt',' updateAlly(dt);')+'}',c);return{c,kills};
 }

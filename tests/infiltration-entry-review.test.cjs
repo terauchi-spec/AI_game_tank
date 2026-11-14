@@ -34,7 +34,7 @@ test('both ordinary infiltration floors draw destination arrows inside their lan
    drawInfiltrationStairSprite(reviewFloor);g.moveTo=oldMove;g.lineTo=oldLine;g.fillText=oldText;
    return JSON.stringify({points,labels,safe:indoorStairSafeArea(reviewFloor)});})()`));
   assert.equal(result.points.length,7);assert.equal(result.points[1].y<result.points[0].y,number===1);
-  assert.ok(result.labels.includes(number===1?'2Fへ':'1Fへ'));
+  assert.deepEqual(result.labels,[],'stairs use arrows without floor labels');
   assert.ok(result.points.every(p=>p.x>=result.safe.x&&p.x<=result.safe.x+result.safe.w&&p.y>=result.safe.y&&p.y<=result.safe.y+result.safe.h));
  }
 });

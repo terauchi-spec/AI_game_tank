@@ -57,7 +57,7 @@ test('stage selection only highlights the card; deployment starts the chosen dif
 });
 test('all-stage debug selection retains prerequisites and turning it off restores locks and selection',()=>{
  const c=harness(),{buttons,nodes}=cards(c);vm.runInContext('stageDebugAll=true',c);c.renderStageLocks();assert.ok(buttons.every(b=>!b.disabled));assert.equal(c.stageSelectable('front'),false);assert.equal(c.setSelectedStage('front'),true);assert.equal(nodes.stageDeploy.textContent,'制圧（上級）で出撃');
- const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');c.skillDebugAll=false;vm.runInContext(html.slice(html.indexOf('function newScoreStats()'),html.indexOf('function playerDetectedNow()')),c);const stats=c.newScoreStats();assert.equal(stats.debugUsed,true);stats.final={cleared:true};c.stageMode='front';c.unlockStageOnClear(stats);assert.equal(c.storage.size,0);
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');c.skillDebugAll=false;vm.runInContext(html.slice(html.indexOf('function newScoreStats()'),html.indexOf('function playerDetectedNow(')),c);const stats=c.newScoreStats();assert.equal(stats.debugUsed,true);stats.final={cleared:true};c.stageMode='front';c.unlockStageOnClear(stats);assert.equal(c.storage.size,0);
  vm.runInContext('stageDebugAll=false',c);c.renderStageLocks();assert.equal(buttons[5].disabled,true);assert.equal(nodes.stageDeploy.textContent,'破壊（初級）で出撃');assert.equal(buttons[0].classList.selected,true);
 });
 test('area debug opens its picker only after confirmation and cannot grant stage progress',()=>{

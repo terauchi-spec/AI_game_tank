@@ -1,6 +1,8 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path');
+// These standalone generator tests exercise ordinary infiltration.
+globalThis.rescueAdvancedTest=false;
 const {indoorGenerateFloor,indoorGenerateExterior,indoorRect,indoorAt}=require('../js/infiltration-world.js');
 const source=fs.readFileSync(path.join(__dirname,'../js/infiltration-world.js'),'utf8');
 const random=seed=>{let n=seed;return()=>{n=(Math.imul(n,1664525)+1013904223)>>>0;return n/4294967296;}};
@@ -60,8 +62,8 @@ test('outside entrances use the hills backdrop with no concrete strips',()=>{
  const calls=[],concrete={},hill={};
  const g=new Proxy({fillRect(...r){calls.push({style:this.fillStyle,r});}},{get:(o,k)=>k in o?o[k]:()=>{}});
  const floor={footprint:{x:50,y:200,w:800,h:800},entrances:[{x:300,y:1672},{x:480,y:1672}],emergency:{x:400,y:104},corridors:[],rooms:[],stair:{x:100,y:500}};
- const draw=new Function('g','indoorWorld','WW','W','H','INDOOR_FORECOURT_DEPTH','terrainSurfacePattern','indoorOutdoorTerrain','indoorConcretePattern','INDOOR_EXIT_RADIUS','INDOOR_EXIT_SECONDS',source.slice(start,end)+';return drawInfiltrationFloors;')(
-  g,{floors:[floor]},960,480,720,900,()=>hill,{n:'丘陵',g:'#6b7a3a'},()=>concrete,90,5);
+ const draw=new Function('rescueAdvancedTest','g','indoorWorld','WW','W','H','INDOOR_FORECOURT_DEPTH','terrainSurfacePattern','indoorOutdoorTerrain','indoorConcretePattern','INDOOR_EXIT_RADIUS','INDOOR_EXIT_SECONDS',source.slice(start,end)+';return drawInfiltrationFloors;')(
+  false,g,{floors:[floor]},960,480,720,900,()=>hill,{n:'丘陵',g:'#6b7a3a'},()=>concrete,90,5);
  draw(0,1050);
  assert.equal(calls[0].style,hill);
  assert.equal(calls.filter(q=>q.style===concrete).length,0,'no concrete outside the footprint');
@@ -134,8 +136,8 @@ test('exit marker uses the escape radius and a half ring at 2.5 seconds',()=>{
  const g=new Proxy({arc:(...a)=>circles.push(a),fillText:(...a)=>labels.push(a)},{get:(o,k)=>k in o?o[k]:()=>{}});
  const floor={footprint:{x:50,y:200,w:800,h:800},entrances:[exit],emergency:null,corridors:[],rooms:[],stair:{x:100,y:500}};
  const m={escapeExit:exit,escapeProgress:2.5};
- const draw=new Function('g','indoorWorld','WW','W','H','INDOOR_FORECOURT_DEPTH','terrainSurfacePattern','indoorOutdoorTerrain','indoorConcretePattern','INDOOR_EXIT_RADIUS','INDOOR_EXIT_SECONDS','mission',source.slice(start,end)+';return drawInfiltrationFloors;')(
-  g,{floors:[floor]},960,480,720,900,()=>null,{g:'#6b7a3a'},()=>null,90,5,m);
+ const draw=new Function('rescueAdvancedTest','g','indoorWorld','WW','W','H','INDOOR_FORECOURT_DEPTH','terrainSurfacePattern','indoorOutdoorTerrain','indoorConcretePattern','INDOOR_EXIT_RADIUS','INDOOR_EXIT_SECONDS','mission',source.slice(start,end)+';return drawInfiltrationFloors;')(
+  false,g,{floors:[floor]},960,480,720,900,()=>null,{g:'#6b7a3a'},()=>null,90,5,m);
  draw(0,1050);
  assert.deepEqual(circles,[[300,1672,90,0,Math.PI*2],[300,1672,90,-Math.PI/2,Math.PI/2]]);
  assert.ok(labels.some(q=>q[0]==='EXIT'));assert.ok(labels.some(q=>q[0]==='2.5s'));
@@ -145,7 +147,9 @@ test('stair sprites select ascending and descending artwork and preserve image p
  const start=source.indexOf('function drawInfiltrationStairSprite(floor){'),end=source.indexOf('function drawInfiltrationFloors(cx,cy){',start);
  const calls=[],requests=[],shades=[],g={beginPath(){},arc(){},fill(){},moveTo(){},lineTo(){},closePath(){},stroke(){},fillText(){},save(){},restore(){},drawImage:(...a)=>calls.push(a),fillRect(...r){shades.push({r,color:this.fillStyle});}};
  const image={naturalWidth:100,naturalHeight:240};
- const draw=new Function('g','indoorPropImage','INDOOR_STAIR_WIDTH',source.slice(start,end)+';return drawInfiltrationStairSprite;')(g,key=>{requests.push(key);return image;},60);
+ const helpers=source.slice(source.indexOf('const INDOOR_STAIR_WIDTH='),source.indexOf('function indoorStairWalls('));
+ const draw=new Function('g','indoorPropImage','indoorWorld','rescueAdvancedTest',helpers+source.slice(start,end)+';return drawInfiltrationStairSprite;')(
+  g,key=>{requests.push(key);return image;},null,false);
  for(const number of [1,2])assert.equal(draw({number,stair:{x:500,y:1000}}),true);
  assert.deepEqual(requests,['stairs_up','stairs_down']);
  assert.equal(shades.length,1,'only the ascending first-floor landing is darkened');

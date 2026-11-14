@@ -302,7 +302,7 @@ test('separate staircases have fixed destinations and visible up/down arrows ins
   drawInfiltrationStairSprite(f,stair);g.moveTo=oldMove;g.lineTo=oldLine;g.fillText=oldText;
   const safe=indoorStairSafeArea(f,stair);
   return points.length===7&&points.every(q=>q.x>=safe.x&&q.x<=safe.x+safe.w&&q.y>=safe.y&&q.y<=safe.y+safe.h)&&
-   (points[1].y<points[0].y)===(stair.direction>0)&&labels.includes((stair.destination+1)+'Fへ')&&
+   (points[1].y<points[0].y)===(stair.direction>0)&&labels.length===0&&
    [-12,12].every(dx=>{p.x=stair.x+dx;return indoorStairDestination(f,stair)===stair.destination;});
  }))`),true);
 });

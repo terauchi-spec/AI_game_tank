@@ -1,6 +1,6 @@
 const test=require('node:test'),assert=require('node:assert/strict'),path=require('node:path');
 const {createGameEngine}=require('./helpers/game-engine.cjs');
-function scene(){const h=createGameEngine(path.join(__dirname,'..'));h.run("stageMode='base';setupZones();state='play';skill='partner';p={x:480,y:11500,hp:3,body:0,ang:0,cc:0,vc:0,dig:0,scd:0};allies=[];parts=[];covers=[];objects=[];bushes=[];humans=[];etanks=[];cars=[];bullets=[];fx=[];waves=[];water=[];bridges=[];mud=[];mission=null;base={x:100,y:50,w:100,h:100,hp:30,maxHp:30};scoreStats=newScoreStats();los=()=>true;rebuildSpatialGrid();v={x:480,y:11000,t:GUN_TOWER_TYPE,kind:'tower',hp:8,c:0,v:500,f:0,ch:0,body:0,aim:0};");return h;}
+function scene(){const h=createGameEngine(path.join(__dirname,'..'));h.run("stageMode='base';setupZones();state='play';skill='partner';p={x:480,y:11500,hp:3,body:0,ang:0,cc:0,vc:0,dig:0,scd:0};allies=[];parts=[];covers=[];objects=[];bushes=[];humans=[];etanks=[];cars=[];bullets=[];bombs=[];items=[];airbombs=[];fx=[];waves=[];water=[];bridges=[];mud=[];mission=null;base={x:100,y:50,w:100,h:100,hp:30,maxHp:30};scoreStats=newScoreStats();los=()=>true;rebuildSpatialGrid();v={x:480,y:11000,t:GUN_TOWER_TYPE,kind:'tower',hp:8,c:0,v:500,f:0,ch:0,body:0,aim:0};");return h;}
 test('emplacements spawn only in the two advanced stages and start with zero fuel and 500 rounds',()=>{
  for(const id of ['beginner','baseIntermediate','base','frontBeginner','frontIntermediate','front','indoor','indoorLab','decisive','training']){
   const h=scene();h.c.sampleId=id;h.run("currentStageId=()=>sampleId;stageMode=sampleId==='front'?'front':'base';mission={points:[{x:240,y:9000},{x:720,y:6000},{x:240,y:3000}]};setupGunTowers();");
@@ -205,7 +205,7 @@ test('enemy and partner tower operators warm up before the first bullet',()=>{
 });
 
 test('enemy gunner holds target alert for two seconds after sight is lost',()=>{
- const h=scene();h.run("cars=[v];enemy={x:v.x,y:v.y,alive:true,elite:false};boardEnemyGunTower(v,enemy);p.x=v.x+200;p.y=v.y;updateGunTowerEnemy(enemy,.2);los=()=>false;before=bullets.length;for(let i=0;i<10;i++)updateGunTowerEnemy(enemy,.15);");
+ const h=scene();h.run("cars=[v];enemy={x:v.x,y:v.y,alive:true,elite:false};boardEnemyGunTower(v,enemy);p.x=v.x+200;p.y=v.y;findDetectedTarget=()=>({obj:p,key:'p'});updateGunTowerEnemy(enemy,.2);los=()=>false;findDetectedTarget=()=>null;before=bullets.length;for(let i=0;i<10;i++)updateGunTowerEnemy(enemy,.15);");
  assert.equal(h.run('enemy.st'),1);assert.equal(h.run('bullets.length'),h.run('before'));
  h.run("for(let i=0;i<6;i++)updateGunTowerEnemy(enemy,.15);");assert.equal(h.run('enemy.st'),0);
 });
