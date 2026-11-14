@@ -362,6 +362,21 @@ test('decisive desert schedules both recurring air events',()=>{
  assert.ok(run('desertRadios.every(q=>q.got)'));
 
 });
+test('arriving at the fortress ends carpet bombing without stopping white paratrooper passes',()=>{
+ const {run}=start();completeFacility(run);
+ run(`mission.enemyWavesStarted=true;decisiveBattle.pendingReinforcement=false;
+  const raid=mission.enemyAirRaid,drop=decisiveBattle.desertDrop;
+  const near=base.y+base.h+DECISIVE_FORTRESS_APPROACH;
+  p.x=WW/2;p.y=near+1;raid.nextPassT=0;updateDecisiveMission(.01)`);
+ assert.equal(run('raid.phase'),'warning');
+ run('updateDecisiveMission(.01);p.y=near;drop.remaining=1;updateDecisiveMission(.01)');
+ assert.equal(run('raid.phase'),'done');
+ assert.equal(run('raid.plane'),null);
+ assert.ok(run('drop.remaining<1'));
+ run('p.y=near+100;raid.nextPassT=0;updateDecisiveMission(.1)');
+ assert.equal(run('raid.phase'),'done');
+ assert.equal(run('raid.plane'),null);
+});
 test('desert bomber collisions stop both missions and preserve another aircraft in formation',()=>{
  const {run}=start();completeFacility(run);
  run(`p.y=decisiveBattle.assaultStartY-500;updateDecisiveMission(.01);

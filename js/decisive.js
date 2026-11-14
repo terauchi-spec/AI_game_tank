@@ -37,6 +37,7 @@ const DECISIVE_FORTRESS_MOUNTS=[
 const DECISIVE_ROOF_TURRETS=[[.264,.506],[.736,.506]];
 const DECISIVE_FORTRESS_DOORS=[.293,.5,.707];
 const DECISIVE_ARC_TIME=1.65,DECISIVE_ARC_HEIGHT=146,DECISIVE_ARC_RADIUS=52;
+const DECISIVE_FORTRESS_APPROACH=650;
 const DECISIVE_DOOR_TIME=1.35,DECISIVE_DOOR_RELEASE=.72;
 const DECISIVE_FORTRESS_GEARS=[[.175,51],[.282,31],[.368,39],[.469,42],[.56,29],[.663,47],[.765,34],[.86,53]];
 const DECISIVE_ALLIED_AIRDROP_DISTANCE=200,DECISIVE_ENEMY_RELEASE_DISTANCE=500;
@@ -679,6 +680,11 @@ function updateDecisiveMission(dt){
  cleanupFrontlineArmy(dt);updateFrontlineWaves(dt);
  const zone=zoneAt(p.y);
  updateDecisiveEnemyDrop(d.desertDrop,zone.n==='砂漠'?zone:null,dt,10,10);
+ const raid=mission.enemyAirRaid;
+ if(raid.phase!=='done'&&p.y<=base.y+base.h+DECISIVE_FORTRESS_APPROACH){
+  // End the bombing run and its warning. Released bombs finish falling.
+  raid.phase='done';raid.plane=null;raid.route=null;
+ }
  updateEnemyBomber(dt);
  if(state!=='play')return;
  mission.reinforceT-=dt;
@@ -709,7 +715,7 @@ function updateDecisiveTankDrop(d,dt){
   cars.push(v);say('補充戦車が到着！');
   return;
  }
- if(reinforcementPass||p.tank?.kind==='tank'||p.y<base.y+base.h||p.y>base.y+base.h+650)return;
+ if(reinforcementPass||p.tank?.kind==='tank'||p.y<base.y+base.h||p.y>base.y+base.h+DECISIVE_FORTRESS_APPROACH)return;
  d.tankDropCheck=(d.tankDropCheck||0)-dt;
  if(d.tankDropCheck>0)return;
  d.tankDropCheck=1;
