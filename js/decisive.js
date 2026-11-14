@@ -1,14 +1,14 @@
-// Stage 07 orchestrates existing destruction combat and bounded frontline armies.
-// stageMode changes to 'front' only after the relay falls; the persistent stage ID stays decisive.
-const DECISIVE_RELAY_CAPTURE_SECONDS=15;
-const DECISIVE_RELAY_RADIUS=240;
+// 決戦の砂漠街、施設潜入、砂漠戦を一つの作戦として進める。
+const DECISIVE_FACILITY_NAME='最高指揮通信施設';
+const DECISIVE_FACILITY_ENTRY_RADIUS=58;
 const DECISIVE_DESERT_START=6;
 const DESERT_SANDBAG_W=210,DESERT_SANDBAG_H=52;
 const DECISIVE_BUNKER_SCAN_SECONDS=.2;
 let decisiveBattle=null,desertTownEvents=null;
-function isDecisiveStage(){return stageMode==='decisive'||stageMode==='front'&&!!decisiveBattle;}
+function isDecisiveFacility(){return stageMode==='indoor'&&decisiveBattle?.phase==='facility';}
+function isDecisiveStage(){return stageMode==='decisive'||isDecisiveFacility()||stageMode==='front'&&!!decisiveBattle;}
 function loadDecisiveAssets(){
- for(const key of ['fortress','bunker','bunker-barrel'])if(!COVER_IMG['decisive_'+key])COVER_IMG['decisive_'+key]=makeAssetImage('assets/decisive/'+key+'.webp?v='+GAME_VERSION);
+ for(const key of ['fortress','bunker','bunker-barrel','command-facility'])if(!COVER_IMG['decisive_'+key])COVER_IMG['decisive_'+key]=makeAssetImage('assets/decisive/'+key+'.webp?v='+GAME_VERSION);
  loadDesertTerrain();loadDesertSandbags();
 }
 function loadDesertSandbags(){
@@ -213,7 +213,7 @@ function spawnDesertTownDoorSoldier(door){
  door.departed++;
 }
 function updateDesertTownEvents(dt){
- if(!desertTownEvents||state!=='play')return;
+ if(!desertTownEvents||state!=='play'||stageMode==='indoor')return;
  const zone=zoneAt(p.y),{doorsByZone,drop}=desertTownEvents;
  if(zone.n==='砂漠街'){
   for(const door of doorsByZone.get(zone)||[]){
@@ -237,7 +237,7 @@ function updateDesertTownEvents(dt){
  if(drop.plane||drop.parachutes.length)updateEnemyParachutePass(drop,dt);
 }
 function drawDesertTownDoors(cx,cy){
- if(!desertTownEvents||!p)return;
+ if(!desertTownEvents||!p||stageMode==='indoor')return;
  for(const door of desertTownEvents.doorsByZone.get(zoneAt(p.y))||[]){
   if(!door.elapsed||!drawPointInView(door.x,door.y,cx,cy,45))continue;
   const {x,y,w,h,elapsed}=door;
@@ -282,16 +282,21 @@ function spawnDesertTownPatrols(zones){
 function decisiveRectsOverlap(a,b,pad=0){return a.x<b.x+b.w+pad&&a.x+a.w+pad>b.x&&a.y<b.y+b.h+pad&&a.y+a.h+pad>b.y;}
 function setupDecisiveWorld(){
  loadDecisiveAssets();
- const border=ZONES[DECISIVE_DESERT_START].y0,gate={x:WW/2,y:border+420,captureRadius:DECISIVE_RELAY_RADIUS,name:'中継拠点',done:false};
- decisiveBattle={phase:'infiltration',border,gate,reserve:[],bunkers:[],fortressDir:1,fortressCd:2,gunScan:0};
- // Reserve a dry, open relay circle. The desert has an uninterrupted central route.
- const clearing={x:gate.x-350,y:gate.y-350,w:700,h:700};
+ const border=ZONES[DECISIVE_DESERT_START].y0;
+ const w=440,h=w*439/448,building={x:(WW-w)/2,y:border+86,w,h,kd:3,decisiveKind:'command-facility'};
+ const gate={x:WW/2,y:building.y+h+22,name:DECISIVE_FACILITY_NAME};
+ decisiveBattle={phase:'town',border,gate,building,reserve:[],bunkers:[],fortressDir:1,fortressCd:2,gunScan:0};
+ // 施設と南側正面の進入路を砂漠街の生成物から空ける。
+ const clearing={x:gate.x-350,y:border+24,w:700,h:740};
  covers=covers.filter(c=>c.y>=border&&!decisiveRectsOverlap(c,clearing));
  objects=objects.filter(o=>o.y>=border&&!decisiveRectsOverlap(o,clearing));
  bushes=bushes.filter(b=>b.y>=border&&!decisiveRectsOverlap(b,clearing));
  water=water.filter(w=>w.y>=border&&!decisiveRectsOverlap(w,clearing));
  bridges=bridges.filter(b=>b.y>=border&&!decisiveRectsOverlap(b,clearing));
  roadBands=roadBands.filter(r=>r.y>=border);
+ mud=mud.filter(m=>!decisiveRectsOverlap(m,clearing));
+ cars=cars.filter(v=>!decisiveRectsOverlap({x:v.x-32,y:v.y-32,w:64,h:64},clearing));
+ covers.push(building);
  base={x:WW/2-300,y:140,w:600,h:400,hp:90,maxHp:90,deadAt:0,decisiveFortress:true,decisiveLocked:true};
  for(const zone of ZONES.slice(DECISIVE_DESERT_START)){
   for(let i=0;i<3;i++){
@@ -312,18 +317,82 @@ function setupDecisiveWorld(){
  enemyDogs=enemyDogs.filter(d=>d.handler&&humans.includes(d.handler));
  etanks=etanks.filter(e=>e.y>1100&&!covers.some(c=>decisiveRectsOverlap(c,{x:e.x-32,y:e.y-32,w:64,h:64})));
  humans=humans.filter(h=>!covers.some(c=>decisiveRectsOverlap(c,{x:h.x-12,y:h.y-12,w:24,h:24})));
- mission={index:0,progress:0,points:[gate],waveT:6,reinforceT:18,captureReady:false,capturing:false,contested:false};
+ mission={index:0,points:[gate]};
  scoreStats.objectiveTotal=2;scoreStats.objectiveProgress=0;
  rebuildSpatialGrid();captureBuildingGroundMarks();ensurePlayerVehicleSpawns();ensureEnemyTankSpawns();
  const townZones=ZONES.slice(1,DECISIVE_DESERT_START);
  placeDesertTownGunTowers(townZones);
  spawnDesertTownPatrols(townZones);
  setupDesertTownEvents();
- say('決戦：中継拠点を制圧し、砂漠の移動要塞を破壊せよ');
+ say('決戦：最高指揮通信施設に潜入せよ');
+}
+function enterDecisiveFacility(){
+ const d=decisiveBattle;
+ if(stageMode!=='decisive'||d?.phase!=='town'||p.tank||p.dig>0||p.digPrep>0||p.drill>0||D(p,d.gate)>DECISIVE_FACILITY_ENTRY_RADIUS)return false;
+ if(partner)indoorPreparePartnerTravel(partner);
+ // 砂漠街と後半エリアは生成済みの状態を保持し、潜入中の更新を止める。
+ d.outdoors={ZONES,roadBands,covers,objects,bushes,mud,water,bridges,cars,enemyDogs,etanks,humans,
+  bombs,items,allies,builtWalls,tankWrecks,buildingGroundMarks,radio,whiteRadio,base,baseSpawnT,
+  patrolRoutesVisible,roadTruckEvents,waterRipples,burningNature:[...burningNatureSet],fallen:fallenEnemies.slice()};
+ d.phase='facility';stageMode='indoor';
+ const hp=p.hp;
+ setupInfiltrationWorld(true);
+ setupInfiltrationMission();
+ p.hp=hp;scoreStats.lastY=p.y;
+ whiteRadio=null;reinforcementPass=null;roadTruckEvents=[];waterRipples=[];
+ sandIntensity=0;sandWeatherZone=null;
+ resetDecisiveLocation();
+ say('地下2階のコンピューターを設置爆弾で破壊せよ');
+ return true;
+}
+function resetDecisiveLocation(){
+ clearInfiltrationRenderCache();clearStaticRasterCache();clearFragmentRenderCache();clearSpinifexScatters();
+ clearFallenEnemies();burningNatureSet.clear();
+ if(partner){
+  indoorPreparePartnerTravel(partner);
+  Object.assign(partner,{x:p.x+24,y:p.y+32,face:p.body});
+ }
+ if(hound){
+  hound.x=p.x;hound.y=p.y;
+  resetHoundPosition();
+ }
+ touchTurretAngle=null;cam=Math.max(0,Math.min(WH-H,p.y-H*.6));camX=Math.max(0,Math.min(WW-W,p.x-W/2));
+}
+function damageDecisiveComputer(x,y){
+ const target=mission?.computer,blast={x,y};
+ if(state!=='play'||!target||target.done||target.floor!==indoorWorld.currentFloor+1||D(target,blast)>70||!los(blast,target))return;
+ target.done=true;
+ scoreStats.objectiveProgress=.25;
+ fb(target.x,target.y,34);
+ burst(target.x,target.y,24,'#ffb347',220);
+ say('コンピューターを破壊！ 地上階のEXITへ');
+}
+function updateDecisiveFacilityExit(dt){
+ const m=mission,w=indoorWorld,ground=w.floors[0].footprint;
+ const atExit=m.computer.done&&w.currentFloor===0&&!p.tank&&!(p.dig>0)&&!(p.digPrep>0)&&!(p.blastAirT>0)&&p.y>ground.y+ground.h+12&&D(p,w.exit)<INDOOR_EXIT_RADIUS;
+ m.escapeExit=atExit?w.exit:null;
+ m.escapeProgress=atExit?m.escapeProgress+dt:0;
+ if(m.escapeProgress>=INDOOR_EXIT_SECONDS-1e-9)beginDecisiveAssault();
 }
 function beginDecisiveAssault(){
- if(!decisiveBattle||decisiveBattle.phase!=='infiltration')return false;
- const d=decisiveBattle;d.phase='assault';d.gate.done=true;base.decisiveLocked=false;
+ const d=decisiveBattle;
+ if(!isDecisiveFacility()||!mission?.computer?.done||mission.escapeProgress<INDOOR_EXIT_SECONDS-1e-9)return false;
+ const saved=d.outdoors;d.outdoors=null;d.phase='assault';
+ ({ZONES,roadBands,covers,objects,bushes,mud,water,bridges,cars,enemyDogs,etanks,humans,
+   bombs,items,allies,builtWalls,tankWrecks,buildingGroundMarks,radio,whiteRadio,base,baseSpawnT,
+   patrolRoutesVisible,roadTruckEvents,waterRipples}=saved);
+ base.decisiveLocked=false;
+ indoorWorld=null;
+ p.x=WW/2;p.y=d.border-86;p.body=p.ang=-Math.PI/2;
+ p.blastAirT=0;p.grappleT=0;p.grappleTarget=null;
+ p.digPrep=0;p.digExitAnim=0;p.drill=0;p.drillTarget=null;
+ scoreStats.lastY=p.y;
+ scoreStats.objectiveProgress=.5;
+ bullets=[];waves=[];parts=[];fx=[];decoy=null;
+ weather='clear';weatherT=0;weatherNext=20+R()*30;
+ rebuildSpatialGrid();resetDecisiveLocation();
+ fallenEnemies.push(...saved.fallen);
+ for(const cover of saved.burningNature)burningNatureSet.add(cover);
  // Switching here reuses all existing frontline target acquisition, movement, ally roles and stun rules.
  stageMode='front';frontlineBeginner=false;frontlineOni=false;
  humans=humans.filter(h=>h.alive&&!(h.stun>0));humans.push(...d.reserve.filter(h=>h.alive));d.reserve=[];
@@ -331,27 +400,17 @@ function beginDecisiveAssault(){
  setupFrontlineArmy();mission.enemyWavesStarted=true;mission.advanceReleased=true;
  for(const ally of allies)if(ally.alive){ally.frontline=true;assignFrontlineAllyRole(ally);}
  missionAllies(d.gate.y);setupFrontlineVehicles();spawnFrontlineWave(6);
- p.hp=3;sfx('capture');say('中継拠点を制圧！ 味方部隊と砂漠の移動要塞へ進軍！');
+ p.hp=3;sfx('capture');say('施設から脱出！ 味方部隊と砂漠の移動要塞へ進軍せよ');
  return true;
 }
 function updateDecisiveMission(dt){
  const d=decisiveBattle;if(!d||state!=='play')return;
- if(d.phase==='infiltration'){
-  // The relay is the only passage into the desert, including when a plane is boarded.
+ if(d.phase==='town'){
   p.y=Math.max(d.border+32,p.y);
   if(p.tank){p.tank.x=p.x;p.tank.y=p.y;}
-  const q=d.gate,m=mission,r=frontlineCaptureRadius(q);
-  let foes=0;for(const h of humans)if(h.alive&&!(h.stun>0)&&D(h,q)<r+30)foes++;
-  for(const e of etanks)if(e.alive&&D(e,q)<r+30)foes++;
-  m.contested=foes>0;m.enemiesInside=m.contested;
-  m.captureReady=D(p,q)<r&&!(p.dig>0)&&p.tank?.kind!=='fighter';
-  m.captureCount=m.captureReady?1:0;m.captureRate=m.captureCount;m.capturing=m.captureReady&&!foes;
-  if(m.capturing){m.progress=Math.min(DECISIVE_RELAY_CAPTURE_SECONDS,m.progress+dt);scoreStats.captureSeconds+=dt;}
-  else if(foes)m.progress=Math.max(0,m.progress-dt*.35);
-  scoreStats.objectiveProgress=.5*m.progress/DECISIVE_RELAY_CAPTURE_SECONDS;
-  if(m.progress>=DECISIVE_RELAY_CAPTURE_SECONDS){scoreStats.capturePoints=1;beginDecisiveAssault();}
   return;
  }
+ if(d.phase==='facility'){updateInfiltrationMission(dt);return;}
  updateDecisiveFortress(dt);
  cleanupFrontlineArmy(dt);updateFrontlineWaves(dt);
  mission.reinforceT-=dt;
@@ -424,16 +483,43 @@ function drawDecisiveCover(c){
 }
 function drawDecisiveMission(){
  document.body.classList.toggle('front-battle',decisiveBattle?.phase==='assault');
+ if(isDecisiveFacility()){drawInfiltrationMission();return;}
  document.getElementById('missionHud').style.display='none';
  if(state!=='play'||!decisiveBattle)return;
- const d=decisiveBattle,q=d.phase==='infiltration'?d.gate:mission.points[0];
+ const d=decisiveBattle,town=d.phase==='town',q=town?d.gate:mission.points[0];
  gm.save();gm.setTransform(1,0,0,1,0,0);
- if(d.phase==='infiltration'){
-  const x=q.x-camX,y=q.y-cam,r=frontlineCaptureRadius(q),colors=frontlineCaptureColors(q,mission);
-  if(y>-r&&y<H+r){gm.strokeStyle=colors.stroke;gm.fillStyle=colors.fill;gm.lineWidth=3;gm.beginPath();gm.arc(x,y,r,0,Math.PI*2);gm.fill();gm.stroke();drawFrontlineCaptureRing(q,x,y,mission,DECISIVE_RELAY_CAPTURE_SECONDS);}
- }
  drawFrontlineArrow(q);
  gm.font='bold 16px system-ui';gm.fillStyle='#fff1c0';gm.textAlign='center';gm.strokeStyle='#302a20';gm.lineWidth=4;
- const text=d.phase==='infiltration'?'中継拠点を制圧 '+Math.floor(mission.progress/DECISIVE_RELAY_CAPTURE_SECONDS*100)+'%':'決戦：移動要塞を破壊せよ';
+ const text=town?(D(p,q)<=DECISIVE_FACILITY_ENTRY_RADIUS?'入口でA：施設へ潜入':'決戦：最高指揮通信施設へ'):'決戦：移動要塞を破壊せよ';
  gm.strokeText(text,W/2,32);gm.fillText(text,W/2,32);gm.restore();
+}
+function drawDecisiveComputer(cx,cy){
+ const q=mission?.computer;
+ if(!q||q.floor!==indoorWorld.currentFloor+1||!drawPointInView(q.x,q.y,cx,cy,30))return;
+ const {x,y}=q;
+ g.fillStyle='#262927';g.fillRect(x-16,y-12,32,24);
+ g.fillStyle='#646a63';g.fillRect(x-14,y-14,28,17);
+ g.fillStyle=q.done?'#343431':'#90db9b';g.fillRect(x-10,y-11,20,11);
+ g.fillStyle=q.done?'#8d5745':'#737f73';g.fillRect(x-10,y+6,20,3);
+}
+function drawDecisiveFacilityHud(el){
+ const w=indoorWorld,q=mission.computer,floor=w.currentFloor;
+ const basement=['1F','B1F','B2F'][floor];
+ const task=q.done?'地上のEXITで5秒待機':'地下2階のコンピューターを設置爆弾で破壊';
+ const alarm=w.alarm?.active?'館内アラート発令中 ／ ':'';
+ const hud='<b>'+DECISIVE_FACILITY_NAME+' '+basement+'</b><small>'+alarm+task+'</small>';
+ if(hud!==indoorHudSnapshot){indoorHudSnapshot=hud;el.innerHTML=hud;}
+ const targetFloor=q.done?0:2;
+ const guide=floor===targetFloor?(q.done?w.exit:q):w.floors[floor].stairs.find(s=>s.destination===floor+Math.sign(targetFloor-floor));
+ gm.save();gm.setTransform(1,0,0,1,0,0);
+ drawInfiltrationAlarmOverlay();
+ if(indoorStairProtected())drawIndoorStairSafeArea(w.stairSanctuary);
+ drawFrontlineArrow(guide);
+ if(floor===2&&!q.done&&drawPointInView(q.x,q.y,camX,cam,40)){
+  const x=q.x-camX,y=q.y-cam;
+  gm.font='bold 15px system-ui';gm.textAlign='center';gm.lineWidth=4;gm.strokeStyle='#302a20';gm.fillStyle='#ffe1a0';
+  gm.strokeText('コンピューター',x,y-30);gm.fillText('コンピューター',x,y-30);
+  gm.beginPath();gm.arc(x,y,18,0,Math.PI*2);gm.strokeStyle='#ffe1a0';gm.lineWidth=2;gm.stroke();
+ }
+ gm.restore();drawIndoorStairTransition();
 }

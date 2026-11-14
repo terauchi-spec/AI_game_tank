@@ -1,7 +1,7 @@
 /* Indoor environment adapter: NO replacement game loop or controls. */
 let INDOOR_FILES_TOTAL=3;
 const INDOOR_ACQUIRE_SECONDS=8,INDOOR_ACQUIRE_RADIUS=68;
-function isInfiltrationBeginner(){return typeof indoorBeginner!=='undefined'&&indoorBeginner;}
+function isInfiltrationBeginner(){return (typeof indoorBeginner!=='undefined'&&indoorBeginner)||!!(typeof isDecisiveFacility==='function'&&isDecisiveFacility());}
 const INDOOR_EXIT_RADIUS=90,INDOOR_EXIT_SECONDS=5;
 // 透過余白を除いたWebPの実寸比。生成時の当たり判定も元画像の比率に揃える。
 const INDOOR_PROP_ASPECT={container:119/256,equipment:207/256,shelf:108/256,
@@ -46,7 +46,7 @@ function indoorRoomEquipmentWalkable(room,rects){
   if(room.doors.some(d=>!near(d,38,26)))return false;
   return room.tiles.every(t=>[.23,.5,.77].some(u=>[.23,.5,.77].some(v=>near({x:t.x+t.w*u,y:t.y+t.h*v},20,7))));
 }
-function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null,secondaryStairIndex=null,rescueCellRoom=false){
+function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null,secondaryStairIndex=null,rescueCellRoom=false,commandFacility=false){
   // 5×7の180px区画を接続。廊下の形だけ先に確定し、残りを10室に分割する。
   // 同じ部屋に割り当てた区画間は壁を作らず、大小さまざまな連結部屋にする。
   const laboratory=typeof isLaboratoryStage==='function'&&isLaboratoryStage();
@@ -82,7 +82,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null,second
     for(let c=1;c<=3;c++)add(c,5);
   }
   // Exterior entrances and the broad lobby belong only to the ground floor.
-  const hasExterior=number===1,emergencyRoll=hasExterior?rng():1,hasEmergency=hasExterior&&emergencyRoll<.5&&!isInfiltrationBeginner();
+  const hasExterior=number===1,emergencyRoll=hasExterior?rng():1,hasEmergency=hasExterior&&emergencyRoll<.5&&!commandFacility&&!isInfiltrationBeginner();
   if(!laboratory){add(2,1);add(1,1);}if(hasExterior)add(2,0);
   const south=[1,2,3].filter(c=>hall.has(index(c,5)));
   const entranceCol=south.length?south[Math.floor(rng()*south.length)]:1;
@@ -101,7 +101,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null,second
   const stairDraw=stairOptions[Math.floor(rng()*stairOptions.length)];
   const stairIndex=Number.isInteger(sharedStairIndex)&&hall.has(sharedStairIndex)?sharedStairIndex:stairDraw;
   const stair=center(stairIndex);
-  const stairs=[stair,...((laboratory||rescueAdvancedTest)&&Number.isInteger(secondaryStairIndex)?[center(secondaryStairIndex)]:[])];
+  const stairs=[stair,...((laboratory||rescueAdvancedTest||commandFacility)&&Number.isInteger(secondaryStairIndex)?[center(secondaryStairIndex)]:[])];
   const distToStair=new Map([[stairIndex,0]]),queue=[stairIndex];
   for(let at=0;at<queue.length;at++){
     const i=queue[at],d=distToStair.get(i);
@@ -1046,9 +1046,9 @@ function indoorGenerateExterior(floor,rng,worldWidth=960){
   }
   return out;
 }
-function setupInfiltrationWorld(){
+function setupInfiltrationWorld(commandFacility=false){
   // Scale physical floor area, retaining the same rendering resolution and two-floor layout.
-  const beginner=isInfiltrationBeginner(),size=beginner?Math.sqrt(.8):1;
+  const beginner=commandFacility||isInfiltrationBeginner(),size=beginner?Math.sqrt(.8):1;
   INDOOR_FILES_TOTAL=rescueAdvancedTest?0:beginner?2:3;
   INDOOR_SCALE_X=size*(typeof isLaboratoryStage==='function'&&isLaboratoryStage() ? .95 : 1);INDOOR_SCALE_Y=1.75*size;INDOOR_OFFSET_X=480-520*INDOOR_SCALE_X;
   const ground=ZONE_STYLE['敵迷路基地'];
@@ -1060,12 +1060,12 @@ function setupInfiltrationWorld(){
   // Off-map base avoids outdoor destruction / HQ spawning while preserving core state shape.
   base={x:-5000,y:-5000,w:100,h:100,hp:30,maxHp:30,deadAt:0};
   document.body.classList.remove('front-battle');
-  indoorWorld={floors:[],intel:[],currentFloor:0,stairEntryFloor:null,stairMoveLock:0,stairsCooldown:0,exit:null,emergency:null,entrance:null,
+  indoorWorld={commandFacility,floors:[],intel:[],currentFloor:0,stairEntryFloor:null,stairMoveLock:0,stairsCooldown:0,exit:null,emergency:null,entrance:null,
     alarm:{active:false,witnesses:new Set(),elapsed:0}};
   // 全階で同じ階段位置を共有。間取りは各階別々のランダムシード。
   const indoorSeedRng=seed=>{let x=seed>>>0;return()=>{x=(Math.imul(x,1664525)+1013904223)>>>0;return x/4294967296;};};
   const laboratory=typeof isLaboratoryStage==='function'&&isLaboratoryStage();
-  const multiFloor=laboratory||rescueAdvancedTest;
+  const basementLayout=commandFacility||rescueAdvancedTest,multiFloor=laboratory||basementLayout;
   const floorNumbers=multiFloor?[1,2,3]:[1,2];
   const seeds=rescueAdvancedTest?Array(floorNumbers.length).fill(Math.floor(R()*4294967296)):floorNumbers.map(()=>Math.floor(R()*4294967296));
   const trial=floorNumbers.map((n,i)=>indoorGenerateFloor(n,indoorSeedRng(seeds[i])));
@@ -1080,19 +1080,19 @@ function setupInfiltrationWorld(){
   const upperOptions=multiFloor?sharedOptions.filter(id=>id!==sharedStair):[];
   const upperStair=multiFloor?upperOptions[Math.floor(R()*upperOptions.length)]:null;
     const rawFloors=floorNumbers.map((n,i)=>indoorGenerateFloor(n,indoorSeedRng(seeds[i]),
-    rescueAdvancedTest?(n<=2?sharedStair:upperStair):multiFloor&&n===3?upperStair:sharedStair,
-    rescueAdvancedTest?(n===2?upperStair:null):multiFloor&&n===2?upperStair:null,
-    rescueAdvancedTest&&n===3));
+    basementLayout?(n<=2?sharedStair:upperStair):multiFloor&&n===3?upperStair:sharedStair,
+    basementLayout?(n===2?upperStair:null):multiFloor&&n===2?upperStair:null,
+    rescueAdvancedTest&&n===3,commandFacility));
   const fileDistribution=R(),groundFiles=beginner?1:fileDistribution<.5?1:2;
   const shuffled=floorNumbers;
   for(const n of shuffled){
-    const raw=rawFloors[n-1],off=rescueAdvancedTest?[8800,6100,3400][n-1]:INDOOR_FLOOR_OFFSETS[n-1];
+    const raw=rawFloors[n-1],off=basementLayout?[8800,6100,3400][n-1]:INDOOR_FLOOR_OFFSETS[n-1];
     const to=pt=>indoorAt(pt.x,pt.y,off);
     const rooms=raw.rooms.map(r=>{const rect=indoorRect(r,off);
       return{...rect,id:r.id,name:r.name,purpose:r.purpose,size:r.size,isGuardPost:!!r.isGuardPost,...(r.laboratoryRole?{laboratoryRole:r.laboratoryRole}:{}),tiles:r.tiles.map(tile=>indoorRect(tile,off))};
     });
     // Walls use the existing concrete wall cover kind. Doors remain actual gaps in the core collision grid.
-    const windows=(rescueAdvancedTest&&n>1?[]:raw.windows).map(q=>({...to(q),vertical:q.vertical,broken:false}));
+    const windows=(basementLayout&&n>1?[]:raw.windows).map(q=>({...to(q),vertical:q.vertical,broken:false}));
     const wallRects=[];
     for(const wall of raw.walls){
       for(const rect of indoorSplitWindowWall(indoorRect(wall,off),windows)){
@@ -1157,8 +1157,8 @@ function setupInfiltrationWorld(){
     navigation.grid=indoorMakeGuardGrid(raw,off);
     const stair=to(raw.stair),stairObstacle=indoorStairObstacleBounds(stair,n);
     const stairs=multiFloor?raw.stairs.map((q,i)=>{
-      const destination=rescueAdvancedTest?(i===0?(n===1?1:n-2):n):n===1?1:n===3?1:i===0?0:2;
-      const id=rescueAdvancedTest?(n===1?'lower':n===2?(i===0?'lower':'upper'):'upper'):(n===3||i===1?'upper':'lower');
+      const destination=basementLayout?(i===0?(n===1?1:n-2):n):n===1?1:n===3?1:i===0?0:2;
+      const id=basementLayout?(n===1?'lower':n===2?(i===0?'lower':'upper'):'upper'):(n===3||i===1?'upper':'lower');
       return {...to(q),id,destination,direction:destination>n-1?1:-1};
     }):null;
     const stairObstacles=(raw.stairs||[raw.stair]).map(q=>indoorStairObstacleBounds(to(q),n));
@@ -1196,7 +1196,11 @@ function setupInfiltrationWorld(){
       humans.push(guard);guards.push(guard);postGuards.push(guard);
     }
     // 初級は各階1箇所、上級は従来の合計3箇所を配分する。
-    const count=rescueAdvancedTest?0:laboratory?1:n===1?groundFiles:INDOOR_FILES_TOTAL-groundFiles;
+    if(commandFacility&&n===3){
+      const terminal=raw.intel[0];
+      indoorWorld.computer={...to(terminal),floor:n,done:false};
+    }
+    const count=basementLayout?0:laboratory?1:n===1?groundFiles:INDOOR_FILES_TOTAL-groundFiles;
     const intel=raw.intel.slice(0,count).map((q,i)=>({...to(q),id:q.id,name:'重要資料 '+n+'F-'+(i+1),roomId:q.roomId,fixtureArt:q.fixtureArt,done:false,floor:n,progress:0}));
     indoorWorld.intel.push(...intel);
     const entrances=raw.entrances.map(to);
@@ -1233,8 +1237,10 @@ function setupInfiltrationWorld(){
   }
   const entrance=indoorWorld.floors[0];
   p.x=entrance.entrance.x;p.y=entrance.entrance.y;p.hp=3;p.tank=null;p.body=-Math.PI/2;p.ang=-Math.PI/2;
-  scoreStats.startY=p.y;scoreStats.stage='indoor'; // Normal infiltration runs save achievements; actual debug flags remain unchanged.
-  scoreStats.documentTotal=INDOOR_FILES_TOTAL;scoreStats.objectiveTotal=INDOOR_FILES_TOTAL;
+  if(!commandFacility){
+    scoreStats.startY=p.y;scoreStats.stage='indoor';
+    scoreStats.documentTotal=INDOOR_FILES_TOTAL;scoreStats.objectiveTotal=INDOOR_FILES_TOTAL;
+  }
   indoorWorld.exit={...entrance.entrance};
   indoorWorld.entrance={...entrance.entrance};
   indoorWorld.emergency=entrance.emergency?{...entrance.emergency}:null;
@@ -1252,7 +1258,7 @@ function setupInfiltrationWorld(){
   covers.push(...indoorWorld.exterior);
   patrolRoutesVisible=false;
   rebuildSpatialGrid();
-  if(!rescueAdvancedTest)say('拠点潜入：廊下の物資に身を隠し、重要資料'+INDOOR_FILES_TOTAL+'箇所を回収せよ');
+  if(!basementLayout)say('拠点潜入：廊下の物資に身を隠し、重要資料'+INDOOR_FILES_TOTAL+'箇所を回収せよ');
 }
 // One pair on 1F in advanced sorties; laboratories reuse one patrol per floor.
 // Setup-only grid sampling; no extra roster slot or recurring dog reinforcement.
@@ -1496,7 +1502,7 @@ function updateIndoorStairTransition(dt){
   w.stairEntryFloor=null;w.stairEntryId=null;w.stairActive=null;
   if(!w.rescue){mission.progress=0;mission.current=null;}
   cam=Math.max(0,Math.min(WH-H,p.y-H*.6));
-  say((w.rescue?['1F','B1F','B2F'][w.currentFloor]:floor.number+'階')+'へ移動');sfx('skill');
+  say((w.rescue||w.commandFacility?['1F','B1F','B2F'][w.currentFloor]:floor.number+'階')+'へ移動');sfx('skill');
  }
  transition.remaining=remaining;
  w.stairMoveLock=remaining;
@@ -1558,7 +1564,8 @@ function drawRescueAdvancedMission(){
 
 function setupInfiltrationMission(){
   if(rescueAdvancedTest){setupRescueAdvancedMission();return;}
-  mission={index:0,progress:0,points:indoorWorld.intel,exit:indoorWorld.exit,detected:false,
+  mission={index:0,progress:0,points:indoorWorld.commandFacility?[indoorWorld.computer]:indoorWorld.intel,
+    computer:indoorWorld.computer,exit:indoorWorld.exit,detected:false,
     current:null,alarm:0,escapeProgress:0,escapeExit:null,escapeComplete:false};
 }
 
@@ -2753,6 +2760,7 @@ function updateInfiltrationMission(dt){
   indoorScanStunnedGuards(dt);
   // 発見だけでは終了させず、潜入専用AIの追跡・最終目撃地点確認・捜索を継続する。
   if(beginIndoorStairTransition(dt))return;
+  if(w.commandFacility){updateDecisiveFacilityExit(dt);return;}
   for(const q of m.points)if(q.collectedT>0)q.collectedT=Math.max(0,q.collectedT-dt);
   m.current=null;m.progress=0;
   for(const q of m.points){
@@ -2993,12 +3001,12 @@ function drawInfiltrationStairSprite(floor){
 }
 function drawInfiltrationStairArrow(floor,stair,height){
   const direction=stair.direction||(floor.number===1?1:-1),x=stair.x,y=stair.y-height/2+24;
-  const arrowDirection=rescueAdvancedTest?-direction:direction;
+  const arrowDirection=rescueAdvancedTest||indoorWorld?.commandFacility?-direction:direction;
   g.save();
   g.fillStyle='rgba(20,30,35,.8)';g.beginPath();g.arc(x,y,15,0,Math.PI*2);g.fill();
   // A north-pointing arrow denotes up a floor, a south-pointing arrow down.
   g.beginPath();const pts=[[-9,0],[0,-11],[9,0],[4,0],[4,10],[-4,10],[-4,0]];
-  for(let i=0;i<pts.length;i++){const [dx,dy]=pts[i];if(i)g.lineTo(x+dx,y+dy*arrowDirection);else g.moveTo(x+dx,y+dy*direction);}
+  for(let i=0;i<pts.length;i++){const [dx,dy]=pts[i];if(i)g.lineTo(x+dx,y+dy*arrowDirection);else g.moveTo(x+dx,y+dy*arrowDirection);}
   g.closePath();g.fillStyle=direction>0?'#fff0a8':'#a5e8ff';g.strokeStyle='#15232b';g.lineWidth=1.5;g.fill();g.stroke();
   g.restore();
 }
@@ -3080,8 +3088,9 @@ function drawExitCircle(q,radius,progress,active){
 }
 function drawInfiltrationExitsForFloor(f,cx,cy){
     // 前線制圧のような円形の脱出範囲。描画と待機判定は同じ半径を使う。
-    if(rescueAdvancedTest&&(f.number!==1||indoorWorld.currentFloor!==0))return;
-    for(const q of [f.entrance||f.entrances?.[0],f.emergency].filter(Boolean)){
+    if((rescueAdvancedTest||indoorWorld.commandFacility)&&(f.number!==1||indoorWorld.currentFloor!==0))return;
+    const exits=indoorWorld.commandFacility?[indoorWorld.exit]:[f.entrance||f.entrances?.[0],f.emergency].filter(Boolean);
+    for(const q of exits){
       const radius=INDOOR_EXIT_RADIUS;
       if(q.x+radius<cx||q.x-radius>cx+W||q.y+radius<cy||q.y-radius>cy+H)continue;
       const active=typeof mission!=='undefined'&&mission?.escapeExit===q;
@@ -3284,6 +3293,7 @@ function drawInfiltrationMission(){
   if(!visible){if(el.style.display!=='none')el.style.display='none';return;}
   if(el.style.display!=='block')el.style.display='block';
   if(rescueAdvancedTest){drawRescueAdvancedHud(el);return;}
+  if(indoorWorld.commandFacility){drawDecisiveFacilityHud(el);return;}
   const now=performance.now();
   if(now>=indoorHudRefresh){
     indoorHudRefresh=now+120;
