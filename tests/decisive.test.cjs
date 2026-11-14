@@ -183,7 +183,8 @@ test('command facility keeps both floor dimensions, a fixed central room and nin
   return room.size===9&&Math.abs(room.x+room.w/2-f.footprint.x-f.footprint.w/2)<1e-6&&
    Math.abs(room.y+room.h/2-f.footprint.y-f.footprint.h/2)<1e-6&&main.y-room.y<20&&
    small.length===9&&new Set(small.map(o=>o.x)).size===3&&new Set(small.map(o=>o.y)).size===3&&
-   small.every(o=>o.indoorExplosive&&o.y>main.y+main.h);
+   small.every(o=>o.indoorExplosive&&Math.abs(o.w-96)<1e-6&&Math.abs(o.h-96*87/192)<1e-6&&
+    o.y>main.y+main.h&&o.x>=room.x&&o.x+o.w<=room.x+room.w&&o.y+o.h<=room.y+room.h);
  })()`));
  assert.ok(run(`(()=>{
   const small=objects.find(o=>o.kind==='commandSmall');
@@ -194,6 +195,27 @@ test('command facility keeps both floor dimensions, a fixed central room and nin
  })()`));
  assert.match(run('COVER_IMG["decisive_computer-large"].src'),/computer-large\.webp/);
  assert.equal(run('decisiveFacilityOutdoorTerrain.n'),'砂漠');
+ assert.ok(run(`(()=>{
+  const f=indoorWorld.floors[0].footprint,clips=[];
+  indoorWorld.currentFloor=0;
+  const mask=gameCanvasContext(document.createElement('canvas'));
+  mask.rect=(...bounds)=>clips.push(bounds);
+  indoorPaintLightingMask(mask,f.x-50,f.y-50,f.w+100,f.h+100);
+  return clips[0]?.join() === [50,50,f.w,f.h].join()&&
+   decisiveFacilityOutdoorTerrain.g===ZONE_STYLE['砂漠'].g;
+ })()`));
+ assert.deepEqual(Array.from(run(`(()=>{
+  const target=mission.computer,bar=drawObjectiveHealthBar,bomb=drawHudBomb,calls=[];
+  drawObjectiveHealthBar=(ctx,x,y,w,fraction)=>calls.push(fraction);
+  drawHudBomb=()=>calls.push('bomb');
+  indoorWorld.currentFloor=1;camX=target.x-W/2;cam=target.y-H/2;
+  try{
+   drawDecisiveFacilityHud({});target.hits=1;
+   drawDecisiveFacilityHud({});target.done=true;
+   drawDecisiveFacilityHud({});
+  }finally{drawObjectiveHealthBar=bar;drawHudBomb=bomb;target.hits=0;target.done=false;}
+  return calls;
+ })()`)),[1,'bomb',1-1/3,'bomb']);
  assert.deepEqual(Array.from(run(`(()=>{
   indoorWorld.currentFloor=0;
   const original=drawExitCircle,calls=[];

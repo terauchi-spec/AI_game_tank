@@ -937,6 +937,12 @@ function indoorLightingStamp(){
 function indoorPaintLightingMask(q,left,top,mw,mh){
     const r=INDOOR_LIGHT_RADIUS,stamp=indoorLightingStamp();
     q.setTransform(1,0,0,1,0,0);q.clearRect(0,0,mw,mh);
+    const daylightExterior=indoorWorld.commandFacility&&indoorWorld.currentFloor===0;
+    if(daylightExterior){
+      // Keep the desert forecourt outside the interior shade and lamp mask.
+      const f=indoorWorld.floors[0].footprint;
+      q.save();q.beginPath();q.rect(f.x-left,f.y-top,f.w,f.h);q.clip();
+    }
     q.fillStyle='rgba(7,13,15,.58)';q.fillRect(0,0,mw,mh);
     q.globalCompositeOperation='destination-out';
     for(const f of indoorWorld.floors){
@@ -954,6 +960,7 @@ function indoorPaintLightingMask(q,left,top,mw,mh){
       }
     }
     q.globalCompositeOperation='source-over';
+    if(daylightExterior)q.restore();
 }
 function indoorWallGroundSprite(mark){
  if(mark.indoorShadowRaster)return mark.indoorShadowRaster;
@@ -984,12 +991,12 @@ function drawInfiltrationLighting(cx,cy){
   }
   const mask=indoorShadeCanvas,q=indoorShadeCtx,mw=Math.ceil(W)+256,mh=Math.ceil(H)+256;
   let cached=indoorShadeSnapshot;
-  if(!cached||cached.world!==indoorWorld||mask.width!==mw||mask.height!==mh||
+  if(!cached||cached.world!==indoorWorld||cached.floor!==indoorWorld.currentFloor||mask.width!==mw||mask.height!==mh||
      cx<cached.x+32||cy<cached.y+32||cx+W>cached.x+mw-32||cy+H>cached.y+mh-32){
     if(mask.width!==mw)mask.width=mw;if(mask.height!==mh)mask.height=mh;
     const left=Math.floor(cx/64)*64-96,top=Math.floor(cy/64)*64-96;
     indoorPaintLightingMask(q,left,top,mw,mh);
-    cached=indoorShadeSnapshot={world:indoorWorld,x:left,y:top};
+    cached=indoorShadeSnapshot={world:indoorWorld,floor:indoorWorld.currentFloor,x:left,y:top};
   }
   gm.save();if(typeof isLaboratoryStage==='function'&&isLaboratoryStage())gm.globalAlpha*=.68;gm.drawImage(mask,cx-cached.x,cy-cached.y,W,H,0,0,W,H);gm.restore();
 }

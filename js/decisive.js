@@ -11,8 +11,9 @@ function placeDecisiveRoomComputers(room,objects){
   w:w/INDOOR_SCALE_X,h:h/INDOOR_SCALE_Y,group:'command-room'
  });
  place('commandMain',center,15,360,360*184/512);
+ const smallWidth=96;
  for(let row=0;row<3;row++)for(let col=-1;col<=1;col++){
-  place('commandSmall',center+col*145/INDOOR_SCALE_X,218+row*105,80,80*87/192);
+  place('commandSmall',center+col*145/INDOOR_SCALE_X,218+row*105,smallWidth,smallWidth*87/192);
  }
 }
 
@@ -527,7 +528,7 @@ function drawDecisiveMission(){
 function drawDecisiveFacilityHud(el){
  const w=indoorWorld,q=mission.computer,floor=w.currentFloor;
  const basement=['1F','B1F'][floor];
- const task=q.done?'地上のEXITで5秒待機':'大型コンピューターを破壊 ／ 設置爆弾あと'+(DECISIVE_COMPUTER_HITS-q.hits)+'回';
+ const task=q.done?'地上のEXITで5秒待機':'設置爆弾あと'+(DECISIVE_COMPUTER_HITS-q.hits)+'回';
  const alarm=w.alarm?.active?'館内アラート発令中 ／ ':'';
  const hud='<b>'+DECISIVE_FACILITY_NAME+' '+basement+'</b><small>'+alarm+task+'</small>';
  if(hud!==indoorHudSnapshot){indoorHudSnapshot=hud;el.innerHTML=hud;}
@@ -537,10 +538,11 @@ function drawDecisiveFacilityHud(el){
  drawInfiltrationAlarmOverlay();
  if(indoorStairProtected())drawIndoorStairSafeArea(w.stairSanctuary);
  drawFrontlineArrow(guide);
- if(floor===targetFloor&&!q.done&&drawPointInView(q.x,q.y,camX,cam,40)){
-  const x=q.x-camX,y=q.object.y+q.object.h-cam;
-  gm.font='bold 15px system-ui';gm.textAlign='center';gm.lineWidth=4;gm.strokeStyle='#302a20';gm.fillStyle='#ffe1a0';
-  gm.strokeText('大型コンピューター',x,y-12);gm.fillText('大型コンピューター',x,y-12);
+ const {x,y,w:width,h:height}=q.object;
+ const cx=Math.round(camX/2)*2,cy=Math.round(cam/2)*2;
+ if(!q.done&&floor===targetFloor&&drawBoundsInView(x,y,width,height,cx,cy,48)){
+  drawObjectiveHealthBar(gm,x+10-cx,y-16-cy,width-20,1-q.hits/DECISIVE_COMPUTER_HITS);
+  drawHudBomb(q.x-cx,y-32-cy);
  }
  gm.restore();drawIndoorStairTransition();
 }
