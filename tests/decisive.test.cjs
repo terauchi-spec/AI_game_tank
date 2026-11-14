@@ -163,6 +163,8 @@ test('the facility stairs, placed bomb and ground EXIT lead into the existing as
   assert.equal(run('mission.computer.done'),hits===3);
  }
  assert.equal(run('objects.includes(mission.computer.object)'),false);
+ assert.ok(run(`decisiveBattle.computerWrecks.some(q=>q.kind==='commandMain'&&
+  q.x===mission.computer.object.x&&q.y===mission.computer.object.y)`));
  run('p.blastAirT=0;useStair(0);p.x=indoorWorld.exit.x;p.y=indoorWorld.exit.y;updateMission(4.9)');
  assert.equal(run('stageMode'),'indoor');
  run('p.x+=200;updateMission(.2);p.x-=200;updateMission(4.9)');
@@ -171,6 +173,7 @@ test('the facility stairs, placed bomb and ground EXIT lead into the existing as
  assert.equal(run('stageMode'),'front');
  assert.ok(run('scoreStats===originalScore&&covers===originalCovers&&scoreStats.playerKillPoints===400&&scoreStats.stageRecordId==="decisive"'));
  assert.equal(run('zoneAt(p.y).n'),'砂漠');
+ assert.equal(run('decisiveBattle.computerWrecks'),null);
  assert.equal(run('beginDecisiveAssault()'),false);
  run('p.x=mission.points[0].x;p.y=mission.points[0].y;for(let i=0;i<200;i++)updateMission(.5)');
  assert.equal(run('state'),'play');
@@ -196,10 +199,24 @@ test('command facility keeps both floor dimensions, a fixed central room and nin
   damageObject(small,'mg');damageObject(small,'mg');
   if(small.burnT!==3)return false;
   updateBurningObjects(3.1);
-  return !objects.includes(small)&&mission.computer.hits===0;
+  return !objects.includes(small)&&mission.computer.hits===0&&decisiveBattle.computerWrecks.some(
+   q=>q.kind==='commandSmall'&&q.x===small.x&&q.y===small.y);
  })()`));
  assert.match(run('COVER_IMG["decisive_computer-large"].src'),/computer-large\.webp/);
  assert.equal(run('decisiveFacilityOutdoorTerrain.n'),'砂漠');
+ assert.ok(run(`indoorWorld.exterior.length===0&&!covers.some(c=>c.indoorExterior)&&
+  objects.filter(o=>o.kind==='barrel').every(o=>Math.abs(o.h-30*1.75*Math.sqrt(.8))<1e-6)&&
+  objects.filter(o=>o.kind==='shellPallet').every(o=>Math.abs(o.h-120*1.75*Math.sqrt(.8))<1e-6)`));
+ assert.deepEqual(Array.from(run(`(()=>{
+  const original=drawAssetSprite,images=[];
+  drawAssetSprite=image=>images.push(image.src.split('/').pop().split('?')[0]);
+  const q=decisiveBattle.computerWrecks[0];
+  try{
+   indoorWorld.currentFloor=0;drawDecisiveComputerWrecks(q.x-50,q.y-50);
+   indoorWorld.currentFloor=1;drawDecisiveComputerWrecks(q.x-50,q.y-50);
+  }finally{drawAssetSprite=original;}
+  return images;
+ })()`)),['computer-small-wreck.webp']);
  assert.ok(run(`(()=>{
   const f=indoorWorld.floors[0].footprint,clips=[];
   indoorWorld.currentFloor=0;

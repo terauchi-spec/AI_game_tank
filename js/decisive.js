@@ -17,6 +17,20 @@ function placeDecisiveRoomComputers(room,objects){
  }
 }
 
+function recordDecisiveComputerWreck(o){
+ if(!isDecisiveFacility())return;
+ decisiveBattle.computerWrecks.push({x:o.x,y:o.y,w:o.w,h:o.h,kind:o.kind});
+ indoorRefreshDamagedNavigation(o.x+o.w/2,o.y+o.h/2,Math.max(o.w,o.h));
+}
+function drawDecisiveComputerWrecks(cx,cy){
+ if(indoorWorld.currentFloor!==1)return;
+ for(const q of decisiveBattle.computerWrecks){
+  if(!drawBoundsInView(q.x,q.y,q.w,q.h,cx,cy))continue;
+  const image=COVER_IMG[q.kind==='commandMain'?'decisive_computer-large-wreck':'decisive_computer-small-wreck'];
+  const [w,h]=fitAspect(image,q.w,q.h);
+  drawAssetSprite(image,q.x+q.w/2,q.y+q.h/2,w,h);
+ }
+}
 function drawDecisiveComputerObject(o){
  const main=o.kind==='commandMain',image=COVER_IMG[main?'decisive_computer-large':'decisive_computer-small'];
  if(drawAssetSprite(image,o.x+o.w/2,o.y+o.h/2,o.w,o.h))return;
@@ -356,9 +370,9 @@ function enterDecisiveFacility(){
  d.outdoors={ZONES,roadBands,covers,objects,bushes,mud,water,bridges,cars,enemyDogs,etanks,humans,
   bombs,items,allies,builtWalls,tankWrecks,buildingGroundMarks,radio,whiteRadio,base,baseSpawnT,
   patrolRoutesVisible,roadTruckEvents,waterRipples,burningNature:[...burningNatureSet],fallen:fallenEnemies.slice()};
- d.phase='facility';stageMode='indoor';
+ d.phase='facility';d.computerWrecks=[];stageMode='indoor';
  const hp=p.hp;
- for(const key of ['computer-small','computer-large'])if(!COVER_IMG['decisive_'+key])COVER_IMG['decisive_'+key]=makeAssetImage('assets/decisive/'+key+'.webp?v='+GAME_VERSION);
+ for(const key of ['computer-small','computer-large','computer-small-wreck','computer-large-wreck'])if(!COVER_IMG['decisive_'+key])COVER_IMG['decisive_'+key]=makeAssetImage('assets/decisive/'+key+'.webp?v='+GAME_VERSION);
  setupInfiltrationWorld(true);
  setupInfiltrationMission();
  p.hp=hp;scoreStats.lastY=p.y;
@@ -396,7 +410,6 @@ function damageDecisiveComputer(x,y){
  target.done=true;
  scoreStats.objectiveProgress=.25;
  explodeObject(target.object);
- indoorRefreshDamagedNavigation(target.x,target.y,target.object.w);
  say('大型コンピューターを破壊！ 地上階のEXITへ');
 }
 function updateDecisiveFacilityExit(dt){
@@ -409,7 +422,7 @@ function updateDecisiveFacilityExit(dt){
 function beginDecisiveAssault(){
  const d=decisiveBattle;
  if(!isDecisiveFacility()||!mission?.computer?.done||mission.escapeProgress<INDOOR_EXIT_SECONDS-1e-9)return false;
- const saved=d.outdoors;d.outdoors=null;d.phase='assault';
+ const saved=d.outdoors;d.outdoors=null;d.computerWrecks=null;d.phase='assault';
  ({ZONES,roadBands,covers,objects,bushes,mud,water,bridges,cars,enemyDogs,etanks,humans,
    bombs,items,allies,builtWalls,tankWrecks,buildingGroundMarks,radio,whiteRadio,base,baseSpawnT,
    patrolRoutesVisible,roadTruckEvents,waterRipples}=saved);

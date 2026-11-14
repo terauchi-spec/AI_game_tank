@@ -58,6 +58,8 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null,second
   const center=i=>{const {c,r}=coord(i);return{x:X0+(c+.5)*SIZE,y:Y0+(r+.5)*SIZE};};
   const patterns=['H','L','T','四角','コ'];
   const commandBasement=commandFacility&&number===2;
+  const propScaleY=commandFacility?1.75*INDOOR_SCALE_X:INDOOR_SCALE_Y;
+  const cargoDepth=INDOOR_SCALE_Y/propScaleY;
   const pattern=commandBasement?'指揮室':laboratory?'外周':patterns[Math.floor(rng()*patterns.length)];
   const hall=new Set(),add=(c,r)=>hall.add(index(c,r));
   if(commandBasement){
@@ -422,7 +424,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null,second
     item.primaryAsset=!!(room&&slot===0);
     const labSize=laboratory?laboratoryPropSize(item.artKind):null;
     const ar=labSize?labSize.w/labSize.h:INDOOR_PROP_ASPECT[item.artKind];if(!ar)continue;
-    const maxW=item.w*INDOOR_SCALE_X,maxH=item.h*INDOOR_SCALE_Y;
+    const maxW=item.w*INDOOR_SCALE_X,maxH=item.h*propScaleY;
     let h=Math.min(maxH,maxW/ar),w=h*ar;
     if(item.artKind==='bed'){h=104;w=h*ar;}
     if(INDOOR_PROP_LENGTH[item.artKind]){h=INDOOR_PROP_LENGTH[item.artKind];w=h*ar;}
@@ -529,16 +531,18 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null,second
     if(count<=0)return false;
     const columns=zone==='hallway'||kind==='shellPallet'||kind==='crate'?1:2;
     const gap=kind==='shellPallet'?0:7;
-    const itemH=kind==='crate'?size/1.5/INDOOR_SCALE_Y:size;
+    const itemH=kind==='crate'?size/1.5/INDOOR_SCALE_Y:size/cargoDepth;
     const rows=Math.ceil(count/columns),width=columns*size+(columns-1)*gap,height=rows*itemH+(rows-1)*gap;
     const positions=zone==='hallway'
       ?hallCorners(width,height,14)
       :[[14,14],[SIZE-width-14,14],[14,SIZE-height-14],[SIZE-width-14,SIZE-height-14]];
     for(const [dx,dy] of positions){
+      const minY=commandFacility&&kind==='shellPallet'?4:10;
+      const startY=commandFacility&&kind==='shellPallet'?(SIZE-itemH)/2:dy;
       const items=Array.from({length:count},(_,i)=>({
-        x:xx+dx+(i%columns)*(size+gap),y:yy+dy+Math.floor(i/columns)*(itemH+gap),
+        x:xx+dx+(i%columns)*(size+gap),y:yy+startY+Math.floor(i/columns)*(itemH+gap),
         w:size,h:itemH,kind,zone,group:zone+'-'+groupId}));
-      if(dx<10||dy<10||dx+width>SIZE-10||dy+height>SIZE-10)continue;
+      if(dx<10||startY<minY||dx+width>SIZE-10||startY+height>SIZE-minY)continue;
       if(items.every(o=>isFree(o))){
         explosiveObjects.push(...items);return true;
       }
@@ -554,8 +558,9 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null,second
       if(machineryRooms.has(owner[cell])&&!allowMachinery)continue;
       const {c,r}=coord(cell),xx=X0+c*SIZE,yy=Y0+r*SIZE;
       for(const dx of [14,46])for(const dy of [14,46]){
-        const o={x:xx+dx,y:yy+dy,w:120,h:120,kind:'shellPallet',zone:'room',group:'room-shell-large'};
-        if(distance({x:o.x+60,y:o.y+60},stair)<98||
+        const h=120/cargoDepth,top=commandFacility?(SIZE-h)/2:dy;
+        const o={x:xx+dx,y:yy+top,w:120,h,kind:'shellPallet',zone:'room',group:'room-shell-large'};
+        if(distance({x:o.x+60,y:o.y+o.h/2},stair)<98||
            doorLanes.some(d=>overlap(o,d,5))||
            walls.some(w=>overlap(o,w,3))||
            explosiveObjects.some(v=>overlap(o,v,7)))continue;
@@ -1278,7 +1283,7 @@ function setupInfiltrationWorld(commandFacility=false){
     roadBands=indoorWorld.exits.map(exit=>({x:0,y:exit.y-160,w:WW,h:320,
       kind:'asphalt',lanes:4,indoorExtractionRoad:true}));
   }
-  indoorWorld.exterior=indoorGenerateExterior(entrance,indoorSeedRng(seeds[0]^0x7e31ac09));
+  indoorWorld.exterior=commandFacility?[]:indoorGenerateExterior(entrance,indoorSeedRng(seeds[0]^0x7e31ac09));
   if(roadBands.length)indoorWorld.exterior=indoorWorld.exterior.filter(o=>!roadBands.some(r=>
     o.x+o.w>r.x&&o.x<r.x+r.w&&o.y+o.h>r.y-12&&o.y<r.y+r.h+12));
   covers.push(...indoorWorld.exterior);
