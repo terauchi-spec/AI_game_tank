@@ -81,7 +81,7 @@ function introDialogueLines(){
   'なかなか良い名前ではないか',
   'その名にはじぬよう、一人前のこっそり兵士をめざすがよい',
   'ではゆけ！'+name+'よ',
-  'この戦場にその名をしらしめるのだ！'
+  '行き過ぎたサバイバルゲームを決着させるのだ！'
  ];
 }
 // Keyboard changes the visible viewport on iOS without shrinking the layout viewport.
