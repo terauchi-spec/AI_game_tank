@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.15.0903</title>
+<title>こっそり戦車大作戦 2026.11.15.0924</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -1027,7 +1027,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.15.0903',FILE_CREATED_AT='2026/11/15 09:03',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.15.0924',FILE_CREATED_AT='2026/11/15 09:24',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -3500,7 +3500,9 @@ function damageBase(amount,ix,iy,rr=20,multi=1,cause='player'){
  for(let i=0;i<hits;i++){
   const a=hits===1?0:(i/hits)*Math.PI*2+riverHash({x:ix,y:iy,w:rr,h:amount},i)*.7;
   const spread=hits===1?0:Math.min(rr*.32,12);
-  removed+=carveBaseFragments(ix+Math.cos(a)*spread,iy+Math.sin(a)*spread,baseR*(hits===1?1:.82));
+  const x=ix+Math.cos(a)*spread,y=iy+Math.sin(a)*spread,r=baseR*(hits===1?1:.82);
+  if(b.decisiveFortress)removed+=damageDecisiveFortressDrive(b,x,y,r);
+  removed+=carveBaseFragments(x,y,r);
  }
  burst(ix,iy,16,'#a89a74',180);shake=Math.max(shake,6);
  if(b.hp<=0){if(b.decisiveFortress&&scoreStats)scoreStats.objectiveProgress=1;sfx('objectiveDestroyed');b.deadAt=performance.now();if(state==='play')winSeq();}
@@ -9052,7 +9054,7 @@ function reportGameError(error){
 </script>
 <script src="js/road-trucks.js?v=2026.11.14.1728"></script>
 <script src="js/stage-progress.js?v=2026.11.12.2006"></script>
-<script src="js/decisive.js?v=2026.11.15.0903"></script>
+<script src="js/decisive.js?v=2026.11.15.0924"></script>
 <script src="js/frontline.js?v=2026.11.13.1834"></script>
 <script src="js/award-icons.js?v=2026.10.31.0807"></script>
 <script src="js/developer.js?v=2026.11.11.2308"></script>

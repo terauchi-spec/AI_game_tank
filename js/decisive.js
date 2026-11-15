@@ -380,7 +380,7 @@ function spawnDesertTownPatrols(zones){
 }
 function decisiveRectsOverlap(a,b,pad=0){return a.x<b.x+b.w+pad&&a.x+a.w+pad>b.x&&a.y<b.y+b.h+pad&&a.y+a.h+pad>b.y;}
 function createDecisiveFortress(locked){
- return {x:(WW-DECISIVE_FORTRESS_W)/2,y:DECISIVE_FORTRESS_Y,w:DECISIVE_FORTRESS_W,h:DECISIVE_FORTRESS_H,hp:90,maxHp:90,deadAt:0,decisiveFortress:true,decisiveLocked:locked};
+ return {x:(WW-DECISIVE_FORTRESS_W)/2,y:DECISIVE_FORTRESS_Y,w:DECISIVE_FORTRESS_W,h:DECISIVE_FORTRESS_H,hp:90,maxHp:90,deadAt:0,decisiveFortress:true,decisiveLocked:locked,driveDamage:[0,0]};
 }
 function createDecisiveFortressState(){
  return {fortressDir:1,fortressDepthT:5,fortressTargetY:DECISIVE_FORTRESS_Y,fortressCd:2,fortressTravel:0,fortressScan:0,
@@ -889,14 +889,48 @@ function decisiveFortressHits(b,x,y,r=0,originX=b.x,originY=b.y){
    }
   }
  }
- if(b.hp<=0)return false;
- const gearX=Math.min(Math.abs(lx-b.w*.052),Math.abs(lx-b.w*.948));
- if(gearX>53*b.w/1200+r)return false;
- for(const [height,width] of DECISIVE_FORTRESS_GEARS){
-  const limit=width*b.w/1200+r,dy=ly-b.h*height;
-  if(gearX*gearX+dy*dy<=limit*limit)return true;
+ return b.hp>0&&decisiveFortressDriveHits(b,lx,ly,r);
+}
+function decisiveFortressLink(b,x,y,side,i){
+ const [height,width]=DECISIVE_FORTRESS_GEARS[i],scale=b.w/600,size=width*scale;
+ const angle=(decisiveBattle?.fortressTravel||0)*2/size*(i%2?-1:1),pin=size*.24;
+ return {
+  from:{x:x+Math.cos(angle)*pin,y:y+b.h*height+Math.sin(angle)*pin},
+  to:{x:x-side*(i%2?14:5)*scale,y:y+b.h*DECISIVE_FORTRESS_GEARS[i+1][0]}
+ };
+}
+function decisiveFortressDriveHits(b,lx,ly,r,damage=false){
+ const gears=DECISIVE_FORTRESS_GEARS,scale=b.w/600;
+ let removed=0;
+ for(let sideIndex=0;sideIndex<2;sideIndex++){
+  const side=sideIndex*2-1,x=b.w*(.5+side*.448),dx=lx-x;
+  if(Math.abs(dx)>gears.at(-1)[1]*scale/2+r)continue;
+  const railX=x-side*10*scale,damaged=b.driveDamage?.[sideIndex]||0;
+  let hit=0;
+  for(let i=0;i<gears.length;i++){
+   const [height,width]=gears[i],y=b.h*height,radius=width*scale/2+r,dy=ly-y;
+   const gearBit=1<<(2*i),linkBit=gearBit<<1;
+   if(!(damaged&gearBit)&&dx*dx+dy*dy<=radius*radius)hit|=gearBit;
+   if(i<gears.length-1&&!(damaged&linkBit)){
+    const nextY=b.h*gears[i+1][0],pad=r+4*scale;
+    if(ly>=y-width*scale*.24-pad&&ly<=nextY+pad){
+     const {from,to}=decisiveFortressLink(b,x,0,side,i);
+     const railDy=Math.max(y-ly,ly-nextY,0);
+     const railHit=(lx-railX)**2+railDy**2<=(r+2.5*scale)**2;
+     if(railHit||pointSegDist(lx,ly,from,to)<=r+(i%2?2:4)*scale)hit|=linkBit;
+    }
+   }
+   if(hit&&!damage)return true;
+  }
+  if(hit){
+   (b.driveDamage??=[0,0])[sideIndex]=damaged|hit;
+   for(let bits=hit;bits;bits&=bits-1)removed++;
+  }
  }
- return false;
+ return damage?removed:false;
+}
+function damageDecisiveFortressDrive(b,x,y,r){
+ return decisiveFortressDriveHits(b,x-b.x,y-b.y,r,true);
 }
 function decisiveHeatHash(x,y){
  const hash=Math.imul(x+137,0x1f123bb5)^Math.imul(y+251,0x5f356495);
@@ -1132,29 +1166,34 @@ function drawDecisiveFortressDrive(b){
  const gear=COVER_IMG['decisive_fortress-gear'];
  if(decisiveFortressSpriteKey()!=='decisive_fortress-hull'||!assetOK(gear))return;
  const travel=decisiveBattle?.fortressTravel||0,scale=b.w/600;
- for(const side of [-1,1]){
-  const x=b.x+b.w*(.5+side*.448);
+ const gears=DECISIVE_FORTRESS_GEARS;
+ for(let sideIndex=0;sideIndex<2;sideIndex++){
+  const side=sideIndex*2-1,x=b.x+b.w*(.5+side*.448),railX=x-side*10*scale;
+  const damaged=b.driveDamage?.[sideIndex]||0;
   g.save();
-  for(let i=0;i<DECISIVE_FORTRESS_GEARS.length;i++){
-   const [height,width]=DECISIVE_FORTRESS_GEARS[i],size=width*scale,y=b.y+b.h*height;
+  for(let i=0;i<gears.length;i++){
+   if(damaged&(1<<(2*i)))continue;
+   const [height,width]=gears[i],size=width*scale,y=b.y+b.h*height;
    const angle=travel*2/size*(i%2?-1:1);
    g.save();g.translate(x,y);g.rotate(angle);g.drawImage(gear,-size/2,-size/2,size,size);g.restore();
   }
-  g.lineCap='round';
-  g.beginPath();g.moveTo(x-side*10*scale,b.y+b.h*DECISIVE_FORTRESS_GEARS[0][0]);
-  g.lineTo(x-side*10*scale,b.y+b.h*DECISIVE_FORTRESS_GEARS.at(-1)[0]);
+  g.lineCap='round';g.beginPath();
+  let connected=false;
+  for(let i=0;i<gears.length-1;i++){
+   if(damaged&(1<<(2*i+1))){connected=false;continue;}
+   if(!connected)g.moveTo(railX,b.y+b.h*gears[i][0]);
+   g.lineTo(railX,b.y+b.h*gears[i+1][0]);connected=true;
+  }
   g.strokeStyle='#45494a';g.lineWidth=5*scale;g.stroke();
   g.strokeStyle='#aaa190';g.lineWidth=2*scale;g.stroke();
-  for(let i=0;i<DECISIVE_FORTRESS_GEARS.length-1;i++){
-   const [height,width]=DECISIVE_FORTRESS_GEARS[i],size=width*scale,y=b.y+b.h*height;
-   const angle=travel*2/size*(i%2?-1:1),pin=size*.24;
-   const fromX=x+Math.cos(angle)*pin,fromY=y+Math.sin(angle)*pin;
-   const toX=x-side*(i%2?14:5)*scale,toY=b.y+b.h*DECISIVE_FORTRESS_GEARS[i+1][0];
-   g.beginPath();g.moveTo(fromX,fromY);g.lineTo(toX,toY);
+  for(let i=0;i<gears.length-1;i++){
+   if(damaged&(1<<(2*i+1)))continue;
+   const {from,to}=decisiveFortressLink(b,x,b.y,side,i);
+   g.beginPath();g.moveTo(from.x,from.y);g.lineTo(to.x,to.y);
    g.lineWidth=4*scale;g.strokeStyle='#332f2a';g.stroke();
    g.lineWidth=2*scale;g.strokeStyle='#b8b3a6';g.stroke();
    if(i%2===0){
-    g.beginPath();g.moveTo(toX,toY);g.lineTo((fromX+toX)/2,(fromY+toY)/2);
+    g.beginPath();g.moveTo(to.x,to.y);g.lineTo((from.x+to.x)/2,(from.y+to.y)/2);
     g.strokeStyle='#373535';g.lineWidth=8*scale;g.stroke();
     g.strokeStyle='#81715c';g.lineWidth=5*scale;g.stroke();
    }

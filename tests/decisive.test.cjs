@@ -593,6 +593,34 @@ test('fortress collision follows surviving hull and gears while the exposed deck
   return !!raster&&raster===baseDamageCanvas()&&assetOK(COVER_IMG['decisive_fortress-underlay']);
  })()`));
 });
+test('cannon hits remove side gears and cylinders from both rendering and collision',()=>{
+ const {run}=createGameEngine(root);
+ run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='移動要塞';reset(false)");
+ const countParts=()=>JSON.parse(run(`(()=>{
+  const im=COVER_IMG['decisive_fortress-gear'],drawImage=g.drawImage,stroke=g.stroke;
+  let gears=0,cylinders=0;
+  g.drawImage=image=>{if(image===im)gears++;};
+  g.stroke=()=>{if(g.strokeStyle==='#81715c')cylinders++;};
+  try{drawDecisiveFortressDrive(base);}finally{g.drawImage=drawImage;g.stroke=stroke;}
+  return JSON.stringify({gears,cylinders});
+ })()`));
+ assert.deepEqual(countParts(),{gears:16,cylinders:8});
+ run(`fire(base.x-40,base.y+base.h*.175,0,'p','c',760,500,1);update(.12)`);
+ assert.ok(run(`(base.driveDamage[0]&1)!==0&&base.driveDamage[1]===0&&
+  !circleHitsBase(base.x+base.w*.052,base.y+base.h*.175)&&circleHitsBase(base.x+base.w*.948,base.y+base.h*.175)`));
+ assert.equal(countParts().gears,15);
+ run(`(()=>{
+  const x=base.x+base.w*.948-10*base.w/600,y=base.y+base.h*.175+29;
+  if(!circleHitsBase(x,y))throw Error('expected right cylinder to collide');
+  fire(x,y,Math.PI,'p','c',760,500,1);update(1/60);
+ })()`);
+ assert.ok(run(`(base.driveDamage[1]&2)!==0&&
+  !circleHitsBase(base.x+base.w*.948-10*base.w/600,base.y+base.h*.175+29)&&base.hp<base.maxHp`));
+ assert.ok(countParts().cylinders<8);
+ run('reset(false)');
+ assert.ok(run('base.driveDamage.every(mask=>mask===0)'));
+ assert.deepEqual(countParts(),{gears:16,cylinders:8});
+});
 test('fortress heat is drawn as small warm tiles on the exposed armor edge',()=>{
  const {run}=createGameEngine(root);
  const calls=JSON.parse(run(`(()=>{
