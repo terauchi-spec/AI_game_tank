@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.15.2014</title>
+<title>こっそり戦車大作戦 2026.11.15.2021</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -916,8 +916,8 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 #stageScreen .stage-art{display:flex;align-items:center;justify-content:center;min-width:0;overflow:hidden;border:1px solid #ac936460;border-radius:3px;background:#242c1d}
 #stageScreen .stage-art img{display:block;width:100%;height:var(--stage-art-height);object-fit:contain;image-rendering:auto}
 /* Scale the image area while leaving its 1px frame intact. */
-#stageScreen .stage-card[aria-expanded="true"]:not([data-stage="areaDebug"]){--stage-art-column:calc(var(--stage-art-width) * 1.5 - 1px)}
-#stageScreen .stage-card[aria-expanded="true"] .stage-art img{height:calc(var(--stage-art-height) * 1.5)}
+#stageScreen .stage-card[aria-expanded="true"]:not([data-stage="areaDebug"]){--stage-art-expanded-scale:1.65;--stage-art-column:calc((var(--stage-art-width) - 2px) * var(--stage-art-expanded-scale) + 2px)}
+#stageScreen .stage-card[aria-expanded="true"]:not([data-stage="areaDebug"]) .stage-art img{height:calc(var(--stage-art-height) * var(--stage-art-expanded-scale))}
 @media(max-width:580px){
  #stageScreen .stage-options{gap:7px;padding-top:18px}
  #stageScreen .stage-card{--stage-number-width:32px;--stage-art-width:90px;--stage-art-height:62px;gap:10px;padding:5px 7px 5px 9px;min-height:76px}
@@ -1027,7 +1027,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.15.2014',FILE_CREATED_AT='2026/11/15 20:14',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.15.2021',FILE_CREATED_AT='2026/11/15 20:21',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
