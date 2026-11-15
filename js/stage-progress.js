@@ -8,16 +8,16 @@ const STAGE_ORDER=[
  {id:'beginner',target:'軍事衛星施設',name:'破壊（初級）',image:'satellite'},
  {id:'indoorBeginner',target:'軍司令施設（南部）',name:'潜入（初級）',image:'infiltration_beginner'},
  {id:'frontBeginner',target:'軍需物資',name:'制圧（初級）',image:'supplies'},
- {id:'rescueBeginner',target:'森林と村',name:'救出（初級）',image:'forest',imagePath:'assets/terrain/forest.webp'},
+ {id:'rescueBeginner',target:'要人警護',name:'救出（初級）',image:'rescue_beginner_escort'},
  {id:'baseIntermediate',target:'軍司令施設（北部）',name:'破壊（中級）',image:'headquarters'},
  {id:'indoor',target:'軍需格納庫',name:'潜入（中級）',image:'infiltration_advanced'},
  {id:'frontIntermediate',target:'戦術アンテナ',name:'制圧（中級）',image:'antenna'},
- {id:'escapeTest',target:'ジャングル',name:'救出（中級）',image:'palm',imagePath:'assets/jungle/palm.webp'},
+ {id:'escapeTest',target:'ジャングル',name:'救出（中級）',image:'rescue_intermediate_jungle'},
  {id:'base',target:'戦略ミサイル基地',name:'破壊（上級）',image:'missile_base_scene'},
  LABORATORY_STAGE,
- {id:'front',target:'戦術アンテナ',name:'制圧（上級）',image:'antenna'},
- {id:'rescueAdvancedTest',target:'軍事バンカー',name:'救出（上級）',image:'infiltration_advanced'},
- {id:'decisive',target:'移動要塞',name:'決戦',image:'decisive'}
+ {id:'front',target:'組立式SRBM',name:'制圧（上級）',image:'front_advanced_srbm'},
+ {id:'rescueAdvancedTest',target:'軍事バンカー',name:'救出（上級）',image:'rescue_advanced_bunker'},
+ {id:'decisive',target:'機動要塞',name:'決戦',image:'decisive_mobile_fortress'}
 ];
 const PRE_BEGINNER_RESCUE_STAGE_ORDER=STAGE_ORDER.filter(stage=>stage.id!=='rescueBeginner');
 const PRE_RESCUE_STAGE_ORDER=PRE_BEGINNER_RESCUE_STAGE_ORDER.filter(stage=>stage.id!=='escapeTest'&&stage.id!=='rescueAdvancedTest');

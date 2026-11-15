@@ -70,9 +70,31 @@ test('fixed menu, area debug navigation and removed skill toggle are wired to th
 
 test('decisive appears with its artwork and deploys in developer all-stage selection without granting normal progression',()=>{
  const c=harness(),{buttons,nodes}=cards(c),card=buttons.find(b=>b.dataset.stage==='decisive');c.renderStageLocks();assert.equal(card.disabled,true);assert.equal(card.classList['stage-concealed'],false);
- vm.runInContext('stageDebugAll=true',c);c.renderStageLocks();assert.equal(card.disabled,false);assert.equal(card.target.textContent,'移動要塞');assert.equal(card.classList['stage-concealed'],false);assert.equal(c.stageSelectable('decisive'),false);assert.equal(c.setSelectedStage('decisive'),true);assert.equal(nodes.stageDeploy.textContent,'決戦で出撃');
+ vm.runInContext('stageDebugAll=true',c);c.renderStageLocks();assert.equal(card.disabled,false);assert.equal(card.target.textContent,'機動要塞');assert.equal(card.classList['stage-concealed'],false);assert.equal(c.stageSelectable('decisive'),false);assert.equal(c.setSelectedStage('decisive'),true);assert.equal(nodes.stageDeploy.textContent,'決戦で出撃');
  Object.assign(c,{state:'stage',gameBuildQueued:false,skillDebugAll:false,selectedSkillId:'throw',skillMenuList:()=>[{id:'throw'}],selectSkillIndex:()=>true});assert.equal(c.deploySelectedStage(),true);assert.equal(c.stageMode,'decisive');assert.equal(c.frontlineOni,false);assert.equal(c.currentStageId(),'decisive');assert.equal(c.storage.size,0);
- vm.runInContext('stageDebugAll=false',c);c.renderStageLocks();assert.equal(card.disabled,true);assert.equal(card.classList['stage-concealed'],false);assert.equal(card.target.textContent,'移動要塞');assert.equal(nodes.stageDeploy.textContent,'破壊（初級）で出撃');
+ vm.runInContext('stageDebugAll=false',c);c.renderStageLocks();assert.equal(card.disabled,true);assert.equal(card.classList['stage-concealed'],false);assert.equal(card.target.textContent,'機動要塞');assert.equal(nodes.stageDeploy.textContent,'破壊（初級）で出撃');
+});
+test('the five new stage cards use their distinct artwork and exact target labels',()=>{
+ const c=harness(),{buttons}=cards(c),html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+ vm.runInContext('stageDebugAll=true',c);c.renderStageLocks();
+ const stages=vm.runInContext('STAGE_ORDER',c);
+ for(const [id,target,image] of [
+  ['rescueBeginner','要人警護','rescue_beginner_escort'],
+  ['escapeTest','ジャングル','rescue_intermediate_jungle'],
+  ['front','組立式SRBM','front_advanced_srbm'],
+  ['rescueAdvancedTest','軍事バンカー','rescue_advanced_bunker'],
+  ['decisive','機動要塞','decisive_mobile_fortress']
+ ]){
+  const src='assets/ui/stages/'+image+'.webp';
+  const card=html.split('\n').find(line=>line.includes('data-stage="'+id+'"'));
+  assert.ok(card.includes('<span class="stage-target">'+target+'</span>'));
+  assert.ok(card.includes('src="'+src+'"')&&card.includes('loading="lazy"'));
+  assert.equal(stages.find(stage=>stage.id===id).image,image);
+  assert.equal(buttons.find(button=>button.dataset.stage===id).target.textContent,target);
+  const bytes=fs.readFileSync(path.join(__dirname,'..',src));
+  assert.equal(bytes.toString('ascii',8,12),'WEBP');
+  assert.ok(bytes.length<55000);
+ }
 });
 test('Oni is absent from HTML and cannot be selected or deployed even with stale developer state',()=>{
  const c=harness();vm.runInContext('stageDebugAll=true',c);assert.equal(c.stageAvailableForSelection('frontOni'),false);assert.equal(c.setSelectedStage('frontOni'),false);Object.assign(c,{state:'stage',gameBuildQueued:false});vm.runInContext("selectedStageId='frontOni'",c);assert.equal(c.deploySelectedStage(),false);
