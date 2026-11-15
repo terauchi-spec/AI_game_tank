@@ -320,7 +320,7 @@ function drawGunTower(v,x,y,angle){
  }
  g.restore();
  const enemy=!!v.gunner,occupied=enemy||p?.tank===v||partner?.vehicle===v;
- const enemyAlpha=enemy?digEnemyAlpha()*(1-sandIntensity):1;
+ const enemyAlpha=enemy?digEnemyAlpha()*sandstormUnitOpacity():1;
  // Draw the gunner after the sprite so they are visible sitting in the cockpit.
  if(occupied){
   g.save();g.globalAlpha*=enemyAlpha;

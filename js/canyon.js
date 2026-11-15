@@ -190,7 +190,7 @@ function drawTumbleweeds(cx,cy){
   if(b.burnT>0){const t=performance.now()*.012+(b.burnSeed||0),cx=b.x,cy=b.y;g.save();g.globalCompositeOperation='lighter';for(let j=0;j<3;j++)flameBlob(cx+Math.sin(t+j*2.1)*b.r*.28,cy-b.r*.35+j*3,5+j%2*2,t+j*1.8,.68);g.restore();}
  }
 }
-function sandstormEnemyOpacity(){return 1-sandIntensity*(sandWeatherZone?.n==='砂漠街'?.2:1);}
+function sandstormUnitOpacity(){return Math.max(.1,1-.9*sandIntensity);}
 function sandstormSightScale(){return sandWeatherZone?.n==='砂漠街'?.75:.55;}
 function updateSandstorm(dt){
  const z=p&&zoneAt(p.y),town=z?.n==='砂漠街',arid=z?.n==='荒野'||town&&(z.desertTownStorm||sandWeatherZone===z);

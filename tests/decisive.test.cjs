@@ -765,12 +765,26 @@ test('desert town airdrops recur, deploy three white soldiers, and roll commande
  run('drop.remaining=.01;updateDesertTownEvents(.02);');
  assert.ok(run('drop.plane'));
 });
-test('town sandstorms preserve at least eighty percent enemy opacity',()=>{
- const {run}=start();
- run('sandIntensity=1;sandWeatherZone=ZONES[1];');
- assert.equal(run('sandstormEnemyOpacity()'),.8);
- run('sandWeatherZone={n:"荒野"};');
- assert.equal(run('sandstormEnemyOpacity()'),0);
+test('wilderness and town sandstorms keep the same minimum opacity for both sides',()=>{
+ const {run}=createGameEngine(root);
+ for(const name of ['砂漠街','荒野']){
+  run(`sandIntensity=1;sandWeatherZone={n:'${name}'};weather='sandstorm';`);
+  assert.equal(run('sandstormUnitOpacity()'),.1);
+  assert.equal(run('sniperViewRange()'),name==='荒野'?0:run('SNIPER_RANGE*.7'));
+  assert.ok(run(`(()=>{
+   const draw=soldier,seen=[],oldAlpha=g.globalAlpha,save=g.save,restore=g.restore,stack=[];
+   g.globalAlpha=1;soldier=()=>seen.push(g.globalAlpha);
+   g.save=()=>stack.push(g.globalAlpha);g.restore=()=>{g.globalAlpha=stack.pop();};
+   try{
+    drawAllyParachute({alive:true,chute:1,x:100,y:100,face:0},false);
+    drawAllyParachute({alive:true,chute:1,x:100,y:100,face:0},true);
+   }finally{soldier=draw;g.globalAlpha=oldAlpha;g.save=save;g.restore=restore;}
+   return seen.length===2&&seen.every(alpha=>alpha===.1);
+  })()`));
+  run('sandIntensity=.5');
+  assert.equal(run('sandstormUnitOpacity()'),.55);
+ }
+ run('sandIntensity=0');assert.equal(run('sandstormUnitOpacity()'),1);
 });
 test('an obstructed adobe exit stays closed and retries on its regular timer',()=>{
  const {run}=start(11);
