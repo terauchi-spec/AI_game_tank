@@ -769,7 +769,7 @@ test('wilderness and town sandstorms keep the same minimum opacity for both side
  const {run}=createGameEngine(root);
  for(const name of ['砂漠街','荒野']){
   run(`sandIntensity=1;sandWeatherZone={n:'${name}'};weather='sandstorm';`);
-  assert.equal(run('sandstormUnitOpacity()'),.15);
+  assert.equal(run('sandstormUnitOpacity()'),.2);
   assert.equal(run('sniperViewRange()'),name==='荒野'?0:run('SNIPER_RANGE*.7'));
   assert.ok(run(`(()=>{
    const draw=soldier,seen=[],oldAlpha=g.globalAlpha,save=g.save,restore=g.restore,stack=[];
@@ -779,10 +779,10 @@ test('wilderness and town sandstorms keep the same minimum opacity for both side
     drawAllyParachute({alive:true,chute:1,x:100,y:100,face:0},false);
     drawAllyParachute({alive:true,chute:1,x:100,y:100,face:0},true);
    }finally{soldier=draw;g.globalAlpha=oldAlpha;g.save=save;g.restore=restore;}
-   return seen.length===2&&seen.every(alpha=>alpha===.15);
+   return seen.length===2&&seen.every(alpha=>alpha===.2);
   })()`));
   run('sandIntensity=.5');
-  assert.equal(run('sandstormUnitOpacity()'),.575);
+  assert.ok(Math.abs(run('sandstormUnitOpacity()')-.6)<1e-12);
  }
  run('sandIntensity=0');assert.equal(run('sandstormUnitOpacity()'),1);
 });
