@@ -12,7 +12,7 @@ const STAGE_ORDER=[
  {id:'baseIntermediate',target:'軍司令施設（北部）',name:'破壊（中級）',image:'headquarters'},
  {id:'indoor',target:'軍需格納庫',name:'潜入（中級）',image:'infiltration_advanced'},
  {id:'frontIntermediate',target:'戦術アンテナ',name:'制圧（中級）',image:'antenna'},
- {id:'escapeTest',target:'ジャングル',name:'救出（中級）',image:'rescue_intermediate_trackless_jungle'},
+ {id:'escapeTest',target:'ジャングル',name:'救出（中級）',image:'rescue_intermediate_riverside'},
  {id:'base',target:'戦略ミサイル基地',name:'破壊（上級）',image:'missile_base_scene'},
  LABORATORY_STAGE,
  {id:'front',target:'組立式SRBM',name:'制圧（上級）',image:'front_advanced_srbm_reversed_tail'},
