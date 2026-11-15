@@ -67,3 +67,5 @@ These five 432 × 288 WebP thumbnails use the same elevated, hand-painted game e
 - `decisive_mobile_fortress.webp` uses `missile_base_scene.webp` for style and `assets/decisive/fortress-hull.webp` for appearance. The blue-gray tracked fortress has two circular roof turrets and a central command tower in an ochre desert.
 
 - `rescue_beginner_village.webp` uses `rescue_beginner_escort.webp` as the village and painting reference. Show the lane and weathered timber-and-stone houses at standing eye level, with filtered afternoon light and a forest beyond. Keep the village in focus, with no people or interface. This 432 × 288 WebP replaces the rescue beginner card artwork.
+
+- `rescue_intermediate_jungle_pov.webp` uses `rescue_intermediate_jungle.webp` for the painted rainforest and `rescue_beginner_village.webp` for its eye-level framing. Follow a muddy trail beside a shaded river, with buttress roots, hanging vines, palms, and filtered light. This 432 × 288 WebP replaces the rescue intermediate card artwork.
