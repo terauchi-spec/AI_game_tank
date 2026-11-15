@@ -139,7 +139,7 @@ test('developer mode shows all stage information independently of the unlock tog
  c.renderStageLocks();
  assert.ok(buttons.every(card=>!card.classList['stage-concealed']&&card.target.textContent!=='？'));
  assert.equal(normalFacility.disabled,true);
- assert.equal(decisive.hidden,false);
+ assert.ok(!decisive.hidden);
  vm.runInContext('stageDebugAll=true',c);
  c.renderStageLocks();
  assert.equal(normalFacility.disabled,false);
@@ -149,7 +149,8 @@ test('developer mode shows all stage information independently of the unlock tog
  assert.equal(normalFacility.disabled,true);
  assert.equal(normalFacility.target.textContent,'？');
  assert.equal(normalFacility.classList['stage-concealed'],true);
- assert.equal(decisive.hidden,true);
+ assert.ok(!decisive.hidden);
+ assert.equal(decisive.classList['stage-concealed'],true);
 });
 test('non-developers cannot bypass unlocks or select area debug and Oni even with stale all-stage flags',()=>{
  const c=harness();c.isDeveloperMode=()=>false;vm.runInContext('stageDebugAll=true',c);assert.equal(c.stageAvailableForSelection('beginner'),true);for(const id of ['front','areaDebug','frontOni','decisive'])assert.equal(c.stageAvailableForSelection(id),false,id);c.isDeveloperMode=()=>true;for(const id of ['front','areaDebug','decisive'])assert.equal(c.stageAvailableForSelection(id),true,id);assert.equal(c.stageAvailableForSelection('frontOni'),false);
@@ -169,16 +170,27 @@ test('v2 migration preserves old unlocked stages and records without fabricating
 });
 
 
-test('stage 13 is hidden and cannot deploy outside developer mode even with all clears',()=>{
- const c=harness(JSON.stringify({version:4,cleared:order,unlocked:order})),{buttons}=cards(c),card=buttons.find(b=>b.dataset.stage==='decisive');
- c.isDeveloperMode=()=>false;vm.runInContext('stageDebugAll=true',c);c.renderStageLocks();assert.equal(card.hidden,true);assert.equal(card.disabled,true);assert.equal(c.stageAvailableForSelection('decisive'),false);assert.equal(c.setSelectedStage('decisive'),false);
- Object.assign(c,{state:'stage',gameBuildQueued:false});vm.runInContext("selectedStageId='decisive'",c);assert.equal(c.deploySelectedStage(),false);
- c.isDeveloperMode=()=>true;c.renderStageLocks();assert.equal(card.hidden,false);assert.equal(c.stageAvailableForSelection('decisive'),true);
- c.isDeveloperMode=()=>false;c.renderStageLocks();assert.equal(card.hidden,true);assert.notEqual(c.currentStageId(),'decisive');
-});
-test('normal clearing of rescue advanced does not announce the developer-only stage',()=>{
- const c=harness(JSON.stringify({version:4,cleared:order.slice(0,-2),unlocked:[]}));c.isDeveloperMode=()=>false;
- assert.equal(clear(c,'rescueAdvancedTest').unlockedStage,undefined);assert.ok(c.readStageProgress().cleared.includes('rescueAdvancedTest'));assert.equal(c.stageAvailableForSelection('decisive'),false);
+test('decisive is visible in normal mode and unlocks after the first twelve stages',()=>{
+ const c=harness(JSON.stringify({version:5,cleared:order.slice(0,-2),unlocked:[]})),{buttons,nodes}=cards(c);
+ const card=buttons.find(b=>b.dataset.stage==='decisive');
+ c.isDeveloperMode=()=>false;
+ c.renderStageLocks();
+ assert.ok(!card.hidden);assert.equal(card.disabled,true);assert.equal(card.target.textContent,'？');
+ assert.equal(c.setSelectedStage('decisive'),false);
+ const result=clear(c,'rescueAdvancedTest');
+ assert.equal(result.unlockedStage,'decisive');
+ c.renderStageUnlock(result);
+ assert.match(nodes.resStageUnlockName.textContent,/決戦/);
+ assert.equal(nodes.resStageUnlockImage.src,'assets/ui/stages/decisive_geared_fortress.webp');
+ c.renderStageLocks();
+ assert.equal(card.disabled,false);assert.equal(card.target.textContent,'機動要塞');
+ assert.equal(c.setSelectedStage('decisive'),true);
+ Object.assign(c,{state:'stage',gameBuildQueued:false,selectedSkillId:'throw',skillMenuList:()=>[{id:'throw'}],selectSkillIndex:()=>true});
+ assert.equal(c.deploySelectedStage(),true);
+ assert.equal(c.currentStageId(),'decisive');
+ const restored=harness(c.storage.get('tankGameStageProgressV1'));
+ restored.isDeveloperMode=()=>false;
+ assert.equal(restored.stageAvailableForSelection('decisive'),true);
 });
 
 test('v3 campaign clears unlock both public rescue stages and preserve access to former stages',()=>{

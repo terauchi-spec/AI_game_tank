@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.15.2110</title>
+<title>こっそり戦車大作戦 2026.11.15.2122</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -712,7 +712,7 @@ body.success-open .mission-firework{animation:missionFireworkBurst 1250ms ease-o
 <li><strong>10 潜入（上級）：</strong>3階建ての先端科学研究所で各階の重要資料を回収して脱出します。</li>
 <li><strong>11 制圧（上級）：</strong>運搬用ロケットパーツのある3拠点を順に制圧します。</li>
 <li><strong>12 救出（上級）：</strong>軍事バンカーの地下2階で要人に接触し、1階屋外のEXITに護衛します。鍵の入手と赤い扉の解錠は任意です。要人とEXIT円内で5秒待つと脱出できます。</li>
-<li><strong>13 決戦（開発者モード）：</strong>砂漠街の最高指揮通信施設に潜入し、地下1階の大型コンピューターを設置爆弾3回で破壊します。施設を脱出したら、砂漠の移動要塞を破壊します。</li>
+<li><strong>13 決戦：</strong>砂漠街の最高指揮通信施設に潜入し、地下1階の大型コンピューターを設置爆弾3回で破壊します。施設を脱出したら、砂漠の移動要塞を破壊します。</li>
 </ol>
 <p><strong>潜入の共通ルール：</strong>資料の円内で回収を進めます。1人での回収は1か所につき8秒です。全資料を回収後、EXIT円内で5秒間待機すると脱出できます。</p>
 <p><strong>制圧の共通ルール：</strong>プレイヤーが地上で一度進入した拠点は、円内に行動可能な味方兵が1人以上いて、近くに敵がいなければ制圧が進みます。プレイヤー単独では進みません。参加者が1人なら48秒、2人なら24秒、3人なら16秒が目安です。気絶中・降下中の兵士は人数に含まれません。敵が円内に入るとゲージが水色からオレンジに変わります。敵が近くにいる間は制圧ゲージが徐々に戻ります。</p>
@@ -805,10 +805,10 @@ body.success-open .mission-firework{animation:missionFireworkBurst 1250ms ease-o
 <ul><li>天候は晴れと雨が切り替わります。雨は30秒間で、降り始めの約5秒は小雨から徐々に強まり、最後の約6秒は徐々に弱まります。画面の暗さ・雨粒・水しぶきも雨量に合わせて変化します。雨天のゲーム効果は雨の開始から終了まで適用されます。</li><li>雨天では敵の索敵距離が通常の75%、狙撃スコープの見通し距離が70%になります。</li><li>雨天では自然物への延焼が抑えられます。密林では雨と、雨量が約3倍で敵の索敵がさらに弱まるスコールが発生します。</li><li>荒野・砂漠街の砂嵐では、敵・味方の兵士は砂嵐が最も強いときも不透明度20%で表示されます。狙撃中も砂嵐が表示され、荒野ではスコープでの索敵範囲がゼロになります。</li><li>川の流れや泥などは、歩兵・車両の移動に影響します。泥は湿った土の濃淡、不規則な縁、小さな水たまりで表示されます。泥での移動速度は徒歩・兵士・猟犬が通常の30%、地上の乗り物（敵戦車・下車後の慣性走行を含む）が60%です。川では従来どおり30%です。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-score"><h2>10. 評価・スコア・称号</h2>
-<ul><li>クリアまたは失敗後の評価画面に、総合スコアと<strong>F〜Sの7段階ランク</strong>を表示します。</li><li>スコアは潜入・戦闘・任務達成・クリア時間などをもとに計算します。前線制圧では自分の撃破を中心に評価し、味方の撃破は上限付きの支援点として加算します。継続増援の大量撃破や安全な移動だけで得点が過度に伸びないよう補正します。救出は要人が到達した区画、未発見での護衛、救出時の残りライフ、決戦は指揮施設の破壊・脱出と移動要塞の損傷を評価します。開発者向けの決戦は称号の獲得対象外です。到達距離は出撃開始地点からの最大前進距離です。距離表示はすべてm単位です。</li><li>プレイスタイルを<strong>任務遂行／隠密／戦闘／爆破／機動／戦術／連携／生存</strong>の8軸（Lv0〜5）で評価します。Lvは評価点を四捨五入して判定し、Lv5には100点と高い成果が必要です。称号の距離・ポイントの目安は、丸めにより少し手前で到達する場合があります。任務遂行は自分の目標達成への貢献、隠密は未発見での接近・回収、戦闘は撃破数・武器効率・連撃、爆破は目標爆破・爆発撃破、機動は目標への新たな前進、戦術は誘導・防御・組み付き、連携は共同作戦・救助・共同撃破、生存は任務参加と無傷での生還を評価します。待機・同じ場所の往復・支援任せだけでは伸びません。</li><li><strong>マルチキル：</strong>撃破間隔4秒以内で続けて敵を撃破すること。<strong>ワンショットキル：</strong>同一攻撃で複数の敵を撃破すること。無線支援爆撃とその連鎖爆発は、マルチキル・ワンショットキルの対象外です。</li><li>スコアボードでは、総合・ステージ別の自己ベスト上位30件を確認できます。</li><li>称号の取得対象は公開中の12ステージです。称号は実績16種・複合実績4種・特殊実績4種・伝説級実績9種・神話級実績1種の全34種です。伝説級実績「全戦域の覇者」は公開中の12ステージすべてのクリア、神話級実績「戦場の神話」はほかの33種類すべての獲得が条件です。各軸の実績は、指定されたLv4以上またはLv5と個別の成果が条件です。複合実績は、明記された2軸ともLv5と個別の成果が必要です。8種類の伝説級実績は、対応するLv5の実績を累計3回獲得すると授与します。累積条件の伝説級・神話級称号は、初めて獲得した回だけ「今回の称号」の候補になります。タイトル画面の「称号・戦績」からコレクションと累計戦績を確認できます。</li></ul>
+<ul><li>クリアまたは失敗後の評価画面に、総合スコアと<strong>F〜Sの7段階ランク</strong>を表示します。</li><li>スコアは潜入・戦闘・任務達成・クリア時間などをもとに計算します。前線制圧では自分の撃破を中心に評価し、味方の撃破は上限付きの支援点として加算します。継続増援の大量撃破や安全な移動だけで得点が過度に伸びないよう補正します。救出は要人が到達した区画、未発見での護衛、救出時の残りライフ、決戦は指揮施設の破壊・脱出と移動要塞の損傷を評価します。到達距離は出撃開始地点からの最大前進距離です。距離表示はすべてm単位です。</li><li>プレイスタイルを<strong>任務遂行／隠密／戦闘／爆破／機動／戦術／連携／生存</strong>の8軸（Lv0〜5）で評価します。Lvは評価点を四捨五入して判定し、Lv5には100点と高い成果が必要です。称号の距離・ポイントの目安は、丸めにより少し手前で到達する場合があります。任務遂行は自分の目標達成への貢献、隠密は未発見での接近・回収、戦闘は撃破数・武器効率・連撃、爆破は目標爆破・爆発撃破、機動は目標への新たな前進、戦術は誘導・防御・組み付き、連携は共同作戦・救助・共同撃破、生存は任務参加と無傷での生還を評価します。待機・同じ場所の往復・支援任せだけでは伸びません。</li><li><strong>マルチキル：</strong>撃破間隔4秒以内で続けて敵を撃破すること。<strong>ワンショットキル：</strong>同一攻撃で複数の敵を撃破すること。無線支援爆撃とその連鎖爆発は、マルチキル・ワンショットキルの対象外です。</li><li>スコアボードでは、総合・ステージ別の自己ベスト上位30件を確認できます。</li><li>称号の取得対象は決戦を含む公開中の13ステージです。称号は実績16種・複合実績4種・特殊実績4種・伝説級実績9種・神話級実績1種の全34種です。伝説級実績「全戦域の覇者」は公開中の13ステージすべてのクリア、神話級実績「戦場の神話」はほかの33種類すべての獲得が条件です。各軸の実績は、指定されたLv4以上またはLv5と個別の成果が条件です。複合実績は、明記された2軸ともLv5と個別の成果が必要です。8種類の伝説級実績は、対応するLv5の実績を累計3回獲得すると授与します。累積条件の伝説級・神話級称号は、初めて獲得した回だけ「今回の称号」の候補になります。タイトル画面の「称号・戦績」からコレクションと累計戦績を確認できます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <section class="spec-section" id="spec-save"><h2>11. スキル解放・保存・デバッグ</h2>
-<ul><li>破壊・制圧・潜入・救出は、いずれも評価・実績保存の対象です。ステージは01から順番に、ひとつ前をクリアすると解放されます。</li><li>初期解放スキルは<strong>遠投</strong>。デバッグ使用の有無にかかわらず、クリアするたびに、新しいスキルが順番に1種類ずつ解放されます。</li><li>獲得した称号の種類数で二等兵から大将まで16段階の階級が上がり、全34種類を集めると大将になります。同じ称号を再獲得しても階級の集計は増えません。称号画面と評価画面で確認できます。</li><li>スキル解放・称号・ハイスコア・戦績などは、このブラウザ内に保存されます。</li><li>称号画面の「戦績」から保存データを初期化できます。初期化は取り消せません。</li><li>各デバッグ機能は開発者モード限定です。開発者モードではPキー（スマホは上部アイコン）で「無敵→無敵＋索敵解除→無敵＋戦闘機（燃料無限）→通常」を切り替え、描画診断ではAI・衝突等の更新を止め、最初の15秒はゲーム画面全体、次の15秒は背景だけを、同じ経路で自動スクロールします。終了後は無敵＋戦闘機に戻ります。Oキーで前方に戦車を出現、Lキーで巡回ルート表示を切り替えられます。スキル選択画面には全スキル表示、ステージ選択画面には全ステージ表示とエリアデバッグがあります。エリアデバッグのエリア選択画面で敵爆撃機をONにすると、30秒ごとに飛来し、50%の確率で味方戦闘機が迎撃します。エリアデバッグでは全エリアの遮蔽物・静止した敵のサンプルを確認でき、出発地点付近にガソリンと無線を配置しています。デバッグ用ガソリンは徒歩でも表示され、取得には乗車が必要です。通常ステージではデバッグ中も、ステージ・スキル解放、称号、ハイスコア、戦績が保存されます。</li></ul>
+<ul><li>破壊・制圧・潜入・救出・決戦は、いずれも評価・実績保存の対象です。ステージは01から順番に、ひとつ前をクリアすると解放されます。</li><li>初期解放スキルは<strong>遠投</strong>。デバッグ使用の有無にかかわらず、クリアするたびに、新しいスキルが順番に1種類ずつ解放されます。</li><li>獲得した称号の種類数で二等兵から大将まで16段階の階級が上がり、全34種類を集めると大将になります。同じ称号を再獲得しても階級の集計は増えません。称号画面と評価画面で確認できます。</li><li>スキル解放・称号・ハイスコア・戦績などは、このブラウザ内に保存されます。</li><li>称号画面の「戦績」から保存データを初期化できます。初期化は取り消せません。</li><li>各デバッグ機能は開発者モード限定です。開発者モードではPキー（スマホは上部アイコン）で「無敵→無敵＋索敵解除→無敵＋戦闘機（燃料無限）→通常」を切り替え、描画診断ではAI・衝突等の更新を止め、最初の15秒はゲーム画面全体、次の15秒は背景だけを、同じ経路で自動スクロールします。終了後は無敵＋戦闘機に戻ります。Oキーで前方に戦車を出現、Lキーで巡回ルート表示を切り替えられます。スキル選択画面には全スキル表示、ステージ選択画面には全ステージ表示とエリアデバッグがあります。エリアデバッグのエリア選択画面で敵爆撃機をONにすると、30秒ごとに飛来し、50%の確率で味方戦闘機が迎撃します。エリアデバッグでは全エリアの遮蔽物・静止した敵のサンプルを確認でき、出発地点付近にガソリンと無線を配置しています。デバッグ用ガソリンは徒歩でも表示され、取得には乗車が必要です。通常ステージではデバッグ中も、ステージ・スキル解放、称号、ハイスコア、戦績が保存されます。</li></ul>
 <a class="spec-top-link" href="#spec-toc">↑ 目次に戻る</a></section>
 <p class="spec-foot">仕様は Ver.<span id="specVersion"></span> 時点の内容です。ゲームの更新に伴い変更される場合があります。</p>
 </div></div>
@@ -1011,7 +1011,7 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 <button type="button" class="stage-card" data-stage="indoorLab"><span class="stage-number" aria-hidden="true">10</span><span class="stage-copy"><strong>潜入（上級）</strong><span class="stage-target">先端科学研究所</span></span><span class="stage-art"><img src="assets/ui/stages/laboratory_scene_white.webp" alt="" width="144" height="96" loading="lazy" decoding="async"></span><span class="stage-records" hidden><span class="stage-record-metrics"><span><small>最高スコア</small><b class="stage-record-score">—</b></span><span class="stage-record-rank-group"><small>最高ランク</small><span class="stage-record-rank-value"><img alt="" width="42" height="42" decoding="async"><b class="stage-record-rank">—</b></span></span><span><small>成功/出撃回数</small><b class="stage-record-count">0 / 0回</b></span></span><small class="stage-record-note"></small></span></button>
 <button type="button" class="stage-card" data-stage="front"><span class="stage-number" aria-hidden="true">11</span><span class="stage-copy"><strong>制圧（上級）</strong><span class="stage-target">組立式SRBM</span></span><span class="stage-art"><img src="assets/ui/stages/front_advanced_srbm_reversed_tail.webp" alt="" width="144" height="96" loading="lazy" decoding="async"></span><span class="stage-records" hidden><span class="stage-record-metrics"><span><small>最高スコア</small><b class="stage-record-score">—</b></span><span class="stage-record-rank-group"><small>最高ランク</small><span class="stage-record-rank-value"><img alt="" width="42" height="42" decoding="async"><b class="stage-record-rank">—</b></span></span><span><small>成功/出撃回数</small><b class="stage-record-count">0 / 0回</b></span></span><small class="stage-record-note"></small></span></button>
 <button type="button" class="stage-card" data-stage="rescueAdvancedTest"><span class="stage-number" aria-hidden="true">12</span><span class="stage-copy"><strong>救出（上級）</strong><span class="stage-target">軍事バンカー</span></span><span class="stage-art"><img src="assets/ui/stages/rescue_advanced_bunker.webp" alt="" width="144" height="96" loading="lazy" decoding="async"></span><span class="stage-records" hidden><span class="stage-record-metrics"><span><small>最高スコア</small><b class="stage-record-score">—</b></span><span class="stage-record-rank-group"><small>最高ランク</small><span class="stage-record-rank-value"><img alt="" width="42" height="42" decoding="async"><b class="stage-record-rank">—</b></span></span><span><small>成功/出撃回数</small><b class="stage-record-count">0 / 0回</b></span></span><small class="stage-record-note"></small></span></button>
-<button type="button" class="stage-card" data-stage="decisive" hidden><span class="stage-number" aria-hidden="true">13</span><span class="stage-copy"><strong>決戦</strong><span class="stage-target">機動要塞</span></span><span class="stage-art"><img src="assets/ui/stages/decisive_geared_fortress.webp" alt="" width="144" height="96" loading="lazy" decoding="async"></span><span class="stage-records" hidden><span class="stage-record-metrics"><span><small>最高スコア</small><b class="stage-record-score">—</b></span><span class="stage-record-rank-group"><small>最高ランク</small><span class="stage-record-rank-value"><img alt="" width="42" height="42" decoding="async"><b class="stage-record-rank">—</b></span></span><span><small>成功/出撃回数</small><b class="stage-record-count">0 / 0回</b></span></span><small class="stage-record-note"></small></span></button>
+<button type="button" class="stage-card" data-stage="decisive"><span class="stage-number" aria-hidden="true">13</span><span class="stage-copy"><strong>決戦</strong><span class="stage-target">機動要塞</span></span><span class="stage-art"><img src="assets/ui/stages/decisive_geared_fortress.webp" alt="" width="144" height="96" loading="lazy" decoding="async"></span><span class="stage-records" hidden><span class="stage-record-metrics"><span><small>最高スコア</small><b class="stage-record-score">—</b></span><span class="stage-record-rank-group"><small>最高ランク</small><span class="stage-record-rank-value"><img alt="" width="42" height="42" decoding="async"><b class="stage-record-rank">—</b></span></span><span><small>成功/出撃回数</small><b class="stage-record-count">0 / 0回</b></span></span><small class="stage-record-note"></small></span></button>
 <button type="button" class="stage-card" data-stage="areaDebug"><span class="stage-number" aria-hidden="true">EX</span><span class="stage-copy"><strong>エリアデバッグ</strong><span class="stage-target">エリアを選んで地形・遮蔽物を確認</span></span><span class="stage-art stage-debug-art" aria-hidden="true">⚙</span><span class="stage-records" hidden><span class="stage-record-metrics"><span><small>最高スコア</small><b class="stage-record-score">—</b></span><span class="stage-record-rank-group"><small>最高ランク</small><span class="stage-record-rank-value"><img alt="" width="42" height="42" decoding="async"><b class="stage-record-rank">—</b></span></span><span><small>成功/出撃回数</small><b class="stage-record-count">0 / 0回</b></span></span><small class="stage-record-note"></small></span></button>
 </div><footer class="sk-bottom stage-bottom"><button type="button" class="sk-toggle" id="stageDebugAll" aria-pressed="false">全ステージを表示</button><button type="button" class="sk-deploy" id="stageDeploy" disabled>ステージを選択してください</button></footer></div></div>
 <div id="missionHud" role="status"></div>
@@ -1030,7 +1030,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.15.2110',FILE_CREATED_AT='2026/11/15 21:10',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.15.2122',FILE_CREATED_AT='2026/11/15 21:22',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -8390,7 +8390,7 @@ const legendNames=['任務の覇者','幽影の覇者','戦場の覇王','爆炎
 const TITLE_LEGENDS=Object.freeze(TITLE_BASE.map(([axis],i)=>({id:'v3_legend_'+i,name:legendNames[i],from:'v3_single_'+i+'_elite',axis:i,flavor:axis+'を極め、幾度も戦果を重ねた伝説の兵士'})));
 const TITLE_LEGEND_REQUIRED=3;
 for(const t of TITLE_LEGENDS)TITLE_CATALOG.push({id:t.id,name:t.name,type:'伝説級実績',priority:650,note:'実績「'+TITLE_BASE[t.axis][2]+'」を累計'+TITLE_LEGEND_REQUIRED+'回獲得',legendFrom:t.from,axis:t.axis,threshold:5,evidence:'elite'});
-const TITLE_ALL_STAGES=Object.freeze({id:'v3_all_stages_clear',name:'全戦域の覇者',type:'伝説級実績',priority:700,note:'公開中の全12ステージをクリア（破壊・潜入・制圧の初級／中級／上級、救出の初級／中級／上級）',flavor:'すべての戦域で作戦を完遂した、歴戦の覇者',valid:(lv,s,r)=>allNormalStagesCleared(s,r)});
+const TITLE_ALL_STAGES=Object.freeze({id:'v3_all_stages_clear',name:'全戦域の覇者',type:'伝説級実績',priority:700,note:'公開中の全13ステージをクリア（破壊・潜入・制圧・救出の初級／中級／上級と決戦）',flavor:'すべての戦域で作戦を完遂した、歴戦の覇者',valid:(lv,s,r)=>allNormalStagesCleared(s,r)});
 TITLE_CATALOG.push(TITLE_ALL_STAGES);
 const TITLE_COLLECTION_TARGETS=Object.freeze(TITLE_CATALOG.map(t=>t.id));
 const TITLE_MYTHIC=Object.freeze({id:'v3_mythic_complete',name:'戦場の神話',type:'神話級実績',priority:900,collection:true,note:'ほかの称号33種類をすべて獲得',flavor:'あらゆる作戦を極めた者だけが辿り着く、神話の頂'});
@@ -8398,7 +8398,6 @@ TITLE_CATALOG.push(TITLE_MYTHIC);
 const TITLE_FLAVOR=Object.freeze({...Object.fromEntries(TITLE_LEGENDS.map(t=>[t.id,t.flavor])),[TITLE_ALL_STAGES.id]:TITLE_ALL_STAGES.flavor,[TITLE_MYTHIC.id]:TITLE_MYTHIC.flavor});
 // 旧コレクションの保存データは保持するが、表示・新規授与は厳選した33称号と全種獲得の神話級。
 function evaluateRunTitles(levels,metrics,s,r,archive=readTitleArchive()){
- if(s.stage==='decisive')return{primary:TITLE_FALLBACK,titles:[]};
  const eligible=TITLE_CATALOG.filter(t=>{
   if(t.legacy||t.collection)return false;
   // 直前までに2回以上獲得し、今回も対応するLv5の実績の条件を達成した場合に伝説級を授与。
@@ -8433,8 +8432,7 @@ function allNormalStagesCleared(s=null,r=null){
   const id=currentStageId();
   if(STAGE_ORDER.some(stage=>stage.id===id)&&stageSelectable(id,progress))cleared.add(id);
  }
- // Developer-only stages never prevent public collection completion.
- return STAGE_ORDER.filter(stage=>stage.id!=='decisive').every(stage=>cleared.has(stage.id));
+ return STAGE_ORDER.every(stage=>cleared.has(stage.id));
 }
 function readTitleArchive(){
  let archive={titles:{},medals:{},runs:0};
@@ -8479,8 +8477,6 @@ function recordRunAchievements(s){
  const result={primary:evals.primary.id,titles:evals.titles.map(v=>v.id),newTitles:[],repeatTitles:[],titleCounts:{},disabled:false};
  // 通常ステージはデバッグ使用時も保存する。終了判定のないエリアデバッグのみ対象外。
  if(areaDebugEnabled||s.laboratoryTest){result.disabled=true;s.awards=result;return;}
- // The unreleased decisive stage cannot earn titles or promote the career rank.
- if(s.stage==='decisive'){result.excluded=true;s.awards=result;return;}
  const stamp=new Date().toISOString();
  for(const t of evals.titles){
   const previous=archive.titles[t.id],count=titleAcquisitionCount(previous)+1;
@@ -8501,7 +8497,7 @@ function renderAwardResult(s){
  const titleById=new Map(TITLE_CATALOG.map(t=>[t.id,t]));
  const ids=[...(aw.titles||[])].filter(id=>id!==aw.primary).sort((a,b)=>Number((aw.newTitles||[]).includes(b))-Number((aw.newTitles||[]).includes(a)));
  el('resEarnedTitles').innerHTML=ids.map(id=>renderAwardChip(titleById.get(id),'title',(aw.newTitles||[]).includes(id))).join('')||'<span class="res-sub">ほかの称号の獲得なし</span>';
- el('resAwardNote').textContent=aw.excluded?'この作戦は称号の獲得対象外です':aw.disabled?(s.laboratoryTest?'追加テストのため保存されません':'エリアデバッグのため保存されません'):aw.saveFailed?'保存できませんでした。ブラウザの保存設定をご確認ください。':'初獲得は NEW! 表示。全'+TITLE_CATALOG.length+'種類の獲得条件・履歴は下の「称号」から確認できます。';
+ el('resAwardNote').textContent=aw.disabled?(s.laboratoryTest?'追加テストのため保存されません':'エリアデバッグのため保存されません'):aw.saveFailed?'保存できませんでした。ブラウザの保存設定をご確認ください。':'初獲得は NEW! 表示。全'+TITLE_CATALOG.length+'種類の獲得条件・履歴は下の「称号」から確認できます。';
 }
 let trophyTab='title';
 function renderTrophyArchive(){
@@ -9084,7 +9080,7 @@ function reportGameError(error){
 }
 </script>
 <script src="js/road-trucks.js?v=2026.11.14.1728"></script>
-<script src="js/stage-progress.js?v=2026.11.15.2014"></script>
+<script src="js/stage-progress.js?v=2026.11.15.2122"></script>
 <script src="js/decisive.js?v=2026.11.15.1117"></script>
 <script src="js/frontline.js?v=2026.11.13.1834"></script>
 <script src="js/award-icons.js?v=2026.10.31.0807"></script>

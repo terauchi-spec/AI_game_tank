@@ -30,19 +30,21 @@ test('multi-kill text describes the interval rule; eight kills over 27.3 seconds
  assert.match(h.run("TITLE_CATALOG.find(t=>t.id==='v3_chain').note"),/撃破間隔を4秒以内/);
  assert.equal(h.run('scoreStats.maxKillChain'),8);assert.equal(h.run("TITLE_CATALOG.find(t=>t.id==='v3_chain').valid([],scoreStats,{})"),true);
 });
-test('shadow-pair describes solo partner participation; unreleased decisive runs cannot earn titles',()=>{
+test('shadow-pair describes solo partner participation and infantry stays limited to destruction and control',()=>{
  const h=createGameEngine(root);
  assert.match(h.run("TITLE_CATALOG.find(t=>t.id==='v3_shadow_pair').note"),/相棒単独の回収も対象/);
  assert.equal(h.run("(()=>{const s=Object.assign(newScoreStats(),{stage:'indoor',documents:3,documentTotal:3,hiddenDocuments:3,partnerDocuments:3,partnerRescues:2,jointObjectiveSeconds:0});const r={cleared:true},m=resultMetrics(s,r);return evaluateRunTitles(m.map(resLevel),m,s,r,{titles:{}}).titles.some(t=>t.id==='v3_shadow_pair')})()"),true);
- assert.match(h.run("TITLE_CATALOG.find(t=>t.id==='v3_infantry').note"),/破壊／制圧/);assert.equal(h.run("TITLE_CATALOG.every(t=>!t.note.includes('決戦'))"),true);
+ assert.match(h.run("TITLE_CATALOG.find(t=>t.id==='v3_infantry').note"),/破壊／制圧/);assert.match(h.run('TITLE_ALL_STAGES.note'),/全13ステージ.*決戦/);
  assert.equal(h.run("TITLE_CATALOG.find(t=>t.id==='v3_infantry').valid([],Object.assign(newScoreStats(),{stage:'decisive',playerKills:10}),{cleared:true})"),false);
 });
 
-test('decisive results preserve previously earned titles and counters and never award a new title',()=>{
+test('decisive can award titles and preserves previous career records',()=>{
  const h=createGameEngine(root);
- h.run("localStorage.setItem(TITLE_ARCHIVE_KEY,JSON.stringify({titles:{v3_single_0_elite:{count:2,at:'old'}},medals:{},runs:3}));sampleRun=Object.assign(newScoreStats(),{stage:'decisive',objectiveDamage:1,objectiveProgress:1,playerKills:40,playerKillPoints:9000,maxProgress:12000,maxKillChain:10,final:{cleared:true,total:10000}});beforeArchive=JSON.stringify(readTitleArchive());recordRunAchievements(sampleRun);");
- assert.equal(h.run('sampleRun.awards.excluded'),true);assert.equal(h.run('sampleRun.awards.titles.length'),0);assert.equal(h.run('sampleRun.awards.newTitles.length'),0);assert.equal(h.run('JSON.stringify(readTitleArchive())===beforeArchive'),true);
- const result=h.run('evaluateRunTitles(Array(8).fill(5),Array(8).fill(100),sampleRun,sampleRun.final)');assert.equal(result.titles.length,0);assert.equal(result.primary.id,'unranked');
+ h.run("localStorage.setItem(TITLE_ARCHIVE_KEY,JSON.stringify({titles:{v3_single_0_elite:{count:2,at:'old'},v3_all_stages_clear:{count:1,at:'old'}},medals:{},runs:3}));sampleRun=Object.assign(newScoreStats(),{stage:'decisive',objectiveDamage:1,objectiveProgress:1,playerKills:40,playerKillPoints:9000,maxProgress:12000,maxKillChain:10,final:{cleared:true,total:10000}});recordRunAchievements(sampleRun);readBack=readTitleArchive();");
+ assert.equal(h.run("sampleRun.awards.newTitles.includes('v3_chain')"),true);
+ assert.equal(h.run("readBack.titles.v3_single_0_elite.at"),'old');
+ assert.equal(h.run("readBack.titles.v3_all_stages_clear.at"),'old');
+ assert.equal(h.run('readBack.runs'),4);
 });
 
 test('escort score and titles distinguish a quiet, intact rescue from a spotted or injured VIP',()=>{
