@@ -121,16 +121,16 @@ function placeEscapeBuildingSupplies(jungles){
   }
  }
 }
-// Place one of each existing support radio in the five jungle areas, once per run.
+// Place rescue radios within the playable route, once per run.
 function placeEscapeTestRadios(areas){
- radio=null;whiteRadio=null;
+ radio=null;whiteRadio=null;redRadio=null;
  const shuffled=areas.slice();
  for(let i=shuffled.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];}
- const place=(avoid)=>{
+ const place=(...avoid)=>{
   for(const z of shuffled){
    for(let i=0;i<240;i++){
     const q={x:65+R()*(WW-130),y:z.y1+110+R()*(z.y0-z.y1-220)};
-    if(avoid&&D(q,avoid)<120)continue;
+    if(avoid.some(pickup=>pickup&&D(q,pickup)<120))continue;
     if(!specialSpawnValid(q,12,60))continue;
     if(z.escapeRiver&&ov2({x:q.x-18,y:q.y-18,w:36,h:36},z.escapeRiver,20))continue;
     if(z.oasis&&oasisContains(z.oasis,q.x,q.y,28))continue;
@@ -139,9 +139,17 @@ function placeEscapeTestRadios(areas){
   }
   return null;
  };
- radio=place(null);
- whiteRadio=place(radio);
- if(!radio||!whiteRadio)console.warn('Escape radio placement incomplete');
+ if(rescueBeginner){
+  radio=place();
+  whiteRadio=place(radio);
+  if(!radio||!whiteRadio)console.warn('Escape radio placement incomplete');
+ }else{
+  const spawnGreen=R()<.5,spawnRed=R()<.5;
+  whiteRadio=place();
+  if(spawnGreen)radio=place(whiteRadio);
+  if(spawnRed)redRadio=place(whiteRadio,radio);
+  if(!whiteRadio)console.warn('Escape white radio spawn skipped: no safe separated location');
+ }
 }
 // Keep both independent rolls and original lake size. Reserve both feathered banks,
 // relocate the lake first, and move the river only if neither side has enough space.

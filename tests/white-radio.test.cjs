@@ -11,9 +11,57 @@ test('white radio rolls once per eligible sortie and uses normal spawn clearance
   assert.equal(h.run('!!whiteRadio'),['beginner','base','front'].includes(mode),mode);
  }
  h.run("stageMode='front';areaDebugEnabled=true");place(0);assert.equal(h.run('whiteRadio'),null);
- h.run('areaDebugEnabled=false');place(.5);assert.equal(h.run('whiteRadio'),null);
+ h.run('areaDebugEnabled=false;frontlineBeginner=true');place(.5);assert.equal(h.run('whiteRadio'),null);
 });
 
+test('white and red radios roll separately against the difficulty threshold',()=>{
+ const {run}=createGameEngine(root);
+ run(`p={x:480,y:9000};mission={northEdge:2400};specialSpawnZones=()=>[];
+  randomSpecialSpawn=(radius,accept)=>[{x:500,y:1300},{x:500,y:2460},{x:500,y:3100}].find(accept);`);
+ for(const [mode,variant,below,at] of [
+  ['beginner','',.49,.5],['front','frontlineBeginner=true',.49,.5],
+  ['base',"intermediateStageId='baseIntermediate'",.74,.75],
+  ['front',"intermediateStageId='frontIntermediate'",.74,.75],
+  ['base','',.999,null],['front','',.999,null]
+ ]){
+  run(`stageMode='${mode}';frontlineBeginner=false;intermediateStageId=null;${variant}`);
+  const place=(name,roll)=>run(`(function(R){return ${run(name+'.toString()')};})(()=>${roll})()`);
+  place('placeWhiteRadio',below);place('placeRedRadio',below);
+  assert.ok(run('whiteRadio&&redRadio&&D(whiteRadio,redRadio)>=420'));
+  if(mode==='front')assert.ok(run('whiteRadio.y>=2460&&redRadio.y>=2460'));
+  if(at!==null){
+   place('placeWhiteRadio',at);place('placeRedRadio',below);
+   assert.ok(run('!whiteRadio&&redRadio'));
+   place('placeWhiteRadio',below);place('placeRedRadio',at);
+   assert.ok(run('whiteRadio&&!redRadio'));
+  }
+ }
+});
+test('intermediate and advanced capture keep all generated radios beyond the north boundary',()=>{
+ const {run}=createGameEngine(root);
+ for(const stage of ['frontIntermediate',null]){
+  run(`stageMode='front';intermediateStageId=${JSON.stringify(stage)};reset(false)`);
+  assert.ok(run('radio&&[radio,whiteRadio,redRadio].every(q=>!q||q.y>=frontlineNorthEdge()+60)'));
+  if(!stage)assert.ok(run('whiteRadio&&redRadio'));
+ }
+});
+test('intermediate rescue always places white and rolls green and red independently in the jungle',()=>{
+ const {run}=createGameEngine(root);
+ run(`rescueBeginner=false;
+  const rescueRadioZone={n:'密林',y0:4000,y1:1600};
+  specialSpawnValid=()=>true;`);
+ const source=run('placeEscapeTestRadios.toString()');
+ for(const [green,red] of [[.49,.49],[.49,.5],[.5,.49],[.5,.5]]){
+  run(`(function(R){return ${source};})((()=>{
+   const values=[${green},${red},.2,.4,.5,.4,.8,.4];
+   return ()=>values.shift();
+  })())([rescueRadioZone])`);
+  assert.equal(run('!!whiteRadio'),true);
+  assert.equal(run('!!radio'),green<.5);
+  assert.equal(run('!!redRadio'),red<.5);
+  assert.ok(run('[whiteRadio,radio,redRadio].every(q=>!q||q.y>1600&&q.y<4000)'));
+ }
+});
 test('support pass drops one commander and two ordinary parachutists alongside existing support',()=>{
  for(const mode of ['base','front']){
   const h=createGameEngine(root);
