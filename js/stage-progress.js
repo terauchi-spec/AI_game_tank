@@ -17,7 +17,7 @@ const STAGE_ORDER=[
  LABORATORY_STAGE,
  {id:'front',target:'組立式SRBM',name:'制圧（上級）',image:'front_advanced_srbm_reversed_tail'},
  {id:'rescueAdvancedTest',target:'軍事バンカー',name:'救出（上級）',image:'rescue_advanced_bunker'},
- {id:'decisive',target:'機動要塞',name:'決戦',image:'decisive_mobile_fortress'}
+ {id:'decisive',target:'機動要塞',name:'決戦',image:'decisive_geared_fortress'}
 ];
 const PRE_BEGINNER_RESCUE_STAGE_ORDER=STAGE_ORDER.filter(stage=>stage.id!=='rescueBeginner');
 const PRE_RESCUE_STAGE_ORDER=PRE_BEGINNER_RESCUE_STAGE_ORDER.filter(stage=>stage.id!=='escapeTest'&&stage.id!=='rescueAdvancedTest');

@@ -83,7 +83,7 @@ test('the five new stage cards use their distinct artwork and exact target label
   ['escapeTest','ジャングル','rescue_intermediate_riverside'],
   ['front','組立式SRBM','front_advanced_srbm_reversed_tail'],
   ['rescueAdvancedTest','軍事バンカー','rescue_advanced_bunker'],
-  ['decisive','機動要塞','decisive_mobile_fortress']
+  ['decisive','機動要塞','decisive_geared_fortress']
  ]){
   const src='assets/ui/stages/'+image+'.webp';
   const card=html.split('\n').find(line=>line.includes('data-stage="'+id+'"'));
