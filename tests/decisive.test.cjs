@@ -505,7 +505,16 @@ test('red radio shares the tank transport outside Decisive and waits if support 
  assert.equal(run('redRadio.got'),false);
  run('reinforcementPass=null;collectRedRadio()');
  assert.ok(run('redRadio.got&&reinforcementPass.cargoFlight&&TYPES.includes(reinforcementPass.tankCargo.t)'));
- run('updateReinforcementPass(10);updateTankDropCargo(2.6)');
+ run('updateReinforcementPass(10)');
+ assert.ok(run(`(()=>{
+  const vehicle=drawVehicle,gradient=g.createLinearGradient,calls=[];
+  drawVehicle=v=>{if(v===tankDropCargo.vehicle)calls.push('tank');};
+  g.createLinearGradient=(...args)=>{calls.push('canopy');return gradient(...args);};
+  try{drawTankDrop(tankDropCargo.vehicle.x-W/2,tankDropCargo.vehicle.y-H/2);}
+  finally{drawVehicle=vehicle;g.createLinearGradient=gradient;}
+  return calls.join(',')==='tank,canopy';
+ })()`));
+ run('updateTankDropCargo(2.6)');
  assert.ok(run('cars.length===1&&cars[0].kind==="tank"&&cars[0].f===cars[0].t.fmax&&!tankDropCargo'));
  run('collectRedRadio()');
  assert.equal(run('reinforcementPass'),null);
