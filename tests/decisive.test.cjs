@@ -371,12 +371,13 @@ test('moving fortress yields to nearby units; bunker and fortress guns reuse exi
  run('var bunkerLayers=[];g.drawImage=(im)=>bunkerLayers.push(im.src);drawDecisiveCover(bunker);drawDecisiveCover({decisiveKind:"bunker",x:bunker.x,y:bunker.y,w:bunker.w,h:bunker.h});');
  assert.deepEqual(Array.from(run('bunkerLayers.map(src=>src.split("/").pop().split("?")[0])')),['bunker.webp','bunker-barrel.webp','bunker.webp']);
 });
-test('desert radios are rerolled on sortie and bombing radios stay outside the moving fortress approach',()=>{
+test('desert radios are rerolled on sortie and the last bombing radio is in front of the moving fortress',()=>{
  const {run}=start();
  const validate=`ZONES.slice(DECISIVE_DESERT_START).every(z=>{
   const [white,bomb]=z.decisiveRadios;
-  const approach=base.y+base.h+DECISIVE_FORTRESS_DEPTH+DECISIVE_FORTRESS_APPROACH;
-  return white?.white===true&&bomb?.white===false&&bomb.y>=approach+30&&D(white,bomb)>=80&&
+  const south=base.y+base.h+DECISIVE_FORTRESS_DEPTH;
+  const near=z!==ZONES.at(-1)||(bomb?.y>=south+60&&bomb.y<=south+DECISIVE_FORTRESS_APPROACH);
+  return white?.white===true&&bomb?.white===false&&near&&D(white,bomb)>=80&&
    z.decisiveRadios.every(q=>zoneAt(q.y)===z&&!hitsM(q.x,q.y,16)&&
     !cars.some(v=>D(v,q)<66)&&!items.some(item=>D(item,q)<44));
  })`;
@@ -387,6 +388,16 @@ test('desert radios are rerolled on sortie and bombing radios stay outside the m
  assert.ok(run(validate));
  assert.notEqual(coords(true),first[0]);
  assert.notEqual(coords(false),first[1]);
+});
+test('radio carpet bombing deals half damage to the fortress only',()=>{
+ const {run}=createGameEngine(root);
+ run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='移動要塞';reset(false)");
+ run("airBombBlast(base.x+base.w/2,base.y+base.h/2,'radio')");
+ assert.equal(run('base.hp'),88);
+ run("airBombBlast(base.x+base.w/2,base.y+base.h/2,'fighter')");
+ assert.equal(run('base.hp'),84);
+ run("selectedAreaDebug='敵司令本部';reset(false);airBombBlast(base.x+base.w/2,base.y+base.h/2,'radio')");
+ assert.equal(run('base.hp'),26);
 });
 test('decisive desert schedules both recurring air events',()=>{
  const {run}=start();
@@ -532,6 +543,22 @@ test('roof guns alternate and their marked arc lands at the original aim point',
  assert.equal(run('p.hp'),run('originalHp-.5'));
  assert.ok(run('fx.some(f=>f.max===125*1.3)'));
 });
+test('both roof guns can fire behind the fortress and the shell reuses its orange halo',()=>{
+ const {run}=createGameEngine(root);
+ run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='移動要塞';reset(false)");
+ run('p.x=base.x+base.w/2;p.y=base.y-60;decisiveBattle.roofCd=0;updateDecisiveRoofGuns(base,decisiveBattle,0)');
+ assert.ok(run("decisiveBattle.roofNext===1&&decisiveBattle.roofShell.targetY===p.y"));
+ assert.ok(run(`(()=>{
+  const raster=drawStaticRaster,visible=drawPointInView,glows=[];
+  drawPointInView=()=>true;
+  drawStaticRaster=(canvas,x,y,w,h)=>glows.push({canvas,w,h});
+  try{drawDecisiveRoofShell(0,0);drawDecisiveRoofShell(0,0);}
+  finally{drawStaticRaster=raster;drawPointInView=visible;}
+  return glows.length===2&&glows[0].canvas===glows[1].canvas&&glows[0].w===44&&glows[0].h===44;
+ })()`));
+ run('updateDecisiveRoofShell(decisiveBattle,DECISIVE_ARC_TIME);decisiveBattle.roofCd=0;updateDecisiveRoofGuns(base,decisiveBattle,2000)');
+ assert.ok(run("decisiveBattle.roofNext===0&&decisiveBattle.roofShell.targetY===p.y"));
+});
 test('fortress door opens, releases a single blue soldier and closes',()=>{
  const {run}=start();completeFacility(run);
  run(`p.x=base.x+base.w/2;p.y=base.y+base.h+300;humans=[];allies=[];etanks=[];cars=[];covers=[];objects=[];water=[];rebuildSpatialGrid();
@@ -593,7 +620,7 @@ test('fortress collision follows surviving hull and gears while the exposed deck
   return !!raster&&raster===baseDamageCanvas()&&assetOK(COVER_IMG['decisive_fortress-underlay']);
  })()`));
 });
-test('cannon hits remove side gears and cylinders from both rendering and collision',()=>{
+test('cannon hits remove side gears and cylinders from both rendering and collision without reducing fortress HP',()=>{
  const {run}=createGameEngine(root);
  run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='移動要塞';reset(false)");
  const countParts=()=>JSON.parse(run(`(()=>{
@@ -606,7 +633,7 @@ test('cannon hits remove side gears and cylinders from both rendering and collis
  })()`));
  assert.deepEqual(countParts(),{gears:16,cylinders:8});
  run(`fire(base.x-40,base.y+base.h*.175,0,'p','c',760,500,1);update(.12)`);
- assert.ok(run(`(base.driveDamage[0]&1)!==0&&base.driveDamage[1]===0&&
+ assert.ok(run(`(base.driveDamage[0]&1)!==0&&base.driveDamage[1]===0&&base.hp===base.maxHp&&
   !circleHitsBase(base.x+base.w*.052,base.y+base.h*.175)&&circleHitsBase(base.x+base.w*.948,base.y+base.h*.175)`));
  assert.equal(countParts().gears,15);
  run(`(()=>{
@@ -615,8 +642,10 @@ test('cannon hits remove side gears and cylinders from both rendering and collis
   fire(x,y,Math.PI,'p','c',760,500,1);update(1/60);
  })()`);
  assert.ok(run(`(base.driveDamage[1]&2)!==0&&
-  !circleHitsBase(base.x+base.w*.948-10*base.w/600,base.y+base.h*.175+29)&&base.hp<base.maxHp`));
+  !circleHitsBase(base.x+base.w*.948-10*base.w/600,base.y+base.h*.175+29)&&base.hp===base.maxHp`));
  assert.ok(countParts().cylinders<8);
+ run('cannonDamageBase(3,base.x+base.w/2,base.y+base.h/2,"player")');
+ assert.equal(run('base.hp'),87);
  run('reset(false)');
  assert.ok(run('base.driveDamage.every(mask=>mask===0)'));
  assert.deepEqual(countParts(),{gears:16,cylinders:8});

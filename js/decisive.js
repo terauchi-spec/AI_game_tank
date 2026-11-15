@@ -572,11 +572,11 @@ function placeDecisiveDesertSupplies(zone){
   }
  }
  zone.decisiveRadios=[];
- const maxY=zone.y0-60;
- // Leave room for collecting the pickup outside the fortress's full approach range.
- const bombRadioMinY=base.y+base.h+DECISIVE_FORTRESS_DEPTH+DECISIVE_FORTRESS_APPROACH+30;
+ const fortressSouth=base.y+base.h+DECISIVE_FORTRESS_DEPTH;
  for(const white of [true,false]){
-  const minY=Math.max(Math.max(0,zone.y1)+60,white?0:bombRadioMinY);
+  const nearFortress=!white&&zone===ZONES.at(-1);
+  const minY=nearFortress?fortressSouth+60:Math.max(0,zone.y1)+60;
+  const maxY=nearFortress?Math.min(zone.y0-60,fortressSouth+DECISIVE_FORTRESS_APPROACH):zone.y0-60;
   if(minY>maxY)continue;
   const valid=(x,y)=>clear(x,y,16)&&!zone.decisiveRadios.some(q=>D(q,{x,y})<80);
   let found=null;
@@ -874,6 +874,9 @@ function updateDecisiveBunkers(dt){
 function decisiveFortressHits(b,x,y,r=0,originX=b.x,originY=b.y){
  const lx=x-originX,ly=y-originY;
  if(lx+r<0||lx-r>=b.w||ly+r<0||ly-r>=b.h)return false;
+ return decisiveFortressHullHits(b,lx,ly,r)||b.hp>0&&decisiveFortressDriveHits(b,lx,ly,r);
+}
+function decisiveFortressHullHits(b,lx,ly,r){
  // The exposed lower deck is drawn beneath the surviving hull fragments.
  if(b.fragMask){
   if(facilitySpriteHits(b.x+lx,b.y+ly,r,DECISIVE_HULL_SPANS,120,80,1))return true;
@@ -889,7 +892,7 @@ function decisiveFortressHits(b,x,y,r=0,originX=b.x,originY=b.y){
    }
   }
  }
- return b.hp>0&&decisiveFortressDriveHits(b,lx,ly,r);
+ return false;
 }
 function decisiveFortressLink(b,x,y,side,i){
  const [height,width]=DECISIVE_FORTRESS_GEARS[i],scale=b.w/600,size=width*scale;
@@ -1046,8 +1049,8 @@ function updateDecisiveFortress(dt){
 function updateDecisiveRoofGuns(b,d,now){
  const intact=gun=>!b.fragMask||baseFragmentAliveAt(b.x+b.w*gun.x,b.y+b.h*gun.y);
  const firingIndex=d.roofCd<=0&&!d.roofShell?(intact(d.roofGuns[d.roofNext])?d.roofNext:1-d.roofNext):-1;
- const dx=p.x-(b.x+b.w/2),dy=p.y-(b.y+b.h);
- const target=dy>40&&Math.hypot(dx,dy)<850&&!(p.dig>0)&&debugMode<2?p:null;
+ const dx=p.x-(b.x+b.w/2),front=p.y-(b.y+b.h),rear=b.y-p.y;
+ const target=(front>40||rear>=0)&&Math.hypot(dx,Math.max(front,rear))<850&&!(p.dig>0)&&debugMode<2?p:null;
  for(let i=0;i<d.roofGuns.length;i++){
   const gun=d.roofGuns[i],x=b.x+b.w*gun.x,y=b.y+b.h*gun.y;
   if(!intact(gun))continue;
@@ -1117,6 +1120,8 @@ function updateDecisiveFortressDoor(b,d,dt){
  d.door={index,elapsed:0};d.doorCd=9;
  sfx('door',{x:b.x+b.w*DECISIVE_FORTRESS_DOORS[index],y:b.y+b.h});
 }
+let decisiveRoofShellGlow=null;
+const DECISIVE_ROOF_SHELL_GLOW_RADIUS=22;
 function drawDecisiveRoofShell(cx,cy){
  const shell=decisiveBattle?.roofShell;
  if(!shell||base?.hp<=0)return;
@@ -1126,7 +1131,18 @@ function drawDecisiveRoofShell(cx,cy){
   g.strokeStyle='rgba(255,168,77,.8)';g.lineWidth=2;g.beginPath();
   g.arc(targetX,targetY,DECISIVE_ARC_DAMAGE_RADIUS,0,Math.PI*2);g.stroke();
  }
- if(drawPointInView(px,py,cx,cy,15)){
+ const radius=DECISIVE_ROOF_SHELL_GLOW_RADIUS;
+ if(drawPointInView(px,py,cx,cy,radius)){
+  if(!decisiveRoofShellGlow){
+   const canvas=document.createElement('canvas');canvas.width=canvas.height=radius*2;
+   const ctx=gameCanvasContext(canvas),glow=ctx.createRadialGradient(radius,radius,2,radius,radius,radius);
+   glow.addColorStop(0,'rgba(255,163,53,.94)');
+   glow.addColorStop(.38,'rgba(255,113,27,.58)');
+   glow.addColorStop(.72,'rgba(255,83,16,.19)');
+   glow.addColorStop(1,'rgba(255,83,16,0)');
+   ctx.fillStyle=glow;ctx.fillRect(0,0,canvas.width,canvas.height);decisiveRoofShellGlow=canvas;
+  }
+  drawStaticRaster(decisiveRoofShellGlow,px-radius,py-radius,radius*2,radius*2);
   g.fillStyle='#ffe1a0';g.beginPath();g.ellipse(px,py,5,8,Math.atan2(targetY-y,targetX-x)-Math.PI/2,0,Math.PI*2);g.fill();
  }
 }
