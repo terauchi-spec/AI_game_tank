@@ -8,7 +8,7 @@ const STAGE_ORDER=[
  {id:'beginner',target:'軍事衛星施設',name:'破壊（初級）',image:'satellite'},
  {id:'indoorBeginner',target:'軍司令施設（南部）',name:'潜入（初級）',image:'infiltration_beginner'},
  {id:'frontBeginner',target:'軍需物資',name:'制圧（初級）',image:'supplies'},
- {id:'rescueBeginner',target:'要人警護',name:'救出（初級）',image:'rescue_beginner_escort'},
+ {id:'rescueBeginner',target:'要人警護',name:'救出（初級）',image:'rescue_beginner_village'},
  {id:'baseIntermediate',target:'軍司令施設（北部）',name:'破壊（中級）',image:'headquarters'},
  {id:'indoor',target:'軍需格納庫',name:'潜入（中級）',image:'infiltration_advanced'},
  {id:'frontIntermediate',target:'戦術アンテナ',name:'制圧（中級）',image:'antenna'},

@@ -65,3 +65,5 @@ These five 432 × 288 WebP thumbnails use the same elevated, hand-painted game e
 - `front_advanced_srbm.webp` uses `missile_base_scene.webp` for style and `assets/objectives/frontline_rocket_middle.webp` for appearance. Three separate exterior modules of one fictional missile sit in olive transport cradles.
 - `rescue_advanced_bunker.webp` uses `infiltration_advanced.webp` for style. A low concrete military bunker is built into a rocky, wooded hillside, with amber lighting on its approach.
 - `decisive_mobile_fortress.webp` uses `missile_base_scene.webp` for style and `assets/decisive/fortress-hull.webp` for appearance. The blue-gray tracked fortress has two circular roof turrets and a central command tower in an ochre desert.
+
+- `rescue_beginner_village.webp` uses `rescue_beginner_escort.webp` as the village and painting reference. Show the lane and weathered timber-and-stone houses at standing eye level, with filtered afternoon light and a forest beyond. Keep the village in focus, with no people or interface. This 432 × 288 WebP replaces the rescue beginner card artwork.
