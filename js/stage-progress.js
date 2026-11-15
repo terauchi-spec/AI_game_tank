@@ -15,7 +15,7 @@ const STAGE_ORDER=[
  {id:'escapeTest',target:'ジャングル',name:'救出（中級）',image:'rescue_intermediate_trackless_jungle'},
  {id:'base',target:'戦略ミサイル基地',name:'破壊（上級）',image:'missile_base_scene'},
  LABORATORY_STAGE,
- {id:'front',target:'組立式SRBM',name:'制圧（上級）',image:'front_advanced_srbm_modules'},
+ {id:'front',target:'組立式SRBM',name:'制圧（上級）',image:'front_advanced_srbm_perspective'},
  {id:'rescueAdvancedTest',target:'軍事バンカー',name:'救出（上級）',image:'rescue_advanced_bunker'},
  {id:'decisive',target:'機動要塞',name:'決戦',image:'decisive_mobile_fortress'}
 ];
