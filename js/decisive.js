@@ -75,6 +75,19 @@ const DECISIVE_SANDSTONE=[
   0x1ffffffe,0x0ffffffe,0x0ffffffe,0x07fffff8,0x01fffff0,0x007fffe0,0x001fff00,0x0007f000
  ]]
 ];
+const decisiveSandstoneTints=new WeakMap();
+function decisiveSandstoneImage(image){
+ let canvas=decisiveSandstoneTints.get(image);
+ if(canvas)return canvas;
+ canvas=document.createElement('canvas');canvas.width=image.naturalWidth;canvas.height=image.naturalHeight;
+ const ctx=gameCanvasContext(canvas);
+ ctx.drawImage(image,0,0);
+ // Blend in a little of the ground tile's sand color while preserving the rock's alpha.
+ ctx.globalCompositeOperation='source-atop';ctx.fillStyle='rgba(199,152,91,.22)';
+ ctx.fillRect(0,0,canvas.width,canvas.height);
+ decisiveSandstoneTints.set(image,canvas);
+ return canvas;
+}
 function isDecisiveFacility(){return stageMode==='indoor'&&decisiveBattle?.phase==='facility';}
 function isDecisiveStage(){return stageMode==='decisive'||isDecisiveFacility()||stageMode==='front'&&!!decisiveBattle;}
 function loadDecisiveAssets(){
