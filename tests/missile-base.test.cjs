@@ -55,7 +55,7 @@ test('forest objective retains timed reinforcements only in its own zone and whi
  h.run('humans=[];base.hp=0;baseSpawnT=0;updateHQSpawn(.1);');assert.equal(h.run('humans.length'),0);
 });
 
-test('each destruction objective keeps its ground shadow and caches its rubble without a deck',()=>{
+test('each destruction objective keeps the remaining building, rubble and ground shadow without a deck',()=>{
  for(const [id,key] of [['beginner','radio_facility'],['baseIntermediate','command_building_1'],['base','missile_base']]){
   const h=id==='beginner'?createGameEngine(root):stage(id);
   if(id==='beginner')h.run("stageMode='beginner';reset(false)");
@@ -63,12 +63,12 @@ test('each destruction objective keeps its ground shadow and caches its rubble w
   h.c.expectedArt=key;
   assert.ok(h.run(`(()=>{
    if(base.damageArt!==expectedArt||baseDamageCanvas()!==null)return false;
-   const rubble=COVER_IMG[expectedArt+'-rubble'];
+   const rubble=COVER_IMG[expectedArt+'-rubble'],roof=COVER_IMG[expectedArt];
    if(COVER_IMG[expectedArt+'-underlay']||!assetOK(rubble))return false;
    const create=gameCanvasContext,drawRaster=drawStaticRaster,events=[];
    gameCanvasContext=()=>new Proxy({
     rect(){events.push('rect');},clip(){events.push('clip');},
-    drawImage(im){events.push(im===rubble?'rubble':'roof');}
+    drawImage(im){events.push(im===rubble?'rubble':im===roof?'roof':'unexpected layer');}
    },{get:(o,k)=>o[k]??(()=>{})});
    try{
     carveBaseFragments(base.x+base.w/2,base.y+base.h/2,30);
@@ -78,10 +78,13 @@ test('each destruction objective keeps its ground shadow and caches its rubble w
        events.indexOf('roof')<=events.indexOf('rubble'))return false;
     events.length=0;base.hp=0;
     const destroyed=baseDamageCanvas();
-    if(destroyed===partial||destroyed!==baseDamageCanvas()||events.join(',')!=='rubble')return false;
+    if(destroyed===partial||destroyed!==baseDamageCanvas()||events[0]!=='rubble'||
+       events.filter(event=>event==='roof').length!==base.fragMask.reduce((n,tile)=>n+tile,0)||
+       events.includes('unexpected layer'))return false;
+    events.length=0;
     drawStaticRaster=(im,x,y)=>{if(x===base.x-14&&y===base.y-14*.45)events.push('shadow');};
     drawBuildingGroundMarks(base.x,base.y);
-    return events.join(',')==='rubble,shadow';
+    return events.join(',')==='shadow';
    }finally{gameCanvasContext=create;drawStaticRaster=drawRaster;}
   })()`),id);
  }
