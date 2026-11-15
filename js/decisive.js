@@ -902,56 +902,31 @@ function decisiveHeatHash(x,y){
  const hash=Math.imul(x+137,0x1f123bb5)^Math.imul(y+251,0x5f356495);
  return ((Math.imul(hash^(hash>>>16),0x45d9f3b)>>>0)&0xffff)/0xffff;
 }
-function decisiveHeatNoise(x,y){
- const i=Math.floor(x),j=Math.floor(y),u=x-i,v=y-j;
- const sx=u*u*(3-2*u),sy=v*v*(3-2*v);
- const a=decisiveHeatHash(i,j),b=decisiveHeatHash(i,j+1);
- const top=a+(decisiveHeatHash(i+1,j)-a)*sx;
- const bottom=b+(decisiveHeatHash(i+1,j+1)-b)*sx;
- return top+(bottom-top)*sy;
-}
+const DECISIVE_HEAT_COLORS=['#68271e','#843121','#a34323','#bc5126','#d46a29','#e58b36','#efb956'];
 function drawDecisiveFortressHeat(ctx,b,w,h){
- // Build the heat at reduced resolution when the cached damage artwork changes.
- const scale=3,width=Math.ceil(w/scale),height=Math.ceil(h/scale),field=new Float32Array(width*height);
  const {fragMask:mask,fragCols:cols,fragRows:rows,fragTile:tile}=b;
- let hasHeat=false;
- const spread=(x,y,seed)=>{
-  const cx=(x+(decisiveHeatHash(seed,3)-.5)*tile)/scale;
-  const cy=(y+(decisiveHeatHash(seed,7)-.5)*tile)/scale;
-  const radius=(20+decisiveHeatHash(seed,13)*25)/scale;
-  const strength=.55+decisiveHeatHash(seed,17)*.45;
-  const left=Math.max(0,Math.floor(cx-radius)),right=Math.min(width-1,Math.ceil(cx+radius));
-  const top=Math.max(0,Math.floor(cy-radius)),bottom=Math.min(height-1,Math.ceil(cy+radius));
-  hasHeat=true;
-  for(let py=top;py<=bottom;py++)for(let px=left;px<=right;px++){
-   const dx=px+.5-cx,dy=py+.5-cy,fade=1-(dx*dx+dy*dy)/(radius*radius);
-   if(fade<=0)continue;
-   const index=py*width+px;
-   field[index]=Math.max(field[index],strength*fade*fade);
-  }
- };
+ ctx.save();ctx.globalCompositeOperation='source-atop';ctx.globalAlpha=.88;
  for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
-  const index=row*cols+col,x=col*tile,y=row*tile;
-  if(col+1<cols&&mask[index]!==mask[index+1])spread(x+tile,y+tile*.5,index*2);
-  if(row+1<rows&&mask[index]!==mask[index+cols])spread(x+tile*.5,y+tile,index*2+1);
+  const index=row*cols+col;
+  if(!mask[index])continue;
+  const left=col>0&&!mask[index-1],right=col+1<cols&&!mask[index+1];
+  const top=row>0&&!mask[index-cols],bottom=row+1<rows&&!mask[index+cols];
+  if(!(left||right||top||bottom))continue;
+  const x=col*tile,y=row*tile,width=Math.min(tile,w-x),height=Math.min(tile,h-y);
+  const across=Math.ceil(width/3.5),down=Math.ceil(height/3.5);
+  // Small flat facets within the exposed edge of surviving armor.
+  for(let iy=0;iy<down;iy++)for(let ix=0;ix<across;ix++){
+   const depth=Math.min(left?ix:Infinity,right?across-1-ix:Infinity,top?iy:Infinity,bottom?down-1-iy:Infinity);
+   if(depth>1)continue;
+   const tone=decisiveHeatHash(col*4+ix,row*4+iy);
+   if(tone<(depth===0?.10:.36))continue;
+   const color=depth===0?(tone>.94?6:1+Math.floor(tone*5)):Math.floor(tone*4)-1;
+   const x0=Math.floor(ix*width/across),x1=Math.floor((ix+1)*width/across);
+   const y0=Math.floor(iy*height/down),y1=Math.floor((iy+1)*height/down);
+   ctx.fillStyle=DECISIVE_HEAT_COLORS[color];ctx.fillRect(x+x0,y+y0,x1-x0,y1-y0);
+  }
  }
- if(!hasHeat)return;
- const heat=document.createElement('canvas');heat.width=width;heat.height=height;
- const q=gameCanvasContext(heat),image=q.createImageData(width,height),pixels=image.data;
- for(let y=0;y<height;y++)for(let x=0;x<width;x++){
-  const index=y*width+x,spreadHeat=field[index];
-  if(spreadHeat<.015)continue;
-  const noise=.56*decisiveHeatNoise(x*.12,y*.12)+.30*decisiveHeatNoise(x*.30+17,y*.30)+.14*decisiveHeatNoise(x*.68,y*.68+23);
-  const heatLevel=spreadHeat*(.28+noise*.93);
-  const ember=Math.min(1,heatLevel*1.5),pixel=index*4;
-  pixels[pixel]=135+120*ember;
-  pixels[pixel+1]=27+145*ember*ember;
-  pixels[pixel+2]=16+58*ember*ember;
-  pixels[pixel+3]=heatLevel*156;
- }
- q.putImageData(image,0,0);
- // The heat can reach both hull and exposed deck while transparent edges stay clear.
- ctx.save();ctx.globalCompositeOperation='source-atop';ctx.drawImage(heat,0,0,w,h);ctx.restore();
+ ctx.restore();
 }
 function decisiveFortressSpriteKey(){
  return assetOK(COVER_IMG['decisive_fortress-hull'])?'decisive_fortress-hull':'decisive_fortress';
