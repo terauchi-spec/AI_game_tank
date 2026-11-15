@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.15.2214</title>
+<title>こっそり戦車大作戦 2026.11.15.2234</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -467,7 +467,7 @@ body.area-picker-open #pad,body.area-picker-open #resetBtn,body.area-picker-open
 .award-chip-label{min-width:0;overflow-wrap:anywhere}.award-new{color:#ffe3a0;white-space:nowrap}
 .res-title-name{display:flex;align-items:center;gap:12px;line-height:1.4;min-width:0}
 .res-title-name>span{min-width:0;overflow-wrap:anywhere}.res-title-name .award-icon{width:80px;height:80px;object-fit:contain}
-/* Keep title copy compact while the medal occupies the full right column. */
+/* Center the medal independently of the description height. */
 .trophy-card{display:grid;grid-template-columns:minmax(0,1fr) minmax(108px,40%);gap:12px;align-items:stretch}
 .trophy-card .tc-copy{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0}
 .trophy-card .tc-copy .tc-type,.trophy-card .tc-copy .tc-flavor,.trophy-card .tc-copy .tc-note{margin:0}
@@ -475,11 +475,10 @@ body.area-picker-open #pad,body.area-picker-open #resetBtn,body.area-picker-open
 .trophy-card .tc-copy .tc-flavor:empty{display:none}
 .trophy-card .tc-copy .tc-note{clear:none;white-space:pre-line;line-height:1.55;overflow-wrap:anywhere}
 .trophy-card .tc-copy .tc-state{margin-top:3px;line-height:1.5;max-width:100%}
-.trophy-card .tc-mark{position:relative;float:none;margin:0;min-width:0;min-height:152px;overflow:hidden;line-height:1}
-.trophy-card .tc-mark .award-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(.8925);width:150%;height:100%;max-width:none;object-fit:contain}
+.trophy-card .tc-mark{position:relative;inset:auto;display:grid;place-items:center;float:none;margin:0;min-width:0;min-height:152px;overflow:hidden;line-height:1}
+.trophy-card .tc-mark .award-icon{width:min(100%,136px);height:auto;aspect-ratio:1;object-fit:contain}
 .trophy-card.mythic{border-color:#e3b7f5;background:linear-gradient(135deg,#34243c,#193d39);box-shadow:inset 0 0 0 1px #e7cb8b}
 .trophy-card.mythic .tc-type,.trophy-card.mythic .tc-name{color:#ffe1fa}
-.trophy-card.mythic .tc-mark .award-icon{width:100%;height:100%}
 .res-award-chip.mythic{border-color:#e3b7f5;background:#49314d;color:#ffe4fa}
 .trophy-card.locked .award-icon{opacity:.65;filter:brightness(0)}
 @media(max-width:380px){.res-title-name{gap:8px;font-size:19px}.res-title-name .award-icon{width:60px;height:60px}.trophy-card{gap:9px;grid-template-columns:minmax(0,1fr) minmax(100px,40%)}}
@@ -1030,7 +1029,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.15.2214',FILE_CREATED_AT='2026/11/15 22:14',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.15.2234',FILE_CREATED_AT='2026/11/15 22:34',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
