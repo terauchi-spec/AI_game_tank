@@ -80,7 +80,7 @@ test('the five new stage cards use their distinct artwork and exact target label
  const stages=vm.runInContext('STAGE_ORDER',c);
  for(const [id,target,image] of [
   ['rescueBeginner','要人警護','rescue_beginner_village'],
-  ['escapeTest','ジャングル','rescue_intermediate_jungle_pov'],
+  ['escapeTest','ジャングル','rescue_intermediate_trackless_jungle'],
   ['front','組立式SRBM','front_advanced_srbm'],
   ['rescueAdvancedTest','軍事バンカー','rescue_advanced_bunker'],
   ['decisive','機動要塞','decisive_mobile_fortress']
