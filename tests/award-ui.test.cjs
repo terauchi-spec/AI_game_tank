@@ -8,6 +8,8 @@ function harness(){
  const storage=new Map();
  const c={document:{body:node(),getElementById:id=>{assert.ok(nodes.has(id),'removed/missing element '+id);return nodes.get(id)},createElement:node},localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)},areaDebugEnabled:false,skillDebugAll:false,debugMode:0,p:{y:1000},ZONES:[],stageMode:'base',STAGE_NAMES:{base:'破壊'},SK:[],highScoreData:{score:100},renderStageUnlock(){},distanceMeters:v=>Math.round(v/10),formatRunTime:v=>String(v),readSkillProgress:()=>({unlocked:[]}),loadHighScore:()=>({score:100,rank:'F'}),performance:{now:()=>0},requestAnimationFrame(){},matchMedia:()=>({matches:true}),sfx(){},rollSkillChoices(){},bombReq:false,cannonReq:false,interact:false,skillReq:false,trophyReturnToResult:false};
  vm.createContext(c);
+ const intro=fs.readFileSync(path.join(__dirname,'../js/intro.js'),'utf8');
+ vm.runInContext(intro.slice(0,intro.indexOf('function resetIntroName()')),c);
  // Use the production stage resolver so result artwork follows the selected difficulty.
  const stageProgress=fs.readFileSync(path.join(__dirname,'../js/stage-progress.js'),'utf8');
  vm.runInContext(stageProgress.slice(stageProgress.indexOf('let selectedStageId='),stageProgress.indexOf('function readStageProgress()')),c);
@@ -21,6 +23,16 @@ test('result opens, displays earned titles, visits 34-title collection and stats
  const c=harness();c.recordRunAchievements(c.scoreStats);c.syncResultScreen();assert.ok(c.document.body.classList.contains('result-open'));assert.match(c.nodes.get('resTitle').innerHTML,/完遂の達人|不屈の生還者/);assert.match(c.nodes.get('resDetail').innerHTML,/100%/);
  c.nodes.get('resHome').click();assert.ok(c.document.body.classList.contains('trophy-open'));assert.equal(c.nodes.get('trophyGrid').children.length,34);assert.equal(c.nodes.get('trophyBack').textContent,'評価画面');
  c.nodes.get('trophyTabStats').click();assert.equal(c.nodes.get('trophyStats').hidden,false);c.nodes.get('trophyTabTitles').click();assert.equal(c.nodes.get('trophyGrid').children.length,34);c.nodes.get('trophyBack').click();assert.ok(!c.document.body.classList.contains('trophy-open'));assert.ok(c.document.body.classList.contains('result-open'));
+});
+test('the registered name appears above the career rank in both trophy tabs',()=>{
+ const c=harness(),name=c.nodes.get('trophyPlayerName'),key=c.run('INTRO_NAME_KEY');
+ assert.ok(html.indexOf('id="trophyPlayerName"')<html.indexOf('id="trophyCareerRank"'));
+ c.openTrophyArchive();assert.equal(name.textContent,'');
+ c.storage.set(key,'コッソリ7');
+ c.openTrophyArchive();assert.equal(name.textContent,'コッソリ7');
+ c.nodes.get('trophyTabStats').click();assert.equal(name.textContent,'コッソリ7');
+ c.storage.delete(key);
+ c.nodes.get('trophyTabTitles').click();assert.equal(name.textContent,'');
 });
 test('legacy award data never inflates the visible 34 titles',()=>{
  const c=harness();c.storage.set(c.run('TITLE_ARCHIVE_KEY'),JSON.stringify({titles:{v2_single_1_elite:{count:8},v3_ghost_agent:{count:4}},medals:{untouched:{count:4}},runs:9}));c.openTrophyArchive();assert.equal(c.nodes.get('trophyGrid').children.length,34);assert.match(c.nodes.get('trophyOverview').innerHTML,/>0<\/strong> \/ 34/);
