@@ -1087,7 +1087,7 @@ function updateDecisiveRoofShell(d,dt){
  d.roofShell=null;
  const {targetX:x,targetY:y}=shell,r=DECISIVE_ARC_DAMAGE_RADIUS;
  sfx('shellExplosion',{x,y});cannonImpactFx(x,y,DECISIVE_ARC_BLAST_SCALE);
- cannonBlastPush(x,y,'e',3,DECISIVE_ARC_BLAST_SCALE);
+ cannonBlastPush(x,y,'e',0,DECISIVE_ARC_BLAST_SCALE,0);
  if(p.dig>0||debugInvincible||p.tank?.kind==='fighter'||Math.hypot(p.x-x,p.y-y)>=r)return;
  if(p.tank){
   const v=p.tank;

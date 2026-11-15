@@ -571,6 +571,23 @@ test('roof guns alternate and their marked arc lands at the original aim point',
  assert.equal(run('p.hp'),run('originalHp-.5'));
  assert.ok(run('fx.some(f=>f.max===125*1.3)'));
 });
+test('roof shells still knock infantry back but stun neither side nor tower gunners',()=>{
+ const {run}=createGameEngine(root);
+ run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='移動要塞';reset(false);stageMode='front'");
+ assert.ok(run(`(()=>{
+  const x=480,y=850,actor=(dx)=>({x:x+dx,y,alive:true,stun:0});
+  const enemy=actor(-100),ally=actor(100),gunner=actor(75),tower={kind:'tower',x:gunner.x,y,gunner};
+  humans=[enemy,gunner];allies=[ally];cars=[tower];gunner.gunTower=tower;
+  decisiveBattle.roofShell={targetX:x,targetY:y,elapsed:0};
+  updateDecisiveRoofShell(decisiveBattle,DECISIVE_ARC_TIME);
+  if(!enemy.blastAirT||!ally.blastAirT||enemy.blastLandStun||ally.blastLandStun||gunner.stun||tower.gunner!==gunner)return false;
+  updateBlastFlight(enemy,.5);updateBlastFlight(ally,.5);
+  if(enemy.stun||ally.stun)return false;
+  cannonBlastPush(x,y,'e');
+  updateBlastFlight(enemy,.5);updateBlastFlight(ally,.5);
+  return enemy.stun===5&&ally.stun===10&&gunner.stun===5;
+ })()`));
+});
 test('both roof guns can fire behind the fortress and the shell reuses its orange halo',()=>{
  const {run}=createGameEngine(root);
  run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='移動要塞';reset(false)");
