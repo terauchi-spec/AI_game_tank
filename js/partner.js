@@ -527,7 +527,10 @@ function drawPartner(){
   if(q.stunT>0)lab('★',q.x,q.y-42,'bold 18px system-ui','#ffd85a');
   return;
  }
- soldier(q.x,q.y,q.face,true,false,q.moving,false,'',true,'blue',q);
+ const stunned=q.stunT>0;
+ const drawn=stunned&&typeof drawStunnedEnemy==='function'&&drawStunnedEnemy(q.x,q.y,q.face+Math.PI/2,undefined,'ally');
+ if(!drawn)soldier(q.x,q.y,q.face,true,false,q.moving,false,'',true,'blue',q);
+ if(stunned){drawStunStars(q.x,q.y);return;}
  if(q.grappleT>0&&q.grappleTarget&&q.grappleTarget.alive){
   const h=q.grappleTarget,a=Math.atan2(h.y-q.y,h.x-q.x),k=1-q.grappleT/.45;
   g.save();g.strokeStyle='rgba(255,230,170,'+(1-k*.25)+')';g.lineWidth=3;g.beginPath();
@@ -538,12 +541,5 @@ function drawPartner(){
    g.lineTo(q.x-Math.cos(a)*20+Math.cos(a+1.57)*off,q.y-Math.sin(a)*20+Math.sin(a+1.57)*off);g.stroke();}
   g.restore();
  }
- if(q.stunT>0){
-  // Exactly the enemy soldier's rotating three-star stun graphic.
-  const tt=performance.now()*.006;g.fillStyle='#ffd85a';
-  for(let i=0;i<3;i++){const a=tt+i*2.094,x=q.x+Math.cos(a)*13,y=q.y-18+Math.sin(a)*5;
-   g.save();g.translate(x,y);g.rotate(a);g.beginPath();g.moveTo(0,-4);g.lineTo(2,-1);g.lineTo(5,0);
-   g.lineTo(2,1);g.lineTo(0,4);g.lineTo(-2,1);g.lineTo(-5,0);g.lineTo(-2,-1);g.closePath();g.fill();g.restore();
-  }
- }
+
 }

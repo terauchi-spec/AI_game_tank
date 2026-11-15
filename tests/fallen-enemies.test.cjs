@@ -111,6 +111,21 @@ test('reinforcement and Frontline ally stun selects olive supine and preserves t
  run("stageMode='front';allies[0].frontline=true;allies[0].stun=10;allies[0].x=p.x+50;updateAlly(1)");assert.equal(run('allies[0].stun'),9);
  run('allies[0].x=p.x;rescueFrontlineAlly(allies[0])');assert.equal(run('allies[0].stun'),0);assert.equal(run('fallenEnemies.length'),0);
 });
+test('an on-foot stunned companion uses the same supine art and stars as allied soldiers',()=>{
+ const {createGameEngine}=require('./helpers/game-engine.cjs'),{run}=createGameEngine(root,{seed:7});
+ assert.ok(run(`(()=>{
+  skill='partner';p={tank:null};
+  partner={x:100,y:200,face:.4,hp:3,stunT:2,down:false};
+  const arts=[],stars=[],standing=[];
+  drawStunnedEnemy=(...args)=>{arts.push(args);return true;};
+  drawStunStars=(...args)=>stars.push(args);
+  soldier=(...args)=>standing.push(args);
+  drawPartner();
+  if(arts.length!==1||arts[0][4]!=='ally'||arts[0][2]!==partner.face+Math.PI/2||stars.length!==1||standing.length)return false;
+  partner.stunT=0;drawPartner();
+  return arts.length===1&&stars.length===1&&standing.length===1;
+ })()`));
+});
 test('rocket defeats use allied sprites without kill credit; despawn leaves no reaction',()=>{
  const {createGameEngine}=require('./helpers/game-engine.cjs'),{run}=createGameEngine(root,{seed:7});
  run("stageMode='beginner';reset(false);humans=[];etanks=[];covers=[];objects=[];cars=[];clearFallenEnemies();allies=[{x:500,y:1000,alive:true}];commanderRocketBlast(500,1000)");

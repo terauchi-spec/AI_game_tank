@@ -208,6 +208,25 @@ test('the facility replaces the capture circle and A opens it only on foot at th
  assert.equal(run('scoreStats.stage'),'decisive');
  assert.equal(run('currentStageId()'),'decisive');
 });
+test('both wide command facility stairs leave room for the companion to exit the landing',()=>{
+ const {run}=start();
+ run("skill='partner';updatePartner(1/60)");
+ enterFacility(run);
+ for(const destination of [1,0]){
+  assert.ok(run(`(()=>{
+   const w=indoorWorld,f=w.floors[w.currentFloor],s=f.stair,b=indoorStairBounds(s,f.number);
+   if(b.w!==60||Math.abs(b.h-60*320/162)>.001)return false;
+   w.stairsCooldown=0;Object.assign(p,{x:s.x,y:b.y+b.h-18});updateMission(.016);
+   p.y=b.y+22;updateMission(.016);
+   updateIndoorStairTransition(.5);
+   if(w.currentFloor!==${destination})return false;
+   const next=w.floors[w.currentFloor],landing=indoorStairLanding(next),bounds=indoorStairBounds(next.stair,next.number);
+   if(partner.x!==landing.x+14||partner.y!==landing.y+12||hitsM(partner.x,partner.y,10))return false;
+   for(let y=partner.y;y<=bounds.y+bounds.h+12;y+=4)if(hitsM(partner.x,y,10))return false;
+   return true;
+  })()`));
+ }
+});
 test('the facility stairs, placed bomb and ground EXIT lead into the existing assault',()=>{
  const {run}=start();
  run('var originalScore=scoreStats,originalCovers=covers;scoreStats.playerKillPoints=400;p.hp=2');
@@ -291,7 +310,7 @@ test('command facility keeps both floor dimensions, a fixed central room and nin
  assert.ok(run(`(()=>{
   const w=indoorWorld,f=w.floors[0],north=f.openings.find(o=>o.side===-1);
   return north&&w.exits.length===1&&w.exit.x===north.x&&w.exit.y<f.footprint.y&&
-   !hitsM(north.x,north.y,8)&&indoorStairAsset(1)==='stairs_down'&&indoorStairAsset(2)==='stairs_up';
+   !hitsM(north.x,north.y,8)&&indoorStairAsset(1)==='stairs_down'&&indoorStairAsset(2)==='stairs_down';
  })()`));
  assert.deepEqual(Array.from(run(`(()=>{
   const originalArrow=drawFrontlineArrow,originalText=gm.fillText,calls=[],q=mission.computer;

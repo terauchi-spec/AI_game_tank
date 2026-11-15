@@ -1617,15 +1617,15 @@ function setupInfiltrationMission(){
 
 const INDOOR_STAIR_WIDTH=60;
 function indoorStairAsset(number){
-  const upstairs=indoorWorld?.commandFacility?number===2:number===1;
-  return upstairs?'stairs_up':'stairs_down';
+  // The command facility uses the wider flight on both floors. The arrow indicates direction.
+  return indoorWorld?.commandFacility||number!==1?'stairs_down':'stairs_up';
 }
 function indoorStairBounds(stair,number){
   // The lab shares one tall staircase on both floors. Its surrounding walls,
   // landing and sanctuary must follow that silhouette, not the military down stair.
   const laboratory=typeof isLaboratoryStage==='function'&&isLaboratoryStage();
   const up=indoorStairAsset(number)==='stairs_up';
-  const w=indoorWorld?.commandFacility&&up?40:INDOOR_STAIR_WIDTH;
+  const w=INDOOR_STAIR_WIDTH;
   const h=w*(laboratory?384/107:up?320/100:320/162);
   return{x:stair.x-w/2,y:stair.y-h/2,w,h};
 }
