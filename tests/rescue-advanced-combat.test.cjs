@@ -24,6 +24,52 @@ function setup(){
  return h;
 }
 
+test('entering the VIP circle starts the escort and plays the documents-complete sound once',()=>{
+ const h=setup();
+ h.run(`
+  globalThis.rescueSounds=[];globalThis.rescueArcs=[];
+  sfx=name=>rescueSounds.push(name);
+  drawEscapeVipSprite=()=>{};
+  g.arc=(x,y,r)=>rescueArcs.push([x,y,r]);
+  p.x=vip.x+51;p.y=vip.y;
+  updateRescueAdvancedMission(0);drawRescueAdvancedMission();
+ `);
+ assert.equal(h.run('vip.freed'),false);
+ assert.equal(h.run('rescueArcs.some(([x,y,r])=>x===vip.x&&y===vip.y&&r===50)'),true);
+ assert.equal(h.run("rescueSounds.includes('allDocuments')"),false);
+ h.run('p.x=vip.x+50;updateRescueAdvancedMission(0);');
+ assert.equal(h.run('vip.freed'),true);
+ assert.equal(h.run('indoorWorld.rescue.key.done'),false);
+ assert.equal(h.run('vip.followWait'),.6);
+ h.run('updateRescueAdvancedMission(0);rescueArcs.length=0;drawRescueAdvancedMission();');
+ assert.equal(h.run("rescueSounds.filter(name=>name==='allDocuments').length"),1);
+ assert.equal(h.run('rescueArcs.length'),0);
+});
+
+test('the locked rescue door shows a key only when the player touches it without the key',()=>{
+ const h=setup();
+ h.run(`
+  globalThis.cell=indoorWorld.rescue.door;
+  globalThis.keyHints=0;
+  drawRescueKeyIcon=()=>keyHints++;
+  const touchDoor=actor=>Object.assign(actor,{x:cell.x,y:cell.y});
+  touchDoor(guard);p.x=cell.x+100;p.y=cell.y+100;
+  updateInfiltrationDoors(.1);
+ `);
+ assert.equal(h.run('cell.rescueKeyHint'),false);
+ h.run('touchDoor(p);updateInfiltrationDoors(.1);drawInfiltrationOpenings(cell.x-100,cell.y-100);');
+ assert.equal(h.run('cell.rescueKeyHint'),true);
+ assert.equal(h.run('keyHints'),1);
+ assert.equal(h.run('cell.open'),0);
+ h.run('p.x+=100;p.y+=100;updateInfiltrationDoors(.1);drawInfiltrationOpenings(cell.x-100,cell.y-100);');
+ assert.equal(h.run('cell.rescueKeyHint'),false);
+ assert.equal(h.run('keyHints'),1);
+ h.run('touchDoor(p);indoorWorld.rescue.key.done=true;updateInfiltrationDoors(.1);drawInfiltrationOpenings(cell.x-100,cell.y-100);');
+ assert.equal(h.run('cell.rescueUnlocked'),true);
+ assert.ok(h.run('cell.open')>0);
+ assert.equal(h.run('keyHints'),1);
+});
+
 test('rescued VIP is confirmed, pursued, hit by enemy rifles and lost at zero life',()=>{
  const h=setup();
  h.tick(.8,'updateRescueVipGuardDetection(1/60)');

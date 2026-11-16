@@ -239,7 +239,7 @@ test('automatic doors keep 6px colliders while vertical artwork is 10 percent th
  const entities=[{x:450,y:400}],cover={noHit:false},door={...q,vertical:true,open:0,cover};
  const updater=new Function('indoorWorld','p','allies','partner','hound','indoorEndAllyCombat',
    'INDOOR_DOOR_THICKNESS','INDOOR_DOOR_SPEED','INDOOR_DOOR_WIDTH','INDOOR_SCALE_X','INDOOR_SCALE_Y',
-   extract('updateInfiltrationDoors')+'\nreturn updateInfiltrationDoors;')(
+   extract('indoorDoorTouches')+'\n'+extract('updateInfiltrationDoors')+'\nreturn updateInfiltrationDoors;')(
      {floors:[{doors:[door],guards:[]}]},entities[0],[],null,null,()=>{},thickness,5.2,84,1,1.75
    );
  updater(.2);assert.equal(cover.noHit,false,'stays shut away from the panel');

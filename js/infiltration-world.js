@@ -1456,6 +1456,8 @@ function indoorReplenishGuards(dt){
  }
 }
 
+const RESCUE_ADVANCED_VIP_RADIUS=50;
+
 function setupRescueAdvancedMission(){
  loadEscapeVipArtwork();
  const w=indoorWorld,basement=w.floors[2];
@@ -1467,7 +1469,7 @@ function setupRescueAdvancedMission(){
  const keyFloor=w.floors[Math.floor(R()*2)],keySource=keyFloor.rooms.find(q=>q.tiles?.length)||keyFloor.rooms[0];
  const keyPoint=keySource.tiles?.[0]||keySource;
  const key={x:keyPoint.x+keyPoint.w/2,y:keyPoint.y+keyPoint.h/2,floor:keyFloor.number,progress:0,done:false};
- w.rescue={vip:{...vipPoint,face:0,hp:3,moving:false,leaderX:p.x,leaderY:p.y,indoorFloor:3,freed:false},key,door,room};
+ w.rescue={vip:{...vipPoint,face:0,hp:3,moving:false,leaderX:p.x,leaderY:p.y,indoorFloor:3,freed:false},key,door};
  mission={index:0,progress:0,points:[],exit:w.exit,detected:false,current:null,alarm:0,escapeProgress:0,escapeExit:null,escapeComplete:false,rescueAdvanced:true};
  scoreStats.rescue=true;scoreStats.vipMaxHp=scoreStats.vipHp=w.rescue.vip.hp;
  say('救出作戦：鍵を入手し、地下2階の要人を救出して地上のEXITへ');
@@ -1484,8 +1486,9 @@ function updateRescueAdvancedMission(dt){
   r.key.progress=Math.min(INDOOR_ACQUIRE_SECONDS,r.key.progress+dt);
   if(r.key.progress>=INDOOR_ACQUIRE_SECONDS){r.key.done=true;sfx('document');say('牢屋の鍵を入手！ 赤い扉を開けられる');}
  }
- if(!vip.freed&&w.currentFloor===2&&!p.tank&&D(p,vip)<27){
-  vip.freed=true;vip.followWait=.6;vip.leaderX=p.x;vip.leaderY=p.y;say('要人を救出！ 地上のEXITへ向かえ');
+ if(!vip.freed&&w.currentFloor+1===vip.indoorFloor&&!p.tank&&D(p,vip)<=RESCUE_ADVANCED_VIP_RADIUS){
+  vip.freed=true;vip.followWait=.6;vip.leaderX=p.x;vip.leaderY=p.y;
+  sfx('allDocuments');say('要人を救出！ 地上のEXITへ向かえ');
  }
  if(vip.freed&&vip.hp>0&&w.currentFloor+1===vip.indoorFloor){
   vip.stunImmuneT=Math.max(0,(vip.stunImmuneT||0)-dt);
@@ -1592,20 +1595,15 @@ function updateRescueVipGuardDetection(dt){
  }
 }
 function drawRescueAdvancedMission(){
- const r=indoorWorld?.rescue;if(!r)return;
- const vip=r.vip;
- if(indoorWorld.currentFloor===2){
-  const room=r.room;g.save();g.strokeStyle='#89949c';g.lineWidth=3;
-  // Cell bars are visual overlays on the existing solid room walls.
-  for(let x=room.x+12;x<room.x+room.w-8;x+=20){
-   for(const y of [room.y+6,room.y+room.h-6]){
-    if(Math.hypot(x-r.door.x,y-r.door.y)<38)continue;
-    g.beginPath();g.moveTo(x,y-8);g.lineTo(x,y+8);g.stroke();
-   }
-  }
-  g.restore();
+ const vip=indoorWorld?.rescue?.vip;
+ if(!vip||vip.indoorFloor!==indoorWorld.currentFloor+1)return;
+ if(!vip.freed){
+  g.save();g.beginPath();g.arc(vip.x,vip.y,RESCUE_ADVANCED_VIP_RADIUS,0,Math.PI*2);
+  g.strokeStyle='rgba(15,20,17,.8)';g.lineWidth=6;g.stroke();
+  g.strokeStyle='#ffe1a0';g.lineWidth=3;g.stroke();g.restore();
  }
- if(vip.indoorFloor===indoorWorld.currentFloor+1){drawEscapeVipSprite(g,vip.x,vip.y,vip.face,vip.moving,vip);if(vip.stunT>0)drawStunStars(vip.x,vip.y);}
+ drawEscapeVipSprite(g,vip.x,vip.y,vip.face,vip.moving,vip);
+ if(vip.stunT>0)drawStunStars(vip.x,vip.y);
 }
 
 function setupInfiltrationMission(){
@@ -2740,6 +2738,11 @@ function updateInfiltrationGuardAI(h,dt){
  }
  return true;
 }
+function indoorDoorTouches(door,actor,half){
+  const perpendicular=door.vertical?Math.abs(actor.x-door.x):Math.abs(actor.y-door.y);
+  const along=door.vertical?Math.abs(actor.y-door.y):Math.abs(actor.x-door.x);
+  return perpendicular<=INDOOR_DOOR_THICKNESS/2+16&&along<=half+12;
+}
 function updateInfiltrationDoors(dt){
   if(!indoorWorld)return;
   // PC、味方、敵兵の誰でも近づけば自動で開く。離れたら自然に閉じる。
@@ -2755,6 +2758,7 @@ function updateInfiltrationDoors(dt){
     if(hound)players.push(hound);
     if(typeof enemyDogs!=='undefined')players.push(...enemyDogs.filter(d=>d.indoorFloor===floor.number));
     for(const door of floor.doors){
+      const half=INDOOR_DOOR_WIDTH/2*(door.vertical?INDOOR_SCALE_Y:INDOOR_SCALE_X);
       let near=false;
       for(const a of players){
         if(!a||a.alive===false||a.down||a.stun>0)continue;
@@ -2762,14 +2766,12 @@ function updateInfiltrationDoors(dt){
         if(a.indoorPost&&!a.st&&!(a.sus>0))continue;
         // 扉パネルの当たり判定近傍に触れたときだけ反応する。
         // 従来の半径140pxセンサーと違い、付近を通り過ぎても開かない。
-        const perpendicular=door.vertical?Math.abs(a.x-door.x):Math.abs(a.y-door.y);
-        const along=door.vertical?Math.abs(a.y-door.y):Math.abs(a.x-door.x);
-        const contact=INDOOR_DOOR_THICKNESS/2+16; // 同一厚みのパネル接触半径
-        const half=INDOOR_DOOR_WIDTH/2*(door.vertical?INDOOR_SCALE_Y:INDOOR_SCALE_X);
-        if(perpendicular<=contact&&along<=half+12){near=true;break;}
+        if(indoorDoorTouches(door,a,half)){near=true;break;}
       }
       if(door.rescueCell&&!door.rescueUnlocked){
-        if(near&&indoorWorld.rescue?.key.done&&Math.hypot(p.x-door.x,p.y-door.y)<48){
+        const hasKey=indoorWorld.rescue?.key.done;
+        door.rescueKeyHint=!hasKey&&floor.number===indoorWorld.currentFloor+1&&indoorDoorTouches(door,p,half);
+        if(near&&hasKey&&Math.hypot(p.x-door.x,p.y-door.y)<48){
           door.rescueUnlocked=true;say('鍵で牢屋の扉を解錠！');sfx('skill');
         }else near=false;
       }
@@ -3271,6 +3273,9 @@ function drawInfiltrationOpenings(cx,cy){
       }
       if(q.rescueCell){g.fillStyle=q.rescueUnlocked?'#58d9fa':'#ff4848';g.beginPath();g.arc(q.x,q.y-13,5,0,Math.PI*2);g.fill();}
       g.restore();
+      if(q.rescueKeyHint&&f.number===indoorWorld.currentFloor+1&&!q.rescueUnlocked&&!indoorWorld.rescue?.key.done){
+        drawRescueKeyIcon(g,q.x,q.y-(q.vertical?half:10)-23);
+      }
     }
   }
 }
@@ -3305,17 +3310,26 @@ function drawInfiltrationAlarmOverlay(){
   drawInfiltrationAlarmEyes();
  gm.restore();
 }
+function drawRescueKeyIcon(ctx,x,y){
+ ctx.save();ctx.translate(x,y);ctx.rotate(-Math.PI/4);
+ ctx.beginPath();ctx.arc(-7,0,6,0,Math.PI*2);
+ ctx.moveTo(-1,0);ctx.lineTo(13,0);ctx.lineTo(13,5);
+ ctx.moveTo(7,0);ctx.lineTo(7,4);
+ ctx.lineCap='round';ctx.lineJoin='round';
+ ctx.strokeStyle='#302815';ctx.lineWidth=7;ctx.stroke();
+ ctx.strokeStyle='#ffdb68';ctx.lineWidth=4;ctx.stroke();ctx.restore();
+}
 function drawRescueAdvancedHud(el){
  const r=indoorWorld.rescue;if(!r)return;
  const floor=indoorWorld.currentFloor,labels=['1F','B1F','B2F'];
- const rescued=r.vip.freed,hasKey=r.key.done,unlocked=r.door.rescueUnlocked;
- const task=rescued?'要人と一緒に1F屋外のEXITへ':!hasKey?'B2Fの要人に接触（鍵は任意）':!unlocked?'B2Fの要人に接触（解錠は任意）':'B2Fの要人に接触';
+ const rescued=r.vip.freed,hasKey=r.key.done;
+ const task=rescued?'要人と一緒に1F屋外のEXITへ':hasKey?'B2Fの要人のサークルへ':'B2Fの要人のサークルへ（鍵は任意）';
  el.innerHTML='<b>救出（上級） '+labels[floor]+'</b><small>'+task+'</small>';
  gm.save();gm.setTransform(1,0,0,1,0,0);
  gm.textAlign='right';gm.font='bold 14px system-ui';gm.fillStyle='#e6e9d8';
  gm.fillText('エリア:'+labels[floor],W-12,34);
  if(rescued)for(let i=0;i<3;i++)drawHudHeart(W-83+i*28,77,r.vip.hp>i?1:0);
- if(hasKey){gm.fillStyle='#ffdb68';gm.font='bold 23px system-ui';gm.fillText('⚿',W-18,rescued?137:126);}
+ if(hasKey)drawRescueKeyIcon(gm,W-33,rescued?131:123);
  if(!rescued&&floor!==2){gm.fillStyle='#ffe1a0';gm.font='bold 26px system-ui';gm.fillText('→B2F',W-12,99);}
  else if(!rescued){const a=Math.atan2(r.vip.y-p.y,r.vip.x-p.x);gm.save();gm.translate(W-35,94);gm.rotate(a);gm.fillStyle='#ffe1a0';gm.beginPath();gm.moveTo(18,0);gm.lineTo(-10,-11);gm.lineTo(-4,0);gm.lineTo(-10,11);gm.closePath();gm.fill();gm.restore();}
  else {gm.fillStyle='#a9f3c0';gm.font='bold 21px system-ui';gm.fillText('→EXIT',W-12,110);}
@@ -3324,7 +3338,7 @@ function drawRescueAdvancedHud(el){
   gm.fillStyle='rgba(255,214,92,.16)';gm.strokeStyle='#ffdb68';gm.lineWidth=3;
   gm.beginPath();gm.arc(x,y,rad,0,Math.PI*2);gm.fill();gm.stroke();
   gm.lineWidth=7;gm.beginPath();gm.arc(x,y,rad,-Math.PI/2,-Math.PI/2+Math.PI*2*q.progress/INDOOR_ACQUIRE_SECONDS);gm.stroke();
-  gm.font='bold 22px system-ui';gm.textAlign='center';gm.fillStyle='#ffe69c';gm.fillText('⚿',x,y+7);
+  drawRescueKeyIcon(gm,x,y);
  }
  gm.restore();
  drawInfiltrationAlarmOverlay();
