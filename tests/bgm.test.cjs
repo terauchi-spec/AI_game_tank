@@ -26,14 +26,14 @@ test('success and failure results reset the theme and wait for outcome and resul
  const h=harness(),{c}=h;c.unlockGameBgm();await tick();h.sources[0].onended();
  for(const state of ['win','lose']){
   c.state='play';c.updateGameBgm();c.state=state;const result={name:'results'},outcome={name:state};c.gameSe.voices.add(result);c.gameSe.voices.add(outcome);c.beginResultGameBgm();const count=h.sources.length;c.updateGameBgm();assert.equal(h.sources.length,count);assert.equal(h.get('gameBgm.offset'),0);
-  c.gameSe.voices.delete(result);c.updateGameBgm();assert.equal(h.sources.length,count);c.gameSe.voices.delete(outcome);c.updateGameBgm();assert.equal(h.sources.length,count+1);assert.deepEqual(h.sources.at(-1).args,[0,0]);assert.equal(h.get('gameBgm.gain.gain.value'),.115);for(let i=0;i<10;i++)c.updateGameBgm();assert.equal(h.sources.length,count+1);h.sources.at(-1).onended();c.updateGameBgm();assert.equal(h.sources.length,count+1);
+  c.gameSe.voices.delete(result);c.updateGameBgm();assert.equal(h.sources.length,count);c.gameSe.voices.delete(outcome);c.updateGameBgm();assert.equal(h.sources.length,count+1);assert.deepEqual(h.sources.at(-1).args,[0,0]);assert.equal(h.get('gameBgm.gain.gain.value'),.1035);for(let i=0;i<10;i++)c.updateGameBgm();assert.equal(h.sources.length,count+1);h.sources.at(-1).onended();c.updateGameBgm();assert.equal(h.sources.length,count+1);
  }
  assert.equal(h.requests.length,1);assert.equal(h.decodes(),1);
 });
-test('an active result theme adjusts to menu volume when returning to title',async()=>{
+test('an active result theme keeps the same volume when returning to title',async()=>{
  const h=harness(),{c}=h;c.unlockGameBgm();await tick();
  c.state='win';c.beginResultGameBgm();c.updateGameBgm();
- assert.equal(h.get('gameBgm.gain.gain.value'),.115);
+ assert.equal(h.get('gameBgm.gain.gain.value'),.1035);
  const source=h.sources.at(-1);
  c.state='title';c.updateGameBgm();
  assert.equal(h.get('gameBgm.gain.gain.value'),.1035);

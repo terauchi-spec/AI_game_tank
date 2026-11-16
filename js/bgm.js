@@ -1,6 +1,6 @@
 // Use the SE AudioContext directly: no media element or separate audio session.
 const GAME_BGM_URL='assets/audio/bgm/stahlmarsch_zum_sieg.mp3?v=696964203a01';
-const gameBgm={buffer:null,pending:null,source:null,gain:null,volume:null,offset:0,startedAt:0,unlocked:false,finished:false,blocked:false,focused:true,resultActive:false,resultWaiting:false,resultRun:null};
+const gameBgm={buffer:null,pending:null,source:null,gain:null,offset:0,startedAt:0,unlocked:false,finished:false,blocked:false,focused:true,resultActive:false,resultWaiting:false,resultRun:null};
 function gameBgmContext(){return typeof audioCtx!=='undefined'?audioCtx:null;}
 function gameBgmAllowed(){return typeof state!=='undefined'&&(state==='title'||state==='leaderboard'||state==='developer'||state==='developerPass'||state==='skill'||state==='stage'||(gameBgm.resultActive&&(state==='win'||state==='lose')));}
 function gameBgmVisible(){return gameBgm.focused&&(typeof document==='undefined'||document.visibilityState!=='hidden');}
@@ -37,16 +37,12 @@ function updateGameBgm(){
  if(typeof state!=='undefined'&&state!=='win'&&state!=='lose')gameBgm.resultActive=false;
  if(gameBgm.resultWaiting&&!resultGameSePlaying())gameBgm.resultWaiting=false;
  if(!gameBgmWanted()){pauseGameBgm();return;}
- const volume=gameBgm.resultActive?.115:.1035;
- if(gameBgm.gain&&gameBgm.volume!==volume){
-  gameBgm.gain.gain.value=volume;gameBgm.volume=volume;
- }
  if(!gameBgm.unlocked||gameBgm.finished||gameBgm.pending||gameBgm.blocked||gameBgm.source)return;
  const context=gameBgmContext();if(!context||context.state!=='running')return;
  if(!gameBgm.buffer){loadGameBgm(context);return;}
  if(gameBgm.offset>=gameBgm.buffer.duration){gameBgm.finished=true;return;}
  try{
-  if(!gameBgm.gain){const gain=context.createGain();gain.gain.value=volume;gameBgm.volume=volume;gain.connect(typeof gameAudioDestination==='function'?gameAudioDestination(context):context.destination);gameBgm.gain=gain;}
+  if(!gameBgm.gain){const gain=context.createGain();gain.gain.value=.1035;gain.connect(typeof gameAudioDestination==='function'?gameAudioDestination(context):context.destination);gameBgm.gain=gain;}
   const source=context.createBufferSource();source.buffer=gameBgm.buffer;source.loop=false;source.connect(gameBgm.gain);
   source.onended=()=>{
    if(gameBgm.source!==source)return;
