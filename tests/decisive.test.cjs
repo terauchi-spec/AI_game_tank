@@ -592,6 +592,47 @@ test('roof guns alternate and their marked arc lands at the original aim point',
  assert.equal(run('p.hp'),run('originalHp-.5'));
  assert.ok(run('fx.some(f=>f.max===125*1.3)'));
 });
+test('both roof guns can target an unoccupied tank with any fuel or ammunition spent',()=>{
+ const {run}=createGameEngine(root);
+ run(`stageMode='base';areaDebugEnabled=true;selectedAreaDebug='移動要塞';reset(false);
+  p.x=base.x+base.w/2;p.y=base.y+base.h+500;p.dig=0;debugMode=0;
+  const tankType=TYPES[0],tank={kind:'tank',t:tankType,x:p.x+25,y:p.y-200,body:0};
+  const d=decisiveBattle;cars=[tank];d.roofNext=0;
+  const restoreTank=()=>Object.assign(tank,{f:tankType.fmax,c:tankType.cmax,v:tankType.vmax});
+  const aim=()=>{d.roofCd=0;d.roofShell=null;updateDecisiveRoofGuns(base,d,0);};
+  restoreTank();aim();`);
+ assert.equal(run('d.roofShell.targetX'),run('p.x'),'a nearer fully supplied parked tank is ignored');
+ run('p.y+=500;aim()');
+ assert.equal(run('d.roofShell'),null,'no shot with only a pristine tank in range');
+ for(const key of ['f','c','v']){
+  run(`restoreTank();tank.${key}--;aim();`);
+  assert.equal(run('d.roofShell.targetX'),run('tank.x'));
+ }
+ assert.equal(run('d.roofNext'),0,'both guns fired at the tank in succession');
+ run('partner={vehicle:tank};aim()');
+ assert.equal(run('d.roofShell'),null,'the parked-tank rule excludes occupied vehicles');
+ run('partner=null;tank.y=base.y-60;aim()');
+ assert.equal(run('d.roofShell.targetY'),run('tank.y'),'the rear firing area also applies to tanks');
+});
+
+test('a roof shell destroys parked tanks within its impact circle using the existing wreck art',()=>{
+ const {run}=createGameEngine(root);
+ run(`stageMode='base';areaDebugEnabled=true;selectedAreaDebug='移動要塞';reset(false);
+  p.y=base.y+base.h+1000;p.dig=0;debugMode=0;
+  const d=decisiveBattle,x=base.x+base.w/2,y=base.y+base.h+260,t=TYPES[0];
+  const parked=(dx,f=t.fmax)=>({kind:'tank',t,x:x+dx,y,body:0,f,c:t.cmax,v:t.vmax});
+  const target=parked(0,t.fmax-1),collateral=parked(40),outside=parked(53),truck={kind:'truck',x,y};
+  cars=[target,collateral,outside,truck];
+  const hp=p.hp,wreckCount=tankWrecks.length;
+  d.roofCd=0;updateDecisiveRoofGuns(base,d,0);
+  updateDecisiveRoofShell(d,DECISIVE_ARC_TIME/2);`);
+ assert.ok(run('cars.includes(target)&&tankWrecks.length===wreckCount'));
+ run('updateDecisiveRoofShell(d,DECISIVE_ARC_TIME/2)');
+ assert.ok(run('cars.length===2&&cars.includes(outside)&&cars.includes(truck)'));
+ assert.ok(run('tankWrecks.length===wreckCount+2&&tankWrecks.slice(wreckCount).every(w=>w.id===t.id)'));
+ assert.equal(run('p.hp'),run('hp'));
+});
+
 test('roof shells still knock infantry back but stun neither side nor tower gunners',()=>{
  const {run}=createGameEngine(root);
  run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='移動要塞';reset(false);stageMode='front'");

@@ -1059,11 +1059,31 @@ function updateDecisiveFortress(dt){
   fire(shot.x,shot.y,shot.angle,'e','c',420,1000,1.4,'enemyCannon');d.fortressCd=3;
  }
 }
+function decisiveUnoccupiedTank(v){
+ return v.kind==='tank'&&v.t.id!=='armored'&&!v.wreckSpawned&&
+  v!==p.tank&&v!==partner?.vehicle&&v!==partner?.passengerVehicle;
+}
+function decisiveRoofTargetDistance(b,actor){
+ const front=actor.y-(b.y+b.h),rear=b.y-actor.y;
+ return front>40||rear>=0?Math.hypot(actor.x-(b.x+b.w/2),Math.max(front,rear)):Infinity;
+}
+function decisiveRoofTarget(b){
+ let target=null,best=850;
+ if(!(p.dig>0)&&debugMode<2){
+  const distance=decisiveRoofTargetDistance(b,p);
+  if(distance<best){target=p;best=distance;}
+ }
+ for(const v of cars){
+  if(!decisiveUnoccupiedTank(v)||!(v.f<v.t.fmax||v.c<v.t.cmax||v.v<v.t.vmax))continue;
+  const distance=decisiveRoofTargetDistance(b,v);
+  if(distance<best){target=v;best=distance;}
+ }
+ return target;
+}
 function updateDecisiveRoofGuns(b,d,now){
  const intact=gun=>!b.fragMask||baseFragmentAliveAt(b.x+b.w*gun.x,b.y+b.h*gun.y);
  const firingIndex=d.roofCd<=0&&!d.roofShell?(intact(d.roofGuns[d.roofNext])?d.roofNext:1-d.roofNext):-1;
- const dx=p.x-(b.x+b.w/2),front=p.y-(b.y+b.h),rear=b.y-p.y;
- const target=(front>40||rear>=0)&&Math.hypot(dx,Math.max(front,rear))<850&&!(p.dig>0)&&debugMode<2?p:null;
+ const target=decisiveRoofTarget(b);
  for(let i=0;i<d.roofGuns.length;i++){
   const gun=d.roofGuns[i],x=b.x+b.w*gun.x,y=b.y+b.h*gun.y;
   if(!intact(gun))continue;
@@ -1088,6 +1108,12 @@ function updateDecisiveRoofShell(d,dt){
  const {targetX:x,targetY:y}=shell,r=DECISIVE_ARC_DAMAGE_RADIUS;
  sfx('shellExplosion',{x,y});cannonImpactFx(x,y,DECISIVE_ARC_BLAST_SCALE);
  cannonBlastPush(x,y,'e',0,DECISIVE_ARC_BLAST_SCALE,0);
+ for(let i=cars.length-1;i>=0;i--){
+  const v=cars[i];
+  if(!decisiveUnoccupiedTank(v)||Math.hypot(v.x-x,v.y-y)>=r)continue;
+  spawnVehicleWreck(v,v.x,v.y,v.body,v.ang??v.body,x,y);
+  cars.splice(i,1);sfx('vehicleDestroyed',v);
+ }
  if(p.dig>0||debugInvincible||p.tank?.kind==='fighter'||Math.hypot(p.x-x,p.y-y)>=r)return;
  if(p.tank){
   const v=p.tank;
