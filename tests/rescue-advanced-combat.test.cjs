@@ -30,14 +30,15 @@ test('entering the VIP circle starts the escort and plays the documents-complete
   globalThis.rescueSounds=[];globalThis.rescueArcs=[];
   sfx=name=>rescueSounds.push(name);
   drawEscapeVipSprite=()=>{};
-  g.arc=(x,y,r)=>rescueArcs.push([x,y,r]);
-  p.x=vip.x+51;p.y=vip.y;
+  g.arc=(x,y,r)=>rescueArcs.push([x,y,r,g.fillStyle,g.strokeStyle,g.lineWidth]);
+  p.x=vip.x+41;p.y=vip.y;
   updateRescueAdvancedMission(0);drawRescueAdvancedMission();
  `);
  assert.equal(h.run('vip.freed'),false);
- assert.equal(h.run('rescueArcs.some(([x,y,r])=>x===vip.x&&y===vip.y&&r===50)'),true);
+ assert.equal(h.run(`rescueArcs.some(([x,y,r,fill,outline,width])=>
+  x===vip.x&&y===vip.y&&r===40&&fill==='rgba(255,214,92,.16)'&&outline==='#ffdb68'&&width===3)`),true);
  assert.equal(h.run("rescueSounds.includes('allDocuments')"),false);
- h.run('p.x=vip.x+50;updateRescueAdvancedMission(0);');
+ h.run('p.x=vip.x+40;updateRescueAdvancedMission(0);');
  assert.equal(h.run('vip.freed'),true);
  assert.equal(h.run('indoorWorld.rescue.key.done'),false);
  assert.equal(h.run('vip.followWait'),.6);

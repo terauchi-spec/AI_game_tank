@@ -1456,7 +1456,7 @@ function indoorReplenishGuards(dt){
  }
 }
 
-const RESCUE_ADVANCED_VIP_RADIUS=50;
+const RESCUE_ADVANCED_VIP_RADIUS=40;
 
 function setupRescueAdvancedMission(){
  loadEscapeVipArtwork();
@@ -1598,9 +1598,7 @@ function drawRescueAdvancedMission(){
  const vip=indoorWorld?.rescue?.vip;
  if(!vip||vip.indoorFloor!==indoorWorld.currentFloor+1)return;
  if(!vip.freed){
-  g.save();g.beginPath();g.arc(vip.x,vip.y,RESCUE_ADVANCED_VIP_RADIUS,0,Math.PI*2);
-  g.strokeStyle='rgba(15,20,17,.8)';g.lineWidth=6;g.stroke();
-  g.strokeStyle='#ffe1a0';g.lineWidth=3;g.stroke();g.restore();
+  g.save();drawIndoorObjectiveCircle(g,vip.x,vip.y,RESCUE_ADVANCED_VIP_RADIUS);g.restore();
  }
  drawEscapeVipSprite(g,vip.x,vip.y,vip.face,vip.moving,vip);
  if(vip.stunT>0)drawStunStars(vip.x,vip.y);
@@ -3310,6 +3308,10 @@ function drawInfiltrationAlarmOverlay(){
   drawInfiltrationAlarmEyes();
  gm.restore();
 }
+function drawIndoorObjectiveCircle(ctx,x,y,radius,fill='rgba(255,214,92,.16)',outline='#ffdb68'){
+ ctx.fillStyle=fill;ctx.strokeStyle=outline;ctx.lineWidth=3;
+ ctx.beginPath();ctx.arc(x,y,radius,0,Math.PI*2);ctx.fill();ctx.stroke();
+}
 function drawRescueKeyIcon(ctx,x,y){
  ctx.save();ctx.translate(x,y);ctx.rotate(-Math.PI/4);
  ctx.beginPath();ctx.arc(-7,0,6,0,Math.PI*2);
@@ -3335,8 +3337,7 @@ function drawRescueAdvancedHud(el){
  else {gm.fillStyle='#a9f3c0';gm.font='bold 21px system-ui';gm.fillText('→EXIT',W-12,110);}
  if(!hasKey&&floor+1===r.key.floor){
   const q=r.key,x=q.x-camX,y=q.y-cam,rad=INDOOR_ACQUIRE_RADIUS;
-  gm.fillStyle='rgba(255,214,92,.16)';gm.strokeStyle='#ffdb68';gm.lineWidth=3;
-  gm.beginPath();gm.arc(x,y,rad,0,Math.PI*2);gm.fill();gm.stroke();
+  drawIndoorObjectiveCircle(gm,x,y,rad);
   gm.lineWidth=7;gm.beginPath();gm.arc(x,y,rad,-Math.PI/2,-Math.PI/2+Math.PI*2*q.progress/INDOOR_ACQUIRE_SECONDS);gm.stroke();
   drawRescueKeyIcon(gm,x,y);
  }
@@ -3381,9 +3382,8 @@ function drawInfiltrationMission(){
     if(x<-r-15||x>W+r+15||y<-r-15||y>H+r+15)continue;
     gm.save();
     if(q.done)gm.globalAlpha=Math.min(1,q.collectedT/.55);
-    gm.fillStyle=q.done?'rgba(80,220,130,.25)':'rgba(241,208,112,.12)';
-    gm.strokeStyle=q.done?'#79e8a2':'rgba(250,220,130,.65)';
-    gm.lineWidth=3;gm.beginPath();gm.arc(x,y,r,0,Math.PI*2);gm.fill();gm.stroke();
+    drawIndoorObjectiveCircle(gm,x,y,r,q.done?'rgba(80,220,130,.25)':'rgba(241,208,112,.12)',
+      q.done?'#79e8a2':'rgba(250,220,130,.65)');
     const ratio=Math.min(1,(q.progress||0)/INDOOR_ACQUIRE_SECONDS);
     gm.strokeStyle=q.done?'#79e8a2':'#ffdf83';gm.lineWidth=8;gm.lineCap='round';gm.beginPath();
     gm.arc(x,y,r,-Math.PI/2,-Math.PI/2+Math.PI*2*ratio);if(ratio>0)gm.stroke();
