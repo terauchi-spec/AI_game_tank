@@ -27,7 +27,6 @@
   "se_041_vehicle_board_exit": "d3d3e4f26657",
   "se_042_tank_movement_loop": "c66ba82d1935",
   "se_043_wheeled_vehicle_loop": "4a9788d09067",
-  "se_048_aircraft_flyby": "667ec0d2671f",
   "se_050_air_bomb_explosion": "6f114287d521",
   "se_051_air_raid_warning": "fef9bf6c1c83",
   "se_058_decoy_signal": "0424608dff9d",
@@ -63,5 +62,7 @@
   "se_jet flying": "9de941ee2dbf",
   "se_dog_letsgo": "acb624acf68f",
   "se_dog_growling_loop": "a4dd6f228257",
-  "se_sandstorm1": "0a6b5986c7ad"
+  "se_sandstorm1": "0a6b5986c7ad",
+  "se_Parachute": "9fb7efb62978",
+  "se_jumbo_jet": "b3163c241f38"
 }

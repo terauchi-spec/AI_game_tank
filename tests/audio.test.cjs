@@ -74,9 +74,9 @@ test('enemy tanks share one loop, use movement rather than turret rotation, and 
  c.state='results';c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),false);c.state='play';c.now+=120;for(const t of c.etanks)t.x+=5;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),false);
  c.now+=120;for(const t of c.etanks)t.x+=5;c.updateGameAudio();await settle();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),true);c.stopGameAudio();c.now+=120;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),false);
 });
-test('all 65 active manifest MP3s match the explicitly uploaded files, without requesting unprovided effects',()=>{
+test('all 66 active manifest MP3s match the explicitly uploaded files, without requesting unprovided effects',()=>{
  const {c}=harness(),defs=c.get('GAME_SE_FILES'),manifest=JSON.parse(fs.readFileSync(path.join(__dirname,'../docs/se-installed.json')));
- assert.equal(Object.keys(defs).length,65);assert.deepEqual(Object.values(defs).map(n=>'assets/audio/se/'+n+'.mp3').sort(),manifest.files.sort());for(const file of manifest.files)assert.ok(fs.statSync(path.join(__dirname,'..',file)).size>0);
+ assert.equal(Object.keys(defs).length,66);assert.deepEqual(Object.values(defs).map(n=>'assets/audio/se/'+n+'.mp3').sort(),manifest.files.sort());for(const file of manifest.files)assert.ok(fs.statSync(path.join(__dirname,'..',file)).size>0);
  assert.equal(c.gameSeName('sniperLens'),'sniperLens');assert.equal(c.playGameSe('pickup'),false);
 });
 test('MP3s decode once and cached effects play immediately; loading never replays a late shot',async()=>{
@@ -119,6 +119,39 @@ test('uploaded loops are attached to flame, rain, indoor alarms, aircraft and ne
  c.p.flameActive=true;c.weather='rain';c.airstrike={x:0,y:0};c.burningAt=()=>true;c.updateGameAudio();await settle();for(const k of ['flame','rain','aircraft','fire'])assert.equal(c.get('gameSe.loops.has("'+k+'")'),true);
  c.now+=120;c.stageMode='indoor';c.indoorWorld={currentFloor:0,alarm:{active:true}};c.updateGameAudio();await settle();assert.equal(c.get('gameSe.loops.has("rain")'),false);assert.equal(c.get('gameSe.loops.has("alarm")'),true);
 });
+test('the uploaded parachute clip and bomber loop use the original filenames',async()=>{
+ const h=harness(),{c}=h;
+ await c.loadGameSe('parachute');await c.loadGameSe('aircraft');
+ assert.deepEqual(h.requests,['assets/audio/se/se_Parachute.mp3?v=9fb7efb62978','assets/audio/se/se_jumbo_jet.mp3?v=b3163c241f38']);
+ assert.equal(c.playGameSe('parachute'),true);
+ assert.equal(c.get('[...gameSe.voices].find(v=>v.name==="parachute").source.loop'),false);
+});
+test('any flying bomber starts the loop and a surviving bomber keeps it playing after a collision',async()=>{
+ const {c}=harness();await c.loadGameSe('aircraft');
+ const plane={x:0,y:0},sources=[
+  ['airstrike',plane],
+  ['reinforcementPass',{...plane,offsets:[-140,140]}],
+  ['mission',{enemyAirRaid:{phase:'flight',plane}}],
+  ['mission',{enemyDrop:{plane}}],
+  ['desertTownEvents',{drop:{plane}}],
+  ['decisiveBattle',{desertDrop:{plane}}],
+ ];
+ for(const [key,flight] of sources){
+  c[key]=flight;c.now+=120;c.updateGameAudio();await settle();
+  const voice=c.get('gameSe.loops.get("aircraft").voice');
+  assert.equal(voice.source.loop,true,key);
+  c[key]=null;c.now+=120;c.updateGameAudio();
+  assert.equal(voice.source.stopped,true,key);
+ }
+ c.mission={enemyAirRaid:{phase:'flight',plane}};
+ c.reinforcementPass={x:0,y:0,offsets:[140]};
+ c.now+=120;c.updateGameAudio();await settle();
+ const voice=c.get('gameSe.loops.get("aircraft").voice');
+ plane.falling=true;c.now+=120;c.updateGameAudio();
+ assert.equal(c.get('gameSe.loops.get("aircraft").voice'),voice);
+ c.reinforcementPass.offsets=[];c.now+=120;c.updateGameAudio();
+ assert.equal(voice.source.stopped,true);
+});
 test('the legacy wrapper keeps unavailable effects and gameplay skill tones, while menu actions use uploaded UI audio',()=>{
  const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),line=html.split('\n').find(l=>l.startsWith('function sfx(n,position=')),played=[],fallback=[];
  const c={state:'play',gameSoundEnabled:true,ensureAudio(){},playGameSe(n){played.push(n);return false;},legacySfx:n=>fallback.push(n)};vm.createContext(c);vm.runInContext(line,c);c.sfx('skill');assert.equal(played.pop(),'legacySkill');assert.equal(fallback.pop(),'skill');c.state='stage';c.sfx('skill');assert.equal(played.pop(),'uiSelect');c.sfx('bombExplosion');assert.equal(fallback.pop(),'explosion');c.playGameSe=()=>{throw Error('audio failure');};c.sfx('mg');assert.equal(fallback.pop(),'mg');
@@ -134,7 +167,7 @@ test('all nine shared skill activation aliases reuse se_skills with one download
 });
 
 test('each active MP3 request includes its verified content revision',async()=>{
- const h=harness(),{c}=h;await c.loadGameSe('cannon');const versions=JSON.parse(fs.readFileSync(path.join(__dirname,'../docs/se-revisions.json')));assert.equal(h.requests[0],'assets/audio/se/se_025_tank_cannon_fire.mp3?v='+versions.se_025_tank_cannon_fire);assert.equal(Object.keys(versions).length,65);
+ const h=harness(),{c}=h;await c.loadGameSe('cannon');const versions=JSON.parse(fs.readFileSync(path.join(__dirname,'../docs/se-revisions.json')));assert.equal(h.requests[0],'assets/audio/se/se_025_tank_cannon_fire.mp3?v='+versions.se_025_tank_cannon_fire);assert.deepEqual({...c.get('GAME_SE_REVISIONS')},versions);
 });
 test('drill contact loops only during actual contact and stops on release, expiry or menus',async()=>{
  const h=harness(),{c}=h;await c.loadGameSe('drillContact');c.p.drill=5;c.p.drillContact=false;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("drillContact")'),false);

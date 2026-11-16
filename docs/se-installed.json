@@ -1,5 +1,5 @@
 {
-  "source": "こっそり戦車大作戦_ゲーム_SE.xlsx B列の緑 + 共通スキル発動音 se_skills.mp3 + 追加ドリル接触音 se_063_drill_contact.mp3 + 添付敵戦車走行音 se_00_enemy_tank_movement_loop.mp3 + 追加SE（花火・土の足音・目標破壊・狙撃ズーム）（反撃警告SEは除外） + 戦車7車種の主砲SE（追加6種）・トラック/装甲車の走行音更新 + アンロックカード表示音・プレイヤー気絶攻撃音 + 草むら進入音（Google Drive提供） + 味方迎撃戦闘機の飛来音 se_jet flying.mp3 + 猟犬突撃・かみつき・砂嵐SE",
+  "source": "こっそり戦車大作戦_ゲーム_SE.xlsx B列の緑 + 共通スキル発動音 se_skills.mp3 + 追加ドリル接触音 se_063_drill_contact.mp3 + 添付敵戦車走行音 se_00_enemy_tank_movement_loop.mp3 + 追加SE（花火・土の足音・目標破壊・狙撃ズーム）（反撃警告SEは除外） + 戦車7車種の主砲SE（追加6種）・トラック/装甲車の走行音更新 + アンロックカード表示音・プレイヤー気絶攻撃音 + 草むら進入音（Google Drive提供） + 味方迎撃戦闘機の飛来音 se_jet flying.mp3 + 猟犬突撃・かみつき・砂嵐SE + パラシュート展開音と爆撃機の飛行音",
   "ids": [
     1,
     2,
@@ -32,7 +32,6 @@
     41,
     42,
     43,
-    48,
     50,
     51,
     52,
@@ -91,7 +90,8 @@
     "assets/audio/se/se_041_vehicle_board_exit.mp3",
     "assets/audio/se/se_042_tank_movement_loop.mp3",
     "assets/audio/se/se_043_wheeled_vehicle_loop.mp3",
-    "assets/audio/se/se_048_aircraft_flyby.mp3",
+    "assets/audio/se/se_Parachute.mp3",
+    "assets/audio/se/se_jumbo_jet.mp3",
     "assets/audio/se/se_050_air_bomb_explosion.mp3",
     "assets/audio/se/se_051_air_raid_warning.mp3",
     "assets/audio/se/se_058_decoy_signal.mp3",

@@ -451,8 +451,9 @@ test('arriving at the fortress ends carpet bombing without stopping white paratr
  assert.equal(run('raid.phase'),'done');
  assert.equal(run('raid.plane'),null);
 });
-test('desert bomber collisions stop both missions and preserve another aircraft in formation',()=>{
+test('desert bomber collisions play the explosion sound and preserve another aircraft in formation',()=>{
  const {run}=start();completeFacility(run);
+ run("var collisionSe=[];sfx=name=>collisionSe.push(name)");
  run(`p.y=decisiveBattle.assaultStartY-500;updateDecisiveMission(.01);
   const raid=mission.enemyAirRaid;
   raid.phase='flight';raid.plane={x:340,y:p.y-60,age:0,drops:0,drop:0};
@@ -461,6 +462,7 @@ test('desert bomber collisions stop both missions and preserve another aircraft 
   updateDecisiveAircraftCollisions(.1);
  `);
  assert.ok(run('raid.plane.collision&&raid.plane.falling&&!reinforcementPass&&!decisiveBattle.desertDrop.plane'));
+ assert.equal(run("collisionSe.filter(name=>name==='airExplosion').length"),2);
  run('updateDecisiveAircraftCollisions(.9);updateEnemyBomber(.9)');
  assert.equal(run('raid.wrecks.length'),4);
  assert.equal(run('raid.wrecks.filter(w=>w.friendly).length'),2);
@@ -468,6 +470,25 @@ test('desert bomber collisions stop both missions and preserve another aircraft 
  run(`raid.plane={x:340,y:p.y-35};reinforcementPass={x:480,y:p.y+35,offsets:[-140,140]};
   updateDecisiveAircraftCollisions(.016)`);
  assert.deepEqual(Array.from(run('reinforcementPass.offsets')),[140]);
+});
+test('each parachute starts one sound when its canopy first enters the view',()=>{
+ const {run}=start();
+ assert.equal(run(`(()=>{
+  camX=cam=0;
+  const sounds=[];sfx=name=>sounds.push(name);
+  const friendly={alive:true,chute:1,x:W+100,y:150,face:0};
+  const enemy={alive:true,chute:1,x:160,y:150,face:0};
+  const cargo={kind:'tank'};
+  drawAllyParachute(friendly);
+  if(sounds.length)return false;
+  friendly.x=150;
+  drawAllyParachute(friendly);drawAllyParachute(friendly);
+  drawAllyParachute(enemy,true);drawAllyParachute(enemy,true);
+  const originalDrawVehicle=drawVehicle;drawVehicle=()=>{};
+  try{drawAllyParachute({...enemy},false,cargo);drawAllyParachute({...enemy},false,cargo);}
+  finally{drawVehicle=originalDrawVehicle;}
+  return sounds.join(',')==='parachute,parachute,parachute';
+ })()`),true);
 });
 test('desert truck probability is per sector and destroyed sandbags retain their ground mark',()=>{
  const {run,c}=start();completeFacility(run);
