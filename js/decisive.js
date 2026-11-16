@@ -585,12 +585,9 @@ function placeDecisiveDesertSupplies(zone){
   }
  }
  zone.decisiveRadios=[];
- const fortressSouth=base.y+base.h+DECISIVE_FORTRESS_DEPTH;
+ const minY=Math.max(0,zone.y1)+60,maxY=zone.y0-60;
+ if(minY>maxY)return;
  for(const white of [true,false]){
-  const nearFortress=!white&&zone===ZONES.at(-1);
-  const minY=nearFortress?fortressSouth+60:Math.max(0,zone.y1)+60;
-  const maxY=nearFortress?Math.min(zone.y0-60,fortressSouth+DECISIVE_FORTRESS_APPROACH):zone.y0-60;
-  if(minY>maxY)continue;
   const valid=(x,y)=>clear(x,y,16)&&!zone.decisiveRadios.some(q=>D(q,{x,y})<80);
   let found=null;
   for(let i=0;!found&&i<32;i++){

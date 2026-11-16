@@ -390,13 +390,11 @@ test('moving fortress yields to nearby units; bunker and fortress guns reuse exi
  run('var bunkerLayers=[];g.drawImage=(im)=>bunkerLayers.push(im.src);drawDecisiveCover(bunker);drawDecisiveCover({decisiveKind:"bunker",x:bunker.x,y:bunker.y,w:bunker.w,h:bunker.h});');
  assert.deepEqual(Array.from(run('bunkerLayers.map(src=>src.split("/").pop().split("?")[0])')),['bunker.webp','bunker-barrel.webp','bunker.webp']);
 });
-test('desert radios are rerolled on sortie and the last bombing radio is in front of the moving fortress',()=>{
+test('desert radios are rerolled on sortie and use clear spots throughout each zone',()=>{
  const {run}=start();
  const validate=`ZONES.slice(DECISIVE_DESERT_START).every(z=>{
   const [white,bomb]=z.decisiveRadios;
-  const south=base.y+base.h+DECISIVE_FORTRESS_DEPTH;
-  const near=z!==ZONES.at(-1)||(bomb?.y>=south+60&&bomb.y<=south+DECISIVE_FORTRESS_APPROACH);
-  return white?.white===true&&bomb?.white===false&&near&&D(white,bomb)>=80&&
+  return white?.white===true&&bomb?.white===false&&D(white,bomb)>=80&&
    z.decisiveRadios.every(q=>zoneAt(q.y)===z&&!hitsM(q.x,q.y,16)&&
     !cars.some(v=>D(v,q)<66)&&!items.some(item=>D(item,q)<44));
  })`;
@@ -407,6 +405,15 @@ test('desert radios are rerolled on sortie and the last bombing radio is in fron
  assert.ok(run(validate));
  assert.notEqual(coords(true),first[0]);
  assert.notEqual(coords(false),first[1]);
+});
+test('the bombing radio can spawn alongside the fortress outside the old forward-only band',()=>{
+ const {run}=start();
+ run(`const zone=ZONES.at(-1),left=base.x,right=base.x+base.w;
+  zone.y1=base.y;zone.y0=base.y+base.h;
+  covers=[];objects=[];cars=[];items=[];rebuildSpatialGrid();
+  placeDecisiveDesertSupplies(zone);`);
+ assert.ok(run(`zone.decisiveRadios.some(q=>!q.white&&q.y>=base.y&&q.y<=base.y+base.h&&
+  (q.x<left||q.x>right)&&!inBase(q.x,q.y))`));
 });
 test('radio carpet bombing deals half damage to the fortress only',()=>{
  const {run}=createGameEngine(root);
