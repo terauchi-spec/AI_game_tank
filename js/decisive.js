@@ -38,9 +38,9 @@ const DECISIVE_ROOF_TURRETS=[[.264,.506],[.736,.506]];
 const DECISIVE_FORTRESS_DOORS=[.293,.5,.707];
 const DECISIVE_ARC_TIME=1.65,DECISIVE_ARC_HEIGHT=146,DECISIVE_ARC_DAMAGE_RADIUS=52;
 const DECISIVE_ARC_BLAST_SCALE=1.3;
-const DECISIVE_FORTRESS_W=630,DECISIVE_FORTRESS_H=420,DECISIVE_FORTRESS_Y=140;
-const DECISIVE_FORTRESS_SWEEP=115,DECISIVE_FORTRESS_SPEED=38;
-const DECISIVE_FORTRESS_DEPTH=62,DECISIVE_FORTRESS_DEPTH_SPEED=25;
+const DECISIVE_FORTRESS_W=693,DECISIVE_FORTRESS_H=462,DECISIVE_FORTRESS_Y=140,DECISIVE_FORTRESS_HP=117;
+const DECISIVE_FORTRESS_SWEEP=115,DECISIVE_FORTRESS_SPEED=22.8;
+const DECISIVE_FORTRESS_DEPTH=62,DECISIVE_FORTRESS_DEPTH_SPEED=15;
 const DECISIVE_FORTRESS_DOOR_TOP=.825,DECISIVE_FORTRESS_DOOR_HEIGHT=.071;
 const DECISIVE_FORTRESS_APPROACH=650;
 const DECISIVE_DOOR_TIME=1.35,DECISIVE_DOOR_RELEASE=.72;
@@ -393,7 +393,7 @@ function spawnDesertTownPatrols(zones){
 }
 function decisiveRectsOverlap(a,b,pad=0){return a.x<b.x+b.w+pad&&a.x+a.w+pad>b.x&&a.y<b.y+b.h+pad&&a.y+a.h+pad>b.y;}
 function createDecisiveFortress(locked){
- return {x:(WW-DECISIVE_FORTRESS_W)/2,y:DECISIVE_FORTRESS_Y,w:DECISIVE_FORTRESS_W,h:DECISIVE_FORTRESS_H,hp:90,maxHp:90,deadAt:0,decisiveFortress:true,decisiveLocked:locked,driveDamage:[0,0]};
+ return {x:(WW-DECISIVE_FORTRESS_W)/2,y:DECISIVE_FORTRESS_Y,w:DECISIVE_FORTRESS_W,h:DECISIVE_FORTRESS_H,hp:DECISIVE_FORTRESS_HP,maxHp:DECISIVE_FORTRESS_HP,deadAt:0,decisiveFortress:true,decisiveLocked:locked,driveDamage:[0,0]};
 }
 function createDecisiveFortressState(){
  return {fortressDir:1,fortressDepthT:5,fortressTargetY:DECISIVE_FORTRESS_Y,fortressCd:2,fortressTravel:0,fortressScan:0,
@@ -1065,7 +1065,9 @@ function decisiveUnoccupiedTank(v){
 }
 function decisiveRoofTargetDistance(b,actor){
  const front=actor.y-(b.y+b.h),rear=b.y-actor.y;
- return front>40||rear>=0?Math.hypot(actor.x-(b.x+b.w/2),Math.max(front,rear)):Infinity;
+ const sideDistance=Math.abs(actor.x-(b.x+b.w/2));
+ if(front<=40&&rear<0&&sideDistance<=b.w/2)return Infinity;
+ return Math.hypot(sideDistance,Math.max(0,front,rear));
 }
 function decisiveRoofTarget(b){
  let target=null,best=850;

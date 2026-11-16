@@ -111,12 +111,12 @@ test('the mobile fortress area debug starts a live and repeatable boss test with
  run('for(let i=0;i<9;i++)update(.1)');
  assert.ok(run("humans.some(h=>h.commander==='blue')"));
  run('damageBase(10,base.x+base.w/2,base.y+base.h/2,40)');
- assert.ok(run('base.hp===80&&!circleHitsBase(base.x+base.w/2,base.y+base.h/2,12)&&baseDamageCanvas()'));
- run('damageBase(100,base.x+base.w/2,base.y+base.h/2,40);update(1/60);draw()');
+ assert.ok(run('base.hp===107&&!circleHitsBase(base.x+base.w/2,base.y+base.h/2,12)&&baseDamageCanvas()'));
+ run('damageBase(120,base.x+base.w/2,base.y+base.h/2,40);update(1/60);draw()');
  assert.ok(run("state==='play'&&base.hp===0&&scoreStats.final===null&&!decisiveBattle.roofShell&&!decisiveBattle.door"));
  for(const key of ['tankGameStageProgressV1','tankGameStageRecordsV1'])assert.equal(storage.has(key),false);
  run('reset(false)');
- assert.ok(run('base.hp===90&&!base.fragMask&&state==="play"'));
+ assert.ok(run('base.hp===117&&!base.fragMask&&state==="play"'));
  run("selectedAreaDebug='草原';reset(false)");
  assert.ok(run("decisiveBattle===null&&!base.decisiveFortress&&ZONES[0].n==='草原'"));
 });
@@ -412,9 +412,9 @@ test('radio carpet bombing deals half damage to the fortress only',()=>{
  const {run}=createGameEngine(root);
  run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='移動要塞';reset(false)");
  run("airBombBlast(base.x+base.w/2,base.y+base.h/2,'radio')");
- assert.equal(run('base.hp'),88);
+ assert.equal(run('base.hp'),115);
  run("airBombBlast(base.x+base.w/2,base.y+base.h/2,'fighter')");
- assert.equal(run('base.hp'),84);
+ assert.equal(run('base.hp'),111);
  run("selectedAreaDebug='敵司令本部';reset(false);airBombBlast(base.x+base.w/2,base.y+base.h/2,'radio')");
  assert.equal(run('base.hp'),26);
 });
@@ -633,6 +633,24 @@ test('a roof shell destroys parked tanks within its impact circle using the exis
  assert.equal(run('p.hp'),run('hp'));
 });
 
+test('both roof guns cover the fortress sides at hull height',()=>{
+ const {run}=createGameEngine(root);
+ run(`stageMode='base';areaDebugEnabled=true;selectedAreaDebug='移動要塞';reset(false);
+  cars=[];p.y=base.y+base.h/2;p.dig=0;debugMode=0;
+  const d=decisiveBattle;d.roofNext=0;
+  const aim=()=>{d.roofCd=0;d.roofShell=null;updateDecisiveRoofGuns(base,d,0);};
+  p.x=base.x-24;aim();`);
+ assert.equal(run('d.roofShell?.targetX'),run('p.x'));
+ assert.equal(run('d.roofNext'),1);
+ run('p.x=base.x+base.w+24;aim()');
+ assert.equal(run('d.roofShell?.targetX'),run('p.x'));
+ assert.equal(run('d.roofNext'),0);
+ run(`const t=TYPES[0];
+  cars=[{kind:'tank',t,x:base.x-24,y:p.y,f:t.fmax-1,c:t.cmax,v:t.vmax}];
+  p.x=base.x+base.w/2;p.y=base.y+base.h+900;aim();`);
+ assert.equal(run('d.roofShell?.targetX'),run('cars[0].x'));
+});
+
 test('roof shells still knock infantry back but stun neither side nor tower gunners',()=>{
  const {run}=createGameEngine(root);
  run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='移動要塞';reset(false);stageMode='front'");
@@ -681,16 +699,21 @@ test('fortress door opens, releases a single blue soldier and closes',()=>{
  assert.equal(run('humans.length'),1);
  assert.equal(run('decisiveBattle.door'),null);
 });
-test('fortress dimensions increase and its timed depth movement reverses',()=>{
+test('the larger fortress has more HP and sweeps both axes at 60 percent of its original speed',()=>{
  const {run}=start();completeFacility(run);
- assert.equal(run('base.w'),630);assert.equal(run('base.h'),420);
+ assert.equal(run('base.w'),693);assert.equal(run('base.h'),462);
+ assert.equal(run('base.hp'),117);assert.equal(run('base.maxHp'),117);
  assert.ok(run(`(()=>{
   humans=[];etanks=[];allies=[];cars=[];p.y=base.y+base.h+2500;
-  const y=base.y;decisiveBattle.fortressDepthT=0;
-  updateDecisiveFortress(.1);updateDecisiveFortress(3);
+  const {x,y}=base;decisiveBattle.fortressDepthT=0;
+  updateDecisiveFortress(.1);
+  if(Math.abs(base.x-x-2.28)>1e-9)return false;
+  updateDecisiveFortress(1);
+  if(base.y!==y+15)return false;
+  updateDecisiveFortress(4);
   if(base.y!==y+DECISIVE_FORTRESS_DEPTH)return false;
   decisiveBattle.fortressDepthT=0;
-  updateDecisiveFortress(.1);updateDecisiveFortress(3);
+  updateDecisiveFortress(.1);updateDecisiveFortress(5);
   return base.y===y;
  })()`));
 });
@@ -752,7 +775,7 @@ test('cannon hits remove side gears and cylinders from both rendering and collis
   !circleHitsBase(base.x+base.w*.948-10*base.w/600,base.y+base.h*.175+29)&&base.hp===base.maxHp`));
  assert.ok(countParts().cylinders<8);
  run('cannonDamageBase(3,base.x+base.w/2,base.y+base.h/2,"player")');
- assert.equal(run('base.hp'),87);
+ assert.equal(run('base.hp'),114);
  run('reset(false)');
  assert.ok(run('base.driveDamage.every(mask=>mask===0)'));
  assert.deepEqual(countParts(),{gears:16,cylinders:8});
