@@ -119,7 +119,7 @@ test('uploaded loops are attached to flame, rain, indoor alarms, aircraft and ne
  c.p.flameActive=true;c.weather='rain';c.airstrike={x:0,y:0};c.burningAt=()=>true;c.updateGameAudio();await settle();for(const k of ['flame','rain','aircraft','fire'])assert.equal(c.get('gameSe.loops.has("'+k+'")'),true);
  c.now+=120;c.stageMode='indoor';c.indoorWorld={currentFloor:0,alarm:{active:true}};c.updateGameAudio();await settle();assert.equal(c.get('gameSe.loops.has("rain")'),false);assert.equal(c.get('gameSe.loops.has("alarm")'),true);
 });
-test('squalls swap the rain loop to the supplied heavy-rain clip and stop on clearing',async()=>{
+test('squalls match regular rain loudness, retain their fade and stop on clearing',async()=>{
  const h=harness(),{c}=h;c.stageMode='escapeTest';
  await c.loadGameSe('rainLoop');await c.loadGameSe('squallLoop');
  assert.ok(h.requests.includes('assets/audio/se/se_heavy_rain.mp3?v=f20b116d0508'));
@@ -128,7 +128,10 @@ test('squalls swap the rain loop to the supplied heavy-rain clip and stop on cle
  c.weather='squall';c.now+=16;c.updateGameAudio();await settle();
  const heavy=c.get('gameSe.loops.get("rain").voice');
  assert.equal(regular.source.stopped,true);assert.equal(heavy.name,'squallLoop');assert.equal(heavy.source.loop,true);
- c.now+=16;c.updateGameAudio();assert.equal(c.get('gameSe.loops.get("rain").voice'),heavy);
+ assert.ok(Math.abs(heavy.gain.gain.value-.0225)<1e-12);
+ c.rainIntensity=.2;c.now+=120;c.updateGameAudio();
+ assert.equal(c.get('gameSe.loops.get("rain").voice'),heavy);
+ assert.ok(Math.abs(heavy.gain.gain.value-.0045)<1e-12);
  c.weather='clear';c.now+=16;c.updateGameAudio();
  assert.equal(heavy.source.stopped,true);assert.equal(c.get('gameSe.loops.has("rain")'),false);
 });

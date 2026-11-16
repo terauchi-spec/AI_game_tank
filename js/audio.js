@@ -118,6 +118,8 @@ function setGameSeLoop(key,name,volume,rate=1){
  if(!name||volume<.01||!gameSeVisible()){
   if(previous){gameSe.loops.delete(key);if(previous.voice)stopGameSeVoice(previous.voice);}return;
  }
+ // The heavy-rain recording is about 28.5 LU louder than the regular rain loop.
+ if(name==='squallLoop')volume*=.0375;
  if(previous?.name===name){previous.volume=volume;previous.rate=rate;if(previous.voice){const t=previous.voice.source.context.currentTime;previous.voice.gain.gain.setTargetAtTime(volume,t,.06);previous.voice.source.playbackRate.setTargetAtTime(rate,t,.06);}return;}
  if(previous){gameSe.loops.delete(key);if(previous.voice)stopGameSeVoice(previous.voice);}
  const record={name,volume,rate,voice:null};gameSe.loops.set(key,record);

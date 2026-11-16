@@ -266,6 +266,35 @@ test('escape rivers are 150–300px wide, roll at 60 percent, and never generate
 });
 
 
+test('squalls fade players, allies, enemies and VIP artwork to 30 percent',()=>{
+ const h=start();
+ h.run(`
+  state='play';skill='throw';p.tank=null;
+  const seen={};let phase;
+  for(const ctx of [gm,og]){
+   const stack=[];ctx.globalAlpha=1;
+   ctx.save=()=>stack.push(ctx.globalAlpha);ctx.restore=()=>{ctx.globalAlpha=stack.pop();};
+  }
+  const ally={alive:true,x:p.x+70,y:p.y,face:0};
+  const enemy={alive:true,x:p.x-70,y:p.y,face:0};
+  allies=[ally];humans=[enemy];
+  mission.vip.x=p.x;mission.vip.y=p.y-30;
+  soldier=(x,y,face,isP,alert,moving,elite,commander,weapon,stripe,actor)=>{
+   if(actor===p)seen[phase].player=g.globalAlpha;
+   if(actor===ally)seen[phase].ally=g.globalAlpha;
+   if(actor===enemy)seen[phase].enemy=g.globalAlpha;
+  };
+  drawEscapeVipSprite=()=>{seen[phase].vip=g.globalAlpha;};
+  for(const [name,kind,intensity] of [['peak','squall',1],['fade','squall',.5],['rain','rain',1],['clear','clear',0]]){
+   phase=name;seen[phase]={};weather=kind;rainIntensity=intensity;draw(null);
+  }
+ `);
+ for(const [phase,alpha] of [['peak',.3],['fade',.65],['rain',1],['clear',1]]){
+  for(const actor of ['player','ally','enemy','vip']){
+   assert.ok(Math.abs(h.run(`seen.${phase}.${actor}`)-alpha)<1e-12,`${actor} during ${phase}`);
+  }
+ }
+});
 test('both jungle modes alternate rain and squalls with stronger enemy sight loss',()=>{
  const h=createGameEngine(root);
  for(const setup of ["stageMode='escapeTest';areaDebugEnabled=false","stageMode='base';areaDebugEnabled=true;selectedAreaDebug='密林'"]){
