@@ -74,9 +74,9 @@ test('enemy tanks share one loop, use movement rather than turret rotation, and 
  c.state='results';c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),false);c.state='play';c.now+=120;for(const t of c.etanks)t.x+=5;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),false);
  c.now+=120;for(const t of c.etanks)t.x+=5;c.updateGameAudio();await settle();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),true);c.stopGameAudio();c.now+=120;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),false);
 });
-test('all 66 active manifest MP3s match the explicitly uploaded files, without requesting unprovided effects',()=>{
+test('all 67 active manifest MP3s match the explicitly uploaded files, without requesting unprovided effects',()=>{
  const {c}=harness(),defs=c.get('GAME_SE_FILES'),manifest=JSON.parse(fs.readFileSync(path.join(__dirname,'../docs/se-installed.json')));
- assert.equal(Object.keys(defs).length,66);assert.deepEqual(Object.values(defs).map(n=>'assets/audio/se/'+n+'.mp3').sort(),manifest.files.sort());for(const file of manifest.files)assert.ok(fs.statSync(path.join(__dirname,'..',file)).size>0);
+ assert.equal(Object.keys(defs).length,67);assert.deepEqual(Object.values(defs).map(n=>'assets/audio/se/'+n+'.mp3').sort(),manifest.files.sort());for(const file of manifest.files)assert.ok(fs.statSync(path.join(__dirname,'..',file)).size>0);
  assert.equal(c.gameSeName('sniperLens'),'sniperLens');assert.equal(c.playGameSe('pickup'),false);
 });
 test('MP3s decode once and cached effects play immediately; loading never replays a late shot',async()=>{
@@ -118,6 +118,19 @@ test('uploaded loops are attached to flame, rain, indoor alarms, aircraft and ne
  const h=harness(),{c}=h;for(const n of ['flameLoop','rainLoop','indoorAlarm','aircraft','fireLoop'])await c.loadGameSe(n);
  c.p.flameActive=true;c.weather='rain';c.airstrike={x:0,y:0};c.burningAt=()=>true;c.updateGameAudio();await settle();for(const k of ['flame','rain','aircraft','fire'])assert.equal(c.get('gameSe.loops.has("'+k+'")'),true);
  c.now+=120;c.stageMode='indoor';c.indoorWorld={currentFloor:0,alarm:{active:true}};c.updateGameAudio();await settle();assert.equal(c.get('gameSe.loops.has("rain")'),false);assert.equal(c.get('gameSe.loops.has("alarm")'),true);
+});
+test('squalls swap the rain loop to the supplied heavy-rain clip and stop on clearing',async()=>{
+ const h=harness(),{c}=h;c.stageMode='escapeTest';
+ await c.loadGameSe('rainLoop');await c.loadGameSe('squallLoop');
+ assert.ok(h.requests.includes('assets/audio/se/se_heavy_rain.mp3?v=f20b116d0508'));
+ c.weather='rain';c.updateGameAudio();await settle();
+ const regular=c.get('gameSe.loops.get("rain").voice');
+ c.weather='squall';c.now+=16;c.updateGameAudio();await settle();
+ const heavy=c.get('gameSe.loops.get("rain").voice');
+ assert.equal(regular.source.stopped,true);assert.equal(heavy.name,'squallLoop');assert.equal(heavy.source.loop,true);
+ c.now+=16;c.updateGameAudio();assert.equal(c.get('gameSe.loops.get("rain").voice'),heavy);
+ c.weather='clear';c.now+=16;c.updateGameAudio();
+ assert.equal(heavy.source.stopped,true);assert.equal(c.get('gameSe.loops.has("rain")'),false);
 });
 test('the uploaded parachute clip and bomber loop use the original filenames',async()=>{
  const h=harness(),{c}=h;
