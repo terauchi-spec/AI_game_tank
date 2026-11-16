@@ -9,8 +9,8 @@ function harness({defer=false,fail=false,decodeFail=false}={}){
 }
 const tick=()=>new Promise(r=>setImmediate(r));
 test('BGM uses the SE AudioContext, waits for interaction, and decodes once across menu transitions',async()=>{
- const h=harness(),{c}=h;c.updateGameBgm();c.unlockGameBgm({isTrusted:false});assert.equal(h.requests.length,0);h.events.pointerdown({isTrusted:true});await tick();assert.equal(h.requests.length,1);assert.equal(h.decodes(),1);const source=h.sources[0];assert.equal(source.context,h.context);assert.equal(source.loop,false);assert.deepEqual(source.args,[0,0]);assert.equal(h.get('gameBgm.gain.gain.value'),.115);
- h.context.currentTime=17;for(const state of ['skill','stage','skill','title']){c.state=state;c.updateGameBgm();}assert.equal(h.sources.length,1);assert.equal(source.stopped,undefined);assert.equal(h.requests.length,1);
+ const h=harness(),{c}=h;c.updateGameBgm();c.unlockGameBgm({isTrusted:false});assert.equal(h.requests.length,0);h.events.pointerdown({isTrusted:true});await tick();assert.equal(h.requests.length,1);assert.equal(h.decodes(),1);const source=h.sources[0];assert.equal(source.context,h.context);assert.equal(source.loop,false);assert.deepEqual(source.args,[0,0]);assert.equal(h.get('gameBgm.gain.gain.value'),.1035);
+ h.context.currentTime=17;for(const state of ['skill','stage','skill','title']){c.state=state;c.updateGameBgm();}assert.equal(h.sources.length,1);assert.equal(source.stopped,undefined);assert.equal(h.requests.length,1);assert.equal(h.get('gameBgm.gain.gain.value'),.1035);
 });
 test('BGM pauses outside eligible menus and resumes its exact position on return, visibility and focus changes',async()=>{
  const h=harness(),{c}=h;c.unlockGameBgm();await tick();h.context.currentTime=21;c.state='preparing';c.updateGameBgm();assert.equal(h.sources[0].stopped,true);assert.equal(h.get('gameBgm.offset'),21);assert.equal(h.get('gameBgm.finished'),false);
@@ -26,9 +26,18 @@ test('success and failure results reset the theme and wait for outcome and resul
  const h=harness(),{c}=h;c.unlockGameBgm();await tick();h.sources[0].onended();
  for(const state of ['win','lose']){
   c.state='play';c.updateGameBgm();c.state=state;const result={name:'results'},outcome={name:state};c.gameSe.voices.add(result);c.gameSe.voices.add(outcome);c.beginResultGameBgm();const count=h.sources.length;c.updateGameBgm();assert.equal(h.sources.length,count);assert.equal(h.get('gameBgm.offset'),0);
-  c.gameSe.voices.delete(result);c.updateGameBgm();assert.equal(h.sources.length,count);c.gameSe.voices.delete(outcome);c.updateGameBgm();assert.equal(h.sources.length,count+1);assert.deepEqual(h.sources.at(-1).args,[0,0]);for(let i=0;i<10;i++)c.updateGameBgm();assert.equal(h.sources.length,count+1);h.sources.at(-1).onended();c.updateGameBgm();assert.equal(h.sources.length,count+1);
+  c.gameSe.voices.delete(result);c.updateGameBgm();assert.equal(h.sources.length,count);c.gameSe.voices.delete(outcome);c.updateGameBgm();assert.equal(h.sources.length,count+1);assert.deepEqual(h.sources.at(-1).args,[0,0]);assert.equal(h.get('gameBgm.gain.gain.value'),.115);for(let i=0;i<10;i++)c.updateGameBgm();assert.equal(h.sources.length,count+1);h.sources.at(-1).onended();c.updateGameBgm();assert.equal(h.sources.length,count+1);
  }
  assert.equal(h.requests.length,1);assert.equal(h.decodes(),1);
+});
+test('an active result theme adjusts to menu volume when returning to title',async()=>{
+ const h=harness(),{c}=h;c.unlockGameBgm();await tick();
+ c.state='win';c.beginResultGameBgm();c.updateGameBgm();
+ assert.equal(h.get('gameBgm.gain.gain.value'),.115);
+ const source=h.sources.at(-1);
+ c.state='title';c.updateGameBgm();
+ assert.equal(h.get('gameBgm.gain.gain.value'),.1035);
+ assert.equal(h.get('gameBgm.source'),source);
 });
 test('a late download cannot start during gameplay or while result SE is playing; fetch/decode are deduplicated',async()=>{
  for(const state of ['play','win']){
