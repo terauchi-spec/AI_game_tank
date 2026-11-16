@@ -1,6 +1,30 @@
 const test=require('node:test'),assert=require('node:assert/strict'),path=require('node:path');
 const {createGameEngine}=require('./helpers/game-engine.cjs');
 function setup(){const h=createGameEngine(path.join(__dirname,'..'));h.run("stageMode='front';state='play';skill='partner';p={x:400,y:400,body:0};allies=[];parts=[];covers=[];humans=[];etanks=[];cars=[];fx=[];waves=[];water=[];bridges=[];mud=[];mission=null;base={x:100,y:50,w:100,h:100,hp:30};scoreStats=newScoreStats();los=()=>true;");return h;}
+test('object chain blasts push allied soldiers without stunning them; enemy cannons still stun',()=>{
+ const h=setup();
+ h.run(`
+  bushes=[];partner=null;hound=null;
+  var barrel={x:500,y:500,w:20,h:20,kind:'barrel'},crate={x:585,y:500,w:20,h:20,kind:'crate'};
+  var frontlineSoldier={x:510,y:560,alive:true,frontline:true},reinforcement={x:590,y:560,alive:true};
+  objects=[barrel,crate];allies=[frontlineSoldier,reinforcement];rebuildSpatialGrid();
+  explodeObject(barrel);
+ `);
+ assert.ok(h.run('crate.burnT>0'));
+ for(const ally of ['frontlineSoldier','reinforcement']){
+  assert.ok(h.run(ally+'.blastAirT>0'));
+  assert.equal(h.run(ally+'.blastLandStun'),0);
+  assert.equal(h.run('updateBlastFlight('+ally+',1);'+ally+'.stun||0'),0);
+ }
+ h.run("stageMode='base';allies=[reinforcement];updateBurningObjects(4)");
+ assert.equal(h.run('objects.length'),0);
+ assert.ok(h.run('reinforcement.blastAirT>0'));
+ assert.equal(h.run('updateBlastFlight(reinforcement,1);reinforcement.stun||0'),0);
+ h.run("cannonImpact(reinforcement.x-10,reinforcement.y,'e');updateBlastFlight(reinforcement,1)");
+ assert.equal(h.run('reinforcement.stun'),5);
+ h.run("stageMode='front';allies=[frontlineSoldier];cannonImpact(frontlineSoldier.x-10,frontlineSoldier.y,'e');updateBlastFlight(frontlineSoldier,1)");
+ assert.equal(h.run('frontlineSoldier.stun'),10);
+});
 test('contact rescue emits exactly one rising, fading, bounded rescue cross',()=>{
  const h=setup();h.run("a={x:400,y:410,alive:true,stun:10};allies=[a];rescueFrontlineAlly(a);rescueFrontlineAlly(a);");
  assert.equal(h.run('a.stun'),0);assert.equal(h.run('a.stunImmuneT'),15);assert.equal(h.run('parts.filter(q=>q.rescueCross).length'),1);
