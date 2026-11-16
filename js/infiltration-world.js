@@ -3,6 +3,7 @@ let INDOOR_FILES_TOTAL=3;
 const INDOOR_ACQUIRE_SECONDS=8,INDOOR_ACQUIRE_RADIUS=68;
 function isInfiltrationBeginner(){return (typeof indoorBeginner!=='undefined'&&indoorBeginner)||!!(typeof isDecisiveFacility==='function'&&isDecisiveFacility());}
 const INDOOR_EXIT_RADIUS=90,INDOOR_EXIT_SECONDS=5;
+const INDOOR_BEGINNER_SCALE=Math.sqrt(.8);
 // 透過余白を除いたWebPの実寸比。生成時の当たり判定も元画像の比率に揃える。
 const INDOOR_PROP_ASPECT={container:119/256,equipment:207/256,shelf:108/256,
   cabinet:137/256,desk:147/256,bed:106/256,weapon_rack:179/384,server_rack:127/384,
@@ -58,8 +59,11 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null,second
   const center=i=>{const {c,r}=coord(i);return{x:X0+(c+.5)*SIZE,y:Y0+(r+.5)*SIZE};};
   const patterns=['H','L','T','四角','コ'];
   const commandBasement=commandFacility&&number===2;
-  const propScaleY=commandFacility?1.75*INDOOR_SCALE_X:INDOOR_SCALE_Y;
-  const cargoDepth=INDOOR_SCALE_Y/propScaleY;
+  // Rescue uses the beginner furniture dimensions without scaling the floor plan.
+  const propScaleX=rescueAdvancedTest?INDOOR_BEGINNER_SCALE:INDOOR_SCALE_X;
+  const propScaleY=commandFacility||rescueAdvancedTest?1.75*propScaleX:INDOOR_SCALE_Y;
+  const propWidthRatio=propScaleX/INDOOR_SCALE_X;
+  const cargoDepth=commandFacility?INDOOR_SCALE_Y/propScaleY:1;
   const pattern=commandBasement?'指揮室':laboratory?'外周':patterns[Math.floor(rng()*patterns.length)];
   const hall=new Set(),add=(c,r)=>hall.add(index(c,r));
   if(commandBasement){
@@ -424,7 +428,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null,second
     item.primaryAsset=!!(room&&slot===0);
     const labSize=laboratory?laboratoryPropSize(item.artKind):null;
     const ar=labSize?labSize.w/labSize.h:INDOOR_PROP_ASPECT[item.artKind];if(!ar)continue;
-    const maxW=item.w*INDOOR_SCALE_X,maxH=item.h*propScaleY;
+    const maxW=item.w*propScaleX,maxH=item.h*propScaleY;
     let h=Math.min(maxH,maxW/ar),w=h*ar;
     if(item.artKind==='bed'){h=104;w=h*ar;}
     if(INDOOR_PROP_LENGTH[item.artKind]){h=INDOOR_PROP_LENGTH[item.artKind];w=h*ar;}
@@ -482,7 +486,8 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null,second
     for(const scale of laboratory||large?[1]:[1,.88,.76,.67,.6]){
       const labSize=laboratory?laboratoryPropSize(artKind):null;
       const h=(labSize?labSize.h:INDOOR_PROP_LENGTH[artKind]*scale)/INDOOR_SCALE_Y,w=labSize?labSize.w/INDOOR_SCALE_X:INDOOR_PROP_LENGTH[artKind]*scale*INDOOR_PROP_ASPECT[artKind];
-      placementSearch: for(const [pw,ph] of laboratory?[[w,h]]:[[w,h],[h*INDOOR_SCALE_Y,w/INDOOR_SCALE_Y]]){
+      placementSearch: for(const [pw,ph] of laboratory?[[w,h]]:
+        [[w*propWidthRatio,h],[h*INDOOR_SCALE_Y*propWidthRatio,w/INDOOR_SCALE_Y]]){
         // 発電機は南向きの原画を回転せず置く。
         if(!laboratory&&artKind==='generator'&&pw>ph*INDOOR_SCALE_Y)continue;
         for(let y=room.y+14;y+ph<=room.y+room.h-14;y+=8)for(let x=room.x+14;x+pw<=room.x+room.w-14;x+=8){
@@ -762,7 +767,7 @@ function indoorGenerateFloor(number,rng=Math.random,sharedStairIndex=null,second
         if(artKind==='bed'&&furniture.some(o=>o.roomId===room.id&&o.artKind==='bed'))continue;
         const worldH=artKind==='bed'?104:artKind==='container'?140:(INDOOR_PROP_LENGTH[artKind]||70);
         const labSize=laboratory?laboratoryPropSize(artKind):null;
-        const w=labSize?labSize.w/INDOOR_SCALE_X:worldH*INDOOR_PROP_ASPECT[artKind],h=(labSize?labSize.h:worldH)/INDOOR_SCALE_Y;
+        const w=labSize?labSize.w/INDOOR_SCALE_X:worldH*INDOOR_PROP_ASPECT[artKind]*propWidthRatio,h=(labSize?labSize.h:worldH)/INDOOR_SCALE_Y;
         const positions=[[14,14],[SIZE-w-14,14],[14,SIZE-h-14],[SIZE-w-14,SIZE-h-14],
           [14,(SIZE-h)/2],[SIZE-w-14,(SIZE-h)/2],[(SIZE-w)/2,14],[(SIZE-w)/2,SIZE-h-14]];
         for(const [dx,dy] of positions){
@@ -1079,7 +1084,7 @@ function indoorGenerateExterior(floor,rng,worldWidth=960){
 }
 function setupInfiltrationWorld(commandFacility=false){
   // Scale physical floor area, retaining the same rendering resolution and two-floor layout.
-  const beginner=commandFacility||isInfiltrationBeginner(),size=beginner?Math.sqrt(.8):1;
+  const beginner=commandFacility||isInfiltrationBeginner(),size=beginner?INDOOR_BEGINNER_SCALE:1;
   INDOOR_FILES_TOTAL=rescueAdvancedTest?0:beginner?2:3;
   INDOOR_SCALE_X=size*(typeof isLaboratoryStage==='function'&&isLaboratoryStage() ? .95 : 1);INDOOR_SCALE_Y=1.75*size*(commandFacility?.7:1);INDOOR_OFFSET_X=480-520*INDOOR_SCALE_X;
   const ground=ZONE_STYLE[commandFacility?'砂漠':'敵迷路基地'];

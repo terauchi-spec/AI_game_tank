@@ -24,6 +24,23 @@ function setup(){
  return h;
 }
 
+test('all rescue floors use beginner-sized furniture and matching cover bounds',()=>{
+ const root=path.join(__dirname,'..');
+ const beginner=createGameEngine(root,{seed:1771}),rescue=createGameEngine(root,{seed:1771});
+ beginner.run("stageMode='indoor';indoorBeginner=true;reset(false)");
+ rescue.run("stageMode='indoor';rescueAdvancedTest=true;reset(false)");
+ const dimensions=`JSON.stringify(indoorWorld.floors.map(floor=>[
+  floor.props.find(p=>p.propKind==='postTable'),
+  floor.props.find(p=>p.propKind==='supply'&&p.propArt==='shelf'),
+  floor.props.find(p=>p.propArt==='operations_table')
+ ].map(p=>[Math.round(p.w*1e6)/1e6,Math.round(p.h*1e6)/1e6])))`;
+ const [reference]=JSON.parse(beginner.run(dimensions));
+ const floors=JSON.parse(rescue.run(dimensions));
+ assert.equal(floors.length,3);
+ for(const sizes of floors)assert.deepEqual(sizes,reference);
+ assert.ok(rescue.run('indoorWorld.floors.every(floor=>floor.footprint.w===900&&floor.props.every(p=>covers.includes(p)))'));
+});
+
 test('entering the VIP circle starts the escort and plays the documents-complete sound once',()=>{
  const h=setup();
  h.run(`
