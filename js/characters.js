@@ -70,13 +70,12 @@ function characterGait(actor,x,y,moving,now,jog=true){
 }
 function loadEscapeVipArtwork(){
  if(CHARACTER_GRAPHICS_MODE!=='webp'||CHARACTER_ART.escapeVip)return;
- CHARACTER_ART.escapeVip=makeAssetImage('assets/characters/escape-vip.webp?v='+GAME_VERSION,
-  ()=>prepareCharacterLayers(CHARACTER_ART.escapeVip,false));
+ CHARACTER_ART.escapeVip=makeAssetImage('assets/characters/escape-vip-magenta.webp?v='+GAME_VERSION);
 }
 function drawEscapeVipArtwork(x,y,face,moving,actor){
  const im=CHARACTER_ART.escapeVip;
  if(CHARACTER_GRAPHICS_MODE!=='webp'||!assetOK(im))return false;
- const stride=characterGait(actor,x,y,moving,performance.now());
+ const stride=characterGait(actor,x,y,moving,performance.now(),false);
  g.save();g.imageSmoothingEnabled=true;g.translate(x,y);g.scale(CHARACTER_GRAPHICS_SCALE,CHARACTER_GRAPHICS_SCALE);
  g.fillStyle='rgba(8,12,9,.30)';g.beginPath();g.ellipse(1,3,11,7,0,0,Math.PI*2);g.fill();
  g.rotate(face);drawOverheadCutout(im,32,32*im.naturalHeight/im.naturalWidth,stride);
@@ -127,9 +126,30 @@ function drawCommanderRadio(pack,width){
  g.strokeStyle='#d3d5b8';g.lineWidth=.65;g.beginPath();g.moveTo(-18.4,-12.4);g.lineTo(-20.6,-20);g.stroke();
  g.restore();
 }
+function composeEscapeVipCutout(im,width,height,stride){
+ const left=-width*.60,top=-height*.50,iw=im.naturalWidth,ih=im.naturalHeight;
+ if(!stride){g.drawImage(im,left,top,width,height);return;}
+ const arm=.24,hip=.26;
+ const drawRegion=(x,y,w,h,shift=0,targetWidth=w)=>g.drawImage(im,
+  x*iw,y*ih,w*iw,h*ih,left+(x+shift)*width,top+y*height,targetWidth*width,h*height);
+ // Keep the hips fixed while extending one leg and shortening the other.
+ for(const side of [-1,1]){
+  const shift=side*stride*.088;
+  drawRegion(0,side<0?arm:.5,hip,.5-arm,-shift,hip+shift);
+ }
+ drawRegion(hip,arm,1-hip,1-2*arm);
+ // Shear at the shoulder so the arms swing opposite their feet without gaps.
+ for(const side of [-1,1]){
+  const edge=side<0?arm:1-arm,shear=-stride*.48;
+  g.save();g.transform(1,0,shear,1,-shear*(top+edge*height),0);
+  drawRegion(0,side<0?0:edge,1,arm);
+  g.restore();
+ }
+}
 function composeOverheadCutout(im,width,height,stride=0,armed=false,radio=false){
+ if(im===CHARACTER_ART.escapeVip){composeEscapeVipCutout(im,width,height,stride);return;}
  const left=-width*.60,top=-height*.50,layers=CHARACTER_LAYERS.get(im);
- const trousers=im===CHARACTER_ART.escapeVip?'#454638':(im===CHARACTER_ART.player||im===CHARACTER_ART.player_plain||im===CHARACTER_ART.player_blue)?'#77734f':im===CHARACTER_ART.white||im===CHARACTER_ART.white_commander?'#d0cdbd':'#7c97b5';
+ const trousers=(im===CHARACTER_ART.player||im===CHARACTER_ART.player_plain||im===CHARACTER_ART.player_blue)?'#77734f':im===CHARACTER_ART.white||im===CHARACTER_ART.white_commander?'#d0cdbd':'#7c97b5';
  if(!layers){g.drawImage(im,left,top,width,height);return;}
  for(let i=0;i<layers.parts.length;i++){
   const part=layers.parts[i];

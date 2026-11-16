@@ -1,6 +1,29 @@
 const test=require('node:test'),assert=require('node:assert/strict'),path=require('node:path'),fs=require('node:fs'),vm=require('node:vm');
 const {createGameEngine}=require('./helpers/game-engine.cjs'),root=path.join(__dirname,'..');
 function start(seed=7){const h=createGameEngine(root,{seed});h.run("stageMode='escapeTest';areaDebugEnabled=false;skill='throw';reset(false)");return h;}
+test('all three rescues load the transparent VIP artwork and share its cached walking poses',()=>{
+ const h=start();
+ const asset='assets/characters/escape-vip-magenta.webp';
+ const bytes=fs.readFileSync(path.join(root,asset));
+ assert.equal(bytes.toString('ascii',8,12),'WEBP');
+ assert.ok(bytes[20]&0x10,'WebP has a transparent alpha channel');
+ assert.ok(bytes.length<=12500);
+ for(const [mode,beginner,advanced] of [['escapeTest',true,false],['escapeTest',false,false],['indoor',false,true]]){
+  const variant=createGameEngine(root,{seed:7});
+  variant.c.rescueVariant={mode,beginner,advanced};
+  variant.run('stageMode=rescueVariant.mode;rescueBeginner=rescueVariant.beginner;rescueAdvancedTest=rescueVariant.advanced;reset(false)');
+  assert.match(variant.run('CHARACTER_ART.escapeVip.src'),/^assets\/characters\/escape-vip-magenta\.webp\?v=/);
+ }
+ assert.equal(h.run(`(()=>{
+  let now=1000;performance.now=()=>now;
+  const vip=mission.vip,im=CHARACTER_ART.escapeVip;
+  drawEscapeVipArtwork(vip.x,vip.y,0,false,vip);
+  const poses=CHARACTER_POSES.get(im);
+  if(!poses?.has('free:0'))return false;
+  for(let i=0;i<48;i++){now+=30;vip.x+=2;drawEscapeVipArtwork(vip.x,vip.y,0,true,vip);}
+  return poses.has('free:4')&&poses.has('free:-4')&&poses.size<=9;
+ })()`),true);
+});
 // Search for a continuous vehicle-width passage. Supplies placed after terrain
 // generation can cross the planned centerline. Rivers slow movement.
 function hasEscapePassage(h){

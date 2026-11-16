@@ -1457,6 +1457,7 @@ function indoorReplenishGuards(dt){
 }
 
 function setupRescueAdvancedMission(){
+ loadEscapeVipArtwork();
  const w=indoorWorld,basement=w.floors[2];
  for(const floor of w.floors)floor.stairSafeAreas=floor.stairs.map(stair=>indoorStairSafeArea(floor,stair));
  const room=basement.rooms[0];
