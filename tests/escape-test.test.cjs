@@ -129,7 +129,7 @@ test('VIP follows unarmed, rejoins from below without healing, and takes enemy f
  h.run("p.x=400;p.y=12600;Object.assign(mission.vip,{x:520,y:12600,hp:3});p.dig=2;globalThis.enemy={x:545,y:12600};humans=[enemy];etanks=[];covers=[];objects=[];rebuildSpatialGrid()");
  assert.equal(h.run("findDetectedTarget(enemy,Math.PI).key"),'escapeVip');
  assert.equal(h.run("targetObj('escapeVip')===mission.vip"),true);
- h.run('humans=[]');
+ h.run('humans=[];globalThis.hitSounds=[];sfx=name=>hitSounds.push(name)');
  for(let remaining=2;remaining>=0;remaining--){
   h.run("fire(mission.vip.x+16,mission.vip.y,Math.PI,'e','r',600,240);update(.033)");
   assert.equal(h.run('mission.vip.hp'),remaining);
@@ -137,6 +137,7 @@ test('VIP follows unarmed, rejoins from below without healing, and takes enemy f
  assert.equal(h.run('state'),'failed');
  assert.equal(h.run('scoreStats.final.cleared'),false);
  assert.equal(h.run("targetObj('escapeVip')"),null);
+ assert.equal(h.run("hitSounds.filter(name=>name==='vipHit').length"),3);
 });
 test('VIP waits 0.6 seconds before following at 70 percent speed',()=>{
  const h=start();

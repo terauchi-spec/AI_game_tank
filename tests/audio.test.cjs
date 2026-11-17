@@ -74,9 +74,9 @@ test('enemy tanks share one loop, use movement rather than turret rotation, and 
  c.state='results';c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),false);c.state='play';c.now+=120;for(const t of c.etanks)t.x+=5;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),false);
  c.now+=120;for(const t of c.etanks)t.x+=5;c.updateGameAudio();await settle();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),true);c.stopGameAudio();c.now+=120;c.updateGameAudio();assert.equal(c.get('gameSe.loops.has("enemyTanks")'),false);
 });
-test('all 67 active manifest MP3s match the explicitly uploaded files, without requesting unprovided effects',()=>{
+test('all 68 active manifest MP3s match the explicitly uploaded files, without requesting unprovided effects',()=>{
  const {c}=harness(),defs=c.get('GAME_SE_FILES'),manifest=JSON.parse(fs.readFileSync(path.join(__dirname,'../docs/se-installed.json')));
- assert.equal(Object.keys(defs).length,67);assert.deepEqual(Object.values(defs).map(n=>'assets/audio/se/'+n+'.mp3').sort(),manifest.files.sort());for(const file of manifest.files)assert.ok(fs.statSync(path.join(__dirname,'..',file)).size>0);
+ assert.equal(Object.keys(defs).length,68);assert.deepEqual(Object.values(defs).map(n=>'assets/audio/se/'+n+'.mp3').sort(),manifest.files.sort());for(const file of manifest.files)assert.ok(fs.statSync(path.join(__dirname,'..',file)).size>0);
  assert.equal(c.gameSeName('sniperLens'),'sniperLens');assert.equal(c.playGameSe('pickup'),false);
 });
 test('MP3s decode once and cached effects play immediately; loading never replays a late shot',async()=>{
@@ -134,6 +134,13 @@ test('squalls match regular rain loudness, retain their fade and stop on clearin
  assert.ok(Math.abs(heavy.gain.gain.value-.0045)<1e-12);
  c.weather='clear';c.now+=16;c.updateGameAudio();
  assert.equal(heavy.source.stopped,true);assert.equal(c.get('gameSe.loops.has("rain")'),false);
+});
+test('the VIP hit effect uses the uploaded voice and suppresses duplicate playback on the same impact',async()=>{
+ const h=harness(),{c}=h;await c.loadGameSe('vipHit');
+ assert.ok(h.requests.includes('assets/audio/se/se_woman_shaut.mp3?v=c4a4f28692d7'));
+ assert.equal(c.playGameSe('vipHit'),true);
+ assert.equal(c.playGameSe('vipHit'),true);
+ assert.equal(c.get("[...gameSe.voices].filter(v=>v.name==='vipHit'&&!v.loop).length"),1);
 });
 test('the uploaded parachute clip and bomber loop use the original filenames',async()=>{
  const h=harness(),{c}=h;
