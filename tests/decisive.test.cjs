@@ -816,6 +816,24 @@ test('starting an existing stage clears decisive state and preserves its normal 
  const {run}=start();run("stageMode='beginner';reset(false)");assert.equal(run('decisiveBattle'),null);assert.equal(run('isDecisiveStage()'),false);assert.equal(run('currentStageId()'),'beginner');assert.equal(run('ZONES.length'),5);assert.equal(run('ZONES.some(z=>z.n==="砂漠")'),false);assert.equal(run('base.maxHp'),30);assert.equal(run('mission'),null);
  run("stageMode='front';frontlineBeginner=false;reset(false)");assert.equal(run('decisiveBattle'),null);assert.equal(run('mission.points.length'),3);assert.equal(run('currentStageId()'),'front');assert.ok(run('allies.length>0'));
 });
+test('the decisive mission briefing uses its dedicated transparent artwork',()=>{
+ const {c,run}=createGameEngine(root);
+ const screen=c.document.getElementById('missionBriefing');
+ const image=screen.querySelector('.mission-briefing-image');
+ const classes=new Set();
+ screen.classList.toggle=(name,active)=>active?classes.add(name):classes.delete(name);
+ run("stageMode='decisive';state='briefing';syncMissionBriefing()");
+ assert.match(image.src,/^assets\/ui\/mission_decisive\.webp\?v=/);
+ assert.match(image.alt,/戦車のハッチ/);
+ assert.ok(classes.has('decisive-briefing'));
+ const bytes=fs.readFileSync(path.join(root,image.src.split('?')[0]));
+ assert.equal(bytes.toString('ascii',8,12),'WEBP');
+ assert.ok(bytes[20]&0x10,'artwork includes transparency');
+ run("stageMode='base';syncMissionBriefing()");
+ assert.match(image.src,/mission_hero\.webp/);
+ assert.equal(classes.has('decisive-briefing'),false);
+});
+
 test('decisive sprites, stage preview and script exist without new per-frame image loading',()=>{
  const src=fs.readFileSync(path.join(root,'js/decisive.js'),'utf8');for(const name of ['fortress','bunker','sandbags','desert','bunker-barrel'])assert.ok(fs.statSync(path.join(root,'assets/decisive',name+'.webp')).size<16000);assert.ok(fs.statSync(path.join(root,'assets/ui/stages/decisive.webp')).size<16000);assert.doesNotMatch(src.slice(src.indexOf('function updateDecisiveMission')),/makeAssetImage\(/);
  for(const [name,limit] of [['fortress-hull',120000],['fortress-gear',10000]])assert.ok(fs.statSync(path.join(root,'assets/decisive',name+'.webp')).size<limit);
