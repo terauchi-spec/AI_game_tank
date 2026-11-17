@@ -1,6 +1,31 @@
 const test=require('node:test'),assert=require('node:assert/strict'),path=require('node:path'),fs=require('node:fs'),vm=require('node:vm');
 const {createGameEngine}=require('./helpers/game-engine.cjs'),root=path.join(__dirname,'..');
 function start(seed=7){const h=createGameEngine(root,{seed});h.run("stageMode='escapeTest';areaDebugEnabled=false;skill='throw';reset(false)");return h;}
+test('the three rescue briefings share the transparent illustration and use the wide layout',()=>{
+ const h=createGameEngine(root);
+ const screen=h.c.document.getElementById('missionBriefing');
+ const image=screen.querySelector('.mission-briefing-image');
+ const classes=new Set();
+ screen.classList.toggle=(name,active)=>active?classes.add(name):classes.delete(name);
+ const variants=[
+  ["stageMode='escapeTest';rescueBeginner=true",true],
+  ["stageMode='escapeTest';rescueBeginner=false",true],
+  ["stageMode='indoor';rescueAdvancedTest=true",true],
+  ["stageMode='indoor';rescueAdvancedTest=false",false]
+ ];
+ for(const [setup,rescue] of variants){
+  h.run(setup+";state='briefing';syncMissionBriefing()");
+  assert.equal(classes.has('rescue-briefing'),rescue);
+  if(rescue){
+   assert.match(image.src,/^assets\/ui\/mission_rescue\.webp\?v=/);
+   assert.match(image.alt,/女性要人/);
+  }else assert.match(image.src,/mission_infiltration\.webp/);
+ }
+ const art=fs.readFileSync(path.join(root,'assets/ui/mission_rescue.webp'));
+ assert.equal(art.toString('ascii',8,12),'WEBP');
+ assert.ok(art[20]&0x10);
+});
+
 test('all three rescues load the transparent VIP artwork and share its cached walking poses',()=>{
  const h=start();
  const asset='assets/characters/escape-vip-magenta.webp';

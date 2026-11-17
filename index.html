@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.17.1619</title>
+<title>こっそり戦車大作戦 2026.11.17.2011</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -522,17 +522,17 @@ body.briefing-open .mission-briefing-image{transform-origin:center bottom;animat
 #missionBriefing.front-briefing .mission-hud-guide,#missionFrontlineRules[hidden]{display:none}
 #missionBriefing.indoor-briefing .mission-hud-guide,#missionIndoorRules[hidden],#missionDecisiveRules[hidden]{display:none}
 #missionBriefing .mission-hud-guide[hidden]{display:none}
-#missionBriefing.front-briefing .mission-briefing-content{width:min(100%,1040px);gap:24px}
-#missionBriefing.front-briefing .mission-briefing-image{width:min(48vw,520px);height:min(65dvh,450px)}
-#missionBriefing.front-briefing .mission-briefing-copy{flex:1;min-width:0}
+#missionBriefing.front-briefing .mission-briefing-content,#missionBriefing.rescue-briefing .mission-briefing-content{width:min(100%,1040px);gap:24px}
+#missionBriefing.front-briefing .mission-briefing-image,#missionBriefing.rescue-briefing .mission-briefing-image{width:min(48vw,520px);height:min(65dvh,450px)}
+#missionBriefing.front-briefing .mission-briefing-copy,#missionBriefing.rescue-briefing .mission-briefing-copy{flex:1;min-width:0}
 #missionBriefing.front-briefing .mission-briefing-copy h1{margin-bottom:12px}
 #missionBriefing.front-briefing #missionBriefingGoal{font-size:clamp(18px,2.3vw,23px);margin-bottom:18px}
 #missionBriefing .mission-front-rules{display:grid;gap:14px;width:max-content;max-width:100%;margin:0 auto 22px;padding:0;list-style:none;text-align:left;font-size:17px;font-weight:700;line-height:1.5}
 #missionBriefing .mission-front-rules li{display:flex;align-items:center;gap:12px}
 #missionBriefing .mission-front-rules svg{width:28px;height:28px;flex:none;fill:none;stroke:#ffe0a0;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 @media(max-width:600px){
- #missionBriefing.front-briefing .mission-briefing-content{gap:10px}
- #missionBriefing.front-briefing .mission-briefing-image{width:min(86vw,420px);height:min(32dvh,270px)}
+ #missionBriefing.front-briefing .mission-briefing-content,#missionBriefing.rescue-briefing .mission-briefing-content{gap:10px}
+ #missionBriefing.front-briefing .mission-briefing-image,#missionBriefing.rescue-briefing .mission-briefing-image{width:min(86vw,420px);height:min(32dvh,270px)}
  #missionBriefing.front-briefing #missionBriefingGoal{font-size:18px;margin-bottom:14px}
  #missionBriefing .mission-front-rules{font-size:15px;gap:12px;margin-bottom:18px}
  #missionBriefing .mission-front-rules li{gap:10px}
@@ -1029,7 +1029,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.17.1619',FILE_CREATED_AT='2026/11/17 16:19',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.17.2011',FILE_CREATED_AT='2026/11/17 20:11',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -8832,12 +8832,14 @@ function syncMissionBriefing(){
  const active=state==='briefing',wasOpen=document.body.classList.contains('briefing-open');
  if(active!==wasOpen){document.body.classList.toggle('briefing-open',active);if(active){
    const escape=stageMode==='escapeTest',isTraining=stageMode==='training',decisive=stageMode==='decisive',front=stageMode==='front',screen=document.getElementById('missionBriefing'),image=screen.querySelector('.mission-briefing-image');
+   const rescue=escape||(stageMode==='indoor'&&rescueAdvancedTest);
+   screen.classList.toggle('rescue-briefing',rescue);
    screen.classList.toggle('front-briefing',front);
    screen.classList.toggle('indoor-briefing',stageMode==='indoor');
    document.getElementById('missionFrontlineOrder').textContent=(isFrontlineBeginner()?2:3)+'拠点を順番に制圧';
-   const imageSrc=escape?(rescueBeginner?'assets/terrain/forest.webp':'assets/jungle/palm.webp'):isTraining?'assets/characters/battlefield-assistant.webp':decisive?'assets/ui/stages/decisive.webp':stageMode==='indoor'?'assets/ui/mission_infiltration.webp?v=2026.10.21':front?'assets/ui/mission_frontline.webp?v=2026.10.17':'assets/ui/mission_hero.webp?v=2026.10.14.1653';
+   const imageSrc=rescue?'assets/ui/mission_rescue.webp?v=8856c813037d':isTraining?'assets/characters/battlefield-assistant.webp':decisive?'assets/ui/stages/decisive.webp':stageMode==='indoor'?'assets/ui/mission_infiltration.webp?v=2026.10.21':front?'assets/ui/mission_frontline.webp?v=2026.10.17':'assets/ui/mission_hero.webp?v=2026.10.14.1653';
    if(image.getAttribute('src')!==imageSrc)image.src=imageSrc;
-   image.alt=escape?(rescueBeginner?'森林の地形':'脱出する密林'):isTraining?'戦場アシスタントのアイラ':decisive?'砂漠の巨大移動要塞':stageMode==='indoor'?'鋼鉄のドアに身を隠し、設置爆弾を手に様子をうかがう主人公':front?'主人公と2人の味方兵が一緒に進軍する姿':'円形爆弾を抱えて走る主人公';
+   image.alt=rescue?'壁に身を隠し、女性要人に静かにするよう合図しながら先導する主人公':isTraining?'戦場アシスタントのアイラ':decisive?'砂漠の巨大移動要塞':stageMode==='indoor'?'鋼鉄のドアに身を隠し、設置爆弾を手に様子をうかがう主人公':front?'主人公と2人の味方兵が一緒に進軍する姿':'円形爆弾を抱えて走る主人公';
    screen.querySelector('.mission-hud-guide').hidden=escape||isTraining||front||decisive||stageMode==='indoor';
    document.getElementById('missionEscapeRules').hidden=!escape;
    document.getElementById('missionRescueRoute').textContent=rescueBeginner?'ライフ3の要人女性を護衛して森林と村2エリアを突破':'ライフ3の要人女性を護衛して密林5エリアを突破';
