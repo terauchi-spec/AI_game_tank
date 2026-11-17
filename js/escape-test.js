@@ -54,8 +54,6 @@ function setupEscapeTestWorld(){
   const inside=o=>o.y+o.h/2>z.y1&&o.y+o.h/2<=z.y0;
   z.jungleDensity.trees=covers.filter(c=>c.kd===6&&inside(c)).length;z.jungleDensity.grass=bushes.filter(b=>!b.spinifex&&inside(b)).length;z.jungleDensity.plants=bushes.filter(b=>b.spinifex&&inside(b)).length;
  }
- // One ordinary starting vehicle; test selection does not force invincibility or infinite ammo.
- const t=TYPES[0];cars.push({x:WW/2+130,y:p.y-100,t,kind:'tank',hp:t.hp,c:t.cmax,v:t.vmax,f:t.fmax,ch:0,mgHits:0,body:-Math.PI/2});
  debugMode=0;debugInvincible=false;baseSpawnT=99999;weather='clear';weatherNext=5+R()*10;weatherT=0;rainIntensity=0;
  commanderPrevX=p.x;commanderPrevY=p.y;commanderVelocity={x:0,y:0};commanderRallying=false;commanderSignals=[];
  placeEscapeBuildingSupplies(jungles);

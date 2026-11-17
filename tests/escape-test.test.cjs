@@ -105,7 +105,7 @@ test('five contiguous jungle areas reuse normal combat and terrain, with safe st
   assert.equal(h.run('zoneAt(p.y)===ZONES[0]'),true);assert.equal(h.run('zoneAt(mission.exit.y)===ZONES[6]'),true);
   assert.equal(h.run('inWaterAt(mission.exit.x,mission.exit.y)||hitsC(mission.exit.x,mission.exit.y,90)||hitsM(p.x,p.y,8)'),false);
   assert.equal(h.run('areaDebugEnabled||debugInvincible||cars.some(v=>v.debugInfinite)'),false);
-  assert.equal(h.run('cars.length'),1);assert.equal(h.run('humans.length'),45);assert.equal(h.run('etanks.length'),10);
+  assert.equal(h.run('cars.length'),0);assert.equal(h.run('humans.length'),45);assert.equal(h.run('etanks.length'),10);
   assert.equal(h.run('ZONES.slice(1,-1).every(z=>z.jungleDensity.trees>5&&z.jungleDensity.grass>20)'),true);
   assert.equal(h.run('ZONES.every(z=>!z.escapeRiver||z.escapeRiver.h>=150&&z.escapeRiver.h<=300&&z.escapeRiver.bridge===null)'),true);
   assert.equal(h.run('ZONES.every(z=>!z.oasis||z.oasis.sizeScale>=.2&&z.oasis.sizeScale<=1.5&&water.includes(z.oasis))'),true);
@@ -131,7 +131,7 @@ test('EXIT requires five uninterrupted seconds on foot, resets outside, and fina
  assert.equal(h.run('mission.escapeProgress'),0);
  h.run('Object.assign(mission.vip,mission.exit);updateMission(4.9)');
  h.run('p.x+=INDOOR_EXIT_RADIUS+1;updateMission(.2)');assert.equal(h.run('mission.escapeProgress'),0);
- h.run('p.x=mission.exit.x;p.tank=cars[0];updateMission(5)');assert.equal(h.run('mission.escapeProgress'),0);
+ h.run("p.x=mission.exit.x;p.tank={kind:'tank',t:TYPES[0]};updateMission(5)");assert.equal(h.run('mission.escapeProgress'),0);
  h.run("p.tank=null;state='briefing';updateMission(5)");assert.equal(h.run('mission.escapeProgress'),0);
  h.run("p.y=0;state='play';updateMission(.1)");assert.equal(h.run('mission.index'),6);h.run('p.y=mission.exit.y;updateMission(5);draw()');
  assert.equal(h.run('state'),'indoorEscape');assert.equal(h.run('mission.extraction.carX<mission.extraction.stopX'),true);
@@ -271,7 +271,7 @@ test('jungle buildings, separate water banks and capped marshes remain safe acro
   if(seed<=3)h.run('for(const w of water){cam=Math.max(0,w.y-100);draw()}for(const m of mud){cam=m.y-100;draw()}');
   if(h.run('mud.length>0')){
    h.run('globalThis.m=mud[0];p.x=m.x+m.w/2;p.y=m.y+m.h/2;p.tank=null');
-   assert.equal(h.run('terrainMoveScale(p,1,0,8)'),.3);h.run('p.tank=cars[0]');assert.equal(h.run('terrainMoveScale(p,1,0,8)'),.6);
+   assert.equal(h.run('terrainMoveScale(p,1,0,8)'),.3);h.run("p.tank={kind:'tank',t:TYPES[0]}");assert.equal(h.run('terrainMoveScale(p,1,0,8)'),.6);
   }
  }
  assert.deepEqual([...planned].sort(),[0,2,4]);assert.equal(buildingTypes.size,4);assert.ok(lakesWithRivers>20&&ponds>10&&trails>50&&lakeTrees>0&&lakeGrass>0);
@@ -297,7 +297,7 @@ test('escape rivers are 150–300px wide, roll at 60 percent, and never generate
 });
 
 
-test('squalls fade players, allies, enemies and VIP artwork to 30 percent',()=>{
+test('squalls fade allies, enemies and VIP artwork while keeping the player opaque',()=>{
  const h=start();
  h.run(`
   state='play';skill='throw';p.tank=null;
@@ -322,7 +322,7 @@ test('squalls fade players, allies, enemies and VIP artwork to 30 percent',()=>{
  `);
  for(const [phase,alpha] of [['peak',.3],['fade',.65],['rain',1],['clear',1]]){
   for(const actor of ['player','ally','enemy','vip']){
-   assert.ok(Math.abs(h.run(`seen.${phase}.${actor}`)-alpha)<1e-12,`${actor} during ${phase}`);
+   assert.ok(Math.abs(h.run(`seen.${phase}.${actor}`)-(actor==='player'?1:alpha))<1e-12,`${actor} during ${phase}`);
   }
  }
 });
@@ -423,4 +423,31 @@ test('outdoor rescue evaluation follows the VIP instead of the player across are
   h.run('mission.vip.y=(ZONES[1].y0+ZONES[1].y1)/2;updateEscapeTestMission(0)');
   assert.equal(h.run('scoreStats.objectiveProgress'),h.run('1/ZONES.length'));
  }
+});
+
+test('sandstorms and squalls keep the player opaque on foot and in exposed or concealed tanks',()=>{
+ const h=start();
+ const samples=h.run(`(()=>{
+  const samples=[],drawSoldier=soldier,drawVehicleOriginal=drawVehicle;
+  for(const ctx of [gm,og]){
+   const stack=[];ctx.globalAlpha=1;
+   ctx.save=()=>stack.push(ctx.globalAlpha);ctx.restore=()=>{ctx.globalAlpha=stack.pop();};
+  }
+  soldier=(...args)=>{if(args[10]===p)samples.push(g.globalAlpha);};
+  drawVehicle=(vehicle)=>{if(vehicle===p.tank)samples.push(g.globalAlpha);};
+  try{
+   for(const storm of ['sandstorm','squall']){
+    weather=storm;sandIntensity=1;rainIntensity=1;state='play';
+    for(const mode of ['foot','tank','bushTank']){
+     bushes=mode==='bushTank'?[{x:p.x-100,y:p.y-100,w:200,h:200}]:[];rebuildSpatialGrid();
+     p.tank=mode==='foot'?null:{kind:'tank',t:TYPES[0],f:100};
+     g.globalAlpha=1;draw();
+    }
+   }
+  }finally{
+   soldier=drawSoldier;drawVehicle=drawVehicleOriginal;p.tank=null;
+  }
+  return samples;
+ })()`);
+ assert.deepEqual(Array.from(samples),[1,1,1,1,1,1]);
 });
