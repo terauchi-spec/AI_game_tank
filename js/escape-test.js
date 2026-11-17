@@ -260,8 +260,8 @@ function escapeVipTarget(){
  return vip?.hp>0?vip:null;
 }
 function damageMissionVip(vip,damage=1){
- if(!vip||vip.hp<=0||state!=='play')return;
- vip.hp=Math.max(0,vip.hp-damage);sfx('vipHit');
+ if(!vip||vip.hp<=0||state!=='play'||vip.damageImmuneT>0)return;
+ vip.hp=Math.max(0,vip.hp-damage);vip.damageImmuneT=1;sfx('vipHit');
  if(scoreStats?.rescue&&!scoreStats.finalized)scoreStats.vipHp=vip.hp;
  burst(vip.x,vip.y,7,'#f28b9f',75);
  if(vip.hp>0){say('要人女性が被弾！ 残りライフ '+vip.hp);return;}
@@ -270,7 +270,7 @@ function damageMissionVip(vip,damage=1){
 }
 function stunEscapeVipAtBlast(x,y,radius){
  const vip=stageMode==='escapeTest'?mission?.vip:null;
- if(!vip||vip.hp<=0||state!=='play'||vip.stunT>0||vip.stunImmuneT>0||Math.hypot(vip.x-x,vip.y-y)>radius)return;
+ if(!vip||vip.hp<=0||state!=='play'||vip.stunT>0||vip.stunImmuneT>0||vip.damageImmuneT>0||Math.hypot(vip.x-x,vip.y-y)>radius)return;
  vip.stunT=5;vip.stunContactDelay=.3;vip.moving=false;sfx('vipHit');
  vip.wallFollow=null;vip.sideStep=null;vip.followWait=ESCAPE_VIP_FOLLOW_DELAY;
  say('要人女性が爆風で気絶！触れるか5秒で復帰');

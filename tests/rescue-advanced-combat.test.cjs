@@ -108,7 +108,12 @@ test('rescued VIP is confirmed, pursued, hit by enemy rifles and lost at zero li
  assert.ok(h.run("bullets.some(b=>b.from==='e'&&b.k==='r')"));
  h.run('guard.cd=10');
  h.tick(.6,"if(state==='play')update(1/60)");
- assert.equal(h.run('vip.hp'),0);
+ assert.equal(h.run('vip.hp'),2,'only the first bullet in the burst deals damage');
+ for(const remaining of [1,0]){
+  h.tick(1,'update(1/60)');
+  h.run("fire(vip.x+16,vip.y,Math.PI,'e','r',600,240);update(.033)");
+  assert.equal(h.run('vip.hp'),remaining);
+ }
  assert.equal(h.run('state'),'failed');
  assert.equal(h.run('scoreStats.vipHp'),0);
  assert.equal(h.run('scoreStats.vipDetections'),1);

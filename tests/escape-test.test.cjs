@@ -129,11 +129,16 @@ test('VIP follows unarmed, rejoins from below without healing, and takes enemy f
  h.run("p.x=400;p.y=12600;Object.assign(mission.vip,{x:520,y:12600,hp:3});p.dig=2;globalThis.enemy={x:545,y:12600};humans=[enemy];etanks=[];covers=[];objects=[];rebuildSpatialGrid()");
  assert.equal(h.run("findDetectedTarget(enemy,Math.PI).key"),'escapeVip');
  assert.equal(h.run("targetObj('escapeVip')===mission.vip"),true);
- h.run('humans=[];globalThis.hitSounds=[];sfx=name=>hitSounds.push(name)');
- for(let remaining=2;remaining>=0;remaining--){
-  h.run("fire(mission.vip.x+16,mission.vip.y,Math.PI,'e','r',600,240);update(.033)");
-  assert.equal(h.run('mission.vip.hp'),remaining);
- }
+ h.run(`humans=[];globalThis.hitSounds=[];sfx=name=>hitSounds.push(name);
+  const hitVip=()=>{fire(mission.vip.x+16,mission.vip.y,Math.PI,'e','r',1200,240);update(1/60);};
+  hitVip();hitVip();stunEscapeVipAtBlast(mission.vip.x,mission.vip.y,95);`);
+ assert.equal(h.run('mission.vip.hp'),2);
+ assert.equal(h.run('mission.vip.stunT>0'),false);
+ h.run('for(let i=0;i<57;i++)update(1/60);hitVip()');
+ assert.equal(h.run('mission.vip.hp'),2,'a bullet at frame 59 is blocked');
+ h.run('hitVip()');
+ assert.equal(h.run('mission.vip.hp'),1,'a bullet at one second can damage again');
+ h.run('for(let i=0;i<59;i++)update(1/60);hitVip()');
  assert.equal(h.run('state'),'failed');
  assert.equal(h.run('scoreStats.final.cleared'),false);
  assert.equal(h.run("targetObj('escapeVip')"),null);
