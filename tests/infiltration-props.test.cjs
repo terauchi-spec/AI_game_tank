@@ -143,19 +143,17 @@ test('exit marker uses the escape radius and a half ring at 2.5 seconds',()=>{
  assert.ok(labels.some(q=>q[0]==='EXIT'));assert.ok(labels.some(q=>q[0]==='2.5s'));
 });
 
-test('stair sprites select ascending and descending artwork and preserve image proportions',()=>{
+test('stair sprites select directional artwork and fit the existing staircase bounds',()=>{
  const start=source.indexOf('function drawInfiltrationStairSprite(floor){'),end=source.indexOf('function drawInfiltrationFloors(cx,cy){',start);
- const calls=[],requests=[],shades=[],g={beginPath(){},arc(){},fill(){},moveTo(){},lineTo(){},closePath(){},stroke(){},fillText(){},save(){},restore(){},drawImage:(...a)=>calls.push(a),fillRect(...r){shades.push({r,color:this.fillStyle});}};
+ const calls=[],requests=[],g={beginPath(){},arc(){},fill(){},moveTo(){},lineTo(){},closePath(){},stroke(){},save(){},restore(){},drawImage:(...a)=>calls.push(a)};
  const image={naturalWidth:100,naturalHeight:240};
  const helpers=source.slice(source.indexOf('const INDOOR_STAIR_WIDTH='),source.indexOf('function indoorStairWalls('));
  const draw=new Function('g','indoorPropImage','indoorWorld','rescueAdvancedTest',helpers+source.slice(start,end)+';return drawInfiltrationStairSprite;')(
   g,key=>{requests.push(key);return image;},null,false);
  for(const number of [1,2])assert.equal(draw({number,stair:{x:500,y:1000}}),true);
  assert.deepEqual(requests,['stairs_up','stairs_down']);
- assert.equal(shades.length,1,'only the ascending first-floor landing is darkened');
- assert.equal(shades[0].color,'rgba(0,0,0,.14)');
- assert.deepEqual(shades[0].r,[476,933.04,48,23.04]);
- for(const [im,x,y,w,h] of calls){assert.equal(im,image);assert.ok(Math.abs(w/h-100/240)<1e-9);assert.equal(w,60);assert.equal(h,144);assert.equal(x+w/2,500);assert.equal(y+h/2,1000);}
+ assert.deepEqual(calls.map(([im,x,y,w,h])=>[im,x,y+h/2,w,h]),
+  [[image,470,1000,60,192],[image,470,1000,60,60*(320/162)]]);
 });
 
 test('ascending and descending staircase files are small alpha WebP assets',()=>{

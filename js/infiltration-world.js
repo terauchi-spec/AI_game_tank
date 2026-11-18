@@ -1619,17 +1619,19 @@ function setupInfiltrationMission(){
 
 
 const INDOOR_STAIR_WIDTH=60;
-function indoorStairAsset(number){
-  // The command facility uses the wider flight on both floors. The arrow indicates direction.
-  return indoorWorld?.commandFacility||number!==1?'stairs_down':'stairs_up';
+function indoorStairDestination(floor,stair=indoorWorld.stairActive){
+  return Number.isInteger(stair?.destination)?stair.destination:2-floor.number;
+}
+function indoorStairGoesUp(floor,stair){
+  const destination=indoorStairDestination(floor,stair),origin=floor.number-1;
+  return rescueAdvancedTest||indoorWorld?.commandFacility?destination<origin:destination>origin;
 }
 function indoorStairBounds(stair,number){
-  // The lab shares one tall staircase on both floors. Its surrounding walls,
-  // landing and sanctuary must follow that silhouette, not the military down stair.
+  // Keep each layout's existing footprint for walls, stair entry and safe landings.
   const laboratory=typeof isLaboratoryStage==='function'&&isLaboratoryStage();
-  const up=indoorStairAsset(number)==='stairs_up';
+  const tall=number===1&&!indoorWorld?.commandFacility;
   const w=INDOOR_STAIR_WIDTH;
-  const h=w*(laboratory?384/107:up?320/100:320/162);
+  const h=w*(laboratory?384/107:tall?320/100:320/162);
   return{x:stair.x-w/2,y:stair.y-h/2,w,h};
 }
 function indoorStairWalls(stair,number){
@@ -1664,9 +1666,6 @@ function indoorPartnerStairLanding(floor,stair=floor.stair){
   indoorPreparePartnerTravel(partner);
   const landing=indoorStairLanding(floor,stair);
   Object.assign(partner,{x:landing.x+14,y:landing.y+12,face:p.body});
-}
-function indoorStairDestination(floor,stair=indoorWorld.stairActive){
-  return Number.isInteger(stair?.destination)?stair.destination:1-indoorWorld.currentFloor;
 }
 function indoorStairTravelReady(floor){
   const w=indoorWorld;
@@ -3053,27 +3052,23 @@ const indoorOutdoorTerrain={n:'丘陵',g:'#6b7a3a'};
 const indoorLaboratoryOutdoorTerrain={n:'街',g:'#57595e'};
 function drawInfiltrationStairSprite(floor){
   const stair=arguments[1]||floor.stairs?.[0]||floor.stair;
-  const image=indoorPropImage(indoorStairAsset(floor.number));if(!image)return false;
-  const iw=image.naturalWidth||image.width,ih=image.naturalHeight||image.height;
-  const w=indoorStairBounds(stair,floor.number).w,h=w*ih/iw;
+  const up=indoorStairGoesUp(floor,stair),image=indoorPropImage(up?'stairs_up':'stairs_down');
+  if(!image)return false;
+  const {x,y,w,h}=indoorStairBounds(stair,floor.number);
   g.save();g.imageSmoothingEnabled=true;
-  g.drawImage(image,stair.x-w/2,stair.y-h/2,w,h);
-  if(floor.number===1){
-    g.fillStyle='rgba(0,0,0,.14)';
-    g.fillRect(stair.x-w*.4,stair.y-h/2+h*.035,w*.8,h*.16);
-  }
+  g.drawImage(image,x,y,w,h);
   drawInfiltrationStairArrow(floor,stair,h);
   g.restore();return true;
 }
 function drawInfiltrationStairArrow(floor,stair,height){
-  const direction=stair.direction||(floor.number===1?1:-1),x=stair.x,y=stair.y-height/2+24;
-  const arrowDirection=rescueAdvancedTest||indoorWorld?.commandFacility?-direction:direction;
+  const up=indoorStairGoesUp(floor,stair),x=stair.x,y=stair.y-height/2+24;
+  const arrowDirection=up?1:-1;
   g.save();
   g.fillStyle='rgba(20,30,35,.8)';g.beginPath();g.arc(x,y,15,0,Math.PI*2);g.fill();
   // A north-pointing arrow denotes up a floor, a south-pointing arrow down.
   g.beginPath();const pts=[[-9,0],[0,-11],[9,0],[4,0],[4,10],[-4,10],[-4,0]];
   for(let i=0;i<pts.length;i++){const [dx,dy]=pts[i];if(i)g.lineTo(x+dx,y+dy*arrowDirection);else g.moveTo(x+dx,y+dy*arrowDirection);}
-  g.closePath();g.fillStyle=direction>0?'#fff0a8':'#a5e8ff';g.strokeStyle='#15232b';g.lineWidth=1.5;g.fill();g.stroke();
+  g.closePath();g.fillStyle=up?'#a5e8ff':'#fff0a8';g.strokeStyle='#15232b';g.lineWidth=1.5;g.fill();g.stroke();
   g.restore();
 }
 function drawInfiltrationFloors(cx,cy){
@@ -3122,10 +3117,11 @@ function drawInfiltrationFloors(cx,cy){
     for(const stair of f.stairs||[f.stair])if(stair.y>cy-130&&stair.y<cy+H+130){
       const x=stair.x,y=stair.y;
       if(!drawInfiltrationStairSprite(f,stair)){
-      g.save();g.translate(x,y);g.scale(60/88,1);
+      const {w,h}=indoorStairBounds(stair,f.number);
+      g.save();g.translate(x,y);g.scale(w/88,h/116);
       g.fillStyle='#283c37';g.fillRect(-44,-58,88,116);
       g.fillStyle='#8a9684';g.fillRect(-36,-52,72,103);
-      g.fillStyle=f.number===1?'#2e3e37':'#354740';g.fillRect(-36,-52,72,10);
+      g.fillStyle=indoorStairGoesUp(f,stair)?'#b7beb3':'#283331';g.fillRect(-36,-52,72,21);
       for(let step=0;step<7;step++){
         const yy=-40+step*13;
         g.fillStyle=step%2?'#718477':'#9aa79a';
@@ -3135,7 +3131,7 @@ function drawInfiltrationFloors(cx,cy){
       }
       g.fillStyle='#ced7bc';g.fillRect(-42,-50,5,96);g.fillRect(37,-50,5,96);
       g.restore();
-      drawInfiltrationStairArrow(f,stair,116);
+      drawInfiltrationStairArrow(f,stair,h);
       }
     }
     if(arguments[2]!==false&&(!rescueAdvancedTest||(f.number===1&&indoorWorld.currentFloor===0)))drawInfiltrationExitsForFloor(f,cx,cy);

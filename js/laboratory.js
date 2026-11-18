@@ -7,7 +7,7 @@ const LABORATORY_ART={
  equipment:'lab-analyzer',server_rack:'lab-analyzer',generator:'lab-reactor',bed:'lab-medical',
  shell_pallet_hd:'lab-samples',waste_tank:'lab-waste-tank',cooling_unit:'lab-cooling-unit',
  transport_container:'lab-transport-container',ultra_freezer:'lab-freezer',centrifuge:'lab-centrifuge',incubator:'lab-incubator',wash_station:'lab-wash-sink',
- stairs_up:'lab-stairs',stairs_down:'lab-stairs',building:'lab-building'
+ stairs_up:'lab-stairs',building:'lab-building'
 };
 // Fixed world dimensions for each lab sprite, shared by every placement path.
 // Aspect ratios match the tightly cropped transparent runtime assets.

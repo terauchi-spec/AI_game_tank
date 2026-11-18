@@ -1241,12 +1241,13 @@ test('upper floors have sealed exterior walls, no lobby or exterior exit, and re
 test('upper-floor drawing omits exterior paths and entrance signs while preserving stairs',()=>{
  const src=require('node:fs').readFileSync(require('node:path').join(__dirname,'../js/infiltration-world.js'),'utf8');
  const from=src.indexOf('function drawInfiltrationFloors(cx,cy){'),to=src.indexOf('function drawInfiltrationProps(cx,cy){',from);
+ const stairs=src.slice(src.indexOf('const INDOOR_STAIR_WIDTH='),src.indexOf('function indoorStairWalls('));
  const labels=[],fills=[];
  const g=new Proxy({fillText:t=>labels.push(t),fillRect:(...r)=>fills.push(r)},
   {get:(o,k)=>k in o?o[k]:()=>{}});
  for(const floorNo of [1,2]){
   const f=indoorGenerateFloor(floorNo,random(313));
-  const draw=new Function('rescueAdvancedTest','g','indoorWorld','WW','H','INDOOR_FORECOURT_DEPTH','W','terrainSurfacePattern','indoorOutdoorTerrain','indoorConcretePattern','INDOOR_EXIT_RADIUS','INDOOR_EXIT_SECONDS','drawInfiltrationStairSprite',src.slice(src.indexOf('function drawInfiltrationStairArrow('),from)+src.slice(from,to)+';return drawInfiltrationFloors;')(
+  const draw=new Function('rescueAdvancedTest','g','indoorWorld','WW','H','INDOOR_FORECOURT_DEPTH','W','terrainSurfacePattern','indoorOutdoorTerrain','indoorConcretePattern','INDOOR_EXIT_RADIUS','INDOOR_EXIT_SECONDS','drawInfiltrationStairSprite',stairs+src.slice(src.indexOf('function drawInfiltrationStairArrow('),from)+src.slice(from,to)+';return drawInfiltrationFloors;')(
    false,g,{floors:[f]},960,2500,900,960,()=>null,{g:0},()=>null,90,5,()=>false);
   labels.length=0;fills.length=0;draw(0,0);
   if(floorNo===1){

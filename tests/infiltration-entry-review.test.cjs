@@ -24,18 +24,40 @@ test('an unconfirmed glimpse cannot discover the player after they hide',()=>{
  const h=sentry();h.tick(8);h.run('p.dig=5');h.tick(120);
  assert.notEqual(h.run('reviewGuard.target'),'p');assert.equal(h.run('reviewGuard.indoorNotice.visible'),false);
 });
-test('both ordinary infiltration floors draw destination arrows inside their landings',()=>{
- const h=createGameEngine(root);
- h.run("stageMode='indoor';indoorLaboratory=false;indoorPropImages.stairs_up={complete:true,naturalWidth:100,naturalHeight:320};indoorPropImages.stairs_down={complete:true,naturalWidth:162,naturalHeight:320};");
- for(const number of [1,2]){
-  h.c.reviewFloor={number,stair:{x:500,y:1000}};
-  const result=JSON.parse(h.run(`(()=>{const points=[],labels=[],oldMove=g.moveTo,oldLine=g.lineTo,oldText=g.fillText;
-   g.moveTo=(x,y)=>points.push({x,y});g.lineTo=(x,y)=>points.push({x,y});g.fillText=t=>labels.push(t);
-   drawInfiltrationStairSprite(reviewFloor);g.moveTo=oldMove;g.lineTo=oldLine;g.fillText=oldText;
-   return JSON.stringify({points,labels,safe:indoorStairSafeArea(reviewFloor)});})()`));
-  assert.equal(result.points.length,7);assert.equal(result.points[1].y<result.points[0].y,number===1);
-  assert.deepEqual(result.labels,[],'stairs use arrows without floor labels');
-  assert.ok(result.points.every(p=>p.x>=result.safe.x&&p.x<=result.safe.x+result.safe.w&&p.y>=result.safe.y&&p.y<=result.safe.y+result.safe.h));
+test('infiltration and rescue stairs match their actual destination, artwork and arrow',()=>{
+ const stages=[
+  ['indoorBeginner',['up','down']],
+  ['indoor',['up','down']],
+  ['indoorLaboratory',['up','down up','down']],
+  ['rescueAdvancedTest',['down','up down','up']]
+ ];
+ for(const [flag,expected] of stages){
+  const h=createGameEngine(root,{seed:1771});
+  h.run(`stageMode='indoor';${flag==='indoor'?'':flag+'=true;'}reset(false)`);
+  const result=JSON.parse(h.run(`JSON.stringify(indoorWorld.floors.map(floor=>(floor.stairs||[floor.stair]).map(stair=>{
+   const points=[],labels=[],oldMove=g.moveTo,oldLine=g.lineTo,oldText=g.fillText,oldImage=g.drawImage;
+   let url;
+   g.moveTo=(x,y)=>points.push({x,y});g.lineTo=(x,y)=>points.push({x,y});
+   g.fillText=t=>labels.push(t);g.drawImage=image=>{url=image.src;};
+   try{drawInfiltrationStairSprite(floor,stair);}
+   finally{g.moveTo=oldMove;g.lineTo=oldLine;g.fillText=oldText;g.drawImage=oldImage;}
+   const safe=indoorStairSafeArea(floor,stair);
+   return {
+    direction:points[1].y<points[0].y?'up':'down',
+    inside:points.length===7&&points.every(p=>p.x>=safe.x&&p.x<=safe.x+safe.w&&p.y>=safe.y&&p.y<=safe.y+safe.h),
+    url,labels
+   };
+  })))`));
+  assert.deepEqual(result.map(stairs=>stairs.map(s=>s.direction).join(' ')),expected,flag);
+  for(const stairs of result){
+   assert.equal(new Set(stairs.map(s=>s.url)).size,stairs.length,flag);
+   for(const s of stairs){
+    assert.equal(s.inside,true,flag);
+    assert.deepEqual(s.labels,[]);
+    const asset=s.direction==='up'&&flag==='indoorLaboratory'?'lab-stairs':'stairs_'+s.direction;
+    assert.ok(s.url.includes('/'+asset+'.webp'),`${flag}: ${s.url}`);
+   }
+  }
  }
 });
 

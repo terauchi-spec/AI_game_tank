@@ -310,7 +310,7 @@ test('command facility keeps both floor dimensions, a fixed central room and nin
  assert.ok(run(`(()=>{
   const w=indoorWorld,f=w.floors[0],north=f.openings.find(o=>o.side===-1);
   return north&&w.exits.length===1&&w.exit.x===north.x&&w.exit.y<f.footprint.y&&
-   !hitsM(north.x,north.y,8)&&indoorStairAsset(1)==='stairs_down'&&indoorStairAsset(2)==='stairs_down';
+   !hitsM(north.x,north.y,8)&&!indoorStairGoesUp(f,f.stairs[0])&&indoorStairGoesUp(w.floors[1],w.floors[1].stairs[0]);
  })()`));
  assert.deepEqual(Array.from(run(`(()=>{
   const originalArrow=drawFrontlineArrow,originalText=gm.fillText,calls=[],q=mission.computer;
