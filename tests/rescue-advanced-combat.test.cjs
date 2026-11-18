@@ -187,3 +187,29 @@ test('stair travel fades for half a second and moves the player and VIP at the m
  assert.equal(h.run('indoorWorld.stairTransition'),null);
  assert.equal(h.run('indoorWorld.stairMoveLock'),0);
 });
+
+test('rescue EXIT roads and the ground-floor forecourts stay clear of both basement floors',()=>{
+ let northExits=0;
+ for(const seed of [1,7,13,31,91]){
+  const h=createGameEngine(path.join(__dirname,'..'),{seed});
+  h.run("stageMode='indoor';rescueAdvancedTest=true;reset(false);state='play'");
+  northExits+=h.run('Number(!!indoorWorld.emergency)');
+  assert.equal(h.run(`(()=>{
+   const ground=indoorWorld.floors[0],north=ground.footprint.y-INDOOR_FORECOURT_DEPTH;
+   return indoorWorld.floors.slice(1).every(f=>f.footprint.y+f.footprint.h<north)
+    &&ground.footprint.y+ground.footprint.h+INDOOR_FORECOURT_DEPTH<WH
+    &&indoorWorld.exits.every(exit=>roadBands.some(r=>r.indoorExtractionRoad&&r.y===exit.y-160&&r.h===320));
+  })()`),true);
+  assert.equal(h.run(`(()=>{
+   const seen=[],original=drawRoadBand;drawRoadBand=road=>seen.push(road);
+   try{
+    for(const exit of indoorWorld.exits){
+     indoorUncachedFloors(0,exit.y-H/2,false);
+     if(!seen.some(r=>r.y===exit.y-160))return false;
+    }
+   }finally{drawRoadBand=original;}
+   return true;
+  })()`),true);
+ }
+ assert.ok(northExits>0);
+});

@@ -1122,7 +1122,7 @@ function setupInfiltrationWorld(commandFacility=false){
   const fileDistribution=R(),groundFiles=beginner?1:fileDistribution<.5?1:2;
   const shuffled=floorNumbers;
   for(const n of shuffled){
-    const raw=rawFloors[n-1],off=basementLayout?[8800,6100,3400][n-1]:INDOOR_FLOOR_OFFSETS[n-1];
+    const raw=rawFloors[n-1],off=basementLayout&&!rescueAdvancedTest?[8800,6100,3400][n-1]:INDOOR_FLOOR_OFFSETS[n-1];
     const to=pt=>indoorAt(pt.x,pt.y,off);
     const rooms=raw.rooms.map(r=>{const rect=indoorRect(r,off);
       return{...rect,id:r.id,name:r.name,purpose:r.purpose,size:r.size,isGuardPost:!!r.isGuardPost,...(r.laboratoryRole?{laboratoryRole:r.laboratoryRole}:{}),tiles:r.tiles.map(tile=>indoorRect(tile,off))};
@@ -1282,9 +1282,9 @@ function setupInfiltrationWorld(commandFacility=false){
   indoorWorld.emergency=entrance.emergency?{...entrance.emergency}:null;
   indoorWorld.exits=commandFacility?[indoorWorld.exit]:[entrance.entrance,entrance.emergency].filter(Boolean);
   indoorWorld.currentFloor=0;
-  // Lab pickup roads reuse destruction-stage asphalt, markings and its shared
+  // Pickup roads reuse destruction-stage asphalt, markings and its shared
   // one-time visual cache. Both possible jeep lanes (+/-68px) fit the 320px road.
-  if(typeof isLaboratoryStage==='function'&&isLaboratoryStage()){
+  if(rescueAdvancedTest||typeof isLaboratoryStage==='function'&&isLaboratoryStage()){
     roadBands=indoorWorld.exits.map(exit=>({x:0,y:exit.y-160,w:WW,h:320,
       kind:'asphalt',lanes:4,indoorExtractionRoad:true}));
   }
@@ -3075,9 +3075,9 @@ function drawInfiltrationFloors(cx,cy){
   const outdoor=indoorWorld.commandFacility?decisiveFacilityOutdoorTerrain:typeof isLaboratoryStage==='function'&&isLaboratoryStage()?indoorLaboratoryOutdoorTerrain:indoorOutdoorTerrain;
   g.fillStyle=indoorWorld.currentFloor>=1?'#11171c':terrainSurfacePattern(outdoor)||outdoor.g;
   g.fillRect(left,top,right-left,bottom-top);
-  // Lab rescue roads belong to the static floor layer. Drawing them in the
+  // Extraction roads belong to the static floor layer. Drawing them in the
   // global outdoor pass would paint over live EXIT circles and countdowns.
-  if(typeof isLaboratoryStage==='function'&&isLaboratoryStage()){
+  if(rescueAdvancedTest||typeof isLaboratoryStage==='function'&&isLaboratoryStage()){
     for(const road of roadBands)if(road.y+road.h+24>=cy&&road.y-24<=cy+H)drawRoadBand(road);
   }
   const concrete=indoorConcretePattern()||'#777975';
