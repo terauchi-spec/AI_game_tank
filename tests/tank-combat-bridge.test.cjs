@@ -7,12 +7,30 @@ function weapons(){
  vm.runInContext(section('function turnEnemyTankTurret(','// 戦車の疑惑モード：'),c);
  return{c,shots,e:{x:0,y:0,ang:0,cc:0,vc:0,target:'p'}};
 }
-test('a target behind the tank gets fast MG tracking but no cannon until the turret has rotated into aim',()=>{
+test('both weapons wait for the turret to rotate toward a target behind the tank',()=>{
  const {c,shots,e}=weapons();
  for(let i=0;i<108;i++)c.updateEnemyTankWeapons(e,{x:-150,y:0},150,Math.PI,true,true,1/60);
- assert.ok(Math.abs(e.ang-Math.PI*.9)<1e-9);assert.equal(shots.filter(s=>s[4]==='c').length,0);assert.equal(shots[0][4],'v');assert.equal(shots[0][2],Math.PI);
+ assert.ok(Math.abs(e.ang-Math.PI*.9)<1e-9);assert.equal(shots.length,0);
  for(let i=0;i<12;i++)c.updateEnemyTankWeapons(e,{x:-150,y:0},150,Math.PI,true,true,1/60);
  const cannon=shots.find(s=>s[4]==='c');assert.ok(cannon);assert.ok(Math.abs(angD(Math.PI,cannon[2]))<=Math.PI/30+1e-9);assert.ok(Math.abs(cannon[0]-Math.cos(cannon[2])*38)<1e-9);assert.equal(e.cc,2.8);
+ const mg=shots.find(s=>s[4]==='v');assert.ok(mg);
+ assert.ok(Math.abs(angD(Math.PI,mg[2]))<=Math.PI/30+1e-9);
+ assert.ok(Math.abs(mg[0]-Math.cos(mg[2])*32)<1e-9);
+ assert.ok(Math.abs(mg[1]-Math.sin(mg[2])*32)<1e-9);
+ assert.equal(e.vc,.16);
+});
+test('MG bullets originate along the turret direction and keep visibility, range and cooldown limits',()=>{
+ const {c,shots,e}=weapons();e.ang=.4;e.cc=1;
+ c.updateEnemyTankWeapons(e,{x:135,y:65},150,.45,true,true,0);
+ assert.equal(shots.length,1);assert.equal(shots[0][2],.4);
+ assert.equal(shots[0][0],Math.cos(.4)*32);assert.equal(shots[0][1],Math.sin(.4)*32);
+ assert.equal(shots[0][4],'v');assert.equal(shots[0][5],420);assert.equal(shots[0][6],200);
+ c.updateEnemyTankWeapons(e,{x:135,y:65},150,.45,true,true,0);assert.equal(shots.length,1);
+ e.vc=0;
+ for(const [distance,visible,allowed] of [[200,true,true],[150,false,true],[150,true,false]]){
+  c.updateEnemyTankWeapons(e,{x:135,y:65},distance,.45,visible,allowed,0);
+  assert.equal(shots.length,1);assert.equal(e.vc,0);
+ }
 });
 test('cover shots also wait for turret alignment and firing pauses retain their protection',()=>{
  const {c,shots,e}=weapons();c.firstBlockingCover=()=>({x:-160,y:-10,w:20,h:20});

@@ -1029,7 +1029,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.18.0847',FILE_CREATED_AT='2026/11/18 08:47',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.19.0137',FILE_CREATED_AT='2026/11/19 01:37',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -4415,7 +4415,7 @@ function enterTankFound(e,key,pause=null){
  }
  return fresh;
 }
-// Main gun follows the rendered turret at 90 degrees/second; MG keeps fast tracking.
+// Main gun follows the rendered turret at 90 degrees/second; MG shares its direction.
 function turnEnemyTankTurret(e,desired,dt){
  const step=Math.PI/2*dt;e.ang+=Math.max(-step,Math.min(step,angD(desired,e.ang)));
 }
@@ -4427,7 +4427,7 @@ function updateEnemyTankWeapons(e,tg,d,toT,vis,canFire,dt){
  if(e.cc<=0&&(block||vis&&d<detectDropRange(e.target))&&Math.abs(angD(aim,e.ang))<=Math.PI/30){
   e.cc=2.8;fire(e.x+Math.cos(e.ang)*38,e.y+Math.sin(e.ang)*38,e.ang+(R()-.5)*(block?.035:.08),'e','c',enemyCannonSpeed(),block?340:480);
  }
- if(vis&&d<200&&e.vc<=0){e.vc=.16;fire(e.x+Math.cos(toT)*32,e.y+Math.sin(toT)*32,toT+(R()-.5)*.2,'e','v',420,200);}
+ if(vis&&d<200&&e.vc<=0&&Math.abs(angD(toT,e.ang))<=Math.PI/30){e.vc=.16;fire(e.x+Math.cos(e.ang)*32,e.y+Math.sin(e.ang)*32,e.ang+(R()-.5)*.2,'e','v',420,200);}
 }
 // 戦車の疑惑モード：音の発生点を記憶し、車体を止めて砲塔だけで調べる。
 // 「音を聞いた」だけではプレイヤーを発見した扱いにしない。
