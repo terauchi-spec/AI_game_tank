@@ -956,6 +956,7 @@ function indoorPaintLightingMask(q,left,top,mw,mh){
     q.fillStyle='rgba(7,13,15,.58)';q.fillRect(0,0,mw,mh);
     q.globalCompositeOperation='destination-out';
     for(const f of indoorWorld.floors){
+      if(rescueAdvancedTest&&f.number!==indoorWorld.currentFloor+1)continue;
       if(f.footprint.y>top+mh+INDOOR_FORECOURT_DEPTH||f.footprint.y+f.footprint.h<top-INDOOR_FORECOURT_DEPTH)continue;
       for(const lamp of f.lightFixtures){
         const x=lamp.x-left,y=lamp.y-top,rx=lamp.rx||r,ry=lamp.ry||r;
@@ -2861,6 +2862,13 @@ function infiltrationFloorBounds(){
   const fp=floor.footprint,pad=floor.number===1?INDOOR_FORECOURT_DEPTH:0;
   return{left:fp.x,right:fp.x+fp.w,top:fp.y-pad,bottom:fp.y+fp.h+pad};
 }
+function clipRescueFloorScene(cx,cy){
+  const bounds=infiltrationFloorBounds();if(!bounds)return;
+  // Leave space for wall and sprite overhang, inside the gap between floors.
+  const top=bounds.top-128,bottom=bounds.bottom+128;
+  if(cy-24>=top&&cy+H+24<=bottom)return;
+  g.beginPath();g.rect(cx-24,top,W+48,bottom-top);g.clip();
+}
 function indoorFloorEdgeBlocked(o,x,y,r=8){
   if(!indoorWorld)return false;
   const floor=indoorWorld.floors[(o.indoorFloor||indoorWorld.currentFloor+1)-1];
@@ -3077,11 +3085,12 @@ function drawInfiltrationFloors(cx,cy){
   g.fillRect(left,top,right-left,bottom-top);
   // Extraction roads belong to the static floor layer. Drawing them in the
   // global outdoor pass would paint over live EXIT circles and countdowns.
-  if(rescueAdvancedTest||typeof isLaboratoryStage==='function'&&isLaboratoryStage()){
+  if(rescueAdvancedTest?indoorWorld.currentFloor===0:typeof isLaboratoryStage==='function'&&isLaboratoryStage()){
     for(const road of roadBands)if(road.y+road.h+24>=cy&&road.y-24<=cy+H)drawRoadBand(road);
   }
   const concrete=indoorConcretePattern()||'#777975';
   for(const f of indoorWorld.floors){
+    if(rescueAdvancedTest&&f.number!==indoorWorld.currentFloor+1)continue;
     const minY=f.footprint.y-INDOOR_FORECOURT_DEPTH,maxY=f.footprint.y+f.footprint.h+INDOOR_FORECOURT_DEPTH;
     if(maxY<cy-100||minY>cy+H+100)continue;
     // Corridor tiles are generated in H/L/T/ring/U patterns instead of a vertical stripe.
@@ -3193,6 +3202,7 @@ function drawInfiltrationProps(cx,cy){
   // 背景の上・兵士の下に描画する軽量な俯瞰家具。コリジョンと視線遮蔽は同じcover。
   if(!indoorWorld)return;
   for(const floor of indoorWorld.floors){
+    if(rescueAdvancedTest&&floor.number!==indoorWorld.currentFloor+1)continue;
     if(floor.footprint.y>cy+H+90||floor.footprint.y+floor.footprint.h<cy-90)continue;
     for(const o of floor.props){
       const {x,y,w,h}=o;
@@ -3228,6 +3238,7 @@ function drawInfiltrationOpenings(cx,cy){
   if(!indoorWorld)return;
   drawInfiltrationProps(cx,cy);
   for(const f of indoorWorld.floors){
+    if(rescueAdvancedTest&&f.number!==indoorWorld.currentFloor+1)continue;
     if(f.footprint.y+f.footprint.h<cy-130||f.footprint.y>cy+H+130)continue;
     // One cached WebP per state; broken glass leaves a clear physical opening.
     for(const q of f.windows){

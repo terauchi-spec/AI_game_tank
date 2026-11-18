@@ -55,7 +55,7 @@ function indoorRasterAssetStamp(layer){
   const ready=im=>assetOK(im)?(im.naturalWidth||im.width)+':'+(im.naturalHeight||im.height):'0';
   if(layer==='walls')return ready(COVER_IMG.maze_wall)+'/'+ready(COVER_IMG.maze_wall_vertical);
   if(layer==='floor')return indoorWorld.currentFloor+'/'+ready(indoorConcreteImage)+'/'+ready(TERRAIN_IMG[indoorWorld.commandFacility?'砂漠':'丘陵'])+'/'+ready(indoorPropImages.stairs_up)+'/'+ready(indoorPropImages.stairs_down)+(typeof rescueAdvancedTest!=='undefined'&&rescueAdvancedTest?'/road:'+Number(assetOK(ROAD_TEXTURE_IMG.asphalt)):'');
-  let stamp='';for(const name in INDOOR_PROP_ASPECT)stamp+=name+':'+ready(indoorPropImages[name])+';';return stamp;
+  let stamp=typeof rescueAdvancedTest!=='undefined'&&rescueAdvancedTest?indoorWorld.currentFloor+'/':'';for(const name in INDOOR_PROP_ASPECT)stamp+=name+':'+ready(indoorPropImages[name])+';';return stamp;
 }
 function indoorRasterGroups(members){
   const groups=new Map();

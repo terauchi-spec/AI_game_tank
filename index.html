@@ -1029,7 +1029,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.19.0216',FILE_CREATED_AT='2026/11/19 02:16',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.19.0223',FILE_CREATED_AT='2026/11/19 02:23',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -8046,13 +8046,17 @@ function draw(near){
  const victoryCamera=stageMode==='training'?trainingCamera():stageMode==='indoor'?infiltrationCamera():mission?.extraction?{x:mission.extraction.camX,y:mission.extraction.camY}:frontlineVictoryCamera();
  if(victoryCamera){cam=victoryCamera.y;camX=victoryCamera.x;}else if(bl){cam+=((base?.decisiveFortress?Math.max(0,base.y+base.h/2-H/2):0)-cam)*.07;camX+=(Math.max(0,Math.min(WW-W,base.x+base.w/2-W/2))-camX)*.07;}else{cam=Math.max(frontlineNorthEdge(),Math.min(WH-H,p.y-H*.6));camX=Math.max(0,Math.min(WW-W,p.x-W/2));}
  const cy=Math.round(cam/2)*2,cx=Math.round(camX/2)*2;
+ const rescueFloor=stageMode==='indoor'&&rescueAdvancedTest?indoorWorld.currentFloor+1:0;
  g.save();if(shake>0)g.translate((R()-.5)*shake,(R()-.5)*shake);
  g.fillStyle='#2b3322';g.fillRect(-20,-20,W+40,H+40);g.translate(-cx,-cy);
  if(stageMode!=='indoor')for(const z of ZONES){
   if(z.y0<cy-160||z.y1>cy+H+160)continue;
   drawTerrainSurface(z,cx,cy);
  }
- if(stageMode==='indoor')drawInfiltrationFloors(cx,cy);
+ if(stageMode==='indoor'){
+  drawInfiltrationFloors(cx,cy);
+  if(rescueFloor)clipRescueFloorScene(cx,cy);
+ }
  if(debugMode===4&&debugRenderDiagnostic?.active&&debugRenderDiagnostic.phase==='terrain'){
   g.restore();g=gm;gm.imageSmoothingEnabled=false;if(!MOBILE_VIEW)gm.drawImage(oc,0,0,W,H);return;
  }
@@ -8159,7 +8163,7 @@ function draw(near){
  const enemyAlpha=digEnemyAlpha()*allyAlpha;if(enemyAlpha>.001)for(const e of etanks){if(!enemyInView(e,cx,cy,140))continue;g.save();g.globalAlpha*=enemyAlpha;if(e.alive){if(!inBush(e))drawEnemyTank(e);}else if(!e.wreckSpawned){g.fillStyle='#1c1a18';g.beginPath();g.arc(e.x,e.y,14,0,6.28);g.fill();}g.restore();if(e.alive&&enemyAlpha>.18){if(e.st)lab('!',e.x,e.y-38,'bold 18px system-ui','#ff5a5a');else if(e.sus>0)lab('?',e.x,e.y-38,'bold 18px system-ui','#ffd27a');}}
  drawRoadTrucks(cx,cy);
  drawEnemyDogLeashes();
- if(enemyAlpha>.001)for(const h of humans){const sniperFalling=!h.alive&&h.sniperFallT>0;if(h.gunTower||h.fallenSpriteRecorded||(!h.alive&&!sniperFalling)||!enemyInView(h,cx,cy,100))continue;const lift=sniperFalling?0:blastLift(h);if(!sniperFalling)drawBlastShadow(h);g.save();g.translate(0,-lift);g.globalAlpha*=enemyAlpha;if(sniperFalling){const fk=Math.max(0,Math.min(1,1-h.sniperFallT/Math.max(.01,h.sniperFallMax||.72))),side=(h.sniperFallA&&Math.sin(h.sniperFallA)<0?-1:1);g.translate(h.x,h.y);g.rotate(side*fk*1.18);g.translate(-h.x,-h.y);g.globalAlpha*=Math.max(.35,1-fk*.38);}soldier(h.x,h.y,h.face,false,sniperFalling?false:h.st,!sniperFalling&&!!h.walking,!!h.elite,h.commander||'',!sniperFalling&&!(h.commander==='blue'&&h.whistleT>0)&&(h.commander==='white'?h.commanderCharge>0||h.commanderShotT>0:!!h.st),false,h);drawCommanderOverlay(h);
+ if(enemyAlpha>.001)for(const h of humans){const sniperFalling=!h.alive&&h.sniperFallT>0;if(h.gunTower||h.fallenSpriteRecorded||(rescueFloor&&h.indoorFloor&&h.indoorFloor!==rescueFloor)||(!h.alive&&!sniperFalling)||!enemyInView(h,cx,cy,100))continue;const lift=sniperFalling?0:blastLift(h);if(!sniperFalling)drawBlastShadow(h);g.save();g.translate(0,-lift);g.globalAlpha*=enemyAlpha;if(sniperFalling){const fk=Math.max(0,Math.min(1,1-h.sniperFallT/Math.max(.01,h.sniperFallMax||.72))),side=(h.sniperFallA&&Math.sin(h.sniperFallA)<0?-1:1);g.translate(h.x,h.y);g.rotate(side*fk*1.18);g.translate(-h.x,-h.y);g.globalAlpha*=Math.max(.35,1-fk*.38);}soldier(h.x,h.y,h.face,false,sniperFalling?false:h.st,!sniperFalling&&!!h.walking,!!h.elite,h.commander||'',!sniperFalling&&!(h.commander==='blue'&&h.whistleT>0)&&(h.commander==='white'?h.commanderCharge>0||h.commanderShotT>0:!!h.st),false,h);drawCommanderOverlay(h);
  if(!sniperFalling&&h.humanBurnT>0){const tt=performance.now()*.018;g.save();g.globalCompositeOperation='lighter';flameBlob(h.x-4+Math.sin(tt)*2,h.y+2,7+Math.sin(tt*1.3)*1.5,tt,.42);flameBlob(h.x+4+Math.cos(tt*.8)*2,h.y-5,9+Math.sin(tt*.9+1)*2,tt+1.7,.7);flameBlob(h.x+Math.sin(tt*.65)*3,h.y-12,6+Math.sin(tt*1.6+2)*1.5,tt+3.1,.9);g.restore();}
  if(!sniperFalling&&h.stun>0){drawStunStars(h.x,h.y);if(h.grapple>0){g.strokeStyle='rgba(230,233,216,.85)';g.lineWidth=2;g.beginPath();g.arc(h.x,h.y,13,-2.5,.7);g.stroke();}}g.restore();if(!sniperFalling&&enemyAlpha>.18){if(h.st||h.frontAreaAlert)lab('!',h.x,h.y-lift-18,'bold 16px system-ui','#ff5a5a');else if(h.sus>0)lab('?',h.x,h.y-lift-18,'bold 16px system-ui','#ffd27a');}}
  drawCommanderSignals(cx,cy,enemyAlpha);
@@ -9166,8 +9170,8 @@ function reportGameError(error){
 <script src="js/canyon.js?v=2026.11.15.1239"></script>
 <script src="js/vegetation.js?v=2026.11.08.1806"></script>
 <script src="js/laboratory.js?v=2026.10.31.2206"></script>
-<script src="js/infiltration-world.js?v=2026.11.16.1424"></script>
-<script src="js/infiltration-render.js?v=2026.11.14.1450"></script>
+<script src="js/infiltration-world.js?v=2026.11.19.0223"></script>
+<script src="js/infiltration-render.js?v=2026.11.19.0223"></script>
 <script src="js/input-diagnostics.js?v=2026.10.28.0713"></script>
 <script>
 (function(){

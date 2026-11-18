@@ -213,3 +213,36 @@ test('rescue EXIT roads and the ground-floor forecourts stay clear of both basem
  }
  assert.ok(northExits>0);
 });
+
+test('the rescue renderer shows only the active floor and paints EXIT roads on 1F',()=>{
+ const h=createGameEngine(path.join(__dirname,'..'),{seed:1,touch:true,width:320,height:4000});
+ const result=JSON.parse(h.run(`JSON.stringify((()=>{
+  stageMode='indoor';rescueAdvancedTest=true;reset(false);state='play';
+  const f=indoorWorld.floors[0],north=indoorWorld.emergency,basement=indoorWorld.floors[1];
+  const cy=basement.footprint.y;
+  const originalRoad=drawRoadBand,originalFill=g.fillRect,originalProp=drawInfiltrationPropSprite;
+  const render=()=>{
+   const roads=[],floors=[],props=[];
+   drawRoadBand=road=>roads.push(road.y);
+   g.fillRect=(x,y,w,h)=>{
+    const floor=indoorWorld.floors.find(floor=>floor.footprint.y===y&&floor.footprint.x===x&&floor.footprint.h===h);
+    if(floor)floors.push(floor.number);
+   };
+   drawInfiltrationPropSprite=prop=>props.push(prop.y);
+   try{indoorUncachedFloors(0,cy,false);indoorUncachedProps(0,cy);}
+   finally{drawRoadBand=originalRoad;g.fillRect=originalFill;drawInfiltrationPropSprite=originalProp;}
+   return {roads,floors,props};
+  };
+  const ground=render(),groundPropsStamp=indoorRasterAssetStamp('props');
+  indoorWorld.currentFloor=1;
+  const underground=render();
+  return {
+   northRoad:!!north&&ground.roads.includes(north.y-160),
+   groundFloors:ground.floors,basementFloors:underground.floors,basementRoads:underground.roads,
+   separatePropsCache:groundPropsStamp!==indoorRasterAssetStamp('props'),
+   groundProps:ground.props.length>0&&ground.props.every(y=>y>=f.footprint.y),
+   basementProps:underground.props.length>0&&underground.props.every(y=>y<f.footprint.y)
+  };
+ })())`));
+ assert.deepEqual(result,{northRoad:true,groundFloors:[1],basementFloors:[2],basementRoads:[],separatePropsCache:true,groundProps:true,basementProps:true});
+});
