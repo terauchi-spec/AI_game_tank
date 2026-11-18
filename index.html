@@ -1029,7 +1029,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.19.0204',FILE_CREATED_AT='2026/11/19 02:04',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.19.0216',FILE_CREATED_AT='2026/11/19 02:16',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -4167,7 +4167,7 @@ function updateCommanderSignals(dt){
  commanderSignals=commanderSignals.filter(signal=>signal.visualRemaining>1e-9);
 }
 function commanderMove(h,target,dt,sp=150){
- if(moveEliteBombAvoidance(h,sp,dt,target))return;
+ if(moveEliteBombAvoidance(h,sp,dt,target)||moveHumanAroundObjective(h,target,sp,dt))return;
  if(h.frontMarch){moveFrontlineInfantry(h,target,sp,dt);return;}
  if(h.commanderRoute&&Math.hypot(target.x-h.commanderGoal.x,target.y-h.commanderGoal.y)>90)h.commanderRoute=null;
  const a=Math.atan2(target.y-h.y,target.x-h.x),ahead={x:h.x+Math.cos(a)*22,y:h.y+Math.sin(a)*22};
@@ -4524,6 +4524,57 @@ function moveEliteBombAvoidance(h,sp,dt,target=targetObj(h.target)){
   mv(h,q.x-h.x,q.y-h.y,8);h.face=a;return true;
  }
  // Hold outside the blast when terrain blocks all safe detours.
+ return true;
+}
+// The destruction objective is a separate collider, outside the covers list.
+function moveHumanAroundObjective(h,target,sp,dt){
+ if(!target||!(base?.hp>0)||!(base.decisiveFortress||stageMode==='base'&&!areaDebugEnabled||stageMode==='beginner')){h.objectiveDetour=null;return false;}
+ const {x,y,w,h:height}=base;
+ const route=h.objectiveDetour;
+ if(route?.base!==base&&(h.x<x-48||h.x>x+w+48||h.y<y-48||h.y>y+height+48))return false;
+
+ const inner={x:x-10,y:y-10,w:w+20,h:height+20};
+ const inside=(px,py)=>px>=inner.x&&px<=inner.x+inner.w&&py>=inner.y&&py<=inner.y+inner.h;
+ const inBounds=(q)=>q.x>8&&q.x<WW-8&&q.y>8&&q.y<WH-8;
+ const directDistance=D(h,target);
+ const probe=Math.min(22,directDistance);
+ const ahead=probe>0&&circleHitsBase(h.x+(target.x-h.x)*probe/directDistance,
+  h.y+(target.y-h.y)*probe/directDistance,base.decisiveFortress?16:8);
+ const crosses=!inside(h.x,h.y)&&!inside(target.x,target.y)&&segmentHitsRect(h,target,inner);
+ if(!ahead&&!crosses&&!(route?.base===base&&inside(h.x,h.y))){h.objectiveDetour=null;return false;}
+
+ // Recompute the perimeter relative to the hull as the fortress moves.
+ const st=coverPerimeterState(base,h.x,h.y,24);
+ if(route?.base!==base){
+  const cornerOffsets=[0,st.rw,st.rw+st.rh,2*st.rw+st.rh];
+  let best=Infinity,dir=1;
+  for(const side of [1,-1]){
+   const corners=cornerOffsets.map(offset=>({offset,travel:((offset-st.s)*side+st.per)%st.per}));
+   corners.sort((a,b)=>a.travel-b.travel);
+   let score=Infinity;
+   for(const {offset,travel} of corners){
+    const q=coverPerimeterPoint(st,offset);
+    if(!inBounds(q))break;
+    if(!segmentHitsRect(q,target,inner))score=Math.min(score,travel+D(q,target));
+   }
+   if(score<best){best=score;dir=side;}
+  }
+  h.objectiveDetour={base,dir,blockedFor:0};
+ }
+ const detour=h.objectiveDetour;
+ const goal=coverPerimeterPoint(st,st.s+detour.dir*14);
+ const distance=D(h,goal),step=Math.min(sp*dt,distance);
+ if(step<=0)return true;
+ const ox=h.x,oy=h.y,angle=Math.atan2(goal.y-h.y,goal.x-h.x);
+ mv(h,Math.cos(angle)*step,Math.sin(angle)*step,8);
+ if(Math.hypot(h.x-ox,h.y-oy)<step*.25){
+  // Try an outer lane before changing sides when another soldier blocks the corner.
+  const escape=Math.atan2(goal.y-y-height/2,goal.x-x-w/2);
+  mv(h,Math.cos(escape)*step,Math.sin(escape)*step,8);
+  detour.blockedFor+=dt;
+  if(detour.blockedFor>=.65){detour.dir*=-1;detour.blockedFor=0;}
+ }else detour.blockedFor=0;
+ h.face=h.x!==ox||h.y!==oy?Math.atan2(h.y-oy,h.x-ox):angle;
  return true;
 }
 function moveHumanChase(h,toT,sp,dt){
@@ -6340,11 +6391,11 @@ function update(dt){
     // 通常兵だけが設置爆弾を使う。発見モード突入時に設置タイミングを個体ごとにランダム決定。
     if(!h.indoorGuard&&!h.elite&&!h.bu&&!h.plantT&&h.ct>(h.bombAt??1.5)&&!movePause){h.bu=true;h.plantT=.35+R()*.4;h.plantA=toT;}
     if(h.plantT>0){h.plantT=Math.max(0,h.plantT-dt);h.face=h.plantA??toT;if(h.plantT<=0){const bp=enemyBombPoint(h,h.plantA??toT,100);bombs.push({x:h.x,y:h.y,own:'e',armed:true,t:4,fly:.35,sx:h.x,sy:h.y,tx:bp.x,ty:bp.y});h.plantA=null;}}
-    else if(!movePause){if(!moveEliteBombAvoidance(h,moveSp,dt)&&d>110)moveHumanChase(h,toT,moveSp,dt);}
+    else if(!movePause){if(!moveEliteBombAvoidance(h,moveSp,dt)&&!moveHumanAroundObjective(h,tg,moveSp,dt)&&d>110)moveHumanChase(h,toT,moveSp,dt);}
     // 発見モードへの移行直後は、0.5〜1秒の静止が終わるまで発砲しない。
     if(!movePause&&d<150&&h.cd<=0&&vis){if(h.elite){h.characterShotAt=performance.now();fire(h.x,h.y,toT+(R()-.5)*.08,'e','r',330,150);h.cd=1.35;}else{if(!(h.burstLeft>0))h.burstLeft=3;h.characterShotAt=performance.now();fire(h.x,h.y,toT+(R()-.5)*.15,'e','r',330,150);h.burstLeft--;h.cd=h.burstLeft>0?.14:2;}}}
   }
-  if(!h.st){h.wallFollow=null;if(!enemyModePaused(h)&&!(h.chatResumeT>0))h.face=patrol(h,dt,30*(h.elite?1.2:1),8);}
+  if(!h.st){h.wallFollow=null;h.objectiveDetour=null;if(!enemyModePaused(h)&&!(h.chatResumeT>0))h.face=patrol(h,dt,30*(h.elite?1.2:1),8);}
   }finally{syncEnemyMoveBand(h);}
  }
  for(const h of humans)h.walking=enemyIsWalking(h);
