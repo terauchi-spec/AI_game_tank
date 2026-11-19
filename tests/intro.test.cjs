@@ -32,8 +32,8 @@ test('IME confirmation cannot submit early; storage failure allows the current s
 });
 test('all title entry points use the intro gate and input handlers ignore gameplay shortcuts during entry',()=>{
  assert.match(html,/if\(hitRect\(px,py,r.start\)\)\{startFromTitle\(\)/);assert.match(html,/if\(state==='title'\)\{e.preventDefault\(\);startFromTitle\(\)/);assert.match(html,/getElementById\('titleStart'\)\.addEventListener\('click',\(\)=>\{startFromTitle\(\)/);
- for(const kind of ['keydown','keypress','keyup'])assert.ok(html.includes("addEventListener('"+kind+"',e=>{\n if(state==='paused'||state==='intro'||state==='leaderboard'||state==='developer'||state==='developerPass')return;"));
- assert.match(html,/function drawMenuOnlyState\(\)\{\n if\(state==='intro'\|\|state==='leaderboard'\|\|state==='developer'\|\|state==='developerPass'\)return true;/);
+ for(const kind of ['keydown','keypress','keyup'])assert.ok(html.includes("addEventListener('"+kind+"',e=>{\n if(state==='paused'||state==='intro'||state==='endingArt'||state==='leaderboard'||state==='developer'||state==='developerPass')return;"));
+ assert.match(html,/function drawMenuOnlyState\(\)\{\n if\(state==='intro'\|\|state==='endingArt'\|\|state==='leaderboard'\|\|state==='developer'\|\|state==='developerPass'\)return true;/);
 });
 
  test('the title activation cannot skip the opening conversation and conversation focus cannot trigger next on key release',()=>{
@@ -117,4 +117,32 @@ test('instructor and Aira phrases use exactly one training speech cue, including
   completeNext();completeNext();h.c.finishIntroTyping();h.c.now+=500;h.get('introSkipTraining').events.click();
   assert.equal(sounds.length,13);assert.ok(sounds.every(key=>key==='uiSelect'));completeNext();assert.equal(sounds.length,13);assert.equal(h.c.state,'skill');
  }
+});
+
+test('decisive success tells the ending story before showing the usual results',()=>{
+ const run={stage:'decisive',final:{cleared:true}},h=harness({storage:new Map([['tankGamePlayerNameV1','テスト']])});
+ const {c,get}=h;let resultCalls=0,bgmUpdates=0;
+ Object.assign(c,{state:'succeeded',stageMode:'front',scoreStats:run,areaDebugEnabled:false,
+  base:{decisiveFortress:true,hp:0},gameBgm:{},syncResultScreen(){resultCalls++;},
+  beginResultGameBgm(score){assert.equal(score,run);c.gameBgm.resultWaiting=true;},
+  updateGameBgm(){assert.equal(c.state,'endingArt');assert.equal(c.gameBgm.resultWaiting,false);bgmUpdates++;}});
+ Object.assign(c.document.body.classList,{contains:k=>h.classes.has(k),toggle(k,on){on?h.classes.add(k):h.classes.delete(k);}});
+ get('endingArtwork').hidden=true;
+ vm.runInContext(html.slice(html.indexOf('function syncMissionSuccess(){'),html.indexOf('let failureFrameDrawn=false;')),c);
+ c.syncMissionSuccess();assert.equal(get('missionSuccessEvaluate').textContent,'エンディングへ');
+ get('missionSuccessEvaluate').events.click();assert.equal(c.state,'intro');
+ assert.match(get('introInstructor').src,/instructor_0.webp/);
+ assert.equal(get('introDialogue').textContent,'おお！ついにやったのかテストよ！');
+ h.next();assert.equal(get('introDialogue').textContent,'これで長かったサバイバルゲームも我々の勝利で幕を閉じた');
+ h.next();assert.match(get('introInstructor').src,/battlefield-assistant.webp/);
+ assert.equal(get('introDialogue').textContent,'おつかれさまでしたね、テスト！');
+ h.next();assert.equal(get('introDialogue').textContent,'ついにゲームセットということで、今日はみんなでパーティよ！');
+ assert.equal(bgmUpdates,0);assert.equal(resultCalls,0);
+ h.next();assert.equal(c.state,'endingArt');assert.equal(bgmUpdates,1);
+ assert.equal(get('endingArtwork').hidden,false);assert.equal(get('endingNext').hidden,true);
+ assert.match(get('endingParty').src,/decisive-party\.webp$/);
+ assert.ok(fs.statSync(path.join(root,get('endingParty').src)).size>0);
+ get('endingNext').events.click();assert.equal(resultCalls,0);
+ get('endingReveal').events.click();assert.equal(get('endingNext').hidden,false);assert.equal(resultCalls,0);
+ get('endingNext').events.click();assert.equal(c.state,'win');assert.equal(resultCalls,1);assert.equal(get('introScreen').hidden,true);
 });

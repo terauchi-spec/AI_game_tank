@@ -64,3 +64,15 @@ test('unlock and evaluation share one theme source per run, including late unloc
  c.gameSe.voices.clear();source.onended();c.beginResultGameBgm(run);c.updateGameBgm();assert.equal(h.sources.length,count);assert.equal(h.get('gameBgm.finished'),true);
  c.state='play';c.updateGameBgm();c.state='lose';c.beginResultGameBgm({final:{cleared:false}});c.updateGameBgm();assert.equal(h.sources.length,count+1);assert.deepEqual(h.sources.at(-1).args,[0,0]);assert.equal(h.decodes(),1);
 });
+
+test('ending illustration starts the main theme and carries it into unlocks and evaluation',async()=>{
+ const h=harness(),{c}=h;c.unlockGameBgm();await tick();
+ c.state='succeeded';c.updateGameBgm();c.state='intro';c.updateGameBgm();
+ assert.equal(h.get('gameBgm.source'),null);
+ const run={final:{cleared:true}};
+ c.state='endingArt';c.beginResultGameBgm(run);c.gameSe.voices.add({name:'win'});
+ h.get('gameBgm.resultWaiting=false');c.updateGameBgm();
+ const source=h.sources.at(-1),count=h.sources.length;assert.deepEqual(source.args,[0,0]);
+ c.state='win';c.beginResultGameBgm(run);c.updateGameBgm();
+ assert.equal(h.get('gameBgm.source'),source);assert.equal(h.sources.length,count);assert.equal(h.decodes(),1);
+});

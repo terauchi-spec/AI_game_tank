@@ -2,7 +2,7 @@
 const GAME_BGM_URL='assets/audio/bgm/stahlmarsch_zum_sieg.mp3?v=696964203a01';
 const gameBgm={buffer:null,pending:null,source:null,gain:null,offset:0,startedAt:0,unlocked:false,finished:false,blocked:false,focused:true,resultActive:false,resultWaiting:false,resultRun:null};
 function gameBgmContext(){return typeof audioCtx!=='undefined'?audioCtx:null;}
-function gameBgmAllowed(){return typeof state!=='undefined'&&(state==='title'||state==='leaderboard'||state==='developer'||state==='developerPass'||state==='skill'||state==='stage'||(gameBgm.resultActive&&(state==='win'||state==='lose')));}
+function gameBgmAllowed(){return typeof state!=='undefined'&&(state==='title'||state==='leaderboard'||state==='developer'||state==='developerPass'||state==='skill'||state==='stage'||(gameBgm.resultActive&&(state==='win'||state==='lose'||state==='endingArt')));}
 function gameBgmVisible(){return gameBgm.focused&&(typeof document==='undefined'||document.visibilityState!=='hidden');}
 function gameBgmWanted(){return (typeof gameSoundEnabled==='undefined'||gameSoundEnabled)&&gameBgmAllowed()&&gameBgmVisible()&&!gameBgm.resultWaiting;}
 function pauseGameBgm(){
@@ -34,7 +34,7 @@ function loadGameBgm(context){
  return gameBgm.pending;
 }
 function updateGameBgm(){
- if(typeof state!=='undefined'&&state!=='win'&&state!=='lose')gameBgm.resultActive=false;
+ if(typeof state!=='undefined'&&state!=='win'&&state!=='lose'&&state!=='endingArt')gameBgm.resultActive=false;
  if(gameBgm.resultWaiting&&!resultGameSePlaying())gameBgm.resultWaiting=false;
  if(!gameBgmWanted()){pauseGameBgm();return;}
  if(!gameBgm.unlocked||gameBgm.finished||gameBgm.pending||gameBgm.blocked||gameBgm.source)return;

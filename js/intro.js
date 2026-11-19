@@ -1,8 +1,9 @@
 // First-start conversation. Reuses existing compressed artwork; no map generation.
 const INTRO_NAME_KEY='tankGamePlayerNameV1';
 let introSessionName='',introStep=0,introComposing=false,introReadyAt=0,introLine=0;
+let introEnding=false;
 let introTypingTimer=null,introFullText='',introTypedCount=0,introTrainingChoice=null;
-function introAwaitingChoice(){return introStep===3&&introLine===2;}
+function introAwaitingChoice(){return !introEnding&&introStep===3&&introLine===2;}
 function syncIntroChoices(){
  const choosing=introAwaitingChoice()&&introTypedCount===introFullText.length;
  document.getElementById('introChoices').hidden=!choosing;
@@ -55,14 +56,56 @@ function resetIntroName(){
 function startFromTitle(){
  if(state!=='title')return;
  if(readIntroName()){enterIntroSkillSelection();return;}
- state='intro';introStep=0;introLine=0;introTrainingChoice=null;introReadyAt=performance.now()+400;
+ openIntroConversation(false);
+}
+function openIntroConversation(ending){
+ state='intro';introEnding=ending;introStep=0;introLine=0;introTrainingChoice=null;introReadyAt=performance.now()+400;
+ document.getElementById('introHeading').textContent=ending?'エンディング':'司令本部';
  document.body.classList.remove('title-open');document.body.classList.add('intro-open');
  document.getElementById('introScreen').hidden=false;
  const image=document.getElementById('introInstructor');
  image.alt='司令本部で迎える教官';image.src='assets/ui/instructors/instructor_0.webp?v=2026.10.25.1434';
  showIntroStep();
 }
+function startDecisiveEnding(){
+ openIntroConversation(true);
+ document.getElementById('endingParty').src='assets/ui/ending/decisive-party.webp';
+}
+function showDecisiveEndingArtwork(){
+ state='endingArt';
+ document.getElementById('introConversationScene').hidden=true;
+ document.getElementById('endingArtwork').hidden=false;
+ document.getElementById('endingReveal').hidden=false;
+ document.getElementById('endingNext').hidden=true;
+ document.getElementById('endingReveal').focus({preventScroll:true});
+ beginResultGameBgm(scoreStats);
+ gameBgm.resultWaiting=false;
+ updateGameBgm();
+}
+document.getElementById('endingReveal').addEventListener('click',()=>{
+ if(state!=='endingArt')return;
+ document.getElementById('endingReveal').hidden=true;
+ const next=document.getElementById('endingNext');
+ next.hidden=false;next.focus({preventScroll:true});
+});
+document.getElementById('endingNext').addEventListener('click',()=>{
+ if(state!=='endingArt'||document.getElementById('endingNext').hidden)return;
+ closeIntro();
+ document.getElementById('endingArtwork').hidden=true;
+ document.getElementById('introConversationScene').hidden=false;
+ showMissionSuccessResults();
+});
 function introDialogueLines(){
+ if(introEnding){
+  const name=readIntroName()||'隊長';
+  return introStep===0?[
+   'おお！ついにやったのか'+name+'よ！',
+   'これで長かったサバイバルゲームも我々の勝利で幕を閉じた'
+  ]:[
+   'おつかれさまでしたね、'+name+'！',
+   'ついにゲームセットということで、今日はみんなでパーティよ！'
+  ];
+ }
  if(introStep===3)return [
   'よくきたわね！私はアイラ',
   'あなたが一人前のこっそり兵士になれるようにお手伝いをさせてもらうわ',
@@ -115,8 +158,9 @@ function advanceIntroDialogue(){
  if(introTypedCount<introFullText.length){finishIntroTyping();return;}
  if(introAwaitingChoice())return;
  if(introLine<introDialogueLines().length-1)introLine++;
- else if(introStep===0){introStep=1;introLine=0;}
- else if(introStep===2){
+ else if(introEnding&&introStep===3){showDecisiveEndingArtwork();return;}
+ else if(introStep===0&&!introEnding){introStep=1;introLine=0;}
+ else if(introStep===2||introEnding){
   introStep=3;introLine=0;
   const image=document.getElementById('introInstructor');
   image.src='assets/characters/battlefield-assistant.webp';image.alt='戦場アシスタントのアイラ';
@@ -127,7 +171,7 @@ function advanceIntroDialogue(){
  showIntroStep();
 }
 function closeIntro(){
- stopIntroTyping();
+ stopIntroTyping();introEnding=false;
  document.getElementById('introScreen').hidden=true;document.body.classList.remove('intro-open');document.body.classList.remove('intro-naming');
  // Name entry must never leave action/movement keys pressed.
  for(const code in keys)keys[code]=false;
