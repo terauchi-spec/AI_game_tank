@@ -93,6 +93,28 @@ test('desert town replaces the random sections and shares the desert tile and us
  assert.equal(run('water.filter(w=>w.oasis).length'),1);
  assert.ok(run('DESERT_TOWN_BUILDINGS.every(([key])=>covers.some(c=>c.decisiveKind===key))'));
 });
+test('the same desert town section rearranges building pairs, sides and setbacks across sorties',()=>{
+ const {run}=start();
+ const layouts=JSON.parse(run(`JSON.stringify(Array.from({length:48},()=>{
+  const zone={...ZONES[2],desertTownTowers:[]};covers=[];objects=[];bushes=[];water=[];
+  addDesertTownBuildings(zone);
+  const buildings=covers.filter(c=>!c.desertTownGate).map(c=>({...c,y:c.y*MAP_SCALE}));
+  const [left,right]=buildings;
+  addDesertTownScenery(zone);
+  const props=covers.filter(c=>c.decisiveKind==='sandbags'&&!c.desertTownGate)
+   .concat(objects,bushes).map(o=>({...o,y:o.y*MAP_SCALE}));
+  return {
+   pairs:buildings.map(b=>b.decisiveKind).join('/'),
+   stagger:Math.sign(right.y+right.h/2-left.y-left.h/2),
+   clear:buildings.length===4&&zone.desertTownBuildingLanes.every(lane=>lane.w>=136&&
+    !buildings.some(b=>decisiveRectsOverlap(b,lane))&&!props.some(o=>decisiveRectsOverlap(o,lane)))
+  };
+ }))`));
+ assert.ok(layouts.every(layout=>layout.clear));
+ assert.ok(new Set(layouts.map(layout=>layout.pairs)).size>=8);
+ assert.deepEqual([...new Set(layouts.map(layout=>layout.stagger))].sort(),[-1,1]);
+});
+
 test('the mobile fortress area debug starts a live and repeatable boss test without campaign progress',()=>{
  const {run,storage}=createGameEngine(root);
  assert.equal(run("stageMode='base';state='stage';selectedStageId='areaDebug';deploySelectedStage()"),false);
@@ -902,6 +924,7 @@ test('an obstructed adobe exit stays closed and retries on its regular timer',()
   const door=building.desertTownDoor,x=door.x+door.w/2;
   p.x=WW/2;p.y=town.y0-10;
   covers=[building,{kd:1,x:x-40,y:building.y+building.h+6,w:80,h:50,decisiveKind:'sandbags'}];
+  desertTownEvents.doorsByZone.set(town,[door]);
   humans=[];etanks=[];cars=[];objects=[];water=[];rebuildSpatialGrid();door.remaining=.2;
   for(let i=0;i<180;i++)updateDesertTownEvents(1/60);`);
  assert.equal(run('door.elapsed'),0);

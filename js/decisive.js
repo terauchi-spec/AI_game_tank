@@ -157,17 +157,24 @@ function addDesertTownBuildings(z){
  for(const [key] of DESERT_TOWN_BUILDINGS){
   if(!COVER_IMG['decisive_'+key])COVER_IMG['decisive_'+key]=makeAssetImage(ASSET_DIR+'desert-town/'+key+'.webp?v='+GAME_VERSION);
  }
- // Pair the widest building with the tower to leave room for a vehicle to pass.
  const relay=z.decisiveArea===DECISIVE_DESERT_START-1;
  const top=z.oasis?z.oasis.y+z.oasis.h+32:z.y1+(relay?800:70);
  const bottom=z.y0-(z.areaDebug?650:70);
- const pairs=[[1,2],[0,3]],first=relay?1:z.oasis&&!z.areaDebug?0:Math.floor(R()*pairs.length);
- const rows=Array.from({length:relay||z.oasis&&!z.areaDebug?1:2},(_,row)=>pairs[(first+row)%pairs.length].map(index=>{
+ const gateCount=z.areaDebug?2:1;
+ const room=bottom-top-gateCount*DESERT_TOWN_GATE_DEPTH;
+ const buildingHeight=([a,b])=>Math.max(DESERT_TOWN_BUILDINGS[a][3],DESERT_TOWN_BUILDINGS[b][3])*DESERT_TOWN_SCALE;
+ // Each row has one adobe building with a working door and one landmark.
+ const pairings=[[[1,2],[0,3]],[[0,2],[1,3]]];
+ const choices=relay||z.oasis&&!z.areaDebug?
+  pairings.flat().filter(pair=>buildingHeight(pair)+24<=room).map(pair=>[pair]):pairings;
+ const pairs=(choices[Math.floor(R()*choices.length)]||[[1,2]]).slice();
+ if(pairs.length===2&&R()<.5)pairs.reverse();
+ const rows=pairs.map(pair=>(R()<.5?pair:pair.slice().reverse()).map(index=>{
   const [key,kd,w,h]=DESERT_TOWN_BUILDINGS[index];
   return {key,kd,w:w*DESERT_TOWN_SCALE,h:h*DESERT_TOWN_SCALE};
  }));
- const heights=rows.map(row=>Math.max(...row.map(building=>building.h)));
- const gateCount=z.areaDebug?2:1;
+ const heights=pairs.map(buildingHeight);
+ z.desertTownBuildingLanes=[];
  const spare=(bottom-top-gateCount*DESERT_TOWN_GATE_DEPTH-heights.reduce((sum,h)=>sum+h,0))/rows.length;
  let rowTop=top;
  for(const [i,row] of rows.entries()){
@@ -187,18 +194,18 @@ function addDesertTownBuildings(z){
    }
    rowTop+=DESERT_TOWN_GATE_DEPTH;
   }
-  const lot=heights[i]+spare;
-  let central=false;
+  const lot=heights[i]+spare,edge=32;
+  const freeWidth=WW-2*edge-row[0].w-row[1].w;
+  const gap=136+(freeWidth-136)*(.2+R()*.55);
+  const left=edge+(freeWidth-gap)*R();
+  const right=left+row[0].w+gap;
+  const stagger=Math.floor(R()*3)-1;
+  z.desertTownBuildingLanes.push({x:left+row[0].w,y:rowTop,w:gap,h:lot});
   for(const [side,{key,kd,w,h}] of row.entries()){
-   const wideRow=row[0].key==='adobe-building';
-   const left=side?WW/2+(wideRow?156:central?145:100):16,right=side?WW-16:Math.max(WW/2-100,16+w);
-   const roll=R();
-   if(!side)central=!wideRow&&roll<.35;
-   const x=!side&&central?WW/2-w*.85:left+roll*(right-left-w),y=rowTop+(lot-h)*(.35+R()*.3);
-   const desertTownPatrolSite=i===0&&side===1;
-   const patrolMargin=desertTownPatrolSite||key.startsWith('adobe-');
+   const alignment=.5+(side?1:-1)*stagger*.31;
+   const y=rowTop+(lot-h)*(alignment+(R()-.5)*.18);
    // The normal generator scales Y later; sprite dimensions are already in world pixels.
-   covers.push({kd,x:patrolMargin?Math.max(24,Math.min(x,WW-w-24)):x,y:y/MAP_SCALE,w,h,decisiveKind:key,desertTownPatrolSite});
+   covers.push({kd,x:side?right:left,y:y/MAP_SCALE,w,h,decisiveKind:key,desertTownPatrolSite:i===0&&side===1});
   }
   rowTop+=lot;
  }
@@ -212,7 +219,7 @@ function addDesertTownScenery(z){
   return {...o,x:o.x-pad,y:o.y*MAP_SCALE-pad,w:o.w+pad*2,h:o.h+pad*2};
  });
  // Preserve the passage between the left and right buildings and across the rows.
- occupied.push({x:448,y:z.y1,w:176,h:z.y0-z.y1});
+ occupied.push({x:448,y:z.y1,w:176,h:z.y0-z.y1},...(z.desertTownBuildingLanes||[]));
  // Leave the entire staggered row clear of other scenery, including its opening.
  for(const c of covers)if(c.desertTownGate){
   occupied.push({x:0,y:c.y*MAP_SCALE-64,w:WW,h:c.h+128});
