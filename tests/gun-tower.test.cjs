@@ -8,6 +8,20 @@ test('emplacements spawn only in the two advanced stages and start with zero fue
   assert.equal(h.run("cars.every(v=>v.v===500&&v.f===0&&v.t.sp===0)"),true,id);
  }
 });
+test('desert town towers start with a seated blue gunner for rolls below 90 percent',()=>{
+ const h=scene();
+ const result=JSON.parse(h.run(`(()=>{
+  const place=(function(R){return ${h.run('placeDesertTownGunTowers.toString()')};})(()=>townTowerRolls.shift());
+  const townTowerRolls=[0,.899999,.9,.99];
+  place([{desertTownTowers:[160,320,480,640].map(x=>({x,y:11000}))}]);
+  return JSON.stringify({
+   occupied:cars.map(tower=>!!tower.gunner),
+   linked:humans.every(h=>!h.elite&&!h.commander&&h.gunTower?.gunner===h&&
+    D(h,h.gunTower)>20&&!gunTowerAvailable(h.gunTower))
+  });
+ })()`));
+ assert.deepEqual(result,{occupied:[true,true,false,false],linked:true});
+});
 test('advanced capture towers vary by sortie, spread across the route and stay outside capture circles on open maps',()=>{
  const locations=[];
  for(const offset of [0,5]){

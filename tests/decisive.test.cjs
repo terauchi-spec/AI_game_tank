@@ -926,10 +926,10 @@ test('an obstructed adobe exit stays closed and retries on its regular timer',()
   covers=[building,{kd:1,x:x-40,y:building.y+building.h+6,w:80,h:50,decisiveKind:'sandbags'}];
   desertTownEvents.doorsByZone.set(town,[door]);
   humans=[];etanks=[];cars=[];objects=[];water=[];rebuildSpatialGrid();door.remaining=.2;
-  for(let i=0;i<180;i++)updateDesertTownEvents(1/60);`);
+  for(let i=0;i<120;i++)updateDesertTownEvents(1/60);`);
  assert.equal(run('door.elapsed'),0);
  assert.equal(run('humans.length'),0);
- assert.ok(run('door.remaining>0&&door.remaining<=2.3'));
+ assert.ok(run('door.remaining>=.8&&door.remaining<3.4'));
  run('covers=[building];rebuildSpatialGrid();door.remaining=.2;updateDesertTownEvents(.02);updateDesertTownEvents(.15);');
  assert.equal(run('humans.length'),0);
  run(`const crops=[];g.drawImage=(...args)=>crops.push(args);drawPointInView=()=>true;

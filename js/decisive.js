@@ -272,7 +272,9 @@ function addDesertTownScenery(z){
 function placeDesertTownGunTowers(zones){
  for(const z of zones)for(const spot of z.desertTownTowers||[]){
   // The existing tower remains accessible from either end of the gap.
-  if(!hitsM(spot.x,spot.y,GUN_TOWER_TYPE.coverRadius)&&cars.every(v=>D(v,spot)>96))cars.push(makeGunTower(spot));
+  if(hitsM(spot.x,spot.y,GUN_TOWER_TYPE.coverRadius)||cars.some(v=>D(v,spot)<=96))continue;
+  const tower=makeGunTower(spot);cars.push(tower);
+  if(R()<.9)spawnEnemyGunTowerGunner(tower);
  }
 }
 // Coordinates are normalized to the visible door panel on each facade.
