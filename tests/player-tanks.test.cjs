@@ -119,3 +119,13 @@ test('enemy artwork replaces both layers after loading once and keeps animated p
  assert.equal(images.length,2);assert.equal(h.canvases.length,count);
  assert.ok(!h.commands.some(c=>c[0]==='drawImage'));assert.equal(h.depth(),0);
 });
+
+test('enemy pivot counter-rotates cached track strips without translating or changing turret heading',()=>{
+ const h=artHarness();h.c.TANK_DRAW=30;h.c.state='play';
+ const e={x:100,y:200,body:0,ang:.7};h.c.drawEnemyTank(e);
+ const count=h.canvases.length;e.body=.1;h.rasters.length=0;h.c.drawEnemyTank(e);
+ const belts=h.rasters.filter(a=>a.length===9);
+ assert.ok(Math.abs(belts[0][2]-1.2)<1e-9);assert.ok(Math.abs(belts[1][2]-6.8)<1e-9);
+ assert.equal(e.x,100);assert.equal(e.y,200);assert.equal(e.ang,.7);assert.equal(h.canvases.length,count);
+ h.rasters.length=0;h.c.drawEnemyTank(e);assert.deepEqual(h.rasters.filter(a=>a.length===9),belts);
+});

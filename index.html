@@ -1016,7 +1016,7 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 </div><footer class="sk-bottom stage-bottom"><button type="button" class="sk-toggle" id="stageDebugAll" aria-pressed="false">全ステージを表示</button><button type="button" class="sk-deploy" id="stageDeploy" disabled>ステージを選択してください</button></footer></div></div>
 <div id="missionHud" role="status"></div>
 
-<script src="js/player-tank-art.js?v=2026.11.21.1625"></script>
+<script src="js/player-tank-art.js?v=2026.11.21.1631"></script>
 <script src="js/audio.js?v=2026.11.17.1611"></script>
 <script src="js/bgm.js?v=2026.11.19.2241"></script>
 <script src="js/audio-recovery.js?v=2026.10.28.1725"></script>
@@ -1030,7 +1030,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.21.1625',FILE_CREATED_AT='2026/11/21 16:25',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.21.1631',FILE_CREATED_AT='2026/11/21 16:31',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -3064,7 +3064,7 @@ function findPatrolReturnPath(start,goal,r,owner=null){
  patrolSearchBudgetMs=Math.max(0,patrolSearchBudgetMs-(performance.now()-began));
  return result.done?result.value:PATROL_SEARCH_PENDING;
 }
-function movePatrolReturn(o,target,dt,sp,r){
+function movePatrolReturn(o,target,dt,sp,r,turnBeforeMove=null){
  const now=performance.now();
  if(o.returnRoute&&o.returnRouteGoal!==o.wi){o.returnRoute=null;}
  if(o.patrolSearch||(!o.returnRoute&&o.stk>.25&&now>=(o.returnRetryAt||0)&&now>=patrolRoutePlanAt)){
@@ -3076,12 +3076,13 @@ function movePatrolReturn(o,target,dt,sp,r){
  let dest=target;
  if(o.returnRoute){while(o.returnRoute.length&&Math.hypot(o.returnRoute[0].x-o.x,o.returnRoute[0].y-o.y)<5)o.returnRoute.shift();if(o.returnRoute.length)dest=o.returnRoute[0];else o.returnRoute=null;}
  const a=Math.atan2(dest.y-o.y,dest.x-o.x),d=Math.hypot(dest.x-o.x,dest.y-o.y),step=Math.min(sp*dt,d),ox=o.x,oy=o.y;
+ if(turnBeforeMove&&!turnBeforeMove(o,a,dt))return a;
  mv(o,Math.cos(a)*step,Math.sin(a)*step,r);
  const moved=Math.hypot(o.x-ox,o.y-oy);o.stk=moved<step*.1?o.stk+dt:0;
  if(o.returnRoute&&o.stk>.4){o.returnRoute=null;}
  return a;
 }
-function patrol(o,dt,sp,r){
+function patrol(o,dt,sp,r,turnBeforeMove=null){
  if(mazeComparisonEnemyFrozen(o))return Number.isFinite(o.face)?o.face:o.ang||0;
  if(o.frontMarch)return moveFrontlineEnemy(o,dt,sp);
  // Stationary guards have one waypoint. Do not run the two-endpoint reversal.
@@ -3091,7 +3092,7 @@ function patrol(o,dt,sp,r){
  // 巡回ルートの曲がり角・折り返し地点では、方向転換する前に2秒停止する。
  if(o.turnPause>0){o.turnPause-=dt;if(o.turnPause<=0){o.turnPause=0;if(o.loop)o.wi=(o.wi+(o.dir||1)+o.path.length)%o.path.length;else{o.wi+=o.dir;if(o.wi<0||o.wi>=o.path.length){o.dir*=-1;o.wi+=2*o.dir;}}}return o.pauseFace??a;}
  if(Math.hypot(t.x-o.x,t.y-o.y)<5){o.stk=0;o.turnPause=2;o.pauseFace=a;return a;}
- return movePatrolReturn(o,t,dt,sp,r);}
+ return movePatrolReturn(o,t,dt,sp,r,turnBeforeMove);}
 function distributeFlankPatrols(){
  const targetsByZone=[];
  for(const z of ZONES){
@@ -4415,6 +4416,16 @@ function enterTankFound(e,key,pause=null){
   if(key==='p'&&scoreStats&&!scoreStats.finalized)scoreStats.foundEntries++;
  }
  return fresh;
+}
+// Turn on the spot before driving in the new direction (90 degrees/second).
+function turnEnemyTankBody(e,desired,dt){
+ const delta=Math.atan2(Math.sin(desired-e.body),Math.cos(desired-e.body));
+ const step=Math.PI/2*Math.max(0,dt);
+ e.body+=Math.max(-step,Math.min(step,delta));
+ return Math.abs(delta)<=step+1e-9;
+}
+function moveEnemyTank(e,desired,speed,dt){
+ if(turnEnemyTankBody(e,desired,dt))mv(e,Math.cos(desired)*speed*dt,Math.sin(desired)*speed*dt,TANK_HIT);
 }
 // Main gun follows the rendered turret at 90 degrees/second; MG shares its direction.
 function turnEnemyTankTurret(e,desired,dt){
@@ -6420,7 +6431,7 @@ function update(dt){
   let tg=targetObj(e.target);if(e.st&&!tg){e.st=0;e.target=null;e.foundPause=0;pauseAfterEnemyDetection(e);}tg=targetObj(e.target);
   if(e.st&&tg){const d=D(e,tg),toT=Math.atan2(tg.y-e.y,tg.x-e.x),vis=cachedLos(e,tg);
    if(!detected){e.lost-=dt;if(e.lost<=0||d>detectDropRange(e.target)*frontlineTankSightScale(e)){e.st=0;e.target=null;e.foundPause=0;pauseAfterEnemyDetection(e);}}
-   if(e.st){e.cc-=dt;e.vc-=dt;e.firePause=Math.max(0,(e.firePause||0)-dt);const foundPause=(e.foundPause||0)>0;if(foundPause)e.foundPause=Math.max(0,e.foundPause-dt);if(!foundPause&&!e.static&&d>190){mv(e,Math.cos(toT)*55*dt,Math.sin(toT)*55*dt,TANK_HIT);e.body=toT;}else if(!foundPause&&!e.static&&d<120){mv(e,-Math.cos(toT)*40*dt,-Math.sin(toT)*40*dt,TANK_HIT);}
+   if(e.st){e.cc-=dt;e.vc-=dt;e.firePause=Math.max(0,(e.firePause||0)-dt);const foundPause=(e.foundPause||0)>0;if(foundPause)e.foundPause=Math.max(0,e.foundPause-dt);if(!foundPause&&!e.static&&d>190){moveEnemyTank(e,toT,55,dt);}else if(!foundPause&&!e.static&&d<120){moveEnemyTank(e,toT+Math.PI,40,dt);}
     const canFire=(e.firePause||0)<=0;
     updateEnemyTankWeapons(e,tg,d,toT,vis,canFire,dt);}
   }
@@ -6435,7 +6446,7 @@ function update(dt){
    else continue; // 発見していない間は、走行も射撃もしない。
   }
   if(!e.st){
-   if(!enemyModePaused(e)&&!e.static){const a=patrol(e,dt,20,TANK_HIT);e.body=a;}
+   if(!enemyModePaused(e)&&!e.static){patrol(e,dt,20,TANK_HIT,turnEnemyTankBody);}
    if(e.scanTurret){
     // 通常戦車・停止戦車とも、探索型は車体正面を中心に左右75°を走査する。
     e.scanPhase=(e.scanPhase||0)+(e.scanRate||.5)*dt;

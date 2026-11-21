@@ -42,16 +42,16 @@ function playerTankArtSprites(id){
  };
  cached={hull:make('hull'),turret:make('turret')};playerTankArtCache.set(id,cached);return cached;
 }
-function drawPlayerTankArt(x,y,body,ang,id,sz,layer,trackPhase=null){
+function drawPlayerTankArt(x,y,body,ang,id,sz,layer,trackPhase=null,trackTurn=0){
  const art=playerTankArtSprites(id);
  const stamp=sprite=>drawStaticRaster(sprite.canvas,sprite.x*sz,sprite.y*sz,sprite.w*sz,sprite.h*sz);
- if(layer!=='turret'){g.save();g.translate(x,y);g.rotate(body+Math.PI/2);drawPlayerTankTracks(id,sz,Number.isFinite(trackPhase)?trackPhase:0);stamp(art.hull);g.restore();}
+ if(layer!=='turret'){g.save();g.translate(x,y);g.rotate(body+Math.PI/2);drawPlayerTankTracks(id,sz,(Number.isFinite(trackPhase)?trackPhase:0)+trackTurn,(Number.isFinite(trackPhase)?trackPhase:0)-trackTurn);stamp(art.hull);g.restore();}
  if(layer!=='hull'){g.save();g.translate(x,y);g.rotate(ang+Math.PI/2);stamp(art.turret);g.restore();}
 }
 
 // One shared strip, not extra full hull frames. Source cropping moves full-width belts beneath the cached wheels and hull.
 let playerTankTrackStrip=null;
-function drawPlayerTankTracks(id,sz,phase){
+function drawPlayerTankTracks(id,sz,phase,rightPhase=phase){
  if(!playerTankTrackStrip){
   const c=document.createElement('canvas');c.width=8;c.height=96;
   const q=gameCanvasContext(c);q.fillStyle='#2f3338';q.fillRect(0,0,8,96);
@@ -62,15 +62,19 @@ function drawPlayerTankTracks(id,sz,phase){
  const length=id==='churchill'?1.16:1,sourceHeight=2.12*32*length,top=-sz*1.06*length,height=sz*2.12*length;
  const offset=((phase%8)+8)%8;
  drawStaticRaster(playerTankTrackStrip,0,offset,8,sourceHeight,-sz*.98,top,sz*.42,height);
- drawStaticRaster(playerTankTrackStrip,0,offset,8,sourceHeight,sz*.56,top,sz*.42,height);
+ drawStaticRaster(playerTankTrackStrip,0,((rightPhase%8)+8)%8,8,sourceHeight,sz*.56,top,sz*.42,height);
 }
 function playerTankTrackPhase(v,x,y,body){
  if(!v?.t||!PLAYER_TANK_ART[v.t.id])return null;
  return tankTrackPhase(v,x,y,body,v.f>0);
 }
 function drawEnemyTank(e){
+ const delta=Number.isFinite(e.trackDrawBody)?Math.atan2(Math.sin(e.body-e.trackDrawBody),Math.cos(e.body-e.trackDrawBody)):0;
+ e.trackDrawBody=e.body;
+ // Counter-rotate the two belts during a pivot, using one shared strip.
+ e.trackTurnPhase=((e.trackTurnPhase||0)+delta*12)%8;
  const phase=tankTrackPhase(e,e.x,e.y,e.body,true);
- drawPlayerTankArt(e.x,e.y,e.body,e.ang,'enemy',TANK_DRAW,'both',phase);
+ drawPlayerTankArt(e.x,e.y,e.body,e.ang,'enemy',TANK_DRAW,'both',phase,e.trackTurnPhase);
 }
 function tankTrackPhase(v,x,y,body,moving){
  const dx=Number.isFinite(v.trackDrawX)?x-v.trackDrawX:0,dy=Number.isFinite(v.trackDrawY)?y-v.trackDrawY:0;
