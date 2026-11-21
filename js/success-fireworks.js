@@ -14,7 +14,7 @@ function stopSuccessFireworks(){
 }
 function emitSuccessFirework(event,canvas,sound=true){
  const [,x,y,primary,secondary]=event,particles=successFireworks.particles;
- const speed=Math.min(canvas.width,canvas.height)*.66;
+ const speed=Math.min(canvas.width,canvas.height)*.792;
  // Three layers follow the cannon impact's coloured spray and white-hot core.
  burst(x*canvas.width,y*canvas.height,54,primary,speed,particles,Math.random);
  burst(x*canvas.width,y*canvas.height,28,secondary,speed*1.28,particles,Math.random);
