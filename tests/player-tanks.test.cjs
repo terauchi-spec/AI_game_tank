@@ -68,7 +68,7 @@ test('tracks stop on idle, turning, empty fuel and pause, ignore teleports, and 
  assert.equal(step(0),null);assert.equal(step(6),3);assert.equal(step(6),3);assert.equal(step(6,0,2),3);v.f=0;assert.equal(step(10),3);v.f=100;h.c.state='paused';assert.equal(step(20),3);h.c.state='play';assert.equal(step(20),3);assert.equal(step(1020),3);assert.equal(step(1014),0);assert.equal(h.c.playerTankTrackPhase({t:{id:'armored'},f:100},0,0,0),null);
 });
 test('track overlays stay on hull layers, retain caller opacity, and match the sample proportions',()=>{
- const h=artHarness();h.c.g.globalAlpha=.4;h.c.tankShape(0,0,.3,1.2,h.c.types[0],30,'turret',2);assert.equal(h.rasters.length,1);h.rasters.length=0;h.c.tankShape(0,0,.3,1.2,h.c.types[5],30,'hull',2);assert.equal(h.rasters.length,3);const tracks=h.rasters.filter(a=>a.length===9);assert.ok(tracks.every(a=>a[2]+a[4]<=96));assert.ok(Math.abs(tracks[0][8]-30*2.12*436/440)<1e-9);assert.equal(h.c.g.globalAlpha,.4);assert.equal(h.depth(),0);
+ const h=artHarness();h.c.g.globalAlpha=.4;h.c.tankShape(0,0,.3,1.2,h.c.types[0],30,'turret',2);assert.equal(h.rasters.length,1);h.rasters.length=0;h.c.tankShape(0,0,.3,1.2,h.c.types[5],30,'hull',2);assert.equal(h.rasters.length,3);const tracks=h.rasters.filter(a=>a.length===9);assert.ok(tracks.every(a=>a[2]+a[4]<=96));assert.ok(Math.abs(tracks[0][8]-30*2.12*436/440*vm.runInContext('PLAYER_TANK_ART.churchill.displayScale',h.c))<1e-9);assert.equal(h.c.g.globalAlpha,.4);assert.equal(h.depth(),0);
 });
 
 test('parked, newly boarded and stationary driven tanks use identical full-width belts in every model',()=>{
@@ -78,8 +78,8 @@ test('parked, newly boarded and stationary driven tanks use identical full-width
   const vehicle={kind:'tank',t,f:100};h.c.drawVehicle(vehicle,100,100,0,0);const parked=h.rasters.slice(-4);
   h.c.p.tank=vehicle;h.c.drawVehicle(vehicle,100,100,0,0);const boarded=h.rasters.slice(-4);
   assert.deepEqual(boarded,parked,t.id);const belts=parked.filter(a=>a.length===9);assert.equal(belts.length,2);assert.equal(belts[0][2],0);assert.equal(belts[1][2],0);
-  assert.equal(belts[0][7],30*layout.trackWidth);assert.equal(belts[1][7],30*layout.trackWidth);assert.equal(belts[0][8],belts[1][8]);assert.equal(belts[0][1],belts[1][1]);
-  assert.equal(belts[0][5],-30*layout.trackHalfSpan);assert.equal(belts[1][5],30*(layout.trackHalfSpan-layout.trackWidth));
+  assert.equal(belts[0][7],(30*layout.displayScale)*layout.trackWidth);assert.equal(belts[1][7],(30*layout.displayScale)*layout.trackWidth);assert.equal(belts[0][8],belts[1][8]);assert.equal(belts[0][1],belts[1][1]);
+  assert.equal(belts[0][5],-(30*layout.displayScale)*layout.trackHalfSpan);assert.equal(belts[1][5],(30*layout.displayScale)*(layout.trackHalfSpan-layout.trackWidth));
   h.c.drawVehicle(vehicle,106,100,0,0);const rolling=h.rasters.slice(-4);assert.equal(rolling[0][2],3);assert.equal(rolling[1][2],3);assert.equal(rolling[2][0],parked[2][0]);assert.equal(rolling[3][0],parked[3][0]);
   h.c.p.tank=null;h.c.drawVehicle(vehicle,106,100,0,0);assert.deepEqual(h.rasters.slice(-4),rolling,t.id+' exit');
  }
@@ -217,6 +217,11 @@ test('friendly hulls and turrets use one sample scale and expose the outer track
   const outer=layout.trackHalfSpan,width=layout.trackWidth,halfHull=hull[4]/64;
   assert.ok(halfHull>outer-width&&halfHull<outer,tank.id+' connected covers and exposed outer belt');
   const belts=h.rasters.filter(args=>args.length===9);
+  const rim=30*layout.displayScale*.07;
+  const left=belts[0][5]-rim,right=belts[1][5]+belts[1][7]+rim;
+  assert.ok(Math.abs(right-left-30*2.10)<1e-9,tank.id+' legacy outer width');
+  const hullRaster=h.rasters[2],turretRaster=h.rasters[3];
+  assert.ok(Math.abs(hullRaster[3]/hullRaster[0].width-turretRaster[3]/turretRaster[0].width)<1e-9,tank.id+' uniform enlargement');
   assert.ok(Math.abs(belts[0][7]/belts[0][8]-layout.trackPixels.width/layout.trackPixels.height)<1e-9,tank.id+' sample belt ratio');
   assert.ok(Math.abs(outer*2/layout.trackHeight-layout.trackPixels.span/layout.trackPixels.height)<1e-9,tank.id+' sample track spacing');
  }

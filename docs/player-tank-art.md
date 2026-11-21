@@ -19,7 +19,11 @@ and tracks are sized from the same source-sheet pixel measurements for each
 model. Width, spacing and length of the shared animated track strips now match
 the samples, instead of the wider legacy pixel-tank footprint. The original
 painted edge panels provide the partial track covers; no duplicated side panels
-are added. Turrets keep their individual rotation pivots.
+are added. Turrets keep their individual rotation pivots. Each complete friendly tank is
+uniformly scaled at draw time to the legacy pixel tank's 2.10-unit outer width,
+including track rims. Hull, turret, barrel, shadow and animated tracks share this
+scale, preserving the sample proportions and rotation centres. Raster cache
+sizes and source images stay the same.
 
 The enemy turret raster compresses only the projecting barrel by 5 percent.
 The barrel attachment, housing pixels, rotation pivot and weapon calculations

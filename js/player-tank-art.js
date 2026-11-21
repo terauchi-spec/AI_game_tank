@@ -16,6 +16,8 @@ for(const art of Object.values(PLAYER_TANK_ART)){
  art.trackWidth=art.trackPixels.width*scale;
  art.trackHalfSpan=art.trackPixels.span*scale/2;
  art.trackHeight=art.trackPixels.height*scale;
+ // Legacy track rims span -1.05 to +1.05; scale the entire design to that width.
+ art.displayScale=2.10/(art.trackHalfSpan*2+.14);
 }
 const ENEMY_TANK_ART={id:'enemy',col:'#4b5f9e',barrel:1.8,trackWidth:.42,trackHalfSpan:.98,trackHeight:2.12};
 const playerTankArtCache=new Map();
@@ -100,6 +102,7 @@ function playerTankArtSprites(id){
 }
 function drawPlayerTankArt(x,y,body,ang,id,sz,layer,trackPhase=null,trackTurn=0){
  const art=playerTankArtSprites(id);
+ sz*=PLAYER_TANK_ART[id]?.displayScale||1;
  const stamp=sprite=>drawStaticRaster(sprite.canvas,sprite.x*sz,sprite.y*sz,sprite.w*sz,sprite.h*sz);
  if(layer!=='turret'){g.save();g.translate(x,y);g.rotate(body+Math.PI/2);drawPlayerTankTracks(id,sz,(Number.isFinite(trackPhase)?trackPhase:0)+trackTurn,(Number.isFinite(trackPhase)?trackPhase:0)-trackTurn);stamp(art.hull);g.restore();}
  if(layer!=='hull'){g.save();g.translate(x,y);g.rotate(ang+Math.PI/2);stamp(art.turret);g.restore();}
