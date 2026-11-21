@@ -210,8 +210,8 @@ test('friendly hulls and turrets use one sample scale and expose the outer track
  for(const tank of h.c.types){
   h.commands.length=0;h.rasters.length=0;h.c.tankShape(0,0,0,.7,tank,30,'both');
   const stamps=h.commands.filter(command=>command[0]==='drawImage');
-  assert.equal(stamps.length,2,'only the original hull and turret, with no duplicated covers');
-  const [hull,turret]=stamps,layout=designs[tank.id];
+  assert.equal(stamps.length,tank.id==='type10'?3:2,'original hull and turret plus the Type 10 barrel');
+  const hull=stamps[0],turret=stamps.at(-1),layout=designs[tank.id];
   assert.ok(Math.abs(hull[4]/hull[1].naturalWidth-turret[4]/turret[1].naturalWidth)<1e-9,tank.id+' shared source scale');
   assert.ok(Math.abs(hull[5]/hull[1].naturalHeight-turret[5]/turret[1].naturalHeight)<1e-9,tank.id+' original aspect ratios');
   const outer=layout.trackHalfSpan,width=layout.trackWidth,halfHull=hull[4]/64;
@@ -225,4 +225,26 @@ test('friendly hulls and turrets use one sample scale and expose the outer track
   assert.ok(Math.abs(belts[0][7]/belts[0][8]-layout.trackPixels.width/layout.trackPixels.height)<1e-9,tank.id+' sample belt ratio');
   assert.ok(Math.abs(outer*2/layout.trackHeight-layout.trackPixels.span/layout.trackPixels.height)<1e-9,tank.id+' sample track spacing');
  }
+});
+
+
+test('Type 10 barrel is 1.5 times wider and 1.2 times longer around the same attachment',()=>{
+ const h=artHarness(),images=[];
+ h.c.Image=class{constructor(){this.complete=false;images.push(this);}};
+ const tank=h.c.types.find(t=>t.id==='type10');
+ h.c.tankShape(0,0,.3,1.2,tank,30,'both');
+ images.forEach(image=>{Object.assign(image,{complete:true,naturalWidth:133,naturalHeight:256});image.onload();});
+ h.commands.length=0;h.c.tankShape(0,0,.3,1.2,tank,30,'both');
+ const stamps=h.commands.filter(command=>command[0]==='drawImage');
+ assert.equal(stamps.length,3);
+ const barrel=stamps[1],housing=stamps[2],clip=h.commands.filter(command=>command[0]==='rect').at(-1);
+ assert.ok(Math.abs(barrel[8]/housing[4]-1.5)<1e-12);
+ assert.ok(Math.abs(barrel[9]/(housing[5]*106/256)-1.2)<1e-12);
+ assert.ok(Math.abs(barrel[7]+barrel[9]-clip[2])<1e-12);
+ assert.ok(Math.abs(clip[2]-(housing[3]+housing[5]*106/256))<1e-12);
+ assert.ok(Math.abs(barrel[6]+barrel[8]/2)<1e-12);
+ const allocations=h.canvases.length;h.commands.length=0;
+ for(let frame=0;frame<30;frame++)h.c.tankShape(frame,0,.3,1.2,tank,30,'both');
+ assert.equal(h.canvases.length,allocations);assert.ok(!h.commands.some(command=>command[0]==='drawImage'));
+ assert.equal(h.depth(),0);
 });

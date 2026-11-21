@@ -86,6 +86,12 @@ function paintPlayerTankArt(q,id,layer){
    q.drawImage(image,0,0,image.naturalWidth,barrelPixels,-width/2,y+barrelHeight*.05,width,barrelHeight*.95);
    q.save();q.beginPath();q.rect(-width,y+barrelHeight,width*2,height);q.clip();
    q.drawImage(image,-width/2,y,width,height);q.restore();
+  }else if(id==='type10'&&layer==='turret'){
+   // Enlarge the projecting barrel around its fixed attachment point.
+   const barrelPixels=image.naturalHeight*106/256,barrelHeight=height*106/256;
+   q.drawImage(image,0,0,image.naturalWidth,barrelPixels,-width*.75,y-barrelHeight*.2,width*1.5,barrelHeight*1.2);
+   q.save();q.beginPath();q.rect(-width,y+barrelHeight,width*2,height);q.clip();
+   q.drawImage(image,-width/2,y,width,height);q.restore();
   }else q.drawImage(image,-width/2,y,width,height);
  }
  q.restore();
