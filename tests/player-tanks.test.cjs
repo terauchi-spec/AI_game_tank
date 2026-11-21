@@ -174,3 +174,15 @@ test('friendly wreck rendering uses original pixel shapes without requesting pai
   })()`),true);
  }
 });
+
+test('a stationary player pivot counter-rotates the same two track strips while the turret stays independent',()=>{
+ const h=artHarness();h.c.TANK_DRAW=30;h.c.state='play';
+ vm.runInContext(html.split('\n').find(line=>line.startsWith('function drawVehicle(v,')),h.c);
+ const vehicle={kind:'tank',t:h.c.types[0],f:100};
+ h.c.drawVehicle(vehicle,100,100,0,.7);const count=h.canvases.length;
+ h.rasters.length=0;h.commands.length=0;h.c.drawVehicle(vehicle,100,100,.1,.7);
+ const belts=h.rasters.filter(args=>args.length===9);
+ assert.equal(belts.length,2);assert.ok(Math.abs(belts[0][2]-1.2)<1e-9);assert.ok(Math.abs(belts[1][2]-6.8)<1e-9);
+ assert.equal(vehicle.trackPhase,undefined);assert.equal(h.canvases.length,count);
+ assert.ok(h.commands.some(command=>command[0]==='rotate'&&command[1]===.7+Math.PI/2));
+});

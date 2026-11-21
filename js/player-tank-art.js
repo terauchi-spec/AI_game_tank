@@ -109,13 +109,16 @@ function playerTankTrackPhase(v,x,y,body){
  if(!v?.t||!PLAYER_TANK_ART[v.t.id])return null;
  return tankTrackPhase(v,x,y,body,v.f>0);
 }
-function drawEnemyTank(e){
- const delta=Number.isFinite(e.trackDrawBody)?Math.atan2(Math.sin(e.body-e.trackDrawBody),Math.cos(e.body-e.trackDrawBody)):0;
- e.trackDrawBody=e.body;
+function tankTrackTurnPhase(vehicle,body){
+ const delta=Number.isFinite(vehicle.trackDrawBody)?Math.atan2(Math.sin(body-vehicle.trackDrawBody),Math.cos(body-vehicle.trackDrawBody)):0;
+ vehicle.trackDrawBody=body;
  // Counter-rotate the two belts during a pivot, using one shared strip.
- e.trackTurnPhase=((e.trackTurnPhase||0)+delta*12)%8;
- const phase=tankTrackPhase(e,e.x,e.y,e.body,true);
- drawPlayerTankArt(e.x,e.y,e.body,e.ang,'enemy',TANK_DRAW,'both',phase,e.trackTurnPhase);
+ vehicle.trackTurnPhase=((vehicle.trackTurnPhase||0)+delta*12)%8;
+ return vehicle.trackTurnPhase;
+}
+function drawEnemyTank(e){
+ const turn=tankTrackTurnPhase(e,e.body),phase=tankTrackPhase(e,e.x,e.y,e.body,true);
+ drawPlayerTankArt(e.x,e.y,e.body,e.ang,'enemy',TANK_DRAW,'both',phase,turn);
 }
 function tankTrackPhase(v,x,y,body,moving){
  const dx=Number.isFinite(v.trackDrawX)?x-v.trackDrawX:0,dy=Number.isFinite(v.trackDrawY)?y-v.trackDrawY:0;
