@@ -27,10 +27,10 @@ test('all seven player tanks stop to pivot on opposite input and resume at the o
   return true;
  })()`),true);
 });
-test('straight and perpendicular controls retain immediate movement; wheel vehicles and infantry do not pivot',()=>{
+test('straight controls retain immediate movement; wheel vehicles and infantry do not pivot',()=>{
  const h=start();
  assert.equal(h.run(`(()=>{
-  for(const [vehicle,body] of [[{kind:'tank',t:TYPES[0],f:100},0],[{kind:'tank',t:TYPES[0],f:100},Math.PI/2],
+  for(const [vehicle,body] of [[{kind:'tank',t:TYPES[0],f:100},0],
    [{kind:'truck',t:TRUCK_TYPE,f:100},Math.PI],[{kind:'tank',t:ARMORED_TYPE,f:100},Math.PI],
    [{kind:'fighter',t:FIGHTER_TYPE,f:100,hp:FIGHTER_TYPE.hp},Math.PI],[null,Math.PI]]){
    p.x=480;p.y=5000;p.body=body;p.tank=vehicle;
@@ -61,6 +61,28 @@ test('player pivots use the enemy turn rate independently of frame rate',()=>{
    p.body=0;p.tank={kind:'tank',t:TYPES[0]};
    for(let frame=0;frame<Math.round(2/dt)-1;frame++)if(turnPlayerTankBody(Math.PI,dt))return false;
    if(!turnPlayerTankBody(Math.PI,dt)||Math.abs(angD(Math.PI,p.body))>1e-8)return false;
+  }
+  return true;
+ })()`),true);
+});
+
+test('all tracked tanks steer on arcs for perpendicular and diagonal inputs at every frame rate',()=>{
+ const h=start();
+ assert.equal(h.run(`(()=>{
+  for(const type of TYPES)for(const dt of [1/30,1/60,1/120])for(const desired of [-Math.PI/2,-Math.PI/4,Math.PI/4,Math.PI/2]){
+   for(const key of Object.keys(keys))keys[key]=false;
+   p.x=480;p.y=5000;p.body=0;p.ang=.7;p.tank={kind:'tank',t:type,f:100};
+   keys[desired<0?'ArrowUp':'ArrowDown']=true;
+   if(Math.abs(desired)<Math.PI/2)keys.ArrowRight=true;
+   update(dt);
+   if(Math.abs(p.body-desired)<1e-6||Math.abs(p.body-Math.sign(desired)*Math.PI/2*dt)>1e-8)return false;
+   if(!(p.x>480)||Math.sign(p.y-5000)!==Math.sign(desired)||p.tank.playerPivoting||p.tank.f>=100||Math.abs(p.ang-.7)>1e-8)return false;
+   const frames=Math.round(Math.abs(desired)/(Math.PI/2)/dt);
+   for(let i=1;i<frames;i++)update(dt);
+   if(Math.abs(angD(desired,p.body))>1e-8)return false;
+   if(Math.abs(p.x-(480+24*Math.abs(Math.sin(desired))))>1e-7||Math.abs(p.y-(5000+24*Math.sign(desired)*(1-Math.cos(desired))))>1e-7)return false;
+   const x=p.x,y=p.y;update(dt);
+   if(Math.abs(Math.hypot(p.x-x,p.y-y)-type.sp*dt)>1e-8)return false;
   }
   return true;
  })()`),true);
