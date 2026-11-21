@@ -3,7 +3,8 @@
 The approved four-wheel truck uses one transparent body sprite plus four pixel
 tires underneath. Vehicle definitions, movement, boarding, coasting, collisions,
 health, fuel and existing pixel wreck rendering are unchanged. Blue road trucks
-keep their original renderer; armored cars are unchanged.
+keep their original renderer. Armored cars reuse the same pixel tread strip
+through their own WebP hull/turret renderer.
 
 - `approved-truck-master.png`: approved generated PNG, preserved as supplied.
 - `truck-body-master.png`: generated edit removing only rubber tires for pixel overlays.
