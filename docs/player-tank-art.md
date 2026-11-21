@@ -41,3 +41,11 @@ in the original gameplay code. Hull and turret keep independent headings,
 caller opacity and foreground/foliage layering. Destruction and detached wreck
 parts continue through the existing pixel renderer, without painted sprites.
 Enemy tank assets and their pivot animation use the existing enemy path.
+
+All seven friendly tanks bake black hull/turret outlines from a shared temporary
+alpha mask when their image layers are cached. The six models other than Type 10
+use 1.5x barrel thickness and 1.1x projecting length. Type 10 uses its existing
+1.5x thickness and 1.2x length. Each muzzle head is a further 20% wider and 15%
+longer; per-model source boundaries preserve the original mantlet and housing.
+The cached outlines, source images and animated track strips are reused on
+subsequent frames.

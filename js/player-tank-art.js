@@ -1,13 +1,13 @@
 // Painted hulls and independently rotating turrets share the existing pixel tracks.
 // Cache only two layers per type; gameplay and vehicle definitions stay in main.
 const PLAYER_TANK_ART={
- t34:{barrel:1.72,pivot:.6636771300,hullHeightPixels:467,turretWidthPixels:237,trackPixels:{width:84,span:363,height:472}},
- tiger:{barrel:1.82,pivot:.7246753247,hullHeightPixels:367,turretWidthPixels:200,trackPixels:{width:53,span:285,height:367}},
- type10:{barrel:2.08,pivot:.7088452088,hullHeightPixels:389,turretWidthPixels:212,trackPixels:{width:53,span:286,height:389}},
- m1:{barrel:2.0,pivot:.7200956938,hullHeightPixels:392,turretWidthPixels:229,trackPixels:{width:52,span:286,height:393}},
- sherman:{barrel:1.58,pivot:.6785714286,hullHeightPixels:364,turretWidthPixels:215,trackPixels:{width:50,span:288,height:370}},
- churchill:{barrel:1.62,pivot:.6689944134,hullHeightPixels:440,turretWidthPixels:221,trackPixels:{width:40,span:291,height:436}},
- kingtiger:{barrel:2.22,pivot:.6902439024,hullHeightPixels:410,turretWidthPixels:221,trackPixels:{width:50,span:286,height:410}}
+ t34:{barrelEndPixels:90,muzzleEndPixels:20,barrel:1.72,pivot:.6636771300,hullHeightPixels:467,turretWidthPixels:237,trackPixels:{width:84,span:363,height:472}},
+ tiger:{barrelEndPixels:118,muzzleEndPixels:28,barrel:1.82,pivot:.7246753247,hullHeightPixels:367,turretWidthPixels:200,trackPixels:{width:53,span:285,height:367}},
+ type10:{barrelEndPixels:106,muzzleEndPixels:14,barrel:2.08,pivot:.7088452088,hullHeightPixels:389,turretWidthPixels:212,trackPixels:{width:53,span:286,height:389}},
+ m1:{barrelEndPixels:109,muzzleEndPixels:16,barrel:2.0,pivot:.7200956938,hullHeightPixels:392,turretWidthPixels:229,trackPixels:{width:52,span:286,height:393}},
+ sherman:{barrelEndPixels:98,muzzleEndPixels:28,barrel:1.58,pivot:.6785714286,hullHeightPixels:364,turretWidthPixels:215,trackPixels:{width:50,span:288,height:370}},
+ churchill:{barrelEndPixels:85,muzzleEndPixels:28,barrel:1.62,pivot:.6689944134,hullHeightPixels:440,turretWidthPixels:221,trackPixels:{width:40,span:291,height:436}},
+ kingtiger:{barrelEndPixels:96,muzzleEndPixels:28,barrel:2.22,pivot:.6902439024,hullHeightPixels:410,turretWidthPixels:221,trackPixels:{width:50,span:286,height:410}}
 };
 // Scale all parts from each sample's pixel measurements, once at startup.
 for(const art of Object.values(PLAYER_TANK_ART)){
@@ -71,7 +71,6 @@ function paintPlayerTankArt(q,id,layer){
  q.save();q.scale(1/32,1/32);
  // Keep the animated belt interiors clear beneath the painted hull.
  if(!image||id==='enemy'&&layer==='hull')drawOriginalTankShape(0,0,-Math.PI/2,-Math.PI/2,tank,32,layer,q,true);
- else if(layer==='hull'&&id!=='type10')paintPlayerTankTrackRims(q,id);
  if(image){
   q.imageSmoothingEnabled=true;q.imageSmoothingQuality='high';
   const art=PLAYER_TANK_ART[id],turretWidth=id==='enemy'?1.24:art.turretWidth;
@@ -86,13 +85,14 @@ function paintPlayerTankArt(q,id,layer){
    q.drawImage(image,0,0,image.naturalWidth,barrelPixels,-width/2,y+barrelHeight*.05,width,barrelHeight*.95);
    q.save();q.beginPath();q.rect(-width,y+barrelHeight,width*2,height);q.clip();
    q.drawImage(image,-width/2,y,width,height);q.restore();
-  }else if(id==='type10'&&layer==='turret'){
+  }else if(art&&layer==='turret'){
    // Enlarge the projecting barrel around its fixed attachment point.
-   const barrelPixels=image.naturalHeight*106/256,barrelHeight=height*106/256;
-   const muzzlePixels=image.naturalHeight*14/256,muzzleHeight=height*14/256*1.2;
-   const muzzleBottom=y-barrelHeight*.2+muzzleHeight;
+   const extension=id==='type10'?.2:.1,lengthScale=1+extension;
+   const barrelPixels=image.naturalHeight*art.barrelEndPixels/256,barrelHeight=height*art.barrelEndPixels/256;
+   const muzzlePixels=image.naturalHeight*art.muzzleEndPixels/256,muzzleHeight=height*art.muzzleEndPixels/256*lengthScale;
+   const muzzleBottom=y-barrelHeight*extension+muzzleHeight;
    q.drawImage(image,0,0,image.naturalWidth,muzzlePixels,-width*.9,muzzleBottom-muzzleHeight*1.15,width*1.8,muzzleHeight*1.15);
-   q.drawImage(image,0,muzzlePixels,image.naturalWidth,barrelPixels-muzzlePixels,-width*.75,muzzleBottom,width*1.5,barrelHeight*1.2-muzzleHeight);
+   q.drawImage(image,0,muzzlePixels,image.naturalWidth,barrelPixels-muzzlePixels,-width*.75,muzzleBottom,width*1.5,barrelHeight*lengthScale-muzzleHeight);
    q.save();q.beginPath();q.rect(-width,y+barrelHeight,width*2,height);q.clip();
    q.drawImage(image,-width/2,y,width,height);q.restore();
   }else q.drawImage(image,-width/2,y,width,height);
@@ -121,7 +121,7 @@ function playerTankArtSprites(id){
   const a=id==='enemy'?ENEMY_TANK_ART:PLAYER_TANK_ART[id],bounds=layer==='hull'?{x:-1.18,y:-1.60,w:2.36,h:3.20}:{x:-.85,y:-a.barrel-.25,w:1.70,h:a.barrel+(id==='enemy'?1.20:1.10)};
   const canvas=document.createElement('canvas');canvas.width=Math.ceil(bounds.w*32);canvas.height=Math.ceil(bounds.h*32);
   const q=gameCanvasContext(canvas);q.scale(32,32);q.translate(-bounds.x,-bounds.y);paintPlayerTankArt(q,id,layer);
-  if(id==='type10'&&playerTankGraphic(id,layer)){
+  if(PLAYER_TANK_ART[id]&&playerTankGraphic(id,layer)){
    outlineTankLayer(canvas);
    if(layer==='hull'){
     q.save();q.scale(1/32,1/32);q.globalCompositeOperation='destination-over';
