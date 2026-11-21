@@ -1030,7 +1030,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.21.1538',FILE_CREATED_AT='2026/11/21 15:38',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.21.1547',FILE_CREATED_AT='2026/11/21 15:47',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -5807,7 +5807,7 @@ function fireSniper(){
  if((p.sniperFireCd||0)>0){say('狙撃 再装填中… '+(p.sniperFireCd||0).toFixed(1)+'秒');return false;}
  const a=sniperAimAngle(),x=p.x+Math.cos(a)*13,y=p.y+Math.sin(a)*13,soundX=p.x,soundY=p.y;
  fire(x,y,a,'p','s',SNIPER_BULLET_SPEED,SNIPER_RANGE,3);p.sniperFireCd=SNIPER_FIRE_INTERVAL;
- // 銃声は0.5秒後に800px以内を疑惑化。歩兵のみ300px以内で1秒後に発見へ移行し、敵戦車は銃声だけでは発見しない。
+ // 銃声は0.5秒後に800px以内を疑惑化。歩兵のみ100px以内で1秒後に発見へ移行し、敵戦車は銃声だけでは発見しない。
  if(!Array.isArray(p.sniperNoiseEvents))p.sniperNoiseEvents=[];
  p.sniperNoiseEvents.push({x:soundX,y:soundY,susT:.5,foundT:1,susDone:false});
  if(p.sniperNoiseEvents.length>8)p.sniperNoiseEvents.shift();
@@ -5820,8 +5820,8 @@ function triggerSniperSuspicion(ev){
 }
 function triggerSniperFound(ev){
  if(!ev||debugMode>=2)return;
- // 300px以内の歩兵のみ銃声から発見に移る。敵戦車は疑惑を維持し、実際の視認・被弾で発見する。
- for(const h of (humans||[])){if(!h.alive||h.stun>0||Math.hypot(h.x-ev.x,h.y-ev.y)>300)continue;const hold=h.elite?4.5:3;h.sniperForcedFoundT=Math.max(h.sniperForcedFoundT||0,hold);enterHumanFound(h,'p',.5);h.lost=Math.max(h.lost||0,hold);}
+ // 100px以内の歩兵のみ銃声から発見に移る。敵戦車は疑惑を維持し、実際の視認・被弾で発見する。
+ for(const h of (humans||[])){if(!h.alive||h.stun>0||Math.hypot(h.x-ev.x,h.y-ev.y)>100)continue;const hold=h.elite?4.5:3;h.sniperForcedFoundT=Math.max(h.sniperForcedFoundT||0,hold);enterHumanFound(h,'p',.5);h.lost=Math.max(h.lost||0,hold);}
 }
 
 function updateSniperState(dt){
