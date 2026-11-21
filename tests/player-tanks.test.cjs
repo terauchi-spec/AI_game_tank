@@ -243,15 +243,19 @@ test('all friendly tanks emphasize muzzles, enlarge barrels and cache black outl
   assert.ok(Math.abs(barrel[8]/housing[4]-1.5)<1e-12,id+' shaft thickness');
   const originalShaftHeight=housing[5]*(layout.barrelEndPixels-layout.muzzleEndPixels)/256;
   assert.ok(Math.abs(barrel[9]/originalShaftHeight-lengthScale)<1e-12,id+' shaft length');
-  assert.ok(Math.abs(muzzle[8]/barrel[8]-1.2)<1e-12,id+' muzzle width +20%');
+  const emphasis=['tiger','sherman','churchill'].includes(id)?.2:1;
+  assert.ok(Math.abs(muzzle[8]/barrel[8]-(1+.2*emphasis))<1e-12,id+' muzzle width');
   const originalMuzzleHeight=housing[5]*layout.muzzleEndPixels/256*lengthScale;
-  assert.ok(Math.abs(muzzle[9]/originalMuzzleHeight-1.15)<1e-12,id+' muzzle length +15%');
+  assert.ok(Math.abs(muzzle[9]/originalMuzzleHeight-(1+.15*emphasis))<1e-12,id+' muzzle length');
   assert.ok(Math.abs(muzzle[7]+muzzle[9]-barrel[7])<1e-12,id+' muzzle joins the shaft');
   assert.ok(Math.abs(barrel[7]+barrel[9]-clip[2])<1e-12,id+' shaft joins the housing');
   assert.ok(Math.abs(clip[2]-(housing[3]+housing[5]*layout.barrelEndPixels/256))<1e-12);
   assert.ok(Math.abs(barrel[6]+barrel[8]/2)<1e-12);
   const masks=h.commands.filter(command=>command[0]==='drawImage'&&!images.includes(command[1]));
   assert.equal(masks.length,18,'two mask copies and eight outline offsets for each layer');
+  for(const offset of masks.filter(command=>command.length===4)){
+   if(offset[2]!==0||offset[3]!==0)assert.ok(Math.abs(Math.hypot(offset[2],offset[3])-1)<1e-12,'thin outline radius');
+  }
   assert.equal(new Set(masks.filter(command=>command.length===4).map(command=>command[1])).size,3,'two source layers share one outline mask');
   const allocations=h.canvases.length;h.commands.length=0;
   for(let frame=0;frame<30;frame++)h.c.tankShape(frame,0,.3,1.2,tank,30,'both');

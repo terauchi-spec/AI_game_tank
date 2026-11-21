@@ -49,3 +49,7 @@ use 1.5x barrel thickness and 1.1x projecting length. Type 10 uses its existing
 longer; per-model source boundaries preserve the original mantlet and housing.
 The cached outlines, source images and animated track strips are reused on
 subsequent frames.
+
+Sherman, Churchill and Tiger I retain only 20% of the extra muzzle emphasis
+(+4% width and +3% length relative to their enlarged barrels). Friendly hull
+and turret outline radius is 1 cache pixel, reduced from 1.3 pixels.

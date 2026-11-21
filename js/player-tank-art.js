@@ -2,11 +2,11 @@
 // Cache only two layers per type; gameplay and vehicle definitions stay in main.
 const PLAYER_TANK_ART={
  t34:{barrelEndPixels:90,muzzleEndPixels:20,barrel:1.72,pivot:.6636771300,hullHeightPixels:467,turretWidthPixels:237,trackPixels:{width:84,span:363,height:472}},
- tiger:{barrelEndPixels:118,muzzleEndPixels:28,barrel:1.82,pivot:.7246753247,hullHeightPixels:367,turretWidthPixels:200,trackPixels:{width:53,span:285,height:367}},
+ tiger:{muzzleEmphasis:.2,barrelEndPixels:118,muzzleEndPixels:28,barrel:1.82,pivot:.7246753247,hullHeightPixels:367,turretWidthPixels:200,trackPixels:{width:53,span:285,height:367}},
  type10:{barrelEndPixels:106,muzzleEndPixels:14,barrel:2.08,pivot:.7088452088,hullHeightPixels:389,turretWidthPixels:212,trackPixels:{width:53,span:286,height:389}},
  m1:{barrelEndPixels:109,muzzleEndPixels:16,barrel:2.0,pivot:.7200956938,hullHeightPixels:392,turretWidthPixels:229,trackPixels:{width:52,span:286,height:393}},
- sherman:{barrelEndPixels:98,muzzleEndPixels:28,barrel:1.58,pivot:.6785714286,hullHeightPixels:364,turretWidthPixels:215,trackPixels:{width:50,span:288,height:370}},
- churchill:{barrelEndPixels:85,muzzleEndPixels:28,barrel:1.62,pivot:.6689944134,hullHeightPixels:440,turretWidthPixels:221,trackPixels:{width:40,span:291,height:436}},
+ sherman:{muzzleEmphasis:.2,barrelEndPixels:98,muzzleEndPixels:28,barrel:1.58,pivot:.6785714286,hullHeightPixels:364,turretWidthPixels:215,trackPixels:{width:50,span:288,height:370}},
+ churchill:{muzzleEmphasis:.2,barrelEndPixels:85,muzzleEndPixels:28,barrel:1.62,pivot:.6689944134,hullHeightPixels:440,turretWidthPixels:221,trackPixels:{width:40,span:291,height:436}},
  kingtiger:{barrelEndPixels:96,muzzleEndPixels:28,barrel:2.22,pivot:.6902439024,hullHeightPixels:410,turretWidthPixels:221,trackPixels:{width:50,span:286,height:410}}
 };
 // Scale all parts from each sample's pixel measurements, once at startup.
@@ -91,7 +91,8 @@ function paintPlayerTankArt(q,id,layer){
    const barrelPixels=image.naturalHeight*art.barrelEndPixels/256,barrelHeight=height*art.barrelEndPixels/256;
    const muzzlePixels=image.naturalHeight*art.muzzleEndPixels/256,muzzleHeight=height*art.muzzleEndPixels/256*lengthScale;
    const muzzleBottom=y-barrelHeight*extension+muzzleHeight;
-   q.drawImage(image,0,0,image.naturalWidth,muzzlePixels,-width*.9,muzzleBottom-muzzleHeight*1.15,width*1.8,muzzleHeight*1.15);
+   const emphasis=art.muzzleEmphasis??1,muzzleWidth=width*1.5*(1+.2*emphasis),muzzleLength=muzzleHeight*(1+.15*emphasis);
+   q.drawImage(image,0,0,image.naturalWidth,muzzlePixels,-muzzleWidth/2,muzzleBottom-muzzleLength,muzzleWidth,muzzleLength);
    q.drawImage(image,0,muzzlePixels,image.naturalWidth,barrelPixels-muzzlePixels,-width*.75,muzzleBottom,width*1.5,barrelHeight*lengthScale-muzzleHeight);
    q.save();q.beginPath();q.rect(-width,y+barrelHeight,width*2,height);q.clip();
    q.drawImage(image,-width/2,y,width,height);q.restore();
@@ -111,7 +112,7 @@ function outlineTankLayer(canvas){
  context.save();context.setTransform(1,0,0,1,0,0);context.globalCompositeOperation='destination-over';
  for(let i=0;i<8;i++){
   const angle=i*Math.PI/4;
-  context.drawImage(tankOutlineMask,Math.cos(angle)*1.3,Math.sin(angle)*1.3);
+  context.drawImage(tankOutlineMask,Math.cos(angle),Math.sin(angle));
  }
  context.restore();
 }
