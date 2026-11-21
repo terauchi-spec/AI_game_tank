@@ -18,11 +18,11 @@ function setup(reduced=false){
  return {c,frames,sounds,draws,events,gameplay,run:code=>vm.runInContext(code,c),
   tick(now){const entries=[...frames.entries()];frames.clear();for(const [,fn] of entries)fn(now);}};
 }
-test('five colourful impact bursts finish, release their frame and preserve game particles and randomness',()=>{
+test('eight colourful impact bursts finish, release their frame and preserve game particles and randomness',()=>{
  const h=setup();h.c.syncSuccessFireworks(true);
  let max=0;
  for(let now=0;now<3500;now+=17){h.tick(now);max=Math.max(max,h.run('successFireworks.particles.length'));}
- assert.equal(h.sounds.length,5);assert.ok(h.sounds.every(sound=>sound==='firework'));
+ assert.equal(h.sounds.length,8);assert.ok(h.sounds.every(sound=>sound==='firework'));
  assert.ok(h.draws.length>100);assert.ok(max<=320);
  assert.equal(h.frames.size,0);assert.equal(h.run('successFireworks.particles.length'),0);
  assert.deepEqual(h.gameplay,[{life:1}]);

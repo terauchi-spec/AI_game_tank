@@ -5,7 +5,10 @@ const SUCCESS_FIREWORK_BURSTS=[
  [.45,.78,.20,'#62caff','#a1fff3'],
  [.75,.48,.12,'#c497ff','#ff9bdd'],
  [1.05,.22,.60,'#ffb65e','#fff29b'],
- [1.35,.81,.55,'#71f7b0','#9edbff']
+ [1.35,.81,.55,'#71f7b0','#9edbff'],
+ [1.65,.32,.30,'#ff8294','#ffe391'],
+ [1.95,.70,.38,'#88baff','#d7a0ff'],
+ [2.25,.48,.18,'#ffcb69','#a1fff3']
 ];
 function stopSuccessFireworks(){
  if(successFireworks.frame!==null)cancelAnimationFrame(successFireworks.frame);
