@@ -416,6 +416,7 @@ function setupDecisiveFortressDebug(){
 }
 function setupDecisiveWorld(){
  loadDecisiveAssets();
+ for(const key of ['computer-small','computer-large','computer-small-wreck','computer-large-wreck'])if(!COVER_IMG['decisive_'+key])COVER_IMG['decisive_'+key]=makeAssetImage('assets/decisive/'+key+'.webp?v='+GAME_VERSION);
  const border=ZONES[DECISIVE_DESERT_START].y0;
  const w=440,h=w*439/448,building={x:(WW-w)/2,y:border+86,w,h,kd:3,decisiveKind:'command-facility'};
  const gate={x:WW/2,y:building.y+h+22,name:DECISIVE_FACILITY_NAME};
@@ -659,7 +660,6 @@ function openDecisiveFacility(){
   patrolRoutesVisible,roadTruckEvents,waterRipples,burningNature:[...burningNatureSet],fallen:fallenEnemies.slice()};
  d.phase='facility';stageMode='indoor';
  const hp=p.hp;
- for(const key of ['computer-small','computer-large','computer-small-wreck','computer-large-wreck'])if(!COVER_IMG['decisive_'+key])COVER_IMG['decisive_'+key]=makeAssetImage('assets/decisive/'+key+'.webp?v='+GAME_VERSION);
  setupInfiltrationWorld(true);
  setupInfiltrationMission();
  p.hp=hp;scoreStats.lastY=p.y;

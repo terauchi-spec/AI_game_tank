@@ -26,6 +26,15 @@ function completeFacility(run){
  assert.equal(run('mission.computer.done'),true);
  run('indoorWorld.currentFloor=0;p.x=indoorWorld.exit.x;p.y=indoorWorld.exit.y;p.blastAirT=0;for(let i=0;i<5;i++)updateMission(1);update(.25);update(.25);debugInvincible=false');
 }
+test('decisive computer images are requested during preparation and reused on entry',()=>{
+ const {run}=start();
+ const images=run("['small','large','small-wreck','large-wreck'].map(size=>COVER_IMG['decisive_computer-'+size])");
+ assert.ok(images.every(image=>image?.src.includes('/computer-')));
+ const before=run('assetLoadTotal');
+ enterFacility(run);
+ assert.equal(run('assetLoadTotal'),before);
+ assert.deepEqual(Array.from(run("['small','large','small-wreck','large-wreck'].map(size=>COVER_IMG['decisive_computer-'+size])")),Array.from(images));
+});
 test('developer-only 13 preserves its identity through phase change and victory while public completion is already earned',()=>{
  const {run,storage}=start();assert.equal(run('currentStageId()'),'decisive');assert.equal(run('stageDisplayNumber(currentStageId())'),'13');
  assert.equal(run('allies.length'),0);assert.equal(run('p.tank'),null);assert.equal(run('zoneAt(p.y)===ZONES[0]'),true);assert.equal(run('scoreStats.stageRecordId'),'decisive');

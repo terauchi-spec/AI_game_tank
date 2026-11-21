@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.17.2050</title>
+<title>こっそり戦車大作戦 2026.11.21.1237</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -1030,7 +1030,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.21.1218',FILE_CREATED_AT='2026/11/21 12:18',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.21.1237',FILE_CREATED_AT='2026/11/21 12:37',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -5625,7 +5625,7 @@ function updateBurningNature(dt){
   if(o.burnT<=0){
    burningNatureSet.delete(o);
    if(o.kd===6&&(covers||[]).includes(o)){(deadTrees||(deadTrees=new Set())).add(o);if(scoreStats&&!scoreStats.finalized)scoreStats.styleDestroyed+=o.w*o.h;}
-   else if((bushes||[]).includes(o)){markGrassBushChunkDirty(o);(deadBushes||(deadBushes=new Set())).add(o);}
+   else if((bushes||[]).includes(o)){removeGrassBushFromCache(o);(deadBushes||(deadBushes=new Set())).add(o);}
   }
  }
  if(deadTrees){let w=0;for(let i=0;i<covers.length;i++){const o=covers[i];if(!deadTrees.has(o))covers[w++]=o;}covers.length=w;}
@@ -6107,7 +6107,7 @@ function drawSniperPanIndicator(cx,cy,R){
 function drawSniperScope(){
  if(!p||!p.sniperMode)return;
  const viewRange=sniperViewRange(),R=Math.min(W,H)*.46,cx=W*.5,cy=H*.49,minX=Math.max(0,p.x-viewRange),maxX=Math.min(WW,p.x+viewRange),minY=Math.max(0,p.y-viewRange),maxY=Math.min(WH,p.y+viewRange),env=[];
- const add=(kind,o,x,y,w,h,kd=0,visible=true)=>{if(!visible)return;const pr=sniperProjection(x,y);if(!pr)return;env.push({kind,o,p:pr,w,h,kd});};
+ const add=(kind,o,x,y,w,h,kd=0,checkSight=false)=>{const pr=sniperProjection(x,y);if(!pr||(checkSight&&!los(p,o)))return;env.push({kind,o,p:pr,w,h,kd});};
  // 建物破壊後の14pxタイルを一枚ずつ立体化すると、大量のミニ建物に見える。
  // 木造・コンクリートとも元の建物単位でまとめ、一つの低い瓦礫として描く。
  const scopeRubble=new Map();
@@ -6130,10 +6130,10 @@ function drawSniperScope(){
   add('cover',{fr:1,kd:pile.kd,scopeRubble:1},centerX,groundY-rubbleH*.5,rubbleW,rubbleH,pile.kd);
  }
  for(const o of objectsInBox(minX,minY,maxX,maxY))add('object',o,o.x+o.w/2,o.y+o.h/2,o.w,o.h,0);
- for(const h of humans||[])if(h.alive||h.sniperFallT>0)add(h.elite?'elite':'human',h,h.x,h.y,12,24,0,h.sniperFallT>0||los(p,h));
- for(const e of etanks||[])if(e.alive)add('tank',e,e.x,e.y,44,34,0,los(p,e));
- for(const c of cars||[])if(c.kind!=='fighter')add('vehicle',c,c.x,c.y,c.kind==='truck'?48:44,c.kind==='truck'?32:34,0,los(p,c));
- if(base&&base.hp>0)add('base',base,base.x+base.w/2,base.y+base.h/2,base.w,base.h,0,true);
+ for(const h of humans||[])if(h.alive||h.sniperFallT>0)add(h.elite?'elite':'human',h,h.x,h.y,12,24,0,!(h.sniperFallT>0));
+ for(const e of etanks||[])if(e.alive)add('tank',e,e.x,e.y,44,34,0,true);
+ for(const c of cars||[])if(c.kind!=='fighter')add('vehicle',c,c.x,c.y,c.kind==='truck'?48:44,c.kind==='truck'?32:34,0,true);
+ if(base&&base.hp>0)add('base',base,base.x+base.w/2,base.y+base.h/2,base.w,base.h);
  env.sort((a,b)=>a.p.d-b.p.d);if(env.length>96)env.length=96;env.sort((a,b)=>b.p.d-a.p.d);
  g.save();g.fillStyle='#040504';g.fillRect(0,0,W,H);g.beginPath();g.arc(cx,cy,R,0,Math.PI*2);g.clip();
  g.fillStyle='#172019';g.fillRect(cx-R,cy-R,R*2,R*2);g.fillStyle='#2a3128';g.fillRect(cx-R,cy,R*2,R);
@@ -6295,9 +6295,17 @@ function update(dt){
  if(bombReq){bombReq=false;if(!T&&!(p.dig>0)&&!(p.digPrep>0)){const pb=bombs.findIndex(b=>b.own==='p');if(pb<0){bombs.push({x:p.x,y:p.y,own:'p',armed:false,placed:true,hudPlacedAt:performance.now()});sfx('bombPlace');say('爆弾を設置(D（スマホ：B）で起爆)');}else if(!(bombs[pb].fly>0)){bombBlast(bombs[pb].x,bombs[pb].y,0,false,bombs[pb].placed);bombs.splice(pb,1);}}}
  let near=null;if(!sniperLocked&&!T&&!(p.digPrep>0))near=cars.find(c=>(c.kind!=='tower'||gunTowerAvailable(c))&&D(c,p)<(c.kind==='fighter'?76:c.kind==='tower'?GUN_TOWER_TYPE.boardRadius:58));
  if(!sniperLocked&&!T&&!(p.digPrep>0)&&skill==='partner'&&partner&&partner.vehicle&&partner.vehicle.kind!=='tower'&&!partner.down&&!(partner.stunT>0)&&D(partner,p)<(partner.vehicle.kind==='fighter'?76:58)&&(!near||D(partner,p)<D(near,p)))near=partner.vehicle;
- const nearHuman=!sniperLocked&&!T&&!(p.dig>0)&&!(p.digPrep>0)&&!(p.drill>0)?humans.filter(h=>h.alive&&!(h.stun>0)&&D(h,p)<38).sort((a,b)=>D(a,p)-D(b,p))[0]:null;
  if(interact&&typeof enterDecisiveFacility==='function'&&enterDecisiveFacility()){interact=false;return null;}
- if(interact){interact=false;if(p.digPrep>0){say('潜伏準備中');}
+ if(interact){
+  let nearHuman=null,nearest=38;
+  if(!sniperLocked&&!T&&!(p.dig>0)&&!(p.digPrep>0)&&!(p.drill>0)){
+   for(const h of humans){
+    if(!h.alive||h.stun>0||Math.abs(h.x-p.x)>=nearest||Math.abs(h.y-p.y)>=nearest)continue;
+    const distance=D(h,p);
+    if(distance<nearest){nearest=distance;nearHuman=h;}
+   }
+  }
+  interact=false;if(p.digPrep>0){say('潜伏準備中');}
   else if(T){const veh=p.tank,spot=findDismountSpot(p.x,p.y,veh.kind);if(!spot){say('ここでは降車できない');}else{
    Object.assign(veh,{x:p.x,y:p.y,body:p.body});
    if(truckLikeVehicle(veh)){const recent=performance.now()-(veh.lastDriveAt||0)<650;veh.coastMax=recent?1.4:.38;veh.coastT=veh.coastMax;veh.coastSp=recent?Math.max(45,Math.min(veh.t.sp,veh.lastDriveSpeed||veh.t.sp*.7)):veh.t.sp*.22;veh.coastActionId=newCombatAction('truckCoast');}
@@ -6819,46 +6827,77 @@ function drawBushCached(b){
  drawStaticRaster(bushSpriteFor(b),b.x,b.y,b.w,b.h);
 }
 
-// 草原・密林の草むらは512px高のチャンクへ事前合成して描画回数を減らす。
-// 画面内のチャンクだけを描く。草むら配列が入れ替わる／増減した時だけ自動で再生成する。
+// 草むらを描画順のまま区画に割り当て、画面周辺から描画用Canvasを作る。
 const GRASS_BUSH_CHUNK_H=512,GRASS_BUSH_CACHE_SCALE=.5;
-let grassBushChunkCache=new Map(),grassBushCacheRef=null;
-function redrawGrassBushChunk(z,ch){
- invalidateStaticRaster(ch.c);
+const grassBushChunkCache=new Map();
+let grassBushCacheRef=null,grassBushMembership=new WeakMap();
+function redrawGrassBushChunk(ch){
+ if(!ch.c){
+  ch.c=document.createElement('canvas');
+  ch.c.width=Math.ceil(WW*GRASS_BUSH_CACHE_SCALE);
+  ch.c.height=Math.ceil(ch.h*GRASS_BUSH_CACHE_SCALE);
+ }else invalidateStaticRaster(ch.c);
  const q=gameCanvasContext(ch.c);q.setTransform(1,0,0,1,0,0);q.clearRect(0,0,ch.c.width,ch.c.height);q.imageSmoothingEnabled=true;
- for(const b of bushes||[]){
-  if(b.spinifex)continue;
-  const cy=b.y+b.h*.5;if(z.n==='密林'?zoneAt(cy).n!=='密林':cy<=z.y1||cy>z.y0)continue;
-  if(b.y+b.h<ch.y||b.y>ch.y+ch.h)continue;
+ for(const b of ch.members){
   q.drawImage(bushSpriteFor(b),b.x*GRASS_BUSH_CACHE_SCALE,(b.y-ch.y)*GRASS_BUSH_CACHE_SCALE,b.w*GRASS_BUSH_CACHE_SCALE,b.h*GRASS_BUSH_CACHE_SCALE);
  }
  ch.dirty=false;
 }
 function rebuildGrassBushChunkCache(){
- for(const chunks of grassBushChunkCache.values())for(const ch of chunks)invalidateStaticRaster(ch.c);
+ for(const chunks of grassBushChunkCache.values())for(const ch of chunks)if(ch.c)invalidateStaticRaster(ch.c);
  grassBushChunkCache.clear();
- const grassZones=ZONES.filter(z=>z.n==='草原'||z.n==='密林');
- for(const z of grassZones){
+ grassBushMembership=new WeakMap();
+ for(const z of ZONES){
+  if(z.n!=='草原'&&z.n!=='密林')continue;
   const chunks=[];
-  for(let yy=z.y1;yy<z.y0;yy+=GRASS_BUSH_CHUNK_H){
-   const hh=Math.min(GRASS_BUSH_CHUNK_H,z.y0-yy),c=document.createElement('canvas');
-   c.width=Math.ceil(WW*GRASS_BUSH_CACHE_SCALE);c.height=Math.ceil(hh*GRASS_BUSH_CACHE_SCALE);
-   const ch={y:yy,h:hh,c,dirty:true};redrawGrassBushChunk(z,ch);chunks.push(ch);
+  for(let y=z.y1;y<z.y0;y+=GRASS_BUSH_CHUNK_H){
+   chunks.push({y,h:Math.min(GRASS_BUSH_CHUNK_H,z.y0-y),c:null,members:new Set(),dirty:true});
   }
   grassBushChunkCache.set(z,chunks);
  }
+ for(const b of bushes||[]){
+  if(b.spinifex)continue;
+  const center=b.y+b.h*.5,memberships=[];
+  for(const [z,chunks] of grassBushChunkCache){
+   if(b.y+b.h<z.y1||b.y>z.y0)continue;
+   if(z.n==='密林'?zoneAt(center).n!=='密林':center<=z.y1||center>z.y0)continue;
+   const first=Math.max(0,Math.ceil((b.y-z.y1)/GRASS_BUSH_CHUNK_H)-1);
+   const last=Math.min(chunks.length-1,Math.floor((b.y+b.h-z.y1)/GRASS_BUSH_CHUNK_H));
+   for(let i=first;i<=last;i++){
+    const ch=chunks[i];ch.members.add(b);memberships.push(ch);
+   }
+  }
+  if(memberships.length)grassBushMembership.set(b,memberships);
+ }
  grassBushCacheRef=bushes;
 }
-function markGrassBushChunkDirty(b){
- if(!b||grassBushCacheRef!==bushes)return;const z=zoneAt(b.y+b.h*.5);if(!z||(z.n!=='草原'&&z.n!=='密林'))return;
- const chunks=grassBushChunkCache.get(z);if(!chunks)return;for(const ch of chunks)if(!(b.y+b.h<ch.y||b.y>ch.y+ch.h))ch.dirty=true;
+function removeGrassBushFromCache(b){
+ if(grassBushCacheRef!==bushes)return;
+ const memberships=grassBushMembership.get(b);if(!memberships)return;
+ for(const ch of memberships){
+  ch.members.delete(b);ch.dirty=true;
+  if(!ch.members.size&&ch.c){invalidateStaticRaster(ch.c);ch.c=null;}
+ }
+ grassBushMembership.delete(b);
 }
 function ensureGrassBushChunkCache(){if(grassBushCacheRef!==bushes)rebuildGrassBushChunkCache();}
 function drawGrassBushChunks(cx,cy){
- ensureGrassBushChunkCache();const top=cy-50,bottom=cy+H+50;
- for(const z of ZONES){if((z.n!=='草原'&&z.n!=='密林')||z.y1>bottom||z.y0<top)continue;const chunks=grassBushChunkCache.get(z)||[];
-  for(const ch of chunks){if(ch.y>bottom||ch.y+ch.h<top)continue;if(ch.dirty)redrawGrassBushChunk(z,ch);drawStaticRaster(ch.c,0,ch.y,WW,ch.h);}
+ ensureGrassBushChunkCache();
+ const top=cy-50,bottom=cy+H+50;
+ let rebuilt=false,next=null,nextDistance=GRASS_BUSH_CHUNK_H;
+ for(const [z,chunks] of grassBushChunkCache){
+  if(z.y1>bottom+GRASS_BUSH_CHUNK_H||z.y0<top-GRASS_BUSH_CHUNK_H)continue;
+  for(const ch of chunks){
+   if(!ch.members.size)continue;
+   const distance=Math.max(0,ch.y-bottom,top-(ch.y+ch.h));
+   if(distance===0){
+    if(ch.dirty){redrawGrassBushChunk(ch);rebuilt=true;}
+    drawStaticRaster(ch.c,0,ch.y,WW,ch.h);
+   }else if(ch.dirty&&distance<nextDistance){next=ch;nextDistance=distance;}
+  }
  }
+ // 余裕があるフレームで画面外の隣接区画を1個ずつ準備する。
+ if(!rebuilt&&next)redrawGrassBushChunk(next);
 }
 function isGrassBush(b){const n=zoneAt(b.y+b.h*.5).n;return n==='草原'||n==='密林';}
 function tankShape(x,y,body,ang,tank,sz,layer='both',trackPhase=null){
@@ -8039,16 +8078,27 @@ function drawVehicleBottomHud(){
 const STATIC_COVER_DRAW_COLORS=[['#8a7a55','#6a5d40'],['#8c8c86','#6a6a66'],['#7a5f3a','#4e3c24'],['#55504a','#35322e'],['#b9ab8a','#8f8263'],['#7a5f3a','#4e3c24'],['#2f6b34','#1d4a22'],['#4a5a4a','#33403a'],['#7a7468','#57534a'],['#666865','#4e514e'],['#b9ab8a','#8f8263'],['#666865','#4e514e']];
 function draw(near){
  if(drawMenuOnlyState())return;
- // タッチ端末は表示Canvasへ直接描画し、動的な画面外Canvasの毎フレーム転写を避ける。
- g=MOBILE_VIEW?gm:og;g.setTransform(MOBILE_VIEW?1:.5,0,0,MOBILE_VIEW?1:.5,0,0);g.imageSmoothingEnabled=false;labels.length=0;vehicleMarkers.length=0;
- fragmentDrawFrame++;fragmentAssetSignature=Object.values(COVER_IMG).reduce((n,im)=>n+(assetOK(im)?1:0),0);
- if(typeof isLaboratoryStage==='function'&&isLaboratoryStage())fragmentAssetSignature+='|'+laboratoryAssetStamp();
  const bl=state==='blast'||((state==='win'||state==='succeeded')&&(stageMode==='base'||stageMode==='beginner'||base?.decisiveFortress));
  const victoryCamera=stageMode==='training'?trainingCamera():stageMode==='indoor'?infiltrationCamera():mission?.extraction?{x:mission.extraction.camX,y:mission.extraction.camY}:frontlineVictoryCamera();
  if(victoryCamera){cam=victoryCamera.y;camX=victoryCamera.x;}else if(bl){cam+=((base?.decisiveFortress?Math.max(0,base.y+base.h/2-H/2):0)-cam)*.07;camX+=(Math.max(0,Math.min(WW-W,base.x+base.w/2-W/2))-camX)*.07;}else{cam=Math.max(frontlineNorthEdge(),Math.min(WH-H,p.y-H*.6));camX=Math.max(0,Math.min(WW-W,p.x-W/2));}
  const cy=Math.round(cam/2)*2,cx=Math.round(camX/2)*2;
+ const scope=state==='play'&&p.sniperMode&&!(debugMode===4&&debugRenderDiagnostic?.active&&debugRenderDiagnostic.phase==='terrain');
+ // 描画を省いたときも、揺れがゲームの乱数列に与える影響を維持する。
+ const shakeX=shake>0?(R()-.5)*shake:0,shakeY=shake>0?(R()-.5)*shake:0;
+ if(scope){
+  g=gm;g.setTransform(1,0,0,1,0,0);g.imageSmoothingEnabled=false;
+  drawSniperScope();drawSkillBottomHud();
+ }else if(!drawWorld(near,cx,cy,shakeX,shakeY))return;
+ drawGameOverlays();
+}
+
+function drawWorld(near,cx,cy,shakeX,shakeY){
+ // タッチ端末は表示Canvasへ直接描画し、動的な画面外Canvasの毎フレーム転写を避ける。
+ g=MOBILE_VIEW?gm:og;g.setTransform(MOBILE_VIEW?1:.5,0,0,MOBILE_VIEW?1:.5,0,0);g.imageSmoothingEnabled=false;labels.length=0;vehicleMarkers.length=0;
+ fragmentDrawFrame++;fragmentAssetSignature=Object.values(COVER_IMG).reduce((n,im)=>n+(assetOK(im)?1:0),0);
+ if(typeof isLaboratoryStage==='function'&&isLaboratoryStage())fragmentAssetSignature+='|'+laboratoryAssetStamp();
  const rescueFloor=stageMode==='indoor'&&rescueAdvancedTest?indoorWorld.currentFloor+1:0;
- g.save();if(shake>0)g.translate((R()-.5)*shake,(R()-.5)*shake);
+ g.save();if(shake>0)g.translate(shakeX,shakeY);
  g.fillStyle='#2b3322';g.fillRect(-20,-20,W+40,H+40);g.translate(-cx,-cy);
  if(stageMode!=='indoor')for(const z of ZONES){
   if(z.y0<cy-160||z.y1>cy+H+160)continue;
@@ -8059,7 +8109,7 @@ function draw(near){
   if(rescueFloor)clipRescueFloorScene(cx,cy);
  }
  if(debugMode===4&&debugRenderDiagnostic?.active&&debugRenderDiagnostic.phase==='terrain'){
-  g.restore();g=gm;gm.imageSmoothingEnabled=false;if(!MOBILE_VIEW)gm.drawImage(oc,0,0,W,H);return;
+  g.restore();g=gm;gm.imageSmoothingEnabled=false;if(!MOBILE_VIEW)gm.drawImage(oc,0,0,W,H);return false;
  }
  for(let i=0;i<ZONES.length-1;i++)drawZoneTransition(ZONES[i],ZONES[i+1],cy,cy+H);
  if(stageMode!=='indoor')for(const r of roadBands)if(r.y+r.h+24>=cy&&r.y-24<=cy+H)drawRoadBand(r);
@@ -8274,8 +8324,10 @@ function draw(near){
  // 歩兵HUDはHP・爆弾・索敵解除をアイコン化。スマホは左上、PCは左下に表示する。
  drawInfantryBottomHud();if(stageMode!=='training')drawSkillBottomHud();drawVehicleBottomHud();
  if(msgT>0){g.textAlign='center';g.font=vehicleNameT>0?'bold 25px system-ui':'bold 17px system-ui';g.fillText(msg,W/2,vehicleNameT>0?70:64);}
- // スコープ描画は画面全体を覆うため、装填ゲージだけはスコープの上から再描画する。
- if(state==='play'&&p&&p.sniperMode){drawSniperScope();drawSkillBottomHud();}
+ return true;
+}
+
+function drawGameOverlays(){
  if(state==='play'&&patrolRoutesVisible){g.save();g.textAlign='left';g.font='bold 12px system-ui';g.lineWidth=3;g.strokeStyle='rgba(0,0,0,.92)';g.strokeText('巡回ルート  青:建物周回 / 黄:往復  [L]で切替',12,80);g.fillStyle='#91edf7';g.fillText('巡回ルート  青:建物周回 / 黄:往復  [L]で切替',12,80);const zn=zoneAt(p.y).n,hz=humans.filter(h=>h.alive&&zoneAt(h.y).n===zn),loops=hz.filter(h=>h.buildingPatrol).length;g.font='bold 12px system-ui';const cw=hz.filter(h=>h.buildingPatrol&&h.dir===1).length,ccw=loops-cw;g.strokeText(zn+'：周回 '+loops+'（時計 '+cw+' / 反時計 '+ccw+'） / 歩兵 '+hz.length,12,97);g.fillText(zn+'：周回 '+loops+'（時計 '+cw+' / 反時計 '+ccw+'） / 歩兵 '+hz.length,12,97);g.restore();}
  if(state==='play'&&(chainToastT>0||oneShotToastT>0)){
   g.save();g.textAlign='center';const top=Math.max(98,Math.min(H*.19,130));
@@ -9154,7 +9206,7 @@ function reportGameError(error){
 </script>
 <script src="js/road-trucks.js?v=2026.11.14.1728"></script>
 <script src="js/stage-progress.js?v=2026.11.15.2122"></script>
-<script src="js/decisive.js?v=2026.11.20.1252"></script>
+<script src="js/decisive.js?v=2026.11.21.1237"></script>
 <script src="js/frontline.js?v=2026.11.13.1834"></script>
 <script src="js/award-icons.js?v=2026.10.31.0807"></script>
 <script src="js/developer.js?v=2026.11.11.2308"></script>
@@ -9175,7 +9227,7 @@ function reportGameError(error){
 <script src="js/jungle.js?v=2026.11.15.0256"></script>
 <script src="js/escape-test.js?v=2026.11.17.1619"></script>
 <script src="js/canyon.js?v=2026.11.15.1239"></script>
-<script src="js/vegetation.js?v=2026.11.08.1806"></script>
+<script src="js/vegetation.js?v=2026.11.21.1237"></script>
 <script src="js/laboratory.js?v=2026.11.19.0817"></script>
 <script src="js/infiltration-world.js?v=2026.11.19.0817"></script>
 <script src="js/infiltration-render.js?v=2026.11.19.0817"></script>

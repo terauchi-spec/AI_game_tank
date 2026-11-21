@@ -74,3 +74,41 @@ test('jungle movement index preserves collision decisions while enemies cross ba
  assert.ok(h.run('comparisons')>=h.run('indexedComparisons'));
  assert.equal(h.run('enemyMoveIndex'),null);
 });
+
+test('sniper view skips the world and tests sight only within the projected scope',()=>{
+ const {run}=createGameEngine(root);
+ const result=run(`(()=>{
+  stageMode='beginner';skill='sniper';reset(false);state='play';
+  p.sniperMode=true;p.sniperLockA=-Math.PI/2;
+  const visible={x:p.x,y:p.y-100,alive:true};
+  const behind={x:p.x,y:p.y+100,alive:true};
+  const falling={x:p.x,y:p.y-140,alive:false,sniperFallT:.4};
+  humans=[visible,behind,falling];cars=[];etanks=[];
+  const checked=[],drawn=[];
+  let worldFrames=0;
+  los=(_player,target)=>{checked.push(target);return true;};
+  const drawNormalWorld=drawWorld;
+  drawWorld=(...args)=>{worldFrames++;return drawNormalWorld(...args);};
+  drawSniperScopedHuman=item=>drawn.push(item.o);
+  draw();
+  const optimized=worldFrames===0&&checked.length===1&&checked[0]===visible&&drawn.includes(visible)&&drawn.includes(falling)&&!drawn.includes(behind);
+  p.sniperMode=false;draw();
+  return optimized&&worldFrames===1;
+ })()`);
+ assert.equal(result,true);
+});
+
+test('A interaction keeps enemy priority and the first equally close target',()=>{
+ const {run}=createGameEngine(root);
+ const result=run(`(()=>{
+  stageMode='beginner';reset(false);state='play';
+  const first={x:p.x-20,y:p.y,alive:true},second={x:p.x+20,y:p.y,alive:true};
+  const vehicle={x:p.x,y:p.y,kind:'tank',t:TYPES[0]};
+  let stunned=null;
+  stunHuman=enemy=>{stunned=enemy;return true;};
+  humans=[first,second];cars=[vehicle];
+  interact=true;update(1/60);
+  return stunned===first&&p.grappleTarget===first&&!p.tank&&cars.includes(vehicle);
+ })()`);
+ assert.equal(result,true);
+});

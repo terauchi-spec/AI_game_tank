@@ -182,8 +182,20 @@ test('jungle grass varies in size, overlaps grass and cover, and uses cached chu
  const before=h.run('normalGrass.length');h.run('reconcileBushBuildingPlacement()');assert.equal(h.run('bushes.filter(b=>!b.spinifex).length'),before);
  h.run('ensureGrassBushChunkCache()');assert.equal(h.run('grassBushChunkCache.has(ZONES[0])'),true);
  assert.equal(h.run('normalGrass.every(isGrassBush)'),true);
- h.run('drawGrassBushChunks(0,ZONES[0].y1);globalThis.chunks=grassBushChunkCache.get(ZONES[0]);markGrassBushChunkDirty(normalGrass[0])');
- assert.equal(h.run('chunks.some(ch=>ch.dirty)'),true);
+ h.run('globalThis.chunks=grassBushChunkCache.get(ZONES[0])');
+ assert.ok(h.run('chunks.every(ch=>!ch.c)'));
+ assert.ok(h.run(`chunks.every(ch=>{
+  const expected=bushes.filter(b=>!b.spinifex&&zoneAt(b.y+b.h*.5).n==='密林'&&b.y+b.h>=ch.y&&b.y<=ch.y+ch.h);
+  return expected.length===ch.members.size&&expected.every((b,i)=>Array.from(ch.members)[i]===b);
+ })`));
+ h.run('globalThis.viewY=ZONES[0].y1;drawGrassBushChunks(0,viewY)');
+ assert.ok(h.run('chunks.some(ch=>ch.c)&&chunks.some(ch=>!ch.c)'));
+ assert.ok(h.run('chunks.every(ch=>!ch.c||ch.y<=viewY+H+50&&ch.y+ch.h>=viewY-50)'));
+ h.run(`globalThis.burned=[...chunks.find(ch=>ch.c&&ch.members.size>1).members][0];
+  burned.burnT=.01;burned.burnSpreadDone=true;burningNatureSet.add(burned);
+  globalThis.burnedChunks=grassBushMembership.get(burned);
+  updateBurningNature(.02)`);
+ assert.ok(h.run('!bushes.includes(burned)&&burnedChunks.every(ch=>ch.dirty&&!ch.members.has(burned))'));
 });
 test('jungle covers draw once above cached foreground grass while other stages keep their layer',()=>{
  const h=createGameEngine(root);h.run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='密林';reset(false);startAssetLoading();state='play';p.y=ZONES[0].y1+800;globalThis.grassDrawn=false;globalThis.coverLayers=[];globalThis.originalGrassChunks=drawGrassBushChunks;globalThis.originalDrawCover=drawCoverAsset;drawGrassBushChunks=(...args)=>{originalGrassChunks(...args);grassDrawn=true;};drawCoverAsset=c=>{coverLayers.push({after:grassDrawn,key:c.jungleAsset||c.jungleTreeArt||c.kd,ref:c});return originalDrawCover(c);};draw(update(1/60))");

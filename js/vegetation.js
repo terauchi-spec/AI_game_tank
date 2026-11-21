@@ -41,7 +41,7 @@ function drawSpinifexTopLayer(cx,cy){
 function scatterSpinifexAt(x,y,r){
  const dead=new Set();let budget=6;
  for(const b of nearbyBushes(x,y,r+140))if(b.spinifex&&circleHitsRect(x,y,r,b)){
-  dead.add(b);markGrassBushChunkDirty(b);burningNatureSet.delete(b);
+  dead.add(b);burningNatureSet.delete(b);
   if(budget-->0){if(spinifexScatters.length>=6)spinifexScatters.shift();spinifexScatters.push({b:{...b},t:0,away:Math.atan2(b.y+b.h/2-y,b.x+b.w/2-x)});}
  }
  if(!dead.size)return;let w=0;for(const b of bushes)if(!dead.has(b))bushes[w++]=b;bushes.length=w;
