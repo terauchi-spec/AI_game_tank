@@ -1,42 +1,35 @@
 # Player tank artwork
 
-The seven player tanks share the original compact, round, stylized renderer in
-`drawOriginalTankShape()`. Wide tracks, large bright wheels, oversized turrets,
-short hulls and the original palette define their appearance. Real-vehicle cues
-are small accents within that style, rather than scale-model proportions.
+Seven friendly tanks use the approved painted hull and turret cutouts. PNG
+masters are kept in `docs/player-tank-art/`; gameplay loads only fourteen WebP
+images under `assets/vehicles/player/`, approximately 145 KiB combined.
 
-| Game ID | Model cues |
+| Game ID | Finish and details |
 | --- | --- |
-| t34 | Round turret, sloped nose and small rear-side fuel drums. |
-| tiger | Broad box hull and turret, rear cooling fans and chunky muzzle brake. |
-| type10 | Compact angular turret and side skirts. |
-| m1 | Sand finish, broad angular turret and rear bustle. |
-| sherman | Rounded cast nose and round turret with a shorter gun. |
-| churchill | Slightly longer track runs, track guards and a compact turret. |
-| kingtiger | Sloped hull, angular turret and longer gun with a muzzle brake. |
+| t34 | Olive, rounded turret, compact glacis and rear engine grille. |
+| tiger | Warm gray beige, box turret, thick mantlet and muzzle brake. |
+| type10 | Green/brown camouflage, modular turret panels and track covers. |
+| m1 | Desert sand, angular turret, rear stowage and track covers. |
+| sherman | Olive drab, rounded cast turret and shorter gun. |
+| churchill | Dark olive, riveted armor and heavy track covers. |
+| kingtiger | Sand/green/red-brown camouflage, sloped turret and partial skirts. |
 
-Vehicle statistics, collision geometry, weapon origins, spawn rules and enemy
-tank graphics are unchanged. The infantry armor-impact sound fix is retained.
+Hull images keep their aspect ratio and use the same 1.94-unit height. Turret
+housing widths share a 1.24-unit envelope, with a separate rotation pivot for
+each cutout. The seven live tanks share the reference's compact track footprint;
+Churchill's former extra-long live tracks now use that same footprint. No wheel
+circles are drawn over the animated belts. Track covers extend the cutout's
+edge panels over the inner belts, leaving the outer tread strips exposed.
 
-## References
+Images are requested once when initial artwork loading starts. Each model
+caches only its hull and turret raster, independent of vehicle count and
+rotation. Ready images replace fallback pixels without pausing gameplay; late
+loads invalidate only that model's rasters. Original vector drawing remains the
+fallback for failed images. Source cutouts are at most 192 by 256 pixels when
+loaded, 526,848 pixels total before browser overhead (approximately 2 MiB RGBA).
 
-- The Tank Museum, [T-34/85](https://tankmuseum.org/tank-nuts/tank-collection/t-34-85/).
-- The Tank Museum, [Tiger I / Tiger 131](https://tankmuseum.org/tank-nuts/tank-collection/tiger-i/).
-- The Tank Museum, [M4 Sherman collection](https://tankmuseum.org/tank-nuts/tank-collection/m4-sherman/).
-- The Tank Museum, [Tiger II](https://tankmuseum.org/tank_collection/tiger-ii/).
-- Australian Armour & Artillery Museum, [collection including Churchill Mk VII](https://www.ausarmour.com/exhibits/).
-- Mitsubishi Heavy Industries, [Type 10](https://www.mhi.com/jp/business/products-services/space-defense/defense-vehicles/type-10-main-battle-tank).
-- Japan Ground Self-Defense Force, [vehicle equipment](https://www.mod.go.jp/gsdf/equipment/ve/).
-- US Army ODIN, [M1A1 Abrams](https://odin.t2com.army.mil/WEG/Asset/M1A1_Abrams_American_Main_Battle_Tank_).
-
-Reference photographs are not bundled, copied into textures or redistributed.
-
-## Rendering and budget
-
-The original illustrations are drawn once into separate cropped hull/turret
-canvases, then rotated independently through the existing static raster helper.
-The cache has at most fourteen small canvases, fewer than 110,000 pixels total
-(under 0.42 MiB of RGBA pixels, before platform raster mirrors). It is independent
-of the number of vehicles, headings and drawing sizes. There are no new bitmap
-downloads and no repeated track/hatch drawing on cache hits. Wrecks use the
-original compact outlines and blackened styling.
+Vehicle statistics, collision geometry, weapon origins and spawn rules remain
+in the original gameplay code. Hull and turret keep independent headings,
+caller opacity and foreground/foliage layering. Destruction and detached wreck
+parts continue through the existing pixel renderer, without painted sprites.
+Enemy tank assets and their pivot animation use the existing enemy path.

@@ -67,8 +67,8 @@ test('tracks stop on idle, turning, empty fuel and pause, ignore teleports, and 
  const h=artHarness(),v={kind:'tank',t:h.c.types[0],f:100};h.c.state='play';const step=(x,y=0,body=0)=>h.c.playerTankTrackPhase(v,x,y,body);
  assert.equal(step(0),null);assert.equal(step(6),3);assert.equal(step(6),3);assert.equal(step(6,0,2),3);v.f=0;assert.equal(step(10),3);v.f=100;h.c.state='paused';assert.equal(step(20),3);h.c.state='play';assert.equal(step(20),3);assert.equal(step(1020),3);assert.equal(step(1014),0);assert.equal(h.c.playerTankTrackPhase({t:{id:'armored'},f:100},0,0,0),null);
 });
-test('track overlays stay on hull layers, retain caller opacity, and use the longer Churchill belt',()=>{
- const h=artHarness();h.c.g.globalAlpha=.4;h.c.tankShape(0,0,.3,1.2,h.c.types[0],30,'turret',2);assert.equal(h.rasters.length,1);h.rasters.length=0;h.c.tankShape(0,0,.3,1.2,h.c.types[5],30,'hull',2);assert.equal(h.rasters.length,3);const tracks=h.rasters.filter(a=>a.length===9);assert.ok(tracks.every(a=>a[2]+a[4]<=96));assert.ok(Math.abs(tracks[0][8]-30*2.12*1.16)<1e-9);assert.equal(h.c.g.globalAlpha,.4);assert.equal(h.depth(),0);
+test('track overlays stay on hull layers, retain caller opacity, and keep the shared compact footprint',()=>{
+ const h=artHarness();h.c.g.globalAlpha=.4;h.c.tankShape(0,0,.3,1.2,h.c.types[0],30,'turret',2);assert.equal(h.rasters.length,1);h.rasters.length=0;h.c.tankShape(0,0,.3,1.2,h.c.types[5],30,'hull',2);assert.equal(h.rasters.length,3);const tracks=h.rasters.filter(a=>a.length===9);assert.ok(tracks.every(a=>a[2]+a[4]<=96));assert.ok(Math.abs(tracks[0][8]-30*2.12)<1e-9);assert.equal(h.c.g.globalAlpha,.4);assert.equal(h.depth(),0);
 });
 
 test('parked, newly boarded and stationary driven tanks use identical full-width belts in every model',()=>{
@@ -128,4 +128,49 @@ test('enemy pivot counter-rotates cached track strips without translating or cha
  assert.ok(Math.abs(belts[0][2]-1.2)<1e-9);assert.ok(Math.abs(belts[1][2]-6.8)<1e-9);
  assert.equal(e.x,100);assert.equal(e.y,200);assert.equal(e.ang,.7);assert.equal(h.canvases.length,count);
  h.rasters.length=0;h.c.drawEnemyTank(e);assert.deepEqual(h.rasters.filter(a=>a.length===9),belts);
+});
+
+test('all friendly cutouts load once, replace fallback layers independently and reuse their rasters',()=>{
+ const h=artHarness(),images=[];
+ h.c.Image=class{constructor(){this.complete=false;this.naturalWidth=0;images.push(this);}};
+ h.c.loadPlayerTankArtwork();h.c.loadPlayerTankArtwork();assert.equal(images.length,14);
+ const root=path.join(__dirname,'..');
+ for(const t of h.c.types){
+  const hull=images.find(i=>i.src===`assets/vehicles/player/${t.id}/hull.webp`);
+  const turret=images.find(i=>i.src===`assets/vehicles/player/${t.id}/turret.webp`);
+  assert.ok(hull&&turret);
+  for(const layer of ['hull','turret']){
+   const asset=fs.readFileSync(path.join(root,`assets/vehicles/player/${t.id}/${layer}.webp`));
+   assert.equal(asset.toString('ascii',8,12),'WEBP');assert.ok(asset[20]&0x10);
+   assert.ok(asset.length<18000);
+  }
+  h.c.tankShape(0,0,.3,1.2,t,30,'both');
+  Object.assign(hull,{complete:true,naturalWidth:154,naturalHeight:256});hull.onload();
+  h.commands.length=0;h.c.tankShape(0,0,.3,1.2,t,30,'both');
+  assert.ok(h.commands.some(c=>c[0]==='drawImage'&&c[1]===hull));
+  Object.assign(turret,{complete:true,naturalWidth:128,naturalHeight:256});turret.onload();
+  h.commands.length=0;h.rasters.length=0;h.c.tankShape(0,0,.3,1.2,t,30,'both');
+  assert.ok(h.commands.some(c=>c[0]==='drawImage'&&c[1]===hull));
+  assert.ok(h.commands.some(c=>c[0]==='drawImage'&&c[1]===turret));
+  assert.ok(!h.commands.some(c=>c[0]==='arc'&&Math.abs(Math.abs(c[1])-32*.78)<1e-9),'no circles on friendly tracks');
+  assert.equal(h.rasters.length,4);
+  const count=h.canvases.length;h.commands.length=0;
+  for(let i=0;i<20;i++)h.c.tankShape(i,0,.3,1.2,t,30,'both');
+  assert.equal(h.canvases.length,count);assert.ok(!h.commands.some(c=>c[0]==='drawImage'));
+ }
+ assert.equal(images.length,14);assert.equal(h.depth(),0);
+});
+
+test('friendly wreck rendering uses original pixel shapes without requesting painted layers',()=>{
+ const {createGameEngine}=require('./helpers/game-engine.cjs');
+ const h=createGameEngine(path.join(__dirname,'..'));
+ for(const t of ['t34','tiger','type10','m1','sherman','churchill','kingtiger']){
+  h.c.tankId=t;
+  assert.equal(h.run(`(()=>{
+   let requests=0;playerTankGraphic=()=>{requests++;throw Error('wreck requested live artwork');};
+   spawnTankWreck(400,500,.3,1.2,{id:tankId},400,480);
+   drawOneTankWreck(tankWrecks[tankWrecks.length-1]);
+   return requests===0;
+  })()`),true);
+ }
 });

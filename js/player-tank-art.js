@@ -1,17 +1,49 @@
-// Original compact, round tank illustrations, with small per-model details.
+// Painted hulls and independently rotating turrets share the existing pixel tracks.
 // Cache only two layers per type; gameplay and vehicle definitions stay in main.
 const PLAYER_TANK_ART={
- t34:{barrel:1.72},tiger:{barrel:1.82},type10:{barrel:2.08},m1:{barrel:2.0},
- sherman:{barrel:1.58},churchill:{barrel:1.62},kingtiger:{barrel:2.22}
+ t34:{barrel:1.72,pivot:.6636771300},tiger:{barrel:1.82,pivot:.7246753247},
+ type10:{barrel:2.08,pivot:.7088452088,skirts:true},m1:{barrel:2.0,pivot:.7200956938,skirts:true},
+ sherman:{barrel:1.58,pivot:.6785714286},churchill:{barrel:1.62,pivot:.6689944134,skirts:true},
+ kingtiger:{barrel:2.22,pivot:.6902439024,skirts:true}
 };
 const ENEMY_TANK_ART={id:'enemy',col:'#4b5f9e',barrel:1.8};
 const playerTankArtCache=new Map();
-const enemyTankGraphics=new Map();
+const enemyTankGraphics=new Map(),playerTankGraphics=new Map();
+function invalidateTankArtwork(id){
+ const art=playerTankArtCache.get(id);
+ if(art&&typeof invalidateStaticRaster==='function'){
+  invalidateStaticRaster(art.hull.canvas);invalidateStaticRaster(art.turret.canvas);
+ }
+ playerTankArtCache.delete(id);
+}
+function playerTankGraphic(id,layer){
+ const key=id+'/'+layer;
+ let image=playerTankGraphics.get(key);
+ if(!image){
+  image=new Image();image.decoding='async';
+  image.onload=()=>invalidateTankArtwork(id);
+  image.src='assets/vehicles/player/'+key+'.webp';
+  playerTankGraphics.set(key,image);
+ }
+ return image.complete&&image.naturalWidth>0?image:null;
+}
+function loadPlayerTankArtwork(){
+ for(const id of Object.keys(PLAYER_TANK_ART)){
+  playerTankGraphic(id,'hull');playerTankGraphic(id,'turret');
+ }
+}
+function paintPlayerTankTrackRims(q){
+ const alpha=q.globalAlpha;
+ q.globalAlpha=alpha*.22;q.fillStyle='#000';q.beginPath();q.ellipse(0,32*.08,32*1.12,32*1.38,0,0,6.28);q.fill();q.globalAlpha=alpha;
+ q.strokeStyle='#090909';q.lineWidth=32*.07;
+ q.strokeRect(-32*1.015,-32*1.095,32*.49,32*2.19);
+ q.strokeRect(32*.525,-32*1.095,32*.49,32*2.19);
+}
 function enemyTankGraphic(layer){
  let image=enemyTankGraphics.get(layer);
  if(!image){
   image=new Image();image.decoding='async';
-  image.onload=()=>playerTankArtCache.delete('enemy');
+  image.onload=()=>invalidateTankArtwork('enemy');
   image.src='assets/vehicles/enemy/'+layer+'.webp';
   enemyTankGraphics.set(layer,image);
  }
@@ -19,15 +51,24 @@ function enemyTankGraphic(layer){
 }
 function paintPlayerTankArt(q,id,layer){
  const tank=id==='enemy'?ENEMY_TANK_ART:TYPES.find(t=>t.id===id);
- const image=id==='enemy'?enemyTankGraphic(layer):null;
+ const image=id==='enemy'?enemyTankGraphic(layer):playerTankGraphic(id,layer);
  q.save();q.scale(1/32,1/32);
- // The original hull supplies the track rims and ground shadow.
- if(layer==='hull'||!image)drawOriginalTankShape(0,0,-Math.PI/2,-Math.PI/2,tank,32,layer,q,true);
+ // Keep the animated belt interiors clear beneath the painted hull.
+ if(!image||id==='enemy'&&layer==='hull')drawOriginalTankShape(0,0,-Math.PI/2,-Math.PI/2,tank,32,layer,q,true);
+ else if(layer==='hull')paintPlayerTankTrackRims(q);
  if(image){
   q.imageSmoothingEnabled=true;q.imageSmoothingQuality='high';
-  const width=32*1.24,height=width*image.naturalHeight/image.naturalWidth;
-  // The turret pivots at the centre of its round housing, below the barrel.
-  const y=layer==='hull'?-height/2:-height*(1025-63)/(1331-63);
+  const height=layer==='hull'&&id!=='enemy'?32*1.94:32*1.24*image.naturalHeight/image.naturalWidth;
+  const width=height*image.naturalWidth/image.naturalHeight;
+  // Each cutout rotates about its housing centre, below the projecting barrel.
+  const pivot=id==='enemy'?(1025-63)/(1331-63):PLAYER_TANK_ART[id].pivot;
+  const y=layer==='hull'?-height/2:-height*pivot;
+  if(layer==='hull'&&id!=='enemy'&&PLAYER_TANK_ART[id].skirts){
+   // Extend the existing edge panels over the inner belts, leaving both outer strips exposed.
+   const panelWidth=image.naturalWidth*.14,sy=image.naturalHeight*.1,sh=image.naturalHeight*.8;
+   q.drawImage(image,0,sy,panelWidth,sh,-32*.8,-32*.9,32*.25,32*1.8);
+   q.drawImage(image,image.naturalWidth-panelWidth,sy,panelWidth,sh,32*.55,-32*.9,32*.25,32*1.8);
+  }
   q.drawImage(image,-width/2,y,width,height);
  }
  q.restore();
@@ -49,7 +90,7 @@ function drawPlayerTankArt(x,y,body,ang,id,sz,layer,trackPhase=null,trackTurn=0)
  if(layer!=='hull'){g.save();g.translate(x,y);g.rotate(ang+Math.PI/2);stamp(art.turret);g.restore();}
 }
 
-// One shared strip, not extra full hull frames. Source cropping moves full-width belts beneath the cached wheels and hull.
+// One shared strip, not extra full hull frames. Source cropping moves full-width belts beneath the cached hull and track covers.
 let playerTankTrackStrip=null;
 function drawPlayerTankTracks(id,sz,phase,rightPhase=phase){
  if(!playerTankTrackStrip){
@@ -59,7 +100,7 @@ function drawPlayerTankTracks(id,sz,phase,rightPhase=phase){
   q.fillStyle='#181b20';for(let y=3;y<96;y+=8)q.fillRect(0,y,8,2);
   playerTankTrackStrip=c;
  }
- const length=id==='churchill'?1.16:1,sourceHeight=2.12*32*length,top=-sz*1.06*length,height=sz*2.12*length;
+ const sourceHeight=2.12*32,top=-sz*1.06,height=sz*2.12;
  const offset=((phase%8)+8)%8;
  drawStaticRaster(playerTankTrackStrip,0,offset,8,sourceHeight,-sz*.98,top,sz*.42,height);
  drawStaticRaster(playerTankTrackStrip,0,((rightPhase%8)+8)%8,8,sourceHeight,sz*.56,top,sz*.42,height);
