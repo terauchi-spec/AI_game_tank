@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.22.0008</title>
+<title>こっそり戦車大作戦 2026.11.22.0125</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -1016,7 +1016,7 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 </div><footer class="sk-bottom stage-bottom"><button type="button" class="sk-toggle" id="stageDebugAll" aria-pressed="false">全ステージを表示</button><button type="button" class="sk-deploy" id="stageDeploy" disabled>ステージを選択してください</button></footer></div></div>
 <div id="missionHud" role="status"></div>
 
-<script src="js/player-tank-art.js?v=2026.11.22.0008"></script>
+<script src="js/player-tank-art.js?v=2026.11.22.0125"></script>
 <script src="js/audio.js?v=2026.11.17.1611"></script>
 <script src="js/bgm.js?v=2026.11.19.2241"></script>
 <script src="js/audio-recovery.js?v=2026.10.28.1725"></script>
@@ -1030,7 +1030,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.22.0008',FILE_CREATED_AT='2026/11/22 00:08',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.22.0125',FILE_CREATED_AT='2026/11/22 01:25',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -4428,13 +4428,13 @@ function turnEnemyTankBody(e,desired,dt){
 function moveEnemyTank(e,desired,speed,dt){
  if(turnEnemyTankBody(e,desired,dt))mv(e,Math.cos(desired)*speed*dt,Math.sin(desired)*speed*dt,TANK_HIT);
 }
-// Friendly steering and stationary pivots run at 135 degrees/second.
-const PLAYER_TANK_TURN_RATE=Math.PI*.75;
+// Friendly steering and stationary pivots run at 202.5 degrees/second.
+const PLAYER_TANK_TURN_RATE=Math.PI*1.125;
 // Reverse inputs hold position until the pivot is complete.
 function turnPlayerTankBody(desired,dt){
  const vehicle=p.tank;
  vehicle.playerPivoting=!!(vehicle.playerPivoting||Math.abs(Math.atan2(Math.sin(desired-p.body),Math.cos(desired-p.body)))>Math.PI/2+1e-9);
- const ready=turnEnemyTankBody(p,desired,dt*1.5);
+ const ready=turnEnemyTankBody(p,desired,dt*2.25);
  vehicle.playerPivoting=vehicle.playerPivoting&&!ready;
  return ready;
 }
@@ -5508,7 +5508,7 @@ function playerTankContactEffect(vehicle,rect,dx,dy){
  trimParts(3);
  for(let i=0;i<3;i++){
   const side=(i-1)*24;
-  parts.push({x:x-uy*(i-1)*3,y:y+ux*(i-1)*3,vx:-ux*30-uy*side,vy:-uy*30+ux*side-16,life:.22+i*.02,col:i===1?'#ffd184':'#bba582',sz:i===1?2:3,tankContact:true});
+  parts.push({x:x-uy*(i-1)*3,y:y+ux*(i-1)*3,vx:-ux*30-uy*side,vy:-uy*30+ux*side-16,life:.32+i*.02,col:i===1?'#ffe496':'#d9c6a4',sz:i===1?5:6,tankContact:true});
  }
 }
 function playerMove(dx,dy,r,dt,slowOverride=null){
@@ -8350,7 +8350,7 @@ function drawWorld(near,cx,cy,shakeX,shakeY){
   if(decisiveBattle?.desertDrop)drawEnemyParachutePass(decisiveBattle.desertDrop,cx,cy);
  }
  if(typeof drawEnemyBomberAircraft==='function')drawEnemyBomberAircraft();
- for(const q of parts){const psz=q.sz||4,dy=q.y-(q.z||0);if(q.x+psz<cx-30||q.x-psz>cx+W+30||dy+psz<cy-30||dy-psz>cy+H+30)continue;g.globalAlpha=Math.min(1,q.life*2);g.fillStyle=q.col;if(q.arcFrag){g.save();g.translate(q.x,dy);g.rotate(q.rot||0);g.fillRect(-psz/2,-psz/2,psz,Math.max(2,psz*.65));g.restore();}else if(q.rescueCross){g.strokeStyle='#fff';g.lineWidth=2;g.beginPath();const a=psz/2,b=psz/6;g.moveTo(q.x-b,dy-a);g.lineTo(q.x+b,dy-a);g.lineTo(q.x+b,dy-b);g.lineTo(q.x+a,dy-b);g.lineTo(q.x+a,dy+b);g.lineTo(q.x+b,dy+b);g.lineTo(q.x+b,dy+a);g.lineTo(q.x-b,dy+a);g.lineTo(q.x-b,dy+b);g.lineTo(q.x-a,dy+b);g.lineTo(q.x-a,dy-b);g.lineTo(q.x-b,dy-b);g.closePath();g.stroke();g.fill();}else if(q.waterRipple){const k=1-q.life/(q.ttl||.5);g.save();g.strokeStyle=q.col;g.globalAlpha=Math.max(0,(1-k)*.72);g.lineWidth=1.7;g.beginPath();g.ellipse(q.x,dy,psz*(.45+k*.78),psz*(.20+k*.30),0,0,6.28);g.stroke();g.restore();}else g.fillRect(q.x-psz/2,dy-psz/2,psz,psz);}g.globalAlpha=1;
+ for(const q of parts){const psz=q.sz||4,dy=q.y-(q.z||0);if(q.x+psz<cx-30||q.x-psz>cx+W+30||dy+psz<cy-30||dy-psz>cy+H+30)continue;g.globalAlpha=q.tankContact?Math.min(1,q.life/.12):Math.min(1,q.life*2);g.fillStyle=q.col;if(q.tankContact){g.fillStyle='#34291c';g.fillRect(q.x-psz/2-1,dy-psz/2-1,psz+2,psz+2);g.fillStyle=q.col;g.fillRect(q.x-psz/2,dy-psz/2,psz,psz);}else if(q.arcFrag){g.save();g.translate(q.x,dy);g.rotate(q.rot||0);g.fillRect(-psz/2,-psz/2,psz,Math.max(2,psz*.65));g.restore();}else if(q.rescueCross){g.strokeStyle='#fff';g.lineWidth=2;g.beginPath();const a=psz/2,b=psz/6;g.moveTo(q.x-b,dy-a);g.lineTo(q.x+b,dy-a);g.lineTo(q.x+b,dy-b);g.lineTo(q.x+a,dy-b);g.lineTo(q.x+a,dy+b);g.lineTo(q.x+b,dy+b);g.lineTo(q.x+b,dy+a);g.lineTo(q.x-b,dy+a);g.lineTo(q.x-b,dy+b);g.lineTo(q.x-a,dy+b);g.lineTo(q.x-a,dy-b);g.lineTo(q.x-b,dy-b);g.closePath();g.stroke();g.fill();}else if(q.waterRipple){const k=1-q.life/(q.ttl||.5);g.save();g.strokeStyle=q.col;g.globalAlpha=Math.max(0,(1-k)*.72);g.lineWidth=1.7;g.beginPath();g.ellipse(q.x,dy,psz*(.45+k*.78),psz*(.20+k*.30),0,0,6.28);g.stroke();g.restore();}else g.fillRect(q.x-psz/2,dy-psz/2,psz,psz);}g.globalAlpha=1;
  let explosionComposing=false;for(const f of fx){if(f.x+f.max<cx-40||f.x-f.max>cx+W+40||f.y+f.max<cy-40||f.y-f.max>cy+H+40)continue;if(!explosionComposing){g.save();g.globalCompositeOperation='lighter';explosionComposing=true;}const t=1-f.l/.45,r=f.max*(.35+.65*t),gr=g.createRadialGradient(f.x,f.y,0,f.x,f.y,r);gr.addColorStop(0,'rgba(255,250,200,'+(1-t)+')');gr.addColorStop(.45,'rgba(255,140,30,'+.8*(1-t)+')');gr.addColorStop(1,'rgba(160,30,0,0)');g.fillStyle=gr;g.beginPath();g.arc(f.x,f.y,r,0,6.28);g.fill();}if(explosionComposing)g.restore();
  drawSpinifexScatters(cx,cy);drawPartnerOrderSignal();
  g.restore();

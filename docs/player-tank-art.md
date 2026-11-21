@@ -54,11 +54,13 @@ Sherman, Churchill and Tiger I retain only 20% of the extra muzzle emphasis
 (+4% width and +3% length relative to their enlarged barrels). Friendly hull
 and turret outline radius is 1 cache pixel, reduced from 1.3 pixels.
 
-Player steering now turns smoothly at 135 degrees per second. Changes up to
+Player steering now turns smoothly at 202.5 degrees per second. Changes up to
 90 degrees drive along a 24px-radius single-track arc, then resume normal
 speed. Larger changes retain the stationary pivot until aligned. Movement
 continues through playerMove for collisions, terrain and fuel consumption.
 
 Player contact destruction emits three small dust/spark chips at most once per
 0.1 seconds, shared across cover/object collisions, using the existing bounded
-particle array and renderer. Chips last 0.22–0.26 seconds and use no random draws.
+particle array and renderer. Chips last 0.32–0.36 seconds and use no random draws. They draw at full
+opacity until the final 0.12 seconds, with 5–6px bright fills and a 1px dark
+border. At most 12 contact chips coexist during uninterrupted contact.
