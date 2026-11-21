@@ -1,12 +1,23 @@
 // Painted hulls and independently rotating turrets share the existing pixel tracks.
 // Cache only two layers per type; gameplay and vehicle definitions stay in main.
 const PLAYER_TANK_ART={
- t34:{barrel:1.72,pivot:.6636771300},tiger:{barrel:1.82,pivot:.7246753247},
- type10:{barrel:2.08,pivot:.7088452088,skirts:true},m1:{barrel:2.0,pivot:.7200956938,skirts:true},
- sherman:{barrel:1.58,pivot:.6785714286},churchill:{barrel:1.62,pivot:.6689944134,skirts:true},
- kingtiger:{barrel:2.22,pivot:.6902439024,skirts:true}
+ t34:{barrel:1.72,pivot:.6636771300,hullHeightPixels:467,turretWidthPixels:237,trackPixels:{width:84,span:363,height:472}},
+ tiger:{barrel:1.82,pivot:.7246753247,hullHeightPixels:367,turretWidthPixels:200,trackPixels:{width:53,span:285,height:367}},
+ type10:{barrel:2.08,pivot:.7088452088,hullHeightPixels:389,turretWidthPixels:212,trackPixels:{width:53,span:286,height:389}},
+ m1:{barrel:2.0,pivot:.7200956938,hullHeightPixels:392,turretWidthPixels:229,trackPixels:{width:52,span:286,height:393}},
+ sherman:{barrel:1.58,pivot:.6785714286,hullHeightPixels:364,turretWidthPixels:215,trackPixels:{width:50,span:288,height:370}},
+ churchill:{barrel:1.62,pivot:.6689944134,hullHeightPixels:440,turretWidthPixels:221,trackPixels:{width:40,span:291,height:436}},
+ kingtiger:{barrel:2.22,pivot:.6902439024,hullHeightPixels:410,turretWidthPixels:221,trackPixels:{width:50,span:286,height:410}}
 };
-const ENEMY_TANK_ART={id:'enemy',col:'#4b5f9e',barrel:1.8};
+// Scale all parts from each sample's pixel measurements, once at startup.
+for(const art of Object.values(PLAYER_TANK_ART)){
+ const scale=2.12/art.hullHeightPixels;
+ art.turretWidth=art.turretWidthPixels*scale;
+ art.trackWidth=art.trackPixels.width*scale;
+ art.trackHalfSpan=art.trackPixels.span*scale/2;
+ art.trackHeight=art.trackPixels.height*scale;
+}
+const ENEMY_TANK_ART={id:'enemy',col:'#4b5f9e',barrel:1.8,trackWidth:.42,trackHalfSpan:.98,trackHeight:2.12};
 const playerTankArtCache=new Map();
 const enemyTankGraphics=new Map(),playerTankGraphics=new Map();
 function invalidateTankArtwork(id){
@@ -32,12 +43,15 @@ function loadPlayerTankArtwork(){
   playerTankGraphic(id,'hull');playerTankGraphic(id,'turret');
  }
 }
-function paintPlayerTankTrackRims(q){
+function paintPlayerTankTrackRims(q,id){
+ const art=PLAYER_TANK_ART[id];
+ const left=-32*art.trackHalfSpan,right=32*(art.trackHalfSpan-art.trackWidth);
+ const width=32*art.trackWidth,top=-16*art.trackHeight,height=32*art.trackHeight;
  const alpha=q.globalAlpha;
- q.globalAlpha=alpha*.22;q.fillStyle='#000';q.beginPath();q.ellipse(0,32*.08,32*1.12,32*1.38,0,0,6.28);q.fill();q.globalAlpha=alpha;
+ q.globalAlpha=alpha*.22;q.fillStyle='#000';q.beginPath();q.ellipse(0,32*.08,32*art.trackHalfSpan*1.12,height*.61,0,0,6.28);q.fill();q.globalAlpha=alpha;
  q.strokeStyle='#090909';q.lineWidth=32*.07;
- q.strokeRect(-32*1.015,-32*1.095,32*.49,32*2.19);
- q.strokeRect(32*.525,-32*1.095,32*.49,32*2.19);
+ q.strokeRect(left-32*.035,top-32*.035,width+32*.07,height+32*.07);
+ q.strokeRect(right-32*.035,top-32*.035,width+32*.07,height+32*.07);
 }
 function enemyTankGraphic(layer){
  let image=enemyTankGraphics.get(layer);
@@ -55,21 +69,22 @@ function paintPlayerTankArt(q,id,layer){
  q.save();q.scale(1/32,1/32);
  // Keep the animated belt interiors clear beneath the painted hull.
  if(!image||id==='enemy'&&layer==='hull')drawOriginalTankShape(0,0,-Math.PI/2,-Math.PI/2,tank,32,layer,q,true);
- else if(layer==='hull')paintPlayerTankTrackRims(q);
+ else if(layer==='hull')paintPlayerTankTrackRims(q,id);
  if(image){
   q.imageSmoothingEnabled=true;q.imageSmoothingQuality='high';
-  const height=layer==='hull'&&id!=='enemy'?32*1.94:32*1.24*image.naturalHeight/image.naturalWidth;
+  const art=PLAYER_TANK_ART[id],turretWidth=id==='enemy'?1.24:art.turretWidth;
+  const height=layer==='hull'&&art?32*2.12:32*turretWidth*image.naturalHeight/image.naturalWidth;
   const width=height*image.naturalWidth/image.naturalHeight;
   // Each cutout rotates about its housing centre, below the projecting barrel.
   const pivot=id==='enemy'?(1025-63)/(1331-63):PLAYER_TANK_ART[id].pivot;
   const y=layer==='hull'?-height/2:-height*pivot;
-  if(layer==='hull'&&id!=='enemy'&&PLAYER_TANK_ART[id].skirts){
-   // Extend the existing edge panels over the inner belts, leaving both outer strips exposed.
-   const panelWidth=image.naturalWidth*.14,sy=image.naturalHeight*.1,sh=image.naturalHeight*.8;
-   q.drawImage(image,0,sy,panelWidth,sh,-32*.8,-32*.9,32*.25,32*1.8);
-   q.drawImage(image,image.naturalWidth-panelWidth,sy,panelWidth,sh,32*.55,-32*.9,32*.25,32*1.8);
-  }
-  q.drawImage(image,-width/2,y,width,height);
+  if(id==='enemy'&&layer==='turret'){
+   // Compress only the projecting barrel; its attachment and turret pivot stay fixed.
+   const barrelPixels=image.naturalHeight*200/384,barrelHeight=height*200/384;
+   q.drawImage(image,0,0,image.naturalWidth,barrelPixels,-width/2,y+barrelHeight*.05,width,barrelHeight*.95);
+   q.save();q.beginPath();q.rect(-width,y+barrelHeight,width*2,height);q.clip();
+   q.drawImage(image,-width/2,y,width,height);q.restore();
+  }else q.drawImage(image,-width/2,y,width,height);
  }
  q.restore();
 }
@@ -100,10 +115,11 @@ function drawPlayerTankTracks(id,sz,phase,rightPhase=phase){
   q.fillStyle='#181b20';for(let y=3;y<96;y+=8)q.fillRect(0,y,8,2);
   playerTankTrackStrip=c;
  }
- const sourceHeight=2.12*32,top=-sz*1.06,height=sz*2.12;
+ const art=PLAYER_TANK_ART[id]||ENEMY_TANK_ART;
+ const sourceHeight=art.trackHeight*32,top=-sz*art.trackHeight/2,height=sz*art.trackHeight;
  const offset=((phase%8)+8)%8;
- drawStaticRaster(playerTankTrackStrip,0,offset,8,sourceHeight,-sz*.98,top,sz*.42,height);
- drawStaticRaster(playerTankTrackStrip,0,((rightPhase%8)+8)%8,8,sourceHeight,sz*.56,top,sz*.42,height);
+ drawStaticRaster(playerTankTrackStrip,0,offset,8,sourceHeight,-sz*art.trackHalfSpan,top,sz*art.trackWidth,height);
+ drawStaticRaster(playerTankTrackStrip,0,((rightPhase%8)+8)%8,8,sourceHeight,sz*(art.trackHalfSpan-art.trackWidth),top,sz*art.trackWidth,height);
 }
 function playerTankTrackPhase(v,x,y,body){
  if(!v?.t||!PLAYER_TANK_ART[v.t.id])return null;

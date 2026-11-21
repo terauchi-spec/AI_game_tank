@@ -14,12 +14,16 @@ images under `assets/vehicles/player/`, approximately 145 KiB combined.
 | churchill | Dark olive, riveted armor and heavy track covers. |
 | kingtiger | Sand/green/red-brown camouflage, sloped turret and partial skirts. |
 
-Hull images keep their aspect ratio and use the same 1.94-unit height. Turret
-housing widths share a 1.24-unit envelope, with a separate rotation pivot for
-each cutout. The seven live tanks share the reference's compact track footprint;
-Churchill's former extra-long live tracks now use that same footprint. No wheel
-circles are drawn over the animated belts. Track covers extend the cutout's
-edge panels over the inner belts, leaving the outer tread strips exposed.
+Hull images keep their aspect ratio and use a 2.12-unit height. Hulls, turrets
+and tracks are sized from the same source-sheet pixel measurements for each
+model. Width, spacing and length of the shared animated track strips now match
+the samples, instead of the wider legacy pixel-tank footprint. The original
+painted edge panels provide the partial track covers; no duplicated side panels
+are added. Turrets keep their individual rotation pivots.
+
+The enemy turret raster compresses only the projecting barrel by 5 percent.
+The barrel attachment, housing pixels, rotation pivot and weapon calculations
+retain their existing coordinates. No new image files are required.
 
 Images are requested once when initial artwork loading starts. Each model
 caches only its hull and turret raster, independent of vehicle count and

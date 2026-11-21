@@ -67,18 +67,19 @@ test('tracks stop on idle, turning, empty fuel and pause, ignore teleports, and 
  const h=artHarness(),v={kind:'tank',t:h.c.types[0],f:100};h.c.state='play';const step=(x,y=0,body=0)=>h.c.playerTankTrackPhase(v,x,y,body);
  assert.equal(step(0),null);assert.equal(step(6),3);assert.equal(step(6),3);assert.equal(step(6,0,2),3);v.f=0;assert.equal(step(10),3);v.f=100;h.c.state='paused';assert.equal(step(20),3);h.c.state='play';assert.equal(step(20),3);assert.equal(step(1020),3);assert.equal(step(1014),0);assert.equal(h.c.playerTankTrackPhase({t:{id:'armored'},f:100},0,0,0),null);
 });
-test('track overlays stay on hull layers, retain caller opacity, and keep the shared compact footprint',()=>{
- const h=artHarness();h.c.g.globalAlpha=.4;h.c.tankShape(0,0,.3,1.2,h.c.types[0],30,'turret',2);assert.equal(h.rasters.length,1);h.rasters.length=0;h.c.tankShape(0,0,.3,1.2,h.c.types[5],30,'hull',2);assert.equal(h.rasters.length,3);const tracks=h.rasters.filter(a=>a.length===9);assert.ok(tracks.every(a=>a[2]+a[4]<=96));assert.ok(Math.abs(tracks[0][8]-30*2.12)<1e-9);assert.equal(h.c.g.globalAlpha,.4);assert.equal(h.depth(),0);
+test('track overlays stay on hull layers, retain caller opacity, and match the sample proportions',()=>{
+ const h=artHarness();h.c.g.globalAlpha=.4;h.c.tankShape(0,0,.3,1.2,h.c.types[0],30,'turret',2);assert.equal(h.rasters.length,1);h.rasters.length=0;h.c.tankShape(0,0,.3,1.2,h.c.types[5],30,'hull',2);assert.equal(h.rasters.length,3);const tracks=h.rasters.filter(a=>a.length===9);assert.ok(tracks.every(a=>a[2]+a[4]<=96));assert.ok(Math.abs(tracks[0][8]-30*2.12*436/440)<1e-9);assert.equal(h.c.g.globalAlpha,.4);assert.equal(h.depth(),0);
 });
 
 test('parked, newly boarded and stationary driven tanks use identical full-width belts in every model',()=>{
  const h=artHarness();h.c.TANK_DRAW=30;h.c.state='play';vm.runInContext(html.split('\n').find(l=>l.startsWith('function drawVehicle(v,')),h.c);
  for(const t of h.c.types){
+  const layout=vm.runInContext('PLAYER_TANK_ART',h.c)[t.id];
   const vehicle={kind:'tank',t,f:100};h.c.drawVehicle(vehicle,100,100,0,0);const parked=h.rasters.slice(-4);
   h.c.p.tank=vehicle;h.c.drawVehicle(vehicle,100,100,0,0);const boarded=h.rasters.slice(-4);
   assert.deepEqual(boarded,parked,t.id);const belts=parked.filter(a=>a.length===9);assert.equal(belts.length,2);assert.equal(belts[0][2],0);assert.equal(belts[1][2],0);
-  assert.equal(belts[0][7],30*.42);assert.equal(belts[1][7],30*.42);assert.equal(belts[0][8],belts[1][8]);assert.equal(belts[0][1],belts[1][1]);
-  assert.equal(belts[0][5],-30*.98);assert.equal(belts[1][5],30*.56);
+  assert.equal(belts[0][7],30*layout.trackWidth);assert.equal(belts[1][7],30*layout.trackWidth);assert.equal(belts[0][8],belts[1][8]);assert.equal(belts[0][1],belts[1][1]);
+  assert.equal(belts[0][5],-30*layout.trackHalfSpan);assert.equal(belts[1][5],30*(layout.trackHalfSpan-layout.trackWidth));
   h.c.drawVehicle(vehicle,106,100,0,0);const rolling=h.rasters.slice(-4);assert.equal(rolling[0][2],3);assert.equal(rolling[1][2],3);assert.equal(rolling[2][0],parked[2][0]);assert.equal(rolling[3][0],parked[3][0]);
   h.c.p.tank=null;h.c.drawVehicle(vehicle,106,100,0,0);assert.deepEqual(h.rasters.slice(-4),rolling,t.id+' exit');
  }
@@ -109,11 +110,17 @@ test('enemy artwork replaces both layers after loading once and keeps animated p
  assert.deepEqual(images.map(i=>i.src),['assets/vehicles/enemy/hull.webp','assets/vehicles/enemy/turret.webp']);
  images.forEach((i,n)=>{Object.assign(i,{complete:true,naturalWidth:n?177:256,naturalHeight:n?384:378});i.onload();});
  h.commands.length=0;h.rasters.length=0;h.c.drawEnemyTank(enemy);
- const stamps=h.commands.filter(c=>c[0]==='drawImage');assert.equal(stamps.length,2);
- assert.equal(stamps[0][1],images[0]);assert.equal(stamps[1][1],images[1]);
+ const stamps=h.commands.filter(c=>c[0]==='drawImage');assert.equal(stamps.length,3);
+ assert.equal(stamps[0][1],images[0]);assert.equal(stamps[1][1],images[1]);assert.equal(stamps[2][1],images[1]);
  assert.ok(!h.commands.some(c=>c[0]==='arc'&&Math.abs(Math.abs(c[1])-32*.78)<1e-9),'no wheel circles over enemy tracks');
  assert.equal(h.rasters.filter(a=>a.length===9).length,2);
- assert.ok(stamps[1][3]<stamps[0][3]);
+ const barrel=stamps[1],housing=stamps[2],clip=h.commands.filter(command=>command[0]==='rect').at(-1);
+ assert.equal(barrel[3],0);
+ assert.ok(Math.abs(barrel[9]/barrel[5]/(housing[5]/384)-.95)<1e-12);
+ assert.ok(Math.abs(barrel[7]+barrel[9]-clip[2])<1e-12);
+ const originalHeight=32*1.24*384/177,originalTop=-originalHeight*(1025-63)/(1331-63);
+ assert.ok(Math.abs(housing[3]-originalTop)<1e-12);assert.ok(Math.abs(housing[5]-originalHeight)<1e-12);
+ assert.ok(Math.abs(clip[2]-(originalTop+originalHeight*200/384))<1e-12);
  const count=h.canvases.length;h.commands.length=0;
  for(let i=0;i<20;i++){enemy.x+=2;h.c.drawEnemyTank(enemy);}
  assert.equal(images.length,2);assert.equal(h.canvases.length,count);
@@ -185,4 +192,32 @@ test('a stationary player pivot counter-rotates the same two track strips while 
  assert.equal(belts.length,2);assert.ok(Math.abs(belts[0][2]-1.2)<1e-9);assert.ok(Math.abs(belts[1][2]-6.8)<1e-9);
  assert.equal(vehicle.trackPhase,undefined);assert.equal(h.canvases.length,count);
  assert.ok(h.commands.some(command=>command[0]==='rotate'&&command[1]===.7+Math.PI/2));
+});
+
+test('friendly hulls and turrets use one sample scale and expose the outer track strips',()=>{
+ const h=artHarness(),root=path.join(__dirname,'..');
+ h.c.Image=class{
+  constructor(){this.complete=true;}
+  set src(value){
+   this.url=value;
+   const parts=value.split('/'),id=parts[3],layer=parts[4].split('.')[0];
+   const png=fs.readFileSync(path.join(root,`docs/player-tank-art/${id}-${layer}-master.png`));
+   this.naturalWidth=png.readUInt32BE(16);this.naturalHeight=png.readUInt32BE(20);
+  }
+  get src(){return this.url;}
+ };
+ const designs=vm.runInContext('PLAYER_TANK_ART',h.c);
+ for(const tank of h.c.types){
+  h.commands.length=0;h.rasters.length=0;h.c.tankShape(0,0,0,.7,tank,30,'both');
+  const stamps=h.commands.filter(command=>command[0]==='drawImage');
+  assert.equal(stamps.length,2,'only the original hull and turret, with no duplicated covers');
+  const [hull,turret]=stamps,layout=designs[tank.id];
+  assert.ok(Math.abs(hull[4]/hull[1].naturalWidth-turret[4]/turret[1].naturalWidth)<1e-9,tank.id+' shared source scale');
+  assert.ok(Math.abs(hull[5]/hull[1].naturalHeight-turret[5]/turret[1].naturalHeight)<1e-9,tank.id+' original aspect ratios');
+  const outer=layout.trackHalfSpan,width=layout.trackWidth,halfHull=hull[4]/64;
+  assert.ok(halfHull>outer-width&&halfHull<outer,tank.id+' connected covers and exposed outer belt');
+  const belts=h.rasters.filter(args=>args.length===9);
+  assert.ok(Math.abs(belts[0][7]/belts[0][8]-layout.trackPixels.width/layout.trackPixels.height)<1e-9,tank.id+' sample belt ratio');
+  assert.ok(Math.abs(outer*2/layout.trackHeight-layout.trackPixels.span/layout.trackPixels.height)<1e-9,tank.id+' sample track spacing');
+ }
 });
