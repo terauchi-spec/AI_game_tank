@@ -3,7 +3,7 @@ let truckArtworkImage=null,truckTireStrip=null;
 function loadTruckArtwork(){
  if(truckArtworkImage)return truckArtworkImage;
  truckArtworkImage=new Image();truckArtworkImage.decoding='async';
- truckArtworkImage.src='assets/vehicles/player/truck/body.webp';
+ truckArtworkImage.src='assets/vehicles/player/truck/body.webp?v=2026.11.22.0840';
  return truckArtworkImage;
 }
 function truckTirePhase(vehicle,x,y,body){

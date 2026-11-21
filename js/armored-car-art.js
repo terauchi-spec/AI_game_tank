@@ -4,7 +4,7 @@ function armoredCarImage(layer){
  let image=armoredCarArtwork.get(layer);
  if(!image){
   image=new Image();image.decoding='async';
-  image.src='assets/vehicles/player/armored/'+layer+'.webp';armoredCarArtwork.set(layer,image);
+  image.src='assets/vehicles/player/armored/'+layer+'.webp?v=2026.11.22.0840';armoredCarArtwork.set(layer,image);
  }
  return image;
 }

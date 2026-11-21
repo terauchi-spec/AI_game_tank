@@ -16,7 +16,7 @@ function harness(){
 }
 test('armored car loads two source images once and keeps the complete pixel fallback until both images are ready',()=>{
  const h=harness();h.c.loadArmoredCarArtwork();h.c.loadArmoredCarArtwork();
- assert.equal(h.images.length,2);assert.equal(h.images[0].src,'assets/vehicles/player/armored/hull.webp');assert.equal(h.images[1].src,'assets/vehicles/player/armored/turret.webp');
+ assert.equal(h.images.length,2);assert.equal(h.images[0].src,'assets/vehicles/player/armored/hull.webp?v=2026.11.22.0840');assert.equal(h.images[1].src,'assets/vehicles/player/armored/turret.webp?v=2026.11.22.0840');
  assert.equal(h.c.drawArmoredCarArt(0,0,0,0),false);
  Object.assign(h.images[0],{complete:true,naturalWidth:157,naturalHeight:256});
  assert.equal(h.c.drawArmoredCarArt(0,0,0,0),false);

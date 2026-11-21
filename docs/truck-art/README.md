@@ -29,3 +29,13 @@ Validation: composited native Canvas render reviewed with three tread phases;
 unit checks cover shared assets, four tire positions, preserved body aspect ratio,
 alpha, repeat draws, idle, reverse, pause, turning, fuel stops, coasting, teleports,
 normal drawVehicle routing and the legacy enemy path. iPhone hardware not tested.
+
+## Medium olive color update
+
+New `*-mid-olive-master.png` originals preserve the earlier source PNGs.
+Image-tool edit prompt: change paint only to the approved medium olive-sage
+reference (midtones #83925a, highlights #a4b77a, shadows #52683d), retaining
+top-down geometry, dark hardware, transparent tire openings and thin outlines.
+Truck canopy uses warm khaki sage #a7ae82. Runtime dimensions and draw sizes
+remain unchanged; URL versions invalidate cached images.
+Truck uses the same source crop as before.

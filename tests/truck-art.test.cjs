@@ -17,7 +17,7 @@ function harness(){
 }
 test('friendly body loads once and falls back safely while loading or failed; enemy trucks retain their original path',()=>{
  const h=harness();h.c.loadTruckArtwork();h.c.loadTruckArtwork();
- assert.equal(h.images.length,1);assert.equal(h.images[0].src,'assets/vehicles/player/truck/body.webp');
+ assert.equal(h.images.length,1);assert.equal(h.images[0].src,'assets/vehicles/player/truck/body.webp?v=2026.11.22.0840');
  assert.equal(h.c.drawTruckArt(0,0,0,28),false);
  h.c.truckShape(0,0,0,28);assert.ok(h.commands.some(c=>c[0]==='fillRect'));
  h.images[0].complete=true;assert.equal(h.c.drawTruckArt(0,0,0,28),false);

@@ -30,3 +30,15 @@ visually reviewed. Tests cover six tire positions, body/turret aspect ratios,
 independent rotations, pivot placement, shared resources, signed motion, pause,
 owner forwarding, loading fallback and existing wheeled-vehicle behavior.
 iPhone hardware has not been tested.
+
+## Medium olive color update
+
+New `*-mid-olive-master.png` originals preserve the earlier source PNGs.
+Image-tool edit prompt: change paint only to the approved medium olive-sage
+reference (midtones #83925a, highlights #a4b77a, shadows #52683d), retaining
+top-down geometry, dark hardware, transparent tire openings and thin outlines.
+Truck canopy uses warm khaki sage #a7ae82. Runtime dimensions and draw sizes
+remain unchanged; URL versions invalidate cached images.
+Hull uses the same canvas dimensions. Turret content is fitted back into
+the original 270×470 source crop, bounds (19,16)-(251,453), retaining the
+(135,321) rotation pivot before reduction to 147×256 WebP.
