@@ -71,7 +71,7 @@ function paintPlayerTankArt(q,id,layer){
  q.save();q.scale(1/32,1/32);
  // Keep the animated belt interiors clear beneath the painted hull.
  if(!image||id==='enemy'&&layer==='hull')drawOriginalTankShape(0,0,-Math.PI/2,-Math.PI/2,tank,32,layer,q,true);
- else if(layer==='hull')paintPlayerTankTrackRims(q,id);
+ else if(layer==='hull'&&id!=='type10')paintPlayerTankTrackRims(q,id);
  if(image){
   q.imageSmoothingEnabled=true;q.imageSmoothingQuality='high';
   const art=PLAYER_TANK_ART[id],turretWidth=id==='enemy'?1.24:art.turretWidth;
@@ -89,12 +89,31 @@ function paintPlayerTankArt(q,id,layer){
   }else if(id==='type10'&&layer==='turret'){
    // Enlarge the projecting barrel around its fixed attachment point.
    const barrelPixels=image.naturalHeight*106/256,barrelHeight=height*106/256;
-   q.drawImage(image,0,0,image.naturalWidth,barrelPixels,-width*.75,y-barrelHeight*.2,width*1.5,barrelHeight*1.2);
+   const muzzlePixels=image.naturalHeight*14/256,muzzleHeight=height*14/256*1.2;
+   const muzzleBottom=y-barrelHeight*.2+muzzleHeight;
+   q.drawImage(image,0,0,image.naturalWidth,muzzlePixels,-width*.9,muzzleBottom-muzzleHeight*1.15,width*1.8,muzzleHeight*1.15);
+   q.drawImage(image,0,muzzlePixels,image.naturalWidth,barrelPixels-muzzlePixels,-width*.75,muzzleBottom,width*1.5,barrelHeight*1.2-muzzleHeight);
    q.save();q.beginPath();q.rect(-width,y+barrelHeight,width*2,height);q.clip();
    q.drawImage(image,-width/2,y,width,height);q.restore();
   }else q.drawImage(image,-width/2,y,width,height);
  }
  q.restore();
+}
+// One shared temporary alpha mask; outlines are baked only when a layer changes.
+let tankOutlineMask=null;
+function outlineTankLayer(canvas){
+ if(!tankOutlineMask)tankOutlineMask=document.createElement('canvas');
+ tankOutlineMask.width=canvas.width;tankOutlineMask.height=canvas.height;
+ const mask=gameCanvasContext(tankOutlineMask);
+ mask.drawImage(canvas,0,0);mask.globalCompositeOperation='source-in';
+ mask.fillStyle='#000';mask.fillRect(0,0,canvas.width,canvas.height);
+ const context=gameCanvasContext(canvas);
+ context.save();context.setTransform(1,0,0,1,0,0);context.globalCompositeOperation='destination-over';
+ for(let i=0;i<8;i++){
+  const angle=i*Math.PI/4;
+  context.drawImage(tankOutlineMask,Math.cos(angle)*1.3,Math.sin(angle)*1.3);
+ }
+ context.restore();
 }
 function playerTankArtSprites(id){
  let cached=playerTankArtCache.get(id);if(cached)return cached;
@@ -102,6 +121,13 @@ function playerTankArtSprites(id){
   const a=id==='enemy'?ENEMY_TANK_ART:PLAYER_TANK_ART[id],bounds=layer==='hull'?{x:-1.18,y:-1.60,w:2.36,h:3.20}:{x:-.85,y:-a.barrel-.25,w:1.70,h:a.barrel+(id==='enemy'?1.20:1.10)};
   const canvas=document.createElement('canvas');canvas.width=Math.ceil(bounds.w*32);canvas.height=Math.ceil(bounds.h*32);
   const q=gameCanvasContext(canvas);q.scale(32,32);q.translate(-bounds.x,-bounds.y);paintPlayerTankArt(q,id,layer);
+  if(id==='type10'&&playerTankGraphic(id,layer)){
+   outlineTankLayer(canvas);
+   if(layer==='hull'){
+    q.save();q.scale(1/32,1/32);q.globalCompositeOperation='destination-over';
+    paintPlayerTankTrackRims(q,id);q.restore();
+   }
+  }
   return{canvas,x:bounds.x,y:bounds.y,w:canvas.width/32,h:canvas.height/32};
  };
  cached={hull:make('hull'),turret:make('turret')};playerTankArtCache.set(id,cached);return cached;

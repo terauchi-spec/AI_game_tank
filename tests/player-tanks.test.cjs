@@ -209,8 +209,8 @@ test('friendly hulls and turrets use one sample scale and expose the outer track
  const designs=vm.runInContext('PLAYER_TANK_ART',h.c);
  for(const tank of h.c.types){
   h.commands.length=0;h.rasters.length=0;h.c.tankShape(0,0,0,.7,tank,30,'both');
-  const stamps=h.commands.filter(command=>command[0]==='drawImage');
-  assert.equal(stamps.length,tank.id==='type10'?3:2,'original hull and turret plus the Type 10 barrel');
+  const stamps=h.commands.filter(command=>command[0]==='drawImage'&&typeof command[1]?.src==='string');
+  assert.equal(stamps.length,tank.id==='type10'?4:2,'original hull and turret plus the Type 10 muzzle and barrel');
   const hull=stamps[0],turret=stamps.at(-1),layout=designs[tank.id];
   assert.ok(Math.abs(hull[4]/hull[1].naturalWidth-turret[4]/turret[1].naturalWidth)<1e-9,tank.id+' shared source scale');
   assert.ok(Math.abs(hull[5]/hull[1].naturalHeight-turret[5]/turret[1].naturalHeight)<1e-9,tank.id+' original aspect ratios');
@@ -228,21 +228,27 @@ test('friendly hulls and turrets use one sample scale and expose the outer track
 });
 
 
-test('Type 10 barrel is 1.5 times wider and 1.2 times longer around the same attachment',()=>{
+test('Type 10 keeps its enlarged barrel, emphasizes the muzzle and caches black outlines once',()=>{
  const h=artHarness(),images=[];
  h.c.Image=class{constructor(){this.complete=false;images.push(this);}};
  const tank=h.c.types.find(t=>t.id==='type10');
  h.c.tankShape(0,0,.3,1.2,tank,30,'both');
  images.forEach(image=>{Object.assign(image,{complete:true,naturalWidth:133,naturalHeight:256});image.onload();});
  h.commands.length=0;h.c.tankShape(0,0,.3,1.2,tank,30,'both');
- const stamps=h.commands.filter(command=>command[0]==='drawImage');
- assert.equal(stamps.length,3);
- const barrel=stamps[1],housing=stamps[2],clip=h.commands.filter(command=>command[0]==='rect').at(-1);
+ const stamps=h.commands.filter(command=>command[0]==='drawImage'&&images.includes(command[1]));
+ assert.equal(stamps.length,4);
+ const muzzle=stamps[1],barrel=stamps[2],housing=stamps[3],clip=h.commands.filter(command=>command[0]==='rect').at(-1);
  assert.ok(Math.abs(barrel[8]/housing[4]-1.5)<1e-12);
- assert.ok(Math.abs(barrel[9]/(housing[5]*106/256)-1.2)<1e-12);
+ assert.ok(Math.abs(barrel[9]/(housing[5]*92/256)-1.2)<1e-12);
+ assert.ok(Math.abs(muzzle[8]/barrel[8]-1.2)<1e-12,'muzzle width +20%');
+ assert.ok(Math.abs(muzzle[9]/(housing[5]*14/256*1.2)-1.15)<1e-12,'muzzle length +15%');
+ assert.ok(Math.abs(muzzle[7]+muzzle[9]-barrel[7])<1e-12,'muzzle joins the shaft');
  assert.ok(Math.abs(barrel[7]+barrel[9]-clip[2])<1e-12);
  assert.ok(Math.abs(clip[2]-(housing[3]+housing[5]*106/256))<1e-12);
  assert.ok(Math.abs(barrel[6]+barrel[8]/2)<1e-12);
+ const masks=h.commands.filter(command=>command[0]==='drawImage'&&!images.includes(command[1]));
+ assert.equal(masks.length,18,'two mask copies and eight outline offsets for each layer');
+ assert.equal(new Set(masks.filter(command=>command.length===4).map(command=>command[1])).size,3,'two source layers share one outline mask');
  const allocations=h.canvases.length;h.commands.length=0;
  for(let frame=0;frame<30;frame++)h.c.tankShape(frame,0,.3,1.2,tank,30,'both');
  assert.equal(h.canvases.length,allocations);assert.ok(!h.commands.some(command=>command[0]==='drawImage'));
