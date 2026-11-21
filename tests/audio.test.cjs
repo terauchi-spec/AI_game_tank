@@ -258,13 +258,11 @@ test('all infiltration variants share footstep playback and large stair teleport
  const h=harness(),{c}=h;for(const n of ['firework','objectiveDestroyed','sniperLens']){await c.loadGameSe(n);c.playGameSe(n);c.now+=100;c.playGameSe(n);}
  assert.equal(h.requests.length,3);assert.equal(c.get('gameSe.voices.size'),3);
  });
-test('objective destruction plays once at the lethal hit and fireworks follow animation starts only on success',()=>{
+test('objective destruction plays once at the lethal hit',()=>{
  const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),sounds=[],b={hp:2,maxHp:30},c={ensureBaseState:()=>b,scoreStats:null,riverHash:()=>0,carveBaseFragments:()=>0,burst(){},shake:0,performance:{now:()=>100},state:'play',winSeq(){},sfx:n=>sounds.push(n)};
  vm.createContext(c);vm.runInContext(html.slice(html.indexOf('function damageBase('),html.indexOf('function baseFragmentAliveAt(')),c);
  c.damageBase(1,0,0);assert.deepEqual(sounds,[]);c.damageBase(1,0,0);c.damageBase(1,0,0);assert.deepEqual(sounds,['objectiveDestroyed']);
- let listener;c.document={getElementById:()=>({addEventListener:(name,fn)=>listener=fn})};
- const a=html.indexOf("document.getElementById('missionSuccess').addEventListener('animationstart'");vm.runInContext(html.slice(a,html.indexOf("document.getElementById('missionSuccessEvaluate').addEventListener",a)),c);
- c.state='succeeded';listener({animationName:'missionBriefingPop'});listener({animationName:'missionFireworkBurst'});c.state='win';listener({animationName:'missionFireworkBurst'});assert.deepEqual(sounds,['objectiveDestroyed','firework']);
+
 });
 
 test('counterattack warning has no audio download or playback',async()=>{

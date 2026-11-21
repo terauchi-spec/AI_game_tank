@@ -550,12 +550,8 @@ body.failure-open .mission-briefing-image{transform-origin:center bottom;animati
 #missionSuccess .mission-briefing-image{width:min(82vw,640px);height:min(51dvh,420px);flex-shrink:0}
 #missionSuccess h1{color:#ffe09a;margin-bottom:24px}
 body.success-open .mission-briefing-image{transform-origin:center bottom;animation:missionHeroPop 420ms ease-out 1}
-.mission-fireworks{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
-.mission-firework{--firework-size:clamp(180px,36vw,300px);position:absolute;width:var(--firework-size);height:var(--firework-size);margin:calc(var(--firework-size)/-2);background:url('assets/ui/mission_firework.svg?v=2026.10.26.celebration') center/contain no-repeat;opacity:0}
-body.success-open .mission-firework{animation:missionFireworkBurst 1250ms ease-out var(--burst-delay) 1 forwards}
-@keyframes missionFireworkBurst{0%{opacity:0;transform:scale(.08) rotate(-8deg)}12%{opacity:1;transform:scale(.4) rotate(-4deg)}40%{opacity:1;transform:scale(.9)}78%{opacity:.8;transform:scale(1.22)}100%{opacity:0;transform:scale(1.4) rotate(6deg)}}
-@media(max-width:600px){.mission-firework{--firework-size:clamp(160px,46vw,240px)}}
-@media(prefers-reduced-motion:reduce){body.success-open .mission-briefing-image,body.success-open .mission-firework{animation:none}}
+.mission-fireworks{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;pointer-events:none;z-index:0}
+@media(prefers-reduced-motion:reduce){body.success-open .mission-briefing-image{animation:none}}
 </style>
 <style>
 /* 説明ボタンの余白を本文へ戻し、文字数に応じてカードを縦に伸ばす。 */
@@ -972,7 +968,7 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
   <button id="endingNext" type="button" hidden>次へ</button>
  </div>
 </section>
-<div id="missionSuccess" role="dialog" aria-modal="true" aria-labelledby="missionSuccessTitle"><div class="mission-fireworks" aria-hidden="true"><i class="mission-firework" style="left:18%;top:24%;--burst-delay:0.15s"></i><i class="mission-firework" style="left:78%;top:20%;--burst-delay:0.45s"></i><i class="mission-firework" style="left:48%;top:12%;--burst-delay:0.75s"></i><i class="mission-firework" style="left:22%;top:60%;--burst-delay:1.05s"></i><i class="mission-firework" style="left:81%;top:55%;--burst-delay:1.35s"></i></div><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_success.webp?v=2026.10.14.1653" alt="笑顔でジャンプする主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionSuccessTitle">作戦成功</h1><button type="button" id="missionSuccessEvaluate">作戦評価</button></div></div></div>
+<div id="missionSuccess" role="dialog" aria-modal="true" aria-labelledby="missionSuccessTitle"><canvas id="missionFireworks" class="mission-fireworks" aria-hidden="true"></canvas><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_success.webp?v=2026.10.14.1653" alt="笑顔でジャンプする主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionSuccessTitle">作戦成功</h1><button type="button" id="missionSuccessEvaluate">作戦評価</button></div></div></div>
 <div id="missionFailure" role="dialog" aria-modal="true" aria-labelledby="missionFailureTitle"><div class="mission-briefing-content"><img class="mission-briefing-image" src="assets/ui/mission_failed.webp?v=2026.10.14.1653" alt="倒れてふらつく主人公" decoding="async"><div class="mission-briefing-copy"><h1 id="missionFailureTitle">作戦失敗</h1><button type="button" id="missionEvaluate">作戦評価</button></div></div></div>
 <style>
 #stageScreen .stage-shell{padding-bottom:calc(150px + env(safe-area-inset-bottom))}
@@ -1034,7 +1030,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.20.1252',FILE_CREATED_AT='2026/11/20 12:52',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.21.1138',FILE_CREATED_AT='2026/11/21 11:38',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -3818,7 +3814,7 @@ function findDetectedTarget(o,face){
 }
 const MAX_PARTS=MOBILE_VIEW?240:360;
 function trimParts(extra=0){if(!parts)return;const over=parts.length+extra-MAX_PARTS;if(over>0)parts.splice(0,over);}
-function burst(x,y,n,col,sp){const nn=Math.min(n,MAX_PARTS);trimParts(nn);for(let i=0;i<nn;i++){const a=R()*6.28,s=R()*sp;parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.4+R()*.4,col});}}
+function burst(x,y,n,col,sp,target=parts,random=R){const nn=Math.min(n,MAX_PARTS);if(target===parts)trimParts(nn);for(let i=0;i<nn;i++){const a=random()*6.28,s=random()*sp;target.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.4+random()*.4,col});}}
 function spawnRescueCross(actor){
  trimParts(1);parts.push({x:actor.x,y:actor.y-24,vx:0,vy:-32,life:.8,col:'#ef333e',sz:22,rescueCross:true});
 }
@@ -8864,11 +8860,8 @@ let briefingFrameDrawn=false;
 let successFrameDrawn=false;
 function syncMissionSuccess(){
  const active=state==='succeeded',wasOpen=document.body.classList.contains('success-open');
- if(active!==wasOpen){document.body.classList.toggle('success-open',active);if(active){document.getElementById('missionSuccessTitle').textContent=stageMode==='training'?'訓練完了':'作戦成功';document.getElementById('missionSuccessEvaluate').textContent=stageMode==='training'?'訓練を振り返る':canStartDecisiveEnding()?'エンディングへ':'作戦評価';sfx('win');document.getElementById('missionSuccessEvaluate').focus({preventScroll:true});}}
+ if(active!==wasOpen){document.body.classList.toggle('success-open',active);if(typeof syncSuccessFireworks==='function')syncSuccessFireworks(active);if(active){document.getElementById('missionSuccessTitle').textContent=stageMode==='training'?'訓練完了':'作戦成功';document.getElementById('missionSuccessEvaluate').textContent=stageMode==='training'?'訓練を振り返る':canStartDecisiveEnding()?'エンディングへ':'作戦評価';sfx('win');document.getElementById('missionSuccessEvaluate').focus({preventScroll:true});}}
 }
-document.getElementById('missionSuccess').addEventListener('animationstart',event=>{
- if(state==='succeeded'&&event.animationName==='missionFireworkBurst')sfx('firework');
-});
 document.getElementById('missionSuccessEvaluate').addEventListener('click',()=>{
  if(state!=='succeeded')return;
  if(canStartDecisiveEnding()){startDecisiveEnding();syncMissionSuccess();return;}
@@ -9166,6 +9159,7 @@ function reportGameError(error){
 <script src="js/award-icons.js?v=2026.10.31.0807"></script>
 <script src="js/developer.js?v=2026.11.11.2308"></script>
 <script src="js/leaderboard.js?v=2026.10.28.0713"></script>
+<script src="js/success-fireworks.js?v=2026.11.21.1138"></script>
 <script src="js/intro.js?v=2026.11.19.2241"></script>
 <script src="js/unlocks.js?v=2026.11.11.2308"></script>
 <script src="js/enemy-bomber.js?v=2026.11.14.1728"></script>
