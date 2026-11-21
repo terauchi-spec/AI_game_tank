@@ -16,7 +16,8 @@ test('all seven player tanks stop to pivot on opposite input and resume at the o
    for(const key of Object.keys(keys))keys[key]=false;
    p.x=480;p.y=5000;p.body=body;p.ang=.7;
    p.tank={kind:'tank',t:type,f:100,v:100,c:100};keys[key]=true;
-   for(let frame=0;frame<53;frame++){
+   const frames=Math.ceil(180/type.pivotRate*60);
+   for(let frame=0;frame<frames-1;frame++){
     update(1/60);
     if(p.x!==480||p.y!==5000||p.tank.f!==100||Math.abs(p.ang-.7)>1e-9)return false;
    }
@@ -49,17 +50,17 @@ test('release and empty fuel stop a player pivot, and changing the requested dir
   if(p.body!==turned||p.tank.playerPivoting)return false;
   keys.ArrowLeft=true;update(.1);const before=p.body;
   keys.ArrowLeft=false;keys.ArrowUp=true;update(.1);
-  if(Math.abs(p.body-before)>Math.PI*.1125+1e-9||p.x!==480||p.y!==5000)return false;
+  if(Math.abs(p.body-before)>TYPES[0].pivotRate*Math.PI/180*.1+1e-9||p.x!==480||p.y!==5000)return false;
   p.tank.f=0;const stopped=p.body;update(.1);
   return p.body===stopped&&!p.tank.playerPivoting&&p.x===480&&p.y===5000;
  })()`),true);
 });
-test('player pivots are 2.25x the enemy turn rate independently of frame rate',()=>{
+test('player pivots use each model rate independently of frame rate',()=>{
  const h=start();
  assert.equal(h.run(`(()=>{
-  for(const dt of [1/30,1/60,1/120]){
-   p.body=0;p.tank={kind:'tank',t:TYPES[0]};
-   for(let frame=0;frame<Math.ceil((8/9)/dt)-1;frame++)if(turnPlayerTankBody(Math.PI,dt))return false;
+  for(const type of TYPES)for(const dt of [1/30,1/60,1/120]){
+   p.body=0;p.tank={kind:'tank',t:type};
+   for(let frame=0;frame<Math.ceil(180/type.pivotRate/dt)-1;frame++)if(turnPlayerTankBody(Math.PI,dt))return false;
    if(!turnPlayerTankBody(Math.PI,dt)||Math.abs(angD(Math.PI,p.body))>1e-8)return false;
   }
   return true;
@@ -75,12 +76,12 @@ test('all tracked tanks steer on arcs for perpendicular and diagonal inputs at e
    keys[desired<0?'ArrowUp':'ArrowDown']=true;
    if(Math.abs(desired)<Math.PI/2)keys.ArrowRight=true;
    update(dt);
-   if(Math.abs(p.body-desired)<1e-6||Math.abs(p.body-Math.sign(desired)*Math.PI*1.125*dt)>1e-8)return false;
+   if(Math.abs(p.body-desired)<1e-6||Math.abs(p.body-Math.sign(desired)*type.turnRate*Math.PI/180*dt)>1e-8)return false;
    if(!(p.x>480)||Math.sign(p.y-5000)!==Math.sign(desired)||p.tank.playerPivoting||p.tank.f>=100||Math.abs(p.ang-.7)>1e-8)return false;
-   const frames=Math.ceil(Math.abs(desired)/(Math.PI*1.125)/dt);
+   const frames=Math.ceil(Math.abs(desired)/(type.turnRate*Math.PI/180)/dt);
    for(let i=1;i<frames;i++)update(dt);
    if(Math.abs(angD(desired,p.body))>1e-8)return false;
-   const remaining=frames*dt-Math.abs(desired)/(Math.PI*1.125);
+   const remaining=frames*dt-Math.abs(desired)/(type.turnRate*Math.PI/180);
    if(Math.abs(p.x-(480+24*Math.abs(Math.sin(desired))+Math.cos(desired)*type.sp*remaining))>1e-7||Math.abs(p.y-(5000+24*Math.sign(desired)*(1-Math.cos(desired))+Math.sin(desired)*type.sp*remaining))>1e-7)return false;
    const x=p.x,y=p.y;update(dt);
    if(Math.abs(Math.hypot(p.x-x,p.y-y)-type.sp*dt)>1e-8)return false;

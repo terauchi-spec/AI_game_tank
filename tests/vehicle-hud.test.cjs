@@ -15,14 +15,14 @@ test('tank HUD uses shield and fuel gauges plus shell and bullet counts on mobil
   const h=harness(touch);Object.defineProperty(h.c.p,'cc',{get(){throw Error('tank reload timing must not be displayed')}});h.draw(tank());
   assert.deepEqual(h.text.map(t=>t.s),['T-34(ソ連)','8/11','57/72']);
   assert.deepEqual(h.icons.map(i=>i[0]),['shield','shell','ammo','fuel']);
-  assertRatios(h.gauges.map(a=>a[3]),[1.5/2.4,60/163.8]);assert.equal(h.gauges.length,2);
+  assertRatios(h.gauges.map(a=>a[3]),[1.5/2.1,60/163.8]);assert.equal(h.gauges.length,2);
   for(const i of h.icons)assert.ok(i[1]>8&&i[1]<(touch?226:244)&&i[2]>0&&i[2]<720);
  }
 });
 test('armored car reuses the shield, machine-gun ammunition and fuel components without a cannon slot',()=>{
  const h=harness();h.draw({kind:'tank',t:{id:'armored',n:'装甲車',armor:1,vmax:120,fmax:100},ch:.6,v:65,f:20});
  assert.deepEqual(h.text.map(t=>t.s),['装甲車','65/120']);assert.deepEqual(h.icons.map(i=>i[0]),['shield','ammo','fuel']);
- assertRatios(h.gauges.map(a=>a[3]),[.4/2.4,20/163.8]);
+ assertRatios(h.gauges.map(a=>a[3]),[.4/2.1,20/163.8]);
 });
 test('truck displays remaining durability from received hits and shares the fuel gauge',()=>{
  const h=harness();h.draw({kind:'truck',t:{id:'truck',n:'トラック',fmax:100},mgHits:3,f:75});
@@ -48,12 +48,12 @@ test('on-foot players do not draw the vehicle HUD',()=>{
 
 test('all seven real tanks show capacity differences on common absolute armor and fuel scales',()=>{
  const h=harness(),types=h.c.get('TYPES');
- for(const t of types){h.gauges.length=0;h.draw({kind:'tank',t,ch:0,f:t.fmax,c:t.cmax,v:t.vmax});assertRatios(h.gauges.map(a=>a[3]),[t.armor/2.4,t.fmax/163.8]);assertRatios(h.gauges.map(a=>a[5]),[t.armor/2.4,t.fmax/163.8]);}
- assert.equal(new Set(Array.from(types,t=>t.armor)).size,7);assert.equal(h.c.get('VEHICLE_HUD_ARMOR_MAX'),2.4);assert.ok(Math.abs(h.c.get('VEHICLE_HUD_FUEL_MAX')-163.8)<1e-10);
+ for(const t of types){h.gauges.length=0;h.draw({kind:'tank',t,ch:0,f:t.fmax,c:t.cmax,v:t.vmax});assertRatios(h.gauges.map(a=>a[3]),[t.armor/2.1,t.fmax/163.8]);assertRatios(h.gauges.map(a=>a[5]),[t.armor/2.1,t.fmax/163.8]);}
+ assert.equal(new Set(Array.from(types,t=>t.armor)).size,7);assert.equal(h.c.get('VEHICLE_HUD_ARMOR_MAX'),2.1);assert.ok(Math.abs(h.c.get('VEHICLE_HUD_FUEL_MAX')-163.8)<1e-10);
 });
 test('equal absolute remaining armor and fuel have equal lengths across vehicles; warning colors use local remaining fraction',()=>{
  const h=harness(),types=h.c.get('TYPES'),result=[];
- for(const t of [types[0],types[6]]){h.gauges.length=0;h.draw({kind:'tank',t,ch:t.armor-1,f:50,c:0,v:0});result.push(h.gauges.map(a=>a[3]));}
+ for(const t of [types[0],types[6]]){h.gauges.length=0;h.draw({kind:'tank',t,ch:t.armor-.5,f:50,c:0,v:0});result.push(h.gauges.map(a=>a[3]));}
  assertRatios(result[0],result[1]);h.gauges.length=0;h.draw({kind:'tank',t:types[0],ch:0,f:types[0].fmax,c:0,v:0});assert.equal(h.gauges[0][4],'#9bd477');assert.equal(h.gauges[1][4],'#c83d32');
 });
 test('ticks are limited to the filled active portion, stay on the common scale and require no more than eleven marks',()=>{

@@ -2,9 +2,9 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),canyon=fs.readFileSync(path.join(__dirname,'../js/canyon.js'),'utf8');
 const section=(s,a,b)=>s.slice(s.indexOf(a),s.indexOf(b,s.indexOf(a)));
 function harness(){const c={Math,WW:960,WH:15000,p:{x:480,y:14000},cars:[]};vm.createContext(c);vm.runInContext(section(html,'const PLAYER_TANK_FUEL_SCALE=','const ARMORED_TYPE='),c);c.types=vm.runInContext('TYPES',c);vm.runInContext(section(html,'function spawnAreaDebugPlayerTanks(','function setupAreaDebugStage('),c);return c;}
-test('seven unique tanks keep all original specifications and give new tanks distinct roles',()=>{
+test('seven unique tanks keep core weapons and mobility while giving each model distinct roles',()=>{
  const c=harness(),t=c.types;assert.deepEqual(Array.from(t,v=>v.id),['t34','tiger','type10','m1','sherman','churchill','kingtiger']);
- assert.deepEqual(Array.from(t.slice(0,4),v=>[v.hp,v.armor,v.sp,v.cdmg,v.ccd]),[[8,1.35,99,2.7,2.42],[16,2,72,5.4,3.08],[12,1.55,126,3.6,1.65],[15,1.8,113,4.5,1.87]]);
+ assert.deepEqual(Array.from(t.slice(0,4),v=>[v.hp,v.armor,v.sp,v.cdmg,v.ccd]),[[8,.9,99,2.7,2.42],[16,1.8,72,5.4,3.08],[12,1.25,126,3.6,1.65],[15,1.65,113,4.5,1.87]]);
  for(const v of t)for(const k of ['hp','armor','cmax','vmax','fmax','sp','cdmg','ccd','cspd','crng','vcd'])assert.ok(Number.isFinite(v[k])&&v[k]>0,v.id+' '+k);
  const [s,ch,k]=t.slice(4);assert.ok(s.sp>ch.sp&&s.ccd<ch.ccd);assert.ok(ch.armor>t[1].armor&&ch.sp<t[1].sp);assert.ok(k.cdmg>t[1].cdmg&&k.armor>t[1].armor&&k.ccd>t[1].ccd);
 });

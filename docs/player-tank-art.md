@@ -54,7 +54,7 @@ Sherman, Churchill and Tiger I retain only 20% of the extra muzzle emphasis
 (+4% width and +3% length relative to their enlarged barrels). Friendly hull
 and turret outline radius is 1 cache pixel, reduced from 1.3 pixels.
 
-Player steering now turns smoothly at 202.5 degrees per second. Changes up to
+Player steering now uses the model-specific rates in player-tank-balance.md. Changes up to
 90 degrees drive along a 24px-radius single-track arc, then resume normal
 speed. Larger changes retain the stationary pivot until aligned. Movement
 continues through playerMove for collisions, terrain and fuel consumption.
