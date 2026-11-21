@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.22.0147</title>
+<title>こっそり戦車大作戦 2026.11.22.0304</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -1017,6 +1017,7 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 <div id="missionHud" role="status"></div>
 
 <script src="js/player-tank-art.js?v=2026.11.22.0147"></script>
+<script src="js/truck-art.js?v=2026.11.22.0304"></script>
 <script src="js/audio.js?v=2026.11.17.1611"></script>
 <script src="js/bgm.js?v=2026.11.19.2241"></script>
 <script src="js/audio-recovery.js?v=2026.10.28.1725"></script>
@@ -1030,7 +1031,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.22.0147',FILE_CREATED_AT='2026/11/22 01:47',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.22.0304',FILE_CREATED_AT='2026/11/22 03:04',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -1231,6 +1232,7 @@ function startAssetLoading(){
  for(const [k,v] of Object.entries(COVER_ASSET_SRC))COVER_IMG[k]=makeAssetImage(v,()=>{if(k==='spinifex'||k==='spinifex_green')invalidateSpinifexVegetation();});
  if(typeof loadCharacterArtwork==='function')loadCharacterArtwork();
  if(typeof loadPlayerTankArtwork==='function')loadPlayerTankArtwork();
+ if(typeof loadTruckArtwork==='function')loadTruckArtwork();
 }
 function assetsLoading(){return assetInitStarted&&assetLoadTotal>0&&assetLoadDone<assetLoadTotal;}
 function assetOK(im){return !!(im&&im.complete&&im.naturalWidth>0);}
@@ -7202,7 +7204,8 @@ function drawOriginalTankShape(x,y,body,ang,tank,sz,layer,context,animatedTracks
  g.restore();
  }
 }
-function truckShape(x,y,body,sz=28,enemy=false){
+function truckShape(x,y,body,sz=28,enemy=false,vehicle=null){
+ if(!enemy&&typeof drawTruckArt==='function'&&drawTruckArt(x,y,body,sz,vehicle))return;
  g.save();g.translate(x,y);g.rotate(body+1.5708);
 
  // shadow
@@ -7564,7 +7567,7 @@ function armoredShape(x,y,body,ang){
  g.fillStyle='#5a606a';g.fillRect(-1,-30,2,21);g.fillStyle='#333d31';g.beginPath();g.arc(0,0,10,0,Math.PI*2);g.fill();
  g.fillStyle='#73826b';g.beginPath();g.arc(0,0,8,0,Math.PI*2);g.fill();g.strokeStyle='#9baa8e';g.lineWidth=1;g.stroke();g.fillStyle='#29332a';g.fillRect(-3,-3,6,6);g.restore();
 }
-function drawVehicle(v,x,y,body,ang,layer='both'){if(v&&v.kind==='tower'){if(layer==='both')drawGunTower(v,x,y,p?.tank===v?ang:v.aim??ang);}else if(v&&v.t.id==='armored'){if(layer==='both')armoredShape(x,y,body,ang);}else if(v&&v.kind==='truck'){if(layer==='both')truckShape(x,y,body,28);}else if(v&&v.kind==='fighter'){if(layer==='both')fighterShape(x,y,body,36);}else if(v){const trackPhase=layer==='turret'?null:playerTankTrackPhase(v,x,y,body),trackTurn=layer==='turret'?0:tankTrackTurnPhase(v,body);tankShape(x,y,body,ang,v.t,TANK_DRAW,layer,trackPhase,trackTurn);}}
+function drawVehicle(v,x,y,body,ang,layer='both'){if(v&&v.kind==='tower'){if(layer==='both')drawGunTower(v,x,y,p?.tank===v?ang:v.aim??ang);}else if(v&&v.t.id==='armored'){if(layer==='both')armoredShape(x,y,body,ang);}else if(v&&v.kind==='truck'){if(layer==='both')truckShape(x,y,body,28,false,v);}else if(v&&v.kind==='fighter'){if(layer==='both')fighterShape(x,y,body,36);}else if(v){const trackPhase=layer==='turret'?null:playerTankTrackPhase(v,x,y,body),trackTurn=layer==='turret'?0:tankTrackTurnPhase(v,body);tankShape(x,y,body,ang,v.t,TANK_DRAW,layer,trackPhase,trackTurn);}}
 function enemyIsWalking(h){return !!(h.alive&&!(h.stun>0)&&!(h.stunRecover>0)&&!h.houndPinned&&!(h.blastAirT>0)&&Math.hypot(h.x-h.walkStartX,h.y-h.walkStartY)>.02);}
 function soldier(x,y,face,isP,alert,moving,elite=false,commander='',weaponVisible=alert,playerStripe=isP,actor=null){
  if(actor?.alive&&actor.stun>0&&typeof drawStunnedEnemy==='function'){
