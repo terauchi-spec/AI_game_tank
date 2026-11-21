@@ -6,16 +6,36 @@ const PLAYER_TANK_ART={
 };
 const ENEMY_TANK_ART={id:'enemy',col:'#4b5f9e',barrel:1.8};
 const playerTankArtCache=new Map();
+const enemyTankGraphics=new Map();
+function enemyTankGraphic(layer){
+ let image=enemyTankGraphics.get(layer);
+ if(!image){
+  image=new Image();image.decoding='async';
+  image.onload=()=>playerTankArtCache.delete('enemy');
+  image.src='assets/vehicles/enemy/'+layer+'.webp';
+  enemyTankGraphics.set(layer,image);
+ }
+ return image.complete&&image.naturalWidth>0?image:null;
+}
 function paintPlayerTankArt(q,id,layer){
  const tank=id==='enemy'?ENEMY_TANK_ART:TYPES.find(t=>t.id===id);
+ const image=id==='enemy'?enemyTankGraphic(layer):null;
  q.save();q.scale(1/32,1/32);
- drawOriginalTankShape(0,0,-Math.PI/2,-Math.PI/2,tank,32,layer,q,true);
+ // The original hull supplies the track rims, rollers and ground shadow.
+ if(layer==='hull'||!image)drawOriginalTankShape(0,0,-Math.PI/2,-Math.PI/2,tank,32,layer,q,true);
+ if(image){
+  q.imageSmoothingEnabled=true;q.imageSmoothingQuality='high';
+  const width=32*1.24,height=width*image.naturalHeight/image.naturalWidth;
+  // The turret pivots at the centre of its round housing, below the barrel.
+  const y=layer==='hull'?-height/2:-height*(1025-63)/(1331-63);
+  q.drawImage(image,-width/2,y,width,height);
+ }
  q.restore();
 }
 function playerTankArtSprites(id){
  let cached=playerTankArtCache.get(id);if(cached)return cached;
  const make=layer=>{
-  const a=id==='enemy'?ENEMY_TANK_ART:PLAYER_TANK_ART[id],bounds=layer==='hull'?{x:-1.18,y:-1.60,w:2.36,h:3.20}:{x:-.85,y:-a.barrel-.25,w:1.70,h:a.barrel+1.10};
+  const a=id==='enemy'?ENEMY_TANK_ART:PLAYER_TANK_ART[id],bounds=layer==='hull'?{x:-1.18,y:-1.60,w:2.36,h:3.20}:{x:-.85,y:-a.barrel-.25,w:1.70,h:a.barrel+(id==='enemy'?1.20:1.10)};
   const canvas=document.createElement('canvas');canvas.width=Math.ceil(bounds.w*32);canvas.height=Math.ceil(bounds.h*32);
   const q=gameCanvasContext(canvas);q.scale(32,32);q.translate(-bounds.x,-bounds.y);paintPlayerTankArt(q,id,layer);
   return{canvas,x:bounds.x,y:bounds.y,w:canvas.width/32,h:canvas.height/32};

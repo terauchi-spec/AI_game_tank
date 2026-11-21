@@ -33,6 +33,7 @@ test('all tank body and turret layers render independently with balanced canvas 
 function artHarness(){
  const c=harness(),commands=[],rasters=[],canvases=[];let depth=0;
  const context=()=>new Proxy({globalAlpha:1,save(){depth++},restore(){depth--},createLinearGradient(){return{addColorStop(){}}}},{get:(o,k)=>k in o?o[k]:(...args)=>commands.push([k,...args])});
+ c.Image=class{constructor(){this.complete=false;this.naturalWidth=0;}};
  c.g=context();c.shade=()=> '#888';c.document={createElement(){const canvas={number:canvases.length};canvases.push(canvas);return canvas;}};c.gameCanvasContext=context;c.drawStaticRaster=(...args)=>rasters.push(args);
  vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/player-tank-art.js'),'utf8'),c);
  vm.runInContext(section(html,'function wreckHullPath(','function tankWreckPose('),c);vm.runInContext(section(html,'function tankShape(','function truckShape('),c);
@@ -98,4 +99,22 @@ test('blue enemy tanks reuse the track strip and cache two layers; movement driv
  h.c.state='play';enemy.x=4;assert.equal(draw(),1);
  assert.equal(h.canvases.length,5);
  assert.equal(h.depth(),0);
+});
+
+test('enemy artwork replaces both layers after loading once and keeps animated pixel tracks',()=>{
+ const h=artHarness(),images=[];
+ h.c.Image=class{constructor(){this.complete=false;this.naturalWidth=0;images.push(this);}};
+ const enemy={x:0,y:0,body:0,ang:1};h.c.TANK_DRAW=30;h.c.state='play';
+ h.c.drawEnemyTank(enemy);assert.equal(images.length,2);
+ assert.deepEqual(images.map(i=>i.src),['assets/vehicles/enemy/hull.webp','assets/vehicles/enemy/turret.webp']);
+ images.forEach((i,n)=>{Object.assign(i,{complete:true,naturalWidth:n?177:256,naturalHeight:n?384:378});i.onload();});
+ h.commands.length=0;h.rasters.length=0;h.c.drawEnemyTank(enemy);
+ const stamps=h.commands.filter(c=>c[0]==='drawImage');assert.equal(stamps.length,2);
+ assert.equal(stamps[0][1],images[0]);assert.equal(stamps[1][1],images[1]);
+ assert.equal(h.rasters.filter(a=>a.length===9).length,2);
+ assert.ok(stamps[1][3]<stamps[0][3]);
+ const count=h.canvases.length;h.commands.length=0;
+ for(let i=0;i<20;i++){enemy.x+=2;h.c.drawEnemyTank(enemy);}
+ assert.equal(images.length,2);assert.equal(h.canvases.length,count);
+ assert.ok(!h.commands.some(c=>c[0]==='drawImage'));assert.equal(h.depth(),0);
 });
