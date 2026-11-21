@@ -111,6 +111,7 @@ test('enemy artwork replaces both layers after loading once and keeps animated p
  h.commands.length=0;h.rasters.length=0;h.c.drawEnemyTank(enemy);
  const stamps=h.commands.filter(c=>c[0]==='drawImage');assert.equal(stamps.length,2);
  assert.equal(stamps[0][1],images[0]);assert.equal(stamps[1][1],images[1]);
+ assert.ok(!h.commands.some(c=>c[0]==='arc'&&Math.abs(Math.abs(c[1])-32*.78)<1e-9),'no wheel circles over enemy tracks');
  assert.equal(h.rasters.filter(a=>a.length===9).length,2);
  assert.ok(stamps[1][3]<stamps[0][3]);
  const count=h.canvases.length;h.commands.length=0;

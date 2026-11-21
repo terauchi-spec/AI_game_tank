@@ -21,7 +21,7 @@ function paintPlayerTankArt(q,id,layer){
  const tank=id==='enemy'?ENEMY_TANK_ART:TYPES.find(t=>t.id===id);
  const image=id==='enemy'?enemyTankGraphic(layer):null;
  q.save();q.scale(1/32,1/32);
- // The original hull supplies the track rims, rollers and ground shadow.
+ // The original hull supplies the track rims and ground shadow.
  if(layer==='hull'||!image)drawOriginalTankShape(0,0,-Math.PI/2,-Math.PI/2,tank,32,layer,q,true);
  if(image){
   q.imageSmoothingEnabled=true;q.imageSmoothingQuality='high';
