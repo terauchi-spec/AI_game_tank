@@ -125,7 +125,7 @@ test('enemy artwork replaces both layers after loading once and keeps animated p
  assert.equal(h.rasters.filter(a=>a.length===9).length,2);
  const barrel=stamps[1],housing=stamps[2],clip=h.commands.filter(command=>command[0]==='rect').at(-1);
  assert.equal(barrel[3],0);
- assert.ok(Math.abs(barrel[9]/barrel[5]/(housing[5]/384)-.95)<1e-12);
+ assert.ok(Math.abs(barrel[9]/barrel[5]/(housing[5]/384)-.95*.9)<1e-12);
  assert.ok(Math.abs(barrel[7]+barrel[9]-clip[2])<1e-12);
  const originalHeight=32*1.24*384/177,originalTop=-originalHeight*(1025-63)/(1331-63);
  assert.ok(Math.abs(housing[3]-originalTop)<1e-12);assert.ok(Math.abs(housing[5]-originalHeight)<1e-12);
@@ -290,11 +290,11 @@ test('elite artwork has independent caches and shares animated pixel tracks with
  const [hull,muzzle,shaft,casing]=stamps;
  const turretTop=casing[7]-65*turretScale;
  assert.ok(Math.abs(hull[3]+128.178*hullScale-(turretTop+138.75*turretScale))<1e-9,'turret rotates at the hull mounting ring');
- assert.ok(Math.abs(casing[7]-muzzle[7]-55*turretScale*1.21)<1e-9,'projecting barrel is another 10% longer');
+ assert.ok(Math.abs(casing[7]-muzzle[7]-55*turretScale*1.21*1.2)<1e-9,'projecting barrel is another 20% longer');
  assert.ok(Math.abs(muzzle[7]+muzzle[9]-shaft[7])<1e-9,'muzzle meets the shaft');
  assert.ok(Math.abs(shaft[7]+shaft[9]-casing[7])<1e-9,'shaft meets the fixed turret');
  assert.ok(Math.abs(muzzle[8]/shaft[8]-1.2)<1e-9,'muzzle is 20% wider');
- assert.ok(Math.abs(shaft[8]/casing[8]-1.5)<1e-9,'barrel is 1.5 times wider');
+ assert.ok(Math.abs(shaft[8]/casing[8]-1.5*1.2)<1e-9,'barrel is another 1.2 times wider');
  const band=h.commands.find(c=>c[0]==='fillRect'&&Math.abs(c[2]-(muzzle[7]+muzzle[9]*.35))<1e-9);
  assert.ok(band);assert.ok(Math.abs(band[2]-(muzzle[7]+muzzle[9]*.35))<1e-9,'white muzzle band preserves the opening');
  assert.equal(h.commands.filter(c=>c[0]==='drawImage'&&!images.includes(c[1])).length,18,'two layers get cached thin outlines');
