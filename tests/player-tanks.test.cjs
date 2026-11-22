@@ -68,7 +68,7 @@ test('tracks stop on idle, turning, empty fuel and pause, ignore teleports, and 
  assert.equal(step(0),null);assert.equal(step(6),3);assert.equal(step(6),3);assert.equal(step(6,0,2),3);v.f=0;assert.equal(step(10),3);v.f=100;h.c.state='paused';assert.equal(step(20),3);h.c.state='play';assert.equal(step(20),3);assert.equal(step(1020),3);assert.equal(step(1014),0);assert.equal(h.c.playerTankTrackPhase({t:{id:'armored'},f:100},0,0,0),null);
 });
 test('track overlays stay on hull layers, retain caller opacity, and match the sample proportions',()=>{
- const h=artHarness();h.c.g.globalAlpha=.4;h.c.tankShape(0,0,.3,1.2,h.c.types[0],30,'turret',2);assert.equal(h.rasters.length,1);h.rasters.length=0;h.c.tankShape(0,0,.3,1.2,h.c.types[5],30,'hull',2);assert.equal(h.rasters.length,3);const tracks=h.rasters.filter(a=>a.length===9);assert.ok(tracks.every(a=>a[2]+a[4]<=96));assert.ok(Math.abs(tracks[0][8]-30*2.12*436/440*vm.runInContext('PLAYER_TANK_ART.churchill.displayScale',h.c))<1e-9);assert.equal(h.c.g.globalAlpha,.4);assert.equal(h.depth(),0);
+ const h=artHarness();h.c.g.globalAlpha=.4;h.c.tankShape(0,0,.3,1.2,h.c.types[0],30,'turret',2);assert.equal(h.rasters.length,1);h.rasters.length=0;h.c.tankShape(0,0,.3,1.2,h.c.types[5],30,'hull',2);assert.equal(h.rasters.length,3);const tracks=h.rasters.filter(a=>a.length===9);assert.ok(tracks.every(a=>a[2]+a[4]<=96));assert.ok(Math.abs(tracks[0][8]-30*2.12*436/440*.85*vm.runInContext('PLAYER_TANK_ART.churchill.displayScale',h.c))<1e-9);assert.equal(h.c.g.globalAlpha,.4);assert.equal(h.depth(),0);
 });
 
 test('parked, newly boarded and stationary driven tanks use identical full-width belts in every model',()=>{
@@ -194,7 +194,7 @@ test('a stationary player pivot counter-rotates the same two track strips while 
  assert.ok(h.commands.some(command=>command[0]==='rotate'&&command[1]===.7+Math.PI/2));
 });
 
-test('friendly hulls and turrets use one sample scale and expose the outer track strips',()=>{
+test('friendly tanks match the approved proportions and expose the outer track strips',()=>{
  const h=artHarness(),root=path.join(__dirname,'..');
  h.c.Image=class{
   constructor(){this.complete=true;}
@@ -212,23 +212,24 @@ test('friendly hulls and turrets use one sample scale and expose the outer track
   const stamps=h.commands.filter(command=>command[0]==='drawImage'&&typeof command[1]?.src==='string');
   assert.equal(stamps.length,4,'original hull and turret plus the emphasized muzzle and barrel');
   const hull=stamps[0],turret=stamps.at(-1),layout=designs[tank.id];
-  assert.ok(Math.abs(hull[4]/hull[1].naturalWidth-turret[4]/turret[1].naturalWidth)<1e-9,tank.id+' shared source scale');
-  assert.ok(Math.abs(hull[5]/hull[1].naturalHeight-turret[5]/turret[1].naturalHeight)<1e-9,tank.id+' original aspect ratios');
+  assert.ok(Math.abs(hull[4]/hull[1].naturalWidth-32*2.12/layout.hullHeightPixels)<1e-9,tank.id+' original hull width');
+  assert.ok(Math.abs(hull[5]-32*2.12*.85)<1e-9,tank.id+' 15% shorter hull');
+  assert.ok(Math.abs(turret[4]-32*2.12*layout.turretWidthPixels/layout.hullHeightPixels*.88)<1e-9,tank.id+' 12% smaller turret');
   const outer=layout.trackHalfSpan,width=layout.trackWidth,halfHull=hull[4]/64;
   assert.ok(halfHull>outer-width&&halfHull<outer,tank.id+' connected covers and exposed outer belt');
   const belts=h.rasters.filter(args=>args.length===9);
-  const rim=30*layout.displayScale*.07;
+  const rim=30*layout.displayScale*.047;
   const left=belts[0][5]-rim,right=belts[1][5]+belts[1][7]+rim;
-  assert.ok(Math.abs(right-left-30*2.10)<1e-9,tank.id+' legacy outer width');
+  assert.ok(Math.abs(right-left-30*(2.10-2*(.07-.047)*layout.displayScale))<1e-9,tank.id+' outer width with thinner rims');
   const hullRaster=h.rasters[2],turretRaster=h.rasters[3];
   assert.ok(Math.abs(hullRaster[3]/hullRaster[0].width-turretRaster[3]/turretRaster[0].width)<1e-9,tank.id+' uniform enlargement');
-  assert.ok(Math.abs(belts[0][7]/belts[0][8]-layout.trackPixels.width/layout.trackPixels.height)<1e-9,tank.id+' sample belt ratio');
-  assert.ok(Math.abs(outer*2/layout.trackHeight-layout.trackPixels.span/layout.trackPixels.height)<1e-9,tank.id+' sample track spacing');
+  assert.ok(Math.abs(belts[0][7]/belts[0][8]-layout.trackPixels.width/(layout.trackPixels.height*.85))<1e-9,tank.id+' sample belt ratio');
+  assert.ok(Math.abs(outer*2/layout.trackHeight-layout.trackPixels.span/(layout.trackPixels.height*.85))<1e-9,tank.id+' sample track spacing');
  }
 });
 
 
-test('all friendly tanks emphasize muzzles, enlarge barrels and cache black outlines once',()=>{
+test('all friendly tanks emphasize muzzles, enlarge barrels and cache thin dark gray outlines once',()=>{
  for(const id of ['t34','tiger','type10','m1','sherman','churchill','kingtiger']){
   const h=artHarness(),images=[];
   h.c.Image=class{constructor(){this.complete=false;images.push(this);}};
@@ -254,7 +255,7 @@ test('all friendly tanks emphasize muzzles, enlarge barrels and cache black outl
   const masks=h.commands.filter(command=>command[0]==='drawImage'&&!images.includes(command[1]));
   assert.equal(masks.length,18,'two mask copies and eight outline offsets for each layer');
   for(const offset of masks.filter(command=>command.length===4)){
-   if(offset[2]!==0||offset[3]!==0)assert.ok(Math.abs(Math.hypot(offset[2],offset[3])-1)<1e-12,'thin outline radius');
+   if(offset[2]!==0||offset[3]!==0)assert.ok(Math.abs(Math.hypot(offset[2],offset[3])-.65)<1e-12,'thin outline radius');
   }
   assert.equal(new Set(masks.filter(command=>command.length===4).map(command=>command[1])).size,3,'two source layers share one outline mask');
   const allocations=h.canvases.length;h.commands.length=0;

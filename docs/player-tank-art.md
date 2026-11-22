@@ -14,16 +14,12 @@ images under `assets/vehicles/player/`, approximately 145 KiB combined.
 | churchill | Dark olive, riveted armor and heavy track covers. |
 | kingtiger | Sand/green/red-brown camouflage, sloped turret and partial skirts. |
 
-Hull images keep their aspect ratio and use a 2.12-unit height. Hulls, turrets
-and tracks are sized from the same source-sheet pixel measurements for each
-model. Width, spacing and length of the shared animated track strips now match
-the samples, instead of the wider legacy pixel-tank footprint. The original
-painted edge panels provide the partial track covers; no duplicated side panels
-are added. Turrets keep their individual rotation pivots. Each complete friendly tank is
-uniformly scaled at draw time to the legacy pixel tank's 2.10-unit outer width,
-including track rims. Hull, turret, barrel, shadow and animated tracks share this
-scale, preserving the sample proportions and rotation centres. Raster cache
-sizes and source images stay the same.
+Friendly hulls and animated tracks are 15% shorter along the front-to-back
+axis. Hull and belt widths and belt spacing retain the existing scale. The
+narrower rims slightly reduce the outermost width. Turrets and barrels are
+scaled uniformly to 88% about their individual rotation pivots. Track covers
+remain part of the hull artwork. The existing display scale and raster sizes
+are retained for all seven models.
 
 The enemy turret raster compresses only the projecting barrel by 5 percent.
 The barrel attachment, housing pixels, rotation pivot and weapon calculations
@@ -42,7 +38,7 @@ caller opacity and foreground/foliage layering. Destruction and detached wreck
 parts continue through the existing pixel renderer, without painted sprites.
 Enemy tank assets and their pivot animation use the existing enemy path.
 
-All seven friendly tanks bake black hull/turret outlines from a shared temporary
+All seven friendly tanks bake dark gray hull/turret outlines from a shared temporary
 alpha mask when their image layers are cached. The six models other than Type 10
 use 1.5x barrel thickness and 1.1x projecting length. Type 10 uses its existing
 1.5x thickness and 1.2x length. Each muzzle head is a further 20% wider and 15%
@@ -52,7 +48,8 @@ subsequent frames.
 
 Sherman, Churchill and Tiger I retain only 20% of the extra muzzle emphasis
 (+4% width and +3% length relative to their enlarged barrels). Friendly hull
-and turret outline radius is 1 cache pixel, reduced from 1.3 pixels.
+and turret outline radius is 0.65 cache pixels. Track rims use the same dark
+gray and a narrower stroke.
 
 Player steering now uses the model-specific rates in player-tank-balance.md. Changes up to
 90 degrees drive along a 24px-radius single-track arc, then resume normal

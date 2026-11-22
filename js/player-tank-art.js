@@ -9,13 +9,17 @@ const PLAYER_TANK_ART={
  churchill:{muzzleEmphasis:.2,barrelEndPixels:85,muzzleEndPixels:28,barrel:1.62,pivot:.6689944134,hullHeightPixels:440,turretWidthPixels:221,trackPixels:{width:40,span:291,height:436}},
  kingtiger:{barrelEndPixels:96,muzzleEndPixels:28,barrel:2.22,pivot:.6902439024,hullHeightPixels:410,turretWidthPixels:221,trackPixels:{width:50,span:286,height:410}}
 };
-// Scale all parts from each sample's pixel measurements, once at startup.
+const FRIENDLY_TANK_HULL_LENGTH_SCALE=.85;
+const FRIENDLY_TANK_TURRET_SCALE=.88;
+const FRIENDLY_TANK_OUTLINE_COLOR='#2b2e31';
+const FRIENDLY_TANK_OUTLINE_RADIUS=.65;
+// Scale artwork from the source measurements once at startup.
 for(const art of Object.values(PLAYER_TANK_ART)){
  const scale=2.12/art.hullHeightPixels;
- art.turretWidth=art.turretWidthPixels*scale;
+ art.turretWidth=art.turretWidthPixels*scale*FRIENDLY_TANK_TURRET_SCALE;
  art.trackWidth=art.trackPixels.width*scale;
  art.trackHalfSpan=art.trackPixels.span*scale/2;
- art.trackHeight=art.trackPixels.height*scale;
+ art.trackHeight=art.trackPixels.height*scale*FRIENDLY_TANK_HULL_LENGTH_SCALE;
  // Legacy track rims span -1.05 to +1.05; scale the entire design to that width.
  art.displayScale=2.10/(art.trackHalfSpan*2+.14);
 }
@@ -51,7 +55,7 @@ function paintPlayerTankTrackRims(q,id){
  const width=32*art.trackWidth,top=-16*art.trackHeight,height=32*art.trackHeight;
  const alpha=q.globalAlpha;
  q.globalAlpha=alpha*.22;q.fillStyle='#000';q.beginPath();q.ellipse(0,32*.08,32*art.trackHalfSpan*1.12,height*.61,0,0,6.28);q.fill();q.globalAlpha=alpha;
- q.strokeStyle='#090909';q.lineWidth=32*.07;
+ q.strokeStyle=FRIENDLY_TANK_OUTLINE_COLOR;q.lineWidth=32*.047;
  q.strokeRect(left-32*.035,top-32*.035,width+32*.07,height+32*.07);
  q.strokeRect(right-32*.035,top-32*.035,width+32*.07,height+32*.07);
 }
@@ -74,8 +78,10 @@ function paintPlayerTankArt(q,id,layer){
  if(image){
   q.imageSmoothingEnabled=true;q.imageSmoothingQuality='high';
   const art=PLAYER_TANK_ART[id],turretWidth=id==='enemy'?1.24:art.turretWidth;
-  const height=layer==='hull'&&art?32*2.12:32*turretWidth*image.naturalHeight/image.naturalWidth;
-  const width=height*image.naturalWidth/image.naturalHeight;
+  const friendlyHull=layer==='hull'&&art;
+  const sourceHeight=friendlyHull?32*2.12:32*turretWidth*image.naturalHeight/image.naturalWidth;
+  const width=sourceHeight*image.naturalWidth/image.naturalHeight;
+  const height=friendlyHull?sourceHeight*FRIENDLY_TANK_HULL_LENGTH_SCALE:sourceHeight;
   // Each cutout rotates about its housing centre, below the projecting barrel.
   const pivot=id==='enemy'?(1025-63)/(1331-63):PLAYER_TANK_ART[id].pivot;
   const y=layer==='hull'?-height/2:-height*pivot;
@@ -107,12 +113,12 @@ function outlineTankLayer(canvas){
  tankOutlineMask.width=canvas.width;tankOutlineMask.height=canvas.height;
  const mask=gameCanvasContext(tankOutlineMask);
  mask.drawImage(canvas,0,0);mask.globalCompositeOperation='source-in';
- mask.fillStyle='#000';mask.fillRect(0,0,canvas.width,canvas.height);
+ mask.fillStyle=FRIENDLY_TANK_OUTLINE_COLOR;mask.fillRect(0,0,canvas.width,canvas.height);
  const context=gameCanvasContext(canvas);
  context.save();context.setTransform(1,0,0,1,0,0);context.globalCompositeOperation='destination-over';
  for(let i=0;i<8;i++){
   const angle=i*Math.PI/4;
-  context.drawImage(tankOutlineMask,Math.cos(angle),Math.sin(angle));
+  context.drawImage(tankOutlineMask,Math.cos(angle)*FRIENDLY_TANK_OUTLINE_RADIUS,Math.sin(angle)*FRIENDLY_TANK_OUTLINE_RADIUS);
  }
  context.restore();
 }
