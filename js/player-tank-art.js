@@ -84,7 +84,7 @@ function paintPlayerTankArt(q,id,layer){
   const x=-pivot.x*scale,y=mountY-pivot.y*scale,width=image.naturalWidth*scale;
   if(layer==='turret'){
    // Stretch only the projecting barrel, around its fixed join to the turret.
-   const barrelTop=10,barrelEnd=65,muzzleEnd=18,lengthScale=1.21*1.2,barrelWidth=width*1.5*1.2,muzzleWidth=barrelWidth*1.2;
+   const barrelTop=10,barrelEnd=65,muzzleEnd=18,lengthScale=1.6698,barrelWidth=width*1.5*1.2,muzzleWidth=barrelWidth*1.2;
    const top=y+(barrelEnd-(barrelEnd-barrelTop)*lengthScale)*scale;
    const muzzleHeight=(muzzleEnd-barrelTop)*scale*lengthScale;
    q.drawImage(image,0,barrelTop,image.naturalWidth,muzzleEnd-barrelTop,-pivot.x*scale*2.16,top,muzzleWidth,muzzleHeight);
@@ -116,7 +116,7 @@ function paintPlayerTankArt(q,id,layer){
   const y=layer==='hull'?-height/2:-height*pivot;
   if(id==='enemy'&&layer==='turret'){
    // Compress only the projecting barrel; its attachment and turret pivot stay fixed.
-   const barrelPixels=image.naturalHeight*200/384,barrelHeight=height*200/384,barrelLengthScale=.95*.9;
+   const barrelPixels=image.naturalHeight*200/384,barrelHeight=height*200/384,barrelLengthScale=.72675;
    q.drawImage(image,0,0,image.naturalWidth,barrelPixels,-width/2,y+barrelHeight*(1-barrelLengthScale),width,barrelHeight*barrelLengthScale);
    q.save();q.beginPath();q.rect(-width,y+barrelHeight,width*2,height);q.clip();
    q.drawImage(image,-width/2,y,width,height);q.restore();
