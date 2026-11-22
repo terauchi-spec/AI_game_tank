@@ -76,10 +76,12 @@ function paintPlayerTankArt(q,id,layer){
   if(!image){paintPlayerTankArt(q,'enemy',layer);return;}
   q.save();q.scale(1/32,1/32);
   q.imageSmoothingEnabled=true;q.imageSmoothingQuality='high';
-  if(layer==='hull')drawOriginalTankShape(0,0,-Math.PI/2,-Math.PI/2,ENEMY_TANK_ART,32,'trackFrame',q,true);
-  const scale=32*1.5/256;
-  const pivot=layer==='hull'?{x:128.338,y:128.178}:{x:115.27,y:138.75};
-  q.drawImage(image,-pivot.x*scale,-pivot.y*scale,image.naturalWidth*scale,image.naturalHeight*scale);
+  // Match the normal tank's 2.12-unit hull length and 1.24-unit turret width.
+  // Use the opaque artwork bounds, since the turret PNG has wide transparent margins.
+  const scale=layer==='hull'?32*2.12/304:32*1.24/148;
+  const pivot=layer==='hull'?{x:128,y:157}:{x:115.27,y:138.75};
+  const mountY=layer==='hull'?0:32*2.12/304*(128.178-157);
+  q.drawImage(image,-pivot.x*scale,mountY-pivot.y*scale,image.naturalWidth*scale,image.naturalHeight*scale);
   q.restore();return;
  }
  const tank=id==='enemy'?ENEMY_TANK_ART:TYPES.find(t=>t.id===id);
@@ -142,6 +144,14 @@ function playerTankArtSprites(id){
   const a=id==='enemy'||id==='enemyElite'?ENEMY_TANK_ART:PLAYER_TANK_ART[id],bounds=layer==='hull'?{x:-1.18,y:-1.60,w:2.36,h:3.20}:{x:-.85,y:-a.barrel-.25,w:1.70,h:a.barrel+(id==='enemy'||id==='enemyElite'?1.20:1.10)};
   const canvas=document.createElement('canvas');canvas.width=Math.ceil(bounds.w*32);canvas.height=Math.ceil(bounds.h*32);
   const q=gameCanvasContext(canvas);q.scale(32,32);q.translate(-bounds.x,-bounds.y);paintPlayerTankArt(q,id,layer);
+  if(id==='enemyElite'&&enemyTankGraphic(layer,id)){
+   outlineTankLayer(canvas);
+   if(layer==='hull'){
+    q.save();q.scale(1/32,1/32);q.globalCompositeOperation='destination-over';
+    drawOriginalTankShape(0,0,-Math.PI/2,-Math.PI/2,ENEMY_TANK_ART,32,'trackFrame',q,true);
+    q.restore();
+   }
+  }
   if(PLAYER_TANK_ART[id]&&playerTankGraphic(id,layer)){
    outlineTankLayer(canvas);
    if(layer==='hull'){
