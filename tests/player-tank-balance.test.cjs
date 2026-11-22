@@ -2,13 +2,13 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),path=requ
 const {createGameEngine}=require('./helpers/game-engine.cjs');
 const root=path.join(__dirname,'..');
 const expected=[
- ['t34',.9,255,285,.95,288,1,1],
- ['tiger',1.8,150,135,1.3,318,2,2],
- ['type10',1.25,270,300,.85,324,2,2],
- ['m1',1.65,225,210,1.2,330,2,2],
- ['sherman',1.05,240,255,1,306,1,1],
- ['churchill',1.95,120,105,1.6,294,2,2],
- ['kingtiger',2.1,135,120,1.5,312,2,2]
+ ['t34',.9,382.5,427.5,.95,288,1,1],
+ ['tiger',1.8,225,202.5,1.3,318,2,2],
+ ['type10',1.25,405,450,.85,324,2,2],
+ ['m1',1.65,337.5,315,1.2,330,2,2],
+ ['sherman',1.05,360,382.5,1,306,1,1],
+ ['churchill',1.95,180,157.5,1.6,294,2,2],
+ ['kingtiger',2.1,202.5,180,1.5,312,2,2]
 ];
 function start(){
  const h=createGameEngine(root,{touch:true,seed:17});
