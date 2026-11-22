@@ -12,7 +12,7 @@ test('both weapons wait for the turret to rotate toward a target behind the tank
  for(let i=0;i<132;i++)c.updateEnemyTankWeapons(e,{x:-150,y:0},150,Math.PI,true,true,1/60);
  assert.ok(Math.abs(e.ang-Math.PI*165/180)<1e-9);assert.equal(shots.length,0);
  for(let i=0;i<12;i++)c.updateEnemyTankWeapons(e,{x:-150,y:0},150,Math.PI,true,true,1/60);
- const cannon=shots.find(s=>s[4]==='c');assert.ok(cannon);assert.ok(Math.abs(angD(Math.PI,cannon[2]))<=Math.PI/30+1e-9);assert.ok(Math.abs(cannon[0]-Math.cos(cannon[2])*38)<1e-9);assert.equal(e.cc,2.8);
+ const cannon=shots.find(s=>s[4]==='c');assert.ok(cannon);assert.ok(Math.abs(angD(Math.PI,cannon[2]))<=Math.PI/30+1e-9);assert.ok(Math.abs(cannon[0]-Math.cos(cannon[2])*38)<1e-9);assert.equal(e.cc,3.8);
  const mg=shots.find(s=>s[4]==='v');assert.ok(mg);
  assert.ok(Math.abs(angD(Math.PI,mg[2]))<=Math.PI/30+1e-9);
  assert.ok(Math.abs(mg[0]-Math.cos(mg[2])*32)<1e-9);
@@ -107,4 +107,30 @@ test('awake enemy contact still detonates a bomb and contact resumes after stun 
 test('an unconscious enemy is still hit by a detonated bomb blast wave',()=>{
  const {c,kills}=bombContext();c.humans=[{x:10,y:0,alive:true,stun:60}];c.waves=[{x:0,y:0,r:0,max:95,actionId:7}];
  c.updateWaves(.05);assert.equal(c.humans[0].alive,false);assert.equal(kills.length,1);
+});
+
+test('normal tank fires five MG rounds, waits two seconds, and starts a fresh burst',()=>{
+ const {c,e,shots}=weapons();e.cc=10;
+ const shoot=()=>c.updateEnemyTankWeapons(e,{x:150,y:0},150,0,true,true,0);
+ for(let round=1;round<=5;round++){
+  shoot();assert.equal(shots.length,round);
+  assert.equal(e.vc,round===5?2:.16);
+  if(round<5)e.vc=0;
+ }
+ e.vc-=1.99;shoot();assert.equal(shots.length,5);
+ e.vc-=.02;shoot();assert.equal(shots.length,6);assert.equal(e.mgBurstShots,1);assert.equal(e.vc,.16);
+ e.vc=0;c.updateEnemyTankWeapons(e,{x:150,y:0},150,0,false,true,0);
+ c.updateEnemyTankWeapons(e,{x:150,y:0},150,0,true,false,0);
+ assert.equal(e.mgBurstShots,1,'lost visibility or firing pause does not reset the magazine');
+});
+test('normal cannon uses 3.8 seconds and the high performance tank keeps its own weapon cadence',()=>{
+ for(const highPerformance of [false,true]){
+  const {c,e,shots}=weapons();e.highPerformance=highPerformance;
+  c.updateEnemyTankWeapons(e,{x:150,y:0},150,0,true,true,0);
+  assert.equal(e.cc,highPerformance?2.8:3.8);
+  if(highPerformance){
+   for(let round=1;round<6;round++){e.vc=0;c.updateEnemyTankWeapons(e,{x:150,y:0},150,0,true,true,0);}
+   assert.equal(shots.filter(s=>s[4]==='v').length,6);assert.equal(e.vc,.16);
+  }
+ }
 });
