@@ -9,8 +9,8 @@ function weapons(){
 }
 test('both weapons wait for the turret to rotate toward a target behind the tank',()=>{
  const {c,shots,e}=weapons();
- for(let i=0;i<108;i++)c.updateEnemyTankWeapons(e,{x:-150,y:0},150,Math.PI,true,true,1/60);
- assert.ok(Math.abs(e.ang-Math.PI*.9)<1e-9);assert.equal(shots.length,0);
+ for(let i=0;i<132;i++)c.updateEnemyTankWeapons(e,{x:-150,y:0},150,Math.PI,true,true,1/60);
+ assert.ok(Math.abs(e.ang-Math.PI*165/180)<1e-9);assert.equal(shots.length,0);
  for(let i=0;i<12;i++)c.updateEnemyTankWeapons(e,{x:-150,y:0},150,Math.PI,true,true,1/60);
  const cannon=shots.find(s=>s[4]==='c');assert.ok(cannon);assert.ok(Math.abs(angD(Math.PI,cannon[2]))<=Math.PI/30+1e-9);assert.ok(Math.abs(cannon[0]-Math.cos(cannon[2])*38)<1e-9);assert.equal(e.cc,2.8);
  const mg=shots.find(s=>s[4]==='v');assert.ok(mg);
@@ -35,12 +35,26 @@ test('MG bullets originate along the turret direction and keep visibility, range
 test('cover shots also wait for turret alignment and firing pauses retain their protection',()=>{
  const {c,shots,e}=weapons();c.firstBlockingCover=()=>({x:-160,y:-10,w:20,h:20});
  c.updateEnemyTankWeapons(e,{x:150,y:0},150,0,false,true,.1);assert.equal(shots.length,0);assert.ok(e.ang>0);
- c.updateEnemyTankWeapons(e,{x:150,y:0},150,0,false,true,2);assert.equal(shots.length,1);assert.equal(shots[0][4],'c');assert.equal(shots[0][6],340);
+ c.updateEnemyTankWeapons(e,{x:150,y:0},150,0,false,true,2.4);assert.equal(shots.length,1);assert.equal(shots[0][4],'c');assert.equal(shots[0][6],340);
  e.cc=0;c.updateEnemyTankWeapons(e,{x:150,y:0},150,0,true,false,2);assert.equal(shots.length,1);
 });
 test('turret rate is frame-rate independent and takes the short path across the angle boundary',()=>{
- for(const dt of [1/30,1/60,1/120]){const {c,e}=weapons();for(let i=0;i<Math.round(1/dt);i++)c.turnEnemyTankTurret(e,Math.PI,dt);assert.ok(Math.abs(e.ang-Math.PI/2)<1e-9);}
- const {c,e}=weapons();e.ang=Math.PI-.1;c.turnEnemyTankTurret(e,-Math.PI+.1,.1);assert.ok(e.ang>Math.PI);assert.ok(Math.abs(angD(-Math.PI+.1,e.ang))<.05);
+ for(const dt of [1/30,1/60,1/120]){const {c,e}=weapons();for(let i=0;i<Math.round(1/dt);i++)c.turnEnemyTankTurret(e,Math.PI,dt);assert.ok(Math.abs(e.ang-Math.PI*75/180)<1e-9);}
+ const {c,e}=weapons();e.ang=Math.PI-.1;c.turnEnemyTankTurret(e,-Math.PI+.1,.1);assert.ok(e.ang>Math.PI);assert.ok(Math.abs(angD(-Math.PI+.1,e.ang)-(.2-75*Math.PI/180*.1))<1e-9);
+});
+test('unalerted tank modes cap turret movement at 90, 20 and 75 degrees per second',()=>{
+ const {c,e}=weapons();
+ Object.assign(c,{etanks:[e],p:{},enemyModePaused:()=>false,frontlineTankAreaTarget:()=>null,findDetectedTarget:()=>null,decoy:null,targetObj:()=>null,syncEnemyMoveBand(){}});
+ vm.runInContext('function updateTanks(dt){'+section(' // 敵戦車も歩兵と同じ索敵ルール。',' }finally{enemyMoveIndex=null;}')+'}',c);
+ for(const [mode,rate] of [
+  [{sus:3.5,susAngle:Math.PI/2},90],
+  [{scanTurret:true,scanPhase:Math.PI/2,body:0},20],
+  [{body:Math.PI/2},75],
+ ]){
+  Object.assign(e,{alive:true,static:true,sus:0,scanTurret:false,ang:0},mode);
+  c.updateTanks(.25);
+  assert.ok(Math.abs(e.ang-rate*Math.PI/180*.25)<1e-9);
+ }
 });
 test('first detection and repeated detection do not snap the turret toward the target',()=>{
  const {c,e}=weapons();Object.assign(c,{recordDecoyLure(){},targetObj:()=>({x:-150,y:0}),debugMode:0,DETECT_MEMORY:3,foundModePause:()=>.5,enemyModePaused(){},activateStaticTank(){},scoreStats:{foundEntries:0}});e.alive=true;
