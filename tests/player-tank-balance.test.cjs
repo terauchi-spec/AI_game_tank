@@ -28,7 +28,7 @@ test('real enemy shell and blue commander rocket collisions destroy each model o
  const result=h.run(`(()=>{
   const results=[];wreck=()=>{p.tank.testWrecked=true;};
   for(const [id,shells,rockets] of expectedTankHits)for(const rocket of [false,true]){
-   const t=TYPES.find(t=>t.id===id);p.x=480;p.y=5000;p.body=0;p.ang=.7;
+   const t=TYPES.find(t=>t.id===id);p.x=480;p.y=5000;p.body=0;p.ang=.7;camX=0;cam=p.y-H/2;
    p.tank={kind:'tank',t,f:t.fmax,ch:0,c:t.cmax,v:t.vmax};
    const limit=rocket?rockets:shells,damage=1.1;
    for(let hit=1;hit<=limit;hit++){

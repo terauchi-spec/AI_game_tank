@@ -1669,7 +1669,7 @@ test('indoor commanders charge and fire bazooka rockets with no outdoor commande
  for(let i=0;i<6;i++)s.api.weapon(h,point,true,false,.1);
  assert.equal(s.sandbox.bullets.length,1);
  const bullet=s.sandbox.bullets[0];
- assert.equal(bullet.args[4],'c');assert.equal(bullet.args[5],630);assert.equal(bullet.args[6],480);
+ assert.equal(bullet.args[4],'c');assert.equal(bullet.args[5],630);assert.equal(bullet.args[6],1000);
  assert.equal(bullet.commanderRocket,true);assert.equal(bullet.commanderShooter,h);
  assert.equal(h.cd,4);assert.equal(h.commander,null);assert.equal(h.whistleT,undefined);
  h.cd=0;s.api.weapon(h,point,true,false,.1);s.api.weapon(h,point,false,false,.1);

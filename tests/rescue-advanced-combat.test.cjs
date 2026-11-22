@@ -121,7 +121,7 @@ test('rescued VIP is confirmed, pursued, hit by enemy rifles and lost at zero li
 
 test('indoor commander can hit the VIP and guards cannot see the VIP on another floor',()=>{
  const h=setup();
- h.run('guard.x=vip.x-180;guard.indoorCommander=true;vip.freed=true;vip.stunT=20');
+ h.run('guard.x=vip.x-180;guard.indoorCommander=true;vip.freed=true;vip.stunT=20;const view=infiltrationCamera();camX=view.x;cam=view.y;');
  h.tick(.7,'updateRescueVipGuardDetection(1/60)');
  h.tick(1.4,'updateInfiltrationGuardAI(guard,1/60)');
  assert.ok(h.run('bullets.some(b=>b.commanderRocket)'));
