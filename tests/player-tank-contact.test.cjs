@@ -9,7 +9,7 @@ function start(){
   rebuildSpatialGrid();`);
  return h;
 }
-test('cover crushing emits chips on the contact edge without changing destruction or random state',()=>{
+test('cover crushing emits sparks on the contact edge without changing destruction or random state',()=>{
  const results=[];
  for(const enabled of [true,false]){
   const h=start();if(!enabled)h.run('playerTankContactEffect=()=>{};');
@@ -24,7 +24,7 @@ test('cover crushing emits chips on the contact edge without changing destructio
  }
  const [withFx,withoutFx]=results;
  assert.ok(withFx.removed>0);assert.equal(withFx.fx.length,3);assert.equal(withoutFx.fx.length,0);
- for(const q of withFx.fx){assert.equal(q.x,526);assert.ok(Math.abs(q.y-5000)<=3);assert.ok(q.life<=.36);}
+ for(const q of withFx.fx){assert.equal(q.x,526);assert.ok(Math.abs(q.y-5000)<=3);assert.ok(q.life<=.20);}
  for(const key of ['removed','x','y','covers','random'])assert.equal(withFx[key],withoutFx[key],key);
 });
 test('continuous contact follows the hit location, stays bounded across frame rates, and stops on release',()=>{
@@ -41,7 +41,7 @@ test('continuous contact follows the hit location, stays bounded across frame ra
     const n=parts.length;playerMove(1,0,28,1/fps);total+=parts.length-n;
     max=Math.max(max,parts.length);realUpdate(1/fps);
    }
-   if(total<27||total>33||max>12)throw Error(JSON.stringify({fps,total,max}));
+   if(total<27||total>33||max>9)throw Error(JSON.stringify({fps,total,max}));
    // Change contact to the upper edge; the shared timer prevents doubled bursts.
    p.tank.ramFx=0;parts=[];c.x=470;c.y=4972;c.w=60;c.h=10;rebuildSpatialGrid();
    playerMove(0,-1,28,.1);
@@ -52,7 +52,7 @@ test('continuous contact follows the hit location, stays bounded across frame ra
   return true;
  })()`),true);
 });
-test('object contact chips are limited to tracked player tanks and require actual damage',()=>{
+test('object contact sparks are limited to tracked player tanks and require actual damage',()=>{
  const h=start();
  assert.equal(h.run(`(()=>{
   const o={kind:'crate',x:524,y:4970,w:60,h:60};
@@ -65,7 +65,7 @@ test('object contact chips are limited to tracked player tanks and require actua
  })()`),true);
 });
 
-test('contact chips render with opaque bright fills and dark borders above the tank layer',()=>{
+test('contact sparks render as single bright narrow rectangles above the tank layer',()=>{
  const h=start(),html=fs.readFileSync(path.join(root,'index.html'),'utf8');
  const startAt=html.indexOf(' for(const q of parts){const psz=q.sz||4');
  const renderer=html.slice(startAt,html.indexOf(' let explosionComposing=',startAt));
@@ -73,13 +73,14 @@ test('contact chips render with opaque bright fills and dark borders above the t
  h.run(`parts=[];playerTankContactEffect(p.tank,{x:526,y:4970,w:100,h:60},1,0);
   var contactPaints=[];g={fillRect(...rect){contactPaints.push({rect,alpha:this.globalAlpha,color:this.fillStyle});}};`);
  h.run(`{const cx=400,cy=4800;${renderer}}`);
- const paints=h.run('contactPaints');assert.equal(paints.length,6);
- assert.equal(paints.filter(q=>q.color==='#34291c').length,3);
- for(let i=0;i<paints.length;i+=2){
-  assert.equal(paints[i].alpha,1);assert.equal(paints[i+1].alpha,1);
-  assert.ok(paints[i+1].rect[2]>=5);assert.equal(paints[i].rect[2],paints[i+1].rect[2]+2);
+ const paints=h.run('contactPaints');assert.equal(paints.length,3);
+ assert.ok(paints.every(q=>q.color==='#fff4b0'||q.color==='#ffbf55'));
+ for(const paint of paints){
+  assert.equal(paint.alpha,1);
+  assert.equal(Math.min(paint.rect[2],paint.rect[3]),1.2);
+  assert.ok(Math.max(paint.rect[2],paint.rect[3])<=4);
  }
- h.run('updateParts(.26);contactPaints=[];');
+ h.run('updateParts(.12);contactPaints=[];');
  h.run(`{const cx=400,cy=4800;${renderer}}`);
  assert.ok(h.run('contactPaints.every(q=>q.alpha>0&&q.alpha<1)'));
 });

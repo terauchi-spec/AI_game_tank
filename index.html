@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.22.1716</title>
+<title>こっそり戦車大作戦 2026.11.22.1849</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -1016,7 +1016,7 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 </div><footer class="sk-bottom stage-bottom"><button type="button" class="sk-toggle" id="stageDebugAll" aria-pressed="false">全ステージを表示</button><button type="button" class="sk-deploy" id="stageDeploy" disabled>ステージを選択してください</button></footer></div></div>
 <div id="missionHud" role="status"></div>
 
-<script src="js/player-tank-art.js?v=2026.11.22.1716"></script>
+<script src="js/player-tank-art.js?v=2026.11.22.1849"></script>
 <script src="js/truck-art.js?v=2026.11.22.0840"></script>
 <script src="js/armored-car-art.js?v=2026.11.22.0840"></script>
 <script src="js/audio.js?v=2026.11.17.1611"></script>
@@ -1032,7 +1032,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.22.1716',FILE_CREATED_AT='2026/11/22 17:16',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.22.1849',FILE_CREATED_AT='2026/11/22 18:49',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -5519,7 +5519,7 @@ function drawWaterRipples(cx,cy){
  }
  g.restore();
 }
-// Three short-lived contact chips, throttled across object and cover hits.
+// Three short-lived contact sparks, throttled across object and cover hits.
 function playerTankContactEffect(vehicle,rect,dx,dy){
  if((vehicle.ramFx||0)>1e-9)return;
  vehicle.ramFx=.1;
@@ -5527,8 +5527,8 @@ function playerTankContactEffect(vehicle,rect,dx,dy){
  const x=Math.max(rect.x,Math.min(rect.x+rect.w,p.x)),y=Math.max(rect.y,Math.min(rect.y+rect.h,p.y));
  trimParts(3);
  for(let i=0;i<3;i++){
-  const side=(i-1)*24;
-  parts.push({x:x-uy*(i-1)*3,y:y+ux*(i-1)*3,vx:-ux*30-uy*side,vy:-uy*30+ux*side-16,life:.32+i*.02,col:i===1?'#ffe496':'#d9c6a4',sz:i===1?5:6,tankContact:true});
+  const side=(i-1)*55,vx=-ux*85-uy*side,vy=-uy*85+ux*side-20;
+  parts.push({x:x-uy*(i-1)*3,y:y+ux*(i-1)*3,vx,vy,life:.16+i*.02,col:i===1?'#fff4b0':'#ffbf55',sz:i===1?4:3,tankContact:true,sparkVertical:Math.abs(vy)>Math.abs(vx)});
  }
 }
 function playerMove(dx,dy,r,dt,slowOverride=null){
@@ -8372,7 +8372,7 @@ function drawWorld(near,cx,cy,shakeX,shakeY){
   if(decisiveBattle?.desertDrop)drawEnemyParachutePass(decisiveBattle.desertDrop,cx,cy);
  }
  if(typeof drawEnemyBomberAircraft==='function')drawEnemyBomberAircraft();
- for(const q of parts){const psz=q.sz||4,dy=q.y-(q.z||0);if(q.x+psz<cx-30||q.x-psz>cx+W+30||dy+psz<cy-30||dy-psz>cy+H+30)continue;g.globalAlpha=q.tankContact?Math.min(1,q.life/.12):Math.min(1,q.life*2);g.fillStyle=q.col;if(q.tankContact){g.fillStyle='#34291c';g.fillRect(q.x-psz/2-1,dy-psz/2-1,psz+2,psz+2);g.fillStyle=q.col;g.fillRect(q.x-psz/2,dy-psz/2,psz,psz);}else if(q.arcFrag){g.save();g.translate(q.x,dy);g.rotate(q.rot||0);g.fillRect(-psz/2,-psz/2,psz,Math.max(2,psz*.65));g.restore();}else if(q.rescueCross){g.strokeStyle='#fff';g.lineWidth=2;g.beginPath();const a=psz/2,b=psz/6;g.moveTo(q.x-b,dy-a);g.lineTo(q.x+b,dy-a);g.lineTo(q.x+b,dy-b);g.lineTo(q.x+a,dy-b);g.lineTo(q.x+a,dy+b);g.lineTo(q.x+b,dy+b);g.lineTo(q.x+b,dy+a);g.lineTo(q.x-b,dy+a);g.lineTo(q.x-b,dy+b);g.lineTo(q.x-a,dy+b);g.lineTo(q.x-a,dy-b);g.lineTo(q.x-b,dy-b);g.closePath();g.stroke();g.fill();}else if(q.waterRipple){const k=1-q.life/(q.ttl||.5);g.save();g.strokeStyle=q.col;g.globalAlpha=Math.max(0,(1-k)*.72);g.lineWidth=1.7;g.beginPath();g.ellipse(q.x,dy,psz*(.45+k*.78),psz*(.20+k*.30),0,0,6.28);g.stroke();g.restore();}else g.fillRect(q.x-psz/2,dy-psz/2,psz,psz);}g.globalAlpha=1;
+ for(const q of parts){const psz=q.sz||4,dy=q.y-(q.z||0);if(q.x+psz<cx-30||q.x-psz>cx+W+30||dy+psz<cy-30||dy-psz>cy+H+30)continue;g.globalAlpha=q.tankContact?Math.min(1,q.life/.12):Math.min(1,q.life*2);g.fillStyle=q.col;if(q.tankContact){const w=q.sparkVertical?1.2:psz,h=q.sparkVertical?psz:1.2;g.fillRect(q.x-w/2,dy-h/2,w,h);}else if(q.arcFrag){g.save();g.translate(q.x,dy);g.rotate(q.rot||0);g.fillRect(-psz/2,-psz/2,psz,Math.max(2,psz*.65));g.restore();}else if(q.rescueCross){g.strokeStyle='#fff';g.lineWidth=2;g.beginPath();const a=psz/2,b=psz/6;g.moveTo(q.x-b,dy-a);g.lineTo(q.x+b,dy-a);g.lineTo(q.x+b,dy-b);g.lineTo(q.x+a,dy-b);g.lineTo(q.x+a,dy+b);g.lineTo(q.x+b,dy+b);g.lineTo(q.x+b,dy+a);g.lineTo(q.x-b,dy+a);g.lineTo(q.x-b,dy+b);g.lineTo(q.x-a,dy+b);g.lineTo(q.x-a,dy-b);g.lineTo(q.x-b,dy-b);g.closePath();g.stroke();g.fill();}else if(q.waterRipple){const k=1-q.life/(q.ttl||.5);g.save();g.strokeStyle=q.col;g.globalAlpha=Math.max(0,(1-k)*.72);g.lineWidth=1.7;g.beginPath();g.ellipse(q.x,dy,psz*(.45+k*.78),psz*(.20+k*.30),0,0,6.28);g.stroke();g.restore();}else g.fillRect(q.x-psz/2,dy-psz/2,psz,psz);}g.globalAlpha=1;
  let explosionComposing=false;for(const f of fx){if(f.x+f.max<cx-40||f.x-f.max>cx+W+40||f.y+f.max<cy-40||f.y-f.max>cy+H+40)continue;if(!explosionComposing){g.save();g.globalCompositeOperation='lighter';explosionComposing=true;}const t=1-f.l/.45,r=f.max*(.35+.65*t),gr=g.createRadialGradient(f.x,f.y,0,f.x,f.y,r);gr.addColorStop(0,'rgba(255,250,200,'+(1-t)+')');gr.addColorStop(.45,'rgba(255,140,30,'+.8*(1-t)+')');gr.addColorStop(1,'rgba(160,30,0,0)');g.fillStyle=gr;g.beginPath();g.arc(f.x,f.y,r,0,6.28);g.fill();}if(explosionComposing)g.restore();
  drawSpinifexScatters(cx,cy);drawPartnerOrderSignal();
  g.restore();
@@ -9311,10 +9311,10 @@ function reportGameError(error){
 <script src="js/jungle-placement-masks.js?v=2026.11.08.2145"></script>
 <script src="js/jungle.js?v=2026.11.15.0256"></script>
 <script src="js/escape-test.js?v=2026.11.17.1619"></script>
-<script src="js/canyon.js?v=2026.11.22.1716"></script>
+<script src="js/canyon.js?v=2026.11.22.1849"></script>
 <script src="js/vegetation.js?v=2026.11.21.1237"></script>
 <script src="js/laboratory.js?v=2026.11.19.0817"></script>
-<script src="js/infiltration-world.js?v=2026.11.22.1716"></script>
+<script src="js/infiltration-world.js?v=2026.11.22.1849"></script>
 <script src="js/infiltration-render.js?v=2026.11.19.0817"></script>
 <script src="js/input-diagnostics.js?v=2026.10.28.0713"></script>
 <script>

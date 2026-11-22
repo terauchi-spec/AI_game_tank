@@ -58,8 +58,10 @@ Player steering now uses the model-specific rates in player-tank-balance.md. Cha
 speed. Larger changes retain the stationary pivot until aligned. Movement
 continues through playerMove for collisions, terrain and fuel consumption.
 
-Player contact destruction emits three small dust/spark chips at most once per
-0.1 seconds, shared across cover/object collisions, using the existing bounded
-particle array and renderer. Chips last 0.32–0.36 seconds and use no random draws. They draw at full
-opacity until the final 0.12 seconds, with 5–6px bright fills and a 1px dark
-border. At most 12 contact chips coexist during uninterrupted contact.
+Player contact destruction emits three small yellow/orange sparks at most once
+per 0.1 seconds, shared across cover/object collisions, using the existing bounded
+particle array and renderer. Sparks last 0.16–0.20 seconds and use no random draws.
+Each spark takes one narrow rectangle draw, with no outline, blur, shadow or
+per-particle canvas transform. At most nine contact sparks coexist during
+uninterrupted contact. Their faster initial movement scatters them away from
+the contact edge before they fade using the existing particle updater.
