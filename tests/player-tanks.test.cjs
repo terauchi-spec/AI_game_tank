@@ -114,6 +114,10 @@ test('enemy artwork replaces both layers after loading once and keeps animated p
  h.commands.length=0;h.rasters.length=0;h.c.drawEnemyTank(enemy);
  const stamps=h.commands.filter(c=>c[0]==='drawImage');assert.equal(stamps.length,3);
  assert.equal(stamps[0][1],images[0]);assert.equal(stamps[1][1],images[1]);assert.equal(stamps[2][1],images[1]);
+ const [,hullImage,hullX,hullY,hullWidth,hullHeight]=stamps[0];
+ assert.ok(Math.abs(hullWidth-32*1.24*1.15)<1e-9,'15% wider enemy hull');
+ assert.ok(Math.abs(hullHeight-hullWidth*hullImage.naturalHeight/hullImage.naturalWidth)<1e-9,'the hull aspect ratio is retained');
+ assert.equal(hullX,-hullWidth/2);assert.equal(hullY,-hullHeight/2);
  assert.ok(!h.commands.some(command=>command[0]==='fillRect'),'no legacy hull details under the WebP');
  assert.equal(h.commands.filter(command=>command[0]==='strokeRect').length,2,'both tread rims remain');
  assert.ok(h.commands.some(command=>command[0]==='ellipse'&&command[2]===32*.08),'the original shadow remains');

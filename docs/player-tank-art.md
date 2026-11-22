@@ -36,7 +36,8 @@ Vehicle statistics, collision geometry, weapon origins and spawn rules remain
 in the original gameplay code. Hull and turret keep independent headings,
 caller opacity and foreground/foliage layering. Destruction and detached wreck
 parts continue through the existing pixel renderer, without painted sprites.
-The enemy hull WebP is drawn over the animated tracks, rims and shadow.
+The enemy hull WebP is drawn at 115% of its original size around its center,
+over the animated tracks, rims and shadow.
 The original pixel hull is used as a fallback until the WebP is ready.
 
 All seven friendly tanks bake dark gray hull/turret outlines from a shared temporary

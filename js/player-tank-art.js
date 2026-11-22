@@ -80,7 +80,8 @@ function paintPlayerTankArt(q,id,layer){
   q.imageSmoothingEnabled=true;q.imageSmoothingQuality='high';
   const art=PLAYER_TANK_ART[id],turretWidth=id==='enemy'?1.24:art.turretWidth;
   const friendlyHull=layer==='hull'&&art;
-  const sourceHeight=friendlyHull?32*2.12:32*turretWidth*image.naturalHeight/image.naturalWidth;
+  const enemyHullScale=paintedEnemyHull?1.15:1;
+  const sourceHeight=friendlyHull?32*2.12:32*turretWidth*enemyHullScale*image.naturalHeight/image.naturalWidth;
   const width=sourceHeight*image.naturalWidth/image.naturalHeight;
   const height=friendlyHull?sourceHeight*FRIENDLY_TANK_HULL_LENGTH_SCALE:sourceHeight;
   // Each cutout rotates about its housing centre, below the projecting barrel.
