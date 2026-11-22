@@ -283,11 +283,17 @@ test('elite artwork has independent caches and shares animated pixel tracks with
  for(const image of images){const hull=image.src.includes('hull');Object.assign(image,{complete:true,naturalWidth:hull?256:230,naturalHeight:hull?311:222});image.onload();}
  h.commands.length=0;h.rasters.length=0;h.c.drawEnemyTank(elite);
  const stamps=h.commands.filter(c=>c[0]==='drawImage'&&images.includes(c[1]));
- assert.equal(stamps.length,2);assert.equal(stamps[0][1],images[2]);assert.equal(stamps[1][1],images[3]);
- const hullScale=stamps[0][4]/256,turretScale=stamps[1][4]/230;
+ assert.equal(stamps.length,4);assert.equal(stamps[0][1],images[2]);assert.ok(stamps.slice(1).every(c=>c[1]===images[3]));
+ const hullScale=stamps[0][4]/256,turretScale=stamps[3][8]/230;
  assert.ok(Math.abs(hullScale*304-32*2.12)<1e-9,'hull matches the track length');
  assert.ok(Math.abs(turretScale*148-32*1.24)<1e-9,'opaque turret matches the normal enemy width');
- assert.ok(Math.abs(stamps[0][3]+128.178*hullScale-(stamps[1][3]+138.75*turretScale))<1e-9,'turret rotates at the hull mounting ring');
+ const [hull,muzzle,shaft,casing]=stamps;
+ const turretTop=casing[7]-65*turretScale;
+ assert.ok(Math.abs(hull[3]+128.178*hullScale-(turretTop+138.75*turretScale))<1e-9,'turret rotates at the hull mounting ring');
+ assert.ok(Math.abs(casing[7]-muzzle[7]-55*turretScale*1.1)<1e-9,'projecting barrel is 10% longer');
+ assert.ok(Math.abs(muzzle[7]+muzzle[9]-shaft[7])<1e-9,'muzzle meets the shaft');
+ assert.ok(Math.abs(shaft[7]+shaft[9]-casing[7])<1e-9,'shaft meets the fixed turret');
+ assert.ok(Math.abs(muzzle[8]/shaft[8]-1.2)<1e-9,'muzzle is 20% wider');
  assert.equal(h.commands.filter(c=>c[0]==='drawImage'&&!images.includes(c[1])).length,18,'two layers get cached thin outlines');
  assert.equal(h.rasters.filter(a=>a.length===9).length,2);
  const count=h.canvases.length;h.commands.length=0;h.c.drawEnemyTank(elite);assert.equal(h.canvases.length,count);assert.equal(h.commands.some(c=>c[0]==='drawImage'),false);assert.equal(h.depth(),0);

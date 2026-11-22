@@ -81,7 +81,16 @@ function paintPlayerTankArt(q,id,layer){
   const scale=layer==='hull'?32*2.12/304:32*1.24/148;
   const pivot=layer==='hull'?{x:128,y:157}:{x:115.27,y:138.75};
   const mountY=layer==='hull'?0:32*2.12/304*(128.178-157);
-  q.drawImage(image,-pivot.x*scale,mountY-pivot.y*scale,image.naturalWidth*scale,image.naturalHeight*scale);
+  const x=-pivot.x*scale,y=mountY-pivot.y*scale,width=image.naturalWidth*scale;
+  if(layer==='turret'){
+   // Stretch only the projecting barrel, around its fixed join to the turret.
+   const barrelTop=10,barrelEnd=65,muzzleEnd=18,lengthScale=1.1,muzzleWidth=width*1.2;
+   const top=y+(barrelEnd-(barrelEnd-barrelTop)*lengthScale)*scale;
+   const muzzleHeight=(muzzleEnd-barrelTop)*scale*lengthScale;
+   q.drawImage(image,0,barrelTop,image.naturalWidth,muzzleEnd-barrelTop,-pivot.x*scale*1.2,top,muzzleWidth,muzzleHeight);
+   q.drawImage(image,0,muzzleEnd,image.naturalWidth,barrelEnd-muzzleEnd,x,top+muzzleHeight,width,(barrelEnd-muzzleEnd)*scale*lengthScale);
+   q.drawImage(image,0,barrelEnd,image.naturalWidth,image.naturalHeight-barrelEnd,x,y+barrelEnd*scale,width,(image.naturalHeight-barrelEnd)*scale);
+  }else q.drawImage(image,x,y,width,image.naturalHeight*scale);
   q.restore();return;
  }
  const tank=id==='enemy'?ENEMY_TANK_ART:TYPES.find(t=>t.id===id);
