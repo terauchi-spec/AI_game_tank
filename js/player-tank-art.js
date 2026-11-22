@@ -137,12 +137,12 @@ function paintPlayerTankArt(q,id,layer){
 }
 // One shared temporary alpha mask; outlines are baked only when a layer changes.
 let tankOutlineMask=null;
-function outlineTankLayer(canvas){
+function outlineTankLayer(canvas,color=FRIENDLY_TANK_OUTLINE_COLOR){
  if(!tankOutlineMask)tankOutlineMask=document.createElement('canvas');
  tankOutlineMask.width=canvas.width;tankOutlineMask.height=canvas.height;
  const mask=gameCanvasContext(tankOutlineMask);
  mask.drawImage(canvas,0,0);mask.globalCompositeOperation='source-in';
- mask.fillStyle=FRIENDLY_TANK_OUTLINE_COLOR;mask.fillRect(0,0,canvas.width,canvas.height);
+ mask.fillStyle=color;mask.fillRect(0,0,canvas.width,canvas.height);
  const context=gameCanvasContext(canvas);
  context.save();context.setTransform(1,0,0,1,0,0);context.globalCompositeOperation='destination-over';
  for(let i=0;i<8;i++){
@@ -158,7 +158,7 @@ function playerTankArtSprites(id){
   const canvas=document.createElement('canvas');canvas.width=Math.ceil(bounds.w*32);canvas.height=Math.ceil(bounds.h*32);
   const q=gameCanvasContext(canvas);q.scale(32,32);q.translate(-bounds.x,-bounds.y);paintPlayerTankArt(q,id,layer);
   if(id==='enemyElite'&&enemyTankGraphic(layer,id)){
-   outlineTankLayer(canvas);
+   outlineTankLayer(canvas,'#222528');
    if(layer==='hull'){
     q.save();q.scale(1/32,1/32);q.globalCompositeOperation='destination-over';
     drawOriginalTankShape(0,0,-Math.PI/2,-Math.PI/2,ENEMY_TANK_ART,32,'trackFrame',q,true);
