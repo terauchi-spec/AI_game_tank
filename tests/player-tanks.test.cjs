@@ -273,3 +273,26 @@ test('all friendly tanks emphasize muzzles, enlarge barrels and cache thin dark 
   assert.equal(h.depth(),0);
  }
 });
+
+test('elite artwork has independent caches and shares animated pixel tracks with the normal enemy',()=>{
+ const h=artHarness(),images=[];h.c.TANK_DRAW=30;h.c.state='play';
+ h.c.Image=class{constructor(){this.complete=false;images.push(this);}};
+ const normal={x:0,y:0,body:0,ang:.3},elite={...normal,highPerformance:true};
+ h.c.drawEnemyTank(normal);h.c.drawEnemyTank(elite);
+ assert.deepEqual(images.map(i=>i.src),['assets/vehicles/enemy/hull.webp','assets/vehicles/enemy/turret.webp','assets/vehicles/enemy-elite/hull.webp','assets/vehicles/enemy-elite/turret.webp']);
+ for(const image of images){const hull=image.src.includes('hull');Object.assign(image,{complete:true,naturalWidth:hull?256:230,naturalHeight:hull?311:222});image.onload();}
+ h.commands.length=0;h.rasters.length=0;h.c.drawEnemyTank(elite);
+ const stamps=h.commands.filter(c=>c[0]==='drawImage');
+ assert.equal(stamps.length,2);assert.equal(stamps[0][1],images[2]);assert.equal(stamps[1][1],images[3]);
+ assert.equal(h.rasters.filter(a=>a.length===9).length,2);
+ const count=h.canvases.length;h.commands.length=0;h.c.drawEnemyTank(elite);assert.equal(h.canvases.length,count);assert.equal(h.commands.some(c=>c[0]==='drawImage'),false);assert.equal(h.depth(),0);
+});
+test('selected area debug spawns one normal and one high performance tank',()=>{
+ const {createGameEngine}=require('./helpers/game-engine.cjs');
+ const h=createGameEngine(path.join(__dirname,'..'),{seed:17});
+ h.run("stageMode='base';areaDebugEnabled=true;selectedAreaDebug='草原';reset(false);state='play';");
+ assert.equal(h.run('etanks.length'),2);
+ assert.equal(h.run('etanks.filter(e=>e.highPerformance).length'),1);
+ assert.equal(h.run('etanks.filter(e=>!e.highPerformance).length'),1);
+ assert.ok(h.run('etanks.every(e=>e.alive&&e.scanTurret&&!e.areaDebugStatic)'));
+});

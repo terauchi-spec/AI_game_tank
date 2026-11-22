@@ -59,17 +59,29 @@ function paintPlayerTankTrackRims(q,id){
  q.strokeRect(left-32*.035,top-32*.035,width+32*.07,height+32*.07);
  q.strokeRect(right-32*.035,top-32*.035,width+32*.07,height+32*.07);
 }
-function enemyTankGraphic(layer){
- let image=enemyTankGraphics.get(layer);
+function enemyTankGraphic(layer,id='enemy'){
+ const key=id+'/'+layer;
+ let image=enemyTankGraphics.get(key);
  if(!image){
   image=new Image();image.decoding='async';
-  image.onload=()=>invalidateTankArtwork('enemy');
-  image.src='assets/vehicles/enemy/'+layer+'.webp';
-  enemyTankGraphics.set(layer,image);
+  image.onload=()=>invalidateTankArtwork(id);
+  image.src='assets/vehicles/'+(id==='enemyElite'?'enemy-elite':'enemy')+'/'+layer+'.webp';
+  enemyTankGraphics.set(key,image);
  }
  return image.complete&&image.naturalWidth>0?image:null;
 }
 function paintPlayerTankArt(q,id,layer){
+ if(id==='enemyElite'){
+  const image=enemyTankGraphic(layer,id);
+  if(!image){paintPlayerTankArt(q,'enemy',layer);return;}
+  q.save();q.scale(1/32,1/32);
+  q.imageSmoothingEnabled=true;q.imageSmoothingQuality='high';
+  if(layer==='hull')drawOriginalTankShape(0,0,-Math.PI/2,-Math.PI/2,ENEMY_TANK_ART,32,'trackFrame',q,true);
+  const scale=32*1.5/256;
+  const pivot=layer==='hull'?{x:128.338,y:128.178}:{x:115.27,y:138.75};
+  q.drawImage(image,-pivot.x*scale,-pivot.y*scale,image.naturalWidth*scale,image.naturalHeight*scale);
+  q.restore();return;
+ }
  const tank=id==='enemy'?ENEMY_TANK_ART:TYPES.find(t=>t.id===id);
  const image=id==='enemy'?enemyTankGraphic(layer):playerTankGraphic(id,layer);
  q.save();q.scale(1/32,1/32);
@@ -127,7 +139,7 @@ function outlineTankLayer(canvas){
 function playerTankArtSprites(id){
  let cached=playerTankArtCache.get(id);if(cached)return cached;
  const make=layer=>{
-  const a=id==='enemy'?ENEMY_TANK_ART:PLAYER_TANK_ART[id],bounds=layer==='hull'?{x:-1.18,y:-1.60,w:2.36,h:3.20}:{x:-.85,y:-a.barrel-.25,w:1.70,h:a.barrel+(id==='enemy'?1.20:1.10)};
+  const a=id==='enemy'||id==='enemyElite'?ENEMY_TANK_ART:PLAYER_TANK_ART[id],bounds=layer==='hull'?{x:-1.18,y:-1.60,w:2.36,h:3.20}:{x:-.85,y:-a.barrel-.25,w:1.70,h:a.barrel+(id==='enemy'||id==='enemyElite'?1.20:1.10)};
   const canvas=document.createElement('canvas');canvas.width=Math.ceil(bounds.w*32);canvas.height=Math.ceil(bounds.h*32);
   const q=gameCanvasContext(canvas);q.scale(32,32);q.translate(-bounds.x,-bounds.y);paintPlayerTankArt(q,id,layer);
   if(PLAYER_TANK_ART[id]&&playerTankGraphic(id,layer)){
@@ -178,7 +190,7 @@ function tankTrackTurnPhase(vehicle,body){
 }
 function drawEnemyTank(e){
  const turn=tankTrackTurnPhase(e,e.body),phase=tankTrackPhase(e,e.x,e.y,e.body,true);
- drawPlayerTankArt(e.x,e.y,e.body,e.ang,'enemy',TANK_DRAW,'both',phase,turn);
+ drawPlayerTankArt(e.x,e.y,e.body,e.ang,e.highPerformance?'enemyElite':'enemy',TANK_DRAW,'both',phase,turn);
 }
 function tankTrackPhase(v,x,y,body,moving){
  const dx=Number.isFinite(v.trackDrawX)?x-v.trackDrawX:0,dy=Number.isFinite(v.trackDrawY)?y-v.trackDrawY:0;

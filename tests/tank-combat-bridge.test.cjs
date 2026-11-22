@@ -42,19 +42,24 @@ test('turret rate is frame-rate independent and takes the short path across the 
  for(const dt of [1/30,1/60,1/120]){const {c,e}=weapons();for(let i=0;i<Math.round(1/dt);i++)c.turnEnemyTankTurret(e,Math.PI,dt);assert.ok(Math.abs(e.ang-Math.PI*75/180)<1e-9);}
  const {c,e}=weapons();e.ang=Math.PI-.1;c.turnEnemyTankTurret(e,-Math.PI+.1,.1);assert.ok(e.ang>Math.PI);assert.ok(Math.abs(angD(-Math.PI+.1,e.ang)-(.2-75*Math.PI/180*.1))<1e-9);
 });
-test('unalerted tank modes cap turret movement at 90, 20 and 75 degrees per second',()=>{
+test('normal and high performance tanks use their own alert-state turret rates',()=>{
  const {c,e}=weapons();
  Object.assign(c,{etanks:[e],p:{},enemyModePaused:()=>false,frontlineTankAreaTarget:()=>null,findDetectedTarget:()=>null,decoy:null,targetObj:()=>null,syncEnemyMoveBand(){}});
  vm.runInContext('function updateTanks(dt){'+section(' // 敵戦車も歩兵と同じ索敵ルール。',' }finally{enemyMoveIndex=null;}')+'}',c);
- for(const [mode,rate] of [
+ for(const highPerformance of [false,true])for(const [mode,rate] of [
   [{sus:3.5,susAngle:Math.PI/2},90],
-  [{scanTurret:true,scanPhase:Math.PI/2,body:0},20],
-  [{body:Math.PI/2},75],
+  [{scanTurret:true,scanPhase:Math.PI/2,body:0},highPerformance?25:20],
+  [{body:Math.PI/2},highPerformance?85:75],
  ]){
-  Object.assign(e,{alive:true,static:true,sus:0,scanTurret:false,ang:0},mode);
+  Object.assign(e,{alive:true,static:true,sus:0,scanTurret:false,ang:0,highPerformance},mode);
   c.updateTanks(.25);
   assert.ok(Math.abs(e.ang-rate*Math.PI/180*.25)<1e-9);
  }
+});
+test('high performance combat turret turns at 85 degrees per second',()=>{
+ const {c,e}=weapons();e.highPerformance=true;
+ for(let i=0;i<60;i++)c.updateEnemyTankWeapons(e,{x:-150,y:0},150,Math.PI,true,false,1/60);
+ assert.ok(Math.abs(e.ang-85*Math.PI/180)<1e-9);
 });
 test('first detection and repeated detection do not snap the turret toward the target',()=>{
  const {c,e}=weapons();Object.assign(c,{recordDecoyLure(){},targetObj:()=>({x:-150,y:0}),debugMode:0,DETECT_MEMORY:3,foundModePause:()=>.5,enemyModePaused(){},activateStaticTank(){},scoreStats:{foundEntries:0}});e.alive=true;

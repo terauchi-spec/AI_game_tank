@@ -1,0 +1,48 @@
+{
+  "direction": "up",
+  "units": "pixels",
+  "parts": {
+    "hull": {
+      "master_file": "hull-master.png",
+      "master_size": [
+        1137,
+        1383
+      ],
+      "master_pivot": [
+        570,
+        570
+      ],
+      "webp_file": "hull.webp",
+      "webp_size": [
+        256,
+        311
+      ],
+      "webp_pivot": [
+        128.338,
+        128.178
+      ],
+      "master_scale_relative_to_hull": 1.0
+    },
+    "turret": {
+      "master_file": "turret-master.png",
+      "master_size": [
+        1277,
+        1232
+      ],
+      "master_pivot": [
+        640,
+        770
+      ],
+      "webp_file": "turret.webp",
+      "webp_size": [
+        230,
+        222
+      ],
+      "webp_pivot": [
+        115.27,
+        138.75
+      ],
+      "master_scale_relative_to_hull": 0.8
+    }
+  }
+}
