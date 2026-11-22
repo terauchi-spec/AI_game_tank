@@ -106,12 +106,17 @@ test('enemy artwork replaces both layers after loading once and keeps animated p
  const h=artHarness(),images=[];
  h.c.Image=class{constructor(){this.complete=false;this.naturalWidth=0;images.push(this);}};
  const enemy={x:0,y:0,body:0,ang:1};h.c.TANK_DRAW=30;h.c.state='play';
+ const isPixelNoseLight=command=>command[0]==='fillRect'&&command[1]===-32*.30&&command[2]===-32*.97;
  h.c.drawEnemyTank(enemy);assert.equal(images.length,2);
+ assert.ok(h.commands.some(isPixelNoseLight),'the pixel hull is visible before loading');
  assert.deepEqual(images.map(i=>i.src),['assets/vehicles/enemy/hull.webp','assets/vehicles/enemy/turret.webp']);
  images.forEach((i,n)=>{Object.assign(i,{complete:true,naturalWidth:n?177:256,naturalHeight:n?384:378});i.onload();});
  h.commands.length=0;h.rasters.length=0;h.c.drawEnemyTank(enemy);
  const stamps=h.commands.filter(c=>c[0]==='drawImage');assert.equal(stamps.length,3);
  assert.equal(stamps[0][1],images[0]);assert.equal(stamps[1][1],images[1]);assert.equal(stamps[2][1],images[1]);
+ assert.ok(!h.commands.some(command=>command[0]==='fillRect'),'no legacy hull details under the WebP');
+ assert.equal(h.commands.filter(command=>command[0]==='strokeRect').length,2,'both tread rims remain');
+ assert.ok(h.commands.some(command=>command[0]==='ellipse'&&command[2]===32*.08),'the original shadow remains');
  assert.ok(!h.commands.some(c=>c[0]==='arc'&&Math.abs(Math.abs(c[1])-32*.78)<1e-9),'no wheel circles over enemy tracks');
  assert.equal(h.rasters.filter(a=>a.length===9).length,2);
  const barrel=stamps[1],housing=stamps[2],clip=h.commands.filter(command=>command[0]==='rect').at(-1);

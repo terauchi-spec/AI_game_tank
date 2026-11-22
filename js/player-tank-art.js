@@ -73,8 +73,9 @@ function paintPlayerTankArt(q,id,layer){
  const tank=id==='enemy'?ENEMY_TANK_ART:TYPES.find(t=>t.id===id);
  const image=id==='enemy'?enemyTankGraphic(layer):playerTankGraphic(id,layer);
  q.save();q.scale(1/32,1/32);
- // Keep the animated belt interiors clear beneath the painted hull.
- if(!image||id==='enemy'&&layer==='hull')drawOriginalTankShape(0,0,-Math.PI/2,-Math.PI/2,tank,32,layer,q,true);
+ // The enemy WebP replaces the pixel hull, while the original rims and shadow stay beneath it.
+ const paintedEnemyHull=id==='enemy'&&layer==='hull'&&image;
+ if(!image||paintedEnemyHull)drawOriginalTankShape(0,0,-Math.PI/2,-Math.PI/2,tank,32,paintedEnemyHull?'trackFrame':layer,q,true);
  if(image){
   q.imageSmoothingEnabled=true;q.imageSmoothingQuality='high';
   const art=PLAYER_TANK_ART[id],turretWidth=id==='enemy'?1.24:art.turretWidth;

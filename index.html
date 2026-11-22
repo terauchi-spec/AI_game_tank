@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.22.1005</title>
+<title>こっそり戦車大作戦 2026.11.22.1016</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -1016,7 +1016,7 @@ body.stage-preparing #stageLoadingScreen{display:flex;align-items:center;justify
 </div><footer class="sk-bottom stage-bottom"><button type="button" class="sk-toggle" id="stageDebugAll" aria-pressed="false">全ステージを表示</button><button type="button" class="sk-deploy" id="stageDeploy" disabled>ステージを選択してください</button></footer></div></div>
 <div id="missionHud" role="status"></div>
 
-<script src="js/player-tank-art.js?v=2026.11.22.1005"></script>
+<script src="js/player-tank-art.js?v=2026.11.22.1016"></script>
 <script src="js/truck-art.js?v=2026.11.22.0840"></script>
 <script src="js/armored-car-art.js?v=2026.11.22.0840"></script>
 <script src="js/audio.js?v=2026.11.17.1611"></script>
@@ -1032,7 +1032,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.22.1005',FILE_CREATED_AT='2026/11/22 10:05',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.22.1016',FILE_CREATED_AT='2026/11/22 10:16',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -7041,6 +7041,8 @@ function drawOriginalTankShape(x,y,body,ang,tank,sz,layer,context,animatedTracks
   g.fillRect(-sz*.98,-sz*1.06*trackLength,sz*.42,sz*2.12*trackLength);
   g.fillRect(sz*.56,-sz*1.06*trackLength,sz*.42,sz*2.12*trackLength);
  }
+
+ if(layer==='trackFrame'){g.restore();return;}
 
  // Animated tanks keep the exposed belts clear of wheel circles.
  if(!animatedTracks)for(const side of [-1,1]){
