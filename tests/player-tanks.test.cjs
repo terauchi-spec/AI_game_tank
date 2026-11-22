@@ -290,10 +290,13 @@ test('elite artwork has independent caches and shares animated pixel tracks with
  const [hull,muzzle,shaft,casing]=stamps;
  const turretTop=casing[7]-65*turretScale;
  assert.ok(Math.abs(hull[3]+128.178*hullScale-(turretTop+138.75*turretScale))<1e-9,'turret rotates at the hull mounting ring');
- assert.ok(Math.abs(casing[7]-muzzle[7]-55*turretScale*1.1)<1e-9,'projecting barrel is 10% longer');
+ assert.ok(Math.abs(casing[7]-muzzle[7]-55*turretScale*1.21)<1e-9,'projecting barrel is another 10% longer');
  assert.ok(Math.abs(muzzle[7]+muzzle[9]-shaft[7])<1e-9,'muzzle meets the shaft');
  assert.ok(Math.abs(shaft[7]+shaft[9]-casing[7])<1e-9,'shaft meets the fixed turret');
  assert.ok(Math.abs(muzzle[8]/shaft[8]-1.2)<1e-9,'muzzle is 20% wider');
+ assert.ok(Math.abs(shaft[8]/casing[8]-1.5)<1e-9,'barrel is 1.5 times wider');
+ const band=h.commands.find(c=>c[0]==='fillRect'&&Math.abs(c[2]-(muzzle[7]+muzzle[9]*.35))<1e-9);
+ assert.ok(band);assert.ok(Math.abs(band[2]-(muzzle[7]+muzzle[9]*.35))<1e-9,'white muzzle band preserves the opening');
  assert.equal(h.commands.filter(c=>c[0]==='drawImage'&&!images.includes(c[1])).length,18,'two layers get cached thin outlines');
  assert.equal(h.rasters.filter(a=>a.length===9).length,2);
  const count=h.canvases.length;h.commands.length=0;h.c.drawEnemyTank(elite);assert.equal(h.canvases.length,count);assert.equal(h.commands.some(c=>c[0]==='drawImage'),false);assert.equal(h.depth(),0);

@@ -84,11 +84,15 @@ function paintPlayerTankArt(q,id,layer){
   const x=-pivot.x*scale,y=mountY-pivot.y*scale,width=image.naturalWidth*scale;
   if(layer==='turret'){
    // Stretch only the projecting barrel, around its fixed join to the turret.
-   const barrelTop=10,barrelEnd=65,muzzleEnd=18,lengthScale=1.1,muzzleWidth=width*1.2;
+   const barrelTop=10,barrelEnd=65,muzzleEnd=18,lengthScale=1.21,barrelWidth=width*1.5,muzzleWidth=barrelWidth*1.2;
    const top=y+(barrelEnd-(barrelEnd-barrelTop)*lengthScale)*scale;
    const muzzleHeight=(muzzleEnd-barrelTop)*scale*lengthScale;
-   q.drawImage(image,0,barrelTop,image.naturalWidth,muzzleEnd-barrelTop,-pivot.x*scale*1.2,top,muzzleWidth,muzzleHeight);
-   q.drawImage(image,0,muzzleEnd,image.naturalWidth,barrelEnd-muzzleEnd,x,top+muzzleHeight,width,(barrelEnd-muzzleEnd)*scale*lengthScale);
+   q.drawImage(image,0,barrelTop,image.naturalWidth,muzzleEnd-barrelTop,-pivot.x*scale*1.8,top,muzzleWidth,muzzleHeight);
+   // Tint the muzzle band while retaining the dark opening and source transparency.
+   q.save();q.globalCompositeOperation='source-atop';q.fillStyle='#f3f5f6';
+   q.fillRect((104-pivot.x)*scale*1.8,top+muzzleHeight*.35,22*scale*1.8,muzzleHeight*.65);
+   q.restore();
+   q.drawImage(image,0,muzzleEnd,image.naturalWidth,barrelEnd-muzzleEnd,-pivot.x*scale*1.5,top+muzzleHeight,barrelWidth,(barrelEnd-muzzleEnd)*scale*lengthScale);
    q.drawImage(image,0,barrelEnd,image.naturalWidth,image.naturalHeight-barrelEnd,x,y+barrelEnd*scale,width,(image.naturalHeight-barrelEnd)*scale);
   }else q.drawImage(image,x,y,width,image.naturalHeight*scale);
   q.restore();return;
