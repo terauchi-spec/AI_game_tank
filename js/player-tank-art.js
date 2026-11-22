@@ -91,6 +91,9 @@ function paintPlayerTankArt(q,id,layer){
    // Tint the muzzle band while retaining the dark opening and source transparency.
    q.save();q.globalCompositeOperation='source-atop';q.fillStyle='#f3f5f6';
    q.fillRect((104-pivot.x)*scale*2.16,top+muzzleHeight*.35,22*scale*2.16,muzzleHeight*.65);
+   // A small dark oval keeps the bore readable inside the white muzzle rim.
+   q.fillStyle='#151b24';q.beginPath();
+   q.ellipse(0,top+muzzleHeight*.43,3.2*scale*2.16,muzzleHeight*.16,0,0,Math.PI*2);q.fill();
    q.restore();
    q.drawImage(image,0,muzzleEnd,image.naturalWidth,barrelEnd-muzzleEnd,-pivot.x*scale*1.8,top+muzzleHeight,barrelWidth,(barrelEnd-muzzleEnd)*scale*lengthScale);
    q.drawImage(image,0,barrelEnd,image.naturalWidth,image.naturalHeight-barrelEnd,x,y+barrelEnd*scale,width,(image.naturalHeight-barrelEnd)*scale);

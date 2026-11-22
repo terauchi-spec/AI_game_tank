@@ -297,6 +297,9 @@ test('elite artwork has independent caches and shares animated pixel tracks with
  assert.ok(Math.abs(shaft[8]/casing[8]-1.5*1.2)<1e-9,'barrel is another 1.2 times wider');
  const band=h.commands.find(c=>c[0]==='fillRect'&&Math.abs(c[2]-(muzzle[7]+muzzle[9]*.35))<1e-9);
  assert.ok(band);assert.ok(Math.abs(band[2]-(muzzle[7]+muzzle[9]*.35))<1e-9,'white muzzle band preserves the opening');
+ const bore=h.commands.find(c=>c[0]==='ellipse'&&Math.abs(c[2]-(muzzle[7]+muzzle[9]*.43))<1e-9);
+ assert.ok(bore,'dark bore is visible inside the white muzzle');
+ assert.ok(bore[3]>bore[4]&&bore[4]<muzzle[9]*.5,'bore fits inside the muzzle band');
  assert.equal(h.commands.filter(c=>c[0]==='drawImage'&&!images.includes(c[1])).length,18,'two layers get cached thin outlines');
  assert.equal(h.rasters.filter(a=>a.length===9).length,2);
  const count=h.canvases.length;h.commands.length=0;h.c.drawEnemyTank(elite);assert.equal(h.canvases.length,count);assert.equal(h.commands.some(c=>c[0]==='drawImage'),false);assert.equal(h.depth(),0);
