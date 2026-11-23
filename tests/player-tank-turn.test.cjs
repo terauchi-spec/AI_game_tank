@@ -28,11 +28,10 @@ test('all seven player tanks stop to pivot on opposite input and resume at the o
   return true;
  })()`),true);
 });
-test('straight controls retain immediate movement; wheel vehicles and infantry do not pivot',()=>{
+test('straight controls retain immediate movement; infantry and fighters still face input immediately',()=>{
  const h=start();
  assert.equal(h.run(`(()=>{
   for(const [vehicle,body] of [[{kind:'tank',t:TYPES[0],f:100},0],
-   [{kind:'truck',t:TRUCK_TYPE,f:100},Math.PI],[{kind:'tank',t:ARMORED_TYPE,f:100},Math.PI],
    [{kind:'fighter',t:FIGHTER_TYPE,f:100,hp:FIGHTER_TYPE.hp},Math.PI],[null,Math.PI]]){
    p.x=480;p.y=5000;p.body=body;p.tank=vehicle;
    keys.ArrowRight=true;update(1/60);
@@ -85,6 +84,54 @@ test('all tracked tanks steer on arcs for perpendicular and diagonal inputs at e
    if(Math.abs(p.x-(480+24*Math.abs(Math.sin(desired))+Math.cos(desired)*type.sp*remaining))>1e-7||Math.abs(p.y-(5000+24*Math.sign(desired)*(1-Math.cos(desired))+Math.sin(desired)*type.sp*remaining))>1e-7)return false;
    const x=p.x,y=p.y;update(dt);
    if(Math.abs(Math.hypot(p.x-x,p.y-y)-type.sp*dt)>1e-8)return false;
+  }
+  return true;
+ })()`),true);
+});
+
+test('trucks and armored cars steer smoothly on arcs and pivot before reversing at 30/60/120fps',()=>{
+ const h=start();
+ assert.equal(h.run(`(()=>{
+  const rate=202.5*Math.PI/180;
+  for(const [kind,type] of [['truck',TRUCK_TYPE],['tank',ARMORED_TYPE]]){
+   for(const dt of [1/30,1/60,1/120])for(const desired of [-Math.PI/2,-Math.PI/4,Math.PI/4,Math.PI/2,Math.PI]){
+    for(const key of Object.keys(keys))keys[key]=false;
+    p.x=480;p.y=5000;p.body=0;p.ang=.7;p.tank={kind,t:type,f:100,v:120};
+    if(desired===Math.PI)keys.ArrowLeft=true;
+    else {keys[desired<0?'ArrowUp':'ArrowDown']=true;if(Math.abs(desired)<Math.PI/2)keys.ArrowRight=true;}
+    const frames=Math.ceil(Math.abs(desired)/rate/dt);
+    for(let i=0;i<frames;i++){
+     const before=p.body;update(dt);
+     if(Math.abs(angD(p.body,before))>rate*dt+1e-9)return false;
+     if(i===0&&Math.abs(angD(desired,p.body))<1e-6)return false;
+     if(desired===Math.PI&&i<frames-1&&(p.x!==480||p.y!==5000||p.tank.f!==100))return false;
+     if(kind==='truck'&&Math.abs(angD(p.ang,p.body))>1e-9)return false;
+     if(kind==='tank'&&Math.abs(p.ang-.7)>1e-9)return false;
+    }
+    if(Math.abs(angD(desired,p.body))>1e-9||p.tank.playerPivoting)return false;
+    const x=p.x,y=p.y;update(dt);
+    if(Math.abs(Math.hypot(p.x-x,p.y-y)-type.sp*dt)>1e-8)return false;
+    if(Math.abs(angD(Math.atan2(p.y-y,p.x-x),p.body))>1e-9)return false;
+   }
+  }
+  return true;
+ })()`),true);
+});
+
+test('wheel vehicle steering takes the shortest angle and stops on release or empty fuel',()=>{
+ const h=start();
+ assert.equal(h.run(`(()=>{
+  for(const [kind,type] of [['truck',TRUCK_TYPE],['tank',ARMORED_TYPE]]){
+   for(const key of Object.keys(keys))keys[key]=false;
+   p.x=480;p.y=5000;p.body=-Math.PI+.02;p.tank={kind,t:type,f:100};
+   keys.ArrowLeft=true;update(1/60);
+   if(Math.abs(Math.atan2(Math.sin(Math.PI-p.body),Math.cos(Math.PI-p.body)))>1e-9)return false;
+   keys.ArrowLeft=false;keys.ArrowRight=true;update(1/60);
+   if(!p.tank.playerPivoting)return false;
+   keys.ArrowRight=false;const stopped=p.body,x=p.x,y=p.y;update(1/60);
+   if(p.body!==stopped||p.x!==x||p.y!==y||p.tank.playerPivoting)return false;
+   keys.ArrowRight=true;p.tank.f=0;update(1/60);
+   if(p.body!==stopped||p.x!==x||p.y!==y)return false;
   }
   return true;
  })()`),true);

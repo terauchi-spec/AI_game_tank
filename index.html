@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.22.1924</title>
+<title>こっそり戦車大作戦 2026.11.23.0936</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -1032,7 +1032,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.22.1924',FILE_CREATED_AT='2026/11/22 19:24',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.23.0936',FILE_CREATED_AT='2026/11/23 09:36',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -4443,7 +4443,7 @@ function moveEnemyTank(e,desired,speed,dt){
 function playerTankTurnRate(vehicle,pivoting=false){
  return ((pivoting?vehicle?.t?.pivotRate:vehicle?.t?.turnRate)||202.5)*Math.PI/180;
 }
-// Reverse inputs hold position until the pivot is complete.
+// Ground vehicles share bounded steering; reverse inputs finish their pivot before driving.
 function turnPlayerTankBody(desired,dt){
  const vehicle=p.tank;
  vehicle.playerPivoting=!!(vehicle.playerPivoting||Math.abs(Math.atan2(Math.sin(desired-p.body),Math.cos(desired-p.body)))>Math.PI/2+1e-9);
@@ -6313,17 +6313,17 @@ function update(dt){
  const areaDebugInfiniteFuel=!!(p.tank&&(p.tank.kind==='tank'||p.tank.kind==='truck')&&(areaDebugEnabled||p.tank.debugInfinite));
  const areaDebugInfiniteAmmo=!!(p.tank&&p.tank.kind==='tank'&&(areaDebugEnabled||p.tank.debugInfinite));
  cleanBuiltWalls(cy,cx);updateFlame(dt);if(debugMode>=2)clearPlayerDetection();if(areaDebugInfiniteFuel)p.tank.f=p.tank.t.fmax||100;if(areaDebugInfiniteAmmo){p.tank.c=p.tank.t.cmax;p.tank.v=p.tank.t.vmax;}if(debugMode>=3&&p.tank&&p.tank.kind==='fighter'){p.tank.f=FIGHTER_TYPE.fmax;p.tank.hp=FIGHTER_TYPE.hp;}
- const trackedTank=!!(V&&V.kind==='tank'&&!isWheeled);
+ const steeringVehicle=!!(V&&(V.kind==='tank'||isWheeled));
  if((ix||iy)&&!sniperLocked&&!(p.grappleT>0)&&!prepDig&&!playerAir&&V?.kind!=='tower'){
   if(!V||V.f>0){
    const desired=Math.atan2(iy,ix),previousBody=p.body;
-   const pivoting=trackedTank&&(V.playerPivoting||Math.abs(Math.atan2(Math.sin(desired-previousBody),Math.cos(desired-previousBody)))>Math.PI/2+1e-9);
-   const ready=!trackedTank||turnPlayerTankBody(desired,dt);
-   if(ready||trackedTank&&!pivoting){
+   const pivoting=steeringVehicle&&(V.playerPivoting||Math.abs(Math.atan2(Math.sin(desired-previousBody),Math.cos(desired-previousBody)))>Math.PI/2+1e-9);
+   const ready=!steeringVehicle||turnPlayerTankBody(desired,dt);
+   if(ready||steeringVehicle&&!pivoting){
     const digSwimSlow=(p.dig>0&&inWaterAt(p.x,p.y,r))?.6:null;
-    const turn=trackedTank&&!pivoting?Math.atan2(Math.sin(p.body-previousBody),Math.cos(p.body-previousBody)):0;
+    const turn=steeringVehicle&&!pivoting?Math.atan2(Math.sin(p.body-previousBody),Math.cos(p.body-previousBody)):0;
     if(Math.abs(turn)>1e-9){
-     // One belt rests while the centre follows a 24px-radius arc.
+     // Share the tracked steering path: the centre follows a 24px-radius arc.
      const radius=24*Math.sign(turn),remaining=Math.max(0,dt-Math.abs(turn)/playerTankTurnRate(V));
      const dx=radius*(Math.sin(p.body)-Math.sin(previousBody))+Math.cos(p.body)*sp*remaining;
      const dy=radius*(Math.cos(previousBody)-Math.cos(p.body))+Math.sin(p.body)*sp*remaining;
@@ -6336,7 +6336,7 @@ function update(dt){
     else V.f=FIGHTER_TYPE.fmax;
     if(isWheeled&&frameMove>0){V.lastDriveSpeed=frameMove/Math.max(.001,dt);V.lastDriveAt=performance.now();}
    }
-   if(!trackedTank){if(!p.flameActive)p.body=desired;else if(Number.isFinite(p.flameLockA))p.body=p.flameLockA;}
+   if(!steeringVehicle){if(!p.flameActive)p.body=desired;else if(Number.isFinite(p.flameLockA))p.body=p.flameLockA;}
    if(isTruck||isFighter)p.ang=p.body;
    if(isWheeled&&frameMove>0)checkDrivenTruckCrash();
   }else{V.playerPivoting=false;if(msgT<=0)say('ガソリン切れ!Aで降車');}
