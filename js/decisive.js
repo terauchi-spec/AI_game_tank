@@ -470,7 +470,7 @@ function setupDecisiveWorld(){
  humans=humans.filter(h=>!covers.some(c=>decisiveRectsOverlap(c,{x:h.x-12,y:h.y-12,w:24,h:24})));
  mission={index:0,points:[gate]};
  scoreStats.objectiveTotal=2;scoreStats.objectiveProgress=0;
- rebuildSpatialGrid();captureBuildingGroundMarks();ensurePlayerVehicleSpawns();ensureEnemyTankSpawns();
+ rebuildSpatialGrid();captureBuildingGroundMarks();ensurePlayerVehicleSpawns();ensureEnemyTankSpawns();assignHighPerformanceEnemyTanks();
  const townZones=ZONES.slice(1,DECISIVE_DESERT_START);
  plantDesertTownLakeBushes(townZones);
  placeDesertTownGunTowers(townZones);
