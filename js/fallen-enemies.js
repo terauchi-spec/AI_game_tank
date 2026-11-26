@@ -79,10 +79,15 @@ function drawFallenEnemies(cx,cy){
   g.save();g.translate(x,y);if(flying)g.rotate(body.flip*Math.sin(Math.PI*t)*.18);if(body.flip<0)g.scale(-1,1);g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';drawCryingSoldier(im,pose,body.variant,size);g.restore();
  }
 }
-function drawStunnedEnemy(x,y,face,size=FALLEN_ENEMY_SIZE*1.15,variant='blue'){
+function drawStunnedEnemy(x,y,face,size=FALLEN_ENEMY_SIZE*1.15,variant='blue',blueHelmetStripe=false){
  const im=fallenSoldierArt('supine',variant);if(!assetOK(im))return false;
  const scale=size*1.10/Math.max(im.naturalWidth,im.naturalHeight),w=im.naturalWidth*scale,h=im.naturalHeight*scale;
- g.save();g.translate(x,y);g.rotate(face);g.imageSmoothingEnabled=true;g.drawImage(im,-w/2,-h/2,w,h);g.restore();return true;
+ g.save();g.translate(x,y);g.rotate(face);g.imageSmoothingEnabled=true;g.drawImage(im,-w/2,-h/2,w,h);
+ if(blueHelmetStripe){
+  g.strokeStyle='#399bff';g.lineWidth=Math.max(1.5,w*.035);g.lineCap='round';
+  g.beginPath();g.moveTo(0,-h*.44);g.lineTo(0,-h*.32);g.stroke();
+ }
+ g.restore();return true;
 }
 
 // The scope has its own projected character layer; keep the same gentle reaction there.
