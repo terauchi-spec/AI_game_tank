@@ -336,10 +336,10 @@ function rollbackPartnerRoute(q){
  burst(q.x,q.y,5,'#8ad9ff',65);say('ルートが行き止まり：開始地点に戻った');
 }
 // Utility-style companion AI. Decision making is throttled; movement remains frame-based.
-function partnerDangerAt(x,y){
+function partnerDangerAt(x,y,nearHumans=humans,nearTanks=etanks){
  let risk=0,point={x,y};
- for(const h of humans){if(!h.alive||h.stun>0)continue;const d=Math.hypot(h.x-x,h.y-y);if(d<270&&los(h,point))risk+=(h.st?65:120)*(1-d/400);}
- for(const e of etanks){if(!e.alive)continue;const d=Math.hypot(e.x-x,e.y-y);if(d<340&&los(e,point))risk+=(e.st?90:145)*(1-d/460);}
+ for(const h of nearHumans){if(!h.alive||h.stun>0)continue;const d=Math.hypot(h.x-x,h.y-y);if(d<270&&los(h,point))risk+=(h.st?65:120)*(1-d/400);}
+ for(const e of nearTanks){if(!e.alive)continue;const d=Math.hypot(e.x-x,e.y-y);if(d<340&&los(e,point))risk+=(e.st?90:145)*(1-d/460);}
  return risk;
 }
 function updatePartner(dt){
@@ -442,11 +442,20 @@ function updatePartner(dt){
   if(q.mode==='combat'){
    for(const h of humans)if(h.alive&&h.st&&D(h,q)<220){options.push({x:h.x-110,y:h.y+30},{x:h.x+110,y:h.y+30});break;}
   }
+  // A threat outside every candidate's sight radius cannot affect this plan.
+  // Keep source order and evaluate visibility live so scoring remains identical.
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  for(const c of options){
+   minX=Math.min(minX,c.x);minY=Math.min(minY,c.y);
+   maxX=Math.max(maxX,c.x);maxY=Math.max(maxY,c.y);
+  }
+  const nearHumans=humans.filter(h=>h.alive&&!(h.stun>0)&&h.x>=minX-270&&h.x<=maxX+270&&h.y>=minY-270&&h.y<=maxY+270);
+  const nearTanks=etanks.filter(e=>e.alive&&e.x>=minX-340&&e.x<=maxX+340&&e.y>=minY-340&&e.y<=maxY+340);
   let best=null,bestScore=Infinity;
   for(const c of options){
    if(c.x<left||c.x>right||c.y<top||c.y>bottom||hitsC(c.x,c.y,9))continue;
    const d=Math.hypot(c.x-q.x,c.y-q.y),dp=Math.hypot(c.x-p.x,c.y-p.y);
-   const risk=partnerDangerAt(c.x,c.y),hide=inBush(c);
+   const risk=partnerDangerAt(c.x,c.y,nearHumans,nearTanks),hide=inBush(c);
    let score=d*.25+Math.max(0,dp-135)*1.2+Math.max(0,55-dp)*.8+(c.y-p.y)*.14;
    if(q.mode==='stealth'||q.mode==='cautious'||q.mode==='hold')score+=risk*2.4-(hide?110:0);
    else if(q.mode==='retreat')score+=risk*2.8-(hide?80:0);
