@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.28.0033</title>
+<title>こっそり戦車大作戦 2026.11.28.0051</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -1032,7 +1032,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.28.0033',FILE_CREATED_AT='2026/11/28 00:33',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.28.0051',FILE_CREATED_AT='2026/11/28 00:51',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -1662,8 +1662,12 @@ function damageObject(o,source='impact'){
  const instant=source==='cannonDirect'||source==='bombDirect'||source==='drill'||source==='vehicle'||source==='impact'||source==='sniper';
  const burn=source==='enemyBomb'||source==='cannonBlast'||source==='bombBlast'||source==='objectBlast'||source==='flame'||source==='mg'||source==='cannon'||source==='bomb';
  if(instant)return explodeObject(o,true);
- // サブマシンガン系の弾は2発命中で炎上開始。炎上後の追加弾は爆発を早めない。
- if(source==='mg'&&!(o.burnT>0)){
+ // 木箱・ドラム缶は2発で炎上し、累計4発で即爆発する。
+ if(source==='mg'&&(o.kind==='crate'||o.kind==='barrel')){
+  o.mgHits=(o.mgHits||0)+1;
+  if(o.mgHits>=4)return explodeObject(o,true);
+  if(o.mgHits<2&&!(o.burnT>0))return true;
+ }else if(source==='mg'&&!(o.burnT>0)){
   o.mgHits=(o.mgHits||0)+1;
   if(o.mgHits<2)return true;
   o.mgHits=0;
