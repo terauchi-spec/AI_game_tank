@@ -55,3 +55,17 @@ test('skill labels use an emphasized usage prefix and remain plain text for unkn
  const rows=h.get('leaderboardList').children[0].children;
  assert.equal(rows[0].children[1].children[1].children[2].textContent,'使用スキル：遠投');assert.equal(rows[1].children[1].children[1].children[2].textContent,'使用スキル：—');
 });
+
+test('overall rows identify stages and old records remain readable',()=>{
+ const h=harness();
+ h.c.renderLeaderboardRows([{name:'兵士',stage:'beginner',score:100,rank:'A'}]);
+ let body=h.get('leaderboardList').children[0].children[0].children[1];
+ assert.match(body.children.find(v=>v.className==='lb-stage').textContent,/破壊（初級）/);
+ h.c.renderLeaderboardRows([{name:'旧記録',score:90,rank:'B'}]);
+ body=h.get('leaderboardList').children[0].children[0].children[1];
+ assert.equal(body.children.find(v=>v.className==='lb-stage').textContent,'ステージ不明');
+ h.value("leaderboardBoard='beginner'");
+ h.c.renderLeaderboardRows([{name:'兵士',stage:'beginner',score:100,rank:'A'}]);
+ body=h.get('leaderboardList').children[0].children[0].children[1];
+ assert.equal(body.children.some(v=>v.className==='lb-stage'),false);
+});

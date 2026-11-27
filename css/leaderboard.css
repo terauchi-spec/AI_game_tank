@@ -8,3 +8,5 @@ body.leaderboard-open #pad,body.leaderboard-open #resetBtn,body.leaderboard-open
 @media(max-width:380px){.leaderboard-row{grid-template-columns:44px minmax(0,1fr);gap:8px}.lb-name{font-size:20px}}
 
 .lb-medal{display:block;width:100%;height:auto;max-width:56px;object-fit:contain}
+
+.lb-stage{font-size:14px;line-height:1.5;color:#d6e4c2;margin:0 0 10px;overflow-wrap:anywhere}

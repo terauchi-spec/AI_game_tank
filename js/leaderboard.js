@@ -87,6 +87,10 @@ function renderLeaderboardRows(entries){
   const awards=add('div','lb-titles','',body);let found=0;
   for(const id of Array.isArray(entry.titles)?entry.titles:[]){const title=titles.get(id);if(!title)continue;const chip=add('span','lb-title','',awards),art=document.createElement('span');art.className='lb-title-art';art.innerHTML=awardIcon(title,'title');chip.appendChild(art);add('span','',title.name,chip);found++;}
   if(!found)add('span','lb-empty-title','称号なし',awards);
+  if(leaderboardBoard==='overall'){
+   const stage=STAGE_ORDER.find(stage=>stage.id===entry.stage);
+   add('div','lb-stage',stage?stage.name+' ／ '+stage.target:'ステージ不明',body);
+  }
   fragment.appendChild(row);
  });list.replaceChildren(fragment);
 }
