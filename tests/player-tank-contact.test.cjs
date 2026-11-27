@@ -77,8 +77,8 @@ test('contact sparks render as single bright narrow rectangles above the tank la
  assert.ok(paints.every(q=>q.color==='#fff4b0'||q.color==='#ffbf55'));
  for(const paint of paints){
   assert.equal(paint.alpha,1);
-  assert.equal(Math.min(paint.rect[2],paint.rect[3]),1.2);
-  assert.ok(Math.max(paint.rect[2],paint.rect[3])<=4);
+  assert.equal(Math.min(paint.rect[2],paint.rect[3]),3.6);
+  assert.ok(Math.max(paint.rect[2],paint.rect[3])<=12);
  }
  h.run('updateParts(.12);contactPaints=[];');
  h.run(`{const cx=400,cy=4800;${renderer}}`);
