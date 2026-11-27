@@ -83,7 +83,7 @@ test('contact destruction changes the actual area removed, including sustained c
  }
 });
 
-test('bazooka rebalance preserves armored car, fighter and infantry blast damage',()=>{
+test('bazooka blast uses half-heart infantry damage and existing vehicle damage',()=>{
  const h=start();
  assert.equal(h.run(`(()=>{
   p.x=480;p.y=5000;p.dig=0;
@@ -92,6 +92,21 @@ test('bazooka rebalance preserves armored car, fighter and infantry blast damage
   p.tank={kind:'fighter',t:FIGHTER_TYPE,f:100,hp:8};commanderRocketBlast(480,5000);
   if(Math.abs(p.tank.hp-6.5)>1e-9)return false;
   p.tank=null;p.hp=3;commanderRocketBlast(480,5000);
-  return p.hp===2;
+  return p.hp===2.5;
+ })()`),true);
+});
+
+test('bazooka infantry damage is half a heart across stages and stops at 100px',()=>{
+ const h=start();
+ assert.equal(h.run(`(()=>{
+  p.x=480;p.y=5000;p.dig=0;p.tank=null;
+  for(const mode of ['base','front','decisive','escapeTest','indoor']){
+   stageMode=mode;
+   for(const [distance,expected] of [[0,2.5],[99,2.5],[100,3],[105,3]]){
+    p.hp=3;commanderRocketBlast(480+distance,5000);
+    if(p.hp!==expected)return false;
+   }
+  }
+  return true;
  })()`),true);
 });

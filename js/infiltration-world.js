@@ -2065,14 +2065,14 @@ function indoorScanStunnedGuards(dt){
 function indoorUpdateCommanderWeapon(h,point,visible,paused,dt,target=p){
  if(!h.indoorCommander)return false;
  if((h.cd||0)>0&&!(h.indoorRocketCharge>0))return false;
- if(!visible||paused||D(h,point)>1000||!los(h,target)){h.indoorRocketCharge=0;return false;}
+ if(!visible||paused||D(h,point)>480||!los(h,target)){h.indoorRocketCharge=0;return false;}
  if(!(h.indoorRocketCharge>0)){
   h.indoorRocketCharge=.5;h.indoorRocketAim=Math.atan2(point.y-h.y,point.x-h.x);return true;
  }
  h.face=h.indoorRocketAim;h.indoorRocketCharge=Math.max(0,h.indoorRocketCharge-dt);
  if(h.indoorRocketCharge<=0){
   const angle=h.indoorRocketAim;h.characterShotAt=performance.now();
-  fire(h.x+Math.cos(angle)*22,h.y+Math.sin(angle)*22,angle,'e','c',enemyCannonSpeed(),1000);
+  fire(h.x+Math.cos(angle)*22,h.y+Math.sin(angle)*22,angle,'e','c',enemyCannonSpeed(),480);
   const bullet=bullets[bullets.length-1];
   bullet.commanderRocket=true;bullet.commanderShooter=h;h.cd=4;h.burstLeft=0;
  }
