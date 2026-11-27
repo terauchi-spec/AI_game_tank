@@ -124,10 +124,10 @@ test('temporary suspicion and fire-related detection holds expire for a seated g
  assert.equal(h.run('enemy.sus'),0);assert.equal(h.run('enemy.burnSuspicionHold'),0);assert.equal(h.run('bullets.length'),0);
 });
 
-test('200 enemy gatling hits destroy every player tank, while 199 do not',()=>{
+test('200 spaced enemy gatling hits destroy every player tank, while 199 do not',()=>{
  for(const id of ['t34','tiger','type10','m1','sherman','churchill','kingtiger']){
   const h=scene();h.c.testId=id;
-  h.run("p.x=400;p.y=400;p.tank={kind:'tank',t:TYPES.find(t=>t.id===testId),ch:0,hp:10};round=()=>{b={x:450,y:400,vx:1000,vy:0,from:'e',k:'v',gatling:true};updateGatlingBullet(b,350,400,false);};for(let i=0;i<199;i++)round();");
+  h.run("p.x=400;p.y=400;p.tank={kind:'tank',t:TYPES.find(t=>t.id===testId),ch:0,hp:10};round=()=>{p.damageGraceT=0;b={x:450,y:400,vx:1000,vy:0,from:'e',k:'v',gatling:true};updateGatlingBullet(b,350,400,false);};for(let i=0;i<199;i++)round();");
   assert.equal(h.run('!!p.tank'),true,id);assert.ok(h.run('p.tank.ch')>0,id);
   h.run('round()');assert.equal(h.run('p.tank'),null,id);
   assert.ok(h.run('scoreStats.vehicleDamage')>0,id);

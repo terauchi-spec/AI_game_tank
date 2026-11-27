@@ -32,6 +32,7 @@ test('real enemy shell and blue commander rocket collisions destroy each model o
    p.tank={kind:'tank',t,f:t.fmax,ch:0,c:t.cmax,v:t.vmax};
    const limit=rocket?rockets:shells,damage=1.1;
    for(let hit=1;hit<=limit;hit++){
+    p.damageGraceT=0; // Independent durability hits, outside the protection interval.
     bullets=[{x:450,y:5000,sx:420,sy:5000,vx:120,vy:0,life:2,from:'e',k:'c',commanderRocket:rocket}];
     update(.05);
     if(Math.abs(p.tank.ch-hit*damage)>1e-8||!!p.tank.testWrecked!==(hit===limit)||bullets.length)return {id,rocket,hit,ch:p.tank.ch,wrecked:p.tank.testWrecked};
@@ -87,11 +88,11 @@ test('bazooka blast uses half-heart infantry damage and existing vehicle damage'
  const h=start();
  assert.equal(h.run(`(()=>{
   p.x=480;p.y=5000;p.dig=0;
-  p.tank={kind:'tank',t:ARMORED_TYPE,f:100,ch:0};commanderRocketBlast(480,5000);
+  p.tank={kind:'tank',t:ARMORED_TYPE,f:100,ch:0};p.damageGraceT=0;commanderRocketBlast(480,5000);
   if(Math.abs(p.tank.ch-.55)>1e-9)return false;
-  p.tank={kind:'fighter',t:FIGHTER_TYPE,f:100,hp:8};commanderRocketBlast(480,5000);
+  p.tank={kind:'fighter',t:FIGHTER_TYPE,f:100,hp:8};p.damageGraceT=0;commanderRocketBlast(480,5000);
   if(Math.abs(p.tank.hp-6.5)>1e-9)return false;
-  p.tank=null;p.hp=3;commanderRocketBlast(480,5000);
+  p.tank=null;p.hp=3;p.damageGraceT=0;commanderRocketBlast(480,5000);
   return p.hp===2.5;
  })()`),true);
 });
@@ -103,7 +104,7 @@ test('bazooka infantry damage is half a heart across stages and stops at 100px',
   for(const mode of ['base','front','decisive','escapeTest','indoor']){
    stageMode=mode;
    for(const [distance,expected] of [[0,2.5],[99,2.5],[100,3],[105,3]]){
-    p.hp=3;commanderRocketBlast(480+distance,5000);
+    p.hp=3;p.damageGraceT=0;commanderRocketBlast(480+distance,5000);
     if(p.hp!==expected)return false;
    }
   }

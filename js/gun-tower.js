@@ -271,6 +271,7 @@ function updateGatlingBullet(b,ox,oy,expired){
   }
  }
  else if(hit.type==='player'){
+  if(!beginPlayerDamage())return true;
   if(p.tank){const v=p.tank;if(v.kind==='tank'&&v.t.id!=='armored'){const armor=v.t.armor||1.5,amount=armor/GUN_TOWER_TYPE.playerTankHits;v.ch=(v.ch||0)+amount;recordPlayerDamage(1/GUN_TOWER_TYPE.playerTankHits,true);if(v.ch>=armor-1e-9)wreck();sfx('vehicleHit');burst(b.x,b.y,2,'#ffe1a0',60);return true;}if(v.kind==='truck'){recordPlayerDamage(.2,true);v.mgHits=(v.mgHits||0)+1;if(v.mgHits>=5)wreck();}else if(v.kind==='fighter'){recordPlayerDamage(Math.min(v.hp,1)/v.t.hp,true);v.hp--;if(v.hp<=0)wreck();}else{const armor=v.t.armor||1.5,amount=v.t.id==='armored'?armor/7.5:.066;v.ch=(v.ch||0)+amount;recordPlayerDamage(amount/armor,true);if(v.ch>=armor)wreck();}sfx('vehicleHit');}
   else{recordPlayerDamage(Math.min(p.hp,.5)/3);p.hp-=.5;if(p.hp<=0)triggerPlayerDeath();}
  }else if(hit.type==='partner'){

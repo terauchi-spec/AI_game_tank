@@ -1123,6 +1123,7 @@ function updateDecisiveRoofShell(d,dt){
   cars.splice(i,1);sfx('vehicleDestroyed',v);
  }
  if(p.dig>0||debugInvincible||p.tank?.kind==='fighter'||Math.hypot(p.x-x,p.y-y)>=r)return;
+ if(!beginPlayerDamage())return;
  if(p.tank){
   const v=p.tank;
   if(v.kind==='truck'){recordPlayerDamage(.2,true);v.mgHits=(v.mgHits||0)+1;if(v.mgHits>=5)wreck();}
