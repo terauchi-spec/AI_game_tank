@@ -108,8 +108,8 @@ test('Lv5 begins at 100; previous maxima now require more achievement',()=>{
 test('failed and empty runs cannot obtain titles; fallback is outside collection',()=>{
  const c=harness(),s=c.scoreStats,r={cleared:false};const a=c.evaluateRunTitles(Array(8).fill(0),c.metrics(),s,r);assert.equal(a.primary.name,'称号なし');assert.equal(a.titles.length,0);assert.ok(!c.get('TITLE_CATALOG.some(t=>t.id===TITLE_FALLBACK.id)'));
 });
-test('composite title needs both axes at Lv5 plus its evidence',()=>{
- const c=harness(),s=Object.assign(c.scoreStats,{sniperKills:6,sniperShots:7}),lv=Array(8).fill(0);lv[1]=5;lv[2]=4;const ids=()=>c.evaluateRunTitles(lv,Array(8).fill(100),s,{cleared:false},{titles:{}}).titles.map(t=>t.id);assert.ok(!ids().includes('v3_ghost_sniper'));lv[2]=5;assert.ok(ids().includes('v3_ghost_sniper'));s.sniperShots=8;assert.ok(!ids().includes('v3_ghost_sniper'));
+test('sniper composite needs stealth Lv5 and combat Lv4 plus its evidence',()=>{
+ const c=harness(),s=Object.assign(c.scoreStats,{sniperKills:6,sniperShots:7}),lv=Array(8).fill(0);lv[1]=5;lv[2]=3;const ids=()=>c.evaluateRunTitles(lv,Array(8).fill(100),s,{cleared:false},{titles:{}}).titles.map(t=>t.id);assert.ok(!ids().includes('v3_ghost_sniper'));lv[2]=4;assert.ok(ids().includes('v3_ghost_sniper'));s.sniperShots=8;assert.ok(!ids().includes('v3_ghost_sniper'));
 });
 test('medal history is never awarded or incremented in a new run',()=>{
  const c=harness();c.saved.set(c.get('TITLE_ARCHIVE_KEY'),JSON.stringify({titles:{},medals:{v3_mission_clear:{count:2}},runs:2}));Object.assign(c.scoreStats,rich,{final:{cleared:true,total:1000}});c.recordRunAchievements(c.scoreStats);assert.equal(c.scoreStats.awards.medals,undefined);assert.equal(c.readTitleArchive().medals.v3_mission_clear.count,2);assert.equal(c.readTitleArchive().runs,3);

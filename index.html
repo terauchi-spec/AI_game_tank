@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>こっそり戦車大作戦 2026.11.28.1341</title>
+<title>こっそり戦車大作戦 2026.11.29.0143</title>
 
 <style>
 .sound-control{display:flex;align-items:center;gap:7px;align-self:flex-start;width:auto;min-height:44px;margin:0;padding:0 8px 0 0;border:0;border-radius:0;background:transparent;text-align:left;color:#fff5cc;font:700 18px system-ui;cursor:pointer;touch-action:manipulation}
@@ -1032,7 +1032,7 @@ const cv=document.getElementById('c'),gm=gameCanvasContext(cv,{alpha:false}),oc=
 const canvasCreationDiagnostics={requested:MOBILE_READBACK_CANVAS,accepted:null};
 try{const attributes=gm.getContextAttributes?.();if(attributes&&typeof attributes.willReadFrequently==='boolean')canvasCreationDiagnostics.accepted=attributes.willReadFrequently;}catch(_){}
 window.tankCanvasDiagnostics=canvasCreationDiagnostics;
-const GAME_VERSION='2026.11.28.1341',FILE_CREATED_AT='2026/11/28 13:41',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
+const GAME_VERSION='2026.11.29.0143',FILE_CREATED_AT='2026/11/29 01:43',DRILL_ACTIVE=5,DRILL_RECHARGE=6,DIG_PREP_DURATION=.5;
 // 表示・保存用のm換算。移動・評価は内部座標のまま扱う。
 const distanceMeters=distance=>Math.round(Math.max(0,distance)/10);
 let audioCtx=null,gameAudioOutput=null;
@@ -8584,10 +8584,10 @@ const TITLE_AXIS_REQUIREMENTS=[
  {normal:(s,r)=>!!r.cleared,elite:(s,r)=>!!r.cleared&&!s.damageHits&&!s.playerDamage&&!s.vehicleDamage&&(!s.rescue||intactEscort(s)),normalNote:'任務を生きて完遂',eliteNote:'歩兵・搭乗車両とも無傷で完遂。救出では要人も無傷'}
 ];
 const TITLE_COMBOS=[
- {id:'v3_ghost_sniper',name:'ゴーストスナイパー',axes:[1,2],note:'狙撃撃破6体以上・狙撃の撃破効率80%以上',valid:s=>s.sniperKills>=6&&s.sniperKills/Math.max(1,s.sniperShots)>=.8},
+ {id:'v3_ghost_sniper',name:'ゴーストスナイパー',axes:[1,2],axisLevels:[5,4],note:'狙撃撃破6体以上・狙撃の撃破効率80%以上',valid:s=>s.sniperKills>=6&&s.sniperKills/Math.max(1,s.sniperShots)>=.8},
  {id:'v3_armored_assault',name:'鋼鉄の突撃兵',axes:[2,4],note:'戦車搭乗・自分で12体以上撃破・敵戦車2台以上撃破',valid:s=>!!s.vehicleKinds?.tank&&s.playerKills>=12&&s.playerTankKills>=2},
  {id:'v3_front_commander',name:'最前線の指揮官',axes:[0,6],note:'制圧作戦を完遂・全拠点の制圧に参加・共同で制圧した拠点2か所以上・全拠点を共同制圧または防衛撃破5体以上',valid:(s,r)=>s.stage==='front'&&r.cleared&&s.capturePoints===s.objectiveTotal&&s.jointCapturePoints>=2&&(s.jointCapturePoints===s.objectiveTotal||s.captureDefenseKills>=5)},
- {id:'v3_shadow_pair',name:'影の相棒',axes:[1,6],note:'潜入を無発見・無警報で完遂・相棒が回収に参加した資料2件以上（相棒単独の回収も対象）',valid:(s,r)=>s.stage==='indoor'&&!s.rescue&&r.cleared&&s.detections===0&&!s.indoorAlarm&&s.partnerDocuments>=2}
+ {id:'v3_shadow_pair',name:'影の相棒',axes:[1,6],axisLevels:[5,4],note:'潜入を無発見・無警報で完遂・相棒が回収に参加した資料2件以上（相棒単独の回収も対象）',valid:(s,r)=>s.stage==='indoor'&&!s.rescue&&r.cleared&&s.detections===0&&!s.indoorAlarm&&s.partnerDocuments>=2}
 ];
 const TITLE_SPECIAL=[
  {id:'v3_versatile',name:'多彩な戦士',note:'異なる5軸でLv4以上・うち2軸はLv5',priority:460,valid:lv=>lv.filter(v=>v>=4).length>=5&&lv.filter(v=>v>=5).length>=2},
@@ -8600,7 +8600,7 @@ const TITLE_CATALOG=[
  ...TITLE_BASE.flatMap(([axis,normal,elite],i)=>[
  {id:'v3_single_'+i+'_normal',name:normal,type:'実績',note:axis+' Lv4以上・'+TITLE_AXIS_REQUIREMENTS[i].normalNote,priority:120,axis:i,threshold:4,evidence:'normal'},
  {id:'v3_single_'+i+'_elite',name:elite,type:'実績',note:axis+' Lv5・'+TITLE_AXIS_REQUIREMENTS[i].eliteNote,priority:220,axis:i,threshold:5,evidence:'elite'}]),
- ...TITLE_COMBOS.map(c=>({...c,type:'複合実績',priority:410,note:c.axes.map(i=>RES_AXES[i]).join('／')+'がともにLv5・'+c.note})),
+ ...TITLE_COMBOS.map(c=>({...c,type:'複合実績',priority:410,note:(c.axisLevels?c.axes.map((axis,index)=>RES_AXES[axis]+' Lv'+c.axisLevels[index]+'以上').join('／'):c.axes.map(i=>RES_AXES[i]).join('／')+'がともにLv5')+'・'+c.note})),
  ...TITLE_SPECIAL.map(c=>({...c,type:'特殊実績'}))
 ];
 const legendNames=['任務の覇者','幽影の覇者','戦場の覇王','爆炎の支配者','疾風迅雷','神算鬼謀','不滅の絆','不死鳥'];
@@ -8620,7 +8620,7 @@ function evaluateRunTitles(levels,metrics,s,r,archive=readTitleArchive()){
   // 直前までに2回以上獲得し、今回も対応するLv5の実績の条件を達成した場合に伝説級を授与。
   if(t.legendFrom)return titleAcquisitionCount(archive.titles[t.legendFrom])>=TITLE_LEGEND_REQUIRED-1&&levels[t.axis]>=5&&TITLE_AXIS_REQUIREMENTS[t.axis].elite(s,r);
   if(t.axis!=null)return levels[t.axis]>=t.threshold&&TITLE_AXIS_REQUIREMENTS[t.axis][t.evidence](s,r);
-  if(t.axes)return t.axes.every(i=>levels[i]>=5)&&t.valid(s,r);
+  if(t.axes)return t.axes.every((axis,index)=>levels[axis]>=(t.axisLevels?.[index]??5))&&t.valid(s,r);
   return t.valid(levels,s,r);
  });
  // Include titles earned in this result so the final missing title unlocks mythic immediately.

@@ -2,7 +2,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),path=requir
 const {createGameEngine}=require('./helpers/game-engine.cjs'),root=path.join(__dirname,'..');
 test('each composite names both of its actual required axes, and legends use the current achievement terminology',()=>{
  const h=createGameEngine(root);
- assert.equal(h.run("TITLE_CATALOG.filter(t=>t.axes).every(t=>t.axes.every(i=>t.note.includes(RES_AXES[i]))&&t.note.includes('ともにLv5'))"),true);
+ assert.equal(h.run("TITLE_CATALOG.filter(t=>t.axes).every(t=>t.axes.every(i=>t.note.includes(RES_AXES[i]))&&(t.axisLevels?t.axes.every((axis,index)=>t.note.includes(RES_AXES[axis]+' Lv'+t.axisLevels[index]+'以上')):t.note.includes('ともにLv5')))"),true);
  assert.equal(h.run("TITLE_CATALOG.filter(t=>t.legendFrom).every(t=>t.note.startsWith('実績「')&&t.note.includes('累計3回獲得'))"),true);
  const html=fs.readFileSync(path.join(root,'index.html'),'utf8');assert.ok(!html.includes('上級称号'));assert.ok(!html.includes('通常6ステージ'));
 });
@@ -96,4 +96,18 @@ test('two joint captures qualify for Front Commander without requiring extra kil
   return evaluateRunTitles(m.map(resLevel),m,s,r,{titles:{}}).titles.some(t=>t.id==='v3_front_commander');
  })()`);
  assert.equal(earns,true);
+});
+
+test('Shadow Pair accepts teamwork Lv4 while retaining stealth and document evidence',()=>{
+ const h=createGameEngine(root);
+ assert.equal(h.run(`(()=>{
+  const s=Object.assign(newScoreStats(),{stage:'indoor',documentTotal:3,documents:3,hiddenDocuments:3,partnerDocuments:2,jointDocuments:3});
+  const r={cleared:true},m=resultMetrics(s,r),levels=m.map(resLevel);
+  const earned=()=>evaluateRunTitles(levels,m,s,r,{titles:{}}).titles.some(t=>t.id==='v3_shadow_pair');
+  if(levels[1]!==5||levels[6]!==4||!earned())return false;
+  levels[1]=4;if(earned())return false;levels[1]=5;
+  levels[6]=3;if(earned())return false;levels[6]=4;
+  s.partnerDocuments=1;if(earned())return false;
+  s.partnerDocuments=2;s.indoorAlarm=true;return !earned();
+ })()`),true);
 });
