@@ -1,6 +1,6 @@
 // Gatling hardware is drawn at 80% of its former size; people retain their ordinary size.
 // Stationary single-seat vehicle. Ammunition belongs to the emplacement, not its operator.
-const GUN_TOWER_TYPE=Object.freeze({id:'gunTower',n:'機関銃塔',hp:8,armor:1.5,cmax:0,vmax:500,fmax:0,sp:0,ccd:.065,vcd:.065,range:400,speed:1000,antiTankHits:30,playerTankHits:200,spinUpSeconds:.5,enemyTurnRate:Math.PI/6,enemyMinBurstSeconds:1,coverRadius:20,drawScale:1.6,seatOffset:22.4,muzzleOffset:59.2,clearance:67.2,boardRadius:96,col:'#66705a'});
+const GUN_TOWER_TYPE=Object.freeze({id:'gunTower',n:'機関銃塔',hp:8,armor:1.5,cmax:0,vmax:500,fmax:0,sp:0,ccd:.065,vcd:.065,range:400,speed:1000,antiTankHits:30,playerTankHits:200,spinUpSeconds:.5,enemyTurnRate:Math.PI/6,enemyMinBurstSeconds:2,coverRadius:20,drawScale:1.6,seatOffset:22.4,muzzleOffset:59.2,clearance:67.2,boardRadius:96,col:'#66705a'});
 function gunTowerAvailable(v){
  if(v?.kind!=='tower')return true;
  if(v.destroyed)return false;
@@ -215,7 +215,7 @@ function updateGunTowerEnemy(h,dt){
 }
 function fireGunTower(v,angle,from,operator=null){
  if(v?.kind!=='tower'||v.destroyed||!(v.v>0)||from!=='p'&&v.aiRestT>0)return false;
- if(from!=='p'&&!(v.aiBurstT>0))v.aiBurstT=3;
+ if(from!=='p'&&!(v.aiBurstT>0))v.aiBurstT=5;
  v.v--;v.aim=angle;v.f=0;
  const a=angle+(R()-.5)*.045;
  fire(v.x+Math.cos(a)*GUN_TOWER_TYPE.muzzleOffset,v.y+Math.sin(a)*GUN_TOWER_TYPE.muzzleOffset,a,from,'v',GUN_TOWER_TYPE.speed,GUN_TOWER_TYPE.range,0,from==='e'?'enemyGun':'mg');

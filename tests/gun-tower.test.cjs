@@ -109,7 +109,7 @@ test('AI operators spin up before bursts and still rest for three seconds',()=>{
   assert.equal(h.run('v.v'),500,owner);
   h.run('step(.25);');assert.equal(h.run('v.v'),500,owner);
   h.run('step(.25);');assert.equal(h.run('v.v'),499,owner);
-  h.run('for(let i=0;i<31;i++)step(.1);');
+  h.run('for(let i=0;i<51;i++)step(.1);');
   assert.ok(h.run('v.aiRestT')>0,owner);
   h.run('stoppedAmmo=v.v;step(.1);');assert.equal(h.run('v.v'),h.run('stoppedAmmo'),owner);
  }
@@ -267,17 +267,17 @@ test('removing the enemy operator cancels the minimum burst immediately',()=>{
  const h=scene();h.run("cars=[v];enemy={alive:true,elite:false};boardEnemyGunTower(v,enemy);v.enemyMinBurstT=.8;v.spinActive=true;enemy.stun=1;updateGunTowerEnemy(enemy,.02);");assert.equal(h.run('v.gunner'),null);assert.equal(h.run('v.enemyMinBurstT'),0);assert.equal(h.run('v.spinActive'),false);
 });
 
-test('an enemy burst restarted after cooldown gets a fresh minimum second',()=>{
+test('an enemy burst restarted after cooldown gets a fresh minimum two seconds',()=>{
  const h=scene();h.run("cars=[v];enemy={alive:true,elite:false};boardEnemyGunTower(v,enemy);p.x=v.x+200;p.y=v.y;visible=true;findDetectedTarget=()=>visible?({obj:p,key:'p'}):null;los=()=>visible;step=()=>{updateGunTowers(.02);updateGunTowerEnemy(enemy,.02)};for(let i=0;i<500&&!(v.aiRestT>0);i++)step();before=v.v;for(let i=0;i<500&&v.v===before;i++)step();");
- assert.ok(h.run('v.enemyMinBurstT')>.8, h.run('JSON.stringify({min:v.enemyMinBurstT,rest:v.aiRestT,spin:v.spinTime,burst:v.aiBurstT,ammo:v.v,lost:v.lostTargetT})'));assert.equal(h.run('v.enemyBurstActive'),true);
+ assert.ok(h.run('v.enemyMinBurstT')>1.8, h.run('JSON.stringify({min:v.enemyMinBurstT,rest:v.aiRestT,spin:v.spinTime,burst:v.aiBurstT,ammo:v.v,lost:v.lostTargetT})'));assert.equal(h.run('v.enemyBurstActive'),true);
 });
 
-test('enemy gatling starts warming inside 15 degrees and sustained fire ends at three seconds',()=>{
+test('enemy gatling starts warming inside 15 degrees and sustained fire ends at five seconds',()=>{
  for(const angle of [14,16]){
   const h=scene();h.c.angle=angle;
   h.run("cars=[v];enemy={alive:true,elite:false};boardEnemyGunTower(v,enemy);v.aim=0;target={x:v.x+Math.cos(angle*Math.PI/180)*200,y:v.y+Math.sin(angle*Math.PI/180)*200,alive:true};findDetectedTarget=()=>({obj:target,key:'ally:1'});updateGunTowerEnemy(enemy,0);");
   assert.equal(h.run('!!v.spinActive'),angle===14);
  }
- const h=scene();h.run("cars=[v];enemy={alive:true,elite:false};boardEnemyGunTower(v,enemy);v.aim=0;p.x=v.x+200;p.y=v.y;findDetectedTarget=()=>({obj:p,key:'p'});step=()=>{updateGunTowers(.02);updateGunTowerEnemy(enemy,.02)};for(let i=0;i<100&&v.v===500;i++)step();for(let i=0;i<149;i++)step();");
+ const h=scene();h.run("cars=[v];enemy={alive:true,elite:false};boardEnemyGunTower(v,enemy);v.aim=0;p.x=v.x+200;p.y=v.y;findDetectedTarget=()=>({obj:p,key:'p'});step=()=>{updateGunTowers(.02);updateGunTowerEnemy(enemy,.02)};for(let i=0;i<100&&v.v===500;i++)step();for(let i=0;i<249;i++)step();");
  assert.ok(h.run('v.aiBurstT')>0);h.run('step()');assert.ok(h.run('v.aiRestT')>0);
 });
