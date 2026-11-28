@@ -108,7 +108,7 @@ test('AI operators spin up before bursts and still rest for three seconds',()=>{
   h.run("p.x=v.x+200;p.y=v.y;if(sampleOwner==='enemy'){cars=[v];enemy={alive:true,elite:false};humans=[enemy];boardEnemyGunTower(v,enemy);attack=dt=>updateGunTowerEnemy(enemy,dt);}else{cars=[];partner={x:v.x,y:v.y,hp:3,vehicle:v};humans=[{x:v.x+200,y:v.y,alive:true}];attack=dt=>partnerGunTowerAttack(partner,dt);}step=dt=>{updateGunTowers(dt);attack(dt)};attack(0);");
   assert.equal(h.run('v.v'),500,owner);
   h.run('step(.25);');assert.equal(h.run('v.v'),500,owner);
-  h.run('step(.75);');assert.equal(h.run('v.v'),499,owner);
+  h.run('step(.25);');assert.equal(h.run('v.v'),499,owner);
   h.run('for(let i=0;i<31;i++)step(.1);');
   assert.ok(h.run('v.aiRestT')>0,owner);
   h.run('stoppedAmmo=v.v;step(.1);');assert.equal(h.run('v.v'),h.run('stoppedAmmo'),owner);
@@ -177,7 +177,7 @@ test('unalerted enemy gunners sweep a fixed 180-degree forward arc slowly and re
 });
 test('gunner sweep keeps ordinary vision checks and aims at detected targets',()=>{
  const h=scene();h.run("cars=[v];enemy={x:v.x,y:v.y,alive:true,elite:false};boardEnemyGunTower(v,enemy);target={x:v.x+180,y:v.y+90,alive:true};findDetectedTarget=()=>({obj:target,key:'p'});updateGunTowerEnemy(enemy,.2);");
- assert.equal(h.run('enemy.st'),1);assert.ok(Math.abs(h.run('v.aim')-Math.PI/4*.2)<1e-9);
+ assert.equal(h.run('enemy.st'),1);assert.ok(Math.abs(h.run('v.aim')-Math.PI/6*.2)<1e-9);
  assert.equal(h.run('bullets.length'),0);
  h.run('updateGunTowerEnemy(enemy,1)');assert.equal(h.run('bullets.length'),1);
 });
@@ -196,10 +196,10 @@ test('player gun tower is aimed by left-stick directions, and does not move with
  assert.ok(Math.abs(h.run('p.ang')+Math.PI/2)<1e-10);
 });
 
-test('gun tower spin-up prevents firing for the first second and keeps spinning while held',()=>{
+test('gun tower spin-up prevents firing for the first half second and keeps spinning while held',()=>{
  const h=scene();h.run("spinSounds=0;sfx=(name)=>{if(name==='gatlingSpin')spinSounds++};ready=updateGunTowerSpin(v,.25,true);");
  assert.equal(h.run('ready'),false);assert.equal(h.run('v.spinActive'),true);assert.equal(h.run('spinSounds'),1);
- h.run("phase=v.spinPhase;ready=updateGunTowerSpin(v,.74,true);");assert.equal(h.run('ready'),false);assert.ok(h.run('v.spinPhase!==phase'));
+ h.run("phase=v.spinPhase;ready=updateGunTowerSpin(v,.24,true);");assert.equal(h.run('ready'),false);assert.ok(h.run('v.spinPhase!==phase'));
  h.run("ready=updateGunTowerSpin(v,.01,true);fireIfReady=ready&&fireGunTower(v,0,'p');");assert.equal(h.run('fireIfReady'),true);assert.equal(h.run('v.v'),499);
  h.run("phase=v.spinPhase;ready=updateGunTowerSpin(v,.1,true);");assert.equal(h.run('ready'),true);assert.ok(h.run('phase!==v.spinPhase'));assert.equal(h.run('spinSounds'),1);
  h.run("updateGunTowerSpin(v,.01,false);");assert.equal(h.run('v.spinTime'),0);assert.equal(h.run('v.spinActive'),false);
@@ -214,7 +214,7 @@ test('enemy and partner tower operators warm up before the first bullet',()=>{
  for(const owner of ['enemy','partner']){
   const h=scene();h.c.mode=owner;h.run("p.x=v.x+180;p.y=v.y;if(mode==='enemy'){cars=[v];enemy={alive:true,elite:false};humans=[enemy];boardEnemyGunTower(v,enemy);attack=dt=>updateGunTowerEnemy(enemy,dt);}else{cars=[];partner={x:v.x,y:v.y,hp:3,vehicle:v};humans=[{x:v.x+180,y:v.y,alive:true}];attack=dt=>partnerGunTowerAttack(partner,dt);}attack(.25);");
   assert.equal(h.run('bullets.length'),0,owner);
-  h.run('attack(.75)');assert.equal(h.run('bullets.length'),1,owner);
+  h.run('attack(.25)');assert.equal(h.run('bullets.length'),1,owner);
  }
 });
 
@@ -252,15 +252,15 @@ test('enemy burst continues two seconds after sight loss, target death or hiding
 });
 test('enemy aim is rate limited on acquisition, target switches, firing and scan resumption',()=>{
  const h=scene();h.run("cars=[v];enemy={alive:true,elite:false};boardEnemyGunTower(v,enemy);target={x:v.x,y:v.y+200,alive:true};findDetectedTarget=()=>({obj:target,key:'ally:1'});old=v.aim;updateGunTowerEnemy(enemy,.02);");
- assert.ok(Math.abs(h.run('v.aim-old'))<=Math.PI/4*.02+1e-10);assert.equal(h.run('bullets.length'),0);
+ assert.ok(Math.abs(h.run('v.aim-old'))<=Math.PI/6*.02+1e-10);assert.equal(h.run('bullets.length'),0);
  h.run("for(let i=0;i<80;i++){updateGunTowers(.02);updateGunTowerEnemy(enemy,.02)};target.x=v.x-200;target.y=v.y;old=v.aim;updateGunTowerEnemy(enemy,.02);");
- assert.ok(Math.abs(h.run('v.aim-old'))<=Math.PI/4*.02+1e-10);
+ assert.ok(Math.abs(h.run('v.aim-old'))<=Math.PI/6*.02+1e-10);
  h.run("target.alive=false;findDetectedTarget=()=>null;v.enemyMinBurstT=0;v.enemyBurstActive=false;v.enemyLostBurstT=0;old=v.aim;updateGunTowerEnemy(enemy,.02);");assert.ok(Math.abs(h.run('v.aim-old'))<=.208*.02+1e-10);
 });
 test('enemy rotation follows the shortest arc and is independent of frame rate',()=>{
  for(const dt of [.01,.02,.1]){
   const h=scene();h.c.dt=dt;h.run("enemy={face:0};v.aim=Math.PI-.05;old=v.aim;for(let i=0;i<Math.round(.2/dt);i++)turnGunTowerEnemy(v,enemy,-Math.PI+.5,dt);");
-  assert.ok(Math.abs(h.run('v.aim-old')-Math.PI/4*.2)<1e-10);
+  assert.ok(Math.abs(h.run('v.aim-old')-Math.PI/6*.2)<1e-10);
  }
 });
 test('removing the enemy operator cancels the minimum burst immediately',()=>{
